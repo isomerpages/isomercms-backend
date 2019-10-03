@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-const app = require('../app');
+const app = require('../server');
 const debug = require('debug')('isomercms:server');
 const http = require('http');
 
@@ -12,7 +12,7 @@ const http = require('http');
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '8081');
 app.set('port', port);
 
 /**

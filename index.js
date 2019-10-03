@@ -2,7 +2,7 @@ require('dotenv').config({silent: true})
 const express = require('express')
 const simpleOauthModule = require('simple-oauth2')
 const randomstring = require('randomstring')
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 8081
 const oauthProvider = process.env.OAUTH_PROVIDER || 'github'
 const loginAuthTarget = process.env.AUTH_TARGET || '_self'
 

@@ -7,8 +7,6 @@ branches:
     - master
 install:
   - npm install
-before_script:
-  - npx tsc
 after_success:
   # Zip deployment files with commit and timestamp
   - export ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE=$TRAVIS_COMMIT_$(date +%Y_%m_%d_%H_%M_%S).zip
@@ -21,8 +19,7 @@ deploy:
     skip_cleanup: true
     zip_file: $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE
     app: "test-cms"
-    env: "test-cms"
-    bucket_name: "test-cms"
+    env: "TestCms-env"
+    bucket_name: "test-cms-isomer"
     on:
       branch: master
-  - provider: elasticbeanstalk

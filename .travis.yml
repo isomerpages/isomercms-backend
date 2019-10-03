@@ -1,0 +1,28 @@
+language: node_js
+node_js:
+  - "lts/*"
+branches:
+  # This script will be run on the following branches only
+  only:
+    - master
+install:
+  - npm install
+before_script:
+  - npx tsc
+after_success:
+  # Zip deployment files with commit and timestamp
+  - export ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE=$TRAVIS_COMMIT_$(date +%Y_%m_%d_%H_%M_%S).zip
+  - zip -rq $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE * -x .env-example .gitignore package-lock.json
+deploy:
+  - provider: elasticbeanstalk
+    access_key_id: $AWS_ACCESS_KEY_ID_FOR_DEPLOYMENT
+    secret_access_key: $AWS_SECRET_ACCESS_KEY_FOR_DEPLOYMENT
+    region: "ap-southeast-1"
+    skip_cleanup: true
+    zip_file: $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE
+    app: "test-cms"
+    env: "test-cms"
+    bucket_name: "test-cms"
+    on:
+      branch: master
+  - provider: elasticbeanstalk

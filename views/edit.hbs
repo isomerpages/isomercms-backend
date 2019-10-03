@@ -1,0 +1,29 @@
+<script>
+  function saveEdit(){
+    let editedText = document.getElementById('edit-box').textContent
+    let newContent = window.btoa(editedText)
+
+    let params = {
+      "message": "Update file",
+      "content": newContent,
+      "branch": "staging",
+      "sha": "{{sha}}"
+    }
+
+    axios.put('https://api.github.com/repos/isomerpages/travis-test/contents/index.md', params, {
+      headers: {
+        Authorization: "token {{access_token}}",
+        "Content-Type": "application/json"
+      }
+    })
+  }
+</script>
+
+<h3>Edit this file</h3>
+<a href="https://github.com/isomerpages/travis-test/blob/staging/index.md" target="_blank">Go to file on GitHub</a>
+
+<div contenteditable="true" class="edit-box" id="edit-box">
+  {{content}}
+</div>
+
+<button id="save-button" onclick="saveEdit()">Save</button>

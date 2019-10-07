@@ -2,16 +2,18 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const base64 = require('base-64');
+const jwtUtils = require('../utils/jwt-utils')
 
 /* GET home page. */
 router.get('/', async function(req, res, next) {
   try {
-    const accessToken = req.query.access_token
+    const jwt = req.cookies.oauthtoken
+    let { access_token } = jwtUtils.verifyToken(jwt)
 
     const filePath = `https://api.github.com/repos/isomerpages/travis-test/contents/index.md`
     const resp = await axios.get(filePath, {
       headers: {
-        Authorization: `token ${accessToken}`,
+        Authorization: `token ${access_token}`,
         "Content-Type": "application/json"
       }
     })
@@ -22,7 +24,6 @@ router.get('/', async function(req, res, next) {
   
     // Obtain content from a page on GitHub
     res.render('edit', { 
-      access_token: accessToken,
       content: contentString,
       sha: sha
      });

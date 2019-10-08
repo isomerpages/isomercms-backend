@@ -1,0 +1,10 @@
+<h2>These are the files and folders in the current folder</h2>
+
+{{#each objects}}
+  <li>
+    <a href="{{this.link}}">{{this.fileName}}</a>
+    {{#unless this.isFile }}
+      [Folder]
+    {{/unless}}
+  </li>
+{{/each}}

@@ -16,8 +16,6 @@ router.get('/', async function(req, res, next) {
   try {
     const { code, state } = req.query
 
-    console.log(code, state, "CODE STATE")
-  
     const params = {
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
@@ -45,16 +43,9 @@ router.get('/', async function(req, res, next) {
 
     const token = jwtUtils.signToken({access_token})
 
-    console.log(token, "MY TOKEN")
     res.cookie('oauthtoken', token, cookieSettings)
 
-    console.log('set cookie')
-
-    res.redirect(`/edit`)
-
-    console.log('redirect')
-    // res.send()
-    // res.redirect(`/edit?access_token=${access_token}`)
+    res.redirect(`/sites`)
   } catch(err) {
     console.log(err)
   }

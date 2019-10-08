@@ -6,7 +6,7 @@ const logger = require('morgan');
 
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
-const editRouter = require('./routes/edit');
+const sitesRouter = require('./routes/sites');
 
 const bodyParser = require('body-parser')
 // create application/x-www-form-urlencoded parser
@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
-app.use('/edit', editRouter);
+app.use('/sites', sitesRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

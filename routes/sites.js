@@ -101,7 +101,7 @@ router.get('/:site', async function(req, res, next) {
 });
 
 // Get subfolder of site
-router.get('/:site/folders/:folder*', async function(req, res, next) {
+router.get('/:site/folders/:folder', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     let { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -118,11 +118,14 @@ router.get('/:site/folders/:folder*', async function(req, res, next) {
     })
 
     const folderObjects = resp.data.map(object => {
+      const pathUriEncoded = encodeURIComponent(object.path)
+      const pathNameSplit = object.path.split("/")
+      const fileName = pathNameSplit[pathNameSplit.length - 1]
       return { 
         link: object.type === 'file' ? 
-          `${FRONTEND_URL}/sites/${site}/files/${object.path}` : 
-          `${FRONTEND_URL}/sites/${site}/folders/${object.path.replace(`${site}/`)}`, 
-        fileName: object.path,
+          `${FRONTEND_URL}/sites/${site}/files/${pathUriEncoded}` : 
+          `${FRONTEND_URL}/sites/${site}/folders/${pathUriEncoded}`, 
+        fileName: fileName,
         isFile: object.type === 'file' 
       }
     })
@@ -139,7 +142,7 @@ router.get('/:site/folders/:folder*', async function(req, res, next) {
 });
 
 // Get the content of a specified file
-router.get('/:site/files/:file*', async function(req, res, next) {
+router.get('/:site/files/:file', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     let { access_token } = jwtUtils.verifyToken(oauthtoken)

@@ -3,14 +3,16 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-
-const indexRouter = require('./routes/index');
-const authRouter = require('./routes/auth');
-const sitesRouter = require('./routes/sites');
-
-const bodyParser = require('body-parser')
-// create application/x-www-form-urlencoded parser
-const urlencodedParser = bodyParser.urlencoded({ extended: false })
+const indexRouter = require('./routes/index')
+const authRouter = require('./routes/auth')
+const sitesRouter = require('./routes/sites')
+const pagesRouter = require('./routes/pages')
+const collectionsRouter = require('./routes/collections')
+const collectionPagesRouter = require('./routes/collectionPages')
+const resourcesRouter = require('./routes/resources')
+const resourcePagesRouter = require('./routes/resourcePages')
+const imagesRouter = require('./routes/images')
+const filesRouter = require('./routes/files')
 
 const app = express();
 
@@ -26,7 +28,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
-app.use('/sites', sitesRouter);
+app.use('/sites', sitesRouter)
+app.use('/sites', pagesRouter)
+app.use('/sites', collectionsRouter)
+app.use('/sites', collectionPagesRouter)
+app.use('/sites', resourcesRouter)
+app.use('/sites', resourcePagesRouter)
+app.use('/sites', imagesRouter)
+app.use('/sites', filesRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

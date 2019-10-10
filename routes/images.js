@@ -60,7 +60,7 @@ router.post('/:siteName/images', async function(req, res, next) {
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
 
     let params = {
-      "message": `Create page: ${imageName}`,
+      "message": `Create image: ${imageName}`,
       "content": content,
       "branch": "staging",
     }
@@ -128,7 +128,7 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
 
     let params = {
-      "message": `Updating page: ${imageName}`,
+      "message": `Updating image: ${imageName}`,
       "content": content,
       "branch": "staging",
       "sha": sha
@@ -159,7 +159,7 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
 
     let params = {
-      "message": `Deleting page: ${imageName}`,
+      "message": `Deleting image: ${imageName}`,
       "branch": "staging",
       "sha": sha
     }
@@ -194,7 +194,7 @@ router.post('/:siteName/images/:imageName/rename', async function(req, res, next
     const newFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${newImageName}`
 
     let params = {
-      "message": `Create page: ${newImageName}`,
+      "message": `Create image: ${newImageName}`,
       "content": content,
       "branch": "staging",
     }
@@ -210,7 +210,7 @@ router.post('/:siteName/images/:imageName/rename', async function(req, res, next
     const currFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
 
     let params = {
-      "message": `Deleting page: ${imageName}`,
+      "message": `Deleting image: ${imageName}`,
       "branch": "staging",
       "sha": sha
     }

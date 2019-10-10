@@ -60,7 +60,7 @@ router.post('/:siteName/files', async function(req, res, next) {
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
 
     let params = {
-      "message": `Create page: ${fileName}`,
+      "message": `Create file: ${fileName}`,
       "content": content,
       "branch": "staging",
     }
@@ -128,7 +128,7 @@ router.post('/:siteName/files/:fileName', async function(req, res, next) {
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
 
     let params = {
-      "message": `Updating page: ${fileName}`,
+      "message": `Updating file: ${fileName}`,
       "content": content,
       "branch": "staging",
       "sha": sha
@@ -159,7 +159,7 @@ router.delete('/:siteName/files/:fileName', async function(req, res, next) {
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
 
     let params = {
-      "message": `Deleting page: ${fileName}`,
+      "message": `Deleting file: ${fileName}`,
       "branch": "staging",
       "sha": sha
     }
@@ -194,7 +194,7 @@ router.post('/:siteName/files/:fileName/rename', async function(req, res, next) 
     const newFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${newFileName}`
 
     let params = {
-      "message": `Create page: ${newFileName}`,
+      "message": `Create file: ${newFileName}`,
       "content": content,
       "branch": "staging",
     }
@@ -210,7 +210,7 @@ router.post('/:siteName/files/:fileName/rename', async function(req, res, next) 
     const currFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
 
     let params = {
-      "message": `Deleting page: ${fileName}`,
+      "message": `Deleting file: ${fileName}`,
       "branch": "staging",
       "sha": sha
     }

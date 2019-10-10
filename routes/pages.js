@@ -40,7 +40,7 @@ router.get('/:siteName/pages', async function(req, res, next) {
       if (object.type === 'file') {
         return { 
           link: `${FRONTEND_URL}/sites/${siteName}/files/${pathUriEncoded}`,
-          pageName: fileName
+          fileName
         }
       }
     })
@@ -114,7 +114,7 @@ router.get('/:siteName/pages/:pageName', async function(req, res, next) {
     // TO-DO:
     // Validate content
 
-    res.status(200).json({ sha, content })
+    res.status(200).json({ pageName, sha, content })
 
   } catch (err) {
     console.log(err)
@@ -162,7 +162,7 @@ router.delete('/:siteName/pages/:pageName', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
     const { siteName, pageName } = req.params
-    const { pageName, sha } = req.body
+    const { sha } = req.body
 
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${pageName}`
 

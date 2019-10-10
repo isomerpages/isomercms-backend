@@ -86,9 +86,6 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
 
     const { siteName, imageName } = req.params
 
-    // TO-DO:
-    // Validate content
-
     const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
 
     const resp = await axios.get(filePath, {

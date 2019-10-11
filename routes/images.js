@@ -5,8 +5,8 @@ const base64 = require('base-64');
 const jwtUtils = require('../utils/jwt-utils')
 const _ = require('lodash')
 
-const GITHUB_ORG_NAME = 'isomerpages'
-const FRONTEND_URL = process.env.FRONTEND_URL
+// Import classes 
+const { File, ImageType } = require('../classes/File.js')
 
 // List images
 router.get('/:siteName/images', async function(req, res, next) {
@@ -15,31 +15,10 @@ router.get('/:siteName/images', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const imagesFolderPath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/images`
-
-    const resp = await axios.get(imagesFolderPath, {
-      validateStatus: validateStatus,
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    if (resp.status !== 200) throw new Error ('The images folder cannot be found.')
-
-    const images = resp.data.map(object => {
-      const pathUriEncoded = encodeURIComponent(object.path)
-      const pathNameSplit = object.path.split("/")
-      const fileName = pathNameSplit[pathNameSplit.length - 1]
-      if (object.type === 'file') {
-        return { 
-          link: `${FRONTEND_URL}/sites/${siteName}/files/${pathUriEncoded}`,
-          fileName
-        }
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    const images = await GitHubFile.setFileType(ImageType).list()
     
-    res.status(200).json({ images: _.compact(images) })
+    res.status(200).json({ images })
   } catch (err) {
     console.log(err)
   }
@@ -57,20 +36,8 @@ router.post('/:siteName/images', async function(req, res, next) {
     // TO-DO:
     // Validate imageName and content
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
-
-    let params = {
-      "message": `Create image: ${imageName}`,
-      "content": content,
-      "branch": "staging",
-    }
-
-    await axios.put(filePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    await GitHubFile.setFileType(ImageType).create(imageName, content)
 
     res.status(200).json({ imageName, content })
   } catch (err) {
@@ -86,20 +53,8 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
 
     const { siteName, imageName } = req.params
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
-
-    const resp = await axios.get(filePath, {
-      validateStatus: validateStatus,
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    if (resp.status === 404) throw new Error ('Page does not exist')
-
-    const content = resp.data.content
-    const sha = resp.data.sha
+    const GitHubFile = new File(access_token, siteName)
+    const { sha, content } = await GitHubFile.setFileType(ImageType).read(imageName)
 
     // TO-DO:
     // Validate content
@@ -122,21 +77,8 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
     // TO-DO:
     // Validate imageName and content
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
-
-    let params = {
-      "message": `Updating image: ${imageName}`,
-      "content": content,
-      "branch": "staging",
-      "sha": sha
-    }
-
-    await axios.put(filePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    const { sha, content } = await GitHubFile.setFileType(ImageType).read(imageName)
 
     res.status(200).json({ imageName, content })
   } catch (err) {
@@ -153,20 +95,8 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
     const { siteName, imageName } = req.params
     const { sha } = req.body
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
-
-    let params = {
-      "message": `Deleting image: ${imageName}`,
-      "branch": "staging",
-      "sha": sha
-    }
-
-    await axios.delete(filePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    await GitHubFile.setFileType(ImageType).delete(imageName, sha)
 
     res.status(200).json({ imageName, content })
   } catch (err) {
@@ -188,36 +118,9 @@ router.post('/:siteName/images/:imageName/rename', async function(req, res, next
 
     // Create new file with name ${newImageName}
 
-    const newFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${newImageName}`
-
-    let params = {
-      "message": `Create image: ${newImageName}`,
-      "content": content,
-      "branch": "staging",
-    }
-
-    await axios.put(newFilePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    // Delete existing file with name ${imageName}
-    const currFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${imageName}`
-
-    let params = {
-      "message": `Deleting image: ${imageName}`,
-      "branch": "staging",
-      "sha": sha
-    }
-
-    await axios.delete(currFilePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    await GitHubFile.setFileType(ImageType).create(newImageName, content)
+    await GitHubFile.delete(imageName, sha)
 
     res.status(200).json({ newImageName, content })
   } catch (err) {

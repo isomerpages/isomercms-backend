@@ -5,8 +5,8 @@ const axios = require('axios');
 const jwtUtils = require('../utils/jwt-utils')
 const _ = require('lodash')
 
-const GITHUB_ORG_NAME = 'isomerpages'
-const FRONTEND_URL = process.env.FRONTEND_URL
+// Import classes 
+const { File, DocumentType } = require('../classes/File.js')
 
 // List documents
 router.get('/:siteName/documents', async function(req, res, next) {
@@ -15,31 +15,10 @@ router.get('/:siteName/documents', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const filesFolderPath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/files`
-
-    const resp = await axios.get(filesFolderPath, {
-      validateStatus: validateStatus,
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    if (resp.status !== 200) throw new Error ('The documents/files folder cannot be found.')
-
-    const files = resp.data.map(object => {
-      const pathUriEncoded = encodeURIComponent(object.path)
-      const pathNameSplit = object.path.split("/")
-      const fileName = pathNameSplit[pathNameSplit.length - 1]
-      if (object.type === 'file') {
-        return { 
-          link: `${FRONTEND_URL}/sites/${siteName}/files/${pathUriEncoded}`,
-          fileName
-        }
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    const files = await GitHubFile.setFileType(DocumentType).list()
     
-    res.status(200).json({ files: _.compact(files) })
+    res.status(200).json({ files })
   } catch (err) {
     console.log(err)
   }
@@ -57,20 +36,8 @@ router.post('/:siteName/documents', async function(req, res, next) {
     // TO-DO:
     // Validate fileName and content
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
-
-    let params = {
-      "message": `Create document: ${documentName}`,
-      "content": content,
-      "branch": "staging",
-    }
-
-    await axios.put(filePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    await GitHubFile.setFileType(DocumentType).create(documentName, content)
 
     res.status(200).json({ documentName, content })
   } catch (err) {
@@ -86,20 +53,8 @@ router.get('/:siteName/documents/:documentName', async function(req, res, next) 
 
     const { siteName, documentName } = req.params
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
-
-    const resp = await axios.get(filePath, {
-      validateStatus: validateStatus,
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    if (resp.status === 404) throw new Error ('Page does not exist')
-
-    const content = resp.data.content
-    const sha = resp.data.sha
+    const GitHubFile = new File(access_token, siteName)
+    const { sha, content } = await GitHubFile.setFileType(DocumentType).read(documentName)
 
     // TO-DO:
     // Validate content
@@ -122,22 +77,9 @@ router.post('/:siteName/documents/:documentName', async function(req, res, next)
     // TO-DO:
     // Validate pageName and content
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
-
-    let params = {
-      "message": `Updating document: ${documentName}`,
-      "content": content,
-      "branch": "staging",
-      "sha": sha
-    }
-
-    await axios.put(filePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
+    const GitHubFile = new File(access_token, siteName)
+    const { sha, content } = await GitHubFile.setFileType(DocumentType).read(documentName)
+    
     res.status(200).json({ documentName, content })
   } catch (err) {
     console.log(err)
@@ -153,20 +95,8 @@ router.delete('/:siteName/documents/:documentName', async function(req, res, nex
     const { siteName, documentName } = req.params
     const { sha } = req.body
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
-
-    let params = {
-      "message": `Deleting document: ${documentName}`,
-      "branch": "staging",
-      "sha": sha
-    }
-
-    await axios.delete(filePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    await GitHubFile.setFileType(DocumentType).delete(documentName, sha)
 
     res.status(200).json({ documentName, content })
   } catch (err) {
@@ -181,43 +111,14 @@ router.post('/:siteName/documents/:documentName/rename', async function(req, res
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
     const { siteName, documentName } = req.params
-    const { newFileName, sha, content } = req.body
+    const { newDocumentName, sha, content } = req.body
 
     // TO-DO:
     // Validate documentName and content
 
-    // Create new document with name ${newDocumentName}
-
-    const newFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${newDocumentName}`
-
-    let params = {
-      "message": `Create document: ${newDocumentName}`,
-      "content": content,
-      "branch": "staging",
-    }
-
-    await axios.put(newFilePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    // Delete existing document with name ${documentName}
-    const currFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
-
-    let params = {
-      "message": `Deleting document: ${documentName}`,
-      "branch": "staging",
-      "sha": sha
-    }
-
-    await axios.delete(currFilePath, params, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    const GitHubFile = new File(access_token, siteName)
+    await GitHubFile.setFileType(DocumentType).create(newDocumentName, content)
+    await GitHubFile.delete(documentName, sha)
 
     res.status(200).json({ newDocumentName, content })
   } catch (err) {

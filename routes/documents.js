@@ -8,8 +8,8 @@ const _ = require('lodash')
 const GITHUB_ORG_NAME = 'isomerpages'
 const FRONTEND_URL = process.env.FRONTEND_URL
 
-// List files
-router.get('/:siteName/files', async function(req, res, next) {
+// List documents
+router.get('/:siteName/documents', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -25,7 +25,7 @@ router.get('/:siteName/files', async function(req, res, next) {
       }
     })
 
-    if (resp.status !== 200) throw new Error ('The files folder cannot be found.')
+    if (resp.status !== 200) throw new Error ('The documents/files folder cannot be found.')
 
     const files = resp.data.map(object => {
       const pathUriEncoded = encodeURIComponent(object.path)
@@ -45,22 +45,22 @@ router.get('/:siteName/files', async function(req, res, next) {
   }
 })
 
-// Create new file
-router.post('/:siteName/files', async function(req, res, next) {
+// Create new document
+router.post('/:siteName/documents', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
     const { siteName } = req.params
-    const { fileName, content } = req.body
+    const { documentName, content } = req.body
 
     // TO-DO:
     // Validate fileName and content
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
+    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
 
     let params = {
-      "message": `Create file: ${fileName}`,
+      "message": `Create document: ${documentName}`,
       "content": content,
       "branch": "staging",
     }
@@ -72,21 +72,21 @@ router.post('/:siteName/files', async function(req, res, next) {
       }
     })
 
-    res.status(200).json({ fileName, content })
+    res.status(200).json({ documentName, content })
   } catch (err) {
     console.log(err)
   }
 })
 
-// Read file
-router.get('/:siteName/files/:fileName', async function(req, res, next) {
+// Read document
+router.get('/:siteName/documents/:documentName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, fileName } = req.params
+    const { siteName, documentName } = req.params
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
+    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
 
     const resp = await axios.get(filePath, {
       validateStatus: validateStatus,
@@ -110,22 +110,22 @@ router.get('/:siteName/files/:fileName', async function(req, res, next) {
   }
 })
 
-// Update file
-router.post('/:siteName/files/:fileName', async function(req, res, next) {
+// Update document
+router.post('/:siteName/documents/:documentName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, fileName } = req.params
+    const { siteName, documentName } = req.params
     const { content, sha } = req.body
 
     // TO-DO:
     // Validate pageName and content
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
+    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
 
     let params = {
-      "message": `Updating file: ${fileName}`,
+      "message": `Updating document: ${documentName}`,
       "content": content,
       "branch": "staging",
       "sha": sha
@@ -138,25 +138,25 @@ router.post('/:siteName/files/:fileName', async function(req, res, next) {
       }
     })
 
-    res.status(200).json({ fileName, content })
+    res.status(200).json({ documentName, content })
   } catch (err) {
     console.log(err)
   }
 })
 
-// Delete file
-router.delete('/:siteName/files/:fileName', async function(req, res, next) {
+// Delete document
+router.delete('/:siteName/documents/:documentName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, fileName } = req.params
+    const { siteName, documentName } = req.params
     const { sha } = req.body
 
-    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
+    const filePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
 
     let params = {
-      "message": `Deleting file: ${fileName}`,
+      "message": `Deleting document: ${documentName}`,
       "branch": "staging",
       "sha": sha
     }
@@ -168,30 +168,30 @@ router.delete('/:siteName/files/:fileName', async function(req, res, next) {
       }
     })
 
-    res.status(200).json({ fileName, content })
+    res.status(200).json({ documentName, content })
   } catch (err) {
     console.log(err)
   }
 })
 
-// Rename file
-router.post('/:siteName/files/:fileName/rename', async function(req, res, next) {
+// Rename document
+router.post('/:siteName/documents/:documentName/rename', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, fileName } = req.params
+    const { siteName, documentName } = req.params
     const { newFileName, sha, content } = req.body
 
     // TO-DO:
-    // Validate fileName and content
+    // Validate documentName and content
 
-    // Create new file with name ${newFileName}
+    // Create new document with name ${newDocumentName}
 
-    const newFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${newFileName}`
+    const newFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${newDocumentName}`
 
     let params = {
-      "message": `Create file: ${newFileName}`,
+      "message": `Create document: ${newDocumentName}`,
       "content": content,
       "branch": "staging",
     }
@@ -203,11 +203,11 @@ router.post('/:siteName/files/:fileName/rename', async function(req, res, next) 
       }
     })
 
-    // Delete existing file with name ${fileName}
-    const currFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${fileName}`
+    // Delete existing document with name ${documentName}
+    const currFilePath = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/page/${documentName}`
 
     let params = {
-      "message": `Deleting file: ${fileName}`,
+      "message": `Deleting document: ${documentName}`,
       "branch": "staging",
       "sha": sha
     }
@@ -219,7 +219,7 @@ router.post('/:siteName/files/:fileName/rename', async function(req, res, next) 
       }
     })
 
-    res.status(200).json({ newFileName, content })
+    res.status(200).json({ newDocumentName, content })
   } catch (err) {
     console.log(err)
   }

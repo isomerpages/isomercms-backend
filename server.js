@@ -12,7 +12,7 @@ const collectionPagesRouter = require('./routes/collectionPages')
 const resourcesRouter = require('./routes/resources')
 const resourcePagesRouter = require('./routes/resourcePages')
 const imagesRouter = require('./routes/images')
-const filesRouter = require('./routes/files')
+const documentsRouter = require('./routes/documents')
 
 const app = express();
 
@@ -36,7 +36,7 @@ app.use('/sites', collectionPagesRouter)
 app.use('/sites', resourcesRouter)
 app.use('/sites', resourcePagesRouter)
 app.use('/sites', imagesRouter)
-app.use('/sites', filesRouter)
+app.use('/sites', documentsRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

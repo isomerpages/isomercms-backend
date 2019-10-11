@@ -1,12 +1,9 @@
 const express = require('express');
 const router = express.Router();
-// const axios = require('axios');
-// const base64 = require('base-64');
-// const jwtUtils = require('../utils/jwt-utils')
-// const _ = require('lodash')
+const jwtUtils = require('../utils/jwt-utils')
 
-// const ISOMER_GITHUB_ORG_NAME = 'isomerpages'
-// const FRONTEND_URL = process.env.FRONTEND_URL
+// Import classes 
+const { File, ResourcePageType } = require('../classes/File.js')
 
 // List resources
 router.get('/:siteName/resources', async function(req, res, next) {
@@ -29,7 +26,17 @@ router.post('/:siteName/resources', async function(req, res, next) {
 // List pages in resource
 router.get('/:siteName/resources/:resourceName', async function(req, res, next) {
   try {
-    // TO-DO
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, resourceName } = req.params
+
+    // TO-DO: Verify that resource exists
+
+    const GitHubFile = new File(access_token, siteName)
+    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePages = await GitHubFile.list()
+
+    res.status(200).json({ resourcePages })
   } catch (err) {
     console.log(err)
   }

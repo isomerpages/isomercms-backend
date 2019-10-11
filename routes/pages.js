@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
-// const base64 = require('base-64');
 const jwtUtils = require('../utils/jwt-utils')
-const _ = require('lodash')
 
 // Import classes 
 const { File, PageType } = require('../classes/File.js')

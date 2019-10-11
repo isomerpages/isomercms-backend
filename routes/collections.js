@@ -1,12 +1,9 @@
 const express = require('express');
 const router = express.Router();
-// const axios = require('axios');
-// const base64 = require('base-64');
-// const jwtUtils = require('../utils/jwt-utils')
-// const _ = require('lodash')
+const jwtUtils = require('../utils/jwt-utils')
 
-// const ISOMER_GITHUB_ORG_NAME = 'isomerpages'
-// const FRONTEND_URL = process.env.FRONTEND_URL
+// Import classes 
+const { File, CollectionPageType } = require('../classes/File.js')
 
 // List collections
 router.get('/:siteName/collections', async function(req, res, next) {
@@ -29,7 +26,18 @@ router.post('/:siteName/collections', async function(req, res, next) {
 // List pages in collection
 router.get('/:siteName/collections/:collectionName', async function(req, res, next) {
   try {
-    // TO-DO
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, collectionName } = req.params
+
+    // TO-DO: Verify that collection exists
+
+    const GitHubFile = new File(access_token, siteName)
+    GitHubFile.setFileType(CollectionPageType(collectionName))
+    const collectionPages = await GitHubFile.list()
+
+    res.status(200).json({ collectionPages })
+
   } catch (err) {
     console.log(err)
   }

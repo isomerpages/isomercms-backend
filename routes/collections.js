@@ -1,15 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
-const Bluebird = require('bluebird')
-const yaml = require('js-yaml');
-const base64 = require('base-64');
-const axios = require('axios')
 
 const GITHUB_ORG_NAME = 'isomerpages'
 
 // Import classes 
 const { File, CollectionPageType } = require('../classes/File.js')
+const { Config, CollectionType } = require('../classes/Config.js')
 
 // List collections
 router.get('/:siteName/collections', async function(req, res, next) {
@@ -18,26 +15,10 @@ router.get('/:siteName/collections', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    // validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
-    // This is necessary because GitHub returns a 404 status when the file does not exist.
-    const validateStatus = (status) => {
-      return (status >= 200 && status < 300) || status === 404
-    }
-
-    const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/_config.yml`
-    const resp = await axios.get(endpoint, {
-      validateStatus: validateStatus,
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
-
-    if (resp.status === 404) throw new Error ('Page does not exist')
-
-    const { content, sha } = resp.data
-    const config = yaml.safeLoad(base64.decode(content))
-    const collections = Object.keys(config.collections)
+    const GitHubConfig = new Config(access_token, siteName)
+    const collectionType = new CollectionType()
+    GitHubConfig.setConfigType(collectionType)
+    const collections = await GitHubConfig.read()
 
     res.status(200).json({ collections })
 

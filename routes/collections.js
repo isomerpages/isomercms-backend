@@ -110,13 +110,4 @@ router.post('/:siteName/collections/:collectionName/rename', async function(req,
   }
 })
 
-// Reorder collection
-router.post('/:siteName/collections/:collectionName/reorder', async function(req, res, next) {
-  try {
-    // TO-DO
-  } catch (err) {
-    console.log(err)
-  }
-})
-
 module.exports = router;

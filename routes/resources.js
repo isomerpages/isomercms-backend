@@ -33,7 +33,8 @@ router.get('/:siteName/resources/:resourceName', async function(req, res, next) 
     // TO-DO: Verify that resource exists
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePageType = new ResourcePageType(resourceName)
+    GitHubFile.setFileType(resourcePageType)
     const resourcePages = await GitHubFile.list()
 
     res.status(200).json({ resourcePages })

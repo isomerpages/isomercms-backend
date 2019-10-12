@@ -13,7 +13,9 @@ router.get('/:siteName/pages', async function(req, res, next) {
     const { siteName } = req.params
 
     const GitHubFile = new File(access_token, siteName)
-    const pages = await GitHubFile.setFileType(PageType).list()
+    const pageType = new PageType()
+    GitHubFile.setFileType(pageType)
+    const pages = await GitHubFile.list()
 
     res.status(200).json({ pages })
   } catch (err) {
@@ -35,7 +37,9 @@ router.post('/:siteName/pages', async function(req, res, next) {
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(PageType).create(pageName, content)
+    const pageType = new PageType()
+    GitHubFile.setFileType(pageType)
+    await GitHubFile.create(pageName, content)
 
     res.status(200).json({ pageName, content })
 
@@ -54,7 +58,9 @@ router.get('/:siteName/pages/:pageName', async function(req, res, next) {
     const { siteName, pageName } = req.params
 
     const GitHubFile = new File(access_token, siteName)
-    const { sha, content } = await GitHubFile.setFileType(PageType).read(pageName)
+    const pageType = new PageType()
+    GitHubFile.setFileType(pageType)
+    const { sha, content } = await GitHubFile.read(pageName)
 
     // TO-DO:
     // Validate content
@@ -80,7 +86,9 @@ router.post('/:siteName/pages/:pageName', async function(req, res, next) {
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(PageType).update(pageName, content, sha)
+    const pageType = new PageType()
+    GitHubFile.setFileType(pageType)
+    await GitHubFile.update(pageName, content, sha)
 
     res.status(200).json({ pageName, content })
   } catch (err) {
@@ -99,7 +107,9 @@ router.delete('/:siteName/pages/:pageName', async function(req, res, next) {
     const { sha } = req.body
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(PageType).delete(pageName, sha)
+    const pageType = new PageType()
+    GitHubFile.setFileType(pageType)
+    await GitHubFile.delete(pageName, sha)
 
     res.status(200).json({ pageName })
   } catch (err) {
@@ -121,7 +131,9 @@ router.post('/:siteName/pages/:pageName/rename', async function(req, res, next) 
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(PageType).create(newPageName, content)
+    const pageType = new PageType()
+    GitHubFile.setFileType(pageType)
+    await GitHubFile.create(newPageName, content)
     await GitHubFile.delete(pageName, sha)
 
     res.status(200).json({ newPageName })

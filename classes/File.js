@@ -17,12 +17,14 @@ class File {
   }
 
   setFileType(fileType) {
-    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${fileType.getFolderName}`
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${fileType.getFolderName()}`
   }
 
   async list() {
     try {
       const endpoint = `${this.baseEndpoint}`
+
+      console.log(endpoint, "STUFF")
 
       const resp = await axios.get(endpoint, {
         validateStatus: validateStatus,

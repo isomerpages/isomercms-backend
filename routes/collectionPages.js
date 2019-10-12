@@ -19,7 +19,8 @@ router.post('/:siteName/collections/:collectionName/pages', async function(req, 
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(CollectionPageType(collectionName))
+    const collectionPageType = new CollectionPageType(collectionName)
+    GitHubFile.setFileType(collectionPageType)
     await GitHubFile.create(pageName, content)
 
     res.status(200).json({ collectionName, pageName, content })
@@ -37,11 +38,9 @@ router.get('/:siteName/collections/:collectionName/pages/:pageName', async funct
     const { siteName, pageName, collectionName } = req.params
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(CollectionPageType(collectionName))
+    const collectionPageType = new CollectionPageType(collectionName)
+    GitHubFile.setFileType(collectionPageType)
     const { sha, content } = await GitHubFile.read(pageName)
-
-    const content = resp.data.content
-    const sha = resp.data.sha
 
     // TO-DO:
     // Validate content
@@ -65,7 +64,8 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName', async func
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(CollectionPageType(collectionName))
+    const collectionPageType = new CollectionPageType(collectionName)
+    GitHubFile.setFileType(collectionPageType)
     await GitHubFile.update(pageName, content, sha)
 
     res.status(200).json({ pageName, content })
@@ -88,7 +88,8 @@ router.delete('/:siteName/collections/:collectionName/pages/:pageName', async fu
     // Validate that collection exists
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(CollectionPageType(collectionName))
+    const collectionPageType = new CollectionPageType(collectionName)
+    GitHubFile.setFileType(collectionPageType)
     await GitHubFile.delete(pageName, sha)
 
     res.status(200).json({ collectionName, pageName, content })
@@ -113,7 +114,8 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName/rename', asy
     // Create new collection page with name ${newPageName}
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(CollectionPageType(collectionName))
+    const collectionPageType = new CollectionPageType(collectionName)
+    GitHubFile.setFileType(collectionPageType)
     await GitHubFile.create(newPageName, content)
     await GitHubFile.delete(pageName, sha)
 

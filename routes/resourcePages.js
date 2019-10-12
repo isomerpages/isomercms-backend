@@ -19,7 +19,8 @@ router.post('/:siteName/resources/:resourceName/pages', async function(req, res,
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePageType = new ResourcePageType(resourceName)
+    GitHubFile.setFileType(resourcePageType)
     await GitHubFile.create(pageName, content)
 
     res.status(200).json({ resourceName, pageName, content })
@@ -37,11 +38,9 @@ router.get('/:siteName/resources/:resourceName/pages/:pageName', async function(
     const { siteName, pageName, resourceName } = req.params
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePageType = new ResourcePageType(resourceName)
+    GitHubFile.setFileType(resourcePageType)
     const { sha, content } = await GitHubFile.read(pageName)
-
-    const content = resp.data.content
-    const sha = resp.data.sha
 
     // TO-DO:
     // Validate content
@@ -65,7 +64,8 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName', async function
     // Validate pageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePageType = new ResourcePageType(resourceName)
+    GitHubFile.setFileType(resourcePageType)
     await GitHubFile.update(pageName, content, sha)
 
     res.status(200).json({ pageName, content })
@@ -84,7 +84,8 @@ router.delete('/:siteName/resources/:resourceName/pages/:pageName', async functi
     const { sha } = req.body
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePageType = new ResourcePageType(resourceName)
+    GitHubFile.setFileType(resourcePageType)
     await GitHubFile.delete(pageName, sha)
 
     res.status(200).json({ resourceName, pageName, content })
@@ -109,7 +110,8 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName/rename', async f
     // Create new resource page with name ${newPageName}
 
     const GitHubFile = new File(access_token, siteName)
-    GitHubFile.setFileType(ResourcePageType(resourceName))
+    const resourcePageType = new ResourcePageType(resourceName)
+    GitHubFile.setFileType(resourcePageType)
     await GitHubFile.create(newPageName, content)
     await GitHubFile.delete(pageName, sha)
 

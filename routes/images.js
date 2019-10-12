@@ -13,7 +13,9 @@ router.get('/:siteName/images', async function(req, res, next) {
     const { siteName } = req.params
 
     const GitHubFile = new File(access_token, siteName)
-    const images = await GitHubFile.setFileType(ImageType).list()
+    const imageType =  new ImageType()
+    GitHubFile.setFileType(imageType)
+    const images = await GitHubFile.list()
     
     res.status(200).json({ images })
   } catch (err) {
@@ -34,7 +36,9 @@ router.post('/:siteName/images', async function(req, res, next) {
     // Validate imageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(ImageType).create(imageName, content)
+    const imageType =  new ImageType()
+    GitHubFile.setFileType(imageType)
+    await GitHubFile.create(imageName, content)
 
     res.status(200).json({ imageName, content })
   } catch (err) {
@@ -51,7 +55,9 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
     const { siteName, imageName } = req.params
 
     const GitHubFile = new File(access_token, siteName)
-    const { sha, content } = await GitHubFile.setFileType(ImageType).read(imageName)
+    const imageType =  new ImageType()
+    GitHubFile.setFileType(imageType)
+    const { sha, content } = await GitHubFile.read(imageName)
 
     // TO-DO:
     // Validate content
@@ -75,7 +81,9 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
     // Validate imageName and content
 
     const GitHubFile = new File(access_token, siteName)
-    const { sha, content } = await GitHubFile.setFileType(ImageType).read(imageName)
+    const imageType =  new ImageType()
+    GitHubFile.setFileType(imageType)
+    await GitHubFile.update(imageName, content, sha)
 
     res.status(200).json({ imageName, content })
   } catch (err) {
@@ -93,7 +101,9 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
     const { sha } = req.body
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(ImageType).delete(imageName, sha)
+    const imageType =  new ImageType()
+    GitHubFile.setFileType(imageType)
+    await GitHubFile.delete(imageName, sha)
 
     res.status(200).json({ imageName, content })
   } catch (err) {
@@ -116,7 +126,9 @@ router.post('/:siteName/images/:imageName/rename', async function(req, res, next
     // Create new file with name ${newImageName}
 
     const GitHubFile = new File(access_token, siteName)
-    await GitHubFile.setFileType(ImageType).create(newImageName, content)
+    const imageType =  new ImageType()
+    GitHubFile.setFileType(imageType)
+    await GitHubFile.create(newImageName, content)
     await GitHubFile.delete(imageName, sha)
 
     res.status(200).json({ newImageName, content })

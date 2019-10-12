@@ -24,8 +24,6 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}`
 
-      console.log(endpoint, "STUFF")
-
       const resp = await axios.get(endpoint, {
         validateStatus: validateStatus,
         headers: {

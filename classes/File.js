@@ -86,8 +86,7 @@ class File {
   
       if (resp.status === 404) throw new Error ('Page does not exist')
   
-      const content = resp.data.content
-      const sha = resp.data.sha
+      const { content, sha } = resp.data
   
       return { content, sha }
     } catch (err) {

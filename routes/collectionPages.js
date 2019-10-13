@@ -5,6 +5,27 @@ const jwtUtils = require('../utils/jwt-utils')
 // Import classes 
 const { File, CollectionPageType } = require('../classes/File.js')
 
+// List pages in collection
+router.get('/:siteName/collections/:collectionName', async function(req, res, next) {
+  try {
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, collectionName } = req.params
+
+    // TO-DO: Verify that collection exists
+
+    const GitHubFile = new File(access_token, siteName)
+    const collectionPageType = new CollectionPageType(collectionName)
+    GitHubFile.setFileType(collectionPageType)
+    const collectionPages = await GitHubFile.list()
+
+    res.status(200).json({ collectionPages })
+
+  } catch (err) {
+    console.log(err)
+  }
+})
+
 // Create new page in collection
 router.post('/:siteName/collections/:collectionName/pages', async function(req, res, next) {
   try {

@@ -42,27 +42,6 @@ router.post('/:siteName/collections', async function(req, res, next) {
   }
 })
 
-// List pages in collection
-router.get('/:siteName/collections/:collectionName', async function(req, res, next) {
-  try {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
-    const { siteName, collectionName } = req.params
-
-    // TO-DO: Verify that collection exists
-
-    const GitHubFile = new File(access_token, siteName)
-    const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const collectionPages = await GitHubFile.list()
-
-    res.status(200).json({ collectionPages })
-
-  } catch (err) {
-    console.log(err)
-  }
-})
-
 // Delete collection
 router.delete('/:siteName/collections/:collectionName', async function(req, res, next) {
   try {

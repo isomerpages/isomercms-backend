@@ -30,7 +30,18 @@ router.get('/:siteName/collections', async function(req, res, next) {
 // Create new collection
 router.post('/:siteName/collections', async function(req, res, next) {
   try {
-    // TO-DO
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName } = req.params
+    const { collectionName } = req.body
+
+    // TO-DO: Verify that collection doesn't already exist
+    
+    const GitHubConfig = new Config(access_token, siteName)
+    const collectionType = new CollectionType()
+    GitHubConfig.setConfigType(collectionType)
+    await GitHubConfig.add(collectionName)
+
   } catch (err) {
     console.log(err)
   }
@@ -63,6 +74,15 @@ router.delete('/:siteName/collections/:collectionName', async function(req, res,
     // TO-DO: Verify that collection exists
 
     // Remove collection from config file
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName } = req.params
+    const { collectionName } = req.body
+
+    const GitHubConfig = new Config(access_token, siteName)
+    const collectionType = new CollectionType()
+    GitHubConfig.setConfigType(collectionType)
+    await GitHubConfig.delete(collectionName)
 
     // Get all collectionPages
     const GitHubFile = new File(access_token, siteName)

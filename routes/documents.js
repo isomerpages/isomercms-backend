@@ -112,13 +112,13 @@ router.delete('/:siteName/documents/:documentName', async function(req, res, nex
 })
 
 // Rename document
-router.post('/:siteName/documents/:documentName/rename', async function(req, res, next) {
+router.post('/:siteName/documents/:documentName/rename/:newDocumentName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, documentName } = req.params
-    const { newDocumentName, sha, content } = req.body
+    const { siteName, documentName, newDocumentName } = req.params
+    const { sha, content } = req.body
 
     // TO-DO:
     // Validate documentName and content

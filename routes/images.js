@@ -112,13 +112,13 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
 })
 
 // Rename image
-router.post('/:siteName/images/:imageName/rename', async function(req, res, next) {
+router.post('/:siteName/images/:imageName/rename/:newImageName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, imageName } = req.params
-    const { newImageName, sha, content } = req.body
+    const { siteName, imageName, newImageName } = req.params
+    const { sha, content } = req.body
 
     // TO-DO:
     // Validate imageName and content

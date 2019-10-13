@@ -99,13 +99,13 @@ router.delete('/:siteName/collections/:collectionName/pages/:pageName', async fu
 })
 
 // Rename page in collection
-router.post('/:siteName/collections/:collectionName/pages/:pageName/rename', async function(req, res, next) {
+router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, pageName, collectionName } = req.params
-    const { newPageName, sha, content } = req.body
+    const { siteName, pageName, collectionName, newPageName } = req.params
+    const { sha, content } = req.body
 
     // TO-DO:
     // Validate that collection exists

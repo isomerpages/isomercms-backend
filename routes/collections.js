@@ -6,7 +6,8 @@ const GITHUB_ORG_NAME = 'isomerpages'
 
 // Import classes 
 const { File, CollectionPageType } = require('../classes/File.js')
-const { Config, CollectionType } = require('../classes/Config.js')
+const { Config } = require('../classes/Config.js')
+const { Collection } = require('../classes/Collection.js')
 
 // List collections
 router.get('/:siteName/collections', async function(req, res, next) {
@@ -15,10 +16,8 @@ router.get('/:siteName/collections', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const GitHubConfig = new Config(access_token, siteName)
-    const collectionType = new CollectionType()
-    GitHubConfig.setConfigType(collectionType)
-    const collections = await GitHubConfig.read()
+    const GitHubCollection = new Collection(access_token, siteName)
+    const collections = await GitHubCollection.listCollections()
 
     res.status(200).json({ collections })
 
@@ -35,12 +34,8 @@ router.post('/:siteName/collections', async function(req, res, next) {
     const { siteName } = req.params
     const { collectionName } = req.body
 
-    // TO-DO: Verify that collection doesn't already exist
-    
-    const GitHubConfig = new Config(access_token, siteName)
-    const collectionType = new CollectionType()
-    GitHubConfig.setConfigType(collectionType)
-    await GitHubConfig.add(collectionName)
+    const GitHubCollection = new Collection(access_token, siteName)
+    await GitHubCollection.create(collectionName)
 
   } catch (err) {
     console.log(err)
@@ -76,26 +71,10 @@ router.delete('/:siteName/collections/:collectionName', async function(req, res,
     // Remove collection from config file
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
-    const { siteName } = req.params
-    const { collectionName } = req.body
+    const { siteName, collectionName } = req.params
 
-    const GitHubConfig = new Config(access_token, siteName)
-    const collectionType = new CollectionType()
-    GitHubConfig.setConfigType(collectionType)
-    await GitHubConfig.delete(collectionName)
-
-    // Get all collectionPages
-    const GitHubFile = new File(access_token, siteName)
-    const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const collectionPages = await GitHubFile.list()
-
-    // Delete all collectionPages
-    await Bluebird.map(collectionPages, async(collectionPage) => {
-      let pageName = collectionPage.pageName
-      const { sha } = await GitHubFile.read(pageName)
-      return GitHubFile.delete(pageName, sha)
-    })
+    const GitHubCollection = new Collection(access_token, siteName)
+    await GitHubCollection.delete(collectionName)
 
   } catch (err) {
     console.log(err)
@@ -103,9 +82,17 @@ router.delete('/:siteName/collections/:collectionName', async function(req, res,
 })
 
 // Rename collection
-router.post('/:siteName/collections/:collectionName/rename', async function(req, res, next) {
+router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', async function(req, res, next) {
   try {
-    // TO-DO
+    // TO-DO: Verify that collection exists
+
+    // Remove collection from config file
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, collectionName, newCollectionName } = req.params
+
+    const GitHubCollection = new Collection(access_token, siteName)
+    await GitHubCollection.rename(collectionName, newCollectionName)
   } catch (err) {
     console.log(err)
   }

@@ -95,13 +95,13 @@ router.delete('/:siteName/resources/:resourceName/pages/:pageName', async functi
 })
 
 // Rename page in resource
-router.post('/:siteName/resources/:resourceName/pages/:pageName/rename', async function(req, res, next) {
+router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, pageName, resourceName } = req.params
-    const { newPageName, sha, content } = req.body
+    const { siteName, pageName, resourceName, newPageName } = req.params
+    const { sha, content } = req.body
 
     // TO-DO:
     // Validate that resource exists

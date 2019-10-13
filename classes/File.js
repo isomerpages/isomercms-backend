@@ -184,4 +184,13 @@ class DocumentType {
   }
 }
 
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ImageType, DocumentType }
+class DataType {
+  constructor() {
+    this.folderName = '_data'
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+module.exports = { File, PageType, CollectionPageType, ResourcePageType, ImageType, DocumentType, DataType }

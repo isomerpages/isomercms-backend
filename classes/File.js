@@ -33,7 +33,7 @@ class File {
         }
       })
   
-      if (resp.status !== 200) throw new Error ('The pages folder cannot be found.')
+      if (resp.status !== 200) return {}
   
       const files = resp.data.map(object => {
         const pathNameSplit = object.path.split("/")

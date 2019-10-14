@@ -1,5 +1,5 @@
 const yaml = require('js-yaml')
-const base64 = require('base64')
+const base64 = require('base-64')
 
 const { Config } = require('./Config.js')
 const { File, CollectionPageType } = require('./File.js')
@@ -16,7 +16,7 @@ class Collection {
     	const { content, sha } = await config.read()
     	const contentObject = yaml.safeLoad(base64.decode(content))
 
-    	return contentObject.collections
+    	return Object.keys(contentObject.collections)
 
     } catch (err) {
       throw err
@@ -111,4 +111,4 @@ class Collection {
   }
 }
 
-module.exports = Collection
+module.exports = { Collection }

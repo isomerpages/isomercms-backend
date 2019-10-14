@@ -2,11 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
 
-const GITHUB_ORG_NAME = 'isomerpages'
-
 // Import classes 
-const { File, CollectionPageType } = require('../classes/File.js')
-const { Config } = require('../classes/Config.js')
 const { Collection } = require('../classes/Collection.js')
 
 // List collections
@@ -17,7 +13,7 @@ router.get('/:siteName/collections', async function(req, res, next) {
     const { siteName } = req.params
 
     const GitHubCollection = new Collection(access_token, siteName)
-    const collections = await GitHubCollection.listCollections()
+    const collections = await GitHubCollection.list()
 
     res.status(200).json({ collections })
 

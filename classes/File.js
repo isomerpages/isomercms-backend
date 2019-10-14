@@ -17,7 +17,8 @@ class File {
   }
 
   setFileType(fileType) {
-    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${fileType.getFolderName()}`
+    const folderPath = fileType.getFolderName()
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${folderPath}`
   }
 
   async list() {

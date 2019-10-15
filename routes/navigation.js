@@ -51,3 +51,5 @@ router.post('/:siteName/navigation', async function(req, res, next) {
     console.log(err)
   }
 })
+
+module.exports = router;

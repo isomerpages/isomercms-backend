@@ -31,7 +31,10 @@ class Collection {
 
     	// TO-DO: Verify that collection doesn't already exist
 
-    	contentObject.collection[`${collectionName}`] = { output: true }
+    	contentObject.collection[`${collectionName}`] = { 
+				permalink: '/:collection/:path/:title',
+				output: true 
+			}
     	const newContent = base64.encode(yaml.safeDump(contentObject))
 
     	await config.update(newContent, sha)
@@ -78,7 +81,10 @@ class Collection {
     	const { content, sha } = await config.read()
     	const contentObject = yaml.safeLoad(base64.decode(content))
 
-    	contentObject.collection[`${newCollectionName}`] = { output: true }
+    	contentObject.collection[`${newCollectionName}`] = { 
+				permalink: '/:collection/:path/:title',
+				output: true 
+			}
     	delete contentObject.collection[`${oldCollectionName}`]
     	const newContent = base64.encode(yaml.safeDump(contentObject))
 

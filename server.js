@@ -14,14 +14,22 @@ const resourcePagesRouter = require('./routes/resourcePages')
 const imagesRouter = require('./routes/images')
 const documentsRouter = require('./routes/documents')
 const navigationRouter = require('./routes/navigation')
+const cors = require('cors');
 
 const app = express();
+
+const FRONTEND_URL = process.env.FRONTEND_URL
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(cors({
+  'origin': FRONTEND_URL,
+  'credentials': true,
+}))
 
 // Routes layer setup
 app.use('/', indexRouter);

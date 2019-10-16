@@ -11,7 +11,6 @@ const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECO
 
 const jwtUtils = require('../utils/jwt-utils')
 
-/* GET users listing. */
 router.get('/', async function(req, res, next) {
   try {
     const { code, state } = req.query

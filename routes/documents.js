@@ -62,7 +62,7 @@ router.get('/:siteName/documents/:documentName', async function(req, res, next) 
     // TO-DO:
     // Validate content
 
-    res.status(200).json({ fileName, sha, content })
+    res.status(200).json({ documentName, sha, content })
   } catch (err) {
     console.log(err)
   }

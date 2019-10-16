@@ -1,5 +1,7 @@
 const yaml = require('js-yaml')
 const base64 = require('base-64')
+const Bluebird = require('bluebird')
+const _ = require('lodash')
 
 const { Config } = require('./Config.js')
 const { File, CollectionPageType } = require('./File.js')
@@ -31,7 +33,7 @@ class Collection {
 
     	// TO-DO: Verify that collection doesn't already exist
 
-    	contentObject.collection[`${collectionName}`] = { 
+    	contentObject.collections[`${collectionName}`] = { 
 				permalink: '/:collection/:path/:title',
 				output: true 
 			}
@@ -51,7 +53,7 @@ class Collection {
     	const { content, sha } = await config.read()
     	const contentObject = yaml.safeLoad(base64.decode(content))
 
-    	delete contentObject.collection[`${collectionName}`]
+    	delete contentObject.collections[`${collectionName}`]
     	const newContent = base64.encode(yaml.safeDump(contentObject))
 
     	await config.update(newContent, sha)
@@ -60,7 +62,7 @@ class Collection {
 	    const GitHubFile = new File(this.accessToken, this.siteName)
 	    const collectionPageType = new CollectionPageType(collectionName)
 	    GitHubFile.setFileType(collectionPageType)
-	    const collectionPages = await GitHubFile.list()
+			const collectionPages = await GitHubFile.list()
 
 	    // Delete all collectionPages
 	    await Bluebird.map(collectionPages, async(collectionPage) => {
@@ -81,11 +83,11 @@ class Collection {
     	const { content, sha } = await config.read()
     	const contentObject = yaml.safeLoad(base64.decode(content))
 
-    	contentObject.collection[`${newCollectionName}`] = { 
+    	contentObject.collections[`${newCollectionName}`] = { 
 				permalink: '/:collection/:path/:title',
 				output: true 
 			}
-    	delete contentObject.collection[`${oldCollectionName}`]
+    	delete contentObject.collections[`${oldCollectionName}`]
     	const newContent = base64.encode(yaml.safeDump(contentObject))
 
     	await config.update(newContent, sha)
@@ -94,7 +96,10 @@ class Collection {
 	    const OldGitHubFile = new File(this.accessToken, this.siteName)
 	    const oldCollectionPageType = new CollectionPageType(oldCollectionName)
 	    OldGitHubFile.setFileType(oldCollectionPageType)
-	    const collectionPages = await OldGitHubFile.list()
+			const collectionPages = await OldGitHubFile.list()
+			
+			// If the object is empty (there are no pages in the collection), do nothing
+			if (_.isEmpty(collectionPages)) return 
 
 	    // Set up new collection File instance
 	    const NewGitHubFile = new File(this.accessToken, this.siteName)
@@ -103,14 +108,12 @@ class Collection {
 
 	    // Rename all collectionPages
 	    await Bluebird.map(collectionPages, async(collectionPage) => {
-	      let pageName = collectionPage.pageName
-	      const { content, sha } = await OldGitHubFile.read(pageName)
-	      return Promise.all([
-	      	NewGitHubFile.create(pageName, content), 
-	      	OldGitHubFile.delete(pageName, sha)
-	      ])
-	    })
-
+	      let pageName = collectionPage.fileName
+				const { content, sha } = await OldGitHubFile.read(pageName)
+				await OldGitHubFile.delete(pageName, sha)
+	      return NewGitHubFile.create(pageName, content)
+			})
+			
     } catch (err) {
       throw err
     }

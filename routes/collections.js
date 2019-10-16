@@ -33,6 +33,7 @@ router.post('/:siteName/collections', async function(req, res, next) {
     const GitHubCollection = new Collection(access_token, siteName)
     await GitHubCollection.create(collectionName)
 
+    res.status(200).json({ collectionName })
   } catch (err) {
     console.log(err)
   }
@@ -51,6 +52,7 @@ router.delete('/:siteName/collections/:collectionName', async function(req, res,
     const GitHubCollection = new Collection(access_token, siteName)
     await GitHubCollection.delete(collectionName)
 
+    res.status(200).json({ collectionName })
   } catch (err) {
     console.log(err)
   }
@@ -68,6 +70,8 @@ router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', 
 
     const GitHubCollection = new Collection(access_token, siteName)
     await GitHubCollection.rename(collectionName, newCollectionName)
+
+    res.status(200).json({ collectionName, newCollectionName })
   } catch (err) {
     console.log(err)
   }

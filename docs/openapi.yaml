@@ -1,0 +1,885 @@
+openapi: 3.0.0
+info:
+  version: "0.0.1"
+  title: IsomerCMS API
+  description: |
+    # API documentation for IsomerCMS
+servers:
+ - url: "https://cms-api.isomerpages.com"
+   description: "Production API Server"
+ - url: "https://staging-cms-api.isomerpages.com"
+   description: "Staging API Server"
+tags:
+  - name: Authentication
+  - name: Collections
+  - name: Collection Pages
+  - name: Images
+  - name: Documents
+  - name: Pages
+  - name: Sites
+components:
+  securitySchemes:
+    ApiKeyAuthentication:
+      type: apiKey
+      in: header
+      name: x-vault-api-key
+  schemas:
+    OAuthParams:
+      properties:
+        client_id:
+          type: string
+        state:
+          type: string
+        request_uri:
+          type: string
+    CollectionListResponse:
+      properties:
+        collections:
+          type: array
+          items:
+            type: string
+    CollectionPageListResponse:
+      properties:
+        collectionPages:
+          type: array
+          items:
+            type: string
+    PageListResponse:
+      properties:
+        pages:
+          type: array
+          items:
+            type: string
+    DocumentListResponse:
+      properties:
+        documents:
+          type: array
+          items:
+            type: string
+    ImageListResponse:
+      properties:
+        documents:
+          type: array
+          items:
+            type: string
+    CollectionNameResponse:
+      properties:
+        collectionName:
+          type: string
+    CollectionPageResponse:
+      properties:
+        collectionName:
+          type: string
+        pageName:
+          type: string
+        content:
+          type: string
+        sha:
+          type: string
+    PageResponse:
+      properties:
+        pageName:
+          type: string
+        content:
+          type: string
+        sha:
+          type: string
+    DocumentResponse:
+      properties:
+        documentName:
+          type: string
+        content:
+          type: string
+        sha:
+          type: string
+    ImageResponse:
+      properties:
+        imageName:
+          type: string
+        content:
+          type: string
+        sha:
+          type: string
+    ShaAndContent:
+      properties:
+        sha:
+          type: string
+        content:
+          type: string
+    ContentAndPageName:
+      properties:
+        pageName:
+          type: string
+        content:
+          type: string
+    ContentAndDocumentName:
+      properties:
+        documentName:
+          type: string
+        content:
+          type: string
+    ContentAndImageName:
+      properties:
+        imageName:
+          type: string
+        content:
+          type: string
+    RenameCollection:
+      properties:
+        collectionName:
+          type: string
+        newCollectionName:
+          type: string
+    RenamePage:
+      properties:
+        pageName:
+          type: string
+        newPageName:
+          type: string
+    RenameDocument:
+      properties:
+        documentName:
+          type: string
+        newDocumentName:
+          type: string
+    RenameImage:
+      properties:
+        imageName:
+          type: string
+        newDocumentName:
+          type: string
+
+
+paths:
+  /:
+    get:
+      tags:
+        - Authentication
+      description: Obtain parameters for the GitHub OAuth link
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/OAuthParams"
+  /sites/{siteName}/collections:
+    get:
+      tags:
+        - Collections
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: List collections
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionListResponse"
+    post:
+      tags:
+        - Collections
+      description: Create new collection
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionNameResponse"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionNameResponse"
+  /sites/{siteName}/collections/{collectionName}:
+    get:
+      tags:
+        - Collection Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: List collection pages
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionPageListResponse"
+    delete:
+      tags:
+        - Collections
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Delete collection
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionNameResponse"
+  /sites/{siteName}/collections/{collectionName}/rename/{newCollectionName}:
+    post:
+      tags:
+        - Collections
+      description: Rename collection
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newCollectionName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenameCollection"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/RenameCollection"
+  /sites/{siteName}/collections/{collectionName}/pages:
+    post:
+      tags:
+        - Collection Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Create new collection page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentAndPageName"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionListResponse"
+  /sites/{siteName}/collections/{collectionName}/pages/{pageName}:
+    get:
+      tags:
+        - Collection Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Read collection page
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionPageResponse"
+    post:
+      tags:
+        - Collection Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Update collection page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionPageResponse"
+    delete:
+      tags:
+        - Collection Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: body
+          required: true
+          schema:
+            type: string
+      description: Delete collection page
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/collections/{collectionName}/pages/{pageName}/rename/{newPageName}:
+    post:
+      tags:
+        - Collection Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newPageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Rename collection page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/CollectionPageResponse"
+                
+  /sites/{siteName}/pages:
+    get:
+      tags:
+        - Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: List pages
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/PageListResponse"
+    post:
+      tags:
+        - Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Create page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentAndPageName"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/PageResponse"
+  /sites/{siteName}/pages/{pageName}:
+    get:
+      tags:
+        - Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Read page
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/PageResponse"
+    post:
+      tags:
+        - Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Update page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/PageResponse"
+    delete:
+      tags:
+        - Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: body
+          required: true
+          schema:
+            type: string
+      description: Delete page
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/pages/{pageName}/rename/{newPageName}:
+    post:
+      tags:
+        - Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newPageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Rename page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenamePage"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/PageResponse"
+                
+  /sites/{siteName}/documents:
+    get:
+      tags:
+        - Documents
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: List documents
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/DocumentListResponse"
+    post:
+      tags:
+        - Documents
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Create document
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentAndDocumentName"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/DocumentResponse"
+  /sites/{siteName}/documents/{documentName}:
+    get:
+      tags:
+        - Documents
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Read document
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/DocumentResponse"
+    post:
+      tags:
+        - Documents
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Update document
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/DocumentResponse"
+    delete:
+      tags:
+        - Documents
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: body
+          required: true
+          schema:
+            type: string
+      description: Delete document
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/documents/{documentName}/rename/{newDocumentName}:
+    post:
+      tags:
+        - Documents
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newDocumentName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Rename document
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenameDocument"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/DocumentResponse"
+                
+  /sites/{siteName}/images:
+    get:
+      tags:
+        - Images
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: List images
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/ImageListResponse"
+    post:
+      tags:
+        - Images
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Create image
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentAndImageName"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/ImageResponse"
+  /sites/{siteName}/images/{imageName}:
+    get:
+      tags:
+        - Images
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: imageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Read image
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/ImageResponse"
+    post:
+      tags:
+        - Images
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: imageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Update image
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/ImageResponse"
+    delete:
+      tags:
+        - Images
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: imageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: body
+          required: true
+          schema:
+            type: string
+      description: Delete image
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/images/{imageName}/rename/{newImageName}:
+    post:
+      tags:
+        - Images
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: imageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newImageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Rename image
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenameImage"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/ImageResponse"
+security:
+  - ApiKeyAuthentication: []

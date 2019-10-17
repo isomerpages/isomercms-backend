@@ -8,6 +8,7 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET
 const REDIRECT_URI = process.env.REDIRECT_URI
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
+const FRONTEND_URL = process.env.FRONTEND_URL
 
 const jwtUtils = require('../utils/jwt-utils')
 
@@ -44,7 +45,7 @@ router.get('/', async function(req, res, next) {
 
     res.cookie('oauthtoken', token, cookieSettings)
 
-    res.redirect(`/sites`)
+    res.redirect(`${FRONTEND_URL}/sites`)
   } catch(err) {
     console.log(err)
   }

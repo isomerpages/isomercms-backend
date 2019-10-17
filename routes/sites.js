@@ -46,7 +46,7 @@ router.get('/', async function(req, res, next) {
       const hasStagingBranch = (branchResp.status === 200)
       
       if (isIsomerSite && hasStagingBranch) {
-        return { name: site.name, link: `${FRONTEND_URL}/sites/${site.name}` }
+        return site.name
       } else {
         return undefined
       }

@@ -62,12 +62,14 @@ class File {
         "branch": "staging",
       }
   
-      await axios.put(endpoint, params, {
+      const resp = await axios.put(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
         }
       })
+
+      return { sha: resp.content.sha }
     } catch (err) {
       throw err
     }
@@ -106,12 +108,14 @@ class File {
         "sha": sha
       }
   
-      await axios.put(endpoint, params, {
+      const resp = await axios.put(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
         }
       })
+
+      return { newSha: resp.commit.sha }
     } catch (err) {
       throw err
     }

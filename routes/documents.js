@@ -15,9 +15,9 @@ router.get('/:siteName/documents', async function(req, res, next) {
     const GitHubFile = new File(access_token, siteName)
     const documentType = new DocumentType()
     GitHubFile.setFileType(documentType)
-    const files = await GitHubFile.list()
+    const documents = await GitHubFile.list()
     
-    res.status(200).json({ files })
+    res.status(200).json({ documents })
   } catch (err) {
     console.log(err)
   }
@@ -38,9 +38,9 @@ router.post('/:siteName/documents', async function(req, res, next) {
     const GitHubFile = new File(access_token, siteName)
     const documentType = new DocumentType()
     GitHubFile.setFileType(documentType)
-    await GitHubFile.create(documentName, content)
+    const { sha } = await GitHubFile.create(documentName, content)
 
-    res.status(200).json({ documentName, content })
+    res.status(200).json({ documentName, content, sha })
   } catch (err) {
     console.log(err)
   }
@@ -83,9 +83,9 @@ router.post('/:siteName/documents/:documentName', async function(req, res, next)
     const GitHubFile = new File(access_token, siteName)
     const documentType = new DocumentType()
     GitHubFile.setFileType(documentType)
-    await GitHubFile.update(documentName, content, sha)
+    const { newSha } = await GitHubFile.update(documentName, content, sha)
     
-    res.status(200).json({ documentName, content })
+    res.status(200).json({ documentName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }
@@ -105,7 +105,7 @@ router.delete('/:siteName/documents/:documentName', async function(req, res, nex
     GitHubFile.setFileType(documentType)
     await GitHubFile.delete(documentName, sha)
 
-    res.status(200).json({ documentName, content })
+    res.status(200).send('OK')
   } catch (err) {
     console.log(err)
   }
@@ -126,10 +126,10 @@ router.post('/:siteName/documents/:documentName/rename/:newDocumentName', async 
     const GitHubFile = new File(access_token, siteName)
     const documentType = new DocumentType()
     GitHubFile.setFileType(documentType)
-    await GitHubFile.create(newDocumentName, content)
+    const { sha: newSha } = await GitHubFile.create(newDocumentName, content)
     await GitHubFile.delete(documentName, sha)
 
-    res.status(200).json({ newDocumentName, content })
+    res.status(200).json({ documentName: newDocumentName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }

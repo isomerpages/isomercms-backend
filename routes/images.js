@@ -38,9 +38,9 @@ router.post('/:siteName/images', async function(req, res, next) {
     const GitHubFile = new File(access_token, siteName)
     const imageType =  new ImageType()
     GitHubFile.setFileType(imageType)
-    await GitHubFile.create(imageName, content)
+    const { sha } = await GitHubFile.create(imageName, content)
 
-    res.status(200).json({ imageName, content })
+    res.status(200).json({ imageName, content, sha })
   } catch (err) {
     console.log(err)
   }
@@ -83,9 +83,9 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
     const GitHubFile = new File(access_token, siteName)
     const imageType =  new ImageType()
     GitHubFile.setFileType(imageType)
-    await GitHubFile.update(imageName, content, sha)
+    const { newSha } = await GitHubFile.update(imageName, content, sha)
 
-    res.status(200).json({ imageName, content })
+    res.status(200).json({ imageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }
@@ -105,7 +105,7 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
     GitHubFile.setFileType(imageType)
     await GitHubFile.delete(imageName, sha)
 
-    res.status(200).json({ imageName, content })
+    res.status(200).send('OK')
   } catch (err) {
     console.log(err)
   }
@@ -128,10 +128,10 @@ router.post('/:siteName/images/:imageName/rename/:newImageName', async function(
     const GitHubFile = new File(access_token, siteName)
     const imageType =  new ImageType()
     GitHubFile.setFileType(imageType)
-    await GitHubFile.create(newImageName, content)
+    const { sha: newSha } = await GitHubFile.create(newImageName, content)
     await GitHubFile.delete(imageName, sha)
 
-    res.status(200).json({ newImageName, content })
+    res.status(200).json({ imageName: newImageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }

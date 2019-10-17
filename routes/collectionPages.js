@@ -42,9 +42,9 @@ router.post('/:siteName/collections/:collectionName/pages', async function(req, 
     const GitHubFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
     GitHubFile.setFileType(collectionPageType)
-    await GitHubFile.create(pageName, content)
+    const { sha } = await GitHubFile.create(pageName, content)
 
-    res.status(200).json({ collectionName, pageName, content })
+    res.status(200).json({ collectionName, pageName, content, sha })
   } catch (err) {
     console.log(err)
   }
@@ -87,9 +87,9 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName', async func
     const GitHubFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
     GitHubFile.setFileType(collectionPageType)
-    await GitHubFile.update(pageName, content, sha)
+    const { newSha } = await GitHubFile.update(pageName, content, sha)
 
-    res.status(200).json({ pageName, content })
+    res.status(200).json({ collectionName, pageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }
@@ -113,7 +113,7 @@ router.delete('/:siteName/collections/:collectionName/pages/:pageName', async fu
     GitHubFile.setFileType(collectionPageType)
     await GitHubFile.delete(pageName, sha)
 
-    res.status(200).json({ collectionName, pageName, content })
+    res.status(200).send('OK')
   } catch (err) {
     console.log(err)
   }
@@ -137,10 +137,10 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newP
     const GitHubFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
     GitHubFile.setFileType(collectionPageType)
-    await GitHubFile.create(newPageName, content)
+    const { sha: newSha } = await GitHubFile.create(newPageName, content)
     await GitHubFile.delete(pageName, sha)
 
-    res.status(200).json({ newPageName, content })
+    res.status(200).json({ collectionName, pageName: newPageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }

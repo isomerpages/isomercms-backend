@@ -69,7 +69,7 @@ class File {
         }
       })
 
-      return { sha: resp.content.sha }
+      return { sha: resp.data.content.sha }
     } catch (err) {
       throw err
     }
@@ -115,7 +115,7 @@ class File {
         }
       })
 
-      return { newSha: resp.commit.sha }
+      return { newSha: resp.data.commit.sha }
     } catch (err) {
       throw err
     }

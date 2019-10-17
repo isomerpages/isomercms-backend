@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const base64 = require('base-64');
 const jwtUtils = require('../utils/jwt-utils')
 const _ = require('lodash')
 const Bluebird = require('bluebird')
 
 const ISOMER_GITHUB_ORG_NAME = 'isomerpages'
-const FRONTEND_URL = process.env.FRONTEND_URL
 
 // validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
 // This is necessary because GitHub returns a 404 status when the file does not exist.

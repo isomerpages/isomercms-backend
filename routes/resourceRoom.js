@@ -11,8 +11,8 @@ router.get('/:siteName/resource-room', async function(req, res, next) {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
 
     res.status(200).json({ resourceRoom: resourceRoomName })
   } catch (err) {
@@ -30,8 +30,8 @@ router.post('/:siteName/resource-room', async function(req, res, next) {
     // TO-DO:
     // Validate resourceRoom
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    await ResourceRoomInstance.createOrRename(resourceRoom)
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    await IsomerResourceRoom.createOrRename(resourceRoom)
 
     res.status(200).json({ resourceRoom })
   } catch (err) {
@@ -49,8 +49,8 @@ router.post('/:siteName/resource-room/:resourceRoom', async function(req, res, n
     // TO-DO:
     // Validate resourceRoom
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    await ResourceRoomInstance.createOrRename(resourceRoom)
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    await IsomerResourceRoom.createOrRename(resourceRoom)
 
     // TO-DO:
     // Delete all resources and resourcePages
@@ -68,8 +68,8 @@ router.delete('/:siteName/resource-room', async function(req, res, next) {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    await ResourceRoomInstance.delete()
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    await IsomerResourceRoom.delete()
 
     // TO-DO:
     // Delete all resources and resourcePages

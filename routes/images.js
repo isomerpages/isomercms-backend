@@ -12,10 +12,10 @@ router.get('/:siteName/images', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const imageType =  new ImageType()
-    GitHubFile.setFileType(imageType)
-    const images = await GitHubFile.list()
+    IsomerFile.setFileType(imageType)
+    const images = await IsomerFile.list()
     
     res.status(200).json({ images })
   } catch (err) {
@@ -35,10 +35,10 @@ router.post('/:siteName/images', async function(req, res, next) {
     // TO-DO:
     // Validate imageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const imageType =  new ImageType()
-    GitHubFile.setFileType(imageType)
-    const { sha } = await GitHubFile.create(imageName, content)
+    IsomerFile.setFileType(imageType)
+    const { sha } = await IsomerFile.create(imageName, content)
 
     res.status(200).json({ imageName, content, sha })
   } catch (err) {
@@ -54,10 +54,10 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
 
     const { siteName, imageName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const imageType =  new ImageType()
-    GitHubFile.setFileType(imageType)
-    const { sha, content } = await GitHubFile.read(imageName)
+    IsomerFile.setFileType(imageType)
+    const { sha, content } = await IsomerFile.read(imageName)
 
     // TO-DO:
     // Validate content
@@ -80,10 +80,10 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
     // TO-DO:
     // Validate imageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const imageType =  new ImageType()
-    GitHubFile.setFileType(imageType)
-    const { newSha } = await GitHubFile.update(imageName, content, sha)
+    IsomerFile.setFileType(imageType)
+    const { newSha } = await IsomerFile.update(imageName, content, sha)
 
     res.status(200).json({ imageName, content, sha: newSha })
   } catch (err) {
@@ -100,10 +100,10 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
     const { siteName, imageName } = req.params
     const { sha } = req.body
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const imageType =  new ImageType()
-    GitHubFile.setFileType(imageType)
-    await GitHubFile.delete(imageName, sha)
+    IsomerFile.setFileType(imageType)
+    await IsomerFile.delete(imageName, sha)
 
     res.status(200).send('OK')
   } catch (err) {
@@ -125,11 +125,11 @@ router.post('/:siteName/images/:imageName/rename/:newImageName', async function(
 
     // Create new file with name ${newImageName}
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const imageType =  new ImageType()
-    GitHubFile.setFileType(imageType)
-    const { sha: newSha } = await GitHubFile.create(newImageName, content)
-    await GitHubFile.delete(imageName, sha)
+    IsomerFile.setFileType(imageType)
+    const { sha: newSha } = await IsomerFile.create(newImageName, content)
+    await IsomerFile.delete(imageName, sha)
 
     res.status(200).json({ imageName: newImageName, content, sha: newSha })
   } catch (err) {

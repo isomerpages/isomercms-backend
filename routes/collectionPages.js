@@ -14,10 +14,10 @@ router.get('/:siteName/collections/:collectionName', async function(req, res, ne
 
     // TO-DO: Verify that collection exists
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const collectionPages = await GitHubFile.list()
+    IsomerFile.setFileType(collectionPageType)
+    const collectionPages = await IsomerFile.list()
 
     res.status(200).json({ collectionPages })
 
@@ -39,10 +39,10 @@ router.post('/:siteName/collections/:collectionName/pages', async function(req, 
     // Validate that collection exists
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const { sha } = await GitHubFile.create(pageName, content)
+    IsomerFile.setFileType(collectionPageType)
+    const { sha } = await IsomerFile.create(pageName, content)
 
     res.status(200).json({ collectionName, pageName, content, sha })
   } catch (err) {
@@ -58,10 +58,10 @@ router.get('/:siteName/collections/:collectionName/pages/:pageName', async funct
 
     const { siteName, pageName, collectionName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const { sha, content } = await GitHubFile.read(pageName)
+    IsomerFile.setFileType(collectionPageType)
+    const { sha, content } = await IsomerFile.read(pageName)
 
     // TO-DO:
     // Validate content
@@ -84,10 +84,10 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName', async func
     // TO-DO:
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const { newSha } = await GitHubFile.update(pageName, content, sha)
+    IsomerFile.setFileType(collectionPageType)
+    const { newSha } = await IsomerFile.update(pageName, content, sha)
 
     res.status(200).json({ collectionName, pageName, content, sha: newSha })
   } catch (err) {
@@ -108,10 +108,10 @@ router.delete('/:siteName/collections/:collectionName/pages/:pageName', async fu
     // TO-DO:
     // Validate that collection exists
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    await GitHubFile.delete(pageName, sha)
+    IsomerFile.setFileType(collectionPageType)
+    await IsomerFile.delete(pageName, sha)
 
     res.status(200).send('OK')
   } catch (err) {
@@ -134,11 +134,11 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newP
 
     // Create new collection page with name ${newPageName}
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
-    GitHubFile.setFileType(collectionPageType)
-    const { sha: newSha } = await GitHubFile.create(newPageName, content)
-    await GitHubFile.delete(pageName, sha)
+    IsomerFile.setFileType(collectionPageType)
+    const { sha: newSha } = await IsomerFile.create(newPageName, content)
+    await IsomerFile.delete(pageName, sha)
 
     res.status(200).json({ collectionName, pageName: newPageName, content, sha: newSha })
   } catch (err) {

@@ -13,10 +13,10 @@ router.get('/:siteName/menus', async function(req, res, next) {
 
     const { siteName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const dataType =  new DataType()
-    GitHubFile.setFileType(dataType)
-    const menus = await GitHubFile.list()
+    IsomerFile.setFileType(dataType)
+    const menus = await IsomerFile.list()
 
     // TO-DO:
     // Validate content
@@ -35,10 +35,10 @@ router.get('/:siteName/menus/:menuName', async function(req, res, next) {
 
     const { siteName, menuName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const dataType =  new DataType()
-    GitHubFile.setFileType(dataType)
-    const { sha, content } = await GitHubFile.read(menuName)
+    IsomerFile.setFileType(dataType)
+    const { sha, content } = await IsomerFile.read(menuName)
 
     // TO-DO:
     // Validate content
@@ -59,12 +59,12 @@ router.post('/:siteName/menus/:menuName', async function(req, res, next) {
     const { content, sha } = req.body
 
     // TO-DO:
-    // Validate imageName and content
+    // Validate menuName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const dataType =  new DataType()
-    GitHubFile.setFileType(dataType)
-    const { newSha } = await GitHubFile.update(menuName, content, sha)
+    IsomerFile.setFileType(dataType)
+    const { newSha } = await IsomerFile.update(menuName, content, sha)
 
     res.status(200).json({ menuName, content, sha: newSha })
   } catch (err) {

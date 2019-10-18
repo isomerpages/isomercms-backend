@@ -12,8 +12,8 @@ router.get('/:siteName/collections', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const GitHubCollection = new Collection(access_token, siteName)
-    const collections = await GitHubCollection.list()
+    const IsomerCollection = new Collection(access_token, siteName)
+    const collections = await IsomerCollection.list()
 
     res.status(200).json({ collections })
 
@@ -30,8 +30,8 @@ router.post('/:siteName/collections', async function(req, res, next) {
     const { siteName } = req.params
     const { collectionName } = req.body
 
-    const GitHubCollection = new Collection(access_token, siteName)
-    await GitHubCollection.create(collectionName)
+    const IsomerCollection = new Collection(access_token, siteName)
+    await IsomerCollection.create(collectionName)
 
     res.status(200).json({ collectionName })
   } catch (err) {
@@ -49,8 +49,8 @@ router.delete('/:siteName/collections/:collectionName', async function(req, res,
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName, collectionName } = req.params
 
-    const GitHubCollection = new Collection(access_token, siteName)
-    await GitHubCollection.delete(collectionName)
+    const IsomerCollection = new Collection(access_token, siteName)
+    await IsomerCollection.delete(collectionName)
 
     res.status(200).json({ collectionName })
   } catch (err) {
@@ -68,8 +68,8 @@ router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', 
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName, collectionName, newCollectionName } = req.params
 
-    const GitHubCollection = new Collection(access_token, siteName)
-    await GitHubCollection.rename(collectionName, newCollectionName)
+    const IsomerCollection = new Collection(access_token, siteName)
+    await IsomerCollection.rename(collectionName, newCollectionName)
 
     res.status(200).json({ collectionName, newCollectionName })
   } catch (err) {

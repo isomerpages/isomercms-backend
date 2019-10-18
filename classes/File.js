@@ -163,8 +163,17 @@ class CollectionPageType {
 }
 
 class ResourcePageType {
-  constructor(resourceName) {
-    this.folderName = `_${resourceName}`
+  constructor(resourceRoomName, resourceName) {
+    this.folderName = `${resourceRoomName}/${resourceName}/_posts`
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+class ResourceType {
+  constructor(resourceRoomName) {
+    this.folderName = `${resourceRoomName}`
   }
   getFolderName() {
     return this.folderName
@@ -198,4 +207,4 @@ class DataType {
   }
 }
 
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ImageType, DocumentType, DataType }
+module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType }

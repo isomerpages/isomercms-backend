@@ -12,10 +12,10 @@ router.get('/:siteName/pages', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
-    GitHubFile.setFileType(pageType)
-    const pages = await GitHubFile.list()
+    IsomerFile.setFileType(pageType)
+    const pages = await IsomerFile.list()
 
     res.status(200).json({ pages })
   } catch (err) {
@@ -36,10 +36,10 @@ router.post('/:siteName/pages', async function(req, res, next) {
     // TO-DO:
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
-    GitHubFile.setFileType(pageType)
-    const { sha } = await GitHubFile.create(pageName, content)
+    IsomerFile.setFileType(pageType)
+    const { sha } = await IsomerFile.create(pageName, content)
 
     res.status(200).json({ pageName, content, sha })
 
@@ -57,10 +57,10 @@ router.get('/:siteName/pages/:pageName', async function(req, res, next) {
 
     const { siteName, pageName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
-    GitHubFile.setFileType(pageType)
-    const { sha, content } = await GitHubFile.read(pageName)
+    IsomerFile.setFileType(pageType)
+    const { sha, content } = await IsomerFile.read(pageName)
 
     // TO-DO:
     // Validate content
@@ -85,10 +85,10 @@ router.post('/:siteName/pages/:pageName', async function(req, res, next) {
     // TO-DO:
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
-    GitHubFile.setFileType(pageType)
-    const { newSha } = await GitHubFile.update(pageName, content, sha)
+    IsomerFile.setFileType(pageType)
+    const { newSha } = await IsomerFile.update(pageName, content, sha)
 
     res.status(200).json({ pageName, content, sha: newSha })
   } catch (err) {
@@ -106,10 +106,10 @@ router.delete('/:siteName/pages/:pageName', async function(req, res, next) {
     const { siteName, pageName } = req.params
     const { sha } = req.body
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
-    GitHubFile.setFileType(pageType)
-    await GitHubFile.delete(pageName, sha)
+    IsomerFile.setFileType(pageType)
+    await IsomerFile.delete(pageName, sha)
 
     res.status(200).send('OK')
   } catch (err) {
@@ -130,11 +130,11 @@ router.post('/:siteName/pages/:pageName/rename/:newPageName', async function(req
     // TO-DO:
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
-    GitHubFile.setFileType(pageType)
-    const { sha: newSha } = await GitHubFile.create(newPageName, content)
-    await GitHubFile.delete(pageName, sha)
+    IsomerFile.setFileType(pageType)
+    const { sha: newSha } = await IsomerFile.create(newPageName, content)
+    await IsomerFile.delete(pageName, sha)
 
     res.status(200).json({ pageName: newPageName, content, sha: newSha })
 

@@ -12,10 +12,10 @@ router.get('/:siteName/documents', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const documentType = new DocumentType()
-    GitHubFile.setFileType(documentType)
-    const documents = await GitHubFile.list()
+    IsomerFile.setFileType(documentType)
+    const documents = await IsomerFile.list()
     
     res.status(200).json({ documents })
   } catch (err) {
@@ -35,10 +35,10 @@ router.post('/:siteName/documents', async function(req, res, next) {
     // TO-DO:
     // Validate fileName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const documentType = new DocumentType()
-    GitHubFile.setFileType(documentType)
-    const { sha } = await GitHubFile.create(documentName, content)
+    IsomerFile.setFileType(documentType)
+    const { sha } = await IsomerFile.create(documentName, content)
 
     res.status(200).json({ documentName, content, sha })
   } catch (err) {
@@ -54,10 +54,10 @@ router.get('/:siteName/documents/:documentName', async function(req, res, next) 
 
     const { siteName, documentName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const documentType = new DocumentType()
-    GitHubFile.setFileType(documentType)
-    const { sha, content } = await GitHubFile.read(documentName)
+    IsomerFile.setFileType(documentType)
+    const { sha, content } = await IsomerFile.read(documentName)
 
     // TO-DO:
     // Validate content
@@ -80,10 +80,10 @@ router.post('/:siteName/documents/:documentName', async function(req, res, next)
     // TO-DO:
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const documentType = new DocumentType()
-    GitHubFile.setFileType(documentType)
-    const { newSha } = await GitHubFile.update(documentName, content, sha)
+    IsomerFile.setFileType(documentType)
+    const { newSha } = await IsomerFile.update(documentName, content, sha)
     
     res.status(200).json({ documentName, content, sha: newSha })
   } catch (err) {
@@ -100,10 +100,10 @@ router.delete('/:siteName/documents/:documentName', async function(req, res, nex
     const { siteName, documentName } = req.params
     const { sha } = req.body
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const documentType = new DocumentType()
-    GitHubFile.setFileType(documentType)
-    await GitHubFile.delete(documentName, sha)
+    IsomerFile.setFileType(documentType)
+    await IsomerFile.delete(documentName, sha)
 
     res.status(200).send('OK')
   } catch (err) {
@@ -123,11 +123,11 @@ router.post('/:siteName/documents/:documentName/rename/:newDocumentName', async 
     // TO-DO:
     // Validate documentName and content
 
-    const GitHubFile = new File(access_token, siteName)
+    const IsomerFile = new File(access_token, siteName)
     const documentType = new DocumentType()
-    GitHubFile.setFileType(documentType)
-    const { sha: newSha } = await GitHubFile.create(newDocumentName, content)
-    await GitHubFile.delete(documentName, sha)
+    IsomerFile.setFileType(documentType)
+    const { sha: newSha } = await IsomerFile.create(newDocumentName, content)
+    await IsomerFile.delete(documentName, sha)
 
     res.status(200).json({ documentName: newDocumentName, content, sha: newSha })
   } catch (err) {

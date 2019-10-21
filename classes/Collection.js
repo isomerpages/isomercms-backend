@@ -59,16 +59,16 @@ class Collection {
     	await config.update(newContent, sha)
 
 	    // Get all collectionPages
-	    const GitHubFile = new File(this.accessToken, this.siteName)
+	    const IsomerFile = new File(this.accessToken, this.siteName)
 	    const collectionPageType = new CollectionPageType(collectionName)
-	    GitHubFile.setFileType(collectionPageType)
-			const collectionPages = await GitHubFile.list()
+	    IsomerFile.setFileType(collectionPageType)
+			const collectionPages = await IsomerFile.list()
 
 	    // Delete all collectionPages
 	    await Bluebird.map(collectionPages, async(collectionPage) => {
 	      let pageName = collectionPage.pageName
-	      const { sha } = await GitHubFile.read(pageName)
-	      return GitHubFile.delete(pageName, sha)
+	      const { sha } = await IsomerFile.read(pageName)
+	      return IsomerFile.delete(pageName, sha)
 	    })
 
     } catch (err) {
@@ -93,25 +93,25 @@ class Collection {
     	await config.update(newContent, sha)
 
 	    // Get all collectionPages
-	    const OldGitHubFile = new File(this.accessToken, this.siteName)
+	    const OldIsomerFile = new File(this.accessToken, this.siteName)
 	    const oldCollectionPageType = new CollectionPageType(oldCollectionName)
-	    OldGitHubFile.setFileType(oldCollectionPageType)
-			const collectionPages = await OldGitHubFile.list()
+	    OldIsomerFile.setFileType(oldCollectionPageType)
+			const collectionPages = await OldIsomerFile.list()
 			
 			// If the object is empty (there are no pages in the collection), do nothing
 			if (_.isEmpty(collectionPages)) return 
 
 	    // Set up new collection File instance
-	    const NewGitHubFile = new File(this.accessToken, this.siteName)
+	    const NewIsomerFile = new File(this.accessToken, this.siteName)
 	    const newCollectionPageType = new CollectionPageType(newCollectionName)
-	    NewGitHubFile.setFileType(newCollectionPageType)
+	    NewIsomerFile.setFileType(newCollectionPageType)
 
 	    // Rename all collectionPages
 	    await Bluebird.map(collectionPages, async(collectionPage) => {
 	      let pageName = collectionPage.fileName
-				const { content, sha } = await OldGitHubFile.read(pageName)
-				await OldGitHubFile.delete(pageName, sha)
-	      return NewGitHubFile.create(pageName, content)
+				const { content, sha } = await OldIsomerFile.read(pageName)
+				await OldIsomerFile.delete(pageName, sha)
+	      return NewIsomerFile.create(pageName, content)
 			})
 			
     } catch (err) {

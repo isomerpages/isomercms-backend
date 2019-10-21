@@ -1,16 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
-const Bluebird = require('bluebird')
 
 // Import classes 
-const { File, ResourceType, ResourcePageType } = require('../classes/File.js')
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
-
-// Constants
-const RESOURCE_INDEX_PATH = 'index.html'
-const RESOURCE_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzLWFsdAp0aXRsZTogUmVzb3VyY2UgUm9vbQotLS0='
-const RESOURCE_INDEX_CONTENT_SHA = 'c89773cd987d47dab7bdcc166e8639c65b340298'
+const { Resource } = require('../classes/Resource.js')
 
 // List resources
 router.get('/:siteName/resources', async function(req, res, next) {
@@ -19,13 +13,11 @@ router.get('/:siteName/resources', async function(req, res, next) {
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
 
-    const IsomerFile = new File(access_token, siteName, resourceRoomName)
-    const resourceType = new ResourceType(resourceRoomName)
-    IsomerFile.setFileType(resourceType)
-    const resources = await IsomerFile.list()
+    const IsomerResource = new Resource(access_token, siteName)
+    const resources = await IsomerResource.list(resourceRoomName)
 
     res.status(200).json({ resources })
   } catch (err) {
@@ -41,37 +33,14 @@ router.post('/:siteName/resources', async function(req, res, next) {
     const { siteName } = req.params
     const { resourceName } = req.body
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
 
-    // Create an index file in the resource folder
-    const IsomerFile = new File(access_token, siteName, resourceRoomName)
-    const resourceType = new ResourceType(resourceRoomName)
-    IsomerFile.setFileType(resourceType)
-    const { sha } = await IsomerFile.create(`${resourceName}/${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
+    const IsomerResource = new Resource(access_token, siteName)
+    await IsomerResource.create(resourceRoomName, resourceName)
 
-    res.status(200).json({ resourceName, sha })
+    res.status(200).json({ resourceName })
     // TO-DO
-  } catch (err) {
-    console.log(err)
-  }
-})
-
-// List pages in resource
-router.get('/:siteName/resources/:resourceName', async function(req, res, next) {
-  try {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
-    const { siteName, resourceName } = req.params
-
-    // TO-DO: Verify that resource exists
-
-    const IsomerFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    IsomerFile.setFileType(resourcePageType)
-    const resourcePages = await IsomerFile.list()
-
-    res.status(200).json({ resourcePages })
   } catch (err) {
     console.log(err)
   }
@@ -84,26 +53,11 @@ router.delete('/:siteName/resources/:resourceName', async function(req, res, nex
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName, resourceName } = req.params
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
 
-    // Delete index file in resource
-    const IsomerIndexFile = new File(access_token, siteName, resourceRoomName)
-    const resourceType = new ResourceType(resourceRoomName)
-    IsomerIndexFile.setFileType(resourceType)
-    await IsomerIndexFile.delete(`${resourceName}/${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT_SHA)
-
-    // Delete all resourcePages in resource
-    // 1. List all resourcePages in resource
-    const IsomerFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
-    IsomerFile.setFileType(resourcePageType)
-    const resourcePages = await IsomerFile.list()
-
-    // 2. Delete all resourcePages in resource
-    await Bluebird.map(resourcePages, async(resourcePage) => {
-      return IsomerFile.delete(resourcePage.fileName, RESOURCE_INDEX_CONTENT)
-    })
+    const IsomerResource = new Resource(access_token, siteName)
+    await IsomerResource.delete(resourceRoomName, resourceName)
 
     res.status(200).send('OK')
   } catch (err) {
@@ -118,36 +72,13 @@ router.post('/:siteName/resources/:resourceName/rename/:newResourceName', async 
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName, resourceName, newResourceName } = req.params
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
-    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
 
-    // Create index file in resource
-    const IsomerIndexFile = new File(access_token, siteName, resourceRoomName)
-    const resourceType = new ResourceType(resourceRoomName)
-    IsomerIndexFile.setFileType(resourceType)
-    await IsomerIndexFile.create(`${newResourceName}/${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT_SHA)
-    // Delete index file in old resource
-    await IsomerIndexFile.delete(`${resourceName}/${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT_SHA)
+    const IsomerResource = new Resource(access_token, siteName)
+    await IsomerResource.rename(resourceRoomName, resourceName, resourceRoomName, newResourceName)
 
-    // Rename resourcePages
-    const OldIsomerFile = new File(access_token, siteName)
-    const NewIsomerFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
-    const newResourcePageType = new ResourcePageType(newResourceRoomName, resourceName)
-    OldIsomerFile.setFileType(resourcePageType)
-    NewIsomerFile.setFileType(newResourcePageType)
-
-    // 1. List all resourcePages in resource
-    const resourcePages = await OldIsomerFile.list()
-
-    await Bluebird.map(resourcePages, async(resourcePage) => {
-      // 2. Create new resourcePages in newResource
-      const { content, sha } = await OldIsomerFile.read(resourcePage.fileName)
-      await NewIsomerFile.create(resourcePage.fileName, content)
-      // 3. Delete all resourcePages in resource
-      return OldIsomerFile.delete(resourcePage.fileName, sha)
-    })
-
+    res.status(200).json({ resourceName, newResourceName })
   } catch (err) {
     console.log(err)
   }

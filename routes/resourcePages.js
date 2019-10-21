@@ -6,6 +6,26 @@ const jwtUtils = require('../utils/jwt-utils')
 const { File, ResourcePageType } = require('../classes/File.js')
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
 
+// List pages in resource
+router.get('/:siteName/resources/:resourceName', async function(req, res, next) {
+  try {
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, resourceName } = req.params
+
+    // TO-DO: Verify that resource exists
+
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    const resourcePages = await IsomerFile.list()
+
+    res.status(200).json({ resourcePages })
+  } catch (err) {
+    console.log(err)
+  }
+})
+
 // Create new page in resource
 router.post('/:siteName/resources/:resourceName/pages', async function(req, res, next) {
   try {
@@ -72,9 +92,9 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName', async function
     const IsomerFile = new File(access_token, siteName)
     const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
     IsomerFile.setFileType(resourcePageType)
-    await IsomerFile.update(pageName, content, sha)
+    const { newSha } = await IsomerFile.update(pageName, content, sha)
 
-    res.status(200).json({ pageName, content })
+    res.status(200).json({ resourceName, pageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }
@@ -96,7 +116,7 @@ router.delete('/:siteName/resources/:resourceName/pages/:pageName', async functi
     IsomerFile.setFileType(resourcePageType)
     await IsomerFile.delete(pageName, sha)
 
-    res.status(200).json({ resourceName, pageName, content })
+    res.status(200).send('OK')
   } catch (err) {
     console.log(err)
   }
@@ -122,10 +142,10 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageN
     const IsomerFile = new File(access_token, siteName)
     const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
     IsomerFile.setFileType(resourcePageType)
-    await IsomerFile.create(newPageName, content)
+    const { sha: newSha } = await IsomerFile.create(newPageName, content)
     await IsomerFile.delete(pageName, sha)
 
-    res.status(200).json({ newPageName, content })
+    res.status(200).json({ resourceName, newPageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }

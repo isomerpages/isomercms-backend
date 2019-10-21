@@ -36,6 +36,12 @@ components:
           type: string
         request_uri:
           type: string
+    ResourcePageListResponse:
+      properties:
+        resourcePages:
+          type: array
+          items:
+            type: string
     CollectionListResponse:
       properties:
         collections:
@@ -72,9 +78,43 @@ components:
           type: array
           items:
             type: string
+    ResourceListResponse:
+      properties:
+        resources:
+          type: array
+          items:
+            type: string
+    MenuListResponse:
+      properties:
+        menus:
+          type: array
+          items:
+            type: string
+    ResourceResponse:
+      properties:
+        resourceName:
+            type: string
+    MenuResponse:
+      properties:
+        menuName:
+            type: string
+        content:
+            type: string
+        sha:
+            type: string
     CollectionNameResponse:
       properties:
         collectionName:
+          type: string
+    ResourcePageResponse:
+      properties:
+        resourceName:
+          type: string
+        pageName:
+          type: string
+        content:
+          type: string
+        sha:
           type: string
     CollectionPageResponse:
       properties:
@@ -157,6 +197,12 @@ components:
         imageName:
           type: string
         newDocumentName:
+          type: string
+    RenameResource:
+      properties:
+        resourceName:
+          type: string
+        newResourceName:
           type: string
     ResourceRoom:
       properties:
@@ -984,5 +1030,337 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResourceRoom"
+  /sites/{siteName}/resources:
+    get:
+      tags:
+        - Resources
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Get resource list
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceListResponse"
+    post:
+      tags:
+        - Resources
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceResponse"
+      description: Create resource
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceResponse"
+  /sites/{siteName}/resources/{resourceName}:
+    get:
+      tags:
+        - Resource Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Get page list in resource
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageListResponse"
+    delete:
+      tags:
+        - Resources
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Delete resource
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/resources/{resourceName}/rename/{newResourceName}:
+    post:
+      tags:
+        - Resources
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newResourceName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Create resource
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RenameResource"
+  /sites/{siteName}/resources/{resourceName}/pages:
+    post:
+      tags:
+        - Resource Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Create resource page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentAndPageName"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageResponse"
+  /sites/{siteName}/resources/{resourceName}/pages/{pageName}:
+    get:
+      tags:
+        - Resource Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Read resource page
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageListResponse"
+    post:
+      tags:
+        - Resource Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Update resource page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageResponse"
+    delete:
+      tags:
+        - Resource Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sha
+          in: body
+          required: true
+          schema:
+            type: string
+      description: Delete resource page
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/resources/{resourceName}/pages/{pageName}/rename/{newPageName}:
+    post:
+      tags:
+        - Resource Pages
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: newPageName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Rename resource page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenamePage"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourcePageResponse"
+  /sites/{siteName}/menus:
+    get:
+      tags:
+        - Menus
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Get menu list
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuListResponse"
+  /sites/{siteName}/menus/{menuName}:
+    get:
+      tags:
+        - Menus
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: menuName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Read menu page
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuResponse"
+    post:
+      tags:
+        - Menus
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: menuName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Update menu page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShaAndContent"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuResponse"
+
 security:
   - ApiKeyAuthentication: []

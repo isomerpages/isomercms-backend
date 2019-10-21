@@ -43,9 +43,9 @@ router.post('/:siteName/resources/:resourceName/pages', async function(req, res,
     const IsomerFile = new File(access_token, siteName)
     const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
     IsomerFile.setFileType(resourcePageType)
-    await IsomerFile.create(pageName, content)
+    const { sha } = await IsomerFile.create(pageName, content)
 
-    res.status(200).json({ resourceName, pageName, content })
+    res.status(200).json({ resourceName, pageName, content, sha })
   } catch (err) {
     console.log(err)
   }
@@ -145,7 +145,7 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageN
     const { sha: newSha } = await IsomerFile.create(newPageName, content)
     await IsomerFile.delete(pageName, sha)
 
-    res.status(200).json({ resourceName, newPageName, content, sha: newSha })
+    res.status(200).json({ resourceName, pageName: newPageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }

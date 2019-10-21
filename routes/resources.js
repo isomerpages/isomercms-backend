@@ -3,12 +3,23 @@ const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
 
 // Import classes 
-const { File, ResourcePageType } = require('../classes/File.js')
+const { ResourceRoom } = require('../classes/ResourceRoom.js')
+const { Resource } = require('../classes/Resource.js')
 
 // List resources
 router.get('/:siteName/resources', async function(req, res, next) {
   try {
-    // TO-DO
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName } = req.params
+
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
+
+    const IsomerResource = new Resource(access_token, siteName)
+    const resources = await IsomerResource.list(resourceRoomName)
+
+    res.status(200).json({ resources })
   } catch (err) {
     console.log(err)
   }
@@ -17,27 +28,19 @@ router.get('/:siteName/resources', async function(req, res, next) {
 // Create new resource
 router.post('/:siteName/resources', async function(req, res, next) {
   try {
-    // TO-DO
-  } catch (err) {
-    console.log(err)
-  }
-})
-
-// List pages in resource
-router.get('/:siteName/resources/:resourceName', async function(req, res, next) {
-  try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
-    const { siteName, resourceName } = req.params
+    const { siteName } = req.params
+    const { resourceName } = req.body
 
-    // TO-DO: Verify that resource exists
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
 
-    const GitHubFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    GitHubFile.setFileType(resourcePageType)
-    const resourcePages = await GitHubFile.list()
+    const IsomerResource = new Resource(access_token, siteName)
+    await IsomerResource.create(resourceRoomName, resourceName)
 
-    res.status(200).json({ resourcePages })
+    res.status(200).json({ resourceName })
+    // TO-DO
   } catch (err) {
     console.log(err)
   }
@@ -46,16 +49,36 @@ router.get('/:siteName/resources/:resourceName', async function(req, res, next) 
 // Delete resource
 router.delete('/:siteName/resources/:resourceName', async function(req, res, next) {
   try {
-    // TO-DO
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, resourceName } = req.params
+
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
+
+    const IsomerResource = new Resource(access_token, siteName)
+    await IsomerResource.delete(resourceRoomName, resourceName)
+
+    res.status(200).send('OK')
   } catch (err) {
     console.log(err)
   }
 })
 
 // Rename resource
-router.post('/:siteName/resources/:resourceName/rename', async function(req, res, next) {
+router.post('/:siteName/resources/:resourceName/rename/:newResourceName', async function(req, res, next) {
   try {
-    // TO-DO
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, resourceName, newResourceName } = req.params
+
+    const IsomerResourceRoom = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await IsomerResourceRoom.get()
+
+    const IsomerResource = new Resource(access_token, siteName)
+    await IsomerResource.rename(resourceRoomName, resourceName, resourceRoomName, newResourceName)
+
+    res.status(200).json({ resourceName, newResourceName })
   } catch (err) {
     console.log(err)
   }

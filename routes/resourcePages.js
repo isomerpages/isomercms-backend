@@ -4,6 +4,27 @@ const jwtUtils = require('../utils/jwt-utils')
 
 // Import classes 
 const { File, ResourcePageType } = require('../classes/File.js')
+const { ResourceRoom } = require('../classes/ResourceRoom.js')
+
+// List pages in resource
+router.get('/:siteName/resources/:resourceName', async function(req, res, next) {
+  try {
+    const { oauthtoken } = req.cookies
+    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { siteName, resourceName } = req.params
+
+    // TO-DO: Verify that resource exists
+
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    const resourcePages = await IsomerFile.list()
+
+    res.status(200).json({ resourcePages })
+  } catch (err) {
+    console.log(err)
+  }
+})
 
 // Create new page in resource
 router.post('/:siteName/resources/:resourceName/pages', async function(req, res, next) {
@@ -15,13 +36,14 @@ router.post('/:siteName/resources/:resourceName/pages', async function(req, res,
     const { pageName, content } = req.body
 
     // TO-DO:
-    // Validate that resource exists
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    GitHubFile.setFileType(resourcePageType)
-    await GitHubFile.create(pageName, content)
+    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    await IsomerFile.create(pageName, content)
 
     res.status(200).json({ resourceName, pageName, content })
   } catch (err) {
@@ -37,10 +59,12 @@ router.get('/:siteName/resources/:resourceName/pages/:pageName', async function(
 
     const { siteName, pageName, resourceName } = req.params
 
-    const GitHubFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    GitHubFile.setFileType(resourcePageType)
-    const { sha, content } = await GitHubFile.read(pageName)
+    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    const { sha, content } = await IsomerFile.read(pageName)
 
     // TO-DO:
     // Validate content
@@ -63,12 +87,14 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName', async function
     // TO-DO:
     // Validate pageName and content
 
-    const GitHubFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    GitHubFile.setFileType(resourcePageType)
-    await GitHubFile.update(pageName, content, sha)
+    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    const { newSha } = await IsomerFile.update(pageName, content, sha)
 
-    res.status(200).json({ pageName, content })
+    res.status(200).json({ resourceName, pageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }
@@ -83,12 +109,14 @@ router.delete('/:siteName/resources/:resourceName/pages/:pageName', async functi
     const { siteName, pageName, resourceName } = req.params
     const { sha } = req.body
 
-    const GitHubFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    GitHubFile.setFileType(resourcePageType)
-    await GitHubFile.delete(pageName, sha)
+    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    await IsomerFile.delete(pageName, sha)
 
-    res.status(200).json({ resourceName, pageName, content })
+    res.status(200).send('OK')
   } catch (err) {
     console.log(err)
   }
@@ -109,13 +137,15 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageN
 
     // Create new resource page with name ${newPageName}
 
-    const GitHubFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
-    GitHubFile.setFileType(resourcePageType)
-    await GitHubFile.create(newPageName, content)
-    await GitHubFile.delete(pageName, sha)
+    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await ResourceRoomInstance.get()
+    const IsomerFile = new File(access_token, siteName)
+    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
+    IsomerFile.setFileType(resourcePageType)
+    const { sha: newSha } = await IsomerFile.create(newPageName, content)
+    await IsomerFile.delete(pageName, sha)
 
-    res.status(200).json({ newPageName, content })
+    res.status(200).json({ resourceName, newPageName, content, sha: newSha })
   } catch (err) {
     console.log(err)
   }

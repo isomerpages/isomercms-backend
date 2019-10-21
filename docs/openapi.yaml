@@ -17,6 +17,10 @@ tags:
   - name: Documents
   - name: Pages
   - name: Sites
+  - name: Resource Room
+  - name: Resources
+  - name: Resource Pages
+  - name: Menus
 components:
   securitySchemes:
     ApiKeyAuthentication:
@@ -153,6 +157,10 @@ components:
         imageName:
           type: string
         newDocumentName:
+          type: string
+    ResourceRoom:
+      properties:
+        resourceRoom:
           type: string
 
 
@@ -899,5 +907,82 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SiteListResponse"
+                
+  /sites/{siteName}/resource-room:
+    get:
+      tags:
+        - Resource Room
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Get resource room name
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceRoom"
+    post:
+      tags:
+        - Resource Room
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceRoom"
+      description: Create resource room
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceRoom"
+    delete:
+      tags:
+        - Resource Room
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Delete resource room
+      responses:
+        200:
+          description: Success
+  /sites/{siteName}/resource-room/{resourceRoom}:
+    post:
+      tags:
+        - Resource Room
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceRoom
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Rename resource room
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceRoom"
 security:
   - ApiKeyAuthentication: []

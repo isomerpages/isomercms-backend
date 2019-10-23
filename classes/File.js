@@ -207,4 +207,13 @@ class DataType {
   }
 }
 
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType }
+class HomepageType {
+  constructor() {
+    this.folderName = 'index.md'
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }

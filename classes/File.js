@@ -41,7 +41,8 @@ class File {
         if (object.type === 'file') {
           return {
             path: encodeURIComponent(object.path),
-            fileName
+            fileName,
+            sha: object.sha
           }
         }
       })

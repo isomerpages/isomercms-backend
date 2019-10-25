@@ -1,7 +1,9 @@
 const axios = require('axios');
-const _ = require('lodash')
+const _ = require('lodash');
+const { ImageType } = require('./File');
 
 const GITHUB_ORG_NAME = 'isomerpages'
+
 
 // validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
 // This is necessary because GitHub returns a 404 status when the file does not exist.
@@ -158,69 +160,6 @@ class ImageFile {
     } catch (err) {
       throw err
     }
-  }
-}
-
-class PageType {
-  constructor() {
-    this.folderName = 'pages'
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class CollectionPageType {
-  constructor(collectionName) {
-    this.folderName = `_${collectionName}`
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class ResourcePageType {
-  constructor(resourceRoomName, resourceName) {
-    this.folderName = `${resourceRoomName}/${resourceName}/_posts`
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class ResourceType {
-  constructor(resourceRoomName) {
-    this.folderName = `${resourceRoomName}`
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class ImageType {
-  constructor() {
-    this.folderName = 'images'
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class DocumentType {
-  constructor() {
-    this.folderName = 'files'
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class DataType {
-  constructor() {
-    this.folderName = '_data'
-  }
-  getFolderName() {
-    return this.folderName
   }
 }
 

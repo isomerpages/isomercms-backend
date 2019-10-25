@@ -4,6 +4,7 @@ const jwtUtils = require('../utils/jwt-utils')
 
 // Import classes 
 const { File, ImageType } = require('../classes/File.js')
+const { ImageFile } = require('../classes/ImageFile.js')
 
 // List images
 router.get('/:siteName/images', async function(req, res, next) {
@@ -47,22 +48,21 @@ router.post('/:siteName/images', async function(req, res, next) {
 })
 
 // Read image
-router.get('/:siteName/images/:imageName', async function(req, res, next) {
+router.get('/:siteName/images/:imageSha', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, imageName } = req.params
+    const { siteName, imageSha } = req.params
 
-    const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
-    IsomerFile.setFileType(imageType)
-    const { sha, content } = await IsomerFile.read(imageName)
+    const IsomerFile = new ImageFile(access_token, siteName)
+    IsomerFile.setFileTypeToImage()
+    const { sha, content } = await IsomerFile.read(imageSha)
 
     // TO-DO:
     // Validate content
 
-    res.status(200).json({ imageName, sha, content })
+    res.status(200).json({ imageSha, sha, content })
   } catch (err) {
     console.log(err)
   }

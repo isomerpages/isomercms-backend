@@ -48,21 +48,21 @@ router.post('/:siteName/images', async function(req, res, next) {
 })
 
 // Read image
-router.get('/:siteName/images/:imageSha', async function(req, res, next) {
+router.get('/:siteName/images/:imageName', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, imageSha } = req.params
+    const { siteName, imageName } = req.params
 
-    const IsomerFile = new ImageFile(access_token, siteName)
-    IsomerFile.setFileTypeToImage()
-    const { sha, content } = await IsomerFile.read(imageSha)
+    const IsomerImageFile = new ImageFile(access_token, siteName)
+    IsomerImageFile.setFileTypeToImage()
+    const { sha, content } = await IsomerImageFile.read(imageName)
 
     // TO-DO:
     // Validate content
 
-    res.status(200).json({ imageSha, sha, content })
+    res.status(200).json({ imageName, sha, content })
   } catch (err) {
     console.log(err)
   }

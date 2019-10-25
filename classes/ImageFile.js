@@ -14,12 +14,15 @@ class ImageFile {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
+    this.blobEndpoint = null
     this.fileType = null
   }
 
   setFileTypeToImage() {
     this.fileType = new ImageType()
-    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs` 
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
+    // Endpoint to retrieve files greater than 1MB
+    this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
 
@@ -79,12 +82,22 @@ class ImageFile {
     }
   }
 
-  async read(imageSha) {
+  async read(fileName) {
     try {
-      const endpoint = `${this.baseEndpoint}/${imageSha}`
-      console.log('endpoitn', endpoint)
+      /**
+       * Images that are bigger than 1 MB needs to be retrieved
+       * via Github Blob API. The content can only be retrieved through
+       * the `sha` of the file.
+       * The code below takes the `fileName`,
+       * lists all the files in the image directory
+       * and filters it down to get the sha of the file
+       */
+      const images = await this.list()
+      const imageSha = images.filter(image => image.fileName === fileName)[0].sha
 
-      const resp = await axios.get(endpoint, {
+      const blobEndpoint = `${this.baseBlobEndpoint}/${imageSha}`
+
+      const resp = await axios.get(blobEndpoint, {
         validateStatus: validateStatus,
         headers: {
           Authorization: `token ${this.accessToken}`,

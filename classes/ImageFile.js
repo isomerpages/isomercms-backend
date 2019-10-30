@@ -23,7 +23,10 @@ class ImageFile {
   setFileTypeToImage() {
     this.fileType = new ImageType()
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
-    // Endpoint to retrieve files greater than 1MB
+    /**
+     * These endpoints below belong to 
+     * Github's Data API
+     */
     this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
     this.baseRefEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/refs`
     this.baseCommitEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/commits`
@@ -102,15 +105,10 @@ class ImageFile {
       // SHA of newly created blob
       const blobSha = blobResp.data.sha
 
-      // Retrieve SHA of latest commit from `staging` branch
-      const refResp = await axios.get(refEndpoint)
-      const currentCommitSha = refResp.data.object.sha
-  
-      const commitEndpoint = `${this.baseCommitEndpoint}/${currentCommitSha}`
+      const listOfCommitsResp = await axios.get(`https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/commits`)
+      const latestCommit = listOfCommitsResp.data[0]
 
-      // Retrieve SHA of tree that the latest commit is pointing to
-      const commitResp = await axios.get(commitEndpoint)
-      const treeSha = commitResp.data.tree.sha
+      const treeSha = latestCommit.commit.tree.sha
 
       // Create new tree with a file pointing to the created blob
       const newTreeResp = await axios.post(this.baseTreeEndpoint, {

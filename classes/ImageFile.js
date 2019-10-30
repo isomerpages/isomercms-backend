@@ -161,42 +161,6 @@ class ImageFile {
   }
 }
 
-class PageType {
-  constructor() {
-    this.folderName = 'pages'
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class CollectionPageType {
-  constructor(collectionName) {
-    this.folderName = `_${collectionName}`
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class ResourcePageType {
-  constructor(resourceRoomName, resourceName) {
-    this.folderName = `${resourceRoomName}/${resourceName}/_posts`
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class ResourceType {
-  constructor(resourceRoomName) {
-    this.folderName = `${resourceRoomName}`
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
 class ImageType {
   constructor() {
     this.folderName = 'images'
@@ -205,23 +169,4 @@ class ImageType {
     return this.folderName
   }
 }
-
-class DocumentType {
-  constructor() {
-    this.folderName = 'files'
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class DataType {
-  constructor() {
-    this.folderName = '_data'
-  }
-  getFolderName() {
-    return this.folderName
-  }
-}
-
 module.exports = { ImageFile }

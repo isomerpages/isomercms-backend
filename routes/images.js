@@ -36,12 +36,11 @@ router.post('/:siteName/images', async function(req, res, next) {
     // TO-DO:
     // Validate imageName and content
 
-    const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
-    IsomerFile.setFileType(imageType)
-    const { sha } = await IsomerFile.create(imageName, content)
+    const IsomerImageFile = new ImageFile(access_token, siteName)
+    IsomerImageFile.setFileTypeToImage()
+    await IsomerImageFile.create(imageName, content)
 
-    res.status(200).json({ imageName, content, sha })
+    res.status(200).json({ imageName, content })
   } catch (err) {
     console.log(err)
   }
@@ -69,21 +68,20 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
 })
 
 // Update image
-router.post('/:siteName/images/:imageName', async function(req, res, next) {
+router.post('/:siteName/images/', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const { siteName, imageName } = req.params
-    const { content, sha } = req.body
+    const { siteName } = req.params
+    const { content, imageName } = req.body
 
     // TO-DO:
     // Validate imageName and content
 
-    const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
-    IsomerFile.setFileType(imageType)
-    const { newSha } = await IsomerFile.update(imageName, content, sha)
+    const IsomerImageFile = new ImageFile(access_token, siteName)
+    IsomerImageFile.setFileTypeToImage()
+    await IsomerImageFile.create(imageName, content)
 
     res.status(200).json({ imageName, content, sha: newSha })
   } catch (err) {

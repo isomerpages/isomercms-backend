@@ -25,6 +25,9 @@ class ImageFile {
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
     // Endpoint to retrieve files greater than 1MB
     this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
+    this.baseRefEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/refs`
+    this.baseCommitEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/commits`
+    this.baseTreeEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/trees`
   }
 
 
@@ -61,24 +64,107 @@ class ImageFile {
     }
   }
 
+  /**
+   * `create()` works differently compared to its counterpat
+   * in the `File` class. This is due to the size limit (1MB) imposed
+   * on uploading files via the Contents API (Github's).
+   * 
+   * Github's solution was to use their Git Database API (https://developer.github.com/v3/git/)
+   * So this function basically:
+   * 1) Upload the file as a blob (binary large object) and get its SHA
+   * 2) Finds the SHA of the current commit "staging" branch is pointing to
+   * 3) Finds the SHA of the tree the current commit is pointing to
+   * 4) Create a new tree that has an entry with `fileName` and its pointing to the blob's SHA
+   * 5) Create a new commit that points to the new tree
+   * 6) Update the staging branch reference to the new commit
+   * 
+   * ...Yeah it's long I know
+   * @param {String} fileName
+   * @param {String} content 
+   */
   async create(fileName, content) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const blobEndpoint = `${this.baseBlobEndpoint}`
+      const refEndpoint = `${this.baseRefEndpoint}/heads/staging`
 
       let params = {
-        "message": `Create file: ${fileName}`,
         "content": content,
-        "branch": "staging",
+        "encoding": "base64",
       }
-  
-      const resp = await axios.put(endpoint, params, {
+
+      const blobResp = await axios.post(blobEndpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
         }
       })
 
-      return { sha: resp.data.content.sha }
+      // SHA of newly created blob
+      const blobSha = blobResp.data.sha
+
+      // Retrieve SHA of latest commit from `staging` branch
+      const refResp = await axios.get(refEndpoint)
+      const currentCommitSha = refResp.data.object.sha
+  
+      const commitEndpoint = `${this.baseCommitEndpoint}/${currentCommitSha}`
+
+      // Retrieve SHA of tree that the latest commit is pointing to
+      const commitResp = await axios.get(commitEndpoint)
+      const treeSha = commitResp.data.tree.sha
+
+      // Create new tree with a file pointing to the created blob
+      const newTreeResp = await axios.post(this.baseTreeEndpoint, {
+        "base_tree" : treeSha,
+        "tree" : [
+          {
+            path : `images/${fileName}`,
+            mode : "100644",
+            type : "blob",
+            sha : blobSha
+          }
+        ]
+      }, {
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json"
+        }
+      })
+
+      const newTreeSha = newTreeResp.data.sha
+
+      /**
+       * When creating a new commit, it needs to do 3 things:
+       * 1) Point to the previous commit
+       * 2) Point to a tree
+       * 3) Have a message
+       */
+      const newCommitResp = await axios.post(this.baseCommitEndpoint, {
+        message: `Add image: ${fileName}`,
+        tree: newTreeSha,
+        parents: [currentCommitSha]
+      },{
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json"
+        }
+      })
+
+      const newCommitSha = newCommitResp.data.sha
+
+      /**
+       * The `staging` branch reference will now point
+       * to `newCommitSha` instead of `currentCommitSha`
+       */
+      const newRefResp = await axios.patch(refEndpoint, {
+        sha : newCommitSha
+      }, {
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json"
+        }
+      })
+     
+
     } catch (err) {
       throw err
     }

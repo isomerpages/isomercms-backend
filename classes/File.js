@@ -216,4 +216,14 @@ class HomepageType {
   }
 }
 
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }
+class MenuType {
+  constructor() {
+    this.folderName = '_data/'
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+
+module.exports = { File, MenuType, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }

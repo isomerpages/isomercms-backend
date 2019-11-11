@@ -14,6 +14,11 @@ class File {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
+    this.branchRef = "staging"
+  }
+
+  setBranchRef(branchRef) {
+    this.branchRef = branchRef
   }
 
   setFileType(fileType) {
@@ -59,7 +64,7 @@ class File {
       let params = {
         "message": `Create file: ${fileName}`,
         "content": content,
-        "branch": "staging",
+        "branch": `${this.branchRef}`,
       }
   
       const resp = await axios.put(endpoint, params, {
@@ -81,6 +86,9 @@ class File {
 
       const resp = await axios.get(endpoint, {
         validateStatus: validateStatus,
+        params: {
+          ref: `${this.branchRef}`
+        },
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
@@ -104,7 +112,7 @@ class File {
       let params = {
         "message": `Update file: ${fileName}`,
         "content": content,
-        "branch": "staging",
+        "branch": `${this.branchRef}`,
         "sha": sha
       }
   
@@ -127,7 +135,7 @@ class File {
 
       let params = {
         "message": `Delete file: ${fileName}`,
-        "branch": "staging",
+        "branch":`${this.branchRef}`,
         "sha": sha
       }
   

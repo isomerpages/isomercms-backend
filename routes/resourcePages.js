@@ -14,9 +14,10 @@ router.get('/:siteName/resources/:resourceName', async function(req, res, next) 
     const { siteName, resourceName } = req.params
 
     // TO-DO: Verify that resource exists
-
+    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const resourceRoomName = await ResourceRoomInstance.get()
     const IsomerFile = new File(access_token, siteName)
-    const resourcePageType = new ResourcePageType(resourceName)
+    const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
     IsomerFile.setFileType(resourcePageType)
     const resourcePages = await IsomerFile.list()
 

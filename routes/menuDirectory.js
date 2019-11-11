@@ -59,7 +59,16 @@ router.get('/:siteName/tree', async function(req, res, next) {
               return accumulator
             }
 
-            if (accumulator.length === 0 || accumulator[accumulator.length - 1].type !== "thirdnav") {
+            /**
+             * Once the code reaches this point, the `collectionPage` is not
+             * of type `collection-page` and is a `thirdnav-page`
+             * This then checks if a new thirdnav object is to be created where the thirdnav-pages
+             * will then be stored
+             */
+            if (accumulator.length === 0 ||
+              accumulator[accumulator.length - 1].type !== "thirdnav" || /* If last index does not have a thirdnav pushed  in */
+              accumulator[accumulator.length - 1].title !== collectionPage.thirdnav) { /* If the collectionPage thirdnav-page should belong to a new thirdnav object */
+
               accumulator.push({
                 title: collectionPage.thirdnav,
                 type: "thirdnav",
@@ -73,8 +82,9 @@ router.get('/:siteName/tree', async function(req, res, next) {
 
           return {
             type: 'collection',
+            title: navItem.title,
+            collection: navItem.collection,
             children,
-            title: navItem.collection
           }
         } else if (navItem.resource_room) {
           return {

@@ -84,6 +84,8 @@ components:
           type: array
           items:
             type: string
+        resourceRoomName:
+          type: string
     MenuListResponse:
       properties:
         menus:

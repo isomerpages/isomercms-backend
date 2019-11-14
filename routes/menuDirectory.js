@@ -8,6 +8,7 @@ const _ = require('lodash')
 const Bluebird = require('bluebird')
 
 const { PageType, File, CollectionPageType, MenuType } = require('../classes/File')
+const { deslugifyCollectionPage } = require('../utils/utils')
 
 // Read tree of directory
 router.get('/:siteName/tree', async function(req, res, next) {
@@ -43,9 +44,11 @@ router.get('/:siteName/tree', async function(req, res, next) {
             path: encodeURIComponent(new PageType().getFolderName() + fileName)
           }
         } else if (item.collection) {
+          console.log(item)
           return {
             type: 'collection',
-            title: item.collection
+            title: item.title,
+            collection: item.collection,
           }
         } else if (item.resource_room) {
           return {
@@ -67,7 +70,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
       directory = await Bluebird.map(directory, async item => {
         if (item.type === 'collection') {
           const CollectionFile = new File(access_token, siteName)
-          const collectionPageType = new CollectionPageType(item.title)
+          const collectionPageType = new CollectionPageType(item.collection)
           CollectionFile.setFileType(collectionPageType)
           let collectionPages = await CollectionFile.list()
 
@@ -99,7 +102,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
               accumulator.push({
                  path: collectionPage.path,
                  type: 'collection-page',
-                 title: collectionPage.fileName // we need to properly deslugify the file name
+                 title: deslugifyCollectionPage(collectionPage.fileName)
               }) 
               return accumulator
             }
@@ -121,7 +124,11 @@ router.get('/:siteName/tree', async function(req, res, next) {
              * meant to be part of the last thirdnav in `accumulator`
              */
             const lastSubCollectionIndex = accumulator.length - 1
-            accumulator[lastSubCollectionIndex].children.push({path: collectionPage.path, title: collectionPage.fileName, type: 'thirdnav-page'})
+            accumulator[lastSubCollectionIndex].children.push({
+              path: collectionPage.path,
+              title: deslugifyCollectionPage(collectionPage.fileName),
+              type: 'thirdnav-page',
+            })
             
             return accumulator
           }, [])

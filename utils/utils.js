@@ -9,6 +9,17 @@ function deslugifyCollectionPage(collectionPageName) {
     .join(' '); // join it back together
 }
 
+/** 
+ * A function to deslugify a collection's name
+*/
+function deslugifyCollectionName(collectionName) {
+  return collectionName
+    .split('-')
+    .map((string) => string.charAt(0).toUpperCase() + string.slice(1)) // capitalize first letter
+    .join(' '); // join it back together
+}
+
 module.exports = {
   deslugifyCollectionPage,
+  deslugifyCollectionName,
 }

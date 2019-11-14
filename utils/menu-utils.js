@@ -4,15 +4,32 @@ const base64 = require('base-64')
 const { File, CollectionPageType } = require('../classes/File')
 const { deslugifyCollectionPage } = require('./utils')
 
+// this takes an object and helps to aggregate it to the menu object
+// depending on whether it is a collection or not
+const pageAggregator = async (item, access_token, siteName) => {
+  // handle collection objects
+  if (item.type === 'collection') {
+    // handle unlinked pages collection separately
+    if (item.title === 'Unlinked Pages') {
+      // unlinkedPages doesn't require a CollectionFile
+      return thirdNavAggregator(item.collectionPages, undefined, item)
+    }
+
+    // list all pages in the collection
+    const CollectionFile = new File(access_token, siteName)
+    const collectionPageType = new CollectionPageType(item.collection)
+    CollectionFile.setFileType(collectionPageType)
+    const collectionPages = await CollectionFile.list()
+    return thirdNavAggregator(collectionPages, CollectionFile, item)
+  }
+
+  // handle the rest (resources)
+  return item
+}
+
 // this takes a collection and returns an object that contains
 // all the items in the collection
-const collectionPageAggregator = async (item, access_token, siteName) => {
-  // list all pages in the collection
-  const CollectionFile = new File(access_token, siteName)
-  const collectionPageType = new CollectionPageType(item.collection)
-  CollectionFile.setFileType(collectionPageType)
-  const collectionPages = await CollectionFile.list()
-
+const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
   /**
    * Within the listed collection pages, we need to group them up
    * into their respective thirdnav groups
@@ -81,5 +98,6 @@ const collectionPageAggregator = async (item, access_token, siteName) => {
 }
 
 module.exports = {
-  collectionPageAggregator,
+  pageAggregator,
+  thirdNavAggregator,
 }

@@ -10,7 +10,7 @@ const Bluebird = require('bluebird')
 const { PageType, File, CollectionPageType, MenuType } = require('../classes/File')
 const { Collection } = require('../classes/Collection')
 const { ResourceRoom } = require('../classes/ResourceRoom')
-const { collectionPageAggregator } = require('../utils/menu-utils')
+const { pageAggregator } = require('../utils/menu-utils')
 const { deslugifyCollectionName } = require('../utils/utils')
 
 // Read tree of directory
@@ -90,11 +90,8 @@ router.get('/:siteName/tree', async function(req, res, next) {
        * relevant `collection-page`(s) & groups them up into
        * `thirdnav` groups when necessary
        */
-      directory = await Bluebird.map(directory, async item => {
-        if (item.type === 'collection') {
-          return collectionPageAggregator(item, access_token, siteName)
-        }
-        return item
+      directory = await Bluebird.map(directory, async (item) => {
+        return pageAggregator(item, access_token, siteName)
       })
 
       // check whether simple pages are linked in the navigation bar
@@ -110,24 +107,25 @@ router.get('/:siteName/tree', async function(req, res, next) {
       } else {
         unlinkedPages = pages
       }
+
+      let unlinkedArr = [{
+        type: 'collection',
+        title: 'Unlinked Pages',
+        collectionPages: unlinkedPages,
+      }]
       
       // add directory and unlinkedPages to response since they must both exist
       Object.assign(response, {
         directory,
-        unlinked: {
-          unlinkedPages,
-        },
       })
 
       // check whether resources are linked in the navigation bar
       // if they are not linked, include resources in the unlinked section
       if (!navHasResources) {
         const resourceRoomName = await(new ResourceRoom(access_token, siteName)).get()
-        Object.assign(response.unlinked, {
-          resourceRoom: {
-            type: 'resource room',
-            title: resourceRoomName,
-          },
+        unlinkedArr.push({
+          type: 'resource room',
+          title: resourceRoomName,
         })
       }
 
@@ -144,19 +142,20 @@ router.get('/:siteName/tree', async function(req, res, next) {
           title: deslugifyCollectionName(collection), // convert collection name into title
           collection,
         }))
-
-        // go through the whole process of generating a directory
-        unlinkedCollections = await Bluebird.map(unlinkedCollections, async item => (
-          collectionPageAggregator(item, access_token, siteName)
-        ))
-  
-        unlinkedCollections.forEach((collection) => {
-          Object.assign(response.unlinked, {
-            [collection.title]: collection,
-          })
-        })
+        
+        // add these collections to the array of unlinked objects
+        unlinkedArr.push(...unlinkedCollections)
       }
+
+      // run the unlinked array through the same process as we did with directory
+      unlinkedArr = await Bluebird.map(unlinkedArr, async (item) => {
+        return pageAggregator(item, access_token, siteName)
+      })
       
+      Object.assign(response, {
+        unlinked: unlinkedArr,
+      })
+
       res.status(200).json(response)
     } catch (err) {
       console.log(err)

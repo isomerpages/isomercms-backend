@@ -102,7 +102,12 @@ router.get('/:siteName/tree', async function(req, res, next) {
         const pages = await IsomerPageFile.list()
 
         // get the list of pages which are not linked in the navigation bar
-        const linkedPages = directory.filter(item => item.type === 'page')
+        const linkedPages = directory
+                              .filter(item => item.type === 'page')
+                              .map(item => ({
+                                path: item.path,
+                                fileName: item.path.split('%2F')[1],
+                              }))
         unlinkedPages = _.differenceBy(pages, linkedPages, 'fileName') // THIS IS WRONG
       } else {
         unlinkedPages = pages

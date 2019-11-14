@@ -20,8 +20,8 @@ router.get('/:siteName/tree', async function(req, res, next) {
       const IsomerNavFile = new File(access_token, siteName)
       IsomerNavFile.setFileType(new MenuType())
       const { content } = await IsomerNavFile.read('navigation.yml')
-      const navItems = yaml.safeLoad(base64.decode(content)).links
 
+      const navItems = yaml.safeLoad(base64.decode(content)).links;
       /**
        * This tokenizes the items loaded from `navigation.yml`
        * into these types:
@@ -35,10 +35,11 @@ router.get('/:siteName/tree', async function(req, res, next) {
         // For now it defaults to a simple page
         // TODO know if it links to an external page
         if (item.url) {
+          // this is the wrong way to do it, we should look at how exactly the titles are slugified
           const fileName = item.title.toLowerCase().replace(" ", "-") + ".md"
           return {
             type: 'page',
-            title: fileName,
+            title: item.title,
             path: encodeURIComponent(new PageType().getFolderName() + fileName)
           }
         } else if (item.collection) {
@@ -82,7 +83,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
              * after their group number (i.e `c` in `2c-filename.md`)
              * Link: https://isomer.gov.sg/documentation/navbar-and-footer/creating-3rd-level-nav/
              */
-            const identifier = collectionPage.fileName.split("-")[0]
+            const identifier = collectionPage.fileName.split('-')[0]
             const isThirdnav = /[0-9][a-z]/.test(identifier)
 
             /**
@@ -95,16 +96,24 @@ router.get('/:siteName/tree', async function(req, res, next) {
         
             // Treat it as a normal collection page and proceed to the next item
             if (!isThirdnav) {
-               accumulator.push({path: collectionPage.path, type: 'collection-page', title: collectionPage.fileName}) 
-               return accumulator
+              accumulator.push({
+                 path: collectionPage.path,
+                 type: 'collection-page',
+                 title: collectionPage.fileName // we need to properly deslugify the file name
+              }) 
+              return accumulator
             }
         
             // Create a thirdnav object
             if (canCreateThirdnav) {
-              // Retrieve third_nav_title from frontmatter in the thirdnav page
-              const { content } = await CollectionFile.read(collectionPage.fileName)
+              // Retrieve third_nav_title from frontmatter in the thirdnav page - this is slow
+              const { content } = await CollectionFile.read(collectionPage.fileName);
               const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1]);
-              accumulator.push({ title: `${frontMatter.third_nav_title}`, type: "thirdnav", children: [] })
+              accumulator.push({
+                title: `${frontMatter.third_nav_title}`,
+                type: "thirdnav",
+                children: []
+              })
             }
         
             /**

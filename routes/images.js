@@ -4,6 +4,7 @@ const jwtUtils = require('../utils/jwt-utils')
 
 // Import classes 
 const { File, ImageType } = require('../classes/File.js')
+const { ImageFile } = require('../classes/ImageFile.js')
 
 // List images
 router.get('/:siteName/images', async function(req, res, next) {
@@ -54,10 +55,9 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
 
     const { siteName, imageName } = req.params
 
-    const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
-    IsomerFile.setFileType(imageType)
-    const { sha, content } = await IsomerFile.read(imageName)
+    const IsomerImageFile = new ImageFile(access_token, siteName)
+    IsomerImageFile.setFileTypeToImage()
+    const { sha, content } = await IsomerImageFile.read(imageName)
 
     // TO-DO:
     // Validate content

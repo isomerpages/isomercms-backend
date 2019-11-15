@@ -130,7 +130,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
         const resourceRoomName = await(new ResourceRoom(access_token, siteName)).get()
         unlinkedArr.push({
           type: 'resource room',
-          title: resourceRoomName,
+          title: deslugifyCollectionName(resourceRoomName),
         })
       }
 

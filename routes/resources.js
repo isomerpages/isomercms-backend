@@ -19,7 +19,7 @@ router.get('/:siteName/resources', async function(req, res, next) {
     const IsomerResource = new Resource(access_token, siteName)
     const resources = await IsomerResource.list(resourceRoomName)
 
-    res.status(200).json({ resources })
+    res.status(200).json({ resourceRoomName, resources })
   } catch (err) {
     console.log(err)
   }

@@ -20,37 +20,42 @@ router.get('/', async function(req, res, next) {
     const { oauthtoken } = req.cookies
     let { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    const filePath = `https://api.github.com/user/repos`
-    const resp = await axios.get(filePath, {
-      headers: {
-        Authorization: `token ${access_token}`,
-        "Content-Type": "application/json"
-      }
-    })
+    // variable to store user repos
+    const userRepos = []
+    let pageCount = 1
 
-    // Ensures that only sites that are Isomer and have a staging branch are shown
-    const siteNames = _.compact(await Bluebird.map(resp.data, async(site) => {
-      // The full_name is in the format of <GITHUB_ORG_NAME>/<GITHUB_REPO_NAME>
-      // isIsomerSite checks the <GITHUB_ORG_NAME> and makes sure that it matches the Isomer org name
-      const isIsomerSite = site.full_name.split('/')[0] === ISOMER_GITHUB_ORG_NAME
-      const branchEndpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${site.name}/branches/staging`
-      const branchResp = await axios.get(branchEndpoint, {
-        validateStatus: validateStatus,
+    // variable to track pagination of user's repos in case user has more than 100
+    let hasNextPage = true;
+    const filePath = `https://api.github.com/user/repos?per_page=100&page=`;
+
+    while (hasNextPage) {
+      const resp = await axios.get(filePath + pageCount, {
         headers: {
           Authorization: `token ${access_token}`,
           "Content-Type": "application/json"
         }
       })
-      const hasStagingBranch = (branchResp.status === 200)
-      
-      if (isIsomerSite && hasStagingBranch) {
-        return site.name
-      } else {
-        return undefined
-      }
-    }))
 
-    res.status(200).json({ siteNames })
+      // keep only isomer repos
+      const isomerRepos = resp.data.reduce((acc, repo) => {
+        if (repo.full_name.split('/')[0] === ISOMER_GITHUB_ORG_NAME) {
+          return acc.concat(repo.full_name)
+        }
+      }, [])
+
+      // push to results
+      userRepos.concat(...isomerRepos)
+
+      // keeps going if there is a next page
+      hasNextPage = resp.headers.link.includes('next')
+
+      // increment the pageCount
+      ++pageCount
+    }
+
+    console.log(userRepos.length)
+
+    res.status(200).json({ userRepos })
   } catch (err) {
     console.log(err)
   }

@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, PageType } = require('../classes/File.js')
 
 // List pages
-router.get('/:siteName/pages', async function(req, res, next) {
+router.get('/:siteName/pages', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -25,7 +25,7 @@ router.get('/:siteName/pages', async function(req, res, next) {
 })
 
 // Create new page
-router.post('/:siteName/pages', async function(req, res, next) {
+router.post('/:siteName/pages', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -42,7 +42,6 @@ router.post('/:siteName/pages', async function(req, res, next) {
     const { sha } = await IsomerFile.create(pageName, content)
 
     res.status(200).json({ pageName, content, sha })
-
   } catch (err) {
     console.log(err)
     res.status(400).json(err)
@@ -50,7 +49,7 @@ router.post('/:siteName/pages', async function(req, res, next) {
 })
 
 // Read page
-router.get('/:siteName/pages/:pageName', async function(req, res, next) {
+router.get('/:siteName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -66,7 +65,6 @@ router.get('/:siteName/pages/:pageName', async function(req, res, next) {
     // Validate content
 
     res.status(200).json({ pageName, sha, content })
-
   } catch (err) {
     console.log(err)
     res.status(400).json(err)
@@ -74,7 +72,7 @@ router.get('/:siteName/pages/:pageName', async function(req, res, next) {
 })
 
 // Update page
-router.post('/:siteName/pages/:pageName', async function(req, res, next) {
+router.post('/:siteName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -98,7 +96,7 @@ router.post('/:siteName/pages/:pageName', async function(req, res, next) {
 })
 
 // Delete page
-router.delete('/:siteName/pages/:pageName', async function(req, res, next) {
+router.delete('/:siteName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -119,7 +117,7 @@ router.delete('/:siteName/pages/:pageName', async function(req, res, next) {
 })
 
 // Rename page
-router.post('/:siteName/pages/:pageName/rename/:newPageName', async function(req, res, next) {
+router.post('/:siteName/pages/:pageName/rename/:newPageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -137,11 +135,10 @@ router.post('/:siteName/pages/:pageName/rename/:newPageName', async function(req
     await IsomerFile.delete(pageName, sha)
 
     res.status(200).json({ pageName: newPageName, content, sha: newSha })
-
   } catch (err) {
     console.log(err)
     res.status(400).json(err)
   }
 })
 
-module.exports = router;
+module.exports = router

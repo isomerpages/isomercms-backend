@@ -1,15 +1,15 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, HomepageType } = require('../classes/File.js')
 
 // Constants
 const HOMEPAGE_INDEX_PATH = '' // Empty string
 
 // Read homepage index file
-router.get('/:siteName/homepage', async function(req, res, next) {
+router.get('/:siteName/homepage', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -17,7 +17,7 @@ router.get('/:siteName/homepage', async function(req, res, next) {
     const { siteName } = req.params
 
     const IsomerFile = new File(access_token, siteName)
-    const homepageType =  new HomepageType()
+    const homepageType = new HomepageType()
     IsomerFile.setFileType(homepageType)
     const { sha, content } = await IsomerFile.read(HOMEPAGE_INDEX_PATH)
 
@@ -31,7 +31,7 @@ router.get('/:siteName/homepage', async function(req, res, next) {
 })
 
 // Update homepage index file
-router.post('/:siteName/homepage', async function(req, res, next) {
+router.post('/:siteName/homepage', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -43,7 +43,7 @@ router.post('/:siteName/homepage', async function(req, res, next) {
     // Validate content
 
     const IsomerFile = new File(access_token, siteName)
-    const homepageType =  new HomepageType()
+    const homepageType = new HomepageType()
     IsomerFile.setFileType(homepageType)
     const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, content, sha)
 
@@ -53,4 +53,4 @@ router.post('/:siteName/homepage', async function(req, res, next) {
   }
 })
 
-module.exports = router;
+module.exports = router

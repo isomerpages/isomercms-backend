@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, DocumentType } = require('../classes/File.js')
 
 // List documents
-router.get('/:siteName/documents', async function(req, res, next) {
+router.get('/:siteName/documents', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -16,7 +16,7 @@ router.get('/:siteName/documents', async function(req, res, next) {
     const documentType = new DocumentType()
     IsomerFile.setFileType(documentType)
     const documents = await IsomerFile.list()
-    
+
     res.status(200).json({ documents })
   } catch (err) {
     console.log(err)
@@ -24,7 +24,7 @@ router.get('/:siteName/documents', async function(req, res, next) {
 })
 
 // Create new document
-router.post('/:siteName/documents', async function(req, res, next) {
+router.post('/:siteName/documents', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -47,7 +47,7 @@ router.post('/:siteName/documents', async function(req, res, next) {
 })
 
 // Read document
-router.get('/:siteName/documents/:documentName', async function(req, res, next) {
+router.get('/:siteName/documents/:documentName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -69,7 +69,7 @@ router.get('/:siteName/documents/:documentName', async function(req, res, next) 
 })
 
 // Update document
-router.post('/:siteName/documents/:documentName', async function(req, res, next) {
+router.post('/:siteName/documents/:documentName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -84,7 +84,7 @@ router.post('/:siteName/documents/:documentName', async function(req, res, next)
     const documentType = new DocumentType()
     IsomerFile.setFileType(documentType)
     const { newSha } = await IsomerFile.update(documentName, content, sha)
-    
+
     res.status(200).json({ documentName, content, sha: newSha })
   } catch (err) {
     console.log(err)
@@ -92,7 +92,7 @@ router.post('/:siteName/documents/:documentName', async function(req, res, next)
 })
 
 // Delete document
-router.delete('/:siteName/documents/:documentName', async function(req, res, next) {
+router.delete('/:siteName/documents/:documentName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -112,7 +112,7 @@ router.delete('/:siteName/documents/:documentName', async function(req, res, nex
 })
 
 // Rename document
-router.post('/:siteName/documents/:documentName/rename/:newDocumentName', async function(req, res, next) {
+router.post('/:siteName/documents/:documentName/rename/:newDocumentName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -135,5 +135,4 @@ router.post('/:siteName/documents/:documentName/rename/:newDocumentName', async 
   }
 })
 
-
-module.exports = router;
+module.exports = router

@@ -1,7 +1,7 @@
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
-// Import classes 
+// Import classes
 const { File, ResourceType, ResourcePageType } = require('../classes/File.js')
 const { Directory, ResourceRoomType } = require('../classes/Directory.js')
 
@@ -10,12 +10,12 @@ const RESOURCE_INDEX_PATH = 'index.html'
 const RESOURCE_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzLWFsdAp0aXRsZTogUmVzb3VyY2UgUm9vbQotLS0='
 
 class Resource {
-  constructor(accessToken, siteName) {
+  constructor (accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
   }
 
-  async list(resourceRoomName) {
+  async list (resourceRoomName) {
     try {
       const IsomerDir = new Directory(this.accessToken, this.siteName)
       const resourceRoomType = new ResourceRoomType(resourceRoomName)
@@ -26,7 +26,7 @@ class Resource {
     }
   }
 
-  async create(resourceRoomName, resourceName) {
+  async create (resourceRoomName, resourceName) {
     try {
       // Create an index file in the resource folder
       const IsomerFile = new File(this.accessToken, this.siteName)
@@ -38,7 +38,7 @@ class Resource {
     }
   }
 
-  async rename(resourceRoomName, resourceName, newResourceRoomName, newResourceName) {
+  async rename (resourceRoomName, resourceName, newResourceRoomName, newResourceName) {
     try {
       // Delete old index file in old resource
       const OldIsomerIndexFile = new File(this.accessToken, this.siteName)
@@ -67,7 +67,7 @@ class Resource {
 
       if (_.isEmpty(resourcePages)) return
 
-      await Bluebird.each(resourcePages, async(resourcePage) => {
+      await Bluebird.each(resourcePages, async (resourcePage) => {
         // 2. Create new resourcePages in newResource
         const { content, sha } = await OldIsomerFile.read(resourcePage.fileName)
         await NewIsomerFile.create(resourcePage.fileName, content)
@@ -79,7 +79,7 @@ class Resource {
     }
   }
 
-  async delete(resourceRoomName, resourceName) {
+  async delete (resourceRoomName, resourceName) {
     try {
       // Delete index file in resource
       const IsomerIndexFile = new File(this.accessToken, this.siteName)
@@ -98,7 +98,7 @@ class Resource {
       if (_.isEmpty(resourcePages)) return
 
       // 2. Delete all resourcePages in resource
-      await Bluebird.each(resourcePages, async(resourcePage) => {
+      await Bluebird.each(resourcePages, async (resourcePage) => {
         const { sha } = await IsomerFile.read(resourcePage.fileName)
         return IsomerFile.delete(resourcePage.fileName, sha)
       })

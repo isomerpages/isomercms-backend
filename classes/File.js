@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('axios')
 const _ = require('lodash')
 
 const GITHUB_ORG_NAME = 'isomerpages'
@@ -10,23 +10,23 @@ const validateStatus = (status) => {
 }
 
 class File {
-  constructor(accessToken, siteName) {
+  constructor (accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
-    this.branchRef = "staging"
+    this.branchRef = 'staging'
   }
 
-  setBranchRef(branchRef) {
+  setBranchRef (branchRef) {
     this.branchRef = branchRef
   }
 
-  setFileType(fileType) {
+  setFileType (fileType) {
     const folderPath = fileType.getFolderName()
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${folderPath}`
   }
 
-  async list() {
+  async list () {
     try {
       const endpoint = `${this.baseEndpoint}`
 
@@ -34,44 +34,44 @@ class File {
         validateStatus: validateStatus,
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       })
-  
+
       if (resp.status !== 200) return {}
-  
+
       const files = resp.data.map(object => {
-        const pathNameSplit = object.path.split("/")
+        const pathNameSplit = object.path.split('/')
         const fileName = pathNameSplit[pathNameSplit.length - 1]
         if (object.type === 'file') {
           return {
             path: encodeURIComponent(object.path),
-            fileName
+            fileName,
           }
         }
       })
-  
+
       return _.compact(files)
     } catch (err) {
       throw err
     }
   }
 
-  async create(fileName, content) {
+  async create (fileName, content) {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      let params = {
-        "message": `Create file: ${fileName}`,
-        "content": content,
-        "branch": `${this.branchRef}`,
+      const params = {
+        message: `Create file: ${fileName}`,
+        content: content,
+        branch: `${this.branchRef}`,
       }
-  
+
       const resp = await axios.put(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       return { sha: resp.data.content.sha }
@@ -80,47 +80,47 @@ class File {
     }
   }
 
-  async read(fileName) {
+  async read (fileName) {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
       const resp = await axios.get(endpoint, {
         validateStatus: validateStatus,
         params: {
-          ref: `${this.branchRef}`
+          ref: `${this.branchRef}`,
         },
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       })
-  
-      if (resp.status === 404) throw new Error ('Page does not exist')
-  
+
+      if (resp.status === 404) throw new Error('Page does not exist')
+
       const { content, sha } = resp.data
-  
+
       return { content, sha }
     } catch (err) {
       throw err
     }
   }
 
-  async update(fileName, content, sha) {
+  async update (fileName, content, sha) {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      let params = {
-        "message": `Update file: ${fileName}`,
-        "content": content,
-        "branch": `${this.branchRef}`,
-        "sha": sha
+      const params = {
+        message: `Update file: ${fileName}`,
+        content: content,
+        branch: `${this.branchRef}`,
+        sha: sha,
       }
-  
+
       const resp = await axios.put(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       return { newSha: resp.data.commit.sha }
@@ -133,18 +133,18 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      let params = {
-        "message": `Delete file: ${fileName}`,
-        "branch":`${this.branchRef}`,
-        "sha": sha
+      const params = {
+        message: `Delete file: ${fileName}`,
+        branch: `${this.branchRef}`,
+        sha: sha,
       }
-  
+
       await axios.delete(endpoint, {
         data: params,
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       })
     } catch (err) {
       throw err
@@ -153,85 +153,93 @@ class File {
 }
 
 class PageType {
-  constructor() {
+  constructor () {
     this.folderName = 'pages/'
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class CollectionPageType {
-  constructor(collectionName) {
+  constructor (collectionName) {
     this.folderName = `_${collectionName}/`
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class ResourcePageType {
-  constructor(resourceRoomName, resourceName) {
+  constructor (resourceRoomName, resourceName) {
     this.folderName = `${resourceRoomName}/${resourceName}/_posts/`
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class ResourceType {
-  constructor(resourceRoomName) {
+  constructor (resourceRoomName) {
     this.folderName = `${resourceRoomName}/`
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class ImageType {
-  constructor() {
+  constructor () {
     this.folderName = 'images/'
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class DocumentType {
-  constructor() {
+  constructor () {
     this.folderName = 'files/'
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class DataType {
-  constructor() {
+  constructor () {
     this.folderName = '_data/'
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class HomepageType {
-  constructor() {
+  constructor () {
     this.folderName = 'index.md'
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
 
 class MenuType {
-  constructor() {
+  constructor () {
     this.folderName = '_data/'
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }
-
 
 module.exports = { File, MenuType, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }

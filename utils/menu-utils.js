@@ -58,20 +58,20 @@ const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
       accumulator.push({
         path: collectionPage.path,
         type: 'collection-page',
-        title: deslugifyCollectionPage(collectionPage.fileName)
-      }) 
+        title: deslugifyCollectionPage(collectionPage.fileName),
+      })
       return accumulator
     }
 
     // Create a thirdnav object
     if (canCreateThirdnav) {
       // Retrieve third_nav_title from frontmatter in the thirdnav page - this is slow
-      const { content } = await CollectionFile.read(collectionPage.fileName);
-      const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1]);
+      const { content } = await CollectionFile.read(collectionPage.fileName)
+      const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1])
       accumulator.push({
         title: `${frontMatter.third_nav_title}`,
-        type: "thirdnav",
-        children: []
+        type: 'thirdnav',
+        children: [],
       })
     }
 
@@ -85,7 +85,7 @@ const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
       title: deslugifyCollectionPage(collectionPage.fileName),
       type: 'thirdnav-page',
     })
-    
+
     return accumulator
   }, [])
 

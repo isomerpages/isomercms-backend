@@ -1,23 +1,23 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, ImageType } = require('../classes/File.js')
 const { ImageFile } = require('../classes/ImageFile.js')
 
 // List images
-router.get('/:siteName/images', async function(req, res, next) {
+router.get('/:siteName/images', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
     const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
+    const imageType = new ImageType()
     IsomerFile.setFileType(imageType)
     const images = await IsomerFile.list()
-    
+
     res.status(200).json({ images })
   } catch (err) {
     console.log(err)
@@ -25,7 +25,7 @@ router.get('/:siteName/images', async function(req, res, next) {
 })
 
 // Create new image
-router.post('/:siteName/images', async function(req, res, next) {
+router.post('/:siteName/images', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -37,7 +37,7 @@ router.post('/:siteName/images', async function(req, res, next) {
     // Validate imageName and content
 
     const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
+    const imageType = new ImageType()
     IsomerFile.setFileType(imageType)
     const { sha } = await IsomerFile.create(imageName, content)
 
@@ -48,7 +48,7 @@ router.post('/:siteName/images', async function(req, res, next) {
 })
 
 // Read image
-router.get('/:siteName/images/:imageName', async function(req, res, next) {
+router.get('/:siteName/images/:imageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -69,7 +69,7 @@ router.get('/:siteName/images/:imageName', async function(req, res, next) {
 })
 
 // Update image
-router.post('/:siteName/images/:imageName', async function(req, res, next) {
+router.post('/:siteName/images/:imageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -81,7 +81,7 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
     // Validate imageName and content
 
     const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
+    const imageType = new ImageType()
     IsomerFile.setFileType(imageType)
     const { newSha } = await IsomerFile.update(imageName, content, sha)
 
@@ -92,7 +92,7 @@ router.post('/:siteName/images/:imageName', async function(req, res, next) {
 })
 
 // Delete image
-router.delete('/:siteName/images/:imageName', async function(req, res, next) {
+router.delete('/:siteName/images/:imageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -101,7 +101,7 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
     const { sha } = req.body
 
     const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
+    const imageType = new ImageType()
     IsomerFile.setFileType(imageType)
     await IsomerFile.delete(imageName, sha)
 
@@ -112,7 +112,7 @@ router.delete('/:siteName/images/:imageName', async function(req, res, next) {
 })
 
 // Rename image
-router.post('/:siteName/images/:imageName/rename/:newImageName', async function(req, res, next) {
+router.post('/:siteName/images/:imageName/rename/:newImageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -126,7 +126,7 @@ router.post('/:siteName/images/:imageName/rename/:newImageName', async function(
     // Create new file with name ${newImageName}
 
     const IsomerFile = new File(access_token, siteName)
-    const imageType =  new ImageType()
+    const imageType = new ImageType()
     IsomerFile.setFileType(imageType)
     const { sha: newSha } = await IsomerFile.create(newImageName, content)
     await IsomerFile.delete(imageName, sha)
@@ -137,4 +137,4 @@ router.post('/:siteName/images/:imageName/rename/:newImageName', async function(
   }
 })
 
-module.exports = router;
+module.exports = router

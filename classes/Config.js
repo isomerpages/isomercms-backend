@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('axios')
 
 const GITHUB_ORG_NAME = 'isomerpages'
 
@@ -9,12 +9,12 @@ const validateStatus = (status) => {
 }
 
 class Config {
-  constructor(accessToken, siteName) {
+  constructor (accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
   }
 
-  async read() {
+  async read () {
     try {
     	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
 
@@ -22,38 +22,37 @@ class Config {
 	      validateStatus: validateStatus,
 	      headers: {
 	        Authorization: `token ${this.accessToken}`,
-	        "Content-Type": "application/json"
-	      }
+	        'Content-Type': 'application/json',
+	      },
 	    })
 
-	    if (resp.status === 404) throw new Error ('Page does not exist')
+	    if (resp.status === 404) throw new Error('Page does not exist')
 
 	    const { content, sha } = resp.data
 
 	    return { content, sha }
-
     } catch (err) {
       throw err
     }
   }
 
-  async update(newContent, sha) {
+  async update (newContent, sha) {
     try {
     	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
 
-		let params = {
-			"message": 'Edit config',
-			"content": newContent,
-			"branch": "staging",
-			"sha": sha
-		}
+      const params = {
+        message: 'Edit config',
+        content: newContent,
+        branch: 'staging',
+        sha: sha,
+      }
 
-		await axios.put(endpoint, params, {
-			headers: {
+      await axios.put(endpoint, params, {
+        headers: {
 			  Authorization: `token ${this.accessToken}`,
-			  "Content-Type": "application/json"
-			}
-		})
+			  'Content-Type': 'application/json',
+        },
+      })
     } catch (err) {
       throw err
     }

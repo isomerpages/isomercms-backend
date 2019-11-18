@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { Collection } = require('../classes/Collection.js')
 
 // List collections
-router.get('/:siteName/collections', async function(req, res, next) {
+router.get('/:siteName/collections', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -16,14 +16,13 @@ router.get('/:siteName/collections', async function(req, res, next) {
     const collections = await IsomerCollection.list()
 
     res.status(200).json({ collections })
-
   } catch (err) {
     console.log(err)
   }
 })
 
 // Create new collection
-router.post('/:siteName/collections', async function(req, res, next) {
+router.post('/:siteName/collections', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -40,7 +39,7 @@ router.post('/:siteName/collections', async function(req, res, next) {
 })
 
 // Delete collection
-router.delete('/:siteName/collections/:collectionName', async function(req, res, next) {
+router.delete('/:siteName/collections/:collectionName', async function (req, res, next) {
   try {
     // TO-DO: Verify that collection exists
 
@@ -59,7 +58,7 @@ router.delete('/:siteName/collections/:collectionName', async function(req, res,
 })
 
 // Rename collection
-router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', async function(req, res, next) {
+router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', async function (req, res, next) {
   try {
     // TO-DO: Verify that collection exists
 
@@ -77,4 +76,4 @@ router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', 
   }
 })
 
-module.exports = router;
+module.exports = router

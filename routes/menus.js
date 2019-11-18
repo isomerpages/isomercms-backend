@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, DataType } = require('../classes/File.js')
 
 // List menus
-router.get('/:siteName/menus', async function(req, res, next) {
+router.get('/:siteName/menus', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -14,7 +14,7 @@ router.get('/:siteName/menus', async function(req, res, next) {
     const { siteName } = req.params
 
     const IsomerFile = new File(access_token, siteName)
-    const dataType =  new DataType()
+    const dataType = new DataType()
     IsomerFile.setFileType(dataType)
     const menus = await IsomerFile.list()
 
@@ -28,7 +28,7 @@ router.get('/:siteName/menus', async function(req, res, next) {
 })
 
 // Read menu
-router.get('/:siteName/menus/:menuName', async function(req, res, next) {
+router.get('/:siteName/menus/:menuName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -36,7 +36,7 @@ router.get('/:siteName/menus/:menuName', async function(req, res, next) {
     const { siteName, menuName } = req.params
 
     const IsomerFile = new File(access_token, siteName)
-    const dataType =  new DataType()
+    const dataType = new DataType()
     IsomerFile.setFileType(dataType)
     const { sha, content } = await IsomerFile.read(menuName)
 
@@ -50,7 +50,7 @@ router.get('/:siteName/menus/:menuName', async function(req, res, next) {
 })
 
 // Update menu
-router.post('/:siteName/menus/:menuName', async function(req, res, next) {
+router.post('/:siteName/menus/:menuName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -62,7 +62,7 @@ router.post('/:siteName/menus/:menuName', async function(req, res, next) {
     // Validate menuName and content
 
     const IsomerFile = new File(access_token, siteName)
-    const dataType =  new DataType()
+    const dataType = new DataType()
     IsomerFile.setFileType(dataType)
     const { newSha } = await IsomerFile.update(menuName, content, sha)
 
@@ -72,4 +72,4 @@ router.post('/:siteName/menus/:menuName', async function(req, res, next) {
   }
 })
 
-module.exports = router;
+module.exports = router

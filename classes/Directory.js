@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('axios')
 const _ = require('lodash')
 
 const GITHUB_ORG_NAME = 'isomerpages'
@@ -10,20 +10,20 @@ const validateStatus = (status) => {
 }
 
 class Directory {
-  constructor(accessToken, siteName) {
+  constructor (accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
     this.dirType = null
   }
 
-  setDirType(dirType) {
+  setDirType (dirType) {
     this.dirType = dirType
     const folderPath = dirType.getFolderName()
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${folderPath}`
   }
 
-  async list() {
+  async list () {
     try {
       const endpoint = `${this.baseEndpoint}`
 
@@ -31,23 +31,23 @@ class Directory {
         validateStatus: validateStatus,
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       })
-  
+
       if (resp.status !== 200) return {}
-  
+
       const directories = resp.data.map(object => {
-        const pathNameSplit = object.path.split("/")
+        const pathNameSplit = object.path.split('/')
         const dirName = pathNameSplit[pathNameSplit.length - 1]
         if (object.type === 'dir') {
           return {
             path: encodeURIComponent(object.path),
-            dirName
+            dirName,
           }
         }
       })
-  
+
       if (this.dirType instanceof ResourceRoomType) {
         return _.compact(directories)
       }
@@ -60,10 +60,11 @@ class Directory {
 }
 
 class ResourceRoomType {
-  constructor(resourceRoomName) {
+  constructor (resourceRoomName) {
     this.folderName = `${resourceRoomName}`
   }
-  getFolderName() {
+
+  getFolderName () {
     return this.folderName
   }
 }

@@ -23,5 +23,14 @@
     "morgan": "~1.9.1",
     "query-string": "^6.8.3",
     "uuid": "^3.3.3"
+  },
+  "devDependencies": {
+    "@opengovsg/eslint-config-opengovsg": "^1.0.6",
+    "eslint": "^6.6.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
   }
 }

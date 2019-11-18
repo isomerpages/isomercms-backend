@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
 const { Resource } = require('../classes/Resource.js')
 
 // List resources
-router.get('/:siteName/resources', async function(req, res, next) {
+router.get('/:siteName/resources', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -26,7 +26,7 @@ router.get('/:siteName/resources', async function(req, res, next) {
 })
 
 // Create new resource
-router.post('/:siteName/resources', async function(req, res, next) {
+router.post('/:siteName/resources', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -47,7 +47,7 @@ router.post('/:siteName/resources', async function(req, res, next) {
 })
 
 // Delete resource
-router.delete('/:siteName/resources/:resourceName', async function(req, res, next) {
+router.delete('/:siteName/resources/:resourceName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -66,7 +66,7 @@ router.delete('/:siteName/resources/:resourceName', async function(req, res, nex
 })
 
 // Rename resource
-router.post('/:siteName/resources/:resourceName/rename/:newResourceName', async function(req, res, next) {
+router.post('/:siteName/resources/:resourceName/rename/:newResourceName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -84,4 +84,4 @@ router.post('/:siteName/resources/:resourceName/rename/:newResourceName', async 
   }
 })
 
-module.exports = router;
+module.exports = router

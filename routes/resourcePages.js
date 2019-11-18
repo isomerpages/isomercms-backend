@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, ResourcePageType } = require('../classes/File.js')
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
 
 // List pages in resource
-router.get('/:siteName/resources/:resourceName', async function(req, res, next) {
+router.get('/:siteName/resources/:resourceName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -28,7 +28,7 @@ router.get('/:siteName/resources/:resourceName', async function(req, res, next) 
 })
 
 // Create new page in resource
-router.post('/:siteName/resources/:resourceName/pages', async function(req, res, next) {
+router.post('/:siteName/resources/:resourceName/pages', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -53,7 +53,7 @@ router.post('/:siteName/resources/:resourceName/pages', async function(req, res,
 })
 
 // Read page in resource
-router.get('/:siteName/resources/:resourceName/pages/:pageName', async function(req, res, next) {
+router.get('/:siteName/resources/:resourceName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -77,7 +77,7 @@ router.get('/:siteName/resources/:resourceName/pages/:pageName', async function(
 })
 
 // Update page in resource
-router.post('/:siteName/resources/:resourceName/pages/:pageName', async function(req, res, next) {
+router.post('/:siteName/resources/:resourceName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -102,7 +102,7 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName', async function
 })
 
 // Delete page in resource
-router.delete('/:siteName/resources/:resourceName/pages/:pageName', async function(req, res, next) {
+router.delete('/:siteName/resources/:resourceName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -124,7 +124,7 @@ router.delete('/:siteName/resources/:resourceName/pages/:pageName', async functi
 })
 
 // Rename page in resource
-router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', async function(req, res, next) {
+router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -152,4 +152,4 @@ router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageN
   }
 })
 
-module.exports = router;
+module.exports = router

@@ -13,12 +13,12 @@ const RESOURCE_ROOM_INDEX_PATH = 'index.html'
 const RESOURCE_ROOM_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzCnRpdGxlOiBSZXNvdXJjZSBSb29tCi0tLQ=='
 
 class ResourceRoom {
-  constructor(accessToken, siteName) {
+  constructor (accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
   }
 
-  async get() {
+  async get () {
     try {
     	const config = new Config(this.accessToken, this.siteName)
     	const { content } = await config.read()
@@ -30,7 +30,7 @@ class ResourceRoom {
     }
   }
 
-  async create(resourceRoom) {
+  async create (resourceRoom) {
     try {
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
@@ -54,7 +54,7 @@ class ResourceRoom {
     }
   }
 
-  async rename(newResourceRoom) {
+  async rename (newResourceRoom) {
     try {
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
@@ -83,7 +83,7 @@ class ResourceRoom {
       await IsomerIndexFile.delete(RESOURCE_ROOM_INDEX_PATH, deleteSha)
 
       if (!_.isEmpty(resources)) {
-        await Bluebird.map(resources, async(resource) => {
+        await Bluebird.map(resources, async (resource) => {
           return IsomerResource.rename(resourceRoomName, resource.dirName, newResourceRoom, resource.dirName)
         })
       }
@@ -96,7 +96,7 @@ class ResourceRoom {
     }
   }
 
-  async delete() {
+  async delete () {
     try {
     	// Delete collection in config
     	const config = new Config(this.accessToken, this.siteName)
@@ -115,7 +115,7 @@ class ResourceRoom {
       const resources = await IsomerResource.list(resourceRoomName)
 
       if (!_.isEmpty(resources)) {
-        await Bluebird.map(resources, async(resource) => {
+        await Bluebird.map(resources, async (resource) => {
           return IsomerResource.delete(resourceRoomName, resource.dirName)
         })
       }
@@ -128,7 +128,6 @@ class ResourceRoom {
       await IsomerIndexFile.delete(RESOURCE_ROOM_INDEX_PATH, deleteSha)
 
       await config.update(newContent, sha)
-
     } catch (err) {
       throw err
     }

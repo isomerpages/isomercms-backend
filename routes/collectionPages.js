@@ -1,12 +1,12 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const jwtUtils = require('../utils/jwt-utils')
 
-// Import classes 
+// Import classes
 const { File, CollectionPageType } = require('../classes/File.js')
 
 // List pages in collection
-router.get('/:siteName/collections/:collectionName', async function(req, res, next) {
+router.get('/:siteName/collections/:collectionName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -20,14 +20,13 @@ router.get('/:siteName/collections/:collectionName', async function(req, res, ne
     const collectionPages = await IsomerFile.list()
 
     res.status(200).json({ collectionPages })
-
   } catch (err) {
     console.log(err)
   }
 })
 
 // Create new page in collection
-router.post('/:siteName/collections/:collectionName/pages', async function(req, res, next) {
+router.post('/:siteName/collections/:collectionName/pages', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -51,7 +50,7 @@ router.post('/:siteName/collections/:collectionName/pages', async function(req, 
 })
 
 // Read page in collection
-router.get('/:siteName/collections/:collectionName/pages/:pageName', async function(req, res, next) {
+router.get('/:siteName/collections/:collectionName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -73,7 +72,7 @@ router.get('/:siteName/collections/:collectionName/pages/:pageName', async funct
 })
 
 // Update page in collection
-router.post('/:siteName/collections/:collectionName/pages/:pageName', async function(req, res, next) {
+router.post('/:siteName/collections/:collectionName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -95,9 +94,8 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName', async func
   }
 })
 
-
 // Delete page in collection
-router.delete('/:siteName/collections/:collectionName/pages/:pageName', async function(req, res, next) {
+router.delete('/:siteName/collections/:collectionName/pages/:pageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -120,7 +118,7 @@ router.delete('/:siteName/collections/:collectionName/pages/:pageName', async fu
 })
 
 // Rename page in collection
-router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', async function(req, res, next) {
+router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', async function (req, res, next) {
   try {
     const { oauthtoken } = req.cookies
     const { access_token } = jwtUtils.verifyToken(oauthtoken)
@@ -146,4 +144,4 @@ router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newP
   }
 })
 
-module.exports = router;
+module.exports = router

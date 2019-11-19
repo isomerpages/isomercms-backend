@@ -39,8 +39,9 @@ router.get('/', async function(req, res, next) {
 
       // Filter for isomer repos
       const isomerRepos = resp.data.reduce((acc, repo) => {
-        if (repo.full_name.split('/')[0] === ISOMER_GITHUB_ORG_NAME) {
-          return acc.concat(repo.full_name)
+        const fullName = repo.full_name.split('/')
+        if (fullName[0] === ISOMER_GITHUB_ORG_NAME) {
+          return acc.concat(fullName[1])
         }
         return acc
       }, [])

@@ -42,7 +42,7 @@ const timeDiff = (lastUpdated) => {
     case 1: 
       return 'Updated 1 day ago';
     default:
-      return `Updated ${numDaysago} days ago` 
+      return `Updated ${numDaysAgo} days ago` 
   }
 }
 

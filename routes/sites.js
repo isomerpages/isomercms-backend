@@ -6,23 +6,23 @@ const _ = require('lodash')
 const Bluebird = require('bluebird')
 
 const ISOMER_GITHUB_ORG_NAME = 'isomerpages'
-const ISOMER_ADMIN_REPOS = [
-  'isomercms-backend',
-  'isomercms-frontend',
-  'isomer-redirection',
-  'isomerpages-template',
-  'isomer-conversion-scripts',
-  'isomer-wysiwyg',
-  'isomer-slackbot',
-  'isomer-tooling',
-  'generate-site',
-  'travisci-scripts',
-  'recommender-train',
-  'editor',
-  'ci-test',
-  'infra',
-  'markdown-helper',
-]
+// const ISOMER_ADMIN_REPOS = [
+//   'isomercms-backend',
+//   'isomercms-frontend',
+//   'isomer-redirection',
+//   'isomerpages-template',
+//   'isomer-conversion-scripts',
+//   'isomer-wysiwyg',
+//   'isomer-slackbot',
+//   'isomer-tooling',
+//   'generate-site',
+//   'travisci-scripts',
+//   'recommender-train',
+//   'editor',
+//   'ci-test',
+//   'infra',
+//   'markdown-helper',
+// ]
 
 // validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
 // This is necessary because GitHub returns a 404 status when the file does not exist.
@@ -72,11 +72,13 @@ router.get('/', async function(req, res, next) {
 
       // Filter for isomer repos
       const isomerRepos = resp.data.reduce((acc, repo) => {
-        // get the last updated time
-        const test = timeDiff(repo.updated_at)
-        const fullName = repo.full_name.split('/')
+        const { updated_at, full_name } = repo
+        const fullName = full_name.split('/')
         if (fullName[0] === ISOMER_GITHUB_ORG_NAME) {
-          return acc.concat(fullName[1])
+          return acc.concat({
+            repoName: fullName[1],
+            lastUpdated: timeDiff(updated_at),
+          })
         }
         return acc
       }, [])
@@ -88,7 +90,7 @@ router.get('/', async function(req, res, next) {
     }
     
     // Remove Isomer admin repositories from this list
-    siteNames = _.difference(siteNames, ISOMER_ADMIN_REPOS)
+    // siteNames = _.difference(siteNames, ISOMER_ADMIN_REPOS)
     
     res.status(200).json({ siteNames })
   } catch (err) {

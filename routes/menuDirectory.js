@@ -7,7 +7,7 @@ const base64 = require('base-64')
 const _ = require('lodash')
 const Bluebird = require('bluebird')
 
-const { PageType, File, CollectionPageType, MenuType } = require('../classes/File')
+const { PageType, File, CollectionPageType, DataType } = require('../classes/File')
 const { Collection } = require('../classes/Collection')
 const { ResourceRoom } = require('../classes/ResourceRoom')
 const { pageAggregator } = require('../utils/menu-utils')
@@ -35,7 +35,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
   
       // read the _data/navigation.yml file
       const IsomerNavFile = new File(access_token, siteName)
-      IsomerNavFile.setFileType(new MenuType())
+      IsomerNavFile.setFileType(new DataType())
       const { content } = await IsomerNavFile.read('navigation.yml')
 
       const navItems = yaml.safeLoad(base64.decode(content)).links;

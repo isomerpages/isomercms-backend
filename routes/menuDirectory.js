@@ -136,7 +136,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
 
 
       // get the list of collections which are not linked in the navigation bar
-      const repoCollections = await (new Collection(access_token, siteName)).list()
+      const repoCollections = await new Collection(access_token, siteName).list()
       unlinkedCollections = _.differenceBy(repoCollections, collections)
 
       // if there are any unlinked collections, generate the same data structure
@@ -153,12 +153,12 @@ router.get('/:siteName/tree', async function(req, res, next) {
       }
 
       // run the unlinked array through the same process as we did with directory
-      unlinkedArr = await Bluebird.map(unlinkedArr, async (item) => {
+      const unlinked = await Bluebird.map(unlinkedArr, async (item) => {
         return pageAggregator(item, access_token, siteName)
       })
       
       Object.assign(response, {
-        unlinked: unlinkedArr,
+        unlinked,
       })
 
       res.status(200).json(response)

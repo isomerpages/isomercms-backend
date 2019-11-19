@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
+const Bluebird = require('bluebird')
 
-// Import classes 
-const { File, PageType } = require('../classes/File.js')
+// Import classes
+const { File, PageType, CollectionPageType } = require('../classes/File.js')
+const { Collection } = require('../classes/Collection.js')
 
 // List pages
 router.get('/:siteName/pages', async function(req, res, next) {
@@ -15,9 +17,32 @@ router.get('/:siteName/pages', async function(req, res, next) {
     const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
     IsomerFile.setFileType(pageType)
-    const pages = await IsomerFile.list()
+    let simplePages = await IsomerFile.list()
+    simplePages = simplePages.map(simplePage => {
+      return {
+        ...simplePage,
+        type: 'simple-page'
+      }
+    })
 
-    res.status(200).json({ pages })
+    const IsomerCollection = new Collection(access_token, siteName)
+    const collections = await IsomerCollection.list()
+
+    const allCollectionPages = await Bluebird.reduce(collections, async (accumulator, collectionName) => {
+      const CollectionFile = new File(access_token, siteName)
+      const collectionPageType = new CollectionPageType(collectionName)
+      CollectionFile.setFileType(collectionPageType)
+      const collectionPages = await Bluebird.map(await CollectionFile.list(), (item) => {
+        return {
+          ...item,
+          type: 'collection',
+          collectionName
+        }
+      })
+      return accumulator.concat(collectionPages)
+    }, [])
+
+    res.status(200).json({ pages: simplePages.concat(allCollectionPages) })
   } catch (err) {
     console.log(err)
     res.status(400).json(err)

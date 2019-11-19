@@ -23,10 +23,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
       // variable to store unlinked pages
       let unlinkedPages;
       // variable to keep track of collections in the nav bar
-      let collections = [];
-      let unlinkedCollections = [];
-      // object to accumulate what to send back as response
-      let response = {};
+      const collections = [];
 
       // verify credentials
       const { oauthtoken } = req.cookies
@@ -48,7 +45,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
        * `resource room` - Resource room pages
        */
 
-      let directory = navItems.map(item => {
+      const directoryCollections = navItems.map(item => {
         // If navigation item has a url it links to a simple page / external page
         // For now it defaults to a simple page
         // TODO know if it links to an external page
@@ -84,12 +81,12 @@ router.get('/:siteName/tree', async function(req, res, next) {
       });
 
       /**
-       * This function then loops through the directory item
+       * This function then loops through the directoryCollections item
        * to find items of type `collection`, and retrieve the 
        * relevant `collection-page`(s) & groups them up into
        * `thirdnav` groups when necessary
        */
-      directory = await Bluebird.map(directory, async (item) => {
+      const directory = await Bluebird.map(directoryCollections, async (item) => {
         return pageAggregator(item, access_token, siteName)
       })
 
@@ -112,16 +109,11 @@ router.get('/:siteName/tree', async function(req, res, next) {
         unlinkedPages = pages
       }
 
-      let unlinkedArr = [{
+      const unlinkedArr = [{
         type: 'collection',
         title: 'Unlinked Pages',
         collectionPages: unlinkedPages,
       }]
-      
-      // add directory and unlinkedPages to response since they must both exist
-      Object.assign(response, {
-        directory,
-      })
 
       // check whether resources are linked in the navigation bar
       // if they are not linked, include resources in the unlinked section
@@ -136,19 +128,19 @@ router.get('/:siteName/tree', async function(req, res, next) {
 
       // get the list of collections which are not linked in the navigation bar
       const repoCollections = await new Collection(access_token, siteName).list()
-      unlinkedCollections = _.differenceBy(repoCollections, collections)
+      const unlinkedCollections = _.differenceBy(repoCollections, collections)
 
       // if there are any unlinked collections, generate the same data structure
       if (unlinkedCollections.length > 0) {
         // create an array of collection items to mimic what is received from navigation.yml
-        unlinkedCollections = unlinkedCollections.map((collection) => ({
+        const unlinkedCollectionsToAdd = unlinkedCollections.map((collection) => ({
           type: 'collection',
           title: deslugifyCollectionName(collection), // convert collection name into title
           collection,
         }))
         
         // add these collections to the array of unlinked objects
-        unlinkedArr.push(...unlinkedCollections)
+        unlinkedArr.push(...unlinkedCollectionsToAdd)
       }
 
       // run the unlinked array through the same process as we did with directory
@@ -156,9 +148,10 @@ router.get('/:siteName/tree', async function(req, res, next) {
         return pageAggregator(item, access_token, siteName)
       })
       
-      Object.assign(response, {
+      const response = {
+        directory,
         unlinked,
-      })
+      }
 
       res.status(200).json(response)
     } catch (err) {

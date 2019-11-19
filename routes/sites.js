@@ -30,6 +30,22 @@ const validateStatus = (status) => {
   return (status >= 200 && status < 300) || status === 404
 }
 
+// timeDiff tells us when a repo was last updated in terms of days (for e.g. 2 days ago,
+// today)
+const timeDiff = (lastUpdated) => {
+  const gapInUpdate =  new Date().getTime() - new Date(lastUpdated).getTime()
+  const numDaysAgo = Math.floor(gapInUpdate/(1000 * 60 * 60 * 24))
+  // return a message for number of days ago repo was last updated
+  switch (numDaysAgo) {
+    case 0:
+      return 'Updated today';
+    case 1: 
+      return 'Updated 1 day ago';
+    default:
+      return `Updated ${numDaysago} days ago` 
+  }
+}
+
 /* Returns a list of all sites (repos) that the user has access to on Isomer. */
 // TO-DO: Paginate properly
 router.get('/', async function(req, res, next) {
@@ -56,6 +72,8 @@ router.get('/', async function(req, res, next) {
 
       // Filter for isomer repos
       const isomerRepos = resp.data.reduce((acc, repo) => {
+        // get the last updated time
+        const test = timeDiff(repo.updated_at)
         const fullName = repo.full_name.split('/')
         if (fullName[0] === ISOMER_GITHUB_ORG_NAME) {
           return acc.concat(fullName[1])

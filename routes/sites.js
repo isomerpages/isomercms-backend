@@ -20,14 +20,15 @@ router.get('/', async function(req, res, next) {
     const { oauthtoken } = req.cookies
     let { access_token } = jwtUtils.verifyToken(oauthtoken)
 
-    // variable to store user repos
-    const userRepos = []
-    let pageCount = 1
+    // Variable to store user repos
+    let siteNames = []
 
-    // variable to track pagination of user's repos in case user has more than 100
+    // Variables to track pagination of user's repos in case user has more than 100
+    let pageCount = 1
     let hasNextPage = true;
     const filePath = `https://api.github.com/user/repos?per_page=100&page=`;
 
+    // Loop through all user repos
     while (hasNextPage) {
       const resp = await axios.get(filePath + pageCount, {
         headers: {
@@ -36,26 +37,21 @@ router.get('/', async function(req, res, next) {
         }
       })
 
-      // keep only isomer repos
+      // Filter for isomer repos
       const isomerRepos = resp.data.reduce((acc, repo) => {
         if (repo.full_name.split('/')[0] === ISOMER_GITHUB_ORG_NAME) {
           return acc.concat(repo.full_name)
         }
+        return acc
       }, [])
 
-      // push to results
-      userRepos.concat(...isomerRepos)
 
-      // keeps going if there is a next page
+      siteNames= siteNames.concat(isomerRepos)
       hasNextPage = resp.headers.link.includes('next')
-
-      // increment the pageCount
       ++pageCount
     }
 
-    console.log(userRepos.length)
-
-    res.status(200).json({ userRepos })
+    res.status(200).json({ siteNames })
   } catch (err) {
     console.log(err)
   }

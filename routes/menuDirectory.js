@@ -56,7 +56,6 @@ router.get('/:siteName/tree', async function(req, res, next) {
           // navigation contains simple page
           navHasSimplePage = true;
 
-          // this is the wrong way to do it, we should look at how exactly the titles are slugified
           const fileName = item.title.toLowerCase().replace(" ", "-") + ".md"
           return {
             type: 'page',
@@ -108,7 +107,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
                                 path: item.path,
                                 fileName: item.path.split('%2F')[1],
                               }))
-        unlinkedPages = _.differenceBy(pages, linkedPages, 'fileName') // THIS IS WRONG
+        unlinkedPages = _.differenceBy(pages, linkedPages, 'fileName')
       } else {
         unlinkedPages = pages
       }
@@ -127,7 +126,7 @@ router.get('/:siteName/tree', async function(req, res, next) {
       // check whether resources are linked in the navigation bar
       // if they are not linked, include resources in the unlinked section
       if (!navHasResources) {
-        const resourceRoomName = await(new ResourceRoom(access_token, siteName)).get()
+        const resourceRoomName = await new ResourceRoom(access_token, siteName).get()
         unlinkedArr.push({
           type: 'resource room',
           title: deslugifyCollectionName(resourceRoomName),

@@ -87,7 +87,7 @@ class File {
       const resp = await axios.get(endpoint, {
         validateStatus: validateStatus,
         params: {
-          ref: `${this.branchRef}`
+          ref: this.branchRef
         },
         headers: {
           Authorization: `token ${this.accessToken}`,

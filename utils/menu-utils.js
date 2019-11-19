@@ -43,7 +43,7 @@ const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
      * Link: https://isomer.gov.sg/documentation/navbar-and-footer/creating-3rd-level-nav/
      */
     const identifier = collectionPage.fileName.split('-')[0]
-    const isThirdnav = /[0-9][a-z]/.test(identifier)
+    const isThirdnav = /^[0-9]+[a-z]/.test(identifier)
 
     /**
      * `canCreateThirdnav` is to check if the filename indicates
@@ -51,7 +51,7 @@ const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
      * (i.e `1a-filename.md` is the start of a new thirdnav
      * while `1b-filename.md` is not)
      */
-    const canCreateThirdnav = /[0-9]a$/.test(identifier)
+    const canCreateThirdnav = /^[0-9]+a$/.test(identifier)
 
     // Treat it as a normal collection page and proceed to the next item
     if (!isThirdnav) {
@@ -69,7 +69,7 @@ const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
       const { content } = await CollectionFile.read(collectionPage.fileName);
       const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1]);
       accumulator.push({
-        title: `${frontMatter.third_nav_title}`,
+        title: frontMatter.third_nav_title,
         type: "thirdnav",
         children: []
       })

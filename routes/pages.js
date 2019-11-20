@@ -7,7 +7,7 @@ const Bluebird = require('bluebird')
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js')
 
-// List pages
+// List both simple pages and collection pages
 router.get('/:siteName/pages', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
@@ -18,6 +18,7 @@ router.get('/:siteName/pages', async function(req, res, next) {
     const pageType = new PageType()
     IsomerFile.setFileType(pageType)
     let simplePages = await IsomerFile.list()
+    // After listing all simple pages, they're tagged for the frontend
     simplePages = simplePages.map(simplePage => {
       return {
         ...simplePage,
@@ -26,13 +27,21 @@ router.get('/:siteName/pages', async function(req, res, next) {
     })
 
     const IsomerCollection = new Collection(access_token, siteName)
-    const collections = await IsomerCollection.list()
+    const collections = await IsomerCollection.list() //lists out all collections
 
+    /**
+     * This `reduce` function will:
+     * 1) Iterate through the collections
+     *  a) Lists all the collection pages with `CollectionPage.list()`
+     *  b) Map it to tag it with type `collection` [for frontend to know]
+     * 2) Concatenate it into the `accumulator`
+     * This then returns a flattened array of all collections pages from all collections (`allCollectionPages`)
+     */
     const allCollectionPages = await Bluebird.reduce(collections, async (accumulator, collectionName) => {
-      const CollectionFile = new File(access_token, siteName)
+      const CollectionPage = new File(access_token, siteName)
       const collectionPageType = new CollectionPageType(collectionName)
-      CollectionFile.setFileType(collectionPageType)
-      const collectionPages = await Bluebird.map(await CollectionFile.list(), (item) => {
+      CollectionPage.setFileType(collectionPageType)
+      const collectionPages = await Bluebird.map(await CollectionPage.list(), (item) => {
         return {
           ...item,
           type: 'collection',
@@ -42,7 +51,8 @@ router.get('/:siteName/pages', async function(req, res, next) {
       return accumulator.concat(collectionPages)
     }, [])
 
-    res.status(200).json({ pages: simplePages.concat(allCollectionPages) })
+    const pages = simplePages.concat(allCollectionPages); // collection pages are then concatenated with simple pages
+    res.status(200).json({ pages })
   } catch (err) {
     console.log(err)
     res.status(400).json(err)

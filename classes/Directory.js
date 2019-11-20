@@ -14,9 +14,11 @@ class Directory {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
+    this.dirType = null
   }
 
   setDirType(dirType) {
+    this.dirType = dirType
     const folderPath = dirType.getFolderName()
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${folderPath}`
   }
@@ -46,7 +48,11 @@ class Directory {
         }
       })
   
-      return _.compact(directories)
+      if (this.dirType instanceof ResourceRoomType) {
+        return _.compact(directories)
+      }
+
+      return resp.data
     } catch (err) {
       throw err
     }

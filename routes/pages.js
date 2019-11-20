@@ -41,14 +41,10 @@ router.get('/:siteName/pages', async function(req, res, next) {
       const CollectionPage = new File(access_token, siteName)
       const collectionPageType = new CollectionPageType(collectionName)
       CollectionPage.setFileType(collectionPageType)
-      const collectionPages = await Bluebird.map(await CollectionPage.list(), (item) => {
-        return {
-          ...item,
-          type: 'collection',
-          collectionName
-        }
-      })
-      return accumulator.concat(collectionPages)
+      const collectionPages = await CollectionPage.list()
+      const collectionPagesWithType = collectionPages.map((item) => ({ ...item, type: 'collection', collectionName })) // tagged with type for frontend
+
+      return accumulator.concat(collectionPagesWithType)
     }, [])
 
     const pages = simplePages.concat(allCollectionPages); // collection pages are then concatenated with simple pages

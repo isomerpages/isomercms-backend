@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
+const Bluebird = require('bluebird')
 
-// Import classes 
-const { File, PageType } = require('../classes/File.js')
+// Import classes
+const { File, PageType, CollectionPageType } = require('../classes/File.js')
+const { Collection } = require('../classes/Collection.js')
 
-// List pages
+// List both simple pages and collection pages
 router.get('/:siteName/pages', async function(req, res, next) {
   try {
     const { oauthtoken } = req.cookies
@@ -15,8 +17,37 @@ router.get('/:siteName/pages', async function(req, res, next) {
     const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
     IsomerFile.setFileType(pageType)
-    const pages = await IsomerFile.list()
+    let simplePages = await IsomerFile.list()
+    // After listing all simple pages, they're tagged for the frontend
+    simplePages = simplePages.map(simplePage => {
+      return {
+        ...simplePage,
+        type: 'simple-page'
+      }
+    })
 
+    const IsomerCollection = new Collection(access_token, siteName)
+    const collections = await IsomerCollection.list() //lists out all collections
+
+    /**
+     * This `reduce` function will:
+     * 1) Iterate through the collections
+     *  a) Lists all the collection pages with `CollectionPage.list()`
+     *  b) Map it to tag it with type `collection` [for frontend to know]
+     * 2) Concatenate it into the `accumulator`
+     * This then returns a flattened array of all collections pages from all collections (`allCollectionPages`)
+     */
+    const allCollectionPages = await Bluebird.reduce(collections, async (accumulator, collectionName) => {
+      const CollectionPage = new File(access_token, siteName)
+      const collectionPageType = new CollectionPageType(collectionName)
+      CollectionPage.setFileType(collectionPageType)
+      const collectionPages = await CollectionPage.list()
+      const collectionPagesWithType = collectionPages.map((item) => ({ ...item, type: 'collection', collectionName })) // tagged with type for frontend
+
+      return accumulator.concat(collectionPagesWithType)
+    }, [])
+
+    const pages = simplePages.concat(allCollectionPages); // collection pages are then concatenated with simple pages
     res.status(200).json({ pages })
   } catch (err) {
     console.log(err)

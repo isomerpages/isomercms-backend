@@ -30,7 +30,7 @@ class Tree {
     async getLinkedPages() {
         try {
             // Obtain items in the navigation bar
-            const IsomerNavFile = new File(this.access_token, this.siteName)
+            const IsomerNavFile = new File(this.accessToken, this.siteName)
             IsomerNavFile.setFileType(new DataType())
             const { content } = await IsomerNavFile.read('navigation.yml')
             const navItems = yaml.safeLoad(base64.decode(content)).links;
@@ -56,7 +56,7 @@ class Tree {
                     url: item.url,
                 }
                 } else if (item.collection) {
-                collections.push(item.collection)
+                this.collections.push(item.collection)
                 return {
                     type: 'collection',
                     title: item.title,
@@ -79,7 +79,7 @@ class Tree {
              * `thirdnav` groups when necessary
              */
             this.directory = await Bluebird.map(directoryCollections, async (item) => {
-                return pageAggregator(item, this.access_token, this.siteName)
+                return pageAggregator(item, this.accessToken, this.siteName)
             })
         } catch (err) {
           throw err
@@ -88,7 +88,7 @@ class Tree {
 
     async getUnlinkedPages() {
         // Get all files in pages folder in the repo
-        const IsomerPageFile = new File(this.access_token, this.siteName)
+        const IsomerPageFile = new File(this.accessToken, this.siteName)
         IsomerPageFile.setFileType(new PageType())
         const pages = await IsomerPageFile.list()
 
@@ -110,13 +110,13 @@ class Tree {
         const unlinkedArr = [{
             type: 'collection',
             title: 'Unlinked Pages',
-            collectionPages: unlinkedPages,
+            collectionPages: this.unlinkedPages,
           }]
 
         // Check if resources are linked in the navigation bar
         // If they are not linked, include resources in the unlinked section
         if (!this.navHasResources) {
-            const resourceRoomName = await new ResourceRoom(this.access_token, this.siteName).get()
+            const resourceRoomName = await new ResourceRoom(this.accessToken, this.siteName).get()
             unlinkedArr.push({
                 type: 'resource room',
                 title: deslugifyCollectionName(resourceRoomName),
@@ -124,8 +124,8 @@ class Tree {
         }
 
         // Get the list of collections which are not linked in the navigation bar
-        const repoCollections = await new Collection(this.access_token, this.siteName).list()
-        const unlinkedCollections = _.differenceBy(repoCollections, collections)
+        const repoCollections = await new Collection(this.accessToken, this.siteName).list()
+        const unlinkedCollections = _.differenceBy(repoCollections, this.collections)
 
         // If there are any unlinked collections, generate a similar data structure
         // as this.directory
@@ -143,7 +143,7 @@ class Tree {
 
         // run the unlinked array through the same process as we did with directory
         this.unlinked = await Bluebird.map(unlinkedArr, async (item) => {
-            return pageAggregator(item, this.access_token, this.siteName)
+            return pageAggregator(item, this.accessToken, this.siteName)
         })
     }
 }

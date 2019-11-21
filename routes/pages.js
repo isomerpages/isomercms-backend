@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwtUtils = require('../utils/jwt-utils')
 const Bluebird = require('bluebird')
+const _ = require('lodash')
 
 // Import classes
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
@@ -42,6 +43,9 @@ router.get('/:siteName/pages', async function(req, res, next) {
       const collectionPageType = new CollectionPageType(collectionName)
       CollectionPage.setFileType(collectionPageType)
       const collectionPages = await CollectionPage.list()
+      if (_.isEmpty(collectionPages)) {
+        return accumulator
+      }
       const collectionPagesWithType = collectionPages.map((item) => ({ ...item, type: 'collection', collectionName })) // tagged with type for frontend
 
       return accumulator.concat(collectionPagesWithType)

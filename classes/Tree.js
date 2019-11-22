@@ -47,27 +47,33 @@ class Tree {
                 // If navigation item has a url it links to a simple page / external page
                 // TODO - know if it links to an external page
                 if (item.url) {
-                this.navHasSimplePage = true;
-                const fileName = item.title.toLowerCase().replace(" ", "-") + ".md"
-                return {
-                    type: 'page',
-                    title: item.title,
-                    path: encodeURIComponent(new PageType().getFolderName() + fileName),
-                    url: item.url,
-                }
+                    this.navHasSimplePage = true;
+                    const fileName = item.title.toLowerCase().replace(" ", "-") + ".md"
+                    return {
+                        type: 'page',
+                        title: item.title,
+                        path: encodeURIComponent(new PageType().getFolderName() + fileName),
+                        url: item.url,
+                    }
                 } else if (item.collection) {
-                this.collections.push(item.collection)
-                return {
-                    type: 'collection',
-                    title: item.title,
-                    collection: item.collection,
-                }
+                    this.collections.push(item.collection)
+                    return {
+                        type: 'collection',
+                        title: item.title,
+                        collection: item.collection,
+                    }
                 } else if (item.resource_room) {
-                this.navHasResources = true
-                return {
-                    type: 'resource room',
-                    title: item.title,
-                }
+                    this.navHasResources = true
+                    return {
+                        type: 'resource room',
+                        title: item.title,
+                    }
+                } else if (item.sublinks) {
+                    return {
+                        type: 'falseCollection',
+                        title: item.title,
+                        children: item.sublinks.map((item) => (Object.assign(item, { type: 'page' }))),
+                    }
                 }
                 return item
             });

@@ -110,7 +110,7 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      let params = {
+      const params = {
         "message": `Update file: ${fileName}`,
         "content": content,
         "branch": BRANCH_REF,
@@ -134,7 +134,7 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      let params = {
+      const params = {
         "message": `Delete file: ${fileName}`,
         "branch": BRANCH_REF,
         "sha": sha

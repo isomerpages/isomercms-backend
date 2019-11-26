@@ -46,7 +46,7 @@ class Config {
     try {
     	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
 
-		let params = {
+		const params = {
 			"message": 'Edit config',
 			"content": newContent,
 			"branch": BRANCH_REF,

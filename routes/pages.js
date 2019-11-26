@@ -18,7 +18,7 @@ router.get('/:siteName/pages', async function(req, res, next) {
     const IsomerFile = new File(access_token, siteName)
     const pageType = new PageType()
     IsomerFile.setFileType(pageType)
-    let simplePages = await IsomerFile.list()
+    const simplePages = await IsomerFile.list()
     // After listing all simple pages, they're tagged for the frontend
     simplePages = simplePages.map(simplePage => {
       return {

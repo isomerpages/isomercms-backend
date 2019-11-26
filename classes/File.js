@@ -1,7 +1,8 @@
 const axios = require('axios');
 const _ = require('lodash')
 
-const GITHUB_ORG_NAME = 'isomerpages'
+const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const BRANCH_REF = process.env.BRANCH_REF
 
 // validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
 // This is necessary because GitHub returns a 404 status when the file does not exist.
@@ -14,11 +15,7 @@ class File {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
-    this.branchRef = 'staging'
-  }
-
-  setBranchRef(branchRef) {
-    this.branchRef = branchRef
+    this.branchRef = BRANCH_REF
   }
 
   setFileType(fileType) {
@@ -30,8 +27,12 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}`
 
-      const resp = await axios.get(endpoint, {
+      const params = {
         validateStatus: validateStatus,
+        "branch": this.branchRef,
+      }
+
+      const resp = await axios.get(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
@@ -61,7 +62,7 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      let params = {
+      const params = {
         "message": `Create file: ${fileName}`,
         "content": content,
         "branch": this.branchRef,
@@ -84,11 +85,12 @@ class File {
     try {
       const endpoint = `${this.baseEndpoint}${fileName}`
 
-      const resp = await axios.get(endpoint, {
+      const params = {
         validateStatus: validateStatus,
-        params: {
-          ref: this.branchRef
-        },
+        "branch": this.branchRef,
+      }
+
+      const resp = await axios.get(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"

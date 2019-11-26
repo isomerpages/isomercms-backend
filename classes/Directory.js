@@ -16,7 +16,6 @@ class Directory {
     this.siteName = siteName
     this.baseEndpoint = null
     this.dirType = null
-    this.branchRef = BRANCH_REF
   }
 
   setDirType(dirType) {
@@ -31,7 +30,7 @@ class Directory {
 
       const params = {
         validateStatus: validateStatus,
-        "branch": this.branchRef,
+        "ref": BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, params, {

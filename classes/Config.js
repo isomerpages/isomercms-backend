@@ -21,7 +21,7 @@ class Config {
 
 			const params = {
         validateStatus: validateStatus,
-        "branch": this.branchRef,
+        "ref": BRANCH_REF,
 			}
 			
 	    const resp = await axios.get(endpoint, params, {
@@ -49,7 +49,7 @@ class Config {
 		let params = {
 			"message": 'Edit config',
 			"content": newContent,
-			"branch": "staging",
+			"branch": BRANCH_REF,
 			"sha": sha
 		}
 

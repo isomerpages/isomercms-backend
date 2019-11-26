@@ -15,11 +15,12 @@ class File {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
+    this.folderPath = null
   }
 
   setFileType(fileType) {
-    const folderPath = fileType.getFolderName()
-    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${folderPath}`
+    this.folderPath = fileType.getFolderName()
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents${ this.folderPath ? '/' : '' }${this.folderPath}`
   }
 
   async list() {
@@ -59,7 +60,7 @@ class File {
 
   async create(fileName, content) {
     try {
-      const endpoint = `${this.baseEndpoint}${fileName}`
+      const endpoint = `${this.baseEndpoint}/${fileName}`
 
       const params = {
         "message": `Create file: ${fileName}`,
@@ -82,7 +83,7 @@ class File {
 
   async read(fileName) {
     try {
-      const endpoint = `${this.baseEndpoint}${fileName}`
+      const endpoint = `${this.baseEndpoint}/${fileName}`
 
       const params = {
         validateStatus: validateStatus,
@@ -108,7 +109,7 @@ class File {
 
   async update(fileName, content, sha) {
     try {
-      const endpoint = `${this.baseEndpoint}${fileName}`
+      const endpoint = `${this.baseEndpoint}/${fileName}`
 
       const params = {
         "message": `Update file: ${fileName}`,
@@ -132,7 +133,7 @@ class File {
 
   async delete (fileName, sha) {
     try {
-      const endpoint = `${this.baseEndpoint}${fileName}`
+      const endpoint = `${this.baseEndpoint}/${fileName}`
 
       const params = {
         "message": `Delete file: ${fileName}`,
@@ -155,7 +156,7 @@ class File {
 
 class PageType {
   constructor() {
-    this.folderName = 'pages/'
+    this.folderName = 'pages'
   }
   getFolderName() {
     return this.folderName
@@ -164,7 +165,7 @@ class PageType {
 
 class CollectionPageType {
   constructor(collectionName) {
-    this.folderName = `_${collectionName}/`
+    this.folderName = `_${collectionName}`
   }
   getFolderName() {
     return this.folderName
@@ -173,7 +174,7 @@ class CollectionPageType {
 
 class ResourcePageType {
   constructor(resourceRoomName, resourceName) {
-    this.folderName = `${resourceRoomName}/${resourceName}/_posts/`
+    this.folderName = `${resourceRoomName}/${resourceName}/_posts`
   }
   getFolderName() {
     return this.folderName
@@ -182,7 +183,7 @@ class ResourcePageType {
 
 class ResourceType {
   constructor(resourceRoomName) {
-    this.folderName = `${resourceRoomName}/`
+    this.folderName = `${resourceRoomName}`
   }
   getFolderName() {
     return this.folderName
@@ -191,7 +192,7 @@ class ResourceType {
 
 class ImageType {
   constructor() {
-    this.folderName = 'images/'
+    this.folderName = 'images'
   }
   getFolderName() {
     return this.folderName
@@ -200,7 +201,7 @@ class ImageType {
 
 class DocumentType {
   constructor() {
-    this.folderName = 'files/'
+    this.folderName = 'files'
   }
   getFolderName() {
     return this.folderName
@@ -209,7 +210,7 @@ class DocumentType {
 
 class DataType {
   constructor() {
-    this.folderName = '_data/'
+    this.folderName = '_data'
   }
   getFolderName() {
     return this.folderName
@@ -218,7 +219,7 @@ class DataType {
 
 class HomepageType {
   constructor() {
-    this.folderName = 'index.md'
+    this.folderName = ''
   }
   getFolderName() {
     return this.folderName

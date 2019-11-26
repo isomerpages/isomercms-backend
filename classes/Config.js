@@ -1,6 +1,7 @@
 const axios = require('axios');
 
-const GITHUB_ORG_NAME = 'isomerpages'
+const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const BRANCH_REF = process.env.BRANCH_REF
 
 // validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
 // This is necessary because GitHub returns a 404 status when the file does not exist.
@@ -18,8 +19,12 @@ class Config {
     try {
     	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
 
-	    const resp = await axios.get(endpoint, {
-	      validateStatus: validateStatus,
+			const params = {
+        validateStatus: validateStatus,
+        "branch": this.branchRef,
+			}
+			
+	    const resp = await axios.get(endpoint, params, {
 	      headers: {
 	        Authorization: `token ${this.accessToken}`,
 	        "Content-Type": "application/json"

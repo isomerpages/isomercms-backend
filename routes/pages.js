@@ -20,7 +20,7 @@ router.get('/:siteName/pages', async function(req, res, next) {
     IsomerFile.setFileType(pageType)
     const simplePages = await IsomerFile.list()
     // After listing all simple pages, they're tagged for the frontend
-    simplePages = simplePages.map(simplePage => {
+    const taggedSimplePages = simplePages.map(simplePage => {
       return {
         ...simplePage,
         type: 'simple-page'
@@ -51,7 +51,7 @@ router.get('/:siteName/pages', async function(req, res, next) {
       return accumulator.concat(collectionPagesWithType)
     }, [])
 
-    const pages = simplePages.concat(allCollectionPages); // collection pages are then concatenated with simple pages
+    const pages = taggedSimplePages.concat(allCollectionPages); // collection pages are then concatenated with simple pages
     res.status(200).json({ pages })
   } catch (err) {
     console.log(err)

@@ -67,7 +67,7 @@ class File {
         "branch": BRANCH_REF,
       }
   
-      const resp = await axios.put(endpoint, params, {
+      const resp = await axios.put(endpoint, { params }, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
@@ -89,7 +89,7 @@ class File {
         "ref": BRANCH_REF,
       }
 
-      const resp = await axios.get(endpoint, params, {
+      const resp = await axios.get(endpoint, { params }, {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
@@ -117,7 +117,7 @@ class File {
         "sha": sha
       }
   
-      const resp = await axios.put(endpoint, params, {
+      const resp = await axios.put(endpoint, { params } , {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"

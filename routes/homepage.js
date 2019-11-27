@@ -6,7 +6,7 @@ const jwtUtils = require('../utils/jwt-utils')
 const { File, HomepageType } = require('../classes/File.js')
 
 // Constants
-const HOMEPAGE_INDEX_PATH = '' // Empty string
+const HOMEPAGE_INDEX_PATH = 'index.md' // Empty string
 
 // Read homepage index file
 router.get('/:siteName/homepage', async function(req, res, next) {

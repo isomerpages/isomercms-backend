@@ -144,7 +144,7 @@ class File {
       }
   
       await axios.delete(endpoint, {
-        data: params,
+        params,
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"

@@ -59,11 +59,15 @@ router.get('/', async function(req, res, next) {
     // Variables to track pagination of user's repos in case user has more than 100
     let pageCount = 1
     let hasNextPage = true;
-    const filePath = `https://api.github.com/user/repos?per_page=100&page=`;
+    const filePath = `https://api.github.com/user/repos`;
 
     // Loop through all user repos
     while (hasNextPage) {
-      const resp = await axios.get(filePath + pageCount, {
+      const resp = await axios.get(filePath, {
+        params: {
+          per_page: 100,
+          page: pageCount,
+        },
         headers: {
           Authorization: `token ${access_token}`,
           "Content-Type": "application/json"
@@ -85,7 +89,7 @@ router.get('/', async function(req, res, next) {
 
 
       siteNames= siteNames.concat(isomerRepos)
-      hasNextPage = resp.headers.link.includes('next')
+      hasNextPage = resp.headers.link ? resp.headers.link.includes('next') : false
       ++pageCount
     }
     

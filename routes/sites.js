@@ -5,7 +5,7 @@ const jwtUtils = require('../utils/jwt-utils')
 const _ = require('lodash')
 const Bluebird = require('bluebird')
 
-const ISOMER_GITHUB_ORG_NAME = 'isomerpages'
+const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 // const ISOMER_ADMIN_REPOS = [
 //   'isomercms-backend',
 //   'isomercms-frontend',
@@ -59,26 +59,27 @@ router.get('/', async function(req, res, next) {
     // Variables to track pagination of user's repos in case user has more than 100
     let pageCount = 1
     let hasNextPage = true;
-    const filePath = `https://api.github.com/user/repos`;
+    const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`;
 
     // Loop through all user repos
     while (hasNextPage) {
-      const resp = await axios.get(filePath, {
+      const resp = await axios.get(endpoint, {
         params: {
           per_page: 100,
           page: pageCount,
+          sort: "full_name",
         },
         headers: {
           Authorization: `token ${access_token}`,
-          "Content-Type": "application/json"
+          Accept: "application/vnd.github.baptiste-preview+json",
         }
       })
 
       // Filter for isomer repos
       const isomerRepos = resp.data.reduce((acc, repo) => {
-        const { updated_at, full_name } = repo
+        const { permissions, updated_at, full_name } = repo
         const fullName = full_name.split('/')
-        if (fullName[0] === ISOMER_GITHUB_ORG_NAME) {
+        if (permissions.push === true) {
           return acc.concat({
             repoName: fullName[1],
             lastUpdated: timeDiff(updated_at),

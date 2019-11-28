@@ -24,7 +24,8 @@ class Config {
         "ref": BRANCH_REF,
 			}
 			
-	    const resp = await axios.get(endpoint, params, {
+	    const resp = await axios.get(endpoint, {
+				params,
 	      headers: {
 	        Authorization: `token ${this.accessToken}`,
 	        "Content-Type": "application/json"

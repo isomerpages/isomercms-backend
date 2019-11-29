@@ -52,7 +52,7 @@ class Tree {
                     return {
                         type: 'page',
                         title: item.title,
-                        path: encodeURIComponent(new PageType().getFolderName() + fileName),
+                        path: encodeURIComponent(`${new PageType().getFolderName()}/${fileName}`),
                         url: item.url,
                     }
                 } else if (item.collection) {

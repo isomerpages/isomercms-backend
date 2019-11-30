@@ -1,3 +1,5 @@
+const slugify = require('slugify')
+
 /** 
  * A function to deslugify a collection page's file name, taken from isomercms-frontend src/utils
 */
@@ -34,7 +36,18 @@ function deslugifyCollectionName(collectionName) {
     .join(' '); // join it back together
 }
 
+function slugifyThirdNavPage(collectionName, title, group, subgroup) {
+  return `_${collectionName}/${group}${subgroup}-${slugify(title)}.md`.toLowerCase()
+}
+
+function slugifyCollectionPage(collectionName, title, group) {
+  return `_${collectionName}/${group}-${slugify(title)}.md`.toLowerCase()
+}
+
+
 module.exports = {
   deslugifyCollectionPage,
   deslugifyCollectionName,
+  slugifyThirdNavPage,
+  slugifyCollectionPage,
 }

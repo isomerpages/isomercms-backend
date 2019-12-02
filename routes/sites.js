@@ -77,11 +77,10 @@ router.get('/', async function(req, res, next) {
 
       // Filter for isomer repos
       const isomerRepos = resp.data.reduce((acc, repo) => {
-        const { permissions, updated_at, full_name } = repo
-        const fullName = full_name.split('/')
+        const { permissions, updated_at, name } = repo
         if (permissions.push === true) {
           return acc.concat({
-            repoName: fullName[1],
+            repoName: name,
             lastUpdated: timeDiff(updated_at),
           })
         }

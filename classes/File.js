@@ -228,5 +228,15 @@ class HomepageType {
   }
 }
 
+class OtherType {
+  constructor(folderPath) {
+    this.folderName = folderPath
+  }
 
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+
+module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType, OtherType }

@@ -19,9 +19,9 @@ deploy:
     region: "ap-southeast-1"
     skip_cleanup: true
     zip_file: $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE
-    app: "test-cms"
-    env: "TestCms-env"
-    bucket_name: "test-cms-isomer"
+    app: "isomer-cms"
+    env: "isomercms-backend-prod"
+    bucket_name: "isomercms-backend-prod"
     on:
       branch: master
   - provider: elasticbeanstalk
@@ -30,7 +30,7 @@ deploy:
     region: "ap-southeast-1"
     skip_cleanup: true
     zip_file: $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE
-    app: "test-cms"
+    app: "isomer-cms"
     env: "isomercms-backend-staging"
     bucket_name: "isomercms-backend-staging"
     on:

@@ -35,8 +35,6 @@ class Settings {
       const { content: socialMediaResp, sha: socialMediaSha } = await socialMedia
 
       return ({ configResp, socialMediaResp, configSha, socialMediaSha })
-      // res.status(200).json({ configContent, socialMediaContent, colorContent })
-
     } catch (err) {
       console.log(err)
     }
@@ -57,7 +55,6 @@ class Settings {
       const newConfigContent = base64.encode(yaml.safeDump(configSettings))
       const newSocialMediaContent = base64.encode(yaml.safeDump(socialMediaSettings))
       await config.update(newConfigContent, configSha)
-      console.log('abc')
       await IsomerDataFile.update('social-media.yml', newSocialMediaContent, socialMediaSha)
       return
     } catch (err) {

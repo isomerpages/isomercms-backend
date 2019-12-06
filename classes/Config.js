@@ -54,14 +54,14 @@ class Config {
 			"sha": sha
 		}
 
-		await axios.put(endpoint, params, {
+	await axios.put(endpoint, params, {
 			headers: {
 			  Authorization: `token ${this.accessToken}`,
 			  "Content-Type": "application/json"
 			}
 		})
     } catch (err) {
-      throw err
+      console.log(err)
     }
   }
 }

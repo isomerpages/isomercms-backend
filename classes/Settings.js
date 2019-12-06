@@ -1,4 +1,5 @@
 const base64 = require('base-64')
+const yaml = require('js-yaml')
 
 // import classes
 const { Config } = require('../classes/Config.js')

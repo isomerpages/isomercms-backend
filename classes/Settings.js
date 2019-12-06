@@ -1,4 +1,3 @@
-const yaml = require('js-yaml')
 const base64 = require('base-64')
 
 // import classes
@@ -35,18 +34,7 @@ class Settings {
       })
       const { content: socialMediaResp, sha: socialMediaSha } = await socialMedia
 
-
-      // extract content as objects
-      const configContent = yaml.safeLoad(base64.decode(configResp))
-      let socialMediaContent
-      if (socialMediaResp.status === 200) {
-        socialMediaContent = yaml.safeLoad(base64.decode(socialMediaResp))
-        socialMediaContent = {}
-      } else if (!socialMediaResp) {
-        socialMediaContent = {}
-      }
-
-      return ({ configContent, socialMediaContent, configSha, socialMediaSha })
+      return ({ configResp, socialMediaResp, configSha, socialMediaSha })
       // res.status(200).json({ configContent, socialMediaContent, colorContent })
 
     } catch (err) {
@@ -69,6 +57,7 @@ class Settings {
       const newConfigContent = base64.encode(yaml.safeDump(configSettings))
       const newSocialMediaContent = base64.encode(yaml.safeDump(socialMediaSettings))
       await config.update(newConfigContent, configSha)
+      console.log('abc')
       await IsomerDataFile.update('social-media.yml', newSocialMediaContent, socialMediaSha)
       return
     } catch (err) {

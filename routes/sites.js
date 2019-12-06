@@ -71,7 +71,7 @@ router.get('/', async function(req, res, next) {
         },
         headers: {
           Authorization: `token ${access_token}`,
-          Accept: "application/vnd.github.baptiste-preview+json",
+          "Content-Type": "application/json",
         }
       })
 

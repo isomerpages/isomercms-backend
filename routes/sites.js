@@ -71,7 +71,7 @@ router.get('/', async function(req, res, next) {
         },
         headers: {
           Authorization: `token ${access_token}`,
-          Accept: "application/vnd.github.baptiste-preview+json",
+          "Content-Type": "application/json",
         }
       })
 
@@ -88,7 +88,7 @@ router.get('/', async function(req, res, next) {
       }, [])
 
 
-      siteNames= siteNames.concat(isomerRepos)
+      siteNames = siteNames.concat(isomerRepos)
       hasNextPage = resp.headers.link ? resp.headers.link.includes('next') : false
       ++pageCount
     }

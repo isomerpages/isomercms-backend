@@ -5,6 +5,7 @@ branches:
   # This script will be run on the following branches only
   only:
     - master
+    - staging
 install:
   - npm install
 after_success:
@@ -18,8 +19,19 @@ deploy:
     region: "ap-southeast-1"
     skip_cleanup: true
     zip_file: $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE
-    app: "test-cms"
-    env: "TestCms-env"
-    bucket_name: "test-cms-isomer"
+    app: "isomer-cms"
+    env: "isomercms-backend-prod"
+    bucket_name: "isomercms-backend-prod"
     on:
       branch: master
+  - provider: elasticbeanstalk
+    access_key_id: $AWS_ACCESS_KEY_ID_FOR_DEPLOYMENT
+    secret_access_key: $AWS_SECRET_ACCESS_KEY_FOR_DEPLOYMENT
+    region: "ap-southeast-1"
+    skip_cleanup: true
+    zip_file: $ELASTICBEANSTALK_DEPLOYMENT_ZIP_FILE
+    app: "isomer-cms"
+    env: "isomercms-backend-stag"
+    bucket_name: "isomercms-backend-stag"
+    on:
+      branch: staging

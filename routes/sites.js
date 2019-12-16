@@ -3,7 +3,6 @@ const router = express.Router();
 const axios = require('axios');
 const jwtUtils = require('../utils/jwt-utils')
 const _ = require('lodash')
-const Bluebird = require('bluebird')
 
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 // const ISOMER_ADMIN_REPOS = [
@@ -23,12 +22,6 @@ const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 //   'infra',
 //   'markdown-helper',
 // ]
-
-// validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
-// This is necessary because GitHub returns a 404 status when the file does not exist.
-const validateStatus = (status) => {
-  return (status >= 200 && status < 300) || status === 404
-}
 
 // timeDiff tells us when a repo was last updated in terms of days (for e.g. 2 days ago,
 // today)

@@ -28,11 +28,11 @@ class File {
       const endpoint = `${this.baseEndpoint}`
 
       const params = {
-        validateStatus: validateStatus,
         "ref": BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, {
+        validateStatus: validateStatus,
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,
@@ -87,11 +87,11 @@ class File {
       const endpoint = `${this.baseEndpoint}/${fileName}`
 
       const params = {
-        validateStatus: validateStatus,
         "ref": BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, {
+        validateStatus: validateStatus,
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,

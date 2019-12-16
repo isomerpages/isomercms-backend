@@ -29,11 +29,11 @@ class Directory {
       const endpoint = `${this.baseEndpoint}`
 
       const params = {
-        validateStatus: validateStatus,
         "ref": BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, {
+        validateStatus: validateStatus,
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,

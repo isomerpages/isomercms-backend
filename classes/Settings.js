@@ -1,4 +1,4 @@
-const base64 = require('base-64')
+const { Base64 } = require('js-base64')
 const yaml = require('js-yaml')
 
 // import classes
@@ -29,13 +29,26 @@ class Settings {
           youtube: '',
           instagram: '',
         }
-        const socialMediaYml = base64.encode(yaml.safeDump(content))
+        const socialMediaYml = Base64.encode(yaml.safeDump(content))
         const { sha } = IsomerDataFile.create('social-media.yml', socialMediaYml)
         return { content, sha }
       })
       const { content: socialMedia, sha: socialMediaSha } = await socialMediaResp
 
-      return ({ config, socialMedia, configSha, socialMediaSha })
+      // convert data to object form
+      const configContent = yaml.safeLoad(Base64.decode(config));
+      const socialMediaContent = yaml.safeLoad(Base64.decode(socialMedia));
+
+      // retrieve only the relevant config fields
+      const configFieldsRequired = {
+        title: configContent.title,
+        favicon: configContent.favicon,
+        resources_name: configContent.resources_name,
+        colors: configContent.colors,
+
+      }
+
+      return ({ configFieldsRequired, socialMediaContent, configSha, socialMediaSha })
     } catch (err) {
       console.log(err)
     }
@@ -44,17 +57,27 @@ class Settings {
   async post(payload) {
     try {
       // setup 
-    	const configResp = new Config(this.accessToken, this.siteName)
+      const configResp = new Config(this.accessToken, this.siteName)
+      const config = await configResp.read()
       const IsomerDataFile = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       IsomerDataFile.setFileType(dataType)
 
       // extract data
-      const { configSettings, configSha, socialMediaSettings, socialMediaSha } = payload
+      const {
+        socialMediaSettings,
+        configSettings,
+        socialMediaSha,
+        configSha,
+      } = payload
+
+      // update config and social media objects
+      const configContent = yaml.safeLoad(Base64.decode(config.content));
+      Object.keys(configSettings).forEach((setting) => (configContent[setting] = configSettings[setting]));
 
       // update files
-      const newConfigContent = base64.encode(yaml.safeDump(configSettings))
-      const newSocialMediaContent = base64.encode(yaml.safeDump(socialMediaSettings))
+      const newConfigContent = Base64.encode(yaml.safeDump(configContent))
+      const newSocialMediaContent = Base64.encode(yaml.safeDump(socialMediaSettings))
       await configResp.update(newConfigContent, configSha)
       await IsomerDataFile.update('social-media.yml', newSocialMediaContent, socialMediaSha)
       return

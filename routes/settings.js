@@ -26,8 +26,8 @@ router.post('/:siteName/settings', async function(req, res, next) {
     let { access_token } = jwtUtils.verifyToken(oauthtoken)
     const { siteName } = req.params
 
-    const settingsFile = new Settings(access_token, siteName)
-    await settingsFile.post(req.body)
+    const settings = new Settings(access_token, siteName)
+    await settings.post(req.body)
     res.status(200).send('OK')
   } catch (err) {
     console.log(err)

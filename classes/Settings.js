@@ -14,13 +14,13 @@ class Settings {
   async get() {
     try {
       // retrieve _config.yml and social-media.yml
-    	const config = new Config(this.accessToken, this.siteName)
+    	const configResp = new Config(this.accessToken, this.siteName)
       const IsomerDataFile = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       IsomerDataFile.setFileType(dataType)
 
-      const { content: configResp, sha: configSha } = await config.read()
-      const socialMedia = IsomerDataFile.read('social-media.yml').catch((err) => {
+      const { content: config, sha: configSha } = await configResp.read()
+      const socialMediaResp = IsomerDataFile.read('social-media.yml').catch((err) => {
         // social-media.yml doesn't exist so we create a social-media.yml
         const content = {
           facebook: '',
@@ -33,9 +33,9 @@ class Settings {
         const { sha } = IsomerDataFile.create('social-media.yml', socialMediaYml)
         return { content, sha }
       })
-      const { content: socialMediaResp, sha: socialMediaSha } = await socialMedia
+      const { content: socialMedia, sha: socialMediaSha } = await socialMediaResp
 
-      return ({ configResp, socialMediaResp, configSha, socialMediaSha })
+      return ({ config, socialMedia, configSha, socialMediaSha })
     } catch (err) {
       console.log(err)
     }
@@ -44,7 +44,7 @@ class Settings {
   async post(payload) {
     try {
       // setup 
-    	const config = new Config(this.accessToken, this.siteName)
+    	const configResp = new Config(this.accessToken, this.siteName)
       const IsomerDataFile = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       IsomerDataFile.setFileType(dataType)
@@ -55,7 +55,7 @@ class Settings {
       // update files
       const newConfigContent = base64.encode(yaml.safeDump(configSettings))
       const newSocialMediaContent = base64.encode(yaml.safeDump(socialMediaSettings))
-      await config.update(newConfigContent, configSha)
+      await configResp.update(newConfigContent, configSha)
       await IsomerDataFile.update('social-media.yml', newSocialMediaContent, socialMediaSha)
       return
     } catch (err) {

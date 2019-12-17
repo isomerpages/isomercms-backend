@@ -19,7 +19,7 @@ class Settings {
       const dataType = new DataType()
       IsomerDataFile.setFileType(dataType)
 
-      const { content: config, sha: configSha } = await configResp.read()
+      const { content: config } = await configResp.read()
       const socialMediaResp = IsomerDataFile.read('social-media.yml').catch((err) => {
         // social-media.yml doesn't exist so we create a social-media.yml
         const content = {
@@ -48,7 +48,7 @@ class Settings {
 
       }
 
-      return ({ configFieldsRequired, socialMediaContent, configSha, socialMediaSha })
+      return ({ configFieldsRequired, socialMediaContent, socialMediaSha })
     } catch (err) {
       console.log(err)
     }
@@ -68,17 +68,16 @@ class Settings {
         socialMediaSettings,
         configSettings,
         socialMediaSha,
-        configSha,
       } = payload
 
-      // update config and social media objects
+      // update config object
       const configContent = yaml.safeLoad(Base64.decode(config.content));
       Object.keys(configSettings).forEach((setting) => (configContent[setting] = configSettings[setting]));
 
       // update files
       const newConfigContent = Base64.encode(yaml.safeDump(configContent))
       const newSocialMediaContent = Base64.encode(yaml.safeDump(socialMediaSettings))
-      await configResp.update(newConfigContent, configSha)
+      await configResp.update(newConfigContent, config.sha)
       await IsomerDataFile.update('social-media.yml', newSocialMediaContent, socialMediaSha)
       return
     } catch (err) {

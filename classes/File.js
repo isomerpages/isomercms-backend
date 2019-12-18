@@ -223,5 +223,4 @@ class HomepageType {
   }
 }
 
-
 module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }

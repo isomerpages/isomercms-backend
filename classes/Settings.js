@@ -41,11 +41,11 @@ class Settings {
 
       // retrieve only the relevant config fields
       const configFieldsRequired = {
+        url: configContent.url,
         title: configContent.title,
         favicon: configContent.favicon,
         resources_name: configContent.resources_name,
         colors: configContent.colors,
-
       }
 
       return ({ configFieldsRequired, socialMediaContent, socialMediaSha })

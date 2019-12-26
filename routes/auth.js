@@ -9,8 +9,14 @@ const REDIRECT_URI = process.env.REDIRECT_URI
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
 const FRONTEND_URL = process.env.FRONTEND_URL
+const COOKIE_NAME = 'oauthtoken'
 
 const jwtUtils = require('../utils/jwt-utils')
+
+router.get('/logout',async function(req, res, next) {
+  res.clearCookie(COOKIE_NAME, { domain: COOKIE_DOMAIN, path: '/' })
+  res.redirect(FRONTEND_URL)
+})
 
 router.get('/', async function(req, res, next) {
   try {
@@ -43,7 +49,7 @@ router.get('/', async function(req, res, next) {
 
     const token = jwtUtils.signToken({access_token})
 
-    res.cookie('oauthtoken', token, cookieSettings)
+    res.cookie(COOKIE_NAME, token, cookieSettings)
 
     res.redirect(`${FRONTEND_URL}/sites`)
   } catch(err) {

@@ -20,13 +20,21 @@ router.get('/:siteName/tree', async function(req, res, next) {
       const { siteName } = req.params
 
       const IsomerTreeMenu = new Tree(access_token, siteName)
-      await IsomerTreeMenu.getLinkedPages()
-      await IsomerTreeMenu.getUnlinkedPages()
+      // await IsomerTreeMenu.getUnlinkedPages()
       
+      // const response = {
+      //   directory: IsomerTreeMenu.directory,
+      //   unlinked: IsomerTreeMenu.unlinked,
+      // }
+      await IsomerTreeMenu.getTree();
+      
+      // filter tree to get collections
+
+      await IsomerTreeMenu.getLinkedPages()
       const response = {
-        directory: IsomerTreeMenu.directory,
-        unlinked: IsomerTreeMenu.unlinked,
-      }
+        currentCommitSha: IsomerTreeMenu.currentCommitSha,
+        gitTree: IsomerTreeMenu.tree,
+      };
 
       res.status(200).json(response)
     } catch (err) {

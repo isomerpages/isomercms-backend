@@ -4,6 +4,10 @@ const base64 = require('base-64')
 const { File, CollectionPageType } = require('../classes/File')
 const { deslugifyCollectionPage } = require('./utils')
 
+const pageAggregatorV2 = async (item, access_token, siteName, tree) => {
+  // retrieve all pages in collections
+}
+
 // this takes an object and helps to aggregate it to the menu object
 // depending on whether it is a collection or not
 const pageAggregator = async (item, access_token, siteName) => {

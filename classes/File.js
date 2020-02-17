@@ -68,7 +68,8 @@ class File {
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
-        }
+        },
+        maxContentLength: Infinity
       })
 
       return { sha: resp.data.content.sha }

@@ -16,6 +16,7 @@ class File {
   setFileType(fileType) {
     this.folderPath = fileType.getFolderName()
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents${ this.folderPath ? '/' : '' }${this.folderPath}`
+    this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
   async list() {
@@ -43,7 +44,8 @@ class File {
         if (object.type === 'file') {
           return {
             path: encodeURIComponent(object.path),
-            fileName
+            fileName,
+            sha: object.sha
           }
         }
       })
@@ -79,7 +81,9 @@ class File {
 
   async read(fileName) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const files = await this.list()
+      const fileToRead = files.filter((file) => file.fileName === fileName)[0]
+      const endpoint = `${this.baseBlobEndpoint}/${fileToRead.sha}`
 
       const params = {
         "ref": BRANCH_REF,

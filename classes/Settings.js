@@ -1,9 +1,13 @@
 const { Base64 } = require('js-base64')
 const yaml = require('js-yaml')
+const Bluebird = require('bluebird')
 
 // import classes
 const { Config } = require('../classes/Config.js')
-const { File, DataType } = require('../classes/File.js')
+const { File, DataType, HomepageType } = require('../classes/File.js')
+
+// Constants
+const FOOTER_PATH = 'footer.yml'
 
 class Settings {
   constructor(accessToken, siteName) {
@@ -13,42 +17,40 @@ class Settings {
 
   async get() {
     try {
-      // retrieve _config.yml and social-media.yml
-    	const configResp = new Config(this.accessToken, this.siteName)
+      // retrieve _config.yml, index.md, and footer.yml
+      const configResp = new Config(this.accessToken, this.siteName)
+
       const IsomerDataFile = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       IsomerDataFile.setFileType(dataType)
 
-      const { content: config } = await configResp.read()
-      const socialMediaResp = IsomerDataFile.read('social-media.yml').catch((err) => {
-        // social-media.yml doesn't exist so we create a social-media.yml
-        const content = {
-          facebook: '',
-          linkedin: '',
-          twitter: '',
-          youtube: '',
-          instagram: '',
-        }
-        const socialMediaYml = Base64.encode(yaml.safeDump(content))
-        const { sha } = IsomerDataFile.create('social-media.yml', socialMediaYml)
-        return { content, sha }
+      const fileRetrievalArr = [configResp.read(), IsomerDataFile.read(FOOTER_PATH)]
+
+      const fileContentsArr = await Bluebird.map(fileRetrievalArr, async (fileOp) => {
+        const { content, sha } = await fileOp
+        return { content, sha}
       })
-      const { content: socialMedia, sha: socialMediaSha } = await socialMediaResp
 
       // convert data to object form
-      const configContent = yaml.safeLoad(Base64.decode(config));
-      const socialMediaContent = yaml.safeLoad(Base64.decode(socialMedia));
+      const configContent = fileContentsArr[0].content
+      const footerContent = fileContentsArr[1].content
 
-      // retrieve only the relevant config fields
+      const configReadableContent = yaml.safeLoad(Base64.decode(configContent));
+      const footerReadableContent = yaml.safeLoad(Base64.decode(footerContent));
+
+      // retrieve only the relevant config and index fields
       const configFieldsRequired = {
-        url: configContent.url,
-        title: configContent.title,
-        favicon: configContent.favicon,
-        resources_name: configContent.resources_name,
-        colors: configContent.colors,
+        url: configReadableContent.url,
+        title: configReadableContent.title,
+        favicon: configReadableContent.favicon,
+        resources_name: configReadableContent.resources_name,
+        colors: configReadableContent.colors,
       }
 
-      return ({ configFieldsRequired, socialMediaContent, socialMediaSha })
+      // retrieve footer sha since we are sending the footer object wholesale
+      const footerSha = fileContentsArr[1].sha
+
+      return ({ configFieldsRequired, footerContent: footerReadableContent, footerSha })
     } catch (err) {
       console.log(err)
     }
@@ -65,9 +67,9 @@ class Settings {
 
       // extract data
       const {
-        socialMediaSettings,
+        footerSettings,
         configSettings,
-        socialMediaSha,
+        footerSha,
       } = payload
 
       // update config object
@@ -76,9 +78,9 @@ class Settings {
 
       // update files
       const newConfigContent = Base64.encode(yaml.safeDump(configContent))
-      const newSocialMediaContent = Base64.encode(yaml.safeDump(socialMediaSettings))
+      const newFooterContent = Base64.encode(yaml.safeDump(footerSettings))
       await configResp.update(newConfigContent, config.sha)
-      await IsomerDataFile.update('social-media.yml', newSocialMediaContent, socialMediaSha)
+      await IsomerDataFile.update(FOOTER_PATH, newFooterContent, footerSha)
       return
     } catch (err) {
       console.log(err)

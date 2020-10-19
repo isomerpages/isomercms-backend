@@ -4,7 +4,7 @@ const Bluebird = require('bluebird')
 
 // import classes
 const { Config } = require('../classes/Config.js')
-const { File, DataType, HomepageType } = require('../classes/File.js')
+const { File, DataType } = require('../classes/File.js')
 
 // Constants
 const FOOTER_PATH = 'footer.yml'
@@ -17,7 +17,7 @@ class Settings {
 
   async get() {
     try {
-      // retrieve _config.yml, index.md, and footer.yml
+      // retrieve _config.yml and footer.yml
       const configResp = new Config(this.accessToken, this.siteName)
 
       const IsomerDataFile = new File(this.accessToken, this.siteName)

@@ -11,6 +11,7 @@ const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECO
 const FRONTEND_URL = process.env.FRONTEND_URL
 
 const jwtUtils = require('../utils/jwt-utils')
+const COOKIE_NAME = 'oauthtoken'
 
 router.get('/', async function(req, res, next) {
   try {
@@ -43,12 +44,22 @@ router.get('/', async function(req, res, next) {
 
     const token = jwtUtils.signToken({access_token})
 
-    res.cookie('oauthtoken', token, cookieSettings)
+    res.cookie(COOKIE_NAME, token, cookieSettings)
 
     res.redirect(`${FRONTEND_URL}/sites`)
   } catch(err) {
     console.log(err)
   }
 });
+
+router.get('/logout', async function(req, res) {
+  let cookieSettings
+  cookieSettings = {
+    domain: COOKIE_DOMAIN,
+    path: '/',
+  }
+  res.clearCookie(COOKIE_NAME, cookieSettings)
+  res.sendStatus(200)
+})
 
 module.exports = router;

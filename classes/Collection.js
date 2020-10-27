@@ -16,10 +16,9 @@ class Collection {
     try {
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
-    	const contentObject = yaml.safeLoad(base64.decode(content))
-
-    	return Object.keys(contentObject.collections)
-
+		const contentObject = yaml.safeLoad(base64.decode(content))
+		const collections = contentObject.collections ? Object.keys(contentObject.collections) : []
+		return collections
     } catch (err) {
       throw err
     }

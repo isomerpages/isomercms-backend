@@ -1,12 +1,11 @@
-class AuthError extends Error {
+// Import base error
+const { BaseIsomerError } = require('./BaseError')
+
+class AuthError extends BaseIsomerError {
     constructor (message) {
-        super()
-        Error.captureStackTrace(this, this.constructor)
-        this.name = this.constructor.name
-        this.status = 401
-        this.message = message || 'Something went wrong'
+      super(401, message)
     }
-}
+  }
 
 module.exports = {
     AuthError,

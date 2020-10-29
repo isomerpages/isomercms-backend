@@ -25,7 +25,6 @@ async function listCollectionPages(req, res, next) {
 
 // Create new page in collection
 async function createNewcollectionPage (req, res, next) {
-  const { oauthtoken } = req.cookies
   const { accessToken } = req
 
   const { siteName, collectionName } = req.params
@@ -45,7 +44,6 @@ async function createNewcollectionPage (req, res, next) {
 
 // Read page in collection
 async function readCollectionPage(req, res, next) {
-  const { oauthtoken } = req.cookies
   const { accessToken } = req
 
   const { siteName, pageName, collectionName } = req.params
@@ -63,7 +61,6 @@ async function readCollectionPage(req, res, next) {
 
 // Update page in collection
 async function updateCollectionPage (req, res, next) {
-  const { oauthtoken } = req.cookies
   const { accessToken } = req
 
   const { siteName, pageName, collectionName } = req.params
@@ -82,7 +79,6 @@ async function updateCollectionPage (req, res, next) {
 
 // Delete page in collection
 async function deleteCollectionPage (req, res, next) {
-  const { oauthtoken } = req.cookies
   const { accessToken } = req
 
   const { siteName, pageName, collectionName } = req.params
@@ -101,7 +97,6 @@ async function deleteCollectionPage (req, res, next) {
 
 // Rename page in collection
 async function renameCollectionPage (req, res, next) {
-  const { oauthtoken } = req.cookies
   const { accessToken } = req
 
   const { siteName, pageName, collectionName, newPageName } = req.params

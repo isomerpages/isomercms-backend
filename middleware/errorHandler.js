@@ -20,7 +20,7 @@ function errorHandler (err, req, res, next) {
         res.status(500).json({
             error: {
                 code: 500,
-                message: `Something went wrong. ${GENERIC_ERROR_MESSAGE}`,
+                message: 'Something went wrong',
             },
         })
     }

@@ -56,9 +56,9 @@ async function githubAuth (req, res, next) {
 
 async function logout(req, res) {
   let cookieSettings
-  cookieSettings = {
-    domain: COOKIE_DOMAIN,
-    path: '/',
+    cookieSettings = {
+      domain: COOKIE_DOMAIN,
+      path: '/',
   }
   res.clearCookie(COOKIE_NAME, cookieSettings)
   res.sendStatus(200)

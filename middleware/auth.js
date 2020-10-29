@@ -16,8 +16,8 @@ function noVerify (req, res, next) {
 
 const verifyJwt = (req, res, next) => {
     try {
-        const { oauthtoken } = req.cookies
-        const { access_token } = jwtUtils.verifyToken(oauthtoken)
+        const { isomercms } = req.cookies
+        const { access_token } = jwtUtils.verifyToken(isomercms)
         req.accessToken = access_token
     } catch (err) {
         console.error('Authentication error')

@@ -17,7 +17,7 @@ const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECO
 const FRONTEND_URL = process.env.FRONTEND_URL
 
 const jwtUtils = require('../utils/jwt-utils')
-const COOKIE_NAME = 'oauthtoken'
+const COOKIE_NAME = 'isomercms'
 
 async function githubAuth (req, res, next) {
   const { code, state } = req.query

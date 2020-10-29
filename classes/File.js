@@ -2,6 +2,9 @@ const axios = require('axios');
 const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
+// Import error
+const { NotFoundError  } = require('../errors/NotFoundError')
+
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
 
@@ -98,7 +101,7 @@ class File {
         }
       })
   
-      if (resp.status === 404) throw new Error ('Page does not exist')
+      if (resp.status === 404) throw new NotFoundError ('File does not exist')
   
       const { content, sha } = resp.data
   

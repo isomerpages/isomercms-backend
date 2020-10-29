@@ -1,6 +1,9 @@
 const axios = require('axios');
 const validateStatus = require('../utils/axios-utils')
 
+// Import error
+const { NotFoundError  } = require('../errors/NotFoundError')
+
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
 
@@ -14,20 +17,20 @@ class Config {
     try {
     	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
 
-			const params = {
-        "ref": BRANCH_REF,
-			}
+		const params = {
+			"ref": BRANCH_REF,
+		}
 			
 	    const resp = await axios.get(endpoint, {
-				validateStatus,
-				params,
-	      headers: {
-	        Authorization: `token ${this.accessToken}`,
-	        "Content-Type": "application/json"
-	      }
+			validateStatus,
+			params,
+			headers: {
+				Authorization: `token ${this.accessToken}`,
+				"Content-Type": "application/json"
+			}
 	    })
 
-	    if (resp.status === 404) throw new Error ('Page does not exist')
+	    if (resp.status === 404) throw new NotFoundError ('Config page does not exist')
 
 	    const { content, sha } = resp.data
 

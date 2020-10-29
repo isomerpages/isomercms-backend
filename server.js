@@ -8,7 +8,8 @@ const cors = require('cors');
 // Env vars
 const FRONTEND_URL = process.env.FRONTEND_URL
 
-// Import error handler
+// Import middleware
+const { auth } = require('./middleware/auth')
 const { errorHandler } = require('./middleware/errorHandler')
 
 // Import routes
@@ -40,6 +41,9 @@ app.use(cors({
   'origin': FRONTEND_URL,
   'credentials': true,
 }))
+
+// Use auth middleware
+app.use(auth)
 
 // Routes layer setup
 app.use('/', indexRouter);

@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
 
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
@@ -13,8 +12,7 @@ const HOMEPAGE_INDEX_PATH = 'index.md' // Empty string
 
 // Read homepage index file
 async function readHomepage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName } = req.params
 
@@ -32,8 +30,7 @@ async function readHomepage (req, res, next) {
 // Update homepage index file
 async function updateHomepage (req, res, next) {
   try {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { accessToken } = req
 
     const { siteName } = req.params
     const { content, sha } = req.body

@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
@@ -14,11 +13,10 @@ const { create } = require('lodash');
 
 // List both simple pages and collection pages
 async function listPages (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
   const { siteName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
   const simplePages = await IsomerFile.list()
@@ -30,7 +28,7 @@ async function listPages (req, res, next) {
     }
   })
 
-  const IsomerCollection = new Collection(access_token, siteName)
+  const IsomerCollection = new Collection(accessToken, siteName)
   const collections = await IsomerCollection.list() //lists out all collections
 
   /**
@@ -42,7 +40,7 @@ async function listPages (req, res, next) {
    * This then returns a flattened array of all collections pages from all collections (`allCollectionPages`)
    */
   const allCollectionPages = await Bluebird.reduce(collections, async (accumulator, collectionName) => {
-    const CollectionPage = new File(access_token, siteName)
+    const CollectionPage = new File(accessToken, siteName)
     const collectionPageType = new CollectionPageType(collectionName)
     CollectionPage.setFileType(collectionPageType)
     const collectionPages = await CollectionPage.list()
@@ -60,8 +58,7 @@ async function listPages (req, res, next) {
 
 // Create new page
 async function createNewPage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName } = req.params
   const { pageName, content } = req.body
@@ -69,7 +66,7 @@ async function createNewPage (req, res, next) {
   // TO-DO:
   // Validate pageName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
   const { sha } = await IsomerFile.create(pageName, content)
@@ -79,12 +76,11 @@ async function createNewPage (req, res, next) {
 
 // Read page
 async function readPage(req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
   const { sha, content } = await IsomerFile.read(pageName)
@@ -97,8 +93,7 @@ async function readPage(req, res, next) {
 
 // Update page
 async function updatePage(req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName } = req.params
   const { content, sha } = req.body
@@ -106,7 +101,7 @@ async function updatePage(req, res, next) {
   // TO-DO:
   // Validate pageName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
   const { newSha } = await IsomerFile.update(pageName, content, sha)
@@ -116,13 +111,12 @@ async function updatePage(req, res, next) {
 
 // Delete page
 async function deletePage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName } = req.params
   const { sha } = req.body
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
   await IsomerFile.delete(pageName, sha)
@@ -132,8 +126,7 @@ async function deletePage (req, res, next) {
 
 // Rename page
 async function renamePage(req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName, newPageName } = req.params
   const { sha, content } = req.body
@@ -141,7 +134,7 @@ async function renamePage(req, res, next) {
   // TO-DO:
   // Validate pageName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
   const { sha: newSha } = await IsomerFile.create(newPageName, content)

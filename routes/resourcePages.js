@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
 
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
@@ -11,14 +10,13 @@ const { ResourceRoom } = require('../classes/ResourceRoom.js')
 
 // List pages in resource
 async function listResourcePages (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
   const { siteName, resourceName } = req.params
 
   // TO-DO: Verify that resource exists
-  const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+  const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   const resourcePages = await IsomerFile.list()
@@ -28,8 +26,7 @@ async function listResourcePages (req, res, next) {
 
 // Create new page in resource
 async function createNewResourcePage(req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, resourceName } = req.params
   const { pageName, content } = req.body
@@ -37,9 +34,9 @@ async function createNewResourcePage(req, res, next) {
   // TO-DO:
   // Validate pageName and content
 
-  const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+  const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   const { sha } = await IsomerFile.create(pageName, content)
@@ -49,14 +46,13 @@ async function createNewResourcePage(req, res, next) {
 
 // Read page in resource
 async function readResourcePage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName, resourceName } = req.params
 
-  const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+  const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   const { sha, content } = await IsomerFile.read(pageName)
@@ -69,8 +65,7 @@ async function readResourcePage (req, res, next) {
 
 // Update page in resource
 async function updateResourcePage (req, res, next) {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
     const { siteName, pageName, resourceName } = req.params
     const { content, sha } = req.body
@@ -78,9 +73,9 @@ async function updateResourcePage (req, res, next) {
     // TO-DO:
     // Validate pageName and content
 
-    const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+    const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
     const resourceRoomName = await ResourceRoomInstance.get()
-    const IsomerFile = new File(access_token, siteName)
+    const IsomerFile = new File(accessToken, siteName)
     const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
     IsomerFile.setFileType(resourcePageType)
     const { newSha } = await IsomerFile.update(pageName, content, sha)
@@ -90,15 +85,14 @@ async function updateResourcePage (req, res, next) {
 
 // Delete page in resource
 async function deleteResourcePage(req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName, resourceName } = req.params
   const { sha } = req.body
 
-  const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+  const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   await IsomerFile.delete(pageName, sha)
@@ -108,8 +102,7 @@ async function deleteResourcePage(req, res, next) {
 
 // Rename page in resource
 async function renameResourcePage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, pageName, resourceName, newPageName } = req.params
   const { sha, content } = req.body
@@ -120,9 +113,9 @@ async function renameResourcePage (req, res, next) {
 
   // Create new resource page with name ${newPageName}
 
-  const ResourceRoomInstance = new ResourceRoom(access_token, siteName)
+  const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   const { sha: newSha } = await IsomerFile.create(newPageName, content)

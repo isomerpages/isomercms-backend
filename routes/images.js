@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
 
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
@@ -12,11 +11,10 @@ const { update } = require('lodash');
 
 // List images
 async function listImages (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
   const { siteName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const imageType =  new ImageType()
   IsomerFile.setFileType(imageType)
   const images = await IsomerFile.list()
@@ -26,8 +24,7 @@ async function listImages (req, res, next) {
 
 // Create new image
 async function createNewImage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName } = req.params
   const { imageName, content } = req.body
@@ -35,7 +32,7 @@ async function createNewImage (req, res, next) {
   // TO-DO:
   // Validate imageName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const imageType =  new ImageType()
   IsomerFile.setFileType(imageType)
   const { sha } = await IsomerFile.create(imageName, content)
@@ -45,12 +42,11 @@ async function createNewImage (req, res, next) {
 
 // Read image
 async function readImage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, imageName } = req.params
 
-  const IsomerImageFile = new ImageFile(access_token, siteName)
+  const IsomerImageFile = new ImageFile(accessToken, siteName)
   IsomerImageFile.setFileTypeToImage()
   const { sha, content } = await IsomerImageFile.read(imageName)
 
@@ -62,8 +58,7 @@ async function readImage (req, res, next) {
 
 // Update image
 async function updateImage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, imageName } = req.params
   const { content, sha } = req.body
@@ -71,7 +66,7 @@ async function updateImage (req, res, next) {
   // TO-DO:
   // Validate imageName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const imageType =  new ImageType()
   IsomerFile.setFileType(imageType)
   const { newSha } = await IsomerFile.update(imageName, content, sha)
@@ -81,13 +76,12 @@ async function updateImage (req, res, next) {
 
 // Delete image
 async function deleteImage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, imageName } = req.params
   const { sha } = req.body
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const imageType =  new ImageType()
   IsomerFile.setFileType(imageType)
   await IsomerFile.delete(imageName, sha)
@@ -97,8 +91,7 @@ async function deleteImage (req, res, next) {
 
 // Rename image
 async function renameImage (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, imageName, newImageName } = req.params
   const { sha, content } = req.body
@@ -108,7 +101,7 @@ async function renameImage (req, res, next) {
 
   // Create new file with name ${newImageName}
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const imageType =  new ImageType()
   IsomerFile.setFileType(imageType)
   const { sha: newSha } = await IsomerFile.create(newImageName, content)

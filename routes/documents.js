@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
 
 // Import classes 
 const { File, DocumentType } = require('../classes/File.js');
@@ -8,11 +7,10 @@ const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
 
 // List documents
 async function listDocuments (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
   const { siteName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   const documents = await IsomerFile.list()
@@ -22,8 +20,7 @@ async function listDocuments (req, res, next) {
 
 // Create new document
 async function createNewDocument (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName } = req.params
   const { documentName, content } = req.body
@@ -31,7 +28,7 @@ async function createNewDocument (req, res, next) {
   // TO-DO:
   // Validate fileName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   const { sha } = await IsomerFile.create(documentName, content)
@@ -41,12 +38,10 @@ async function createNewDocument (req, res, next) {
 
 // Read document
 async function readDocument (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
-
+  const { accessToken } = req
   const { siteName, documentName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   const { sha, content } = await IsomerFile.read(documentName)
@@ -60,8 +55,7 @@ async function readDocument (req, res, next) {
 // Update document
 async function updateDocument (req, res, next) {
   try {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { accessToken } = req
 
     const { siteName, documentName } = req.params
     const { content, sha } = req.body
@@ -69,7 +63,7 @@ async function updateDocument (req, res, next) {
     // TO-DO:
     // Validate pageName and content
 
-    const IsomerFile = new File(access_token, siteName)
+    const IsomerFile = new File(accessToken, siteName)
     const documentType = new DocumentType()
     IsomerFile.setFileType(documentType)
     const { newSha } = await IsomerFile.update(documentName, content, sha)
@@ -82,13 +76,12 @@ async function updateDocument (req, res, next) {
 
 // Delete document
 async function deleteDocument (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, documentName } = req.params
   const { sha } = req.body
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   await IsomerFile.delete(documentName, sha)
@@ -98,8 +91,7 @@ async function deleteDocument (req, res, next) {
 
 // Rename document
 async function renameDocument (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, documentName, newDocumentName } = req.params
   const { sha, content } = req.body
@@ -107,7 +99,7 @@ async function renameDocument (req, res, next) {
   // TO-DO:
   // Validate documentName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   const { sha: newSha } = await IsomerFile.create(newDocumentName, content)

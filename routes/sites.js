@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const jwtUtils = require('../utils/jwt-utils')
 const _ = require('lodash');
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
 
@@ -43,8 +42,7 @@ const timeDiff = (lastUpdated) => {
 /* Returns a list of all sites (repos) that the user has access to on Isomer. */
 // TO-DO: Paginate properly
 async function getSites (req, res, next) {
-    const { oauthtoken } = req.cookies
-    let { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
     // Variable to store user repos
     let siteNames = []
@@ -63,7 +61,7 @@ async function getSites (req, res, next) {
           sort: "full_name",
         },
         headers: {
-          Authorization: `token ${access_token}`,
+          Authorization: `token ${accessToken}`,
           "Content-Type": "application/json",
         }
       })

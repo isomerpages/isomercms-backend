@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
 
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
@@ -10,12 +9,11 @@ const { File, DataType } = require('../classes/File.js')
 
 // List menus
 async function listMenu (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const dataType =  new DataType()
   IsomerFile.setFileType(dataType)
   const menus = await IsomerFile.list()
@@ -28,12 +26,11 @@ async function listMenu (req, res, next) {
 
 // Read menu
 async function readMenu (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, menuName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const dataType =  new DataType()
   IsomerFile.setFileType(dataType)
   const { sha, content } = await IsomerFile.read(menuName)
@@ -46,8 +43,7 @@ async function readMenu (req, res, next) {
 
 // Update menu
 async function updateMenu (req, res, next) {
-  const { oauthtoken } = req.cookies
-  const { access_token } = jwtUtils.verifyToken(oauthtoken)
+  const { accessToken } = req
 
   const { siteName, menuName } = req.params
   const { content, sha } = req.body
@@ -55,7 +51,7 @@ async function updateMenu (req, res, next) {
   // TO-DO:
   // Validate menuName and content
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const dataType =  new DataType()
   IsomerFile.setFileType(dataType)
   const { newSha } = await IsomerFile.update(menuName, content, sha)

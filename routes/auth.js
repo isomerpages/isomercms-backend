@@ -3,6 +3,9 @@ const router = express.Router();
 const axios = require('axios');
 const queryString = require('query-string');
 
+// Import error
+const { AuthError } = require('../errors/AuthError')
+
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 
@@ -30,7 +33,7 @@ async function githubAuth (req, res, next) {
   const resp = await axios.post('https://github.com/login/oauth/access_token', params)
 
   const access_token = queryString.parse(resp.data).access_token
-  if (!access_token) throw new Error ('Access token not found')
+  if (!access_token) throw new AuthError ('Access token not found')
 
   const authTokenExpiry = new Date()
   authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)

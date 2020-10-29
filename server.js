@@ -49,7 +49,7 @@ app.use(auth)
 // Routes layer setup
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
-app.use('/cookie-validation', cookieValidationRouter)
+app.use('/validate-cookie', cookieValidationRouter)
 app.use('/sites', sitesRouter)
 app.use('/sites', pagesRouter)
 app.use('/sites', collectionsRouter)

@@ -33,7 +33,7 @@ auth.get('/auth', noVerify)
 auth.get('/auth/logout', noVerify)
 
 // Cookie validation to allow user to check whether JWT has expired
-auth.get('/cookie-validation', verifyJwt)
+auth.get('/validate-cookie', verifyJwt)
 
 // Index
 auth.get('/', noVerify)

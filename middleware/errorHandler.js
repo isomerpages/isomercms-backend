@@ -1,5 +1,7 @@
+const { serializeError } = require('serialize-error')
+
 function errorHandler (err, req, res, next) {
-    console.log(`${new Date()}: ${err}`)
+    console.log(`${new Date()}: ${JSON.stringify(serializeError(err))}`)
   
     // set locals, only providing error in development
     res.locals.message = err.message;

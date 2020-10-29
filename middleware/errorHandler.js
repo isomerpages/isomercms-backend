@@ -7,9 +7,23 @@ function errorHandler (err, req, res, next) {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
   
-    // render the error page
-    res.status(err.status || 500);
-    res.json({ error: err });
+    // Error handling for custom errors
+    if (err.isIsomerError) {
+        res.status(err.status).json({
+            error: {
+                name: err.name,
+                code: err.status,
+                message: err.message,
+            },
+        })
+    } else {
+        res.status(500).json({
+            error: {
+                code: 500,
+                message: `Something went wrong. ${GENERIC_ERROR_MESSAGE}`,
+            },
+        })
+    }
   }
 
 module.exports = {

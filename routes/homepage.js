@@ -16,7 +16,7 @@ async function readHomepage (req, res, next) {
 
   const { siteName } = req.params
 
-  const IsomerFile = new File(access_token, siteName)
+  const IsomerFile = new File(accessToken, siteName)
   const homepageType =  new HomepageType()
   IsomerFile.setFileType(homepageType)
   const { sha, content } = await IsomerFile.read(HOMEPAGE_INDEX_PATH)
@@ -38,7 +38,7 @@ async function updateHomepage (req, res, next) {
     // TO-DO:
     // Validate content
 
-    const IsomerFile = new File(access_token, siteName)
+    const IsomerFile = new File(accessToken, siteName)
     const homepageType =  new HomepageType()
     IsomerFile.setFileType(homepageType)
     const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, content, sha)

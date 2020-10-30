@@ -51,7 +51,7 @@ async function githubAuth (req, res, next) {
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
 
-  res.redirect(`${FRONTEND_URL}/auth`)
+  res.redirect(`${FRONTEND_URL}/auth#isomercms`)
 }
 
 async function logout(req, res) {

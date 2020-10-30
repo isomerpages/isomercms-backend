@@ -24,6 +24,10 @@ const verifyJwt = (req, res, next) => {
         if (err.name === 'TokenExpiredError') {
             throw new AuthError('JWT token has expired')
         }
+        if (err.name === 'JsonWebTokenError') {
+            throw new AuthError(err.message)
+        }
+        throw new Error(err)
     }
     return next('router')
 }

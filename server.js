@@ -15,7 +15,6 @@ const { errorHandler } = require('./middleware/errorHandler')
 // Import routes
 const indexRouter = require('./routes/index')
 const authRouter = require('./routes/auth')
-const cookieValidationRouter = require('./routes/cookieValidation')
 const sitesRouter = require('./routes/sites')
 const pagesRouter = require('./routes/pages')
 const collectionsRouter = require('./routes/collections')
@@ -49,7 +48,6 @@ app.use(auth)
 // Routes layer setup
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
-app.use('/validate-cookie', cookieValidationRouter)
 app.use('/sites', sitesRouter)
 app.use('/sites', pagesRouter)
 app.use('/sites', collectionsRouter)

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const jwtUtils = require('../utils/jwt-utils')
+
+// Import middleware
+const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { File, HomepageType } = require('../classes/File.js')
@@ -9,32 +11,26 @@ const { File, HomepageType } = require('../classes/File.js')
 const HOMEPAGE_INDEX_PATH = 'index.md' // Empty string
 
 // Read homepage index file
-router.get('/:siteName/homepage', async function(req, res, next) {
-  try {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+async function readHomepage (req, res, next) {
+  const { accessToken } = req
 
-    const { siteName } = req.params
+  const { siteName } = req.params
 
-    const IsomerFile = new File(access_token, siteName)
-    const homepageType =  new HomepageType()
-    IsomerFile.setFileType(homepageType)
-    const { sha, content } = await IsomerFile.read(HOMEPAGE_INDEX_PATH)
+  const IsomerFile = new File(accessToken, siteName)
+  const homepageType =  new HomepageType()
+  IsomerFile.setFileType(homepageType)
+  const { sha, content } = await IsomerFile.read(HOMEPAGE_INDEX_PATH)
 
-    // TO-DO:
-    // Validate content
+  // TO-DO:
+  // Validate content
 
-    res.status(200).json({ content, sha })
-  } catch (err) {
-    console.log(err)
-  }
-})
+  res.status(200).json({ content, sha })
+}
 
 // Update homepage index file
-router.post('/:siteName/homepage', async function(req, res, next) {
+async function updateHomepage (req, res, next) {
   try {
-    const { oauthtoken } = req.cookies
-    const { access_token } = jwtUtils.verifyToken(oauthtoken)
+    const { accessToken } = req
 
     const { siteName } = req.params
     const { content, sha } = req.body
@@ -42,7 +38,7 @@ router.post('/:siteName/homepage', async function(req, res, next) {
     // TO-DO:
     // Validate content
 
-    const IsomerFile = new File(access_token, siteName)
+    const IsomerFile = new File(accessToken, siteName)
     const homepageType =  new HomepageType()
     IsomerFile.setFileType(homepageType)
     const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, content, sha)
@@ -51,6 +47,9 @@ router.post('/:siteName/homepage', async function(req, res, next) {
   } catch (err) {
     console.log(err)
   }
-})
+}
+
+router.get('/:siteName/homepage', attachRouteHandlerWrapper(readHomepage))
+router.post('/:siteName/homepage', attachRouteHandlerWrapper(updateHomepage))
 
 module.exports = router;

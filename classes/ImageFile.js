@@ -2,6 +2,10 @@ const axios = require('axios');
 const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
+// Import error
+const { NotFoundError  } = require('../errors/NotFoundError')
+
+// Constants
 const GITHUB_ORG_NAME = 'isomerpages'
 
 class ImageFile {
@@ -99,7 +103,7 @@ class ImageFile {
         }
       })
   
-      if (resp.status === 404) throw new Error ('Page does not exist')
+      if (resp.status === 404) throw new NotFoundError ('Image does not exist')
   
       const { content, sha } = resp.data
   

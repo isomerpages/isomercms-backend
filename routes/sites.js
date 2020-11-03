@@ -1,27 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const jwtUtils = require('../utils/jwt-utils')
-const _ = require('lodash')
+const _ = require('lodash');
+const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
 
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
-// const ISOMER_ADMIN_REPOS = [
-//   'isomercms-backend',
-//   'isomercms-frontend',
-//   'isomer-redirection',
-//   'isomerpages-template',
-//   'isomer-conversion-scripts',
-//   'isomer-wysiwyg',
-//   'isomer-slackbot',
-//   'isomer-tooling',
-//   'generate-site',
-//   'travisci-scripts',
-//   'recommender-train',
-//   'editor',
-//   'ci-test',
-//   'infra',
-//   'markdown-helper',
-// ]
+const ISOMER_ADMIN_REPOS = [
+  'isomercms-backend',
+  'isomercms-frontend',
+  'isomer-redirection',
+  'isomerpages-template',
+  'isomer-conversion-scripts',
+  'isomer-wysiwyg',
+  'isomer-slackbot',
+  'isomer-tooling',
+  'generate-site',
+  'travisci-scripts',
+  'recommender-train',
+  'editor',
+  'ci-test',
+  'infra',
+  'markdown-helper',
+]
 
 // timeDiff tells us when a repo was last updated in terms of days (for e.g. 2 days ago,
 // today)
@@ -41,10 +41,8 @@ const timeDiff = (lastUpdated) => {
 
 /* Returns a list of all sites (repos) that the user has access to on Isomer. */
 // TO-DO: Paginate properly
-router.get('/', async function(req, res, next) {
-  try {
-    const { oauthtoken } = req.cookies
-    let { access_token } = jwtUtils.verifyToken(oauthtoken)
+async function getSites (req, res, next) {
+  const { accessToken } = req
 
     // Variable to store user repos
     let siteNames = []
@@ -63,7 +61,7 @@ router.get('/', async function(req, res, next) {
           sort: "full_name",
         },
         headers: {
-          Authorization: `token ${access_token}`,
+          Authorization: `token ${accessToken}`,
           "Content-Type": "application/json",
         }
       })
@@ -87,12 +85,11 @@ router.get('/', async function(req, res, next) {
     }
     
     // Remove Isomer admin repositories from this list
-    // siteNames = _.difference(siteNames, ISOMER_ADMIN_REPOS)
+    siteNames = _.difference(siteNames, ISOMER_ADMIN_REPOS)
     
     res.status(200).json({ siteNames })
-  } catch (err) {
-    console.log(err)
-  }
-});
+}
+
+router.get('/', attachRouteHandlerWrapper(getSites));
 
 module.exports = router;

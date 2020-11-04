@@ -44,7 +44,19 @@ jobs:
         - name: Install NPM
           run: npm ci
         - name: Start application
-          run: npm start
+          run: |
+            npm start &
+            sleep 10 &&
+            curl http://localhost:8081
+          env:
+            AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS: ${{ secrets.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS }}
+            CLIENT_ID: ${{ secrets.CLIENT_ID }}
+            CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+            COOKIE_DOMAIN: ${{ secrets.COOKIE_DOMAIN }}
+            FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+            GH_ORG_NAME: ${{ secrets.GH_ORG_NAME }}
+            JWT_SECRET: ${{ secrets.JWT_SECRET }}
+            NODE_ENV: ${{ secrets.NODE_ENV }}
         - name: Confirm that checks are completed
           shell: bash
           run: echo "App started successfully!"

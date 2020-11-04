@@ -12,13 +12,15 @@ env:
   EB_ENV_STAGING: isomercms-backend-staging
   EB_ENV_DEV: isomercms-backend-staging-dev
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+  GH_EVENT_NAME: ${{ github.event_name }}
 jobs:
   gatekeep:
     name: Determine if Build & Deploy is needed
     runs-on: ubuntu-18.04
     outputs:
       proceed: ${{ steps.determine_proceed.outputs.proceed }}
-    if: github.event_name == 'push' && (github.event.ref == 'refs/heads/master' || github.event.ref == 'refs/heads/staging' || github.event.ref == 'refs/heads/staging-dev')
+      isBranch: ${{ steps.determine_proceed.outputs.isBranch }}
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - shell: python
         id: determine_proceed
@@ -28,20 +30,37 @@ jobs:
           prod = os.environ['PRODUCTION_BRANCH']
           staging = os.environ['STAGING_BRANCH']
           dev = os.environ['DEV_BRANCH']
-          if ref == prod or ref == staging or ref == dev:
+          eventName = os.environ['GH_EVENT_NAME']
+          if ref == prod or ref == staging or ref == dev or eventName == 'pull_request':
             print('::set-output name=proceed::true')
+            if eventName == 'pull_request':
+              print('::set-output name=isBranch::false')
+            else:
+              print('::set-output name=isBranch::true')
           else:
             print('::set-output name=proceed::false')
   test:
     name: Check that application can run
     runs-on: ubuntu-18.04
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.event.ref == 'refs/heads/master' || github.event.ref == 'refs/heads/staging' || github.event.ref == 'refs/heads/staging-dev'))
+    needs: [gatekeep]
+    outputs:
+      proceed: ${{ steps.determine_proceed.outputs.proceed }}
+    if: needs.gatekeep.outputs.proceed == 'true'
     steps:
         - uses: actions/checkout@v2
         - name: Use Node.js
           uses: actions/setup-node@v1
           with:
             node-version: '12.x'
+        - name: Cache Node.js modules
+          uses: actions/cache@v2
+          with:
+            # npm cache files are stored in `~/.npm` on Linux/macOS
+            path: ~/.npm
+            key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+            restore-keys: |
+              ${{ runner.OS }}-node-
+              ${{ runner.OS }}-
         - name: Install NPM
           run: npm ci
         - name: Start application
@@ -61,28 +80,24 @@ jobs:
         - name: Confirm that checks are completed
           shell: bash
           run: echo "App started successfully!"
+        - shell: python
+          id: determine_proceed
+          run: |
+            import os
+            isBranch = os.environ['isBranch']
+            if isBranch == 'true':
+              print('::set-output name=proceed::true')
+            else:
+              print('::set-output name=proceed::false')
+          env:
+            isBranch: ${{ needs.gatekeep.outputs.isBranch }}
   deploy:
     name: Build and deploy to EB
     runs-on: ubuntu-18.04
-    needs: [gatekeep, test]
-    if: needs.gatekeep.outputs.proceed == 'true'
+    needs: [test]
+    if: needs.test.outputs.proceed == 'true'
     steps:
         - uses: actions/checkout@v2
-        - name: Use Node.js
-          uses: actions/setup-node@v1
-          with:
-            node-version: '12.x'
-        - name: Cache Node.js modules
-          uses: actions/cache@v2
-          with:
-            # npm cache files are stored in `~/.npm` on Linux/macOS
-            path: ~/.npm
-            key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-            restore-keys: |
-              ${{ runner.OS }}-node-
-              ${{ runner.OS }}-
-        - name: Install NPM
-          run: npm ci
         - name: Zip application
           run: zip -r "deploy.zip" * -x .env-example .gitignore package-lock.json
         - name: Get timestamp

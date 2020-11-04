@@ -2,7 +2,7 @@ name: ci
 on:
   push:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, synchronize, reopened]
 env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
@@ -13,12 +13,32 @@ env:
   EB_ENV_DEV: isomercms-backend-staging-dev
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 jobs:
+  exportEnv:
+    name: Make workflow-level env vars available at the job level
+    runs-on: ubuntu-18.04
+    outputs:
+      PRODUCTION_BRANCH: ${{ steps.export_env_vars.outputs.prod }}
+      STAGING_BRANCH: ${{ steps.export_env_vars.outputs.staging }}
+      DEV_BRANCH: ${{ steps.export_env_vars.outputs.dev }}
+    steps:
+      - name: Export env vars
+        shell: python
+        id: export_env_vars
+        run: |
+          import os
+          prod = os.environ['PRODUCTION_BRANCH']
+          staging = os.environ['STAGING_BRANCH']
+          dev = os.environ['DEV_BRANCH']
+          print('::set-output name=prod::' + prod)
+          print('::set-output name=staging::' + staging)
+          print('::set-output name=dev::' + dev)
   gatekeep:
     name: Determine if Build & Deploy is needed
+    runs-on: ubuntu-18.04
+    needs: [exportEnv]
     outputs:
       proceed: ${{ steps.determine_proceed.outputs.proceed }}
-    runs-on: ubuntu-18.04
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && (github.event.ref == needs.exportEnv.outputs.PRODUCTION_BRANCH || github.event.ref == needs.exportEnv.outputs.STAGING_BRANCH || github.event.ref == needs.exportEnv.outputs.DEV_BRANCH)
     steps:
       - shell: python
         id: determine_proceed
@@ -35,6 +55,7 @@ jobs:
   test:
     name: Check that application can run
     runs-on: ubuntu-18.04
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.event.ref == needs.exportEnv.outputs.PRODUCTION_BRANCH || github.event.ref == needs.exportEnv.outputs.STAGING_BRANCH || github.event.ref == needs.exportEnv.outputs.DEV_BRANCH))
     steps:
         - uses: actions/checkout@v2
         - name: Use Node.js

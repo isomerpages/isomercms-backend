@@ -6,7 +6,7 @@ on:
 env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
-  DEV_BRANCH: refs/heads/staging-dev
+  DEV_BRANCH: refs/heads/ci/refine-gh-actions
   EB_APP: isomer-cms
   EB_ENV_PRODUCTION: isomercms-backend-prod
   EB_ENV_STAGING: isomercms-backend-staging
@@ -32,10 +32,26 @@ jobs:
             print('::set-output name=proceed::true')
           else:
             print('::set-output name=proceed::false')
+  test:
+    name: Check that application can run
+    runs-on: ubuntu-18.04
+    steps:
+        - uses: actions/checkout@v2
+        - name: Use Node.js
+          uses: actions/setup-node@v1
+          with:
+            node-version: '12.x'
+        - name: Install NPM
+          run: npm ci
+        - name: Start application
+          run: npm start
+        - name: Confirm that checks are completed
+          shell: bash
+          run: echo "App started successfully!"
   deploy:
     name: Build and deploy to EB
     runs-on: ubuntu-18.04
-    needs: [gatekeep]
+    needs: [gatekeep, test]
     if: needs.gatekeep.outputs.proceed == 'true'
     steps:
         - uses: actions/checkout@v2

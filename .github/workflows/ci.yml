@@ -14,7 +14,7 @@ env:
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 jobs:
   gatekeep:
-    name: Determine if Build & Deploy is needed
+    name: Determine if Build & Deploy is needed (test)
     outputs:
       proceed: ${{ steps.determine_proceed.outputs.proceed }}
     runs-on: ubuntu-18.04

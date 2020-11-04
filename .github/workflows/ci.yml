@@ -65,6 +65,16 @@ jobs:
           id: get_label
           env:
             TIMESTAMP: ${{ steps.get_timestamp.outputs.timestamp }}
+        - name: Get truncated version_description
+          id: get_desc
+          shell: bash
+          run: |
+            export commit_msg="${{ github.event.head_commit.message }}";
+            export step1=${commit_msg:0:100}
+            export step2=${step1//\(};
+            export step3=${step2//\(};
+            export desc=${step3//\'};
+            echo "##[set-output name=desc;]$(echo ${desc})";
         - name: Select Elastic Beanstalk variables
           shell: python
           run: |
@@ -94,7 +104,7 @@ jobs:
             aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_DEPLOYMENT }}
             application_name: ${{ steps.select_eb_vars.outputs.eb_app }}
             environment_name: ${{ steps.select_eb_vars.outputs.eb_env }}
-            version_description: ${{ github.event.head_commit.message }}
+            version_description: ${{ steps.get_desc.outputs.desc }}
             version_label: ${{ steps.get_label.outputs.label }}
             region: ap-southeast-1
             deployment_package: deploy.zip

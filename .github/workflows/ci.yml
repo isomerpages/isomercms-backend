@@ -6,11 +6,12 @@ on:
 env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
-  DEV_BRANCH: refs/heads/setup-github-actions
+  DEV_BRANCH: refs/heads/staging-dev
   EB_APP: isomer-cms
   EB_ENV_PRODUCTION: isomercms-backend-prod
   EB_ENV_STAGING: isomercms-backend-staging
   EB_ENV_DEV: isomercms-backend-staging-dev
+  COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 jobs:
   gatekeep:
     name: Determine if Build & Deploy is needed
@@ -65,6 +66,14 @@ jobs:
           id: get_label
           env:
             TIMESTAMP: ${{ steps.get_timestamp.outputs.timestamp }}
+        - name: Get truncated version_description
+          id: get_desc
+          shell: python
+          run: |
+            import os
+            commit_message = os.environ['COMMIT_MESSAGE']
+            description = commit_message[0:100].replace('(', '').replace(')', '').replace('\'', '')
+            print('::set-output name=desc::' + description)
         - name: Select Elastic Beanstalk variables
           shell: python
           run: |
@@ -94,7 +103,7 @@ jobs:
             aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_DEPLOYMENT }}
             application_name: ${{ steps.select_eb_vars.outputs.eb_app }}
             environment_name: ${{ steps.select_eb_vars.outputs.eb_env }}
-            version_description: ${{ github.event.head_commit.message }}
+            version_description: ${{ steps.get_desc.output.desc }}
             version_label: ${{ steps.get_label.outputs.label }}
             region: ap-southeast-1
             deployment_package: deploy.zip

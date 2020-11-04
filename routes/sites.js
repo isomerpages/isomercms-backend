@@ -4,7 +4,7 @@ const axios = require('axios');
 const _ = require('lodash');
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
 
-const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const ISOMER_GITHUB_ORG_NAME = process.env.GH_ORG_NAME
 const ISOMER_ADMIN_REPOS = [
   'isomercms-backend',
   'isomercms-frontend',

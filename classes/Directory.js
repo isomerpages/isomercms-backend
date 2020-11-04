@@ -2,7 +2,7 @@ const axios = require('axios');
 const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
-const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const GITHUB_ORG_NAME = process.env.GH_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
 
 class Directory {

@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-18.04
     if: github.event_name == 'push'
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - shell: python
         id: determine_proceed
         run: |

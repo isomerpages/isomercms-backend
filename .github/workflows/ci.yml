@@ -6,7 +6,7 @@ on:
 env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
-  DEV_BRANCH: refs/heads/setup-github-actions
+  DEV_BRANCH: refs/heads/staging-dev
   EB_APP: isomer-cms
   EB_ENV_PRODUCTION: isomercms-backend-prod
   EB_ENV_STAGING: isomercms-backend-staging

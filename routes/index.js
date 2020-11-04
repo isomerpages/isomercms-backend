@@ -16,6 +16,6 @@ function getCmsHomepage (req, res, next) {
     state: uuid()
    })
 }
-router.get('/', attachRouteHandlerWrapper(getCmsHomepage));
+router.get('/', getCmsHomepage);
 
 module.exports = router;

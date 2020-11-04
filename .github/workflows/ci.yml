@@ -11,6 +11,7 @@ env:
   EB_ENV_PRODUCTION: isomercms-backend-prod
   EB_ENV_STAGING: isomercms-backend-staging
   EB_ENV_DEV: isomercms-backend-staging-dev
+  COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 jobs:
   gatekeep:
     name: Determine if Build & Deploy is needed
@@ -67,14 +68,12 @@ jobs:
             TIMESTAMP: ${{ steps.get_timestamp.outputs.timestamp }}
         - name: Get truncated version_description
           id: get_desc
-          shell: bash
+          shell: python
           run: |
-            export commit_msg="${{ github.event.head_commit.message }}";
-            export step1=${commit_msg:0:100}
-            export step2=${step1//\(};
-            export step3=${step2//\(};
-            export desc=${step3//\'};
-            echo "##[set-output name=desc;]$(echo ${desc})";
+            import os
+            commit_message = os.environ['COMMIT_MESSAGE']
+            description = commit_message[0:100].replace('(', '').replace(')', '').replace('\'', '')
+            print('::set-output name=desc::' + description)
         - name: Select Elastic Beanstalk variables
           shell: python
           run: |

@@ -12,7 +12,6 @@ const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
 const REDIRECT_URI = process.env.REDIRECT_URI
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
 const FRONTEND_URL = process.env.FRONTEND_URL
 
@@ -40,7 +39,6 @@ async function githubAuth (req, res, next) {
   
   let cookieSettings = {
     path: '/',
-    domain: COOKIE_DOMAIN,
     expires: authTokenExpiry,
     httpOnly: true,
     sameSite: true,

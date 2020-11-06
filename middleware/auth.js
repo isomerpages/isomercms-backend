@@ -83,6 +83,7 @@ auth.post('/sites/:siteName/menus/:menuName', verifyJwt)
 
 // Pages
 auth.get('/sites/:siteName/pages', verifyJwt)
+auth.get('/sites/:siteName/unlinkedPages', verifyJwt)
 auth.post('/sites/:siteName/pages', verifyJwt)
 auth.get('/sites/:siteName/pages/:pageName', verifyJwt)
 auth.post('/sites/:siteName/pages/:pageName', verifyJwt)

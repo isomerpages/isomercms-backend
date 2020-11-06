@@ -11,15 +11,28 @@ const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
 const { create } = require('lodash');
 
+const getUnlinkedPages = async (accessToken, siteName) => {
+  const IsomerFile = new File(accessToken, siteName)
+  const pageType = new PageType()
+  IsomerFile.setFileType(pageType)
+  const simplePages = await IsomerFile.list()
+  return simplePages
+}
+
+async function listUnlinkedPages (req, res, next) {
+  const { accessToken } = req
+  const { siteName } = req.params
+
+  const unlinkedPages = await getUnlinkedPages(accessToken, siteName)
+  res.status(200).json({ pages: unlinkedPages })
+}
+
 // List both simple pages and collection pages
 async function listPages (req, res, next) {
   const { accessToken } = req
   const { siteName } = req.params
 
-  const IsomerFile = new File(accessToken, siteName)
-  const pageType = new PageType()
-  IsomerFile.setFileType(pageType)
-  const simplePages = await IsomerFile.list()
+  const simplePages = await getUnlinkedPages(accessToken, siteName)
   // After listing all simple pages, they're tagged for the frontend
   const taggedSimplePages = simplePages.map(simplePage => {
     return {
@@ -145,6 +158,7 @@ async function renamePage(req, res, next) {
 
 
 router.get('/:siteName/pages', attachRouteHandlerWrapper(listPages))
+router.get('/:siteName/unlinkedPages', attachRouteHandlerWrapper(listUnlinkedPages))
 router.post('/:siteName/pages', attachRouteHandlerWrapper(createNewPage))
 router.get('/:siteName/pages/:pageName', attachRouteHandlerWrapper(readPage))
 router.post('/:siteName/pages/:pageName', attachRouteHandlerWrapper(updatePage))

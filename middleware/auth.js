@@ -2,6 +2,9 @@
 const express = require('express')
 const jwtUtils = require('../utils/jwt-utils')
 
+// Import logger
+const logger = require('../logger/logger')
+
 // Import errors
 const { AuthError } = require('../errors/AuthError')
 const { verify } = require('jsonwebtoken')
@@ -21,7 +24,7 @@ const verifyJwt = (req, res, next) => {
         req.accessToken = access_token
         req.userId = user_id
     } catch (err) {
-        console.error('Authentication error')
+        logger.error('Authentication error')
         if (err.name === 'TokenExpiredError') {
             throw new AuthError('JWT token has expired')
         }
@@ -35,7 +38,7 @@ const verifyJwt = (req, res, next) => {
 
 // Login and logout
 auth.get('/auth', noVerify)
-auth.get('/auth/logout', noVerify)
+auth.get('/auth/logout', verifyJwt)
 
 // Index
 auth.get('/', noVerify)

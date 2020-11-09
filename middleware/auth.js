@@ -17,8 +17,9 @@ function noVerify (req, res, next) {
 const verifyJwt = (req, res, next) => {
     try {
         const { isomercms } = req.cookies
-        const { access_token } = jwtUtils.verifyToken(isomercms)
+        const { access_token, user_id } = jwtUtils.verifyToken(isomercms)
         req.accessToken = access_token
+        req.userId = user_id
     } catch (err) {
         console.error('Authentication error')
         if (err.name === 'TokenExpiredError') {

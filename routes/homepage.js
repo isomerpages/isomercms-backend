@@ -29,24 +29,20 @@ async function readHomepage (req, res, next) {
 
 // Update homepage index file
 async function updateHomepage (req, res, next) {
-  try {
-    const { accessToken } = req
+  const { accessToken } = req
 
-    const { siteName } = req.params
-    const { content, sha } = req.body
+  const { siteName } = req.params
+  const { content, sha } = req.body
 
-    // TO-DO:
-    // Validate content
+  // TO-DO:
+  // Validate content
 
-    const IsomerFile = new File(accessToken, siteName)
-    const homepageType =  new HomepageType()
-    IsomerFile.setFileType(homepageType)
-    const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, content, sha)
+  const IsomerFile = new File(accessToken, siteName)
+  const homepageType =  new HomepageType()
+  IsomerFile.setFileType(homepageType)
+  const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, content, sha)
 
-    res.status(200).json({ content, sha: newSha })
-  } catch (err) {
-    console.log(err)
-  }
+  res.status(200).json({ content, sha: newSha })
 }
 
 router.get('/:siteName/homepage', attachRouteHandlerWrapper(readHomepage))

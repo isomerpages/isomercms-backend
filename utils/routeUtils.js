@@ -1,5 +1,10 @@
 // Import classes
-const { File, PageType, CollectionPageType } = require('../classes/File')
+const {
+    File,
+    PageType,
+    CollectionPageType,
+    DataType,
+} = require('../classes/File')
 
 const readPageUtilFunc = async (accessToken, siteName, pageName) => {
     const IsomerFile = new File(accessToken, siteName)
@@ -17,7 +22,16 @@ const readCollectionPageUtilFunc = async (accessToken, siteName, collectionName,
     return fileContents
 }
 
+const createDataFileUtilFunc = async (accessToken, siteName, filePath, content) => {
+    const IsomerFile = new File(accessToken, siteName)
+    const dataType = new DataType()
+    IsomerFile.setFileType(dataType)
+    await IsomerFile.create(filePath, content)
+    return
+}
+
 module.exports = {
     readPageUtilFunc,
     readCollectionPageUtilFunc,
+    createDataFileUtilFunc,
 }

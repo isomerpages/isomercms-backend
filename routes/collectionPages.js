@@ -9,7 +9,7 @@ const { File, CollectionPageType } = require('../classes/File.js');
 const { update } = require('lodash');
 
 // Import util functions
-const { readCollectionPageUtilFunc } = require('../utils/routeUtils')
+const { readCollectionPageUtilFunc } = require('../utils/route-utils')
 
 // List pages in collection
 async function listCollectionPages(req, res, next) {

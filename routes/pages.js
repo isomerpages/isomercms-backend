@@ -12,7 +12,7 @@ const { Collection } = require('../classes/Collection.js');
 const { create } = require('lodash');
 
 // Import util functions
-const { readPageUtilFunc } = require('../utils/routeUtils')
+const { readPageUtilFunc } = require('../utils/route-utils')
 
 const getUnlinkedPages = async (accessToken, siteName) => {
   const IsomerFile = new File(accessToken, siteName)

@@ -11,6 +11,9 @@ const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
 const { create } = require('lodash');
 
+// Import util functions
+const { readPageUtilFunc } = require('../utils/routeUtils/pagesRouteUtils')
+
 const getUnlinkedPages = async (accessToken, siteName) => {
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
@@ -93,11 +96,8 @@ async function readPage(req, res, next) {
 
   const { siteName, pageName } = req.params
 
-  const IsomerFile = new File(accessToken, siteName)
-  const pageType = new PageType()
-  IsomerFile.setFileType(pageType)
-  const { sha, content } = await IsomerFile.read(pageName)
-
+  const { sha, content } = await readPageUtilFunc(accessToken, siteName, pageName)
+  
   // TO-DO:
   // Validate content
 

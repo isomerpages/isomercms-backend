@@ -8,6 +8,9 @@ const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 const { File, CollectionPageType } = require('../classes/File.js');
 const { update } = require('lodash');
 
+// Import util functions
+const { readCollectionPageUtilFunc } = require('../utils/routeUtils')
+
 // List pages in collection
 async function listCollectionPages(req, res, next) {
   const { accessToken } = req
@@ -48,10 +51,7 @@ async function readCollectionPage(req, res, next) {
 
   const { siteName, pageName, collectionName } = req.params
 
-  const IsomerFile = new File(accessToken, siteName)
-  const collectionPageType = new CollectionPageType(collectionName)
-  IsomerFile.setFileType(collectionPageType)
-  const { sha, content } = await IsomerFile.read(pageName)
+  const { sha, content } = await readCollectionPageUtilFunc(accessToken, siteName, collectionName, pageName)
 
   // TO-DO:
   // Validate content

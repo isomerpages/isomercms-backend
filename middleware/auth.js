@@ -56,6 +56,8 @@ auth.get('/sites/:siteName/collections', verifyJwt)
 auth.post('/sites/:siteName/collections', verifyJwt)
 auth.delete('/sites/:siteName/collections/:collectionName', verifyJwt)
 auth.post('/sites/:siteName/collections/:collectionName/rename/:newCollectionName', verifyJwt)
+auth.get('/sites/:siteName/collections/:collectionName/nav', verifyJwt)
+auth.post('/sites/:siteName/collections/:collectionName/nav', verifyJwt)
 
 // Documents
 auth.get('/sites/:siteName/documents', verifyJwt)

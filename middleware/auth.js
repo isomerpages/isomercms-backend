@@ -45,6 +45,7 @@ auth.post('/sites/:siteName/homepage', verifyJwt)
 
 // Collection pages
 auth.get('/sites/:siteName/collections/:collectionName', verifyJwt)
+auth.get('/sites/:siteName/collections/:collectionName/pages', verifyJwt)
 auth.post('/sites/:siteName/collections/:collectionName/pages', verifyJwt)
 auth.get('/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
 auth.post('/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)

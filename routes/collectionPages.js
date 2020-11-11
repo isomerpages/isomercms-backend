@@ -1,12 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const Bluebird = require('bluebird');
+const yaml = require('js-yaml');
+const base64 = require('base-64');
+const _ = require('lodash');
 
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
+const { Collection } = require('../classes/Collection.js')
 const { File, CollectionPageType } = require('../classes/File.js');
 const { update } = require('lodash');
+
+// Import utils
+const { readCollectionPageUtilFunc } = require('../utils/route-utils')
 
 // List pages in collection
 async function listCollectionPages(req, res, next) {

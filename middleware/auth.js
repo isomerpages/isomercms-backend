@@ -114,6 +114,9 @@ auth.post('/sites/:siteName/resources/:resourceName/rename/:newResourceName', ve
 auth.get('/sites/:siteName/settings', verifyJwt)
 auth.post('/sites/:siteName/settings', verifyJwt)
 
+// Netlify toml
+auth.get('/sites/:siteName/netlify-toml', verifyJwt)
+
 // Sites
 auth.get('/sites', verifyJwt)
 

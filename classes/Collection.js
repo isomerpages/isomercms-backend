@@ -63,13 +63,14 @@ class Collection {
 	    IsomerFile.setFileType(collectionPageType)
 			const collectionPages = await IsomerFile.list()
 
-	    // Delete all collectionPages
-	    await Bluebird.map(collectionPages, async(collectionPage) => {
-	      let pageName = collectionPage.pageName
-	      const { sha } = await IsomerFile.read(pageName)
-	      return IsomerFile.delete(pageName, sha)
-	    })
-
+			if (!_.isEmpty(collectionPages)) {
+				// Delete all collectionPages
+				await Bluebird.map(collectionPages, async(collectionPage) => {
+					let pageName = collectionPage.pageName
+					const { sha } = await IsomerFile.read(pageName)
+					return IsomerFile.delete(pageName, sha)
+				})
+			}
     } catch (err) {
       throw err
     }

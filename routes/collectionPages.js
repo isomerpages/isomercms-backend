@@ -11,6 +11,7 @@ const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 // Import classes 
 const { Collection } = require('../classes/Collection.js')
 const { File, CollectionPageType } = require('../classes/File.js');
+const { Collection } = require('../classes/Collection.js');
 const { update } = require('lodash');
 
 // Import utils
@@ -102,8 +103,13 @@ async function createNewcollectionPage (req, res, next) {
   const { siteName, collectionName } = req.params
   const { pageName, content } = req.body
 
+  // Check if collection exists and create if it does not
+  const IsomerCollection = new Collection(accessToken, siteName)
+  const collections = await IsomerCollection.list()
+  if (!collections.includes(collectionName)) {
+    IsomerCollection.create(collectionName)
+  }
   // TO-DO:
-  // Validate that collection exists
   // Validate pageName and content
 
   const IsomerFile = new File(accessToken, siteName)
@@ -163,6 +169,13 @@ async function deleteCollectionPage (req, res, next) {
   const collectionPageType = new CollectionPageType(collectionName)
   IsomerFile.setFileType(collectionPageType)
   await IsomerFile.delete(pageName, sha)
+
+  // Check if collection has any pages left, and delete if none left
+  const collectionPages = await IsomerFile.list()
+  if (_.isEmpty(collectionPages)) {
+    const IsomerCollection = new Collection(accessToken, siteName)
+    await IsomerCollection.delete(collectionName)
+  }
 
   res.status(200).send('OK')
 }

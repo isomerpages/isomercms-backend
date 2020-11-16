@@ -107,7 +107,7 @@ async function createNewcollectionPage (req, res, next) {
   const IsomerCollection = new Collection(accessToken, siteName)
   const collections = await IsomerCollection.list()
   if (!collections.includes(collectionName)) {
-    IsomerCollection.create(collectionName)
+    await IsomerCollection.create(collectionName)
   }
   // TO-DO:
   // Validate pageName and content

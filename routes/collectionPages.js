@@ -11,7 +11,6 @@ const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 // Import classes 
 const { Collection } = require('../classes/Collection.js')
 const { File, CollectionPageType } = require('../classes/File.js');
-const { Collection } = require('../classes/Collection.js');
 const { update } = require('lodash');
 
 // Import utils

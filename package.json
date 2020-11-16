@@ -25,6 +25,7 @@
     "morgan": "~1.9.1",
     "query-string": "^6.8.3",
     "serialize-error": "^7.0.1",
+    "toml": "^3.0.0",
     "uuid": "^3.3.3"
   },
   "devDependencies": {

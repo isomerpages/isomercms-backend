@@ -2,7 +2,7 @@ const Bluebird = require('bluebird')
 const _ = require('lodash')
 
 // Import classes 
-const { File, ResourceType, ResourcePageType } = require('../classes/File.js')
+const { File, ResourceCategoryType, ResourcePageType } = require('../classes/File.js')
 const { Directory, ResourceRoomType } = require('../classes/Directory.js')
 
 // Constants
@@ -30,9 +30,9 @@ class Resource {
     try {
       // Create an index file in the resource folder
       const IsomerFile = new File(this.accessToken, this.siteName)
-      const resourceType = new ResourceType(resourceRoomName)
+      const resourceType = new ResourceCategoryType(resourceRoomName, resourceName)
       IsomerFile.setFileType(resourceType)
-      return IsomerFile.create(`${resourceName}/${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
+      return IsomerFile.create(`${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
     } catch (err) {
       throw err
     }
@@ -42,16 +42,16 @@ class Resource {
     try {
       // Delete old index file in old resource
       const OldIsomerIndexFile = new File(this.accessToken, this.siteName)
-      const resourceType = new ResourceType(resourceRoomName)
+      const resourceType = new ResourceCategoryType(resourceRoomName, resourceName)
       OldIsomerIndexFile.setFileType(resourceType)
-      const { sha: oldSha } = await OldIsomerIndexFile.read(`${resourceName}/${RESOURCE_INDEX_PATH}`)
-      await OldIsomerIndexFile.delete(`${resourceName}/${RESOURCE_INDEX_PATH}`, oldSha)
+      const { sha: oldSha } = await OldIsomerIndexFile.read(`${RESOURCE_INDEX_PATH}`)
+      await OldIsomerIndexFile.delete(`${RESOURCE_INDEX_PATH}`, oldSha)
 
       // Create new index file in new resource
       const NewIsomerIndexFile = new File(this.accessToken, this.siteName)
-      const newResourceType = new ResourceType(newResourceRoomName)
+      const newResourceType = new ResourceCategoryType(newResourceRoomName, newResourceName)
       NewIsomerIndexFile.setFileType(newResourceType)
-      await NewIsomerIndexFile.create(`${newResourceName}/${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
+      await NewIsomerIndexFile.create(`${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
 
       // Rename resourcePages
       const OldIsomerFile = new File(this.accessToken, this.siteName)
@@ -83,10 +83,10 @@ class Resource {
     try {
       // Delete index file in resource
       const IsomerIndexFile = new File(this.accessToken, this.siteName)
-      const resourceType = new ResourceType(resourceRoomName)
+      const resourceType = new ResourceCategoryType(resourceRoomName, resourceName)
       IsomerIndexFile.setFileType(resourceType)
-      const { sha } = await IsomerIndexFile.read(`${resourceName}/${RESOURCE_INDEX_PATH}`)
-      await IsomerIndexFile.delete(`${resourceName}/${RESOURCE_INDEX_PATH}`, sha)
+      const { sha } = await IsomerIndexFile.read(`${RESOURCE_INDEX_PATH}`)
+      await IsomerIndexFile.delete(`${RESOURCE_INDEX_PATH}`, sha)
 
       // Delete all resourcePages in resource
       // 1. List all resourcePages in resource

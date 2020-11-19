@@ -7,6 +7,7 @@ const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
 // Import classes 
 const { File, ResourcePageType } = require('../classes/File.js')
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
+const { Resource } = require('../classes/Resource.js')
 
 // List pages in resource
 async function listResourcePages (req, res, next) {
@@ -33,9 +34,17 @@ async function createNewResourcePage(req, res, next) {
 
   // TO-DO:
   // Validate pageName and content
-
   const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
+
+  // Check if resource category exists and create if it does not
+  const IsomerResource = new Resource(accessToken, siteName)
+  const resources = await IsomerResource.list(resourceRoomName)
+  const resourceCategories = resources.map(resource => resource.dirName)
+  if (!resourceCategories.includes(resourceName)) {
+    await IsomerResource.create(resourceRoomName, resourceName)
+  }
+
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)

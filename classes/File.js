@@ -185,6 +185,15 @@ class ResourcePageType {
   }
 }
 
+class ResourceCategoryType {
+  constructor(resourceRoomName, resourceName) {
+    this.folderName = `${resourceRoomName}/${resourceName}`
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
 class ResourceType {
   constructor(resourceRoomName) {
     this.folderName = `${resourceRoomName}`
@@ -230,4 +239,4 @@ class HomepageType {
   }
 }
 
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }
+module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceCategoryType, ResourceType, ImageType, DocumentType, DataType, HomepageType }

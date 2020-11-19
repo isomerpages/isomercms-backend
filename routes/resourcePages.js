@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const _ = require('lodash')
 
 // Import middleware
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
@@ -105,6 +106,13 @@ async function deleteResourcePage(req, res, next) {
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   await IsomerFile.delete(pageName, sha)
+
+  // Check if collection has any pages left, and delete if none left
+  const resources = await IsomerFile.list()
+  if (_.isEmpty(resources)) {
+    const IsomerResource = new Resource(accessToken, siteName)
+    await IsomerResource.delete(resourceRoomName, resourceName)
+  }
 
   res.status(200).send('OK')
 }

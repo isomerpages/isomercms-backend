@@ -24,22 +24,17 @@ async function listResources (req, res, next) {
 
 // Create new resource
 async function createNewResource (req, res, next) {
-  try {
-    const { accessToken } = req
-    const { siteName } = req.params
-    const { resourceName } = req.body
+  const { accessToken } = req
+  const { siteName } = req.params
+  const { resourceName } = req.body
 
-    const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
-    const resourceRoomName = await IsomerResourceRoom.get()
+  const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
+  const resourceRoomName = await IsomerResourceRoom.get()
 
-    const IsomerResource = new Resource(accessToken, siteName)
-    await IsomerResource.create(resourceRoomName, resourceName)
+  const IsomerResource = new Resource(accessToken, siteName)
+  await IsomerResource.create(resourceRoomName, resourceName)
 
-    res.status(200).json({ resourceName })
-    // TO-DO
-  } catch (err) {
-    console.log(err)
-  }
+  res.status(200).json({ resourceName })
 }
 
 // Delete resource

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const validateStatus = require('../utils/axios-utils')
 const queryString = require('query-string');
 
 // Import error
@@ -34,6 +35,21 @@ async function githubAuth (req, res, next) {
   const access_token = queryString.parse(resp.data).access_token
   if (!access_token) throw new AuthError ('Access token not found')
 
+  // Retrieve user information to put into access token
+  const endpoint = `https://api.github.com/user`
+  const userResp = await axios.get(endpoint, {
+    validateStatus,
+    params,
+    headers: {
+      Authorization: `token ${access_token}`,
+      Accept: 'application/vnd.github.v3+json',
+      "Content-Type": "application/json"
+    }
+  })
+
+  let userId
+  if (userResp.data) userId = userResp.data.login
+
   const authTokenExpiry = new Date()
   authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
   
@@ -45,7 +61,7 @@ async function githubAuth (req, res, next) {
     secure: process.env.NODE_ENV !== 'DEV' && process.env.NODE_ENV !== 'LOCAL_DEV',
   }
 
-  const token = jwtUtils.signToken({access_token})
+  const token = jwtUtils.signToken({access_token, user_id: userId})
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
 

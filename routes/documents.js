@@ -54,24 +54,20 @@ async function readDocument (req, res, next) {
 
 // Update document
 async function updateDocument (req, res, next) {
-  try {
-    const { accessToken } = req
+  const { accessToken } = req
 
-    const { siteName, documentName } = req.params
-    const { content, sha } = req.body
+  const { siteName, documentName } = req.params
+  const { content, sha } = req.body
 
-    // TO-DO:
-    // Validate pageName and content
+  // TO-DO:
+  // Validate pageName and content
 
-    const IsomerFile = new File(accessToken, siteName)
-    const documentType = new DocumentType()
-    IsomerFile.setFileType(documentType)
-    const { newSha } = await IsomerFile.update(documentName, content, sha)
-    
-    res.status(200).json({ documentName, content, sha: newSha })
-  } catch (err) {
-    console.log(err)
-  }
+  const IsomerFile = new File(accessToken, siteName)
+  const documentType = new DocumentType()
+  IsomerFile.setFileType(documentType)
+  const { newSha } = await IsomerFile.update(documentName, content, sha)
+  
+  res.status(200).json({ documentName, content, sha: newSha })
 }
 
 // Delete document

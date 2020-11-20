@@ -1,6 +1,9 @@
 const axios = require('axios');
 const validateStatus = require('../utils/axios-utils')
 
+// Import logger
+const logger = require('../logger/logger');
+
 // Import error
 const { NotFoundError  } = require('../errors/NotFoundError')
 
@@ -42,25 +45,21 @@ class Config {
   }
 
   async update(newContent, sha) {
-    try {
-    	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
+	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
 
-		const params = {
-			"message": 'Edit config',
-			"content": newContent,
-			"branch": BRANCH_REF,
-			"sha": sha
-		}
+	const params = {
+		"message": 'Edit config',
+		"content": newContent,
+		"branch": BRANCH_REF,
+		"sha": sha
+	}
 
 	await axios.put(endpoint, params, {
-			headers: {
-			  Authorization: `token ${this.accessToken}`,
-			  "Content-Type": "application/json"
-			}
-		})
-    } catch (err) {
-      console.log(err)
-    }
+		headers: {
+			Authorization: `token ${this.accessToken}`,
+			"Content-Type": "application/json"
+		}
+	})
   }
 }
 

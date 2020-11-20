@@ -2,6 +2,9 @@
 const express = require('express')
 const jwtUtils = require('../utils/jwt-utils')
 
+// Import logger
+const logger = require('../logger/logger')
+
 // Import errors
 const { AuthError } = require('../errors/AuthError')
 const { verify } = require('jsonwebtoken')
@@ -17,10 +20,11 @@ function noVerify (req, res, next) {
 const verifyJwt = (req, res, next) => {
     try {
         const { isomercms } = req.cookies
-        const { access_token } = jwtUtils.verifyToken(isomercms)
+        const { access_token, user_id } = jwtUtils.verifyToken(isomercms)
         req.accessToken = access_token
+        req.userId = user_id
     } catch (err) {
-        console.error('Authentication error')
+        logger.error('Authentication error')
         if (err.name === 'TokenExpiredError') {
             throw new AuthError('JWT token has expired')
         }

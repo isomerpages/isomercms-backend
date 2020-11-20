@@ -2,7 +2,7 @@
 const express = require('express')
 
 // Logger
-const logger = require('../logger/Logger')
+const logger = require('../logger/logger')
 
 const apiLogger = express.Router()
 

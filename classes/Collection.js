@@ -5,6 +5,8 @@ const _ = require('lodash')
 
 const { Config } = require('./Config.js')
 const { File, CollectionPageType } = require('./File.js')
+const { Navigation } = require('./Navigation.js')
+const { deslugifyCollectionName } = require('../utils/utils.js')
 
 class Collection {
   constructor(accessToken, siteName) {
@@ -39,6 +41,18 @@ class Collection {
       const newContent = base64.encode(yaml.safeDump(contentObject))
 
       await config.update(newContent, sha)
+
+      const nav = new Navigation(this.accessToken, this.siteName)
+      const { content:navContent, sha:navSha } = await nav.read()
+      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+
+      navContentObject.links.push({ 
+        title: deslugifyCollectionName(collectionName),
+        collection: collectionName 
+      })
+      const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+
+      await nav.update(newNavContent, navSha)
 
     } catch (err) {
       throw err

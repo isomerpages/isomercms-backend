@@ -7,6 +7,8 @@ const _ = require('lodash')
 const { Config } = require('./Config.js')
 const { Resource } = require('../classes/Resource.js')
 const { File, ResourceType } = require('../classes/File.js')
+const { Navigation } = require('./Navigation.js')
+const { deslugifyCollectionName } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_ROOM_INDEX_PATH = 'index.html'
@@ -47,6 +49,18 @@ class ResourceRoom {
       await IsomerIndexFile.create(RESOURCE_ROOM_INDEX_PATH, RESOURCE_ROOM_INDEX_CONTENT)
 
       await config.update(newContent, sha)
+
+      const nav = new Navigation(this.accessToken, this.siteName)
+      const { content:navContent, sha:navSha } = await nav.read()
+      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+
+      navContentObject.links.push({ 
+        title: deslugifyCollectionName(resourceRoom),
+        resource_room: true 
+      })
+      const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+
+      await nav.update(newNavContent, navSha)
 
       return resourceRoom
     } catch (err) {

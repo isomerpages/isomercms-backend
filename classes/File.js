@@ -4,6 +4,7 @@ const validateStatus = require('../utils/axios-utils')
 
 // Import error
 const { NotFoundError  } = require('../errors/NotFoundError')
+const { InputNameConflictError  } = require('../errors/InputValidationError')
 
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
@@ -78,7 +79,9 @@ class File {
 
       return { sha: resp.data.content.sha }
     } catch (err) {
-      throw err
+      const status = err.response.status
+      if (status === 422) throw new InputNameConflictError(fileName)
+      throw err.response
     }
   }
 

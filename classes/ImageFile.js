@@ -1,13 +1,12 @@
 const axios = require('axios');
 const _ = require('lodash')
+const validateStatus = require('../utils/axios-utils')
 
+// Import error
+const { NotFoundError  } = require('../errors/NotFoundError')
+
+// Constants
 const GITHUB_ORG_NAME = 'isomerpages'
-
-// validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
-// This is necessary because GitHub returns a 404 status when the file does not exist.
-const validateStatus = (status) => {
-  return (status >= 200 && status < 300) || status === 404
-}
 
 class ImageFile {
   constructor(accessToken, siteName) {
@@ -32,7 +31,7 @@ class ImageFile {
       const endpoint = `${this.baseEndpoint}`
 
       const resp = await axios.get(endpoint, {
-        validateStatus: validateStatus,
+        validateStatus,
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"
@@ -104,7 +103,7 @@ class ImageFile {
         }
       })
   
-      if (resp.status === 404) throw new Error ('Page does not exist')
+      if (resp.status === 404) throw new NotFoundError ('Image does not exist')
   
       const { content, sha } = resp.data
   

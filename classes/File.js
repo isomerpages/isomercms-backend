@@ -1,14 +1,12 @@
 const axios = require('axios');
 const _ = require('lodash')
+const validateStatus = require('../utils/axios-utils')
+
+// Import error
+const { NotFoundError  } = require('../errors/NotFoundError')
 
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
-
-// validateStatus allows axios to handle a 404 HTTP status without rejecting the promise.
-// This is necessary because GitHub returns a 404 status when the file does not exist.
-const validateStatus = (status) => {
-  return (status >= 200 && status < 300) || status === 404
-}
 
 class File {
   constructor(accessToken, siteName) {
@@ -21,6 +19,7 @@ class File {
   setFileType(fileType) {
     this.folderPath = fileType.getFolderName()
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents${ this.folderPath ? '/' : '' }${this.folderPath}`
+    this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
   async list() {
@@ -28,11 +27,11 @@ class File {
       const endpoint = `${this.baseEndpoint}`
 
       const params = {
-        validateStatus: validateStatus,
         "ref": BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, {
+        validateStatus,
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,
@@ -48,7 +47,8 @@ class File {
         if (object.type === 'file') {
           return {
             path: encodeURIComponent(object.path),
-            fileName
+            fileName,
+            sha: object.sha
           }
         }
       })
@@ -84,14 +84,16 @@ class File {
 
   async read(fileName) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const files = await this.list()
+      const fileToRead = files.filter((file) => file.fileName === fileName)[0]
+      const endpoint = `${this.baseBlobEndpoint}/${fileToRead.sha}`
 
       const params = {
-        validateStatus: validateStatus,
         "ref": BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, {
+        validateStatus,
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,
@@ -99,7 +101,7 @@ class File {
         }
       })
   
-      if (resp.status === 404) throw new Error ('Page does not exist')
+      if (resp.status === 404) throw new NotFoundError ('File does not exist')
   
       const { content, sha } = resp.data
   
@@ -183,6 +185,15 @@ class ResourcePageType {
   }
 }
 
+class ResourceCategoryType {
+  constructor(resourceRoomName, resourceName) {
+    this.folderName = `${resourceRoomName}/${resourceName}`
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
 class ResourceType {
   constructor(resourceRoomName) {
     this.folderName = `${resourceRoomName}`
@@ -228,5 +239,4 @@ class HomepageType {
   }
 }
 
-
-module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceType, ImageType, DocumentType, DataType, HomepageType }
+module.exports = { File, PageType, CollectionPageType, ResourcePageType, ResourceCategoryType, ResourceType, ImageType, DocumentType, DataType, HomepageType }

@@ -3,8 +3,8 @@ const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
 // Import error
-const { NotFoundError  } = require('../errors/NotFoundError')
-const { InputNameConflictError  } = require('../errors/InputValidationError')
+const { NotFoundError } = require('../errors/NotFoundError')
+const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
@@ -80,7 +80,7 @@ class File {
       return { sha: resp.data.content.sha }
     } catch (err) {
       const status = err.response.status
-      if (status === 422) throw new InputNameConflictError(fileName)
+      if (status === 422) throw new ConflictError(inputNameConflictErrorMsg(fileName))
       throw err.response
     }
   }

@@ -1,7 +1,9 @@
 // Import base error
 const { BaseIsomerError } = require('./BaseError')
 
-class InputNameConflictError extends BaseIsomerError {
+const inputNameConflictErrorMsg = (fileName) => `A file with ${fileName} already exists.`
+
+class ConflictError extends BaseIsomerError {
   constructor (fileName) {
     super(
       409,
@@ -10,5 +12,6 @@ class InputNameConflictError extends BaseIsomerError {
   }
 }
 module.exports = {
-    InputNameConflictError,
+  ConflictError,
+  inputNameConflictErrorMsg,
 }

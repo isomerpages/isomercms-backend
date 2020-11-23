@@ -8,6 +8,7 @@
     "test": "node -v"
   },
   "dependencies": {
+    "aws-sdk": "^2.787.0",
     "axios": "^0.19.0",
     "base-64": "^0.1.0",
     "bluebird": "^3.7.0",
@@ -18,11 +19,25 @@
     "dotenv": "^8.1.0",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
+    "js-base64": "^2.5.1",
     "js-yaml": "^3.13.1",
     "jsonwebtoken": "^8.5.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
+    "moment-timezone": "^0.5.31",
     "morgan": "~1.9.1",
     "query-string": "^6.8.3",
-    "uuid": "^3.3.3"
+    "serialize-error": "^7.0.1",
+    "toml": "^3.0.0",
+    "uuid": "^3.3.3",
+    "winston": "^3.3.3",
+    "winston-cloudwatch": "^2.3.2"
+  },
+  "devDependencies": {
+    "cz-conventional-changelog": "^3.0.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

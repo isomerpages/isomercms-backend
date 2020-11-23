@@ -8,6 +8,11 @@ const cors = require('cors');
 // Env vars
 const FRONTEND_URL = process.env.FRONTEND_URL
 
+// Import middleware
+const { apiLogger } = require('./middleware/apiLogger')
+const { auth } = require('./middleware/auth')
+const { errorHandler } = require('./middleware/errorHandler')
+
 // Import routes
 const indexRouter = require('./routes/index')
 const authRouter = require('./routes/auth')
@@ -23,6 +28,8 @@ const documentsRouter = require('./routes/documents')
 const menuRouter = require('./routes/menus')
 const homepageRouter = require('./routes/homepage')
 const menuDirectoryRouter = require('./routes/menuDirectory')
+const settingsRouter = require('./routes/settings')
+const netlifyTomlRouter = require('./routes/netlifyToml')
 
 const app = express();
 
@@ -36,6 +43,12 @@ app.use(cors({
   'origin': FRONTEND_URL,
   'credentials': true,
 }))
+
+// Use auth middleware
+app.use(auth)
+
+// Log api requests
+app.use(apiLogger)
 
 // Routes layer setup
 app.use('/', indexRouter);
@@ -52,6 +65,8 @@ app.use('/sites', documentsRouter)
 app.use('/sites', menuRouter)
 app.use('/sites', homepageRouter)
 app.use('/sites', menuDirectoryRouter)
+app.use('/sites', settingsRouter)
+app.use('/sites', netlifyTomlRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -59,14 +74,6 @@ app.use(function(req, res, next) {
 });
 
 // error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.json({ error: err });
-});
+app.use(errorHandler);
 
 module.exports = app;

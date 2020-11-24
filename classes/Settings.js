@@ -135,19 +135,27 @@ class Settings {
     const footerContent = footer.content
     const navigationContent = navigation.content
 
-    const settingsObj = {
-      config: {
+    const settingsObj = {}
+
+    if (configSettings) {
+      settingsObj.config = {
         payload: configSettings,
         currentData: configContent,
-      },
-      footer: {
+      }
+    }
+
+    if (footerSettings) {
+      settingsObj.footer = {
         payload: footerSettings,
         currentData: footerContent,
-      },
-      navigation: {
+      }
+    }
+    
+    if (navigationSettings) {
+      settingsObj.navigation = {
         payload: navigationSettings,
         currentData: navigationContent,
-      },
+      }
     }
 
     const updatedSettingsObjArr = Object.keys(settingsObj).map((settingsObjKey) => {
@@ -168,27 +176,35 @@ class Settings {
 
     const { configSettingsObj, footerSettingsObj, navigationSettingsObj } = updatedSettingsObj
 
-    // update files
-    const newConfigContent = Base64.encode(yaml.safeDump(configSettingsObj))
-    const newFooterContent = Base64.encode(yaml.safeDump(footerSettingsObj))
-    const newNavigationContent = Base64.encode(yaml.safeDump(navigationSettingsObj))
-
     // To-do: use Git Tree to speed up operations
-    await configResp.update(newConfigContent, config.sha)
-    await FooterFile.update(FOOTER_PATH, newFooterContent, footer.sha)
-    await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, navigation.sha)
+    if (configSettings) {
+      const newConfigContent = Base64.encode(yaml.safeDump(configSettingsObj))
+      await configResp.update(newConfigContent, config.sha)
 
-    // Update title in homepage as well if it's changed
-    if (configContent.title !== updatedSettingsObjArr[0].title) {
-      const { content: homepageContentObj, sha } = homepage;
-      homepageContentObj.title = configSettings.title;
-      const homepageFrontMatter = yaml.safeDump(homepageContentObj);
+      // Update title in homepage as well if it's changed
+      if (configContent.title !== configSettingsObj.title) {
+        const { content: homepageContentObj, sha } = homepage;
+        
+        homepageContentObj.title = configSettings.title;
+        const homepageFrontMatter = yaml.safeDump(homepageContentObj);
 
-      const homepageContent = ['---\n', homepageFrontMatter, '---'].join('') ;
-      const newHomepageContent = Base64.encode(homepageContent)
+        const homepageContent = ['---\n', homepageFrontMatter, '---'].join('') ;
+        const newHomepageContent = Base64.encode(homepageContent)
 
-      await HomepageFile.update(HOMEPAGE_INDEX_PATH, newHomepageContent, sha)
+        await HomepageFile.update(HOMEPAGE_INDEX_PATH, newHomepageContent, sha)
+      }
     }
+
+    if (footerSettings) {
+      const newFooterContent = Base64.encode(yaml.safeDump(footerSettingsObj))
+      await FooterFile.update(FOOTER_PATH, newFooterContent, footer.sha)
+    }
+
+    if (navigationSettings) {
+      const newNavigationContent = Base64.encode(yaml.safeDump(navigationSettingsObj))
+      await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, navigation.sha)
+    }
+    
     return
   }
 }

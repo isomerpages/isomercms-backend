@@ -73,6 +73,22 @@ class Collection {
 
       await config.update(newContent, sha)
 
+      // Delete collection in nav if it exists
+      const nav = new File(this.accessToken, this.siteName)
+      const dataType = new DataType()
+      nav.setFileType(dataType)
+      const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
+      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+
+      for (let i = 0; i < navContentObject.links.length; i++) {
+        if (navContentObject.links[i].collection === collectionName) {
+          navContentObject.links.splice(i,1)
+          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
+          break
+        }
+      }
+
       // Get all collectionPages
       const IsomerFile = new File(this.accessToken, this.siteName)
       const collectionPageType = new CollectionPageType(collectionName)
@@ -82,7 +98,7 @@ class Collection {
       if (!_.isEmpty(collectionPages)) {
         // Delete all collectionPages
         await Bluebird.map(collectionPages, async(collectionPage) => {
-          let pageName = collectionPage.pageName
+          let pageName = collectionPage.fileName
           const { sha } = await IsomerFile.read(pageName)
           return IsomerFile.delete(pageName, sha)
         })
@@ -106,6 +122,25 @@ class Collection {
       const newContent = base64.encode(yaml.safeDump(contentObject))
 
       await config.update(newContent, sha)
+
+      // Rename collection in nav if it exists
+      const nav = new File(this.accessToken, this.siteName)
+      const dataType = new DataType()
+      nav.setFileType(dataType)
+      const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
+      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+
+      for (let i = 0; i < navContentObject.links.length; i++) {
+        if (navContentObject.links[i].collection === oldCollectionName) {
+          navContentObject.links[i] = {
+            title: deslugifyCollectionName(newCollectionName),
+            collection: newCollectionName 
+          }
+          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
+          break
+        }
+      }
 
       // Get all collectionPages
       const OldIsomerFile = new File(this.accessToken, this.siteName)

@@ -72,6 +72,7 @@ class ResourceRoom {
 
   async rename(newResourceRoom) {
     try {
+      // Add resource room to config
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
     	const contentObject = yaml.safeLoad(base64.decode(content))
@@ -79,7 +80,27 @@ class ResourceRoom {
       // Obtain existing resourceRoomName
       const resourceRoomName = contentObject.resources_name
       contentObject.resources_name = newResourceRoom
-    	const newContent = base64.encode(yaml.safeDump(contentObject))
+      const newContent = base64.encode(yaml.safeDump(contentObject))
+      
+      // Rename resource room in nav if it exists
+      const nav = new File(this.accessToken, this.siteName)
+      const dataType = new DataType()
+      nav.setFileType(dataType)
+      const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
+      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+
+      for (let i = 0; i < navContentObject.links.length; i++) {
+        if (navContentObject.links[i].resource_room === true) {
+          // Assumption: only a single resource room exists
+          navContentObject.links[i] = {
+            title: deslugifyCollectionName(newResourceRoom),
+            resource_room: true
+          }
+          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
+          break
+        }
+      }
 
       // Delete all resources and resourcePages
       const IsomerResource = new Resource(this.accessToken, this.siteName)
@@ -114,7 +135,7 @@ class ResourceRoom {
 
   async delete() {
     try {
-    	// Delete collection in config
+    	// Delete resource in config
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
     	const contentObject = yaml.safeLoad(base64.decode(content))
@@ -124,7 +145,24 @@ class ResourceRoom {
 
       // Delete resourcses_name from Config
     	delete contentObject.resources_name
-    	const newContent = base64.encode(yaml.safeDump(contentObject))
+      const newContent = base64.encode(yaml.safeDump(contentObject))
+      
+      // Delete resource room in nav if it exists
+      const nav = new File(this.accessToken, this.siteName)
+      const dataType = new DataType()
+      nav.setFileType(dataType)
+      const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
+      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+
+      for (let i = 0; i < navContentObject.links.length; i++) {
+        if (navContentObject.links[i].resource_room === true) {
+          // Assumption: only a single resource room exists
+          navContentObject.links.splice(i,1)
+          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
+          break
+        }
+      }
 
       // Delete all resources and resourcePages
       const IsomerResource = new Resource(this.accessToken, this.siteName)

@@ -4,9 +4,11 @@ const Bluebird = require('bluebird')
 const _ = require('lodash')
 
 const { Config } = require('./Config.js')
-const { File, CollectionPageType } = require('./File.js')
+const { File, CollectionPageType, DataType } = require('./File.js')
 const { Navigation } = require('./Navigation.js')
 const { deslugifyCollectionName } = require('../utils/utils.js')
+
+const NAV_FILE_NAME = 'navigation.yml'
 
 class Collection {
   constructor(accessToken, siteName) {
@@ -41,8 +43,10 @@ class Collection {
 
       await config.update(newContent, sha)
 
-      const nav = new Navigation(this.accessToken, this.siteName)
-      const { content:navContent, sha:navSha } = await nav.read()
+      const nav = new File(this.accessToken, this.siteName)
+      const dataType = new DataType()
+      nav.setFileType(dataType)
+      const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
       const navContentObject = yaml.safeLoad(base64.decode(navContent))
 
       navContentObject.links.push({ 
@@ -51,7 +55,7 @@ class Collection {
       })
       const newNavContent = base64.encode(yaml.safeDump(navContentObject))
 
-      await nav.update(newNavContent, navSha)
+      await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
     } catch (err) {
       throw err

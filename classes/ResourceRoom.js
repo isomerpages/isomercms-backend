@@ -7,7 +7,6 @@ const _ = require('lodash')
 const { Config } = require('./Config.js')
 const { Resource } = require('../classes/Resource.js')
 const { File, ResourceType, DataType } = require('../classes/File.js')
-const { Navigation } = require('./Navigation.js')
 const { deslugifyCollectionName } = require('../utils/utils.js')
 
 // Constants

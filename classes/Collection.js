@@ -5,7 +5,6 @@ const _ = require('lodash')
 
 const { Config } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
-const { Navigation } = require('./Navigation.js')
 const { deslugifyCollectionName } = require('../utils/utils.js')
 
 const NAV_FILE_NAME = 'navigation.yml'

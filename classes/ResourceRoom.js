@@ -6,13 +6,14 @@ const _ = require('lodash')
 // Import Classes
 const { Config } = require('./Config.js')
 const { Resource } = require('../classes/Resource.js')
-const { File, ResourceType } = require('../classes/File.js')
+const { File, ResourceType, DataType } = require('../classes/File.js')
 const { Navigation } = require('./Navigation.js')
 const { deslugifyCollectionName } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_ROOM_INDEX_PATH = 'index.html'
 const RESOURCE_ROOM_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzCnRpdGxlOiBSZXNvdXJjZSBSb29tCi0tLQ=='
+const NAV_FILE_NAME = 'navigation.yml'
 
 class ResourceRoom {
   constructor(accessToken, siteName) {
@@ -50,8 +51,10 @@ class ResourceRoom {
 
       await config.update(newContent, sha)
 
-      const nav = new Navigation(this.accessToken, this.siteName)
-      const { content:navContent, sha:navSha } = await nav.read()
+      const nav = new File(this.accessToken, this.siteName)
+      const dataType = new DataType()
+      nav.setFileType(dataType)
+      const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
       const navContentObject = yaml.safeLoad(base64.decode(navContent))
 
       navContentObject.links.push({ 
@@ -60,7 +63,7 @@ class ResourceRoom {
       })
       const newNavContent = base64.encode(yaml.safeDump(navContentObject))
 
-      await nav.update(newNavContent, navSha)
+      await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       return resourceRoom
     } catch (err) {

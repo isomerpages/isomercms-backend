@@ -89,18 +89,22 @@ class ResourceRoom {
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
       const navContentObject = yaml.safeLoad(base64.decode(navContent))
 
-      for (let i = 0; i < navContentObject.links.length; i++) {
-        if (navContentObject.links[i].resource_room === true) {
-          // Assumption: only a single resource room exists
-          navContentObject.links[i] = {
+      const newNavLinks = navContentObject.links.map(link => {
+        if (link.resource_room === true) {
+          return {
             title: deslugifyCollectionName(newResourceRoom),
             resource_room: true
           }
-          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
-          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
-          break
+        } else {
+          return link
         }
+      })
+      const newNavContentObject = {
+        ...navContentObject,
+        links: newNavLinks,
       }
+      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       // Delete all resources and resourcePages
       const IsomerResource = new Resource(this.accessToken, this.siteName)
@@ -154,15 +158,14 @@ class ResourceRoom {
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
       const navContentObject = yaml.safeLoad(base64.decode(navContent))
 
-      for (let i = 0; i < navContentObject.links.length; i++) {
-        if (navContentObject.links[i].resource_room === true) {
-          // Assumption: only a single resource room exists
-          navContentObject.links.splice(i,1)
-          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
-          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
-          break
-        }
+      // Assumption: only a single resource room exists
+      const newNavLinks = navContentObject.links.filter(link => link.resource_room !== true)
+      const newNavContentObject = {
+        ...navContentObject,
+        links: newNavLinks,
       }
+      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       // Delete all resources and resourcePages
       const IsomerResource = new Resource(this.accessToken, this.siteName)

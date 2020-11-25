@@ -80,14 +80,13 @@ class Collection {
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
       const navContentObject = yaml.safeLoad(base64.decode(navContent))
 
-      for (let i = 0; i < navContentObject.links.length; i++) {
-        if (navContentObject.links[i].collection === collectionName) {
-          navContentObject.links.splice(i,1)
-          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
-          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
-          break
-        }
+      const newNavLinks = navContentObject.links.filter(link => link.collection !== collectionName)
+      const newNavContentObject = {
+        ...navContentObject,
+        links: newNavLinks,
       }
+      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       // Get all collectionPages
       const IsomerFile = new File(this.accessToken, this.siteName)
@@ -130,17 +129,22 @@ class Collection {
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
       const navContentObject = yaml.safeLoad(base64.decode(navContent))
 
-      for (let i = 0; i < navContentObject.links.length; i++) {
-        if (navContentObject.links[i].collection === oldCollectionName) {
-          navContentObject.links[i] = {
+      const newNavLinks = navContentObject.links.map(link => {
+        if (link.collection === oldCollectionName) {
+          return {
             title: deslugifyCollectionName(newCollectionName),
             collection: newCollectionName 
           }
-          const newNavContent = base64.encode(yaml.safeDump(navContentObject))
-          await nav.update(NAV_FILE_NAME, newNavContent, navSha)
-          break
+        } else {
+          return link
         }
+      })
+      const newNavContentObject = {
+        ...navContentObject,
+        links: newNavLinks,
       }
+      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       // Get all collectionPages
       const OldIsomerFile = new File(this.accessToken, this.siteName)

@@ -80,7 +80,7 @@ class File {
       return { sha: resp.data.content.sha }
     } catch (err) {
       const status = err.response.status
-      if (status === 422) throw new ConflictError(inputNameConflictErrorMsg(fileName))
+      if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
       throw err.response
     }
   }

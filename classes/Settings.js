@@ -42,6 +42,9 @@ class Settings {
       url: configReadableContent.url,
       title: configReadableContent.title,
       favicon: configReadableContent.favicon,
+      shareicon: configReadableContent.shareicon,
+      facebook_pixel: configReadableContent['facebook-pixel'],
+      google_analytics: configReadableContent.google_analytics,
       resources_name: configReadableContent.resources_name,
       colors: configReadableContent.colors,
     }

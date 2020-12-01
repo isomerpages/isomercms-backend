@@ -1,4 +1,5 @@
 const { Base64 } = require('js-base64')
+const _ = require('lodash')
 const yaml = require('js-yaml')
 const Bluebird = require('bluebird')
 
@@ -10,6 +11,31 @@ const { File, DataType } = require('../classes/File.js')
 const FOOTER_PATH = 'footer.yml'
 const NAVIGATION_PATH = 'navigation.yml'
 
+const retrieveSettingsFiles = async (accessToken, siteName) => {
+  const configResp = new Config(accessToken, siteName)
+
+  const FooterFile = new File(accessToken, siteName)
+  const dataType = new DataType()
+  FooterFile.setFileType(dataType)
+
+  const NavigationFile = new File(accessToken, siteName)
+  NavigationFile.setFileType(dataType)
+
+  const fileRetrievalArr = [configResp.read(), FooterFile.read(FOOTER_PATH), NavigationFile.read(NAVIGATION_PATH)]
+
+  const fileContentsArr = await Bluebird.map(fileRetrievalArr, async (fileOp) => {
+    const { content, sha } = await fileOp
+    return { content: yaml.safeLoad(Base64.decode(content)), sha}
+  })
+
+  return {
+    configResp,
+    FooterFile,
+    NavigationFile,
+    fileContentsArr,
+  }
+}
+
 class Settings {
   constructor(accessToken, siteName) {
     this.accessToken = accessToken
@@ -17,42 +43,23 @@ class Settings {
   }
 
   async get() {
-    // retrieve _config.yml and footer.yml
-    const configResp = new Config(this.accessToken, this.siteName)
-
-    const FooterFile = new File(this.accessToken, this.siteName)
-    const dataType = new DataType()
-    FooterFile.setFileType(dataType)
-
-    const NavigationFile = new File(this.accessToken, this.siteName)
-    NavigationFile.setFileType(dataType)
-
-    const fileRetrievalArr = [configResp.read(), FooterFile.read(FOOTER_PATH), NavigationFile.read(NAVIGATION_PATH)]
-
-    const fileContentsArr = await Bluebird.map(fileRetrievalArr, async (fileOp) => {
-      const { content, sha } = await fileOp
-      return { content, sha}
-    })
+    const { fileContentsArr } = await retrieveSettingsFiles(this.accessToken, this.siteName)
 
     // convert data to object form
     const configContent = fileContentsArr[0].content
     const footerContent = fileContentsArr[1].content
     const navigationContent = fileContentsArr[2].content
 
-    const configReadableContent = yaml.safeLoad(Base64.decode(configContent));
-    const footerReadableContent = yaml.safeLoad(Base64.decode(footerContent));
-    const navigationReadableContent = yaml.safeLoad(Base64.decode(navigationContent));
-
     // retrieve only the relevant config and index fields
     const configFieldsRequired = {
-      url: configReadableContent.url,
-      title: configReadableContent.title,
-      favicon: configReadableContent.favicon,
-      shareicon: configReadableContent.shareicon,
-      facebook_pixel: configReadableContent['facebook-pixel'],
-      google_analytics: configReadableContent.google_analytics,
-      resources_name: configReadableContent.resources_name,
-      colors: configReadableContent.colors,
+      url: configContent.url,
+      title: configContent.title,
+      favicon: configContent.favicon,
+      shareicon: configContent.shareicon,
+      facebook_pixel: configContent['facebook-pixel'],
+      google_analytics: configContent.google_analytics,
+      resources_name: configContent.resources_name,
+      colors: configContent.colors,
     }
 
     // retrieve footer sha since we are sending the footer object wholesale
@@ -60,46 +67,62 @@ class Settings {
 
     return ({
       configFieldsRequired,
-      footerContent: footerReadableContent,
-      navigationContent: { logo: navigationReadableContent.logo },
+      footerContent,
+      navigationContent: { logo: navigationContent.logo },
       footerSha,
     })
   }
   
   async post(payload) {
-    // setup 
-    const configResp = new Config(this.accessToken, this.siteName)
-    const config = await configResp.read()
-    const FooterFile = new File(this.accessToken, this.siteName)
-    const dataType = new DataType()
-    FooterFile.setFileType(dataType)
-    const NavigationFile = new File(this.accessToken, this.siteName)
-    NavigationFile.setFileType(dataType)
-    const navigation = await NavigationFile.read(NAVIGATION_PATH)
+    const {
+      configResp,
+      FooterFile,
+      NavigationFile,
+      fileContentsArr,
+    } = await retrieveSettingsFiles(this.accessToken, this.siteName)
 
     // extract data
     const {
       footerSettings,
       configSettings,
       navigationSettings,
-      footerSha,
     } = payload
 
-    // update config object
-    const configContent = yaml.safeLoad(Base64.decode(config.content));
-    Object.keys(configSettings).forEach((setting) => (configContent[setting] = configSettings[setting]));
+    // update settings objects
+    const configContent = fileContentsArr[0].content
+    const footerContent = fileContentsArr[1].content
+    const navigationContent = fileContentsArr[2].content
 
-    // update navigation object
-    const navigationContent = yaml.safeLoad(Base64.decode(navigation.content));
-    Object.keys(navigationSettings).forEach((setting) => (navigationContent[setting] = navigationSettings[setting]))
+    const settingsObjArr = [
+      {
+        payload: configSettings,
+        retrievedData: configContent,
+      },
+      {
+        payload: footerSettings,
+        retrievedData: footerContent,
+      },
+      {
+        payload: navigationSettings,
+        retrievedData: navigationContent,
+      },
+    ]
+
+    const updatedSettingsObjArr = settingsObjArr.map(({ payload, retrievedData}) => {
+      const settingsObj = _.cloneDeep(payload);
+      Object.keys(retrievedData).forEach((setting) => (settingsObj[setting] = payload[setting]));
+      console.log(settingsObj)
+      return Base64.encode(yaml.safeDump(settingsObj))
+    })
 
     // update files
-    const newConfigContent = Base64.encode(yaml.safeDump(configContent))
-    const newFooterContent = Base64.encode(yaml.safeDump(footerSettings))
-    const newNavigationContent = Base64.encode(yaml.safeDump(navigationContent))
-    await configResp.update(newConfigContent, config.sha)
-    await FooterFile.update(FOOTER_PATH, newFooterContent, footerSha)
-    await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, navigation.sha)
+    const newConfigContent = updatedSettingsObjArr[0]
+    const newFooterContent = updatedSettingsObjArr[1]
+    const newNavigationContent = updatedSettingsObjArr[2]
+
+    await configResp.update(newConfigContent, fileContentsArr[0].sha)
+    await FooterFile.update(FOOTER_PATH, newFooterContent, fileContentsArr[1].sha)
+    await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, fileContentsArr[2].sha)
     return
   }
 }

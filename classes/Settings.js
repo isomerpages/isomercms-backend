@@ -5,13 +5,14 @@ const Bluebird = require('bluebird')
 
 // import classes
 const { Config } = require('../classes/Config.js')
-const { File, DataType } = require('../classes/File.js')
+const { File, DataType, HomepageType } = require('../classes/File.js')
 
 // Constants
 const FOOTER_PATH = 'footer.yml'
 const NAVIGATION_PATH = 'navigation.yml'
+const HOMEPAGE_INDEX_PATH = 'index.md' // Empty string
 
-const retrieveSettingsFiles = async (accessToken, siteName) => {
+const retrieveSettingsFiles = async (accessToken, siteName, shouldRetrieveHomepage) => {
   const configResp = new Config(accessToken, siteName)
 
   const FooterFile = new File(accessToken, siteName)
@@ -21,17 +22,37 @@ const retrieveSettingsFiles = async (accessToken, siteName) => {
   const NavigationFile = new File(accessToken, siteName)
   NavigationFile.setFileType(dataType)
 
+  const HomepageFile = new File(accessToken, siteName)
+  const homepageType = new HomepageType()
+  HomepageFile.setFileType(homepageType)
+
   const fileRetrievalArr = [configResp.read(), FooterFile.read(FOOTER_PATH), NavigationFile.read(NAVIGATION_PATH)]
 
-  const fileContentsArr = await Bluebird.map(fileRetrievalArr, async (fileOp) => {
+  // Retrieve homepage only if flag is set to true
+  if (shouldRetrieveHomepage) {
+    fileRetrievalArr.push(HomepageFile.read(HOMEPAGE_INDEX_PATH))
+  }
+
+  const fileContentsArr = await Bluebird.map(fileRetrievalArr, async (fileOp, idx) => {
     const { content, sha } = await fileOp
-    return { content: yaml.safeLoad(Base64.decode(content)), sha}
+
+    if (idx < 3) {
+      return { content: yaml.safeLoad(Base64.decode(content)), sha}
+    }
+
+    // homepage requires special extraction as the content is wrapped in front matter
+    if (idx === 3) {
+      const homepageContent = Base64.decode(content)
+      const homepageFrontMatterObj = yaml.safeLoad(homepageContent.split('---')[1])
+      return { content: homepageFrontMatterObj, sha }
+    }
   })
 
   return {
     configResp,
     FooterFile,
     NavigationFile,
+    HomepageFile,
     fileContentsArr,
   }
 }
@@ -78,8 +99,9 @@ class Settings {
       configResp,
       FooterFile,
       NavigationFile,
+      HomepageFile,
       fileContentsArr,
-    } = await retrieveSettingsFiles(this.accessToken, this.siteName)
+    } = await retrieveSettingsFiles(this.accessToken, this.siteName, true)
 
     // extract data
     const {
@@ -111,18 +133,30 @@ class Settings {
     const updatedSettingsObjArr = settingsObjArr.map(({ payload, retrievedData}) => {
       const settingsObj = _.cloneDeep(payload);
       Object.keys(retrievedData).forEach((setting) => (settingsObj[setting] = payload[setting]));
-      console.log(settingsObj)
-      return Base64.encode(yaml.safeDump(settingsObj))
+      return settingsObj
     })
 
     // update files
-    const newConfigContent = updatedSettingsObjArr[0]
-    const newFooterContent = updatedSettingsObjArr[1]
-    const newNavigationContent = updatedSettingsObjArr[2]
+    const newConfigContent = Base64.encode(yaml.safeDump(updatedSettingsObjArr[0]))
+    const newFooterContent = Base64.encode(yaml.safeDump(updatedSettingsObjArr[1]))
+    const newNavigationContent = Base64.encode(yaml.safeDump(updatedSettingsObjArr[2]))
 
+    // To-do: use Git Tree to speed up operations
     await configResp.update(newConfigContent, fileContentsArr[0].sha)
     await FooterFile.update(FOOTER_PATH, newFooterContent, fileContentsArr[1].sha)
     await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, fileContentsArr[2].sha)
+
+    // Update title in homepage as well if it's changed
+    if (configContent.title !== updatedSettingsObjArr[0].title) {
+      const { content: homepageContentObj, sha } = fileContentsArr[3];
+      homepageContentObj.title = configSettings.title;
+      const homepageFrontMatter = yaml.safeDump(homepageContentObj);
+
+      const homepageContent = ['---\n', homepageFrontMatter, '---'].join('') ;
+      const newHomepageContent = Base64.encode(homepageContent)
+
+      await HomepageFile.update(HOMEPAGE_INDEX_PATH, newHomepageContent, sha)
+    }
     return
   }
 }

@@ -119,21 +119,21 @@ class Settings {
     const settingsObjArr = [
       {
         payload: configSettings,
-        retrievedData: configContent,
+        currentData: configContent,
       },
       {
         payload: footerSettings,
-        retrievedData: footerContent,
+        currentData: footerContent,
       },
       {
         payload: navigationSettings,
-        retrievedData: navigationContent,
+        currentData: navigationContent,
       },
     ]
 
-    const updatedSettingsObjArr = settingsObjArr.map(({ payload, retrievedData}) => {
-      const settingsObj = _.cloneDeep(payload);
-      Object.keys(retrievedData).forEach((setting) => (settingsObj[setting] = payload[setting]));
+    const updatedSettingsObjArr = settingsObjArr.map(({ payload, currentData}) => {
+      const settingsObj = _.cloneDeep(currentData);
+      Object.keys(payload).forEach((setting) => (settingsObj[setting] = payload[setting]));
       return settingsObj
     })
 

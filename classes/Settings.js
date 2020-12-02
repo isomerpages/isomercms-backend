@@ -77,6 +77,7 @@ class Settings {
       title: configContent.title,
       favicon: configContent.favicon,
       shareicon: configContent.shareicon,
+      is_government: configContent.is_government,
       facebook_pixel: configContent['facebook-pixel'],
       google_analytics: configContent.google_analytics,
       resources_name: configContent.resources_name,

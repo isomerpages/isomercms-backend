@@ -26,26 +26,28 @@ const retrieveSettingsFiles = async (accessToken, siteName, shouldRetrieveHomepa
   const homepageType = new HomepageType()
   HomepageFile.setFileType(homepageType)
 
-  const fileRetrievalArr = [configResp.read(), FooterFile.read(FOOTER_PATH), NavigationFile.read(NAVIGATION_PATH)]
+  const fileRetrievalObj = {
+    config: configResp.read(),
+    footer: FooterFile.read(FOOTER_PATH),
+    navigation: NavigationFile.read(NAVIGATION_PATH),
+  }
 
   // Retrieve homepage only if flag is set to true
   if (shouldRetrieveHomepage) {
-    fileRetrievalArr.push(HomepageFile.read(HOMEPAGE_INDEX_PATH))
+    fileRetrievalObj.homepage = HomepageFile.read(HOMEPAGE_INDEX_PATH);
   }
 
-  const fileContentsArr = await Bluebird.map(fileRetrievalArr, async (fileOp, idx) => {
-    const { content, sha } = await fileOp
-
-    if (idx < 3) {
-      return { content: yaml.safeLoad(Base64.decode(content)), sha}
-    }
+  const fileContentsArr = await Bluebird.map(Object.keys(fileRetrievalObj), async (fileOpKey) => {
+    const { content, sha } = await fileRetrievalObj[fileOpKey]
 
     // homepage requires special extraction as the content is wrapped in front matter
-    if (idx === 3) {
+    if (fileOpKey === 'homepage') {
       const homepageContent = Base64.decode(content)
       const homepageFrontMatterObj = yaml.safeLoad(homepageContent.split('---')[1])
       return { content: homepageFrontMatterObj, sha }
     }
+
+    return { content: yaml.safeLoad(Base64.decode(content)), sha }
   })
 
   return {

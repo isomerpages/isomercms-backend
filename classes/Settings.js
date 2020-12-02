@@ -37,6 +37,7 @@ const retrieveSettingsFiles = async (accessToken, siteName, shouldRetrieveHomepa
     fileRetrievalObj.homepage = HomepageFile.read(HOMEPAGE_INDEX_PATH);
   }
 
+
   const fileContentsArr = await Bluebird.map(Object.keys(fileRetrievalObj), async (fileOpKey) => {
     const { content, sha } = await fileRetrievalObj[fileOpKey]
 
@@ -44,10 +45,17 @@ const retrieveSettingsFiles = async (accessToken, siteName, shouldRetrieveHomepa
     if (fileOpKey === 'homepage') {
       const homepageContent = Base64.decode(content)
       const homepageFrontMatterObj = yaml.safeLoad(homepageContent.split('---')[1])
-      return { content: homepageFrontMatterObj, sha }
+      return { type: fileOpKey, content: homepageFrontMatterObj, sha }
     }
 
-    return { content: yaml.safeLoad(Base64.decode(content)), sha }
+    return { type: fileOpKey, content: yaml.safeLoad(Base64.decode(content)), sha }
+  })
+
+  // Convert to an object so that data is accessible by key
+  const fileContentsObj = {}
+  fileContentsArr.forEach((fileObj) => {
+    const { type, content, sha } = fileObj
+    fileContentsObj[type] = { content, sha }
   })
 
   return {
@@ -55,7 +63,7 @@ const retrieveSettingsFiles = async (accessToken, siteName, shouldRetrieveHomepa
     FooterFile,
     NavigationFile,
     HomepageFile,
-    fileContentsArr,
+    fileContentsObj,
   }
 }
 
@@ -66,12 +74,16 @@ class Settings {
   }
 
   async get() {
-    const { fileContentsArr } = await retrieveSettingsFiles(this.accessToken, this.siteName)
+    const { fileContentsObj: {
+      config,
+      footer,
+      navigation,
+    } } = await retrieveSettingsFiles(this.accessToken, this.siteName)
 
     // convert data to object form
-    const configContent = fileContentsArr[0].content
-    const footerContent = fileContentsArr[1].content
-    const navigationContent = fileContentsArr[2].content
+    const configContent = config.content;
+    const footerContent = footer.content;
+    const navigationContent = navigation.content;
 
     // retrieve only the relevant config and index fields
     const configFieldsRequired = {
@@ -87,7 +99,7 @@ class Settings {
     }
 
     // retrieve footer sha since we are sending the footer object wholesale
-    const footerSha = fileContentsArr[1].sha
+    const footerSha = footer.sha
 
     return ({
       configFieldsRequired,
@@ -103,7 +115,12 @@ class Settings {
       FooterFile,
       NavigationFile,
       HomepageFile,
-      fileContentsArr,
+      fileContentsObj: {
+        config,
+        footer,
+        navigation,
+        homepage,
+      },
     } = await retrieveSettingsFiles(this.accessToken, this.siteName, true)
 
     // extract data
@@ -114,44 +131,56 @@ class Settings {
     } = payload
 
     // update settings objects
-    const configContent = fileContentsArr[0].content
-    const footerContent = fileContentsArr[1].content
-    const navigationContent = fileContentsArr[2].content
+    const configContent = config.content
+    const footerContent = footer.content
+    const navigationContent = navigation.content
 
-    const settingsObjArr = [
-      {
+    const settingsObj = {
+      config: {
         payload: configSettings,
         currentData: configContent,
       },
-      {
+      footer: {
         payload: footerSettings,
         currentData: footerContent,
       },
-      {
+      navigation: {
         payload: navigationSettings,
         currentData: navigationContent,
       },
-    ]
+    }
 
-    const updatedSettingsObjArr = settingsObjArr.map(({ payload, currentData}) => {
-      const settingsObj = _.cloneDeep(currentData);
-      Object.keys(payload).forEach((setting) => (settingsObj[setting] = payload[setting]));
-      return settingsObj
+    const updatedSettingsObjArr = Object.keys(settingsObj).map((settingsObjKey) => {
+      const { payload, currentData } = settingsObj[settingsObjKey]
+      const clonedSettingsObj = _.cloneDeep(currentData);
+      Object.keys(payload).forEach((setting) => (clonedSettingsObj[setting] = payload[setting]));
+      return {
+        type: settingsObjKey,
+        settingsObj: clonedSettingsObj,
+      }
     })
 
+    const updatedSettingsObj = {}
+    updatedSettingsObjArr.forEach((setting) => {
+      const { type, settingsObj } = setting
+      updatedSettingsObj[`${type}SettingsObj`] = settingsObj
+    })
+
+    const { configSettingsObj, footerSettingsObj, navigationSettingsObj } = updatedSettingsObj
+
     // update files
-    const newConfigContent = Base64.encode(yaml.safeDump(updatedSettingsObjArr[0]))
-    const newFooterContent = Base64.encode(yaml.safeDump(updatedSettingsObjArr[1]))
-    const newNavigationContent = Base64.encode(yaml.safeDump(updatedSettingsObjArr[2]))
+    const newConfigContent = Base64.encode(yaml.safeDump(configSettingsObj))
+    const newFooterContent = Base64.encode(yaml.safeDump(footerSettingsObj))
+    const newNavigationContent = Base64.encode(yaml.safeDump(navigationSettingsObj))
 
     // To-do: use Git Tree to speed up operations
-    await configResp.update(newConfigContent, fileContentsArr[0].sha)
-    await FooterFile.update(FOOTER_PATH, newFooterContent, fileContentsArr[1].sha)
-    await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, fileContentsArr[2].sha)
+    await configResp.update(newConfigContent, config.sha)
+    await FooterFile.update(FOOTER_PATH, newFooterContent, footer.sha)
+    await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, navigation.sha)
 
     // Update title in homepage as well if it's changed
     if (configContent.title !== updatedSettingsObjArr[0].title) {
-      const { content: homepageContentObj, sha } = fileContentsArr[3];
+      const { content: homepageContentObj, sha } = homepage;
       homepageContentObj.title = configSettings.title;
       const homepageFrontMatter = yaml.safeDump(homepageContentObj);
 

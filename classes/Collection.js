@@ -5,7 +5,7 @@ const _ = require('lodash')
 
 const { Config } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
-const { deslugifyCollectionName } = require('../utils/utils.js')
+const { getRootTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 const NAV_FILE_NAME = 'navigation.yml'
 
@@ -146,28 +146,20 @@ class Collection {
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      // Get all collectionPages
-      const OldIsomerFile = new File(this.accessToken, this.siteName)
-      const oldCollectionPageType = new CollectionPageType(oldCollectionName)
-      OldIsomerFile.setFileType(oldCollectionPageType)
-      const collectionPages = await OldIsomerFile.list()
-      
-      // If the object is empty (there are no pages in the collection), do nothing
-      if (_.isEmpty(collectionPages)) return 
-
-      // Set up new collection File instance
-      const NewIsomerFile = new File(this.accessToken, this.siteName)
-      const newCollectionPageType = new CollectionPageType(newCollectionName)
-      NewIsomerFile.setFileType(newCollectionPageType)
-
-      // Rename all collectionPages
-      await Bluebird.map(collectionPages, async(collectionPage) => {
-        let pageName = collectionPage.fileName
-        const { content, sha } = await OldIsomerFile.read(pageName)
-        await OldIsomerFile.delete(pageName, sha)
-        return NewIsomerFile.create(pageName, content)
+      const { gitTree, currentCommitSha } = await getRootTree(this.siteName, this.accessToken);
+      const oldCollectionDirectoryName = `_${oldCollectionName}`
+      const newCollectionDirectoryName = `_${newCollectionName}`
+      const newGitTree = gitTree.map(item => {
+        if (item.path === oldCollectionDirectoryName) {
+          return {
+            ...item,
+            path: newCollectionDirectoryName
+          }
+        } else {
+          return item
+        }
       })
-      
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, `Rename collection from ${oldCollectionName} to ${newCollectionName}`);
     } catch (err) {
       throw err
     }

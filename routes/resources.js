@@ -60,7 +60,7 @@ async function renameResource (req, res, next) {
   const resourceRoomName = await IsomerResourceRoom.get()
 
   const IsomerResource = new Resource(accessToken, siteName)
-  await IsomerResource.rename(resourceRoomName, resourceName, resourceRoomName, newResourceName)
+  await IsomerResource.rename(resourceRoomName, resourceName, newResourceName)
 
   res.status(200).json({ resourceName, newResourceName })
 }

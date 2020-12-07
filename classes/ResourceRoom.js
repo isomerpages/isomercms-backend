@@ -106,28 +106,18 @@ class ResourceRoom {
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      // Delete all resources and resourcePages
-      const IsomerResource = new Resource(this.accessToken, this.siteName)
-      const resources = await IsomerResource.list(resourceRoomName)
-
-      // Create index file in resourceRoom
-      const NewIsomerIndexFile = new File(this.accessToken, this.siteName)
-      const newResourceType = new ResourceType(newResourceRoom)
-      NewIsomerIndexFile.setFileType(newResourceType)
-      await NewIsomerIndexFile.create(RESOURCE_ROOM_INDEX_PATH, RESOURCE_ROOM_INDEX_CONTENT)
-
-      // Delete index file in resourceRoom
-      const IsomerIndexFile = new File(this.accessToken, this.siteName)
-      const resourceType = new ResourceType(resourceRoomName)
-      IsomerIndexFile.setFileType(resourceType)
-      const { sha: deleteSha } = await IsomerIndexFile.read(RESOURCE_ROOM_INDEX_PATH)
-      await IsomerIndexFile.delete(RESOURCE_ROOM_INDEX_PATH, deleteSha)
-
-      if (!_.isEmpty(resources)) {
-        await Bluebird.map(resources, async(resource) => {
-          return IsomerResource.rename(resourceRoomName, resource.dirName, newResourceRoom, resource.dirName)
-        })
-      }
+      const { gitTree, currentCommitSha } = await getRootTree(this.siteName, this.accessToken);
+      const newGitTree = gitTree.map(item => {
+        if (item.path === resourceRoomName) {
+          return {
+            ...item,
+            path: newResourceRoom
+          }
+        } else {
+          return item
+        }
+      })
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, `Rename collection from ${oldCollectionName} to ${newCollectionName}`);
 
       await config.update(newContent, sha)
 

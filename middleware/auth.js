@@ -124,6 +124,7 @@ auth.get('/sites/:siteName/netlify-toml', verifyJwt)
 
 // Sites
 auth.get('/sites', verifyJwt)
+auth.get('/sites/:siteName', verifyJwt)
 
 auth.use((req, res, next) => {
     if (!req.route) {

@@ -3,6 +3,8 @@ const router = express.Router();
 const axios = require('axios');
 const _ = require('lodash');
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+// Import error
+const { NotFoundError } = require('../errors/NotFoundError')
 
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const ISOMER_ADMIN_REPOS = [
@@ -90,6 +92,32 @@ async function getSites (req, res, next) {
     res.status(200).json({ siteNames })
 }
 
+/* Checks if a user has access to a repo. */
+async function checkHasAccess (req, res, next) {
+  try {
+    const { accessToken, userId } = req
+    const { siteName } = req.params
+    
+    const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
+    const resp = await axios.get(endpoint, {
+      headers: {
+        Authorization: `token ${accessToken}`,
+        "Content-Type": "application/json",
+      }
+    })
+    console.log(resp)
+
+    res.status(200).json()
+  } catch (err) {
+    const status = err.response.status
+    // If user is unauthorized or site does not exist, show the same NotFoundError
+    if (status === 404 || status === 403) throw new NotFoundError('Site does not exist')
+    console.log(err)
+    throw err
+  }
+}
+
 router.get('/', attachRouteHandlerWrapper(getSites));
+router.get('/:siteName', attachRouteHandlerWrapper(checkHasAccess));
 
 module.exports = router;

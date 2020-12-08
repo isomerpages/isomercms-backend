@@ -109,6 +109,7 @@ class Collection {
 
   async rename(oldCollectionName, newCollectionName) {
     try {
+      const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
       // Rename collection in config
       const config = new Config(this.accessToken, this.siteName)
       const { content, sha } = await config.read()
@@ -159,7 +160,7 @@ class Collection {
           return item
         }
       })
-      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, `Rename collection from ${oldCollectionName} to ${newCollectionName}`);
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
     } catch (err) {
       throw err
     }

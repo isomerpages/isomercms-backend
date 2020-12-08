@@ -41,6 +41,7 @@ class Resource {
 
   async rename(resourceRoomName, resourceName, newResourceName) {
     try {
+      const commitMessage = `Rename resource category from ${resourceName} to ${newResourceName}`
       const { gitTree, currentCommitSha } = await getRootTree(this.siteName, this.accessToken);
       let newGitTree = []
       let resourceRoomTreeSha
@@ -67,7 +68,7 @@ class Resource {
           })
         }
       })
-      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, `Rename resource category from ${resourceName} to ${newResourceName}`);
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
     } catch (err) {
       throw err
     }

@@ -99,13 +99,12 @@ async function checkHasAccess (req, res, next) {
     const { siteName } = req.params
     
     const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
-    const resp = await axios.get(endpoint, {
+    await axios.get(endpoint, {
       headers: {
         Authorization: `token ${accessToken}`,
         "Content-Type": "application/json",
       }
     })
-    console.log(resp)
 
     res.status(200).json()
   } catch (err) {

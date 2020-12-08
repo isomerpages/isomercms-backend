@@ -5,7 +5,7 @@ const _ = require('lodash')
 
 const { Config } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
-const { getRootTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
+const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 const NAV_FILE_NAME = 'navigation.yml'
 
@@ -147,7 +147,8 @@ class Collection {
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      const { gitTree, currentCommitSha } = await getRootTree(this.siteName, this.accessToken);
+      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
       const oldCollectionDirectoryName = `_${oldCollectionName}`
       const newCollectionDirectoryName = `_${newCollectionName}`
       const newGitTree = gitTree.map(item => {

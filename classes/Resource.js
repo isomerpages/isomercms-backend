@@ -4,7 +4,7 @@ const _ = require('lodash')
 // Import classes 
 const { File, ResourceCategoryType, ResourcePageType } = require('../classes/File.js')
 const { Directory, ResourceRoomType } = require('../classes/Directory.js')
-const { getRootTree, getTree, sendTree } = require('../utils/utils.js')
+const { getCommitAndTreeSha, getTree, sendTree } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_INDEX_PATH = 'index.html'
@@ -42,7 +42,8 @@ class Resource {
   async rename(resourceRoomName, resourceName, newResourceName) {
     try {
       const commitMessage = `Rename resource category from ${resourceName} to ${newResourceName}`
-      const { gitTree, currentCommitSha } = await getRootTree(this.siteName, this.accessToken);
+      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
       let newGitTree = []
       let resourceRoomTreeSha
       // Retrieve all git trees of other items
@@ -53,7 +54,7 @@ class Resource {
           newGitTree.push(item)
         }
       })
-      const { gitTree: resourceRoomTree } = await getTree(this.siteName, this.accessToken, resourceRoomTreeSha)
+      const resourceRoomTree = await getTree(this.siteName, this.accessToken, resourceRoomTreeSha)
       resourceRoomTree.forEach(item => {
         // We need to append resource room to the file path because the path is relative to the subtree
         if (item.path === resourceName) {

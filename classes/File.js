@@ -89,6 +89,7 @@ class File {
     try {
       const files = await this.list()
       const fileToRead = files.filter((file) => file.fileName === fileName)[0]
+      if (fileToRead === undefined) throw new NotFoundError ('File does not exist')
       const endpoint = `${this.baseBlobEndpoint}/${fileToRead.sha}`
 
       const params = {
@@ -103,9 +104,7 @@ class File {
           "Content-Type": "application/json"
         }
       })
-  
-      if (resp.status === 404) throw new NotFoundError ('File does not exist')
-  
+
       const { content, sha } = resp.data
   
       return { content, sha }
@@ -134,6 +133,8 @@ class File {
 
       return { newSha: resp.data.commit.sha }
     } catch (err) {
+      const status = err.response.status
+      if (status === 404) throw new NotFoundError ('File does not exist')
       throw err
     }
   }
@@ -156,6 +157,8 @@ class File {
         }
       })
     } catch (err) {
+      const status = err.response.status
+      if (status === 404) throw new NotFoundError ('File does not exist')
       throw err
     }
   }

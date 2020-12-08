@@ -4,6 +4,8 @@ const axios = require('axios');
 const Bluebird = require('bluebird');
 const _ = require('lodash');
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+const { flatten } = require('lodash');
+
 // Import error
 const { NotFoundError } = require('../errors/NotFoundError')
 
@@ -84,15 +86,12 @@ async function getSites (req, res, next) {
           permissions,
           repoName: name,
         }
-      }).filter((repoData) => repoData.permissions.push === true)
+      }).filter((repoData) => repoData.permissions.push === true && !ISOMER_ADMIN_REPOS.includes(repoData.repoName))
   })
 
   const flattenedSites = _.flatten(sites)
 
-  // Remove Isomer admin repositories from this list
-  const siteNames = flattenedSites.filter((siteData) => !ISOMER_ADMIN_REPOS.includes(siteData.repoName))
-
-  res.status(200).json({ siteNames })
+  res.status(200).json({ siteNames: flattenedSites })
 }
 
 /* Checks if a user has access to a repo. */

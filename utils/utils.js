@@ -45,7 +45,7 @@ async function getRootTree(repo, accessToken, branchRef='staging') {
     const { commit: { tree: { sha: treeSha } } } = commits[0];
     const currentCommitSha = commits[0].sha;
 
-    const { data: { tree: gitTree } } = await axios.get(`https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}${isRecursive ? `?recursive=1` : ''}`, {
+    const { data: { tree: gitTree } } = await axios.get(`https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`, {
       params: {
         ref: branchRef,
       },

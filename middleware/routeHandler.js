@@ -21,8 +21,8 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
   routeHandler(req, res).catch(async (err) => {
     try {
       await backOff(() => revertCommit(originalCommitSha, siteName, accessToken))
-    } catch (err) {
-      next(err)
+    } catch (retryErr) {
+      next(retryErr)
     }
     next(err)
   })

@@ -111,7 +111,7 @@ async function sendTree(gitTree, currentCommitSha, repo, accessToken, message, b
   });
 }
 
-// send the new tree object back to Github and point the latest commit on the staging branch to it
+// Revert the staging branch back to `originalCommitSha`
 async function revertCommit(originalCommitSha, repo, accessToken, branchRef='staging') {
   const headers = {
     Authorization: `token ${accessToken}`,
@@ -122,8 +122,7 @@ async function revertCommit(originalCommitSha, repo, accessToken, branchRef='sta
   const refEndpoint = `${baseRefEndpoint}/heads/${branchRef}`;
 
   /**
-   * The `staging` branch reference will now point
-   * to `newCommitSha` instead of `currentCommitSha`
+   * The `staging` branch reference will now point to `currentCommitSha`
    */
   await axios.patch(refEndpoint, {
     sha: originalCommitSha,

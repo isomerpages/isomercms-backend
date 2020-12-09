@@ -144,6 +144,6 @@ router.post('/:siteName/resources/:resourceName/pages', attachRollbackRouteHandl
 router.get('/:siteName/resources/:resourceName/pages/:pageName', attachRouteHandlerWrapper(readResourcePage))
 router.post('/:siteName/resources/:resourceName/pages/:pageName', attachRouteHandlerWrapper(updateResourcePage))
 router.delete('/:siteName/resources/:resourceName/pages/:pageName', attachRollbackRouteHandlerWrapper(deleteResourcePage))
-router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', attachRouteHandlerWrapper(renameResourcePage))
+router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renameResourcePage))
 
 module.exports = router;

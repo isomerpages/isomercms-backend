@@ -207,6 +207,6 @@ router.post('/:siteName/collections/:collectionName/pages', attachRollbackRouteH
 router.get('/:siteName/collections/:collectionName/pages/:pageName', attachRouteHandlerWrapper(readCollectionPage))
 router.post('/:siteName/collections/:collectionName/pages/:pageName', attachRouteHandlerWrapper(updateCollectionPage))
 router.delete('/:siteName/collections/:collectionName/pages/:pageName', attachRollbackRouteHandlerWrapper(deleteCollectionPage))
-router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', attachRouteHandlerWrapper(renameCollectionPage))
+router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renameCollectionPage))
 
 module.exports = router;

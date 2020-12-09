@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Import classes 
 const { ResourceRoom } = require('../classes/ResourceRoom.js');
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler');
 
 // Get resource room name
 async function getResourceRoomName (req, res, next) {
@@ -57,8 +57,8 @@ async function deleteResourceRoom(req, res, next) {
 }
 
 router.get('/:siteName/resource-room', attachRouteHandlerWrapper(getResourceRoomName))
-router.post('/:siteName/resource-room', attachRouteHandlerWrapper(createResourceRoom))
-router.post('/:siteName/resource-room/:resourceRoom', attachRouteHandlerWrapper(renameResourceRoom))
-router.delete('/:siteName/resource-room', attachRouteHandlerWrapper(deleteResourceRoom))
+router.post('/:siteName/resource-room', attachRollbackRouteHandlerWrapper(createResourceRoom))
+router.post('/:siteName/resource-room/:resourceRoom', attachRollbackRouteHandlerWrapper(renameResourceRoom))
+router.delete('/:siteName/resource-room', attachRollbackRouteHandlerWrapper(deleteResourceRoom))
 
 module.exports = router;

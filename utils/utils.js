@@ -27,8 +27,7 @@ function deslugifyCollectionPage(collectionPageName) {
   )
 }
 
-// retrieve the tree item
-async function getRootTree(repo, accessToken, branchRef='staging') {
+async function getCommitAndTreeSha(repo, accessToken, branchRef='staging') {
   try {
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -45,16 +44,9 @@ async function getRootTree(repo, accessToken, branchRef='staging') {
     const { commit: { tree: { sha: treeSha } } } = commits[0];
     const currentCommitSha = commits[0].sha;
 
-    const { data: { tree: gitTree } } = await axios.get(`https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`, {
-      params: {
-        ref: branchRef,
-      },
-      headers,
-    });
-
-    return { gitTree, currentCommitSha };
+    return { treeSha, currentCommitSha };
   } catch (err) {
-    console.log(err);
+    throw err
   }
 }
 
@@ -73,9 +65,9 @@ async function getTree(repo, accessToken, treeSha, branchRef='staging') {
       headers,
     });
 
-    return { gitTree };
+    return gitTree;
   } catch (err) {
-    console.log(err);
+    throw err
   }
 }
 
@@ -119,6 +111,27 @@ async function sendTree(gitTree, currentCommitSha, repo, accessToken, message, b
   });
 }
 
+// Revert the staging branch back to `originalCommitSha`
+async function revertCommit(originalCommitSha, repo, accessToken, branchRef='staging') {
+  const headers = {
+    Authorization: `token ${accessToken}`,
+    Accept: 'application/json',
+  };
+
+  const baseRefEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/refs`;
+  const refEndpoint = `${baseRefEndpoint}/heads/${branchRef}`;
+
+  /**
+   * The `staging` branch reference will now point to `currentCommitSha`
+   */
+  await axios.patch(refEndpoint, {
+    sha: originalCommitSha,
+    force: true,
+  }, {
+    headers,
+  });
+}
+
 /** 
  * A function to deslugify a collection's name
 */
@@ -132,7 +145,8 @@ function deslugifyCollectionName(collectionName) {
 module.exports = {
   deslugifyCollectionPage,
   deslugifyCollectionName,
-  getRootTree,
+  getCommitAndTreeSha,
   getTree,
   sendTree,
+  revertCommit,
 }

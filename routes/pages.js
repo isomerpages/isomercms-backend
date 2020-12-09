@@ -4,7 +4,7 @@ const Bluebird = require('bluebird')
 const _ = require('lodash')
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
@@ -163,6 +163,6 @@ router.post('/:siteName/pages', attachRouteHandlerWrapper(createNewPage))
 router.get('/:siteName/pages/:pageName', attachRouteHandlerWrapper(readPage))
 router.post('/:siteName/pages/:pageName', attachRouteHandlerWrapper(updatePage))
 router.delete('/:siteName/pages/:pageName', attachRouteHandlerWrapper(deletePage))
-router.post('/:siteName/pages/:pageName/rename/:newPageName', attachRouteHandlerWrapper(renamePage))
+router.post('/:siteName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renamePage))
 
 module.exports = router;

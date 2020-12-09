@@ -7,7 +7,7 @@ const _ = require('lodash')
 const { Config } = require('./Config.js')
 const { Resource } = require('../classes/Resource.js')
 const { File, ResourceType, DataType } = require('../classes/File.js')
-const { deslugifyCollectionName } = require('../utils/utils.js')
+const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_ROOM_INDEX_PATH = 'index.html'
@@ -72,6 +72,7 @@ class ResourceRoom {
 
   async rename(newResourceRoom) {
     try {
+      const commitMessage = `Rename resource room from ${resourceRoomName} to ${newResourceRoom}`
       // Add resource room to config
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
@@ -106,7 +107,8 @@ class ResourceRoom {
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      const { gitTree, currentCommitSha } = await getRootTree(this.siteName, this.accessToken);
+      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
       const newGitTree = gitTree.map(item => {
         if (item.path === resourceRoomName) {
           return {
@@ -117,7 +119,7 @@ class ResourceRoom {
           return item
         }
       })
-      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, `Rename collection from ${oldCollectionName} to ${newCollectionName}`);
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
 
       await config.update(newContent, sha)
 

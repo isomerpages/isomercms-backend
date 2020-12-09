@@ -22,15 +22,27 @@ function errorHandler (err, req, res, next) {
             },
         })
     } else {
-        logger.info(`Unrecognized internal server error: ${errMsg}`)
-        res.status(500).json({
-            error: {
-                code: 500,
-                message: 'Something went wrong',
-            },
-        })
+        // Error thrown by large payload is done by express
+        if (err.name === "PayloadTooLargeError") {
+            logger.info(errMsg)
+            res.status(413).json({
+                error: {
+                    name: err.name,
+                    code: 413,
+                    message: err.message,
+                },
+            })
+        } else {
+            logger.info(`Unrecognized internal server error: ${errMsg}`)
+            res.status(500).json({
+                error: {
+                    code: 500,
+                    message: 'Something went wrong',
+                },
+            })
+        }
     }
-  }
+}
 
 module.exports = {
     errorHandler,

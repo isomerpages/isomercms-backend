@@ -46,7 +46,7 @@ async function getCommitAndTreeSha(repo, accessToken, branchRef='staging') {
 
     return { treeSha, currentCommitSha };
   } catch (err) {
-    console.log(err);
+    throw err
   }
 }
 
@@ -67,7 +67,7 @@ async function getTree(repo, accessToken, treeSha, branchRef='staging') {
 
     return gitTree;
   } catch (err) {
-    console.log(err);
+    throw err
   }
 }
 

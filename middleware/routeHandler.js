@@ -1,3 +1,5 @@
+const { backOff } = require('exponential-backoff')
+
 const { getCommitAndTreeSha, revertCommit } = require('../utils/utils.js')
 
 const attachRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
@@ -16,8 +18,12 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
   } catch (err) {
     next(err)
   }
-  routeHandler(req, res).catch((err) => {
-    revertCommit(originalCommitSha, siteName, accessToken)
+  routeHandler(req, res).catch(async (err) => {
+    try {
+      await backOff(() => revertCommit(originalCommitSha, siteName, accessToken))
+    } catch (err) {
+      next(err)
+    }
     next(err)
   })
 }

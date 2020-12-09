@@ -137,21 +137,21 @@ class Settings {
 
     const settingsObj = {}
 
-    if (configSettings) {
+    if (!_.isEmpty(configSettings)) {
       settingsObj.config = {
         payload: configSettings,
         currentData: configContent,
       }
     }
 
-    if (footerSettings) {
+    if (!_.isEmpty(footerSettings)) {
       settingsObj.footer = {
         payload: footerSettings,
         currentData: footerContent,
       }
     }
     
-    if (navigationSettings) {
+    if (!_.isEmpty(navigationSettings)) {
       settingsObj.navigation = {
         payload: navigationSettings,
         currentData: navigationContent,
@@ -177,7 +177,7 @@ class Settings {
     const { configSettingsObj, footerSettingsObj, navigationSettingsObj } = updatedSettingsObj
 
     // To-do: use Git Tree to speed up operations
-    if (configSettings) {
+    if (!_.isEmpty(configSettings)) {
       const newConfigContent = Base64.encode(yaml.safeDump(configSettingsObj))
       await configResp.update(newConfigContent, config.sha)
 
@@ -195,12 +195,12 @@ class Settings {
       }
     }
 
-    if (footerSettings) {
+    if (!_.isEmpty(footerSettings)) {
       const newFooterContent = Base64.encode(yaml.safeDump(footerSettingsObj))
       await FooterFile.update(FOOTER_PATH, newFooterContent, footer.sha)
     }
 
-    if (navigationSettings) {
+    if (!_.isEmpty(navigationSettings)) {
       const newNavigationContent = Base64.encode(yaml.safeDump(navigationSettingsObj))
       await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, navigation.sha)
     }

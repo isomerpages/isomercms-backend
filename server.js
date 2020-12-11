@@ -50,22 +50,22 @@ app.use(auth)
 app.use(apiLogger)
 
 // Routes layer setup
-app.use('/', indexRouter);
-app.use('/auth', authRouter);
-app.use('/sites', sitesRouter)
-app.use('/sites', pagesRouter)
-app.use('/sites', collectionsRouter)
-app.use('/sites', collectionPagesRouter)
-app.use('/sites', resourceRoomRouter)
-app.use('/sites', resourcesRouter)
-app.use('/sites', resourcePagesRouter)
-app.use('/sites', imagesRouter)
-app.use('/sites', documentsRouter)
-app.use('/sites', menuRouter)
-app.use('/sites', homepageRouter)
-app.use('/sites', menuDirectoryRouter)
-app.use('/sites', settingsRouter)
-app.use('/sites', netlifyTomlRouter)
+app.use('/v1', indexRouter);
+app.use('/v1/auth', authRouter);
+app.use('/v1/sites', sitesRouter)
+app.use('/v1/sites', pagesRouter)
+app.use('/v1/sites', collectionsRouter)
+app.use('/v1/sites', collectionPagesRouter)
+app.use('/v1/sites', resourceRoomRouter)
+app.use('/v1/sites', resourcesRouter)
+app.use('/v1/sites', resourcePagesRouter)
+app.use('/v1/sites', imagesRouter)
+app.use('/v1/sites', documentsRouter)
+app.use('/v1/sites', menuRouter)
+app.use('/v1/sites', homepageRouter)
+app.use('/v1/sites', menuDirectoryRouter)
+app.use('/v1/sites', settingsRouter)
+app.use('/v1/sites', netlifyTomlRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

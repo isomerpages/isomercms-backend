@@ -213,7 +213,7 @@ components:
 
 
 paths:
-  /:
+  /v1:
     get:
       tags:
         - Authentication
@@ -225,7 +225,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/OAuthParams"
-  /sites/{siteName}/collections:
+  /v1/sites/{siteName}/collections:
     get:
       tags:
         - Collections
@@ -265,7 +265,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/CollectionNameResponse"
-  /sites/{siteName}/collections/{collectionName}:
+  /v1/sites/{siteName}/collections/{collectionName}:
     get:
       tags:
         - Collection Pages
@@ -310,7 +310,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/CollectionNameResponse"
-  /sites/{siteName}/collections/{collectionName}/rename/{newCollectionName}:
+  /v1/sites/{siteName}/collections/{collectionName}/rename/{newCollectionName}:
     post:
       tags:
         - Collections
@@ -343,7 +343,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/RenameCollection"
-  /sites/{siteName}/collections/{collectionName}/pages:
+  /v1/sites/{siteName}/collections/{collectionName}/pages:
     post:
       tags:
         - Collection Pages
@@ -371,7 +371,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/CollectionListResponse"
-  /sites/{siteName}/collections/{collectionName}/pages/{pageName}:
+  /v1/sites/{siteName}/collections/{collectionName}/pages/{pageName}:
     get:
       tags:
         - Collection Pages
@@ -459,7 +459,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/collections/{collectionName}/pages/{pageName}/rename/{newPageName}:
+  /v1/sites/{siteName}/collections/{collectionName}/pages/{pageName}/rename/{newPageName}:
     post:
       tags:
         - Collection Pages
@@ -498,7 +498,7 @@ paths:
               schema: 
                 $ref: "#/components/schemas/CollectionPageResponse"
                 
-  /sites/{siteName}/pages:
+  /v1/sites/{siteName}/pages:
     get:
       tags:
         - Pages
@@ -543,7 +543,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/PageResponse"
-  /sites/{siteName}/pages/{pageName}:
+  /v1/sites/{siteName}/pages/{pageName}:
     get:
       tags:
         - Pages
@@ -616,7 +616,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/pages/{pageName}/rename/{newPageName}:
+  /v1/sites/{siteName}/pages/{pageName}/rename/{newPageName}:
     post:
       tags:
         - Pages
@@ -650,7 +650,7 @@ paths:
               schema: 
                 $ref: "#/components/schemas/PageResponse"
                 
-  /sites/{siteName}/documents:
+  /v1/sites/{siteName}/documents:
     get:
       tags:
         - Documents
@@ -690,7 +690,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/DocumentResponse"
-  /sites/{siteName}/documents/{documentName}:
+  /v1/sites/{siteName}/documents/{documentName}:
     get:
       tags:
         - Documents
@@ -763,7 +763,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/documents/{documentName}/rename/{newDocumentName}:
+  /v1/sites/{siteName}/documents/{documentName}/rename/{newDocumentName}:
     post:
       tags:
         - Documents
@@ -797,7 +797,7 @@ paths:
               schema: 
                 $ref: "#/components/schemas/DocumentResponse"
                 
-  /sites/{siteName}/images:
+  /v1/sites/{siteName}/images:
     get:
       tags:
         - Images
@@ -837,7 +837,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/ImageResponse"
-  /sites/{siteName}/images/{imageName}:
+  /v1/sites/{siteName}/images/{imageName}:
     get:
       tags:
         - Images
@@ -910,7 +910,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/images/{imageName}/rename/{newImageName}:
+  /v1/sites/{siteName}/images/{imageName}/rename/{newImageName}:
     post:
       tags:
         - Images
@@ -943,7 +943,7 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/ImageResponse"
-  /sites:
+  /v1/sites:
     get:
       tags:
         - Sites
@@ -956,7 +956,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SiteListResponse"
                 
-  /sites/{siteName}/resource-room:
+  /v1/sites/{siteName}/resource-room:
     get:
       tags:
         - Resource Room
@@ -1009,7 +1009,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/resource-room/{resourceRoom}:
+  /v1/sites/{siteName}/resource-room/{resourceRoom}:
     post:
       tags:
         - Resource Room
@@ -1032,7 +1032,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResourceRoom"
-  /sites/{siteName}/resources:
+  /v1/sites/{siteName}/resources:
     get:
       tags:
         - Resources
@@ -1072,7 +1072,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResourceResponse"
-  /sites/{siteName}/resources/{resourceName}:
+  /v1/sites/{siteName}/resources/{resourceName}:
     get:
       tags:
         - Resource Pages
@@ -1113,7 +1113,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/resources/{resourceName}/rename/{newResourceName}:
+  /v1/sites/{siteName}/resources/{resourceName}/rename/{newResourceName}:
     post:
       tags:
         - Resources
@@ -1141,7 +1141,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RenameResource"
-  /sites/{siteName}/resources/{resourceName}/pages:
+  /v1/sites/{siteName}/resources/{resourceName}/pages:
     post:
       tags:
         - Resource Pages
@@ -1169,7 +1169,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResourcePageResponse"
-  /sites/{siteName}/resources/{resourceName}/pages/{pageName}:
+  /v1/sites/{siteName}/resources/{resourceName}/pages/{pageName}:
     get:
       tags:
         - Resource Pages
@@ -1257,7 +1257,7 @@ paths:
       responses:
         200:
           description: Success
-  /sites/{siteName}/resources/{resourceName}/pages/{pageName}/rename/{newPageName}:
+  /v1/sites/{siteName}/resources/{resourceName}/pages/{pageName}/rename/{newPageName}:
     post:
       tags:
         - Resource Pages
@@ -1295,7 +1295,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResourcePageResponse"
-  /sites/{siteName}/menus:
+  /v1/sites/{siteName}/menus:
     get:
       tags:
         - Menus
@@ -1313,7 +1313,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MenuListResponse"
-  /sites/{siteName}/menus/{menuName}:
+  /v1/sites/{siteName}/menus/{menuName}:
     get:
       tags:
         - Menus

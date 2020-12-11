@@ -37,93 +37,94 @@ const verifyJwt = (req, res, next) => {
 }
 
 // Login and logout
-auth.get('/auth', noVerify)
-auth.get('/auth/logout', noVerify)
+auth.get('/v1/auth', noVerify)
+auth.get('/v1/auth/logout', noVerify)
 
 // Index
-auth.get('/', noVerify)
+auth.get('/v1', noVerify)
 
 // Homepage
-auth.get('/sites/:siteName/homepage', verifyJwt)
-auth.post('/sites/:siteName/homepage', verifyJwt)
+auth.get('/v1/sites/:siteName/homepage', verifyJwt)
+auth.post('/v1/sites/:siteName/homepage', verifyJwt)
 
 // Collection pages
-auth.get('/sites/:siteName/collections/:collectionName', verifyJwt)
-auth.get('/sites/:siteName/collections/:collectionName/pages', verifyJwt)
-auth.post('/sites/:siteName/collections/:collectionName/pages', verifyJwt)
-auth.get('/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
-auth.post('/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
-auth.delete('/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
-auth.post('/sites/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', verifyJwt)
+auth.get('/v1/sites/:siteName/collections/:collectionName', verifyJwt)
+auth.get('/v1/sites/:siteName/collections/:collectionName/pages', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionName/pages', verifyJwt)
+auth.get('/v1/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
+auth.delete('/v1/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', verifyJwt)
 
 // Collections
-auth.get('/sites/:siteName/collections', verifyJwt)
-auth.post('/sites/:siteName/collections', verifyJwt)
-auth.delete('/sites/:siteName/collections/:collectionName', verifyJwt)
-auth.post('/sites/:siteName/collections/:collectionName/rename/:newCollectionName', verifyJwt)
+auth.get('/v1/sites/:siteName/collections', verifyJwt)
+auth.post('/v1/sites/:siteName/collections', verifyJwt)
+auth.delete('/v1/sites/:siteName/collections/:collectionName', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionName/rename/:newCollectionName', verifyJwt)
 
 // Documents
-auth.get('/sites/:siteName/documents', verifyJwt)
-auth.post('/sites/:siteName/documents', verifyJwt)
-auth.get('/sites/:siteName/documents/:documentName', verifyJwt)
-auth.post('/sites/:siteName/documents/:documentName', verifyJwt)
-auth.delete('/sites/:siteName/documents/:documentName', verifyJwt)
-auth.post('/sites/:siteName/documents/:documentName/rename/:newDocumentName', verifyJwt)
+auth.get('/v1/sites/:siteName/documents', verifyJwt)
+auth.post('/v1/sites/:siteName/documents', verifyJwt)
+auth.get('/v1/sites/:siteName/documents/:documentName', verifyJwt)
+auth.post('/v1/sites/:siteName/documents/:documentName', verifyJwt)
+auth.delete('/v1/sites/:siteName/documents/:documentName', verifyJwt)
+auth.post('/v1/sites/:siteName/documents/:documentName/rename/:newDocumentName', verifyJwt)
 
 // Images
-auth.get('/sites/:siteName/images', verifyJwt)
-auth.post('/sites/:siteName/images', verifyJwt)
-auth.get('/sites/:siteName/images/:imageName', verifyJwt)
-auth.post('/sites/:siteName/images/:imageName', verifyJwt)
-auth.delete('/sites/:siteName/images/:imageName', verifyJwt)
-auth.post('/sites/:siteName/images/:imageName/rename/:newImageName', verifyJwt)
+auth.get('/v1/sites/:siteName/images', verifyJwt)
+auth.post('v/sites/:siteName/images', verifyJwt)
+auth.get('/v1/sites/:siteName/images/:imageName', verifyJwt)
+auth.post('/v1/sites/:siteName/images/:imageName', verifyJwt)
+auth.delete('/v1/sites/:siteName/images/:imageName', verifyJwt)
+auth.post('/v1/sites/:siteName/images/:imageName/rename/:newImageName', verifyJwt)
 
 // Menu directory
-auth.get('/sites/:siteName/tree', verifyJwt)
+auth.get('/v1/sites/:siteName/tree', verifyJwt)
 
 // Menu
-auth.get('/sites/:siteName/menus', verifyJwt)
-auth.get('/sites/:siteName/menus/:menuName', verifyJwt)
-auth.post('/sites/:siteName/menus/:menuName', verifyJwt)
+auth.get('/v1/sites/:siteName/menus', verifyJwt)
+auth.get('/v1/sites/:siteName/menus/:menuName', verifyJwt)
+auth.post('/v1/sites/:siteName/menus/:menuName', verifyJwt)
 
 // Pages
-auth.get('/sites/:siteName/pages', verifyJwt)
-auth.get('/sites/:siteName/unlinkedPages', verifyJwt)
-auth.post('/sites/:siteName/pages', verifyJwt)
-auth.get('/sites/:siteName/pages/:pageName', verifyJwt)
-auth.post('/sites/:siteName/pages/:pageName', verifyJwt)
-auth.delete('/sites/:siteName/pages/:pageName', verifyJwt)
-auth.post('/sites/:siteName/pages/:pageName/rename/:newPageName', verifyJwt)
+auth.get('/v1/sites/:siteName/pages', verifyJwt)
+auth.get('/v1/sites/:siteName/unlinkedPages', verifyJwt)
+auth.post('/v1/sites/:siteName/pages', verifyJwt)
+auth.get('/v1/sites/:siteName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/pages/:pageName', verifyJwt)
+auth.delete('/v1/sites/:siteName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/pages/:pageName/rename/:newPageName', verifyJwt)
 
 // Resource pages
-auth.get('/sites/:siteName/resources/:resourceName', verifyJwt)
-auth.post('/sites/:siteName/resources/:resourceName/pages', verifyJwt)
-auth.get('/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
-auth.post('/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
-auth.delete('/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
-auth.post('/sites/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', verifyJwt)
+auth.get('/v1/sites/:siteName/resources/:resourceName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/pages', verifyJwt)
+auth.get('/v1/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
+auth.delete('/v1/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', verifyJwt)
 
 // Resource room
-auth.get('/sites/:siteName/resource-room', verifyJwt)
-auth.post('/sites/:siteName/resource-room', verifyJwt)
-auth.post('/sites/:siteName/resource-room/:resourceRoom', verifyJwt)
-auth.delete('/sites/:siteName/resource-room', verifyJwt)
+auth.get('/v1/sites/:siteName/resource-room', verifyJwt)
+auth.post('/v1/sites/:siteName/resource-room', verifyJwt)
+auth.post('/v1/sites/:siteName/resource-room/:resourceRoom', verifyJwt)
+auth.delete('/v1/sites/:siteName/resource-room', verifyJwt)
 
 // Resources
-auth.get('/sites/:siteName/resources', verifyJwt)
-auth.post('/sites/:siteName/resources', verifyJwt)
-auth.delete('/sites/:siteName/resources/:resourceName', verifyJwt)
-auth.post('/sites/:siteName/resources/:resourceName/rename/:newResourceName', verifyJwt)
+auth.get('/v1/sites/:siteName/resources', verifyJwt)
+auth.post('/v1/sites/:siteName/resources', verifyJwt)
+auth.delete('/v1/sites/:siteName/resources/:resourceName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/rename/:newResourceName', verifyJwt)
 
 // Settings
-auth.get('/sites/:siteName/settings', verifyJwt)
-auth.post('/sites/:siteName/settings', verifyJwt)
+auth.get('/v1/sites/:siteName/settings', verifyJwt)
+auth.post('/v1/sites/:siteName/settings', verifyJwt)
 
 // Netlify toml
-auth.get('/sites/:siteName/netlify-toml', verifyJwt)
+auth.get('/v1/sites/:siteName/netlify-toml', verifyJwt)
 
 // Sites
-auth.get('/sites', verifyJwt)
+auth.get('/v1/sites', verifyJwt)
+auth.get('/v1/sites/:siteName', verifyJwt)
 
 auth.use((req, res, next) => {
     if (!req.route) {

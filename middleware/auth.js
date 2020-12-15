@@ -72,7 +72,7 @@ auth.post('/v1/sites/:siteName/documents/:documentName/rename/:newDocumentName',
 
 // Images
 auth.get('/v1/sites/:siteName/images', verifyJwt)
-auth.post('v/sites/:siteName/images', verifyJwt)
+auth.post('v1/sites/:siteName/images', verifyJwt)
 auth.get('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.post('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/images/:imageName', verifyJwt)

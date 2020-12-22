@@ -3,7 +3,8 @@ const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
 // Import error
-const { NotFoundError  } = require('../errors/NotFoundError')
+const { NotFoundError } = require('../errors/NotFoundError')
+const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
@@ -78,14 +79,18 @@ class File {
 
       return { sha: resp.data.content.sha }
     } catch (err) {
-      throw err
+      const status = err.response.status
+      if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
+      throw err.response
     }
   }
 
   async read(fileName) {
     try {
       const files = await this.list()
+      if (_.isEmpty(files)) throw new NotFoundError ('File does not exist')
       const fileToRead = files.filter((file) => file.fileName === fileName)[0]
+      if (fileToRead === undefined) throw new NotFoundError ('File does not exist')
       const endpoint = `${this.baseBlobEndpoint}/${fileToRead.sha}`
 
       const params = {
@@ -100,9 +105,7 @@ class File {
           "Content-Type": "application/json"
         }
       })
-  
-      if (resp.status === 404) throw new NotFoundError ('File does not exist')
-  
+
       const { content, sha } = resp.data
   
       return { content, sha }
@@ -131,6 +134,8 @@ class File {
 
       return { newSha: resp.data.commit.sha }
     } catch (err) {
+      const status = err.response.status
+      if (status === 404) throw new NotFoundError ('File does not exist')
       throw err
     }
   }
@@ -153,6 +158,8 @@ class File {
         }
       })
     } catch (err) {
+      const status = err.response.status
+      if (status === 404) throw new NotFoundError ('File does not exist')
       throw err
     }
   }

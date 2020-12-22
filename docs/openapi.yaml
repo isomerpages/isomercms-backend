@@ -955,6 +955,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SiteListResponse"
+  /sites/{siteName}:
+    get:
+      tags:
+        - Sites
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+      description: Checks if site exists and user has write access
+      responses:
+        200:
+          description: Success
+        404:
+          description: Not found
+
                 
   /v1/sites/{siteName}/resource-room:
     get:

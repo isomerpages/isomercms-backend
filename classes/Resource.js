@@ -4,6 +4,7 @@ const _ = require('lodash')
 // Import classes 
 const { File, ResourceCategoryType, ResourcePageType } = require('../classes/File.js')
 const { Directory, ResourceRoomType } = require('../classes/Directory.js')
+const { getCommitAndTreeSha, getTree, sendTree } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_INDEX_PATH = 'index.html'
@@ -38,42 +39,37 @@ class Resource {
     }
   }
 
-  async rename(resourceRoomName, resourceName, newResourceRoomName, newResourceName) {
+  async rename(resourceRoomName, resourceName, newResourceName) {
     try {
-      // Delete old index file in old resource
-      const OldIsomerIndexFile = new File(this.accessToken, this.siteName)
-      const resourceType = new ResourceCategoryType(resourceRoomName, resourceName)
-      OldIsomerIndexFile.setFileType(resourceType)
-      const { sha: oldSha } = await OldIsomerIndexFile.read(`${RESOURCE_INDEX_PATH}`)
-      await OldIsomerIndexFile.delete(`${RESOURCE_INDEX_PATH}`, oldSha)
-
-      // Create new index file in new resource
-      const NewIsomerIndexFile = new File(this.accessToken, this.siteName)
-      const newResourceType = new ResourceCategoryType(newResourceRoomName, newResourceName)
-      NewIsomerIndexFile.setFileType(newResourceType)
-      await NewIsomerIndexFile.create(`${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
-
-      // Rename resourcePages
-      const OldIsomerFile = new File(this.accessToken, this.siteName)
-      const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
-      OldIsomerFile.setFileType(resourcePageType)
-
-      const NewIsomerFile = new File(this.accessToken, this.siteName)
-      const newResourcePageType = new ResourcePageType(newResourceRoomName, newResourceName)
-      NewIsomerFile.setFileType(newResourcePageType)
-
-      // 1. List all resourcePages in old resource
-      const resourcePages = await OldIsomerFile.list()
-
-      if (_.isEmpty(resourcePages)) return
-
-      await Bluebird.each(resourcePages, async(resourcePage) => {
-        // 2. Create new resourcePages in newResource
-        const { content, sha } = await OldIsomerFile.read(resourcePage.fileName)
-        await NewIsomerFile.create(resourcePage.fileName, content)
-        // 3. Delete all resourcePages in resource
-        return OldIsomerFile.delete(resourcePage.fileName, sha)
+      const commitMessage = `Rename resource category from ${resourceName} to ${newResourceName}`
+      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
+      let newGitTree = []
+      let resourceRoomTreeSha
+      // Retrieve all git trees of other items
+      gitTree.forEach((item) => {
+        if (item.path === resourceRoomName) {
+          resourceRoomTreeSha = item.sha
+        } else {
+          newGitTree.push(item)
+        }
       })
+      const resourceRoomTree = await getTree(this.siteName, this.accessToken, resourceRoomTreeSha)
+      resourceRoomTree.forEach(item => {
+        // We need to append resource room to the file path because the path is relative to the subtree
+        if (item.path === resourceName) {
+          newGitTree.push({
+            ...item,
+            path: `${resourceRoomName}/${newResourceName}`
+          })
+        } else {
+          newGitTree.push({
+            ...item,
+            path: `${resourceRoomName}/${item.path}`
+          })
+        }
+      })
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
     } catch (err) {
       throw err
     }

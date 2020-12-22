@@ -1,9 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const Bluebird = require('bluebird');
 const _ = require('lodash');
 const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+const { flatten } = require('lodash');
 
+// Import error
+const { NotFoundError } = require('../errors/NotFoundError')
+
+const GH_MAX_REPO_COUNT = 100
+const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const ISOMER_ADMIN_REPOS = [
   'isomercms-backend',
@@ -44,52 +51,74 @@ const timeDiff = (lastUpdated) => {
 async function getSites (req, res, next) {
   const { accessToken } = req
 
-    // Variable to store user repos
-    let siteNames = []
+  const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`;
 
-    // Variables to track pagination of user's repos in case user has more than 100
-    let pageCount = 1
-    let hasNextPage = true;
-    const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`;
+  const params = {
+    per_page: GH_MAX_REPO_COUNT,
+    sort: "full_name",
+  }
 
-    // Loop through all user repos
-    while (hasNextPage) {
-      const resp = await axios.get(endpoint, {
-        params: {
-          per_page: 100,
-          page: pageCount,
-          sort: "full_name",
-        },
-        headers: {
-          Authorization: `token ${accessToken}`,
-          "Content-Type": "application/json",
+  // Simultaneously retrieve all isomerpages repos
+  const paramsArr = []
+  for (i = 0; i < ISOMERPAGES_REPO_PAGE_COUNT; i++) {
+    paramsArr.push({ ...params, page: i + 1 })
+  }
+
+  const sites = await Bluebird.map(paramsArr, async (params) => {
+    const resp = await axios.get(endpoint, {
+      params,
+      headers: {
+        Authorization: `token ${accessToken}`,
+        "Content-Type": "application/json",
+      }
+    })
+
+    return resp.data
+      .map((repoData) => {
+        const {
+          updated_at,
+          permissions,
+          name
+        } = repoData
+
+        return {
+          lastUpdated: timeDiff(updated_at),
+          permissions,
+          repoName: name,
         }
-      })
+      }).filter((repoData) => repoData.permissions.push === true && !ISOMER_ADMIN_REPOS.includes(repoData.repoName))
+  })
 
-      // Filter for isomer repos
-      const isomerRepos = resp.data.reduce((acc, repo) => {
-        const { permissions, updated_at, name } = repo
-        if (permissions.push === true) {
-          return acc.concat({
-            repoName: name,
-            lastUpdated: timeDiff(updated_at),
-          })
-        }
-        return acc
-      }, [])
+  const flattenedSites = _.flatten(sites)
 
+  res.status(200).json({ siteNames: flattenedSites })
+}
 
-      siteNames = siteNames.concat(isomerRepos)
-      hasNextPage = resp.headers.link ? resp.headers.link.includes('next') : false
-      ++pageCount
-    }
+/* Checks if a user has access to a repo. */
+async function checkHasAccess (req, res, next) {
+  try {
+    const { accessToken, userId } = req
+    const { siteName } = req.params
     
-    // Remove Isomer admin repositories from this list
-    siteNames = _.difference(siteNames, ISOMER_ADMIN_REPOS)
-    
-    res.status(200).json({ siteNames })
+    const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
+    await axios.get(endpoint, {
+      headers: {
+        Authorization: `token ${accessToken}`,
+        "Content-Type": "application/json",
+      }
+    })
+
+    res.status(200).json()
+  } catch (err) {
+    const status = err.response.status
+    // If user is unauthorized or site does not exist, show the same NotFoundError
+    if (status === 404 || status === 403) throw new NotFoundError('Site does not exist')
+    console.log(err)
+    throw err
+  }
 }
 
 router.get('/', attachRouteHandlerWrapper(getSites));
+router.get('/:siteName', attachRouteHandlerWrapper(checkHasAccess));
 
 module.exports = router;

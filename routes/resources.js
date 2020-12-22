@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
@@ -60,14 +60,14 @@ async function renameResource (req, res, next) {
   const resourceRoomName = await IsomerResourceRoom.get()
 
   const IsomerResource = new Resource(accessToken, siteName)
-  await IsomerResource.rename(resourceRoomName, resourceName, resourceRoomName, newResourceName)
+  await IsomerResource.rename(resourceRoomName, resourceName, newResourceName)
 
   res.status(200).json({ resourceName, newResourceName })
 }
 
 router.get('/:siteName/resources', attachRouteHandlerWrapper(listResources))
-router.post('/:siteName/resources', attachRouteHandlerWrapper(createNewResource))
-router.delete('/:siteName/resources/:resourceName', attachRouteHandlerWrapper(deleteResource))
-router.post('/:siteName/resources/:resourceName/rename/:newResourceName', attachRouteHandlerWrapper(renameResource))
+router.post('/:siteName/resources', attachRollbackRouteHandlerWrapper(createNewResource))
+router.delete('/:siteName/resources/:resourceName', attachRollbackRouteHandlerWrapper(deleteResource))
+router.post('/:siteName/resources/:resourceName/rename/:newResourceName', attachRollbackRouteHandlerWrapper(renameResource))
 
 module.exports = router;

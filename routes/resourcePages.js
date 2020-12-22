@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { File, ResourcePageType } = require('../classes/File.js')
@@ -140,10 +140,10 @@ async function renameResourcePage (req, res, next) {
   res.status(200).json({ resourceName, pageName: newPageName, content, sha: newSha })
 }
 router.get('/:siteName/resources/:resourceName', attachRouteHandlerWrapper(listResourcePages))
-router.post('/:siteName/resources/:resourceName/pages', attachRouteHandlerWrapper(createNewResourcePage))
+router.post('/:siteName/resources/:resourceName/pages', attachRollbackRouteHandlerWrapper(createNewResourcePage))
 router.get('/:siteName/resources/:resourceName/pages/:pageName', attachRouteHandlerWrapper(readResourcePage))
 router.post('/:siteName/resources/:resourceName/pages/:pageName', attachRouteHandlerWrapper(updateResourcePage))
-router.delete('/:siteName/resources/:resourceName/pages/:pageName', attachRouteHandlerWrapper(deleteResourcePage))
-router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', attachRouteHandlerWrapper(renameResourcePage))
+router.delete('/:siteName/resources/:resourceName/pages/:pageName', attachRollbackRouteHandlerWrapper(deleteResourcePage))
+router.post('/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renameResourcePage))
 
 module.exports = router;

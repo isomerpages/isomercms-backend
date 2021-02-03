@@ -39,7 +39,6 @@ async function githubAuth (req, res, next) {
   const endpoint = `https://api.github.com/user`
   const userResp = await axios.get(endpoint, {
     validateStatus,
-    params,
     headers: {
       Authorization: `token ${access_token}`,
       Accept: 'application/vnd.github.v3+json',

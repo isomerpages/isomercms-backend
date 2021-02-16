@@ -3,6 +3,7 @@ const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
 // Import error
+const { BadRequestError } = require('../errors/BadRequestError')
 const { NotFoundError } = require('../errors/NotFoundError')
 const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 
@@ -55,6 +56,53 @@ class File {
       })
   
       return _.compact(files)
+    } catch (err) {
+      throw err
+    }
+  }
+
+  async listAll() {
+    try {
+      const endpoint = `${this.baseEndpoint}`
+
+      const params = {
+        "ref": BRANCH_REF,
+      }
+
+      const resp = await axios.get(endpoint, {
+        validateStatus,
+        params,
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json"
+        }
+      })
+  
+      if (resp.status !== 200) return {}
+
+      if (!Array.isArray(resp.data)) {
+        throw new BadRequestError(`The provided path, ${endpoint}, is not a directory`)
+      }
+  
+      const filesOrDirs = resp.data.map((fileOrDir) => {
+        const {
+          name,
+          path,
+          sha,
+          size,
+          content,
+          type,
+        } = fileOrDir
+        return {
+          name,
+          path,
+          sha,
+          size,
+          content,
+          type,
+        }
+      })
+      return _.compact(filesOrDirs)
     } catch (err) {
       throw err
     }

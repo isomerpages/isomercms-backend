@@ -27,7 +27,7 @@ async function listFolderContent (req, res, next) {
     IsomerFile.setFileType(folderPageType)
     const folderPages = await IsomerFile.listAll()
 
-    if (JSON.stringify(folderPages) == '{}') throw new BadRequestError(`Path ${path} was invalid!`)
+    if (JSON.stringify(folderPages) === '{}') throw new BadRequestError(`Path ${path} was invalid!`)
     res.status(200).json({ folderPages })
 }
 

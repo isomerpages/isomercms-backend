@@ -9,7 +9,6 @@ const { File, CollectionPageType } = require('../classes/File.js');
 
 // Import error
 const { BadRequestError } = require('../errors/BadRequestError')
-const { NotFoundError } = require('../errors/NotFoundError')
 
 // List pages and directories in folder
 async function listFolderContent (req, res, next) {
@@ -28,7 +27,7 @@ async function listFolderContent (req, res, next) {
     IsomerFile.setFileType(folderPageType)
     const folderPages = await IsomerFile.listAll()
 
-    if (JSON.stringify(folderPages) == '{}') throw new NotFoundError(`Path ${path} was invalid!`)
+    if (JSON.stringify(folderPages) == '{}') throw new BadRequestError(`Path ${path} was invalid!`)
     res.status(200).json({ folderPages })
 }
 

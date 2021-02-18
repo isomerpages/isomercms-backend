@@ -29,6 +29,7 @@ const menuRouter = require('./routes/menus')
 const homepageRouter = require('./routes/homepage')
 const menuDirectoryRouter = require('./routes/menuDirectory')
 const settingsRouter = require('./routes/settings')
+const navigationRouter = require('./routes/navigation')
 const netlifyTomlRouter = require('./routes/netlifyToml')
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/v1/sites', menuRouter)
 app.use('/v1/sites', homepageRouter)
 app.use('/v1/sites', menuDirectoryRouter)
 app.use('/v1/sites', settingsRouter)
+app.use('/v1/sites', navigationRouter)
 app.use('/v1/sites', netlifyTomlRouter)
 
 // catch 404 and forward to error handler

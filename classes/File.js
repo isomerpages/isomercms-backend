@@ -61,53 +61,6 @@ class File {
     }
   }
 
-  async listAll() {
-    try {
-      const endpoint = `${this.baseEndpoint}`
-
-      const params = {
-        "ref": BRANCH_REF,
-      }
-
-      const resp = await axios.get(endpoint, {
-        validateStatus,
-        params,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
-      })
-  
-      if (resp.status !== 200) return {}
-
-      if (!Array.isArray(resp.data)) {
-        throw new BadRequestError(`The provided path, ${endpoint}, is not a directory`)
-      }
-  
-      const filesOrDirs = resp.data.map((fileOrDir) => {
-        const {
-          name,
-          path,
-          sha,
-          size,
-          content,
-          type,
-        } = fileOrDir
-        return {
-          name,
-          path,
-          sha,
-          size,
-          content,
-          type,
-        }
-      })
-      return _.compact(filesOrDirs)
-    } catch (err) {
-      throw err
-    }
-  }
-
   async create(fileName, content) {
     try {
       const endpoint = `${this.baseEndpoint}/${fileName}`

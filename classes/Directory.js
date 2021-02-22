@@ -43,30 +43,30 @@ class Directory {
         return {}
       }
 
-      const filesOrDirs = resp.data.map((fileOrDir) => {
-        const {
-          name,
-          path,
-          sha,
-          size,
-          content,
-          type,
-        } = fileOrDir
-        return {
-          name,
-          path,
-          sha,
-          size,
-          content,
-          type,
-        }
-      })
-
       if (this.dirType instanceof FolderType) {
         // Validation
         if (!Array.isArray(resp.data)) {
           throw new BadRequestError(`The provided path, ${endpoint}, is not a directory`)
         }
+
+        const filesOrDirs = resp.data.map((fileOrDir) => {
+          const {
+            name,
+            path,
+            sha,
+            size,
+            content,
+            type,
+          } = fileOrDir
+          return {
+            name,
+            path,
+            sha,
+            size,
+            content,
+            type,
+          }
+        })
 
         const folderPath = this.dirType.getFolderName()
         const pathArr = folderPath.split('/')

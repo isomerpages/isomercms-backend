@@ -3,7 +3,6 @@ const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
 // Import error
-const { BadRequestError } = require('../errors/BadRequestError')
 const { NotFoundError } = require('../errors/NotFoundError')
 const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 

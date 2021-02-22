@@ -11,7 +11,7 @@ const { Directory, FolderType } = require('../classes/Directory.js');
 async function listFolderContent (req, res, next) {
     const { accessToken } = req
     const { siteName } = req.params
-    const { path } = req.query // paths begin with _
+    const { path } = req.query
 
     const IsomerDirectory = new Directory(accessToken, siteName)
     const folderType = new FolderType(path)

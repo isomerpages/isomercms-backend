@@ -47,6 +47,9 @@ auth.get('/v1', noVerify)
 auth.get('/v1/sites/:siteName/homepage', verifyJwt)
 auth.post('/v1/sites/:siteName/homepage', verifyJwt)
 
+// Folder pages
+auth.get('/v1/sites/:siteName/folders', verifyJwt)
+
 // Collection pages
 auth.get('/v1/sites/:siteName/collections/:collectionName', verifyJwt)
 auth.get('/v1/sites/:siteName/collections/:collectionName/pages', verifyJwt)

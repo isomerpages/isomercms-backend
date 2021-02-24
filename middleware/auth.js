@@ -122,6 +122,10 @@ auth.post('/v1/sites/:siteName/resources/:resourceName/rename/:newResourceName',
 auth.get('/v1/sites/:siteName/settings', verifyJwt)
 auth.post('/v1/sites/:siteName/settings', verifyJwt)
 
+// Navigation
+auth.get('/v1/sites/:siteName/navigation', verifyJwt)
+auth.post('/v1/sites/:siteName/navigation', verifyJwt)
+
 // Netlify toml
 auth.get('/v1/sites/:siteName/netlify-toml', verifyJwt)
 

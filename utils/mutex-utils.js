@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const { serializeError } = require('serialize-error')
 
 const logger = require('../logger/logger')
-const { GetMutexError, ReleaseMutexError } = require('../errors/MutexError')
+const { ConflictError } = require('../errors/ConflictError')
 
 // Env vars
 const { NODE_ENV, MUTEX_TABLE_NAME } = process.env
@@ -41,7 +41,7 @@ const lock = async (siteName) => {
     return logger.info(`Successfully locked repo ${siteName}`)
   } catch (err) {
     logger.error(`Failed to lock repo ${siteName}: ${JSON.stringify(serializeError(err))}`)
-    throw new GetMutexError(`Someone else is currently modifying repo ${siteName}. Please try again later.`)
+    throw new ConflictError(`Someone else is currently modifying repo ${siteName}. Please try again later.`)
   }
 }
 
@@ -59,7 +59,7 @@ const unlock = async (siteName) => {
     return logger.info(`Successfully unlocked repo ${siteName}`)
   } catch (err) {
     logger.error(`Failed to unlock repo ${siteName}: ${JSON.stringify(serializeError(err))}`)
-    throw new ReleaseMutexError(`Something went wrong.`)
+    throw new Error(`Something went wrong.`)
   }
 }
 

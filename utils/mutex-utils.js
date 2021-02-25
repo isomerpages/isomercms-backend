@@ -25,11 +25,14 @@ const mockUnlock = (siteName) => {
 
 const lock = async (siteName) => {
   try {
+    const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME = Math.floor(new Date().valueOf() / 1000) + 60
+
     if (!IS_LOCAL_DEV) {
       const params = {
         TableName: MUTEX_TABLE_NAME,
         Item: {
-          repo_id: siteName
+          repo_id: siteName,
+          expdate: ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME
         },
         ConditionExpression: "attribute_not_exists(repo_id)"
       }

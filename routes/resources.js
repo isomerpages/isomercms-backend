@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
@@ -65,7 +65,7 @@ async function renameResource (req, res, next) {
   res.status(200).json({ resourceName, newResourceName })
 }
 
-router.get('/:siteName/resources', attachRouteHandlerWrapper(listResources))
+router.get('/:siteName/resources', attachReadRouteHandlerWrapper(listResources))
 router.post('/:siteName/resources', attachRollbackRouteHandlerWrapper(createNewResource))
 router.delete('/:siteName/resources/:resourceName', attachRollbackRouteHandlerWrapper(deleteResource))
 router.post('/:siteName/resources/:resourceName/rename/:newResourceName', attachRollbackRouteHandlerWrapper(renameResource))

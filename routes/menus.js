@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper,
+} = require('../middleware/routeHandler')
+
 
 // Import classes 
 const { File, DataType } = require('../classes/File.js')
@@ -58,8 +62,8 @@ async function updateMenu (req, res, next) {
 
   res.status(200).json({ menuName, content, sha: newSha })
 }
-router.get('/:siteName/menus', attachRouteHandlerWrapper(listMenu))
-router.get('/:siteName/menus/:menuName', attachRouteHandlerWrapper(readMenu))
-router.post('/:siteName/menus/:menuName', attachRouteHandlerWrapper(updateMenu))
+router.get('/:siteName/menus', attachReadRouteHandlerWrapper(listMenu))
+router.get('/:siteName/menus/:menuName', attachReadRouteHandlerWrapper(readMenu))
+router.post('/:siteName/menus/:menuName', attachWriteRouteHandlerWrapper(updateMenu))
 
 module.exports = router;

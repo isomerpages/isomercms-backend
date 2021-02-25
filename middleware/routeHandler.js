@@ -3,10 +3,21 @@ const { lock, unlock } = require('../utils/mutex-utils')
 
 const { getCommitAndTreeSha, revertCommit } = require('../utils/utils.js')
 
-const attachRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
+// Used when there are no write API calls to the repo on GitHub
+const attachReadRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
   routeHandler(req, res).catch((err) => {
     next(err)
   })
+}
+
+// Used when there are write API calls to the repo on GitHub
+const attachWriteRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
+  await lock(siteName)
+  routeHandler(req, res).catch(async (err) => {
+    await unlock(siteName)
+    next(err)
+  })
+  await unlock(siteName)
 }
 
 const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
@@ -36,6 +47,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
 }
   
 module.exports = {
-  attachRouteHandlerWrapper,
+  attachReadRouteHandlerWrapper,
+  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 }

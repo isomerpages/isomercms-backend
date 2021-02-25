@@ -3,7 +3,10 @@ const router = express.Router();
 
 // Import classes 
 const { File, DocumentType } = require('../classes/File.js');
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper
+} = require('../middleware/routeHandler')
 
 // List documents
 async function listDocuments (req, res, next) {
@@ -104,11 +107,11 @@ async function renameDocument (req, res, next) {
   res.status(200).json({ documentName: newDocumentName, content, sha: newSha })
 }
 
-router.get('/:siteName/documents', attachRouteHandlerWrapper(listDocuments))
-router.post('/:siteName/documents', attachRouteHandlerWrapper(createNewDocument))
-router.get('/:siteName/documents/:documentName', attachRouteHandlerWrapper(readDocument))
-router.post('/:siteName/documents/:documentName', attachRouteHandlerWrapper(updateDocument))
-router.delete('/:siteName/documents/:documentName', attachRouteHandlerWrapper(deleteDocument))
-router.post('/:siteName/documents/:documentName/rename/:newDocumentName', attachRouteHandlerWrapper(renameDocument))
+router.get('/:siteName/documents', attachReadRouteHandlerWrapper(listDocuments))
+router.post('/:siteName/documents', attachWriteRouteHandlerWrapper(createNewDocument))
+router.get('/:siteName/documents/:documentName', attachReadRouteHandlerWrapper(readDocument))
+router.post('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(updateDocument))
+router.delete('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(deleteDocument))
+router.post('/:siteName/documents/:documentName/rename/:newDocumentName', attachWriteRouteHandlerWrapper(renameDocument))
 
 module.exports = router;

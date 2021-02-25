@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require('axios');
 const Bluebird = require('bluebird');
 const _ = require('lodash');
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler');
 const { flatten } = require('lodash');
 
 // Import error
@@ -118,7 +118,7 @@ async function checkHasAccess (req, res, next) {
   }
 }
 
-router.get('/', attachRouteHandlerWrapper(getSites));
-router.get('/:siteName', attachRouteHandlerWrapper(checkHasAccess));
+router.get('/', attachReadRouteHandlerWrapper(getSites));
+router.get('/:siteName', attachReadRouteHandlerWrapper(checkHasAccess));
 
 module.exports = router;

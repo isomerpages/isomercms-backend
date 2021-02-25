@@ -3,7 +3,7 @@ const router = express.Router()
 const toml = require('toml')
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { NetlifyToml } = require('../classes/NetlifyToml')
@@ -27,6 +27,6 @@ async function getNetlifyToml (req, res, next) {
   res.status(200).json({ netlifyTomlHeaderValues })
 }
 
-router.get('/:siteName/netlify-toml', attachRouteHandlerWrapper(getNetlifyToml))
+router.get('/:siteName/netlify-toml', attachReadRouteHandlerWrapper(getNetlifyToml))
 
 module.exports = router;

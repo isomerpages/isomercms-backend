@@ -12,6 +12,7 @@ const attachReadRouteHandlerWrapper = (routeHandler) => async (req, res, next) =
 
 // Used when there are write API calls to the repo on GitHub
 const attachWriteRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
+  const { siteName } = req.params
   await lock(siteName)
   routeHandler(req, res).catch(async (err) => {
     await unlock(siteName)

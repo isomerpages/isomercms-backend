@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper,
+} = require('../middleware/routeHandler')
 
 // Import classes 
 const { File, HomepageType } = require('../classes/File.js')
@@ -45,7 +48,7 @@ async function updateHomepage (req, res, next) {
   res.status(200).json({ content, sha: newSha })
 }
 
-router.get('/:siteName/homepage', attachRouteHandlerWrapper(readHomepage))
-router.post('/:siteName/homepage', attachRouteHandlerWrapper(updateHomepage))
+router.get('/:siteName/homepage', attachReadRouteHandlerWrapper(readHomepage))
+router.post('/:siteName/homepage', attachWriteRouteHandlerWrapper(updateHomepage))
 
 module.exports = router;

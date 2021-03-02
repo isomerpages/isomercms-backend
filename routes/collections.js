@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachRollbackRouteHandlerWrapper 
+} = require('../middleware/routeHandler')
 
 // Import classes 
 const { Collection } = require('../classes/Collection.js')
@@ -58,7 +61,7 @@ async function renameCollection (req, res, next) {
   res.status(200).json({ collectionName, newCollectionName })
 }
 
-router.get('/:siteName/collections', attachRouteHandlerWrapper(listCollections))
+router.get('/:siteName/collections', attachReadRouteHandlerWrapper(listCollections))
 router.post('/:siteName/collections', attachRollbackRouteHandlerWrapper(createNewCollection))
 router.delete('/:siteName/collections/:collectionName', attachRollbackRouteHandlerWrapper(deleteCollection))
 router.post('/:siteName/collections/:collectionName/rename/:newCollectionName', attachRollbackRouteHandlerWrapper(renameCollection))

@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper, 
+} = require('../middleware/routeHandler')
 
 // Import classes 
 const { File, ImageType } = require('../classes/File.js')
@@ -109,11 +112,11 @@ async function renameImage (req, res, next) {
 
   res.status(200).json({ imageName: newImageName, content, sha: newSha })
 }
-router.get('/:siteName/images', attachRouteHandlerWrapper(listImages))
-router.post('/:siteName/images', attachRouteHandlerWrapper(createNewImage))
-router.get('/:siteName/images/:imageName', attachRouteHandlerWrapper(readImage))
-router.post('/:siteName/images/:imageName', attachRouteHandlerWrapper(updateImage))
-router.delete('/:siteName/images/:imageName', attachRouteHandlerWrapper(deleteImage))
-router.post('/:siteName/images/:imageName/rename/:newImageName', attachRouteHandlerWrapper(renameImage))
+router.get('/:siteName/images', attachReadRouteHandlerWrapper(listImages))
+router.post('/:siteName/images', attachWriteRouteHandlerWrapper(createNewImage))
+router.get('/:siteName/images/:imageName', attachReadRouteHandlerWrapper(readImage))
+router.post('/:siteName/images/:imageName', attachWriteRouteHandlerWrapper(updateImage))
+router.delete('/:siteName/images/:imageName', attachWriteRouteHandlerWrapper(deleteImage))
+router.post('/:siteName/images/:imageName/rename/:newImageName', attachWriteRouteHandlerWrapper(renameImage))
 
 module.exports = router;

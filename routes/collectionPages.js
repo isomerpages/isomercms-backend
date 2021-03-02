@@ -6,7 +6,11 @@ const base64 = require('base-64');
 const _ = require('lodash');
 
 // Import middleware
-const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper, 
+  attachRollbackRouteHandlerWrapper 
+} = require('../middleware/routeHandler')
 
 // Import classes 
 const { Collection } = require('../classes/Collection.js')
@@ -201,11 +205,11 @@ async function renameCollectionPage (req, res, next) {
   res.status(200).json({ collectionName, pageName: newPageName, content, sha: newSha })
 }
 
-router.get('/:siteName/collections/:collectionName', attachRouteHandlerWrapper(listCollectionPages))
-router.get('/:siteName/collections/:collectionName/pages', attachRouteHandlerWrapper(listCollectionPagesDetails))
+router.get('/:siteName/collections/:collectionName', attachReadRouteHandlerWrapper(listCollectionPages))
+router.get('/:siteName/collections/:collectionName/pages', attachReadRouteHandlerWrapper(listCollectionPagesDetails))
 router.post('/:siteName/collections/:collectionName/pages', attachRollbackRouteHandlerWrapper(createNewcollectionPage))
-router.get('/:siteName/collections/:collectionName/pages/:pageName', attachRouteHandlerWrapper(readCollectionPage))
-router.post('/:siteName/collections/:collectionName/pages/:pageName', attachRouteHandlerWrapper(updateCollectionPage))
+router.get('/:siteName/collections/:collectionName/pages/:pageName', attachReadRouteHandlerWrapper(readCollectionPage))
+router.post('/:siteName/collections/:collectionName/pages/:pageName', attachWriteRouteHandlerWrapper(updateCollectionPage))
 router.delete('/:siteName/collections/:collectionName/pages/:pageName', attachRollbackRouteHandlerWrapper(deleteCollectionPage))
 router.post('/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renameCollectionPage))
 

@@ -4,7 +4,11 @@ const Bluebird = require('bluebird')
 const _ = require('lodash')
 
 // Import middleware
-const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const {   
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper, 
+  attachRollbackRouteHandlerWrapper 
+} = require('../middleware/routeHandler')
 
 // Import classes
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
@@ -157,12 +161,12 @@ async function renamePage(req, res, next) {
 }
 
 
-router.get('/:siteName/pages', attachRouteHandlerWrapper(listPages))
-router.get('/:siteName/unlinkedPages', attachRouteHandlerWrapper(listUnlinkedPages))
-router.post('/:siteName/pages', attachRouteHandlerWrapper(createNewPage))
-router.get('/:siteName/pages/:pageName', attachRouteHandlerWrapper(readPage))
-router.post('/:siteName/pages/:pageName', attachRouteHandlerWrapper(updatePage))
-router.delete('/:siteName/pages/:pageName', attachRouteHandlerWrapper(deletePage))
+router.get('/:siteName/pages', attachReadRouteHandlerWrapper(listPages))
+router.get('/:siteName/unlinkedPages', attachReadRouteHandlerWrapper(listUnlinkedPages))
+router.post('/:siteName/pages', attachWriteRouteHandlerWrapper(createNewPage))
+router.get('/:siteName/pages/:pageName', attachReadRouteHandlerWrapper(readPage))
+router.post('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(updatePage))
+router.delete('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(deletePage))
 router.post('/:siteName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renamePage))
 
 module.exports = router;

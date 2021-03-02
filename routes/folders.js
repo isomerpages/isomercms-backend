@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { Directory, FolderType } = require('../classes/Directory.js');
@@ -20,6 +20,6 @@ async function listFolderContent (req, res, next) {
     res.status(200).json({ folderPages })
 }
 
-router.get('/:siteName/folders', attachRouteHandlerWrapper(listFolderContent))
+router.get('/:siteName/folders', attachReadRouteHandlerWrapper(listFolderContent))
 
 module.exports = router;

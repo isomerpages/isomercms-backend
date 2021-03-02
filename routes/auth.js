@@ -8,7 +8,7 @@ const queryString = require('query-string');
 const { AuthError } = require('../errors/AuthError')
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
@@ -76,7 +76,7 @@ async function logout(req, res) {
   res.sendStatus(200)
 }
 
-router.get('/', attachRouteHandlerWrapper(githubAuth));
-router.get('/logout', attachRouteHandlerWrapper(logout));
+router.get('/', attachReadRouteHandlerWrapper(githubAuth));
+router.get('/logout', attachReadRouteHandlerWrapper(logout));
 
 module.exports = router;

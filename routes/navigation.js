@@ -4,7 +4,7 @@ const yaml = require('js-yaml')
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper, attachWriteRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import Classes
 const { File, DataType } = require('../classes/File.js')
@@ -41,7 +41,7 @@ async function updateNavigation(req, res, next) {
   res.status(200).send('OK')
 }
 
-router.get('/:siteName/navigation', attachRouteHandlerWrapper(getNavigation))
-router.post('/:siteName/navigation', attachRouteHandlerWrapper(updateNavigation))
+router.get('/:siteName/navigation', attachReadRouteHandlerWrapper(getNavigation))
+router.post('/:siteName/navigation', attachWriteRouteHandlerWrapper(updateNavigation))
 
 module.exports = router;

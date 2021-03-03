@@ -16,7 +16,7 @@ class Collection {
   }
 
   async list() {
-    // to fix 
+    // to be removed in future PRs as collection data is no longer stored in _config.yml
     try {
       const config = new Config(this.accessToken, this.siteName)
       const { content, sha } = await config.read()

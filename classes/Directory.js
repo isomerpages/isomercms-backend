@@ -98,6 +98,16 @@ class Directory {
   }
 }
 
+class RootType {
+  constructor() {
+    this.folderName = ''
+  }
+
+  getFolderName() {
+    return this.folderName
+  }
+}
+
 class FolderType {
   constructor(folderPath) {
     this.folderName = folderPath
@@ -118,4 +128,9 @@ class ResourceRoomType {
   }
 }
 
-module.exports = { Directory, FolderType, ResourceRoomType }
+module.exports = {
+  Directory,
+  RootType,
+  FolderType,
+  ResourceRoomType,
+}

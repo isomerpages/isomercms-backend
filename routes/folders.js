@@ -48,7 +48,7 @@ async function listAllFolderContent (req, res, next) {
         const collectionPageType = new CollectionPageType(folder.slice(1))
         IsomerFile.setFileType(collectionPageType)
         const { sha, content } = await IsomerFile.read('collection.yml')
-        return { name: folder, sha, content }
+        return { name: folder.slice(1), sha, content }
     })
 
     res.status(200).json({ allFolderContent })

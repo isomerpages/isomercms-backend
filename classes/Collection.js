@@ -3,7 +3,7 @@ const base64 = require('base-64')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
-const { Config } = require('./Config.js')
+const { Config, CollectionConfig } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
 const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
@@ -16,6 +16,7 @@ class Collection {
   }
 
   async list() {
+    // to fix 
     try {
       const config = new Config(this.accessToken, this.siteName)
       const { content, sha } = await config.read()
@@ -29,18 +30,17 @@ class Collection {
 
   async create(collectionName) {
     try {
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      // TO-DO: Verify that collection doesn't already exist
-
-      contentObject.collections[`${collectionName}`] = {
-        output: true 
+      const config = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const contentObject = {
+        collections: {
+          [collectionName]: {
+            output: true,
+            order: [],
+          },
+        }
       }
       const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      await config.create(newContent)
 
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
@@ -63,15 +63,10 @@ class Collection {
 
   async delete(collectionName) {
     try {
-      // Delete collection in config
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      delete contentObject.collections[`${collectionName}`]
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      // Delete collection config
+      const config = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const { sha } = await config.read()
+      await config.delete(sha)
 
       // Delete collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
@@ -111,17 +106,19 @@ class Collection {
     try {
       const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
       // Rename collection in config
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
+      const oldConfig = new CollectionConfig(this.accessToken, this.siteName, oldCollectionName)
+      const { content: oldConfigContent, sha: oldConfigSha } = await oldConfig.read()
+      const oldConfigContentObject = yaml.safeLoad(base64.decode(oldConfigContent))
+      await oldConfig.delete(oldConfigSha)
 
-      contentObject.collections[`${newCollectionName}`] = {
-        output: true 
+      const newConfig = new CollectionConfig(this.accessToken, this.siteName, newCollectionName)
+      const newConfigContentObject = {
+        collections: {
+          [newCollectionName]: oldConfigContentObject.collections[`${oldCollectionName}`]
+        }
       }
-      delete contentObject.collections[`${oldCollectionName}`]
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      const newConfigContent = base64.encode(yaml.safeDump(newConfigContentObject))
+      await newConfig.create(newConfigContent)
 
       // Rename collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)

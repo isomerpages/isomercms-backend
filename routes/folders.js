@@ -54,7 +54,7 @@ async function listAllFolderContent (req, res, next) {
     res.status(200).json({ allFolderContent })
 }
 
-router.get('/:siteName/folders', attachRouteHandlerWrapper(listFolderContent))
-router.get('/:siteName/folders/all', attachRouteHandlerWrapper(listAllFolderContent))
+router.get('/:siteName/folders', attachReadRouteHandlerWrapper(listFolderContent))
+router.get('/:siteName/folders/all', attachReadRouteHandlerWrapper(listAllFolderContent))
 
 module.exports = router;

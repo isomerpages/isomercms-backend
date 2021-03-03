@@ -14,11 +14,12 @@ class Config {
   constructor(accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
+	this.endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
   }
 
   async read() {
     try {
-    	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
+    	const endpoint = `${this.endpoint}`
 
 		const params = {
 			"ref": BRANCH_REF,
@@ -45,7 +46,7 @@ class Config {
   }
 
   async update(newContent, sha) {
-	const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_config.yml`
+	const endpoint = `${this.endpoint}`
 
 	const params = {
 		"message": 'Edit config',
@@ -63,4 +64,64 @@ class Config {
   }
 }
 
-module.exports = { Config }
+class CollectionConfig extends Config {
+	constructor(accessToken, siteName, collectionName) {
+		super(accessToken, siteName)
+		this.collectionName = collectionName
+		this.endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_${collectionName}/collection.yml`
+	}
+
+	async create(content) {
+      try {
+        const endpoint = `${this.endpoint}`
+
+		const params = {
+		  "message": `Create file: _${this.collectionName}/collection.yml`,
+		  "content": content,
+		  "branch": BRANCH_REF,	
+		}
+		
+		const resp = await axios.put(endpoint, params, {
+	      headers: {
+		    Authorization: `token ${this.accessToken}`,
+			"Content-Type": "application/json"
+		  }
+		})
+	
+		return { sha: resp.data.content.sha }
+	  } catch (err) {
+        const status = err.response.status
+        if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
+        throw err.response
+      }
+    }
+	
+
+    async delete (sha) {
+      try {
+        const endpoint = `${this.endpoint}`
+        
+        const params = {
+          "message": `Delete file: _${this.collectionName}/collection.yml`,
+          "branch": BRANCH_REF,
+          "sha": sha
+        }
+    
+        await axios.delete(endpoint, {
+          params,
+          headers: {
+            Authorization: `token ${this.accessToken}`,
+            "Content-Type": "application/json"
+          }
+        })
+      } catch (err) {
+        const status = err.response.status
+        if (status === 404) throw new NotFoundError ('File does not exist')
+        throw err
+      }
+    }
+}
+
+
+
+module.exports = { Config, CollectionConfig }

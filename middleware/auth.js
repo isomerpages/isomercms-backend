@@ -48,7 +48,7 @@ auth.get('/v1/sites/:siteName/homepage', verifyJwt)
 auth.post('/v1/sites/:siteName/homepage', verifyJwt)
 
 // Folder pages
-auth.get('/v1/sites/:siteName/folders', verifyJwt)
+auth.get('/v1/sites/:siteName/folders/:path', verifyJwt)
 auth.get('/v1/sites/:siteName/folders/all', verifyJwt)
 
 // Collection pages

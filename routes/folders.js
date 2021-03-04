@@ -14,14 +14,15 @@ const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
 // List pages and directories in folder
 async function listFolderContent (req, res, next) {
     const { accessToken } = req
-    const { siteName } = req.params
-    const { path } = req.query
+    const { siteName, path } = req.params
+
+    const decodedPath = decodeURIComponent(path)
 
     const IsomerDirectory = new Directory(accessToken, siteName)
-    const folderType = new FolderType(path)
+    const folderType = new FolderType(decodedPath)
     IsomerDirectory.setDirType(folderType)
-    const folderPages = await IsomerDirectory.list()
-    res.status(200).json({ folderPages })
+    const directoryContents = await IsomerDirectory.list()
+    res.status(200).json({ directoryContents })
 }
 
 // List pages and directories from all folders
@@ -53,7 +54,7 @@ async function listAllFolderContent (req, res, next) {
     res.status(200).json({ allFolderContent })
 }
 
-router.get('/:siteName/folders', attachReadRouteHandlerWrapper(listFolderContent))
+router.get('/:siteName/folders/:path', attachReadRouteHandlerWrapper(listFolderContent))
 router.get('/:siteName/folders/all', attachReadRouteHandlerWrapper(listAllFolderContent))
 
 module.exports = router;

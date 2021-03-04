@@ -105,20 +105,6 @@ class Collection {
   async rename(oldCollectionName, newCollectionName) {
     try {
       const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
-      // Rename collection in config
-      const oldConfig = new CollectionConfig(this.accessToken, this.siteName, oldCollectionName)
-      const { content: oldConfigContent, sha: oldConfigSha } = await oldConfig.read()
-      const oldConfigContentObject = yaml.safeLoad(base64.decode(oldConfigContent))
-      await oldConfig.delete(oldConfigSha)
-
-      const newConfig = new CollectionConfig(this.accessToken, this.siteName, newCollectionName)
-      const newConfigContentObject = {
-        collections: {
-          [newCollectionName]: oldConfigContentObject.collections[`${oldCollectionName}`]
-        }
-      }
-      const newConfigContent = base64.encode(yaml.safeDump(newConfigContentObject))
-      await newConfig.create(newConfigContent)
 
       // Rename collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
@@ -159,6 +145,19 @@ class Collection {
         }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
+
+      // Update collection.yml in newCollection with newCollection name
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, newCollectionName)
+      const { content: configContent, sha: configSha } = await collectionConfig.read()
+      const configContentObject = yaml.safeLoad(base64.decode(configContent))
+      const newConfigContentObject = {
+        collections: {
+          [newCollectionName]: configContentObject.collections[oldCollectionName]
+        }
+      }
+      const newConfigContent = base64.encode(yaml.safeDump(newConfigContentObject))
+      await newConfig.update(newConfigContent, configSha)
+
     } catch (err) {
       throw err
     }

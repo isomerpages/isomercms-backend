@@ -28,9 +28,9 @@ class Collection {
     }
   }
 
-  async create(collectionName, orderArray) {
+  async create(collectionName) {
     try {
-      const config = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
       const contentObject = {
         collections: {
           [collectionName]: {
@@ -40,7 +40,7 @@ class Collection {
         }
       }
       const newContent = base64.encode(yaml.safeDump(contentObject))
-      await config.create(newContent)
+      await collectionConfig.create(newContent)
 
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
@@ -64,9 +64,9 @@ class Collection {
   async delete(collectionName) {
     try {
       // Delete collection config
-      const config = new CollectionConfig(this.accessToken, this.siteName, collectionName)
-      const { sha } = await config.read()
-      await config.delete(sha)
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const { sha } = await collectionConfig.read()
+      await collectionConfig.delete(sha)
 
       // Delete collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)

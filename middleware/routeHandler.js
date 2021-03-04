@@ -45,6 +45,8 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
     await unlock(siteName)
     next(err)
   })
+
+  await unlock(siteName)
 }
   
 module.exports = {

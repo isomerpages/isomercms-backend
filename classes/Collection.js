@@ -28,14 +28,14 @@ class Collection {
     }
   }
 
-  async create(collectionName) {
+  async create(collectionName, orderArray) {
     try {
       const config = new CollectionConfig(this.accessToken, this.siteName, collectionName)
       const contentObject = {
         collections: {
           [collectionName]: {
             output: true,
-            order: [],
+            order: orderArray || [],
           },
         }
       }

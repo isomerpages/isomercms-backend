@@ -22,13 +22,11 @@ class Config {
 
   async read() {
     try {
-    	const endpoint = `${this.endpoint}`
-
 		const params = {
 			"ref": BRANCH_REF,
 		}
 			
-	    const resp = await axios.get(endpoint, {
+	    const resp = await axios.get(this.endpoint, {
 			validateStatus,
 			params,
 			headers: {
@@ -49,8 +47,6 @@ class Config {
   }
 
   async update(newContent, sha) {
-	const endpoint = `${this.endpoint}`
-
 	const params = {
 		"message": 'Edit config',
 		"content": newContent,
@@ -58,7 +54,7 @@ class Config {
 		"sha": sha
 	}
 
-	await axios.put(endpoint, params, {
+	await axios.put(this.endpoint, params, {
 		headers: {
 			Authorization: `token ${this.accessToken}`,
 			"Content-Type": "application/json"
@@ -76,15 +72,13 @@ class CollectionConfig extends Config {
 
 	async create(content) {
       try {
-        const endpoint = `${this.endpoint}`
-
 		const params = {
 		  "message": `Create file: _${this.collectionName}/collection.yml`,
 		  "content": content,
 		  "branch": BRANCH_REF,	
 		}
 		
-		const resp = await axios.put(endpoint, params, {
+		const resp = await axios.put(this.endpoint, params, {
 	      headers: {
 		    Authorization: `token ${this.accessToken}`,
 			"Content-Type": "application/json"
@@ -102,15 +96,13 @@ class CollectionConfig extends Config {
 
     async delete (sha) {
       try {
-        const endpoint = `${this.endpoint}`
-        
         const params = {
           "message": `Delete file: _${this.collectionName}/collection.yml`,
           "branch": BRANCH_REF,
           "sha": sha
         }
     
-        await axios.delete(endpoint, {
+        await axios.delete(this.endpoint, {
           params,
           headers: {
             Authorization: `token ${this.accessToken}`,

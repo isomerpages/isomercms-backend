@@ -13,8 +13,9 @@ const {
 } = require('../middleware/routeHandler')
 
 // Import classes 
-const { Collection } = require('../classes/Collection.js')
-const { File, CollectionPageType } = require('../classes/File.js');
+const { Collection } = require('../classes/Collection')
+const { CollectionConfig } = require('../classes/Config');
+const { File, CollectionPageType } = require('../classes/File');
 const { update } = require('lodash');
 
 // Import utils
@@ -123,6 +124,25 @@ async function createNewcollectionPage (req, res, next) {
   res.status(200).json({ collectionName, pageName, content, sha })
 }
 
+// // Create new page in collection
+async function createCollectionPage (req, res, next) {
+  const { accessToken } = req
+
+  const { siteName, collectionName, pageName: encodedPageName } = req.params
+  const { content: pageContent } = req.body
+  const pageName = decodeURIComponent(encodedPageName)
+  
+  const IsomerFile = new File(accessToken, siteName)
+  const collectionPageType = new CollectionPageType(collectionName)
+  IsomerFile.setFileType(collectionPageType)
+  await IsomerFile.create(pageName, Base64.encode(pageContent))
+
+  const config = new CollectionConfig(accessToken, siteName, collectionName)
+  await config.addItemToOrder(pageName)
+
+  res.status(200).json({collectionName, pageName, pageContent })
+}
+
 // Read page in collection
 async function readCollectionPage(req, res, next) {
   const { accessToken } = req
@@ -208,6 +228,7 @@ async function renameCollectionPage (req, res, next) {
 router.get('/:siteName/collections/:collectionName', attachReadRouteHandlerWrapper(listCollectionPages))
 router.get('/:siteName/collections/:collectionName/pages', attachReadRouteHandlerWrapper(listCollectionPagesDetails))
 router.post('/:siteName/collections/:collectionName/pages', attachRollbackRouteHandlerWrapper(createNewcollectionPage))
+router.post('/:siteName/collections/:collectionName/:pageName', attachRollbackRouteHandlerWrapper(createCollectionPage))
 router.get('/:siteName/collections/:collectionName/pages/:pageName', attachReadRouteHandlerWrapper(readCollectionPage))
 router.post('/:siteName/collections/:collectionName/pages/:pageName', attachWriteRouteHandlerWrapper(updateCollectionPage))
 router.delete('/:siteName/collections/:collectionName/pages/:pageName', attachRollbackRouteHandlerWrapper(deleteCollectionPage))

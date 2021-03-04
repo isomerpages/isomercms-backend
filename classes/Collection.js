@@ -156,7 +156,7 @@ class Collection {
         }
       }
       const newConfigContent = base64.encode(yaml.safeDump(newConfigContentObject))
-      await newConfig.update(newConfigContent, configSha)
+      await collectionConfig.update(newConfigContent, configSha)
 
     } catch (err) {
       throw err

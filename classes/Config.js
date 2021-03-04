@@ -87,7 +87,7 @@ class CollectionConfig extends Config {
 	
 		return { sha: resp.data.content.sha }
 	  } catch (err) {
-        const status = err.response.status
+        const { status } = err.response
         if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
         throw err.response
       }

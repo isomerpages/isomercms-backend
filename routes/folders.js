@@ -6,8 +6,8 @@ const Bluebird = require('bluebird')
 const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes
-const { File, CollectionPageType } = require('../classes/File.js');
-const { Directory, RootType, FolderType } = require('../classes/Directory.js');
+const { CollectionConfig } = require('../classes/Config')
+const { Directory, RootType, FolderType } = require('../classes/Directory');
 
 const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
 
@@ -44,11 +44,10 @@ async function listAllFolderContent (req, res, next) {
     }, [])
 
     const allFolderContent = await Bluebird.map(allFolders, async (folder) => {
-        const IsomerFile = new File(accessToken, siteName)
-        const collectionPageType = new CollectionPageType(folder.slice(1))
-        IsomerFile.setFileType(collectionPageType)
-        const { sha, content } = await IsomerFile.read('collection.yml')
-        return { name: folder.slice(1), sha, content }
+        const collectionName = folder.slice(1)
+        const config = new CollectionConfig(accessToken, siteName, collectionName)
+        const { sha, content } = await config.read()
+        return { name: collectionName, sha, content }
     })
 
     res.status(200).json({ allFolderContent })

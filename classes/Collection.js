@@ -3,7 +3,7 @@ const base64 = require('base-64')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
-const { Config } = require('./Config.js')
+const { Config, CollectionConfig } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
 const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
@@ -16,6 +16,7 @@ class Collection {
   }
 
   async list() {
+    // to be removed in future PRs as collection data is no longer stored in _config.yml
     try {
       const config = new Config(this.accessToken, this.siteName)
       const { content, sha } = await config.read()
@@ -29,18 +30,17 @@ class Collection {
 
   async create(collectionName) {
     try {
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      // TO-DO: Verify that collection doesn't already exist
-
-      contentObject.collections[`${collectionName}`] = {
-        output: true 
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const contentObject = {
+        collections: {
+          [collectionName]: {
+            output: true,
+            order: orderArray || [],
+          },
+        }
       }
       const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      await collectionConfig.create(newContent)
 
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
@@ -63,15 +63,10 @@ class Collection {
 
   async delete(collectionName) {
     try {
-      // Delete collection in config
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      delete contentObject.collections[`${collectionName}`]
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      // Delete collection config
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const { sha } = await collectionConfig.read()
+      await collectionConfig.delete(sha)
 
       // Delete collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
@@ -110,18 +105,6 @@ class Collection {
   async rename(oldCollectionName, newCollectionName) {
     try {
       const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
-      // Rename collection in config
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      contentObject.collections[`${newCollectionName}`] = {
-        output: true 
-      }
-      delete contentObject.collections[`${oldCollectionName}`]
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
 
       // Rename collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
@@ -162,6 +145,19 @@ class Collection {
         }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
+
+      // Update collection.yml in newCollection with newCollection name
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, newCollectionName)
+      const { content: configContent, sha: configSha } = await collectionConfig.read()
+      const configContentObject = yaml.safeLoad(base64.decode(configContent))
+      const newConfigContentObject = {
+        collections: {
+          [newCollectionName]: configContentObject.collections[oldCollectionName]
+        }
+      }
+      const newConfigContent = base64.encode(yaml.safeDump(newConfigContentObject))
+      await collectionConfig.update(newConfigContent, configSha)
+
     } catch (err) {
       throw err
     }

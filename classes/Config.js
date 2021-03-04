@@ -67,7 +67,7 @@ class CollectionConfig extends Config {
 	constructor(accessToken, siteName, collectionName) {
 		super(accessToken, siteName)
 		this.collectionName = collectionName
-		this.endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/_${collectionName}/collection.yml`
+		this.endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/_${collectionName}/collection.yml`
 	}
 
 	async create(content) {

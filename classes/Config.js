@@ -1,5 +1,8 @@
 const axios = require('axios');
 const validateStatus = require('../utils/axios-utils')
+const yaml = require('js-yaml')
+const base64 = require('base-64')
+const _ = require('lodash')
 
 // Import logger
 const logger = require('../logger/logger');
@@ -120,6 +123,42 @@ class CollectionConfig extends Config {
         throw err
       }
     }
+
+	async addItemToOrder(item) {
+		const collectionName = this.collectionName
+		
+		const { content, sha } = await this.read()
+		const contentObject = yaml.safeLoad(base64.decode(content))
+		
+		let index
+		if (item.split('/').length === 2) {
+			// if file in subfolder, get index of last file in subfolder
+			index = _.findLastIndex(
+				contentObject.collections[collectionName].order, 
+				(f) => f.split('/')[0] === item.split('/')[0]
+			) + 1
+		} else {
+			// get index of last file in collection
+			index = contentObject.collections[collectionName].order.length
+		}
+		contentObject.collections[collectionName].order.splice(index, 0, item)
+		const newContent = base64.encode(yaml.safeDump(contentObject))
+		
+		await this.update(newContent, sha)
+	}
+
+	async deleteItemFromOrder(item) {
+		const collectionName = this.collectionName
+
+		const { content, sha } = await this.read()
+		const contentObject = yaml.safeLoad(base64.decode(content))
+		
+		const index = contentObject.collections[collectionName].order.indexOf(item);
+		contentObject.collections[collectionName].order.splice(index, 1)
+		const newContent = base64.encode(yaml.safeDump(contentObject))
+		
+		await this.update(newContent, sha)
+	}
 }
 
 

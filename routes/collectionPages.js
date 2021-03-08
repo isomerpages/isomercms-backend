@@ -227,8 +227,8 @@ async function renameCollectionPage (req, res, next) {
 
 router.get('/:siteName/collections/:collectionName', attachReadRouteHandlerWrapper(listCollectionPages))
 router.get('/:siteName/collections/:collectionName/pages', attachReadRouteHandlerWrapper(listCollectionPagesDetails))
-router.post('/:siteName/collections/:collectionName/pages', attachRollbackRouteHandlerWrapper(createNewcollectionPage))
-router.post('/:siteName/collections/:collectionName/:pageName', attachRollbackRouteHandlerWrapper(createCollectionPage))
+router.post('/:siteName/collections/:collectionName/pages', attachRollbackRouteHandlerWrapper(createNewcollectionPage)) // to remove
+router.post('/:siteName/collections/:collectionName/pages/new/:pageName', attachRollbackRouteHandlerWrapper(createCollectionPage))
 router.get('/:siteName/collections/:collectionName/pages/:pageName', attachReadRouteHandlerWrapper(readCollectionPage))
 router.post('/:siteName/collections/:collectionName/pages/:pageName', attachWriteRouteHandlerWrapper(updateCollectionPage))
 router.delete('/:siteName/collections/:collectionName/pages/:pageName', attachRollbackRouteHandlerWrapper(deleteCollectionPage))

@@ -14,6 +14,7 @@ const {
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
 const { create } = require('lodash');
+const { CollectionConfig } = require('../classes/Config');
 
 const getUnlinkedPages = async (accessToken, siteName) => {
   const IsomerFile = new File(accessToken, siteName)
@@ -160,6 +161,44 @@ async function renamePage(req, res, next) {
   res.status(200).json({ pageName: newPageName, content, sha: newSha })
 }
 
+// Move unlinked pages
+async function moveUnlinkedPages (req, res, next) {
+  const { accessToken } = req
+  const { siteName, newPagePath } = req.params
+  const { files } = req.body
+  const processedTargetPathTokens = decodeURIComponent(newPagePath).split('/')
+  const targetCollectionName = processedTargetPathTokens[0]
+  const targetSubfolderName = processedTargetPathTokens[1]
+
+  const IsomerCollection = new Collection(accessToken, siteName)
+  const collections = await IsomerCollection.list()
+
+  // Check if collection already exists
+  if (!collections.includes(targetCollectionName)) {
+    await IsomerCollection.create(targetCollectionName)
+  }
+
+  const oldIsomerFile = new File(accessToken, siteName)
+  const newIsomerFile = new File(accessToken, siteName)
+  const oldPageType = new PageType()
+  const newCollectionPageType = new CollectionPageType(decodeURIComponent(newPagePath))
+  oldIsomerFile.setFileType(oldPageType)
+  newIsomerFile.setFileType(newCollectionPageType)
+  const newConfig = new CollectionConfig(accessToken, siteName, targetCollectionName)
+
+  // We can't perform these operations concurrently because of conflict issues
+  for (const fileName of files) {
+    const { content, sha } = await oldIsomerFile.read(fileName)
+    await oldIsomerFile.delete(fileName, sha)
+    await newIsomerFile.create(fileName, content)
+
+    // Update collection.yml files
+    await newConfig.addItemToOrder(`${targetSubfolderName ? `${targetSubfolderName}/` : ''}${fileName}`)
+  }
+
+  res.status(200).send('OK')
+}
+
 
 router.get('/:siteName/pages', attachReadRouteHandlerWrapper(listPages))
 router.get('/:siteName/unlinkedPages', attachReadRouteHandlerWrapper(listUnlinkedPages))
@@ -168,5 +207,6 @@ router.get('/:siteName/pages/:pageName', attachReadRouteHandlerWrapper(readPage)
 router.post('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(updatePage))
 router.delete('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(deletePage))
 router.post('/:siteName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renamePage))
+router.post('/:siteName/pages/move/:newPagePath', attachRollbackRouteHandlerWrapper(moveUnlinkedPages))
 
 module.exports = router;

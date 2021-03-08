@@ -13,13 +13,14 @@ const {
 // Import classes
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
+const { Directory, FolderType } = require('../classes/Directory');
 const { create } = require('lodash');
 
 const getUnlinkedPages = async (accessToken, siteName) => {
-  const IsomerFile = new File(accessToken, siteName)
-  const pageType = new PageType()
-  IsomerFile.setFileType(pageType)
-  const simplePages = await IsomerFile.list()
+  const IsomerDirectory = new Directory(accessToken, siteName)
+  const folderType = new FolderType('pages')
+  IsomerDirectory.setDirType(folderType)
+  const simplePages = await IsomerDirectory.list()
   return simplePages
 }
 

@@ -8,7 +8,8 @@ const _ = require('lodash')
 const logger = require('../logger/logger');
 
 // Import error
-const { NotFoundError  } = require('../errors/NotFoundError')
+const { NotFoundError } = require('../errors/NotFoundError')
+const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF

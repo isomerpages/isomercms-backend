@@ -6,10 +6,12 @@ const _ = require('lodash')
 const { CollectionConfig } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
 const { Directory, RootType } = require('./Directory.js')
+const { ConflictError, protectedFolderConflictErrorMsg } = require('../errors/ConflictError')
 const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 const NAV_FILE_NAME = 'navigation.yml'
 const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
+const ISOMER_TEMPLATE_PROTECTED_DIRS = ['data', 'includes', 'site', 'layouts', 'files', 'images', 'misc', 'pages']
 
 class Collection {
   constructor(accessToken, siteName) {
@@ -45,6 +47,7 @@ class Collection {
           },
         }
       }
+      if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName)) throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
       const newContent = base64.encode(yaml.safeDump(contentObject))
       await collectionConfig.create(newContent)
 

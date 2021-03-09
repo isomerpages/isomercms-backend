@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Bluebird = require('bluebird')
+const yaml = require('js-yaml');
+const base64 = require('base-64');
 
 // Import middleware
 const { 
@@ -12,6 +14,8 @@ const {
 const { Collection } = require('../classes/Collection.js');
 const { CollectionConfig } = require('../classes/Config.js');
 const { File, CollectionPageType, PageType } = require('../classes/File');
+
+const { deslugifyCollectionName } = require('../utils/utils')
 
 // List collections
 async function listCollections (req, res, next) {
@@ -97,7 +101,18 @@ async function moveFiles (req, res, next) {
   for (const fileName of files) {
     const { content, sha } = await oldIsomerFile.read(fileName)
     await oldIsomerFile.delete(fileName, sha)
-    await newIsomerFile.create(fileName, content)
+    if (targetSubfolderName || collectionSubfolderName) {
+      // Modifying third nav in front matter, to be removed after template rewrite
+      const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1])
+      if (targetSubfolderName) frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
+      else delete frontMatter.third_nav_title
+      const newFrontMatter = yaml.safeDump(frontMatter)
+      const newContent = ['---\n', newFrontMatter, '---'].join('')
+      const newEncodedContent = base64.encode(newContent)
+      await newIsomerFile.create(fileName, newEncodedContent)
+    } else {
+      await newIsomerFile.create(fileName, content)
+    }
 
     // Update collection.yml files
     await oldConfig.deleteItemFromOrder(`${collectionSubfolderName ? `${collectionSubfolderName}/` : ''}${fileName}`)

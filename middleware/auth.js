@@ -95,7 +95,6 @@ auth.post('/v1/sites/:siteName/menus/:menuName', verifyJwt)
 
 // Pages
 auth.get('/v1/sites/:siteName/pages', verifyJwt)
-auth.get('/v1/sites/:siteName/unlinkedPages', verifyJwt)
 auth.post('/v1/sites/:siteName/pages', verifyJwt) // to remove
 auth.post('/v1/sites/:siteName/pages/new/:pageName', verifyJwt)
 auth.get('/v1/sites/:siteName/pages/:pageName', verifyJwt)

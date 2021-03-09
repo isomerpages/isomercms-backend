@@ -16,22 +16,6 @@ const { Collection } = require('../classes/Collection.js');
 const { Directory, FolderType } = require('../classes/Directory');
 const { create } = require('lodash');
 
-const getUnlinkedPages = async (accessToken, siteName) => {
-  const IsomerDirectory = new Directory(accessToken, siteName)
-  const folderType = new FolderType('pages')
-  IsomerDirectory.setDirType(folderType)
-  const simplePages = await IsomerDirectory.list()
-  return simplePages
-}
-
-async function listUnlinkedPages (req, res, next) {
-  const { accessToken } = req
-  const { siteName } = req.params
-
-  const unlinkedPages = await getUnlinkedPages(accessToken, siteName)
-  res.status(200).json({ pages: unlinkedPages })
-}
-
 // List both simple pages and collection pages
 async function listPages (req, res, next) {
   const { accessToken } = req
@@ -178,7 +162,6 @@ async function renamePage(req, res, next) {
 
 
 router.get('/:siteName/pages', attachReadRouteHandlerWrapper(listPages))
-router.get('/:siteName/unlinkedPages', attachReadRouteHandlerWrapper(listUnlinkedPages))
 router.post('/:siteName/pages', attachWriteRouteHandlerWrapper(createNewPage)) // to remove
 router.post('/:siteName/pages/new/:pageName', attachWriteRouteHandlerWrapper(createPage))
 router.get('/:siteName/pages/:pageName', attachReadRouteHandlerWrapper(readPage))

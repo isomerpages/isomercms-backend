@@ -37,6 +37,7 @@ class Directory {
           "Content-Type": "application/json"
         }
       })
+
   
       if (resp.status !== 200) {
         if (this.dirType instanceof FolderType) throw new BadRequestError(`Path ${this.dirType.getFolderName()} was invalid!`)
@@ -67,12 +68,6 @@ class Directory {
             type,
           }
         })
-
-        const folderPath = this.dirType.getFolderName()
-        const pathArr = folderPath.split('/')
-        if (folderPath.slice(0,1) !== '_' || pathArr.length > 2 || (pathArr.length === 2 && pathArr[1].includes('.'))) {
-            throw new BadRequestError(`The provided path ${folderPath} is not a valid directory!`)
-        }
 
         return _.compact(filesOrDirs)
       }

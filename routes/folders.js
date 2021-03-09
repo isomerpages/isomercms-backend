@@ -7,22 +7,9 @@ const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes
 const { CollectionConfig } = require('../classes/Config')
-const { Directory, RootType, FolderType } = require('../classes/Directory');
+const { Directory, RootType } = require('../classes/Directory.js');
 
 const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
-
-// List pages and directories in folder
-async function listFolderContent (req, res, next) {
-    const { accessToken } = req
-    const { siteName } = req.params
-    const { path } = req.query
-
-    const IsomerDirectory = new Directory(accessToken, siteName)
-    const folderType = new FolderType(path)
-    IsomerDirectory.setDirType(folderType)
-    const folderPages = await IsomerDirectory.list()
-    res.status(200).json({ folderPages })
-}
 
 // List pages and directories from all folders
 async function listAllFolderContent (req, res, next) {
@@ -53,7 +40,6 @@ async function listAllFolderContent (req, res, next) {
     res.status(200).json({ allFolderContent })
 }
 
-router.get('/:siteName/folders', attachReadRouteHandlerWrapper(listFolderContent))
 router.get('/:siteName/folders/all', attachReadRouteHandlerWrapper(listAllFolderContent))
 
 module.exports = router;

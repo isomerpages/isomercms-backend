@@ -3,11 +3,15 @@ const base64 = require('base-64')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
-const { Config, CollectionConfig } = require('./Config.js')
+const { CollectionConfig } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
+const { Directory, RootType } = require('./Directory.js')
+const { ConflictError, protectedFolderConflictErrorMsg } = require('../errors/ConflictError')
 const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 const NAV_FILE_NAME = 'navigation.yml'
+const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
+const ISOMER_TEMPLATE_PROTECTED_DIRS = ['data', 'includes', 'site', 'layouts', 'files', 'images', 'misc', 'pages']
 
 class Collection {
   constructor(accessToken, siteName) {
@@ -16,19 +20,23 @@ class Collection {
   }
 
   async list() {
-    // to be removed in future PRs as collection data is no longer stored in _config.yml
-    try {
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-    const contentObject = yaml.safeLoad(base64.decode(content))
-    const collections = contentObject.collections ? Object.keys(contentObject.collections) : []
-    return collections
-    } catch (err) {
-      throw err
-    }
+    const IsomerDirectory = new Directory(this.accessToken, this.siteName)
+    const folderType = new RootType()
+    IsomerDirectory.setDirType(folderType)
+    const repoRootContent = await IsomerDirectory.list()
+
+    const allFolders = repoRootContent.reduce((acc, curr) => {
+        if (
+            curr.type === 'dir'
+            && !ISOMER_TEMPLATE_DIRS.includes(curr.name)
+            && curr.name.slice(0, 1) === '_'
+        ) acc.push(curr.path.slice(1))
+        return acc
+    }, [])
+    return allFolders
   }
 
-  async create(collectionName) {
+  async create(collectionName, orderArray) {
     try {
       const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
       const contentObject = {
@@ -39,6 +47,7 @@ class Collection {
           },
         }
       }
+      if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName)) throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
       const newContent = base64.encode(yaml.safeDump(contentObject))
       await collectionConfig.create(newContent)
 

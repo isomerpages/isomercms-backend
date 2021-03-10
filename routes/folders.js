@@ -7,7 +7,6 @@ const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes
 const { CollectionConfig } = require('../classes/Config')
-const { Directory, FolderType, RootType } = require('../classes/Directory.js');
 const { Collection } = require('../classes/Collection');
 
 const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Bluebird = require('bluebird')
 const _ = require('lodash')
+const yaml = require('js-yaml')
+const base64 = require('base-64')
 
 // Import middleware
 const {   
@@ -15,6 +17,9 @@ const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
 const { Directory, FolderType } = require('../classes/Directory');
 const { create } = require('lodash');
+const { CollectionConfig } = require('../classes/Config');
+
+const { deslugifyCollectionName } = require('../utils/utils')
 
 // List both simple pages and collection pages
 async function listPages (req, res, next) {
@@ -160,6 +165,53 @@ async function renamePage(req, res, next) {
   res.status(200).json({ pageName: newPageName, content, sha: newSha })
 }
 
+// Move unlinked pages
+async function moveUnlinkedPages (req, res, next) {
+  const { accessToken } = req
+  const { siteName, newPagePath } = req.params
+  const { files } = req.body
+  const processedTargetPathTokens = decodeURIComponent(newPagePath).split('/')
+  const targetCollectionName = processedTargetPathTokens[0]
+  const targetSubfolderName = processedTargetPathTokens[1]
+
+  const IsomerCollection = new Collection(accessToken, siteName)
+  const collections = await IsomerCollection.list()
+
+  // Check if collection already exists
+  if (!collections.includes(targetCollectionName)) {
+    await IsomerCollection.create(targetCollectionName)
+  }
+
+  const oldIsomerFile = new File(accessToken, siteName)
+  const newIsomerFile = new File(accessToken, siteName)
+  const oldPageType = new PageType()
+  const newCollectionPageType = new CollectionPageType(decodeURIComponent(newPagePath))
+  oldIsomerFile.setFileType(oldPageType)
+  newIsomerFile.setFileType(newCollectionPageType)
+  const newConfig = new CollectionConfig(accessToken, siteName, targetCollectionName)
+
+  // We can't perform these operations concurrently because of conflict issues
+  for (const fileName of files) {
+    const { content, sha } = await oldIsomerFile.read(fileName)
+    await oldIsomerFile.delete(fileName, sha)
+    if (targetSubfolderName) {
+      // Adding third nav to front matter, to be removed after template rewrite
+      const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1])
+      frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
+      const newFrontMatter = yaml.safeDump(frontMatter)
+      const newContent = ['---\n', newFrontMatter, '---'].join('')
+      const newEncodedContent = base64.encode(newContent)
+      await newIsomerFile.create(fileName, newEncodedContent)
+    } else {
+      await newIsomerFile.create(fileName, content)
+    }
+    // Update collection.yml files
+    await newConfig.addItemToOrder(`${targetSubfolderName ? `${targetSubfolderName}/` : ''}${fileName}`)
+  }
+
+  res.status(200).send('OK')
+}
+
 
 router.get('/:siteName/pages', attachReadRouteHandlerWrapper(listPages))
 router.post('/:siteName/pages', attachWriteRouteHandlerWrapper(createNewPage)) // to remove
@@ -168,5 +220,6 @@ router.get('/:siteName/pages/:pageName', attachReadRouteHandlerWrapper(readPage)
 router.post('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(updatePage))
 router.delete('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(deletePage))
 router.post('/:siteName/pages/:pageName/rename/:newPageName', attachRollbackRouteHandlerWrapper(renamePage))
+router.post('/:siteName/pages/move/:newPagePath', attachRollbackRouteHandlerWrapper(moveUnlinkedPages))
 
 module.exports = router;

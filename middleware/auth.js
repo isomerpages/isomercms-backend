@@ -68,6 +68,7 @@ auth.get('/v1/sites/:siteName/collections', verifyJwt)
 auth.post('/v1/sites/:siteName/collections', verifyJwt)
 auth.delete('/v1/sites/:siteName/collections/:collectionName', verifyJwt)
 auth.post('/v1/sites/:siteName/collections/:collectionName/rename/:newCollectionName', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionPath/move/:targetPath', verifyJwt)
 
 // Documents
 auth.get('/v1/sites/:siteName/documents', verifyJwt)
@@ -101,6 +102,7 @@ auth.get('/v1/sites/:siteName/pages/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/pages/:pageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/pages/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/pages/:pageName/rename/:newPageName', verifyJwt)
+auth.post('/v1/sites/:siteName/pages/move/:newPagePath', verifyJwt)
 
 // Resource pages
 auth.get('/v1/sites/:siteName/resources/:resourceName', verifyJwt)

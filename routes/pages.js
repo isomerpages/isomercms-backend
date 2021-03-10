@@ -13,23 +13,8 @@ const {
 // Import classes
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
+const { Directory, FolderType } = require('../classes/Directory');
 const { create } = require('lodash');
-
-const getUnlinkedPages = async (accessToken, siteName) => {
-  const IsomerFile = new File(accessToken, siteName)
-  const pageType = new PageType()
-  IsomerFile.setFileType(pageType)
-  const simplePages = await IsomerFile.list()
-  return simplePages
-}
-
-async function listUnlinkedPages (req, res, next) {
-  const { accessToken } = req
-  const { siteName } = req.params
-
-  const unlinkedPages = await getUnlinkedPages(accessToken, siteName)
-  res.status(200).json({ pages: unlinkedPages })
-}
 
 // List both simple pages and collection pages
 async function listPages (req, res, next) {
@@ -89,6 +74,21 @@ async function createNewPage (req, res, next) {
   const { sha } = await IsomerFile.create(pageName, content)
 
   res.status(200).json({ pageName, content, sha })
+}
+
+async function createPage (req, res, next) {
+  const { accessToken } = req
+
+  const { siteName, pageName: encodedPageName } = req.params
+  const { content: pageContent } = req.body
+  const pageName = decodeURIComponent(encodedPageName)
+
+  const IsomerFile = new File(accessToken, siteName)
+  const pageType = new PageType()
+  IsomerFile.setFileType(pageType)
+  await IsomerFile.create(pageName, Base64.encode(pageContent))
+
+  res.status(200).json({ pageName, pageContent })
 }
 
 // Read page
@@ -162,8 +162,8 @@ async function renamePage(req, res, next) {
 
 
 router.get('/:siteName/pages', attachReadRouteHandlerWrapper(listPages))
-router.get('/:siteName/unlinkedPages', attachReadRouteHandlerWrapper(listUnlinkedPages))
-router.post('/:siteName/pages', attachWriteRouteHandlerWrapper(createNewPage))
+router.post('/:siteName/pages', attachWriteRouteHandlerWrapper(createNewPage)) // to remove
+router.post('/:siteName/pages/new/:pageName', attachWriteRouteHandlerWrapper(createPage))
 router.get('/:siteName/pages/:pageName', attachReadRouteHandlerWrapper(readPage))
 router.post('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(updatePage))
 router.delete('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(deletePage))

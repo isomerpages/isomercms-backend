@@ -1,1 +1,6 @@
-{}
+{
+    "bracketSpacing": true,
+    "semi": false,
+    "singleQuote": false,
+    "useTabs": false
+}

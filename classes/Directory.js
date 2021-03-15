@@ -2,7 +2,8 @@ const axios = require('axios');
 const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
-const { BadRequestError } = require('../errors/BadRequestError')
+const { BadRequestError } = require('../errors/BadRequestError');
+const { NotFoundError } = require('../errors/NotFoundError');
 
 const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const BRANCH_REF = process.env.BRANCH_REF
@@ -40,7 +41,10 @@ class Directory {
 
   
       if (resp.status !== 200) {
-        if (this.dirType instanceof FolderType) throw new BadRequestError(`Path ${this.dirType.getFolderName()} was invalid!`)
+        if (this.dirType instanceof FolderType) {
+          if (resp.status === 404) throw new NotFoundError(`Path ${this.dirType.getFolderName()} was not found!`)
+          throw new BadRequestError(`Path ${this.dirType.getFolderName()} was invalid!`)
+        }
         return {}
       }
 

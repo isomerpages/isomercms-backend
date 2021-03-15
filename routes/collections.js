@@ -59,11 +59,11 @@ async function renameCollection (req, res, next) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken } = req
+  const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, collectionName, newCollectionName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
-  await IsomerCollection.rename(collectionName, newCollectionName)
+  await IsomerCollection.rename(collectionName, newCollectionName, currentCommitSha, treeSha)
 
   res.status(200).json({ collectionName, newCollectionName })
 }

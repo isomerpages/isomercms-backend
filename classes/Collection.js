@@ -111,7 +111,7 @@ class Collection {
     }
   }
 
-  async rename(oldCollectionName, newCollectionName) {
+  async rename(oldCollectionName, newCollectionName, currentCommitSha, treeSha) {
     try {
       const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
 
@@ -139,7 +139,6 @@ class Collection {
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
       const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
       const oldCollectionDirectoryName = `_${oldCollectionName}`
       const newCollectionDirectoryName = `_${newCollectionName}`

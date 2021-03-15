@@ -45,11 +45,11 @@ async function deleteCollection (req, res, next) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken } = req
+  const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, collectionName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
-  await IsomerCollection.delete(collectionName)
+  await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
 
   res.status(200).json({ collectionName })
 }

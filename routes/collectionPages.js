@@ -147,7 +147,8 @@ async function createCollectionPage (req, res, next) {
 async function readCollectionPage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName, collectionName } = req.params
+  const { siteName, pageName: encodedPageName, collectionName } = req.params
+  const pageName = decodeURIComponent(encodedPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const collectionPageType = new CollectionPageType(collectionName)
@@ -164,8 +165,11 @@ async function readCollectionPage(req, res, next) {
 async function updateCollectionPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName, collectionName } = req.params
-  const { content, sha } = req.body
+  const { siteName, pageName: encodedPageName, collectionName } = req.params
+  const { content: unencodedContent, sha } = req.body
+  const pageName = decodeURIComponent(encodedPageName)
+  
+  const content = base64.encode(unencodedContent)
 
   // TO-DO:
   // Validate pageName and content
@@ -182,9 +186,9 @@ async function updateCollectionPage (req, res, next) {
 async function deleteCollectionPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName, collectionName } = req.params
+  const { siteName, pageName: encodedPageName, collectionName } = req.params
   const { sha } = req.body
-
+  const pageName = decodeURIComponent(encodedPageName)
   // TO-DO:
   // Validate that collection exists
 
@@ -207,8 +211,9 @@ async function deleteCollectionPage (req, res, next) {
 async function renameCollectionPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName, collectionName, newPageName } = req.params
+  const { siteName, pageName: encodedPageName, collectionName, newPageName } = req.params
   const { sha, content } = req.body
+  const pageName = decodeURIComponent(encodedPageName)
 
   // TO-DO:
   // Validate that collection exists

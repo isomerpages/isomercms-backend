@@ -137,6 +137,8 @@ async function renamePage(req, res, next) {
   const { siteName, pageName: encodedPageName, newPageName: encodedNewPageName } = req.params
   const { sha, content: pageContent } = req.body
 
+  // TO-DO:
+  // Validate pageName and content
   const pageName = decodeURIComponent(encodedPageName)
   const newPageName = decodeURIComponent(encodedNewPageName)
 

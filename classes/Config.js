@@ -116,22 +116,24 @@ class CollectionConfig extends Config {
     }
   }
 
-  async addItemToOrder(item) {
+  async addItemToOrder(item, index) {
     const collectionName = this.collectionName
     
     const { content, sha } = await this.read()
     const contentObject = yaml.safeLoad(base64.decode(content))
     
-    let index
-    if (item.split('/').length === 2) {
-      // if file in subfolder, get index of last file in subfolder
-      index = _.findLastIndex(
-        contentObject.collections[collectionName].order, 
-        (f) => f.split('/')[0] === item.split('/')[0]
-      ) + 1
-    } else {
-      // get index of last file in collection
-      index = contentObject.collections[collectionName].order.length
+    if (index === undefined) {
+      let index
+      if (item.split('/').length === 2) {
+        // if file in subfolder, get index of last file in subfolder
+        index = _.findLastIndex(
+          contentObject.collections[collectionName].order, 
+          (f) => f.split('/')[0] === item.split('/')[0]
+        ) + 1
+      } else {
+        // get index of last file in collection
+        index = contentObject.collections[collectionName].order.length
+      }
     }
     contentObject.collections[collectionName].order.splice(index, 0, item)
     const newContent = base64.encode(yaml.safeDump(contentObject))
@@ -150,6 +152,7 @@ class CollectionConfig extends Config {
     const newContent = base64.encode(yaml.safeDump(contentObject))
     
     await this.update(newContent, sha)
+    return { index, item }
   }
 }
 

@@ -207,8 +207,8 @@ async function renameCollectionPage (req, res, next) {
   IsomerFile.setFileType(collectionPageType)
   const { sha: newSha } = await IsomerFile.create(newPageName, Base64.encode(pageContent))
   await IsomerFile.delete(pageName, sha)
-  await collectionConfig.deleteItemFromOrder(pageName)
-  await collectionConfig.addItemToOrder(newPageName)
+  const { index } = await collectionConfig.deleteItemFromOrder(pageName)
+  await collectionConfig.addItemToOrder(newPageName, index)
 
 
   res.status(200).json({ collectionName, pageName: newPageName, pageContent, sha: newSha })

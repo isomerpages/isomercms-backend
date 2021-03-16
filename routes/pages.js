@@ -63,24 +63,6 @@ async function listPages (req, res, next) {
   res.status(200).json({ pages })
 }
 
-// Create new page
-async function createNewPage (req, res, next) {
-  const { accessToken } = req
-
-  const { siteName } = req.params
-  const { pageName, content } = req.body
-
-  // TO-DO:
-  // Validate pageName and content
-
-  const IsomerFile = new File(accessToken, siteName)
-  const pageType = new PageType()
-  IsomerFile.setFileType(pageType)
-  const { sha } = await IsomerFile.create(pageName, content)
-
-  res.status(200).json({ pageName, content, sha })
-}
-
 async function createPage (req, res, next) {
   const { accessToken } = req
 
@@ -105,7 +87,9 @@ async function readPage(req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  const { sha, content } = await IsomerFile.read(pageName)
+  const { sha, content: encodedContent } = await IsomerFile.read(pageName)
+
+  const content = Base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content
@@ -118,8 +102,7 @@ async function updatePage(req, res, next) {
   const { accessToken } = req
 
   const { siteName, pageName } = req.params
-  const { content: unencodedContent, sha } = req.body
-  const content = base64.encode(unencodedContent)
+  const { content: pageContent, sha } = req.body
 
   // TO-DO:
   // Validate pageName and content
@@ -127,9 +110,9 @@ async function updatePage(req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  const { newSha } = await IsomerFile.update(pageName, content, sha)
+  const { newSha } = await IsomerFile.update(pageName, Base64.encode(pageContent), sha)
 
-  res.status(200).json({ pageName, content, sha: newSha })
+  res.status(200).json({ pageName, pageContent, sha: newSha })
 }
 
 // Delete page
@@ -151,19 +134,19 @@ async function deletePage (req, res, next) {
 async function renamePage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName, newPageName } = req.params
-  const { sha, content } = req.body
+  const { siteName, pageName: encodedPageName, newPageName: encodedNewPageName } = req.params
+  const { sha, content: pageContent } = req.body
 
-  // TO-DO:
-  // Validate pageName and content
+  const pageName = decodeURIComponent(encodedPageName)
+  const newPageName = decodeURIComponent(encodedNewPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  const { sha: newSha } = await IsomerFile.create(newPageName, content)
+  const { sha: newSha } = await IsomerFile.create(newPageName, Base64.encode(pageContent))
   await IsomerFile.delete(pageName, sha)
 
-  res.status(200).json({ pageName: newPageName, content, sha: newSha })
+  res.status(200).json({ pageName: newPageName, pageContent, sha: newSha })
 }
 
 // Move unlinked pages
@@ -215,7 +198,6 @@ async function moveUnlinkedPages (req, res, next) {
 
 
 router.get('/:siteName/pages', attachReadRouteHandlerWrapper(listPages))
-router.post('/:siteName/pages', attachWriteRouteHandlerWrapper(createNewPage)) // to remove
 router.post('/:siteName/pages/new/:pageName', attachWriteRouteHandlerWrapper(createPage))
 router.get('/:siteName/pages/:pageName', attachReadRouteHandlerWrapper(readPage))
 router.post('/:siteName/pages/:pageName', attachWriteRouteHandlerWrapper(updatePage))

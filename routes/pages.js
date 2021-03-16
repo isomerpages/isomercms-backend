@@ -82,7 +82,8 @@ async function createPage (req, res, next) {
 async function readPage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName } = req.params
+  const { siteName, pageName: encodedPageName } = req.params
+  const pageName = decodeURIComponent(encodedPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
@@ -101,8 +102,9 @@ async function readPage(req, res, next) {
 async function updatePage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName } = req.params
+  const { siteName, pageName: encodedPageName } = req.params
   const { content: pageContent, sha } = req.body
+  const pageName = decodeURIComponent(encodedPageName)
 
   // TO-DO:
   // Validate pageName and content
@@ -119,8 +121,9 @@ async function updatePage(req, res, next) {
 async function deletePage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName } = req.params
+  const { siteName, pageName: encodedPageName } = req.params
   const { sha } = req.body
+  const pageName = decodeURIComponent(encodedPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()

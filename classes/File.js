@@ -87,11 +87,7 @@ class File {
 
   async read(fileName) {
     try {
-      const files = await this.list()
-      if (_.isEmpty(files)) throw new NotFoundError ('File does not exist')
-      const fileToRead = files.filter((file) => file.fileName === fileName)[0]
-      if (fileToRead === undefined) throw new NotFoundError ('File does not exist')
-      const endpoint = `${this.baseBlobEndpoint}/${fileToRead.sha}`
+      const endpoint = `${this.baseEndpoint}/${fileName}`
 
       const params = {
         "ref": BRANCH_REF,
@@ -105,6 +101,7 @@ class File {
           "Content-Type": "application/json"
         }
       })
+      if (resp.status === 404) throw new NotFoundError ('File does not exist')
 
       const { content, sha } = resp.data
   

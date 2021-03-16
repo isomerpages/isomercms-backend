@@ -118,7 +118,8 @@ async function updatePage(req, res, next) {
   const { accessToken } = req
 
   const { siteName, pageName } = req.params
-  const { content, sha } = req.body
+  const { content: unencodedContent, sha } = req.body
+  const content = base64.encode(unencodedContent)
 
   // TO-DO:
   // Validate pageName and content

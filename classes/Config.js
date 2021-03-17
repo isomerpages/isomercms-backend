@@ -4,9 +4,6 @@ const yaml = require('js-yaml')
 const base64 = require('base-64')
 const _ = require('lodash')
 
-// Import logger
-const logger = require('../logger/logger');
-
 // Import error
 const { NotFoundError } = require('../errors/NotFoundError')
 const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
@@ -116,22 +113,28 @@ class CollectionConfig extends Config {
     }
   }
 
-  async addItemToOrder(item) {
-    const collectionName = this.collectionName
-    
-    const { content, sha } = await this.read()
+  async read() {
+    const { content, sha } = await super.read()
     const contentObject = yaml.safeLoad(base64.decode(content))
-    
-    let index
-    if (item.split('/').length === 2) {
-      // if file in subfolder, get index of last file in subfolder
-      index = _.findLastIndex(
-        contentObject.collections[collectionName].order, 
-        (f) => f.split('/')[0] === item.split('/')[0]
-      ) + 1
-    } else {
-      // get index of last file in collection
-      index = contentObject.collections[collectionName].order.length
+    return { contentObject, sha }
+  }
+
+  async addItemToOrder(item, index) {
+    const collectionName = this.collectionName
+    const { contentObject, sha } = await this.read()
+
+    if (index === undefined) {
+      let index
+      if (item.split('/').length === 2) {
+        // if file in subfolder, get index of last file in subfolder
+        index = _.findLastIndex(
+          contentObject.collections[collectionName].order, 
+          (f) => f.split('/')[0] === item.split('/')[0]
+        ) + 1
+      } else {
+        // get index of last file in collection
+        index = contentObject.collections[collectionName].order.length
+      }
     }
     contentObject.collections[collectionName].order.splice(index, 0, item)
     const newContent = base64.encode(yaml.safeDump(contentObject))
@@ -141,12 +144,21 @@ class CollectionConfig extends Config {
 
   async deleteItemFromOrder(item) {
     const collectionName = this.collectionName
-
-    const { content, sha } = await this.read()
-    const contentObject = yaml.safeLoad(base64.decode(content))
-    
-    const index = contentObject.collections[collectionName].order.indexOf(item);
+    const { contentObject, sha } = await this.read()
+    const index = contentObject.collections[collectionName].order.indexOf(item)
     contentObject.collections[collectionName].order.splice(index, 1)
+    const newContent = base64.encode(yaml.safeDump(contentObject))
+    
+    await this.update(newContent, sha)
+    return { index, item }
+  }
+
+  async updateItemInOrder(oldItem, newItem) {
+    const collectionName = this.collectionName
+    const { contentObject, sha } = await this.read()
+    const index = contentObject.collections[collectionName].order.indexOf(oldItem)
+    contentObject.collections[collectionName].order.splice(index, 1)
+    contentObject.collections[collectionName].order.splice(index, 0, newItem)
     const newContent = base64.encode(yaml.safeDump(contentObject))
     
     await this.update(newContent, sha)

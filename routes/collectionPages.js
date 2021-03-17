@@ -184,7 +184,7 @@ async function updateCollectionPage (req, res, next) {
 
 // Delete page in collection
 async function deleteCollectionPage (req, res, next) {
-  const { accessToken } = req
+  const { accessToken, currentCommitSha, treeSha } = req
 
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const { sha } = req.body
@@ -199,9 +199,9 @@ async function deleteCollectionPage (req, res, next) {
 
   // Check if collection has any pages left, and delete if none left
   const collectionPages = await IsomerFile.list()
-  if (_.isEmpty(collectionPages)) {
+  if (collectionPages.length === 1 && collectionPages[0].fileName === 'collection.yml') {
     const IsomerCollection = new Collection(accessToken, siteName)
-    await IsomerCollection.delete(collectionName)
+    await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
   }
 
   res.status(200).send('OK')

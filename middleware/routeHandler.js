@@ -29,7 +29,11 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
 
   let originalCommitSha
   try {
-    const { currentCommitSha } = await getCommitAndTreeSha(siteName, accessToken)
+    const { currentCommitSha, treeSha } = await getCommitAndTreeSha(siteName, accessToken)
+
+    req.currentCommitSha = currentCommitSha
+    req.treeSha = treeSha
+
     originalCommitSha = currentCommitSha
   } catch (err) {
     await unlock(siteName)

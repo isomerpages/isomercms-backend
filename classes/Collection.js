@@ -70,12 +70,14 @@ class Collection {
     }
   }
 
-  async delete(collectionName) {
+  async delete(collectionName, currentCommitSha, treeSha) {
     try {
-      // Delete collection config
-      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
-      const { sha } = await collectionConfig.read()
-      await collectionConfig.delete(sha)
+      const commitMessage = `Delete collection ${collectionName}`
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
+      const newGitTree = gitTree.filter(item => {
+        if (item.path !== `_${collectionName}`) return item
+      })
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage)
 
       // Delete collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
@@ -91,27 +93,12 @@ class Collection {
       }
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
-
-      // Get all collectionPages
-      const IsomerFile = new File(this.accessToken, this.siteName)
-      const collectionPageType = new CollectionPageType(collectionName)
-      IsomerFile.setFileType(collectionPageType)
-      const collectionPages = await IsomerFile.list()
-
-      if (!_.isEmpty(collectionPages)) {
-        // Delete all collectionPages
-        await Bluebird.map(collectionPages, async(collectionPage) => {
-          let pageName = collectionPage.fileName
-          const { sha } = await IsomerFile.read(pageName)
-          return IsomerFile.delete(pageName, sha)
-        })
-      }
     } catch (err) {
       throw err
     }
   }
 
-  async rename(oldCollectionName, newCollectionName) {
+  async rename(oldCollectionName, newCollectionName, currentCommitSha, treeSha) {
     try {
       const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
 
@@ -139,7 +126,6 @@ class Collection {
       const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
       const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
       const oldCollectionDirectoryName = `_${oldCollectionName}`
       const newCollectionDirectoryName = `_${newCollectionName}`

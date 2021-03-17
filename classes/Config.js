@@ -4,9 +4,6 @@ const yaml = require('js-yaml')
 const base64 = require('base-64')
 const _ = require('lodash')
 
-// Import logger
-const logger = require('../logger/logger');
-
 // Import error
 const { NotFoundError } = require('../errors/NotFoundError')
 const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')

@@ -16,7 +16,6 @@ const {
 const { Collection } = require('../classes/Collection')
 const { CollectionConfig } = require('../classes/Config');
 const { File, CollectionPageType } = require('../classes/File');
-const { update } = require('lodash');
 
 // Import utils
 const { readCollectionPageUtilFunc } = require('../utils/route-utils')

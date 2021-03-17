@@ -15,8 +15,6 @@ const {
 // Import classes
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
-const { Directory, FolderType } = require('../classes/Directory');
-const { create } = require('lodash');
 const { CollectionConfig } = require('../classes/Config');
 
 const { deslugifyCollectionName } = require('../utils/utils')

@@ -148,7 +148,7 @@ class CollectionConfig extends Config {
   async deleteItemFromOrder(item) {
     const collectionName = this.collectionName
     const { contentObject, sha } = await this.read()
-    const index = contentObject.collections[collectionName].order.indexOf(item);
+    const index = contentObject.collections[collectionName].order.indexOf(item)
     contentObject.collections[collectionName].order.splice(index, 1)
     const newContent = base64.encode(yaml.safeDump(contentObject))
     
@@ -157,8 +157,14 @@ class CollectionConfig extends Config {
   }
 
   async updateItemInOrder(oldItem, newItem) {
-    const { index } = await this.deleteItemFromOrder(oldItem)
-    await this.addItemToOrder(newItem, index)
+    const collectionName = this.collectionName
+    const { contentObject, sha } = await this.read()
+    const index = contentObject.collections[collectionName].order.indexOf(oldItem)
+    contentObject.collections[collectionName].order.splice(index, 1)
+    contentObject.collections[collectionName].order.splice(index, 0, newItem)
+    const newContent = base64.encode(yaml.safeDump(contentObject))
+    
+    await this.update(newContent, sha)
   }
 }
 

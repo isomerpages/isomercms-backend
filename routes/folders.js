@@ -35,6 +35,7 @@ async function deleteSubfolder (req, res, next) {
     const { accessToken, currentCommitSha, treeSha } = req
     const { siteName, folderName, subfolderName } = req.params
 
+    // Delete subfolder
     const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`
     const isRecursive = true
     const gitTree = await getTree(siteName, accessToken, treeSha, isRecursive)
@@ -52,6 +53,11 @@ async function deleteSubfolder (req, res, next) {
 
     const newGitTree = [...baseTreeWithoutFolder, ...folderTreeWithoutSubfolder]
     await sendTree(newGitTree, currentCommitSha, siteName, accessToken, commitMessage)
+
+    // Update collection config
+    const collectionConfig = new CollectionConfig(accessToken, siteName, folderName)
+    await collectionConfig.deleteSubfolderFromOrder(subfolderName)
+
     res.status(200).send('Ok')
 }
 

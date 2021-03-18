@@ -163,6 +163,17 @@ class CollectionConfig extends Config {
     
     await this.update(newContent, sha)
   }
+
+  async deleteSubfolderFromOrder(subfolder) {
+    const collectionName = this.collectionName
+    const { contentObject, sha } = await this.read()
+    const filteredOrder = contentObject.collections[collectionName].order.filter(item => !item.includes(`${subfolder}/`))
+    const newContentObject = _.cloneDeep(contentObject)
+    newContentObject.collections[collectionName].order = filteredOrder
+    const newContent = base64.encode(yaml.safeDump(newContentObject))
+
+    await this.update(newContent, sha)
+  }
 }
 
 module.exports = { Config, CollectionConfig }

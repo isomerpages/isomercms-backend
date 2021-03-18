@@ -108,14 +108,7 @@ async function deleteResourcePage(req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
-  const resources = await IsomerFile.list()
-  if (resources.length === 1) {
-    // If there is only 1 page left, we can delete the entire category
-    const IsomerResource = new Resource(accessToken, siteName)
-    await IsomerResource.delete(resourceRoomName, resourceName)
-  } else {
-    await IsomerFile.delete(pageName, sha)
-  }
+  await IsomerFile.delete(pageName, sha)
 
   res.status(200).send('OK')
 }

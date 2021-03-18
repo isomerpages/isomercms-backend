@@ -143,8 +143,7 @@ class Collection {
 
       // Update collection.yml in newCollection with newCollection name
       const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, newCollectionName)
-      const { content: configContent, sha: configSha } = await collectionConfig.read()
-      const configContentObject = yaml.safeLoad(base64.decode(configContent))
+      const { content: configContentObject, sha: configSha } = await collectionConfig.read()
       const newConfigContentObject = {
         collections: {
           [newCollectionName]: configContentObject.collections[oldCollectionName]

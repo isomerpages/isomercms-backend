@@ -44,10 +44,13 @@ async function deleteSubfolder (req, res, next) {
        !item.path.includes('/') && item.path !== `_${folderName}`
     ))
     const folderTreeWithoutSubfolder = gitTree.filter(item => (
-        // get all folder items, except for the tree object of the folder itself (note the trailing /)
-        item.path.includes(`_${folderName}/`)
+        // get all folder items
+        item.path.includes(`_${folderName}`)
     )).filter(item => (
-        // exclude all subfolder items, including the tree object of the subfolder
+        // remove tree objects of folder and subfolder to be renamed
+        item.path !== `_${folderName}` && item.path !== `_${folderName}/${subfolderName}`
+    )).filter(item => (
+        // exclude all subfolder items
         !item.path.includes(`_${folderName}/${subfolderName}`)
     ))
 

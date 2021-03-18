@@ -116,7 +116,7 @@ class CollectionConfig extends Config {
   async read() {
     const { content, sha } = await super.read()
     const contentObject = yaml.safeLoad(base64.decode(content))
-    return { contentObject, sha }
+    return { content: contentObject, sha }
   }
 
   async addItemToOrder(item, index) {

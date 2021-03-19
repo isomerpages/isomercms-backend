@@ -166,9 +166,9 @@ class CollectionConfig extends Config {
 
   async deleteSubfolderFromOrder(subfolder) {
     const collectionName = this.collectionName
-    const { contentObject, sha } = await this.read()
-    const filteredOrder = contentObject.collections[collectionName].order.filter(item => !item.includes(`${subfolder}/`))
-    const newContentObject = _.cloneDeep(contentObject)
+    const { content, sha } = await this.read()
+    const filteredOrder = content.collections[collectionName].order.filter(item => !item.includes(`${subfolder}/`))
+    const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = filteredOrder
     const newContent = base64.encode(yaml.safeDump(newContentObject))
 
@@ -177,12 +177,12 @@ class CollectionConfig extends Config {
 
   async renameSubfolderInOrder(subfolder, newSubfolderName) {
     const collectionName = this.collectionName
-    const { contentObject, sha } = await this.read()
-    const renamedOrder = contentObject.collections[collectionName].order.map(item => {
+    const { content, sha } = await this.read()
+    const renamedOrder = content.collections[collectionName].order.map(item => {
       if (item.includes(`${subfolder}/`)) return `${newSubfolderName}/${item.split('/')[1]}`
       return item
     })
-    const newContentObject = _.cloneDeep(contentObject)
+    const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = renamedOrder
     const newContent = base64.encode(yaml.safeDump(newContentObject))
 

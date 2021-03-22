@@ -16,6 +16,7 @@ const {
 const { File, PageType, CollectionPageType } = require('../classes/File.js')
 const { Collection } = require('../classes/Collection.js');
 const { CollectionConfig } = require('../classes/Config');
+const { Subfolder } = require('../classes/Subfolder');
 
 const { deslugifyCollectionName } = require('../utils/utils')
 
@@ -176,6 +177,13 @@ async function moveUnlinkedPages (req, res, next) {
   oldIsomerFile.setFileType(oldPageType)
   newIsomerFile.setFileType(newCollectionPageType)
   const newConfig = new CollectionConfig(accessToken, siteName, targetCollectionName)
+
+  if (newConfig && targetSubfolderName) {
+    // Check if subfolder exists
+    const IsomerSubfolder = new Subfolder(accessToken, siteName, targetCollectionName)
+    const subfolders = await IsomerSubfolder.list()
+    if (!subfolders.includes(targetSubfolderName)) IsomerSubfolder.create(targetSubfolderName)
+  }
 
   // We can't perform these operations concurrently because of conflict issues
   for (const fileName of files) {

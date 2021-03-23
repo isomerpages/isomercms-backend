@@ -52,6 +52,8 @@ auth.get('/v1/sites/:siteName/files/:path', verifyJwt)
 
 // Folder pages
 auth.get('/v1/sites/:siteName/folders/all', verifyJwt)
+auth.delete('/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName', verifyJwt)
+auth.post('/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName', verifyJwt)
 
 // Collection pages
 auth.get('/v1/sites/:siteName/collections/:collectionName', verifyJwt)

@@ -51,17 +51,21 @@ async function getCommitAndTreeSha(repo, accessToken, branchRef='staging') {
 }
 
 // retrieve the tree from given tree sha
-async function getTree(repo, accessToken, treeSha, branchRef='staging') {
+async function getTree(repo, accessToken, treeSha, isRecursive, branchRef='staging') {
   try {
     const headers = {
       Authorization: `token ${accessToken}`,
       Accept: 'application/json',
     };
 
+    const params = {
+      ref: branchRef,
+    }
+
+    if (isRecursive) params.recursive = true
+
     const { data: { tree: gitTree } } = await axios.get(`https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`, {
-      params: {
-        ref: branchRef,
-      },
+      params,
       headers,
     });
 

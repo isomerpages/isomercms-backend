@@ -121,33 +121,33 @@ class CollectionConfig extends Config {
 
   async addItemToOrder(item, index) {
     const collectionName = this.collectionName
-    const { contentObject, sha } = await this.read()
+    const { content, sha } = await this.read()
 
     if (index === undefined) {
       let index
       if (item.split('/').length === 2) {
         // if file in subfolder, get index of last file in subfolder
         index = _.findLastIndex(
-          contentObject.collections[collectionName].order, 
+          content.collections[collectionName].order,
           (f) => f.split('/')[0] === item.split('/')[0]
         ) + 1
       } else {
         // get index of last file in collection
-        index = contentObject.collections[collectionName].order.length
+        index = content.collections[collectionName].order.length
       }
     }
-    contentObject.collections[collectionName].order.splice(index, 0, item)
-    const newContent = base64.encode(yaml.safeDump(contentObject))
+    content.collections[collectionName].order.splice(index, 0, item)
+    const newContent = base64.encode(yaml.safeDump(content))
     
     await this.update(newContent, sha)
   }
 
   async deleteItemFromOrder(item) {
     const collectionName = this.collectionName
-    const { contentObject, sha } = await this.read()
-    const index = contentObject.collections[collectionName].order.indexOf(item)
-    contentObject.collections[collectionName].order.splice(index, 1)
-    const newContent = base64.encode(yaml.safeDump(contentObject))
+    const { content, sha } = await this.read()
+    const index = content.collections[collectionName].order.indexOf(item)
+    content.collections[collectionName].order.splice(index, 1)
+    const newContent = base64.encode(yaml.safeDump(content))
     
     await this.update(newContent, sha)
     return { index, item }
@@ -155,12 +155,37 @@ class CollectionConfig extends Config {
 
   async updateItemInOrder(oldItem, newItem) {
     const collectionName = this.collectionName
-    const { contentObject, sha } = await this.read()
-    const index = contentObject.collections[collectionName].order.indexOf(oldItem)
-    contentObject.collections[collectionName].order.splice(index, 1)
-    contentObject.collections[collectionName].order.splice(index, 0, newItem)
-    const newContent = base64.encode(yaml.safeDump(contentObject))
+    const { content, sha } = await this.read()
+    const index = content.collections[collectionName].order.indexOf(oldItem)
+    content.collections[collectionName].order.splice(index, 1)
+    content.collections[collectionName].order.splice(index, 0, newItem)
+    const newContent = base64.encode(yaml.safeDump(content))
     
+    await this.update(newContent, sha)
+  }
+
+  async deleteSubfolderFromOrder(subfolder) {
+    const collectionName = this.collectionName
+    const { content, sha } = await this.read()
+    const filteredOrder = content.collections[collectionName].order.filter(item => !item.includes(`${subfolder}/`))
+    const newContentObject = _.cloneDeep(content)
+    newContentObject.collections[collectionName].order = filteredOrder
+    const newContent = base64.encode(yaml.safeDump(newContentObject))
+
+    await this.update(newContent, sha)
+  }
+
+  async renameSubfolderInOrder(subfolder, newSubfolderName) {
+    const collectionName = this.collectionName
+    const { content, sha } = await this.read()
+    const renamedOrder = content.collections[collectionName].order.map(item => {
+      if (item.includes(`${subfolder}/`)) return `${newSubfolderName}/${item.split('/')[1]}`
+      return item
+    })
+    const newContentObject = _.cloneDeep(content)
+    newContentObject.collections[collectionName].order = renamedOrder
+    const newContent = base64.encode(yaml.safeDump(newContentObject))
+
     await this.update(newContent, sha)
   }
 }

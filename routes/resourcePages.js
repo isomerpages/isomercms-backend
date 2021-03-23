@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const base64 = require('base-64');
 
 // Import middleware
 const {   
@@ -68,7 +69,9 @@ async function readResourcePage (req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
-  const { sha, content } = await IsomerFile.read(pageName)
+  const { sha, content: encodedContent } = await IsomerFile.read(pageName)
+
+  const content = Base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content

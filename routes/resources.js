@@ -67,10 +67,10 @@ async function renameResource (req, res, next) {
 }
 
 // Move resource
-async function moveResource (req, res, next) {
+async function moveResources (req, res, next) {
   const { accessToken } = req
   const { siteName, resourceName, newResourceName } = req.params
-  const { fileName } = req.body
+  const { files } = req.body
 
   const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
@@ -88,10 +88,11 @@ async function moveResource (req, res, next) {
   oldIsomerFile.setFileType(oldResourcePageType)
   newIsomerFile.setFileType(newResourcePageType)
 
-  const { content, sha } = await oldIsomerFile.read(fileName)
-  await oldIsomerFile.delete(fileName, sha)
-  await newIsomerFile.create(fileName, content)
-
+  for (const fileName of files) {
+    const { content, sha } = await oldIsomerFile.read(fileName)
+    await oldIsomerFile.delete(fileName, sha)
+    await newIsomerFile.create(fileName, content)
+  }
   res.status(200).send('OK')
 }
 
@@ -99,6 +100,6 @@ router.get('/:siteName/resources', attachReadRouteHandlerWrapper(listResources))
 router.post('/:siteName/resources', attachRollbackRouteHandlerWrapper(createNewResource))
 router.delete('/:siteName/resources/:resourceName', attachRollbackRouteHandlerWrapper(deleteResource))
 router.post('/:siteName/resources/:resourceName/rename/:newResourceName', attachRollbackRouteHandlerWrapper(renameResource))
-router.post('/:siteName/resources/:resourceName/move/:newResourceName', attachRollbackRouteHandlerWrapper(moveResource))
+router.post('/:siteName/resources/:resourceName/move/:newResourceName', attachRollbackRouteHandlerWrapper(moveResources))
 
 module.exports = router;

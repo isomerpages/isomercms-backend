@@ -75,6 +75,12 @@ async function moveResources (req, res, next) {
   const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
 
+  const IsomerResource = new Resource(accessToken, siteName)
+  const resources = await IsomerResource.list(resourceRoomName)
+  const resourceCategories = resources.map(resource => resource.dirName)
+  if (!resourceCategories.includes(resourceName)) throw new NotFoundError(`Resource category ${resourceName} was not found!`)
+  if (!resourceCategories.includes(newResourceName)) throw new NotFoundError(`Resource category ${newResourceName} was not found!`)
+
   const oldIsomerFile = new File(accessToken, siteName)
   const newIsomerFile = new File(accessToken, siteName)
   const oldResourcePageType = new ResourcePageType(resourceRoomName, resourceName)

@@ -182,7 +182,7 @@ async function moveUnlinkedPages (req, res, next) {
     // Check if subfolder exists
     const IsomerSubfolder = new Subfolder(accessToken, siteName, targetCollectionName)
     const subfolders = await IsomerSubfolder.list()
-    if (!subfolders.includes(targetSubfolderName)) IsomerSubfolder.create(targetSubfolderName)
+    if (!subfolders.includes(targetSubfolderName)) await IsomerSubfolder.create(targetSubfolderName)
   }
 
   // We can't perform these operations concurrently because of conflict issues

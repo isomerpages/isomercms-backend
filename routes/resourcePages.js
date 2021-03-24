@@ -71,7 +71,7 @@ async function readResourcePage (req, res, next) {
   IsomerFile.setFileType(resourcePageType)
   const { sha, content: encodedContent } = await IsomerFile.read(pageName)
 
-  const content = Base64.decode(encodedContent)
+  const content = base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content

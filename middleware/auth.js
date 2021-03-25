@@ -126,7 +126,7 @@ auth.get('/v1/sites/:siteName/resources', verifyJwt)
 auth.post('/v1/sites/:siteName/resources', verifyJwt)
 auth.delete('/v1/sites/:siteName/resources/:resourceName', verifyJwt)
 auth.post('/v1/sites/:siteName/resources/:resourceName/rename/:newResourceName', verifyJwt)
-auth.post('/v1/sites/:siteName/resources/:resourceRoomName/move/:newResourceRoomName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/move/:newResourceName', verifyJwt)
 
 // Settings
 auth.get('/v1/sites/:siteName/settings', verifyJwt)

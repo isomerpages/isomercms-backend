@@ -12,15 +12,22 @@ const {
 const { File, ResourcePageType } = require('../classes/File.js')
 const { ResourceRoom } = require('../classes/ResourceRoom.js')
 const { Resource } = require('../classes/Resource.js')
+const { NotFoundError } = require('../errors/NotFoundError');
 
 // List pages in resource
 async function listResourcePages (req, res, next) {
   const { accessToken } = req
   const { siteName, resourceName } = req.params
 
-  // TO-DO: Verify that resource exists
   const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()
+
+  // Check if resource category exists
+  const IsomerResource = new Resource(accessToken, siteName)
+  const resources = await IsomerResource.list(resourceRoomName)
+  const resourceCategories = resources.map(resource => resource.dirName)
+  if (!resourceCategories.includes(resourceName)) throw new NotFoundError(`Resource category ${resourceName} was not found!`)
+
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
@@ -108,14 +115,7 @@ async function deleteResourcePage(req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
-  const resources = await IsomerFile.list()
-  if (resources.length === 1) {
-    // If there is only 1 page left, we can delete the entire category
-    const IsomerResource = new Resource(accessToken, siteName)
-    await IsomerResource.delete(resourceRoomName, resourceName)
-  } else {
-    await IsomerFile.delete(pageName, sha)
-  }
+  await IsomerFile.delete(pageName, sha)
 
   res.status(200).send('OK')
 }

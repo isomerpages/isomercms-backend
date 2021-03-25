@@ -14,8 +14,9 @@ const {
 const { Collection } = require('../classes/Collection.js');
 const { CollectionConfig } = require('../classes/Config.js');
 const { File, CollectionPageType, PageType } = require('../classes/File');
+const { Subfolder } = require('../classes/Subfolder');
 
-const { deslugifyCollectionName } = require('../utils/utils')
+const { deslugifyCollectionName } = require('../utils/utils');
 
 // List collections
 async function listCollections (req, res, next) {
@@ -96,6 +97,13 @@ async function moveFiles (req, res, next) {
   newIsomerFile.setFileType(newCollectionPageType)
   const oldConfig = new CollectionConfig(accessToken, siteName, collectionName)
   const newConfig = targetCollectionName === 'pages' ? null : new CollectionConfig(accessToken, siteName, targetCollectionName)
+
+  if (newConfig && targetSubfolderName) {
+    // Check if subfolder exists
+    const IsomerSubfolder = new Subfolder(accessToken, siteName, targetCollectionName)
+    const subfolders = await IsomerSubfolder.list()
+    if (!subfolders.includes(targetSubfolderName)) await IsomerSubfolder.create(targetSubfolderName)
+  }
 
   // We can't perform these operations concurrently because of conflict issues
   for (const fileName of files) {

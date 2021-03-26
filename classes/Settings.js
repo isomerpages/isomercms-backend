@@ -1,6 +1,6 @@
 const { Base64 } = require('js-base64')
 const _ = require('lodash')
-const yaml = require('js-yaml')
+const yaml = require('yaml')
 const Bluebird = require('bluebird')
 
 // import classes
@@ -44,11 +44,11 @@ const retrieveSettingsFiles = async (accessToken, siteName, shouldRetrieveHomepa
     // homepage requires special extraction as the content is wrapped in front matter
     if (fileOpKey === 'homepage') {
       const homepageContent = Base64.decode(content)
-      const homepageFrontMatterObj = yaml.safeLoad(homepageContent.split('---')[1])
+      const homepageFrontMatterObj = yaml.parse(homepageContent.split('---')[1])
       return { type: fileOpKey, content: homepageFrontMatterObj, sha }
     }
 
-    return { type: fileOpKey, content: yaml.safeLoad(Base64.decode(content)), sha }
+    return { type: fileOpKey, content: yaml.parse(Base64.decode(content)), sha }
   })
 
   // Convert to an object so that data is accessible by key
@@ -178,7 +178,7 @@ class Settings {
 
     // To-do: use Git Tree to speed up operations
     if (!_.isEmpty(configSettings)) {
-      const newConfigContent = Base64.encode(yaml.safeDump(configSettingsObj))
+      const newConfigContent = Base64.encode(yaml.stringify(configSettingsObj))
       await configResp.update(newConfigContent, config.sha)
 
       // Update title in homepage as well if it's changed
@@ -186,7 +186,7 @@ class Settings {
         const { content: homepageContentObj, sha } = homepage;
         
         homepageContentObj.title = configSettings.title;
-        const homepageFrontMatter = yaml.safeDump(homepageContentObj);
+        const homepageFrontMatter = yaml.stringify(homepageContentObj);
 
         const homepageContent = ['---\n', homepageFrontMatter, '---'].join('') ;
         const newHomepageContent = Base64.encode(homepageContent)
@@ -196,12 +196,12 @@ class Settings {
     }
 
     if (!_.isEmpty(footerSettings)) {
-      const newFooterContent = Base64.encode(yaml.safeDump(footerSettingsObj))
+      const newFooterContent = Base64.encode(yaml.stringify(footerSettingsObj))
       await FooterFile.update(FOOTER_PATH, newFooterContent, footer.sha)
     }
 
     if (!_.isEmpty(navigationSettings)) {
-      const newNavigationContent = Base64.encode(yaml.safeDump(navigationSettingsObj))
+      const newNavigationContent = Base64.encode(yaml.stringify(navigationSettingsObj))
       await NavigationFile.update(NAVIGATION_PATH, newNavigationContent, navigation.sha)
     }
     

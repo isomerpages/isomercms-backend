@@ -1,4 +1,4 @@
-const yaml = require('js-yaml')
+const yaml = require('yaml')
 const base64 = require('base-64')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
@@ -48,20 +48,20 @@ class Collection {
         }
       }
       if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName)) throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
-      const newContent = base64.encode(yaml.safeDump(contentObject))
+      const newContent = base64.encode(yaml.stringify(contentObject))
       await collectionConfig.create(newContent)
 
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+      const navContentObject = yaml.parse(base64.decode(navContent))
 
       navContentObject.links.push({ 
         title: deslugifyCollectionName(collectionName),
         collection: collectionName 
       })
-      const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+      const newNavContent = base64.encode(yaml.stringify(navContentObject))
 
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
@@ -84,14 +84,14 @@ class Collection {
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+      const navContentObject = yaml.parse(base64.decode(navContent))
 
       const newNavLinks = navContentObject.links.filter(link => link.collection !== collectionName)
       const newNavContentObject = {
         ...navContentObject,
         links: newNavLinks,
       }
-      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      const newNavContent = base64.encode(yaml.stringify(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
     } catch (err) {
       throw err
@@ -107,7 +107,7 @@ class Collection {
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+      const navContentObject = yaml.parse(base64.decode(navContent))
 
       const newNavLinks = navContentObject.links.map(link => {
         if (link.collection === oldCollectionName) {
@@ -123,7 +123,7 @@ class Collection {
         ...navContentObject,
         links: newNavLinks,
       }
-      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      const newNavContent = base64.encode(yaml.stringify(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
@@ -149,7 +149,7 @@ class Collection {
           [newCollectionName]: configContentObject.collections[oldCollectionName]
         }
       }
-      const newConfigContent = base64.encode(yaml.safeDump(newConfigContentObject))
+      const newConfigContent = base64.encode(yaml.stringify(newConfigContentObject))
       await collectionConfig.update(newConfigContent, configSha)
 
     } catch (err) {

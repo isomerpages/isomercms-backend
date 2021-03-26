@@ -1,6 +1,6 @@
 const { Base64 } = require('js-base64')
 const express = require('express');
-const yaml = require('js-yaml')
+const yaml = require('yaml')
 const router = express.Router();
 
 // Import middleware
@@ -23,7 +23,7 @@ async function getNavigation(req, res, next) {
 
   res.status(200).json({
     sha: sha,
-    content: yaml.safeLoad(Base64.decode(content))
+    content: yaml.parse(Base64.decode(content))
   })
 }
 
@@ -36,7 +36,7 @@ async function updateNavigation(req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const dataType =  new DataType()
   IsomerFile.setFileType(dataType)
-  await IsomerFile.update(NAVIGATION_PATH, Base64.encode(yaml.safeDump(content)), sha)
+  await IsomerFile.update(NAVIGATION_PATH, Base64.encode(yaml.stringify(content)), sha)
 
   res.status(200).send('OK')
 }

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Bluebird = require('bluebird');
-const yaml = require('js-yaml');
+const yaml = require('yaml');
 const base64 = require('base-64');
 const _ = require('lodash');
 
@@ -52,7 +52,7 @@ async function listCollectionPagesDetails(req, res, next) {
   const collectionPages = await CollectionPage.list()
   const collectionPagesMetadata = await Bluebird.map(collectionPages, async (page) => {
     const { content } = await readCollectionPageUtilFunc(accessToken, siteName, collectionName, page.fileName)
-    const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1])
+    const frontMatter = yaml.parse(base64.decode(content).split('---')[1])
     return {
       fileName: page.fileName,
       title: frontMatter.title,

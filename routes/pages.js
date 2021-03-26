@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Bluebird = require('bluebird')
 const _ = require('lodash')
-const yaml = require('js-yaml')
+const yaml = require('yaml')
 const base64 = require('base-64')
 
 // Import middleware
@@ -191,9 +191,9 @@ async function moveUnlinkedPages (req, res, next) {
     await oldIsomerFile.delete(fileName, sha)
     if (targetSubfolderName) {
       // Adding third nav to front matter, to be removed after template rewrite
-      const frontMatter = yaml.safeLoad(base64.decode(content).split('---')[1])
+      const frontMatter = yaml.parse(base64.decode(content).split('---')[1])
       frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
-      const newFrontMatter = yaml.safeDump(frontMatter)
+      const newFrontMatter = yaml.stringify(frontMatter)
       const newContent = ['---\n', newFrontMatter, '---'].join('')
       const newEncodedContent = base64.encode(newContent)
       await newIsomerFile.create(fileName, newEncodedContent)

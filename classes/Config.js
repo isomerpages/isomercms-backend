@@ -123,20 +123,20 @@ class CollectionConfig extends Config {
     const collectionName = this.collectionName
     const { content, sha } = await this.read()
 
+    let newIndex = index
     if (index === undefined) {
-      let index
       if (item.split('/').length === 2) {
         // if file in subfolder, get index of last file in subfolder
-        index = _.findLastIndex(
+        newIndex = _.findLastIndex(
           content.collections[collectionName].order,
           (f) => f.split('/')[0] === item.split('/')[0]
         ) + 1
       } else {
         // get index of last file in collection
-        index = content.collections[collectionName].order.length
+        newIndex = content.collections[collectionName].order.length
       }
     }
-    content.collections[collectionName].order.splice(index, 0, item)
+    content.collections[collectionName].order.splice(newIndex, 0, item)
     const newContent = base64.encode(yaml.stringify(content))
     
     await this.update(newContent, sha)

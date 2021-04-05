@@ -118,7 +118,35 @@ async function checkHasAccess (req, res, next) {
   }
 }
 
+/* Gets the link to the staging site for a repo. */
+async function getStagingUrl (req, res, next) {
+  // TODO: reconsider how we can retrieve url - we can store this in _config.yml or a dynamodb
+  const { accessToken } = req
+  const { siteName } = req.params
+  
+  const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
+  const resp = await axios.get(endpoint, {
+    headers: {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+  })
+
+  const { description } = resp.data
+
+  let stagingUrl
+
+  if (description) {
+    // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
+    const descTokens = description.replace('/;/g', ' ').split(' ')
+    stagingUrl = descTokens.find(token => token.includes('http'))
+  }
+
+  res.status(200).json({ stagingUrl })
+}
+
 router.get('/', attachReadRouteHandlerWrapper(getSites));
 router.get('/:siteName', attachReadRouteHandlerWrapper(checkHasAccess));
+router.get('/:siteName/stagingUrl', attachReadRouteHandlerWrapper(getStagingUrl));
 
 module.exports = router;

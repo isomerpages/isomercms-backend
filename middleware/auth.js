@@ -142,6 +142,7 @@ auth.get('/v1/sites/:siteName/netlify-toml', verifyJwt)
 // Sites
 auth.get('/v1/sites', verifyJwt)
 auth.get('/v1/sites/:siteName', verifyJwt)
+auth.get('/v1/sites/:siteName/lastUpdated', verifyJwt)
 auth.get('/v1/sites/:siteName/stagingUrl', verifyJwt)
 
 auth.use((req, res, next) => {

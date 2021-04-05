@@ -118,6 +118,22 @@ async function checkHasAccess (req, res, next) {
   }
 }
 
+/* Gets the last updated time of the repo. */
+async function getLastUpdated (req, res, next) {
+  const { accessToken } = req
+  const { siteName } = req.params
+
+  const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
+  const resp = await axios.get(endpoint, {
+    headers: {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+  })
+  const { updated_at } = resp.data
+  res.status(200).json({ lastUpdated: timeDiff(updated_at)})
+}
+
 /* Gets the link to the staging site for a repo. */
 async function getStagingUrl (req, res, next) {
   // TODO: reconsider how we can retrieve url - we can store this in _config.yml or a dynamodb
@@ -147,6 +163,7 @@ async function getStagingUrl (req, res, next) {
 
 router.get('/', attachReadRouteHandlerWrapper(getSites));
 router.get('/:siteName', attachReadRouteHandlerWrapper(checkHasAccess));
+router.get('/:siteName/lastUpdated', attachReadRouteHandlerWrapper(getLastUpdated));
 router.get('/:siteName/stagingUrl', attachReadRouteHandlerWrapper(getStagingUrl));
 
 module.exports = router;

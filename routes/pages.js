@@ -20,46 +20,16 @@ const { Subfolder } = require('../classes/Subfolder');
 
 const { deslugifyCollectionName } = require('../utils/utils')
 
-// List both simple pages and collection pages
 async function listPages (req, res, next) {
   const { accessToken } = req
   const { siteName } = req.params
 
-  const simplePages = await getUnlinkedPages(accessToken, siteName)
-  // After listing all simple pages, they're tagged for the frontend
-  const taggedSimplePages = simplePages.map(simplePage => {
-    return {
-      ...simplePage,
-      type: 'simple-page'
-    }
-  })
-
-  const IsomerCollection = new Collection(accessToken, siteName)
-  const collections = await IsomerCollection.list() //lists out all collections
-
-  /**
-   * This `reduce` function will:
-   * 1) Iterate through the collections
-   *  a) Lists all the collection pages with `CollectionPage.list()`
-   *  b) Map it to tag it with type `collection` [for frontend to know]
-   * 2) Concatenate it into the `accumulator`
-   * This then returns a flattened array of all collections pages from all collections (`allCollectionPages`)
-   */
-  const allCollectionPages = await Bluebird.reduce(collections, async (accumulator, collectionName) => {
-    const CollectionPage = new File(accessToken, siteName)
-    const collectionPageType = new CollectionPageType(collectionName)
-    CollectionPage.setFileType(collectionPageType)
-    const collectionPages = await CollectionPage.list()
-    if (_.isEmpty(collectionPages)) {
-      return accumulator
-    }
-    const collectionPagesWithType = collectionPages.map((item) => ({ ...item, type: 'collection', collectionName })) // tagged with type for frontend
-
-    return accumulator.concat(collectionPagesWithType)
-  }, [])
-
-  const pages = taggedSimplePages.concat(allCollectionPages); // collection pages are then concatenated with simple pages
-  res.status(200).json({ pages })
+  const IsomerFile = new File(accessToken, siteName)
+  const pageType = new PageType()
+  IsomerFile.setFileType(pageType)
+  const simplePages = await IsomerFile.list()
+  
+  res.status(200).json({ pages: simplePages })
 }
 
 async function createPage (req, res, next) {

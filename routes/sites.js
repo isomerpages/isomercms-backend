@@ -155,7 +155,8 @@ async function getStagingUrl (req, res, next) {
   if (description) {
     // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
     const descTokens = description.replace('/;/g', ' ').split(' ')
-    stagingUrl = descTokens.find(token => token.includes('http'))
+    // Staging urls also contain staging in their url
+    stagingUrl = descTokens.find(token => token.includes('http') && token.includes('staging'))
   }
 
   res.status(200).json({ stagingUrl })

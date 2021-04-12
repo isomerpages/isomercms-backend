@@ -21,16 +21,18 @@ const COOKIE_NAME = 'isomercms'
 
 async function githubAuth (req, res, next) {
   const { code, state } = req.query
-
   const params = {
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
     code: code,
     redirect_uri: REDIRECT_URI,
     state: state
   }
 
-  const resp = await axios.post('https://github.com/login/oauth/access_token', params)
+  const resp = await axios.post('https://github.com/login/oauth/access_token', params, {
+    auth: {
+      username: CLIENT_ID,
+      password: CLIENT_SECRET,
+    },
+  })
 
   const access_token = queryString.parse(resp.data).access_token
   if (!access_token) throw new AuthError ('Access token not found')

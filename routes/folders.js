@@ -21,10 +21,16 @@ async function listAllFolderContent (req, res, next) {
     const IsomerCollection = new Collection(accessToken, siteName)
     const allFolders = IsomerCollection.list()
 
-    const allFolderContent = await Bluebird.map(allFolders, async (collectionName) => {
-        const config = new CollectionConfig(accessToken, siteName, collectionName)
-        const { sha, content } = await config.read()
-        return { name: collectionName, sha, content }
+    const allFolderContent = []
+    
+    await Bluebird.map(allFolders, async (collectionName) => {
+        try {
+            const config = new CollectionConfig(accessToken, siteName, collectionName)
+            const { sha, content } = await config.read()
+            allFolderContent.push({ name: collectionName, sha, content })
+        } catch (err) {
+            console.log(err)
+        }
     })
 
     res.status(200).json({ allFolderContent })

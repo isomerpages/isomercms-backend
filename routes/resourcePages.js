@@ -83,7 +83,7 @@ async function readResourcePage (req, res, next) {
   // TO-DO:
   // Validate content
 
-  res.status(200).json({ resourceName, pageName, sha, content })
+  res.status(200).json({ resourceRoomName, resourceName, pageName, sha, content })
 }
 
 // Update page in resource

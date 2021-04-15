@@ -8,7 +8,7 @@ const { NotFoundError  } = require('../errors/NotFoundError')
 // Constants
 const GITHUB_ORG_NAME = 'isomerpages'
 
-class ImageFile {
+class MediaFile {
   constructor(accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
@@ -166,4 +166,4 @@ class ImageType {
     return this.folderName
   }
 }
-module.exports = { ImageFile }
+module.exports = { MediaFile }

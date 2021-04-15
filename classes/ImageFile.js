@@ -24,8 +24,6 @@ class ImageFile {
     this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
-
-
   async list() {
     try {
       const endpoint = `${this.baseEndpoint}`

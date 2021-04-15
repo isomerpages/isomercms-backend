@@ -11,6 +11,23 @@ const {
 const { File, ImageType } = require('../classes/File.js')
 const { ImageFile } = require('../classes/ImageFile.js');
 
+const extractDirectoryAndFileName = (imageName) => {
+  let imageDirectory, imageFileName
+
+  const pathArr = imageName.split('/')
+  if (pathArr.length === 1) {
+    imageDirectory = 'images'
+    imageFileName = imageName
+  } else if (pathArr.length > 1) {
+    imageDirectory = `images/${pathArr.slice(0, -1)}`
+    imageFileName = pathArr[pathArr.length - 1]
+  }
+  return {
+    imageDirectory,
+    imageFileName,
+  }
+}
+
 // List images
 async function listImages (req, res, next) {
   const { accessToken } = req
@@ -48,15 +65,7 @@ async function readImage (req, res, next) {
   const { siteName, imageName } = req.params
 
   // get image directory
-  let imageDirectory, imageFileName
-  const pathArr = imageName.split('/')
-  if (pathArr.length === 1) {
-    imageDirectory = 'images'
-    imageFileName = imageName
-  } else if (pathArr.length > 1) {
-    imageDirectory = `images/${pathArr.slice(0, -1)}`
-    imageFileName = pathArr[pathArr.length - 1]
-  }
+  const { imageDirectory, imageFileName } = extractDirectoryAndFileName(imageName)
 
   const IsomerImageFile = new ImageFile(accessToken, siteName)
   IsomerImageFile.setFileTypeToImage(imageDirectory)
@@ -114,11 +123,16 @@ async function renameImage (req, res, next) {
 
   // Create new file with name ${newImageName}
 
-  const IsomerFile = new File(accessToken, siteName)
-  const imageType =  new ImageType()
-  IsomerFile.setFileType(imageType)
-  const { sha: newSha } = await IsomerFile.create(newImageName, content)
-  await IsomerFile.delete(imageName, sha)
+  const { imageDirectory: oldImageDirectory, imageFileName: oldImageFileName } = extractDirectoryAndFileName(imageName)
+  const { imageDirectory: newImageDirectory, imageFileName: newImageFileName } = extractDirectoryAndFileName(newImageName)
+
+  const newIsomerImageFile = new ImageFile(accessToken, siteName)
+  newIsomerImageFile.setFileTypeToImage(newImageDirectory)
+  const { sha: newSha } = await newIsomerImageFile.create(newImageFileName, content)
+
+  const oldIsomerImageFile = new ImageFile(accessToken, siteName)
+  oldIsomerImageFile.setFileTypeToImage(oldImageDirectory)
+  await oldIsomerImageFile.delete(oldImageFileName, sha)
 
   res.status(200).json({ imageName: newImageName, content, sha: newSha })
 }

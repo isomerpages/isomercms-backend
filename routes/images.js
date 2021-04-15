@@ -29,15 +29,14 @@ async function createNewImage (req, res, next) {
   const { accessToken } = req
 
   const { siteName } = req.params
-  const { imageName, content } = req.body
+  const { imageName, imageDirectory, content } = req.body
 
   // TO-DO:
   // Validate imageName and content
 
-  const IsomerFile = new File(accessToken, siteName)
-  const imageType =  new ImageType()
-  IsomerFile.setFileType(imageType)
-  const { sha } = await IsomerFile.create(imageName, content)
+  const IsomerImageFile = new ImageFile(accessToken, siteName)
+  IsomerImageFile.setFileTypeToImage(imageDirectory)
+  const { sha } = await IsomerImageFile.create(imageName, content)
 
   res.status(200).json({ imageName, content, sha })
 }
@@ -61,6 +60,7 @@ async function readImage (req, res, next) {
 
   const IsomerImageFile = new ImageFile(accessToken, siteName)
   IsomerImageFile.setFileTypeToImage(imageDirectory)
+
   const { sha, content } = await IsomerImageFile.read(imageFileName)
 
   // TO-DO:

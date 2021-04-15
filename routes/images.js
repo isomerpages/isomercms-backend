@@ -10,7 +10,6 @@ const {
 // Import classes 
 const { File, ImageType } = require('../classes/File.js')
 const { ImageFile } = require('../classes/ImageFile.js');
-const { update } = require('lodash');
 
 // List images
 async function listImages (req, res, next) {
@@ -49,9 +48,20 @@ async function readImage (req, res, next) {
 
   const { siteName, imageName } = req.params
 
+  // get image directory
+  let imageDirectory, imageFileName
+  const pathArr = imageName.split('/')
+  if (pathArr.length === 1) {
+    imageDirectory = 'images'
+    imageFileName = imageName
+  } else if (pathArr.length > 1) {
+    imageDirectory = `images/${pathArr.slice(0, -1)}`
+    imageFileName = pathArr[pathArr.length - 1]
+  }
+
   const IsomerImageFile = new ImageFile(accessToken, siteName)
-  IsomerImageFile.setFileTypeToImage()
-  const { sha, content } = await IsomerImageFile.read(imageName)
+  IsomerImageFile.setFileTypeToImage(imageDirectory)
+  const { sha, content } = await IsomerImageFile.read(imageFileName)
 
   // TO-DO:
   // Validate content

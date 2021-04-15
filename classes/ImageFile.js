@@ -17,8 +17,8 @@ class ImageFile {
     this.fileType = null
   }
 
-  setFileTypeToImage() {
-    this.fileType = new ImageType()
+  setFileTypeToImage(directory) {
+    this.fileType = new ImageType(directory)
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
     // Endpoint to retrieve files greater than 1MB
     this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
@@ -161,8 +161,8 @@ class ImageFile {
 }
 
 class ImageType {
-  constructor() {
-    this.folderName = 'images'
+  constructor(directory) {
+    this.folderName = directory ? directory : 'images'
   }
   getFolderName() {
     return this.folderName

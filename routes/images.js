@@ -9,7 +9,7 @@ const {
 
 // Import classes 
 const { File, ImageType } = require('../classes/File.js')
-const { ImageFile } = require('../classes/ImageFile.js');
+const { MediaFile } = require('../classes/MediaFile.js');
 
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory, imageFileName
@@ -51,7 +51,7 @@ async function createNewImage (req, res, next) {
   // TO-DO:
   // Validate imageName and content
 
-  const IsomerImageFile = new ImageFile(accessToken, siteName)
+  const IsomerImageFile = new MediaFile(accessToken, siteName)
   IsomerImageFile.setFileTypeToImage(imageDirectory)
   const { sha } = await IsomerImageFile.create(imageName, content)
 
@@ -67,7 +67,7 @@ async function readImage (req, res, next) {
   // get image directory
   const { imageDirectory, imageFileName } = extractDirectoryAndFileName(imageName)
 
-  const IsomerImageFile = new ImageFile(accessToken, siteName)
+  const IsomerImageFile = new MediaFile(accessToken, siteName)
   IsomerImageFile.setFileTypeToImage(imageDirectory)
 
   const { sha, content } = await IsomerImageFile.read(imageFileName)
@@ -126,11 +126,11 @@ async function renameImage (req, res, next) {
   const { imageDirectory: oldImageDirectory, imageFileName: oldImageFileName } = extractDirectoryAndFileName(imageName)
   const { imageDirectory: newImageDirectory, imageFileName: newImageFileName } = extractDirectoryAndFileName(newImageName)
 
-  const newIsomerImageFile = new ImageFile(accessToken, siteName)
+  const newIsomerImageFile = new MediaFile(accessToken, siteName)
   newIsomerImageFile.setFileTypeToImage(newImageDirectory)
   const { sha: newSha } = await newIsomerImageFile.create(newImageFileName, content)
 
-  const oldIsomerImageFile = new ImageFile(accessToken, siteName)
+  const oldIsomerImageFile = new MediaFile(accessToken, siteName)
   oldIsomerImageFile.setFileTypeToImage(oldImageDirectory)
   await oldIsomerImageFile.delete(oldImageFileName, sha)
 

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import classes 
 const { Tree } = require('../classes/Tree.js')
@@ -24,6 +24,6 @@ async function readTree (req, res, next) {
 
   res.status(200).json(response)
 }
-router.get('/:siteName/tree', attachRouteHandlerWrapper(readTree))
+router.get('/:siteName/tree', attachReadRouteHandlerWrapper(readTree))
 
 module.exports = router

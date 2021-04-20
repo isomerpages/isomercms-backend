@@ -1,13 +1,17 @@
-const yaml = require('js-yaml')
+const yaml = require('yaml')
 const base64 = require('base-64')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
-const { Config } = require('./Config.js')
+const { CollectionConfig } = require('./Config.js')
 const { File, CollectionPageType, DataType } = require('./File.js')
+const { Directory, RootType } = require('./Directory.js')
+const { ConflictError, protectedFolderConflictErrorMsg } = require('../errors/ConflictError')
 const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 const NAV_FILE_NAME = 'navigation.yml'
+const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
+const ISOMER_TEMPLATE_PROTECTED_DIRS = ['data', 'includes', 'site', 'layouts', 'files', 'images', 'misc', 'pages']
 
 class Collection {
   constructor(accessToken, siteName) {
@@ -16,43 +20,48 @@ class Collection {
   }
 
   async list() {
-    try {
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-    const contentObject = yaml.safeLoad(base64.decode(content))
-    const collections = contentObject.collections ? Object.keys(contentObject.collections) : []
-    return collections
-    } catch (err) {
-      throw err
-    }
+    const IsomerDirectory = new Directory(this.accessToken, this.siteName)
+    const folderType = new RootType()
+    IsomerDirectory.setDirType(folderType)
+    const repoRootContent = await IsomerDirectory.list()
+
+    const allFolders = repoRootContent.reduce((acc, curr) => {
+        if (
+            curr.type === 'dir'
+            && !ISOMER_TEMPLATE_DIRS.includes(curr.name)
+            && curr.name.slice(0, 1) === '_'
+        ) acc.push(curr.path.slice(1))
+        return acc
+    }, [])
+    return allFolders
   }
 
-  async create(collectionName) {
+  async create(collectionName, orderArray) {
     try {
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      // TO-DO: Verify that collection doesn't already exist
-
-      contentObject.collections[`${collectionName}`] = {
-        output: true 
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, collectionName)
+      const contentObject = {
+        collections: {
+          [collectionName]: {
+            output: true,
+            order: orderArray || [],
+          },
+        }
       }
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName)) throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
+      const newContent = base64.encode(yaml.stringify(contentObject))
+      await collectionConfig.create(newContent)
 
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+      const navContentObject = yaml.parse(base64.decode(navContent))
 
       navContentObject.links.push({ 
         title: deslugifyCollectionName(collectionName),
         collection: collectionName 
       })
-      const newNavContent = base64.encode(yaml.safeDump(navContentObject))
+      const newNavContent = base64.encode(yaml.stringify(navContentObject))
 
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
@@ -61,74 +70,44 @@ class Collection {
     }
   }
 
-  async delete(collectionName) {
+  async delete(collectionName, currentCommitSha, treeSha) {
     try {
-      // Delete collection in config
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      delete contentObject.collections[`${collectionName}`]
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
+      const commitMessage = `Delete collection ${collectionName}`
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
+      const newGitTree = gitTree.filter(item => {
+        if (item.path !== `_${collectionName}`) return item
+      })
+      await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage)
 
       // Delete collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+      const navContentObject = yaml.parse(base64.decode(navContent))
 
       const newNavLinks = navContentObject.links.filter(link => link.collection !== collectionName)
       const newNavContentObject = {
         ...navContentObject,
         links: newNavLinks,
       }
-      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      const newNavContent = base64.encode(yaml.stringify(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
-
-      // Get all collectionPages
-      const IsomerFile = new File(this.accessToken, this.siteName)
-      const collectionPageType = new CollectionPageType(collectionName)
-      IsomerFile.setFileType(collectionPageType)
-      const collectionPages = await IsomerFile.list()
-
-      if (!_.isEmpty(collectionPages)) {
-        // Delete all collectionPages
-        await Bluebird.map(collectionPages, async(collectionPage) => {
-          let pageName = collectionPage.fileName
-          const { sha } = await IsomerFile.read(pageName)
-          return IsomerFile.delete(pageName, sha)
-        })
-      }
     } catch (err) {
       throw err
     }
   }
 
-  async rename(oldCollectionName, newCollectionName) {
+  async rename(oldCollectionName, newCollectionName, currentCommitSha, treeSha) {
     try {
       const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
-      // Rename collection in config
-      const config = new Config(this.accessToken, this.siteName)
-      const { content, sha } = await config.read()
-      const contentObject = yaml.safeLoad(base64.decode(content))
-
-      contentObject.collections[`${newCollectionName}`] = {
-        output: true 
-      }
-      delete contentObject.collections[`${oldCollectionName}`]
-      const newContent = base64.encode(yaml.safeDump(contentObject))
-
-      await config.update(newContent, sha)
 
       // Rename collection in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.safeLoad(base64.decode(navContent))
+      const navContentObject = yaml.parse(base64.decode(navContent))
 
       const newNavLinks = navContentObject.links.map(link => {
         if (link.collection === oldCollectionName) {
@@ -144,10 +123,9 @@ class Collection {
         ...navContentObject,
         links: newNavLinks,
       }
-      const newNavContent = base64.encode(yaml.safeDump(newNavContentObject))
+      const newNavContent = base64.encode(yaml.stringify(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
-      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
       const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
       const oldCollectionDirectoryName = `_${oldCollectionName}`
       const newCollectionDirectoryName = `_${newCollectionName}`
@@ -162,6 +140,18 @@ class Collection {
         }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
+
+      // Update collection.yml in newCollection with newCollection name
+      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, newCollectionName)
+      const { content: configContentObject, sha: configSha } = await collectionConfig.read()
+      const newConfigContentObject = {
+        collections: {
+          [newCollectionName]: configContentObject.collections[oldCollectionName]
+        }
+      }
+      const newConfigContent = base64.encode(yaml.stringify(newConfigContentObject))
+      await collectionConfig.update(newConfigContent, configSha)
+
     } catch (err) {
       throw err
     }

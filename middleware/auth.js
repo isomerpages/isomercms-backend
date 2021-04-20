@@ -47,10 +47,19 @@ auth.get('/v1', noVerify)
 auth.get('/v1/sites/:siteName/homepage', verifyJwt)
 auth.post('/v1/sites/:siteName/homepage', verifyJwt)
 
+// Directory
+auth.get('/v1/sites/:siteName/files/:path', verifyJwt)
+
+// Folder pages
+auth.get('/v1/sites/:siteName/folders/all', verifyJwt)
+auth.delete('/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName', verifyJwt)
+auth.post('/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName', verifyJwt)
+
 // Collection pages
 auth.get('/v1/sites/:siteName/collections/:collectionName', verifyJwt)
 auth.get('/v1/sites/:siteName/collections/:collectionName/pages', verifyJwt)
-auth.post('/v1/sites/:siteName/collections/:collectionName/pages', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionName/pages', verifyJwt) // to remove
+auth.post('/v1/sites/:siteName/collections/:collectionName/pages/new/:pageName', verifyJwt)
 auth.get('/v1/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/collections/:collectionName/pages/:pageName', verifyJwt)
@@ -61,6 +70,7 @@ auth.get('/v1/sites/:siteName/collections', verifyJwt)
 auth.post('/v1/sites/:siteName/collections', verifyJwt)
 auth.delete('/v1/sites/:siteName/collections/:collectionName', verifyJwt)
 auth.post('/v1/sites/:siteName/collections/:collectionName/rename/:newCollectionName', verifyJwt)
+auth.post('/v1/sites/:siteName/collections/:collectionPath/move/:targetPath', verifyJwt)
 
 // Documents
 auth.get('/v1/sites/:siteName/documents', verifyJwt)
@@ -88,17 +98,19 @@ auth.post('/v1/sites/:siteName/menus/:menuName', verifyJwt)
 
 // Pages
 auth.get('/v1/sites/:siteName/pages', verifyJwt)
-auth.get('/v1/sites/:siteName/unlinkedPages', verifyJwt)
-auth.post('/v1/sites/:siteName/pages', verifyJwt)
+auth.post('/v1/sites/:siteName/pages', verifyJwt) // to remove
+auth.post('/v1/sites/:siteName/pages/new/:pageName', verifyJwt)
 auth.get('/v1/sites/:siteName/pages/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/pages/:pageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/pages/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/pages/:pageName/rename/:newPageName', verifyJwt)
+auth.post('/v1/sites/:siteName/pages/move/:newPagePath', verifyJwt)
 
 // Resource pages
 auth.get('/v1/sites/:siteName/resources/:resourceName', verifyJwt)
 auth.post('/v1/sites/:siteName/resources/:resourceName/pages', verifyJwt)
 auth.get('/v1/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/pages/new/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/resources/:resourceName/pages/:pageName', verifyJwt)
 auth.post('/v1/sites/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName', verifyJwt)
@@ -114,10 +126,15 @@ auth.get('/v1/sites/:siteName/resources', verifyJwt)
 auth.post('/v1/sites/:siteName/resources', verifyJwt)
 auth.delete('/v1/sites/:siteName/resources/:resourceName', verifyJwt)
 auth.post('/v1/sites/:siteName/resources/:resourceName/rename/:newResourceName', verifyJwt)
+auth.post('/v1/sites/:siteName/resources/:resourceName/move/:newResourceName', verifyJwt)
 
 // Settings
 auth.get('/v1/sites/:siteName/settings', verifyJwt)
 auth.post('/v1/sites/:siteName/settings', verifyJwt)
+
+// Navigation
+auth.get('/v1/sites/:siteName/navigation', verifyJwt)
+auth.post('/v1/sites/:siteName/navigation', verifyJwt)
 
 // Netlify toml
 auth.get('/v1/sites/:siteName/netlify-toml', verifyJwt)
@@ -125,6 +142,8 @@ auth.get('/v1/sites/:siteName/netlify-toml', verifyJwt)
 // Sites
 auth.get('/v1/sites', verifyJwt)
 auth.get('/v1/sites/:siteName', verifyJwt)
+auth.get('/v1/sites/:siteName/lastUpdated', verifyJwt)
+auth.get('/v1/sites/:siteName/stagingUrl', verifyJwt)
 
 auth.use((req, res, next) => {
     if (!req.route) {

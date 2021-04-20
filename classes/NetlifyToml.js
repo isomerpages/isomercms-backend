@@ -4,8 +4,8 @@ const validateStatus = require('../utils/axios-utils')
 // Import error
 const { NotFoundError } = require('../errors/NotFoundError')
 
-const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
-const BRANCH_REF = process.env.BRANCH_REF
+const GITHUB_BUILD_ORG_NAME = process.env.GITHUB_BUILD_ORG_NAME
+const GITHUB_BUILD_REPO_NAME = process.env.GITHUB_BUILD_REPO_NAME
 
 class NetlifyToml {
   constructor(accessToken, siteName) {
@@ -15,15 +15,10 @@ class NetlifyToml {
 
   async read() {
     try {
-      const endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/netlify.toml`
-      
-      const params = {
-        "ref": BRANCH_REF,
-      }
+      const endpoint = `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/netlify.toml`
 
       const resp = await axios.get(endpoint, {
         validateStatus,
-        params,
         headers: {
           Authorization: `token ${this.accessToken}`,
           "Content-Type": "application/json"

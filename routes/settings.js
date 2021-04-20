@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { attachRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 // Import Classes
 const { Settings } = require('../classes/Settings.js')
@@ -25,7 +25,7 @@ async function updateSettings (req, res, next) {
   res.status(200).send('OK')
 }
 
-router.get('/:siteName/settings', attachRouteHandlerWrapper(getSettings))
+router.get('/:siteName/settings', attachReadRouteHandlerWrapper(getSettings))
 router.post('/:siteName/settings', attachRollbackRouteHandlerWrapper(updateSettings))
 
 module.exports = router;

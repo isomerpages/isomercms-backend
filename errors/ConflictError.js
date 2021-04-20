@@ -3,15 +3,18 @@ const { BaseIsomerError } = require('./BaseError')
 
 const inputNameConflictErrorMsg = (fileName) => `A file with ${fileName} already exists.`
 
+const protectedFolderConflictErrorMsg = (folderName) => `${folderName} is a protected folder name.`
+
 class ConflictError extends BaseIsomerError {
-  constructor (fileName) {
+  constructor (message) {
     super(
       409,
-      `A file with ${fileName} already exists.`
+      message
     )
   }
 }
 module.exports = {
   ConflictError,
   inputNameConflictErrorMsg,
+  protectedFolderConflictErrorMsg,
 }

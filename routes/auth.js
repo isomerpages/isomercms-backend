@@ -8,7 +8,7 @@ const queryString = require('query-string');
 const { AuthError } = require('../errors/AuthError')
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
 
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
@@ -21,16 +21,18 @@ const COOKIE_NAME = 'isomercms'
 
 async function githubAuth (req, res, next) {
   const { code, state } = req.query
-
   const params = {
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
     code: code,
     redirect_uri: REDIRECT_URI,
     state: state
   }
 
-  const resp = await axios.post('https://github.com/login/oauth/access_token', params)
+  const resp = await axios.post('https://github.com/login/oauth/access_token', params, {
+    auth: {
+      username: CLIENT_ID,
+      password: CLIENT_SECRET,
+    },
+  })
 
   const access_token = queryString.parse(resp.data).access_token
   if (!access_token) throw new AuthError ('Access token not found')
@@ -39,7 +41,6 @@ async function githubAuth (req, res, next) {
   const endpoint = `https://api.github.com/user`
   const userResp = await axios.get(endpoint, {
     validateStatus,
-    params,
     headers: {
       Authorization: `token ${access_token}`,
       Accept: 'application/vnd.github.v3+json',
@@ -65,7 +66,7 @@ async function githubAuth (req, res, next) {
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
 
-  res.redirect(`${FRONTEND_URL}/auth#isomercms`)
+  res.redirect(`${FRONTEND_URL}/auth#isomercms-${userId}`)
 }
 
 async function logout(req, res) {
@@ -77,7 +78,7 @@ async function logout(req, res) {
   res.sendStatus(200)
 }
 
-router.get('/', attachRouteHandlerWrapper(githubAuth));
-router.get('/logout', attachRouteHandlerWrapper(logout));
+router.get('/', attachReadRouteHandlerWrapper(githubAuth));
+router.get('/logout', attachReadRouteHandlerWrapper(logout));
 
 module.exports = router;

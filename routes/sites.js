@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require('axios');
 const Bluebird = require('bluebird');
 const _ = require('lodash');
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler');
+const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler');
 const { flatten } = require('lodash');
 
 // Import error
@@ -118,7 +118,53 @@ async function checkHasAccess (req, res, next) {
   }
 }
 
-router.get('/', attachRouteHandlerWrapper(getSites));
-router.get('/:siteName', attachRouteHandlerWrapper(checkHasAccess));
+/* Gets the last updated time of the repo. */
+async function getLastUpdated (req, res, next) {
+  const { accessToken } = req
+  const { siteName } = req.params
+
+  const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
+  const resp = await axios.get(endpoint, {
+    headers: {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+  })
+  const { updated_at } = resp.data
+  res.status(200).json({ lastUpdated: timeDiff(updated_at)})
+}
+
+/* Gets the link to the staging site for a repo. */
+async function getStagingUrl (req, res, next) {
+  // TODO: reconsider how we can retrieve url - we can store this in _config.yml or a dynamodb
+  const { accessToken } = req
+  const { siteName } = req.params
+  
+  const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
+  const resp = await axios.get(endpoint, {
+    headers: {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+  })
+
+  const { description } = resp.data
+
+  let stagingUrl
+
+  if (description) {
+    // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
+    const descTokens = description.replace('/;/g', ' ').split(' ')
+    // Staging urls also contain staging in their url
+    stagingUrl = descTokens.find(token => token.includes('http') && token.includes('staging'))
+  }
+
+  res.status(200).json({ stagingUrl })
+}
+
+router.get('/', attachReadRouteHandlerWrapper(getSites));
+router.get('/:siteName', attachReadRouteHandlerWrapper(checkHasAccess));
+router.get('/:siteName/lastUpdated', attachReadRouteHandlerWrapper(getLastUpdated));
+router.get('/:siteName/stagingUrl', attachReadRouteHandlerWrapper(getStagingUrl));
 
 module.exports = router;

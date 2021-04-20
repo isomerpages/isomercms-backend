@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const base64 = require('base-64')
 
 // Import middleware
-const { attachRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { 
+  attachReadRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper,
+} = require('../middleware/routeHandler')
 
 // Import classes 
 const { File, HomepageType } = require('../classes/File.js')
@@ -19,7 +23,8 @@ async function readHomepage (req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const homepageType =  new HomepageType()
   IsomerFile.setFileType(homepageType)
-  const { sha, content } = await IsomerFile.read(HOMEPAGE_INDEX_PATH)
+  const { sha, content: encodedContent } = await IsomerFile.read(HOMEPAGE_INDEX_PATH)
+  const content = Base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content
@@ -40,12 +45,12 @@ async function updateHomepage (req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const homepageType =  new HomepageType()
   IsomerFile.setFileType(homepageType)
-  const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, content, sha)
+  const { newSha } = await IsomerFile.update(HOMEPAGE_INDEX_PATH, Base64.encode(content), sha)
 
   res.status(200).json({ content, sha: newSha })
 }
 
-router.get('/:siteName/homepage', attachRouteHandlerWrapper(readHomepage))
-router.post('/:siteName/homepage', attachRouteHandlerWrapper(updateHomepage))
+router.get('/:siteName/homepage', attachReadRouteHandlerWrapper(readHomepage))
+router.post('/:siteName/homepage', attachWriteRouteHandlerWrapper(updateHomepage))
 
 module.exports = router;

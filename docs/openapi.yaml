@@ -13,6 +13,7 @@ tags:
   - name: Authentication
   - name: Collections
   - name: Collection Pages
+  - name: Folders
   - name: Images
   - name: Documents
   - name: Pages
@@ -54,6 +55,34 @@ components:
           type: array
           items:
             type: string
+    FolderListItem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: File or directory name
+        path:
+          type: string
+          description: File or directory path
+        sha:
+          type: string
+          description: SHA of the data object
+        size:
+          type: number
+          description: Size of the file in bytes (this defaults to 0 for directories)
+        content:
+          type: string
+          description: Content of the file in base 64 (this is null for directories)
+        type:
+          type: string
+          description: Either 'dir' or 'file'
+    FolderListResponse:
+      properties:
+        folderPages:
+          type: array
+          description: Array of file or directory data types
+          items:
+            $ref: "#/components/schemas/FolderListItem"
     PageListResponse:
       properties:
         pages:
@@ -225,6 +254,28 @@ paths:
             application/json:
               schema: 
                 $ref: "#/components/schemas/OAuthParams"
+  /v1/sites/{siteName}/folders:
+    get:
+      tags:
+        - Folders
+      parameters:
+        - name: siteName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          description: The path of the directory from which we want to retrieve folder contents
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/FolderListResponse"
   /v1/sites/{siteName}/collections:
     get:
       tags:

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Bluebird = require('bluebird')
 const yaml = require('yaml');
-const base64 = require('base-64');
 
 // Import middleware
 const { 

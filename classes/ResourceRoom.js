@@ -1,5 +1,4 @@
 const yaml = require('yaml')
-const base64 = require('base-64')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
@@ -24,7 +23,7 @@ class ResourceRoom {
     try {
     	const config = new Config(this.accessToken, this.siteName)
     	const { content } = await config.read()
-    	const contentObject = yaml.parse(base64.decode(content))
+    	const contentObject = yaml.parse(Base64.decode(content))
 
     	return contentObject.resources_name
     } catch (err) {
@@ -36,11 +35,11 @@ class ResourceRoom {
     try {
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
-    	const contentObject = yaml.parse(base64.decode(content))
+    	const contentObject = yaml.parse(Base64.decode(content))
 
       contentObject.resources_name = resourceRoom
 
-    	const newContent = base64.encode(yaml.stringify(contentObject))
+    	const newContent = Base64.encode(yaml.stringify(contentObject))
 
       // Create index file in resourceRoom
       const IsomerIndexFile = new File(this.accessToken, this.siteName)
@@ -54,13 +53,13 @@ class ResourceRoom {
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.parse(base64.decode(navContent))
+      const navContentObject = yaml.parse(Base64.decode(navContent))
 
       navContentObject.links.push({ 
         title: deslugifyCollectionName(resourceRoom),
         resource_room: true 
       })
-      const newNavContent = base64.encode(yaml.stringify(navContentObject))
+      const newNavContent = Base64.encode(yaml.stringify(navContentObject))
 
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
@@ -76,19 +75,19 @@ class ResourceRoom {
       // Add resource room to config
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
-    	const contentObject = yaml.parse(base64.decode(content))
+    	const contentObject = yaml.parse(Base64.decode(content))
 
       // Obtain existing resourceRoomName
       const resourceRoomName = contentObject.resources_name
       contentObject.resources_name = newResourceRoom
-      const newContent = base64.encode(yaml.stringify(contentObject))
+      const newContent = Base64.encode(yaml.stringify(contentObject))
       
       // Rename resource room in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.parse(base64.decode(navContent))
+      const navContentObject = yaml.parse(Base64.decode(navContent))
 
       const newNavLinks = navContentObject.links.map(link => {
         if (link.resource_room === true) {
@@ -104,7 +103,7 @@ class ResourceRoom {
         ...navContentObject,
         links: newNavLinks,
       }
-      const newNavContent = base64.encode(yaml.stringify(newNavContentObject))
+      const newNavContent = Base64.encode(yaml.stringify(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       const { currentCommitSha, treeSha } = await getCommitAndTreeSha(this.siteName, this.accessToken)
@@ -134,21 +133,21 @@ class ResourceRoom {
     	// Delete resource in config
     	const config = new Config(this.accessToken, this.siteName)
     	const { content, sha } = await config.read()
-    	const contentObject = yaml.parse(base64.decode(content))
+    	const contentObject = yaml.parse(Base64.decode(content))
 
       // Obtain resourceRoomName
       const resourceRoomName = contentObject.resources_name
 
       // Delete resourcses_name from Config
     	delete contentObject.resources_name
-      const newContent = base64.encode(yaml.stringify(contentObject))
+      const newContent = Base64.encode(yaml.stringify(contentObject))
       
       // Delete resource room in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
       const dataType = new DataType()
       nav.setFileType(dataType)
       const { content:navContent, sha:navSha } = await nav.read(NAV_FILE_NAME)
-      const navContentObject = yaml.parse(base64.decode(navContent))
+      const navContentObject = yaml.parse(Base64.decode(navContent))
 
       // Assumption: only a single resource room exists
       const newNavLinks = navContentObject.links.filter(link => link.resource_room !== true)
@@ -156,7 +155,7 @@ class ResourceRoom {
         ...navContentObject,
         links: newNavLinks,
       }
-      const newNavContent = base64.encode(yaml.stringify(newNavContentObject))
+      const newNavContent = Base64.encode(yaml.stringify(newNavContentObject))
       await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
       // Delete all resources and resourcePages

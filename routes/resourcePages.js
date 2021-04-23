@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const base64 = require('base-64');
 
 // Import middleware
 const {   
@@ -78,7 +77,7 @@ async function readResourcePage (req, res, next) {
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
   const { sha, content: encodedContent } = await IsomerFile.read(pageName)
-  const content = base64.decode(encodedContent)
+  const content = Base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content
@@ -101,7 +100,7 @@ async function updateResourcePage (req, res, next) {
     const IsomerFile = new File(accessToken, siteName)
     const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
     IsomerFile.setFileType(resourcePageType)
-    const { newSha } = await IsomerFile.update(pageName, base64.encode(pageContent), sha)
+    const { newSha } = await IsomerFile.update(pageName, Base64.encode(pageContent), sha)
 
     res.status(200).json({ resourceName, pageName, pageContent, sha: newSha })
 }
@@ -141,7 +140,7 @@ async function renameResourcePage (req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
-  const { sha: newSha } = await IsomerFile.create(newPageName, base64.encode(pageContent))
+  const { sha: newSha } = await IsomerFile.create(newPageName, Base64.encode(pageContent))
   await IsomerFile.delete(pageName, sha)
 
   res.status(200).json({ resourceName, pageName: newPageName, pageContent, sha: newSha })

@@ -1,7 +1,6 @@
 const axios = require('axios');
 const validateStatus = require('../utils/axios-utils')
 const yaml = require('yaml')
-const base64 = require('base-64')
 const _ = require('lodash')
 
 // Import error
@@ -115,7 +114,7 @@ class CollectionConfig extends Config {
 
   async read() {
     const { content, sha } = await super.read()
-    const contentObject = yaml.parse(base64.decode(content))
+    const contentObject = yaml.parse(Base64.decode(content))
     return { content: contentObject, sha }
   }
 
@@ -137,7 +136,7 @@ class CollectionConfig extends Config {
       }
     }
     content.collections[collectionName].order.splice(newIndex, 0, item)
-    const newContent = base64.encode(yaml.stringify(content))
+    const newContent = Base64.encode(yaml.stringify(content))
     
     await this.update(newContent, sha)
   }
@@ -147,7 +146,7 @@ class CollectionConfig extends Config {
     const { content, sha } = await this.read()
     const index = content.collections[collectionName].order.indexOf(item)
     content.collections[collectionName].order.splice(index, 1)
-    const newContent = base64.encode(yaml.stringify(content))
+    const newContent = Base64.encode(yaml.stringify(content))
     
     await this.update(newContent, sha)
     return { index, item }
@@ -159,7 +158,7 @@ class CollectionConfig extends Config {
     const index = content.collections[collectionName].order.indexOf(oldItem)
     content.collections[collectionName].order.splice(index, 1)
     content.collections[collectionName].order.splice(index, 0, newItem)
-    const newContent = base64.encode(yaml.stringify(content))
+    const newContent = Base64.encode(yaml.stringify(content))
     
     await this.update(newContent, sha)
   }
@@ -170,7 +169,7 @@ class CollectionConfig extends Config {
     const filteredOrder = content.collections[collectionName].order.filter(item => !item.includes(`${subfolder}/`))
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = filteredOrder
-    const newContent = base64.encode(yaml.stringify(newContentObject))
+    const newContent = Base64.encode(yaml.stringify(newContentObject))
 
     await this.update(newContent, sha)
   }
@@ -184,7 +183,7 @@ class CollectionConfig extends Config {
     })
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = renamedOrder
-    const newContent = base64.encode(yaml.stringify(newContentObject))
+    const newContent = Base64.encode(yaml.stringify(newContentObject))
 
     await this.update(newContent, sha)
   }

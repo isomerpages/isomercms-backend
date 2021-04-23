@@ -1,6 +1,5 @@
 const Bluebird = require('bluebird')
 const yaml = require('yaml')
-const base64 = require('base-64')
 const _ = require('lodash')
 
 
@@ -33,7 +32,7 @@ class Tree {
             const IsomerNavFile = new File(this.accessToken, this.siteName)
             IsomerNavFile.setFileType(new DataType())
             const { content } = await IsomerNavFile.read('navigation.yml')
-            const navItems = yaml.parse(base64.decode(content)).links;
+            const navItems = yaml.parse(Base64.decode(content)).links;
 
             /**
              * The following function tokenizes the items 

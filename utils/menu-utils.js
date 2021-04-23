@@ -1,6 +1,5 @@
 const Bluebird = require('bluebird')
 const yaml = require('yaml')
-const base64 = require('base-64')
 const { File, CollectionPageType } = require('../classes/File')
 const { deslugifyCollectionPage } = require('./utils')
 
@@ -67,7 +66,7 @@ const thirdNavAggregator = async (collectionPages, CollectionFile, item) => {
     if (canCreateThirdnav) {
       // Retrieve third_nav_title from frontmatter in the thirdnav page - this is slow
       const { content } = await CollectionFile.read(collectionPage.fileName);
-      const frontMatter = yaml.parse(base64.decode(content).split('---')[1]);
+      const frontMatter = yaml.parse(Base64.decode(content).split('---')[1]);
       accumulator.push({
         title: frontMatter.third_nav_title,
         type: "thirdnav",

@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const base64 = require('base-64')
 
 // Import middleware
 const { 

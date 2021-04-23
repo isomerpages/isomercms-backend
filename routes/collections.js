@@ -110,12 +110,13 @@ async function moveFiles (req, res, next) {
     await oldIsomerFile.delete(fileName, sha)
     if (targetSubfolderName || collectionSubfolderName) {
       // Modifying third nav in front matter, to be removed after template rewrite
-      const frontMatter = yaml.parse(base64.decode(content).split('---')[1])
+      const [ _, encodedFrontMatter, pageContent ] = Base64.decode(content).split('---')
+      const frontMatter = yaml.parse(encodedFrontMatter)
       if (targetSubfolderName) frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
       else delete frontMatter.third_nav_title
       const newFrontMatter = yaml.stringify(frontMatter)
-      const newContent = ['---\n', newFrontMatter, '---'].join('')
-      const newEncodedContent = base64.encode(newContent)
+      const newContent = ['---\n', newFrontMatter, '---', pageContent].join('')
+      const newEncodedContent = Base64.encode(newContent)
       await newIsomerFile.create(fileName, newEncodedContent)
     } else {
       await newIsomerFile.create(fileName, content)

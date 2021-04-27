@@ -29,10 +29,18 @@ class MediaSubfolder {
   async delete(subfolderPath, currentCommitSha, treeSha) {
     try {
       const commitMessage = `Delete ${this.mediaFolderName} subfolder ${subfolderPath}`
-      const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
-
-      const newGitTree = gitTree.filter(item => {
-        if (item.path !== `${this.mediaFolderName}/${subfolderPath}`) return item
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha, true)
+      const directoryName = `${this.mediaFolderName}/${subfolderPath}`
+      const newGitTree = []
+      gitTree.forEach(item => {
+        if (item.path.includes(directoryName)) {
+          return
+        } else if (item.type === 'tree' && item.path.includes(this.mediaFolderName)) {
+          // We don't include any trees in the media folder - we reconstruct them by adding all their individual files instead
+          return
+        } else {
+          newGitTree.push(item)
+        }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage)
     } catch (err) {
@@ -44,17 +52,24 @@ class MediaSubfolder {
     try {
       const commitMessage = `Rename ${this.mediaFolderName} subfolder from ${oldSubfolderPath} to ${newSubfolderPath}`
 
-      const gitTree = await getTree(this.siteName, this.accessToken, treeSha);
+      const gitTree = await getTree(this.siteName, this.accessToken, treeSha, true);
       const oldDirectoryName = `${this.mediaFolderName}/${oldSubfolderPath}`
       const newDirectoryName = `${this.mediaFolderName}/${newSubfolderPath}`
-      const newGitTree = gitTree.map(item => {
+      const newGitTree = []
+      gitTree.forEach(item => {
         if (item.path === oldDirectoryName) {
-          return {
+          newGitTree.push({
             ...item,
             path: newDirectoryName
-          }
+          })
+        } else if (item.path.includes(oldDirectoryName)) {
+          // We don't want to include these because they use the old path, they are included with the renamed tree
+          return
+        } else if (item.type === 'tree' && item.path.includes(this.mediaFolderName)) {
+          // We don't include any other trees - we reconstruct them by adding all their individual files instead
+          return
         } else {
-          return item
+          newGitTree.push(item)
         }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);

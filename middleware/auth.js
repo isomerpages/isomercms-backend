@@ -39,6 +39,7 @@ const verifyJwt = (req, res, next) => {
 // Login and logout
 auth.get('/v1/auth', noVerify)
 auth.get('/v1/auth/logout', noVerify)
+auth.get('/v1/auth/whoami', verifyJwt)
 
 // Index
 auth.get('/v1', noVerify)

@@ -66,7 +66,7 @@ async function githubAuth (req, res, next) {
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
 
-  res.redirect(`${FRONTEND_URL}/auth#isomercms-${userId}`)
+  res.redirect(`${FRONTEND_URL}/sites`)
 }
 
 async function logout(req, res) {
@@ -78,7 +78,25 @@ async function logout(req, res) {
   res.sendStatus(200)
 }
 
+async function whoami(req, res) {
+  const { accessToken } = req
+
+  // Make a call to github
+  const endpoint = 'https://api.github.com/user'
+
+  const resp = await axios.get(endpoint, {
+    headers: {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json"
+    }
+  })
+
+  const { login: userId } = resp.data
+  res.status(200).json({ userId })
+}
+
 router.get('/', attachReadRouteHandlerWrapper(githubAuth));
 router.get('/logout', attachReadRouteHandlerWrapper(logout));
+router.get('/whoami', attachReadRouteHandlerWrapper(whoami));
 
 module.exports = router;

@@ -24,6 +24,13 @@ class MediaFile {
     this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
+  setFileTypeToDocument(directory) {
+    this.fileType = new DocumentType(directory)
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
+    // Endpoint to retrieve files greater than 1MB
+    this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
+  }
+
   async list() {
     try {
       const endpoint = `${this.baseEndpoint}`
@@ -161,6 +168,15 @@ class MediaFile {
 class ImageType {
   constructor(directory) {
     this.folderName = directory ? directory : 'images'
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+class DocumentType {
+  constructor(directory) {
+    this.folderName = directory ? directory : 'files'
   }
   getFolderName() {
     return this.folderName

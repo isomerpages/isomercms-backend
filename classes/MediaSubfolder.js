@@ -1,6 +1,6 @@
 const _ = require('lodash')
 
-const { File, ImageType } = require('./File.js')
+const { File, ImageType, DocumentType } = require('./File.js')
 const { getTree, sendTree } = require('../utils/utils.js')
 
 class MediaSubfolder {
@@ -10,10 +10,17 @@ class MediaSubfolder {
     switch (fileType) {
       case 'images':
         this.fileType = new ImageType()
+        this.mediaFolderName = fileType
+        break
+      case 'documents':
+        this.fileType = new DocumentType()
+        this.mediaFolderName = 'files'
+        break
       default:
         this.fileType = new ImageType()
+        this.mediaFolderName = fileType
+        break
     }
-    this.mediaFolderName = fileType
   }
 
   async create(subfolderPath) {

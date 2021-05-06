@@ -17,9 +17,7 @@ class MediaSubfolder {
         this.mediaFolderName = 'files'
         break
       default:
-        this.fileType = new ImageType()
-        this.mediaFolderName = fileType
-        break
+        throw new Error("Invalid media type!")
     }
   }
 

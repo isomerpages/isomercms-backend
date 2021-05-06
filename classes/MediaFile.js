@@ -3,7 +3,8 @@ const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
 // Import error
-const { NotFoundError  } = require('../errors/NotFoundError')
+const { NotFoundError } = require('../errors/NotFoundError')
+const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 
 // Constants
 const GITHUB_ORG_NAME = 'isomerpages'
@@ -82,7 +83,9 @@ class MediaFile {
 
       return { sha: resp.data.content.sha }
     } catch (err) {
-      throw err
+      const status = err.response.status
+      if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
+      throw err.response
     }
   }
 

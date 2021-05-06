@@ -12,11 +12,14 @@ const {
 const extractDirectoryAndFileName = (documentName) => {
   let documentDirectory, documentFileName
 
+  // documentName contains the file path excluding the media folder, e.g. subfolder1/subfolder2/file.pdf
   const pathArr = documentName.split('/')
   if (pathArr.length === 1) {
+    // documentName only contains the file name
     documentDirectory = 'files'
     documentFileName = documentName
   } else if (pathArr.length > 1) {
+    // We discard the name of the file for the directory
     documentDirectory = `files/${pathArr.slice(0, -1)}`
     documentFileName = pathArr[pathArr.length - 1]
   }

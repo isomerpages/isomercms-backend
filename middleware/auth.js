@@ -36,10 +36,24 @@ const verifyJwt = (req, res, next) => {
     return next('router')
 }
 
+// Extracts access_token if any, else set access_token to null
+const whoamiAuth = (req, res, next) => {
+  let access_token
+  try {
+    const { isomercms } = req.cookies
+    access_token = jwtUtils.verifyToken(isomercms).access_token
+  } catch (err) {
+    access_token = undefined
+  } finally {
+    req.accessToken = access_token
+    return next('router')
+  }
+}
+
 // Login and logout
 auth.get('/v1/auth', noVerify)
 auth.get('/v1/auth/logout', noVerify)
-auth.get('/v1/auth/whoami', verifyJwt)
+auth.get('/v1/auth/whoami', whoamiAuth)
 
 // Index
 auth.get('/v1', noVerify)

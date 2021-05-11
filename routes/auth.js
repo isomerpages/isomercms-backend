@@ -84,15 +84,20 @@ async function whoami(req, res) {
   // Make a call to github
   const endpoint = 'https://api.github.com/user'
 
-  const resp = await axios.get(endpoint, {
-    headers: {
-      Authorization: `token ${accessToken}`,
-      "Content-Type": "application/json"
-    }
-  })
-
-  const { login: userId } = resp.data
-  res.status(200).json({ userId })
+  let userId
+  try {
+    const resp = await axios.get(endpoint, {
+      headers: {
+        Authorization: `token ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    })
+    userId = resp.data.login
+  } catch (err) {
+    userId = undefined
+  } finally {
+    res.status(200).json({ userId })
+  }
 }
 
 router.get('/', attachReadRouteHandlerWrapper(githubAuth));

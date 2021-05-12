@@ -16,7 +16,12 @@ async function listDirectoryContent (req, res, next) {
     const IsomerDirectory = new Directory(accessToken, siteName)
     const folderType = new FolderType(decodedPath)
     IsomerDirectory.setDirType(folderType)
-    const directoryContents = await IsomerDirectory.list()
+    let directoryContents = []
+    try {
+        directoryContents = await IsomerDirectory.list()
+    } catch (err) {
+        console.log(err)
+    }
     res.status(200).json({ directoryContents })
 }
 

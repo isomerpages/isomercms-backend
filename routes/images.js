@@ -14,11 +14,14 @@ const { MediaFile } = require('../classes/MediaFile.js');
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory, imageFileName
 
+  // imageName contains the file path excluding the media folder, e.g. subfolder1/subfolder2/image.png
   const pathArr = imageName.split('/')
   if (pathArr.length === 1) {
+    // imageName only contains the file name
     imageDirectory = 'images'
     imageFileName = imageName
   } else if (pathArr.length > 1) {
+    // We discard the name of the image for the directory
     imageDirectory = `images/${pathArr.slice(0, -1)}`
     imageFileName = pathArr[pathArr.length - 1]
   }

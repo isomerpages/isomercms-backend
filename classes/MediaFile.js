@@ -3,12 +3,13 @@ const _ = require('lodash')
 const validateStatus = require('../utils/axios-utils')
 
 // Import error
-const { NotFoundError  } = require('../errors/NotFoundError')
+const { NotFoundError } = require('../errors/NotFoundError')
+const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
 
 // Constants
 const GITHUB_ORG_NAME = 'isomerpages'
 
-class ImageFile {
+class MediaFile {
   constructor(accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
@@ -17,14 +18,19 @@ class ImageFile {
     this.fileType = null
   }
 
-  setFileTypeToImage() {
-    this.fileType = new ImageType()
+  setFileTypeToImage(directory) {
+    this.fileType = new ImageType(directory)
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
     // Endpoint to retrieve files greater than 1MB
     this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
-
+  setFileTypeToDocument(directory) {
+    this.fileType = new DocumentType(directory)
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${this.fileType.getFolderName()}`
+    // Endpoint to retrieve files greater than 1MB
+    this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
+  }
 
   async list() {
     try {
@@ -77,7 +83,9 @@ class ImageFile {
 
       return { sha: resp.data.content.sha }
     } catch (err) {
-      throw err
+      const status = err.response.status
+      if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
+      throw err.response
     }
   }
 
@@ -161,11 +169,20 @@ class ImageFile {
 }
 
 class ImageType {
-  constructor() {
-    this.folderName = 'images'
+  constructor(directory) {
+    this.folderName = directory ? directory : 'images'
   }
   getFolderName() {
     return this.folderName
   }
 }
-module.exports = { ImageFile }
+
+class DocumentType {
+  constructor(directory) {
+    this.folderName = directory ? directory : 'files'
+  }
+  getFolderName() {
+    return this.folderName
+  }
+}
+module.exports = { MediaFile }

@@ -103,6 +103,11 @@ auth.post('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.post('/v1/sites/:siteName/images/:imageName/rename/:newImageName', verifyJwt)
 
+// Media subfolders
+auth.post('/v1/sites/:siteName/media/:mediaType/:folderPath', verifyJwt)
+auth.delete('/v1/sites/:siteName/media/:mediaType/:folderPath', verifyJwt)
+auth.post('/v1/sites/:siteName/media/:mediaType/:oldFolderPath/rename/:newFolderPath', verifyJwt)
+
 // Menu directory
 auth.get('/v1/sites/:siteName/tree', verifyJwt)
 

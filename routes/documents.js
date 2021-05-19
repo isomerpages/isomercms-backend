@@ -20,7 +20,7 @@ const extractDirectoryAndFileName = (documentName) => {
     documentFileName = documentName
   } else if (pathArr.length > 1) {
     // We discard the name of the file for the directory
-    documentDirectory = `files/${pathArr.slice(0, -1)}`
+    documentDirectory = `files/${pathArr.slice(0, -1).join('/')}`
     documentFileName = pathArr[pathArr.length - 1]
   }
   return {
@@ -134,11 +134,33 @@ async function renameDocument (req, res, next) {
   res.status(200).json({ documentName: newDocumentName, content, sha: newSha })
 }
 
+// Move image
+async function moveDocument (req, res, next) {
+  const { accessToken } = req
+
+  const { siteName, documentName, newDocumentName } = req.params
+
+  const { documentDirectory: oldDocumentDirectory, documentFileName: oldDocumentFileName } = extractDirectoryAndFileName(documentName)
+  const { documentDirectory: newDocumentDirectory, documentFileName: newDocumentFileName } = extractDirectoryAndFileName(newDocumentName)
+  
+  const oldIsomerDocumentFile = new MediaFile(accessToken, siteName)
+  oldIsomerDocumentFile.setFileTypeToDocument(oldDocumentDirectory)
+  const { sha, content } = await oldIsomerDocumentFile.read(oldDocumentFileName)
+  await oldIsomerDocumentFile.delete(oldDocumentFileName, sha)
+
+  const newIsomerDocumentFile = new MediaFile(accessToken, siteName)
+  newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
+  await newIsomerDocumentFile.create(newDocumentFileName, content)
+
+  res.status(200).send('OK')
+}
+
 router.get('/:siteName/documents', attachReadRouteHandlerWrapper(listDocuments))
 router.post('/:siteName/documents', attachWriteRouteHandlerWrapper(createNewDocument))
 router.get('/:siteName/documents/:documentName', attachReadRouteHandlerWrapper(readDocument))
 router.post('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(updateDocument))
 router.delete('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(deleteDocument))
 router.post('/:siteName/documents/:documentName/rename/:newDocumentName', attachWriteRouteHandlerWrapper(renameDocument))
+router.post('/:siteName/documents/:documentName/move/:newDocumentName', attachWriteRouteHandlerWrapper(moveDocument))
 
 module.exports = router;

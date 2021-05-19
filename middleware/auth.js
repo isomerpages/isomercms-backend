@@ -94,6 +94,7 @@ auth.get('/v1/sites/:siteName/documents/:documentName', verifyJwt)
 auth.post('/v1/sites/:siteName/documents/:documentName', verifyJwt)
 auth.delete('/v1/sites/:siteName/documents/:documentName', verifyJwt)
 auth.post('/v1/sites/:siteName/documents/:documentName/rename/:newDocumentName', verifyJwt)
+auth.post('/v1/sites/:siteName/documents/:documentName/move/:newDocumentName', verifyJwt)
 
 // Images
 auth.get('/v1/sites/:siteName/images', verifyJwt)

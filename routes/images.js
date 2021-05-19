@@ -16,7 +16,6 @@ const extractDirectoryAndFileName = (imageName) => {
 
   // imageName contains the file path excluding the media folder, e.g. subfolder1/subfolder2/image.png
   const pathArr = imageName.split('/')
-  console.log(pathArr, 'pathArr')
   if (pathArr.length === 1) {
     // imageName only contains the file name
     imageDirectory = 'images'

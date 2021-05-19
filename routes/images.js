@@ -16,13 +16,14 @@ const extractDirectoryAndFileName = (imageName) => {
 
   // imageName contains the file path excluding the media folder, e.g. subfolder1/subfolder2/image.png
   const pathArr = imageName.split('/')
+  console.log(pathArr, 'pathArr')
   if (pathArr.length === 1) {
     // imageName only contains the file name
     imageDirectory = 'images'
     imageFileName = imageName
   } else if (pathArr.length > 1) {
     // We discard the name of the image for the directory
-    imageDirectory = `images/${pathArr.slice(0, -1)}`
+    imageDirectory = `images/${pathArr.slice(0, -1).join('/')}`
     imageFileName = pathArr[pathArr.length - 1]
   }
   return {
@@ -139,11 +140,33 @@ async function renameImage (req, res, next) {
 
   res.status(200).json({ imageName: newImageName, content, sha: newSha })
 }
+
+// Move image
+async function moveImage (req, res, next) {
+  const { accessToken } = req
+
+  const { siteName, imageName, newImageName } = req.params
+
+  const { imageDirectory: oldImageDirectory, imageFileName: oldImageFileName } = extractDirectoryAndFileName(imageName)
+  const { imageDirectory: newImageDirectory, imageFileName: newImageFileName } = extractDirectoryAndFileName(newImageName)
+  
+  const oldIsomerImageFile = new MediaFile(accessToken, siteName)
+  oldIsomerImageFile.setFileTypeToImage(oldImageDirectory)
+  const { sha, content } = await oldIsomerImageFile.read(oldImageFileName)
+  await oldIsomerImageFile.delete(oldImageFileName, sha)
+
+  const newIsomerImageFile = new MediaFile(accessToken, siteName)
+  newIsomerImageFile.setFileTypeToImage(newImageDirectory)
+  await newIsomerImageFile.create(newImageFileName, content)
+
+  res.status(200).send('OK')
+}
 router.get('/:siteName/images', attachReadRouteHandlerWrapper(listImages))
 router.post('/:siteName/images', attachWriteRouteHandlerWrapper(createNewImage))
 router.get('/:siteName/images/:imageName', attachReadRouteHandlerWrapper(readImage))
 router.post('/:siteName/images/:imageName', attachWriteRouteHandlerWrapper(updateImage))
 router.delete('/:siteName/images/:imageName', attachWriteRouteHandlerWrapper(deleteImage))
 router.post('/:siteName/images/:imageName/rename/:newImageName', attachWriteRouteHandlerWrapper(renameImage))
+router.post('/:siteName/images/:imageName/move/:newImageName', attachWriteRouteHandlerWrapper(moveImage))
 
 module.exports = router;

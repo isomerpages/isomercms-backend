@@ -102,6 +102,7 @@ auth.get('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.post('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.post('/v1/sites/:siteName/images/:imageName/rename/:newImageName', verifyJwt)
+auth.post('/v1/sites/:siteName/images/:imageName/move/:newImageName', verifyJwt)
 
 // Media subfolders
 auth.post('/v1/sites/:siteName/media/:mediaType/:folderPath', verifyJwt)

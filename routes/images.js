@@ -119,25 +119,22 @@ async function renameImage (req, res, next) {
   const { accessToken } = req
 
   const { siteName, imageName, newImageName } = req.params
-  const { sha, content } = req.body
-
-  // TO-DO:
-  // Validate imageName and content
 
   // Create new file with name ${newImageName}
 
   const { imageDirectory: oldImageDirectory, imageFileName: oldImageFileName } = extractDirectoryAndFileName(imageName)
   const { imageDirectory: newImageDirectory, imageFileName: newImageFileName } = extractDirectoryAndFileName(newImageName)
 
-  const newIsomerImageFile = new MediaFile(accessToken, siteName)
-  newIsomerImageFile.setFileTypeToImage(newImageDirectory)
-  const { sha: newSha } = await newIsomerImageFile.create(newImageFileName, content)
-
   const oldIsomerImageFile = new MediaFile(accessToken, siteName)
   oldIsomerImageFile.setFileTypeToImage(oldImageDirectory)
+  const { sha, content } = await oldIsomerImageFile.read(oldImageFileName)
   await oldIsomerImageFile.delete(oldImageFileName, sha)
 
-  res.status(200).json({ imageName: newImageName, content, sha: newSha })
+  const newIsomerImageFile = new MediaFile(accessToken, siteName)
+  newIsomerImageFile.setFileTypeToImage(newImageDirectory)
+  await newIsomerImageFile.create(newImageFileName, content)
+
+  res.status(200).send('OK')
 }
 
 // Move image

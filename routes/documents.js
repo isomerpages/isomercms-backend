@@ -115,7 +115,6 @@ async function renameDocument (req, res, next) {
   const { accessToken } = req
 
   const { siteName, documentName, newDocumentName } = req.params
-  const { sha, content } = req.body
 
   // TO-DO:
   // Validate documentName and content
@@ -123,15 +122,16 @@ async function renameDocument (req, res, next) {
   const { documentDirectory: oldDocumentDirectory, documentFileName: oldDocumentFileName } = extractDirectoryAndFileName(documentName)
   const { documentDirectory: newDocumentDirectory, documentFileName: newDocumentFileName } = extractDirectoryAndFileName(newDocumentName)
 
-  const newIsomerDocumentFile = new MediaFile(accessToken, siteName)
-  newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
-  const { sha: newSha } = await newIsomerDocumentFile.create(newDocumentFileName, content)
-
   const oldIsomerDocumentFile = new MediaFile(accessToken, siteName)
   oldIsomerDocumentFile.setFileTypeToDocument(oldDocumentDirectory)
+  const { sha, content } = await oldIsomerDocumentFile.read(oldDocumentFileName)
   await oldIsomerDocumentFile.delete(oldDocumentFileName, sha)
 
-  res.status(200).json({ documentName: newDocumentName, content, sha: newSha })
+  const newIsomerDocumentFile = new MediaFile(accessToken, siteName)
+  newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
+  await newIsomerDocumentFile.create(newDocumentFileName, content)
+
+  res.status(200).send('OK')
 }
 
 // Move image

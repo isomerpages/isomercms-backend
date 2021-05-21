@@ -1,14 +1,14 @@
 const Bluebird = require('bluebird')
 const _ = require('lodash')
+const yaml = require('yaml')
 
 // Import classes 
 const { File, ResourceCategoryType, ResourcePageType } = require('../classes/File.js')
 const { Directory, ResourceRoomType } = require('../classes/Directory.js')
-const { getCommitAndTreeSha, getTree, sendTree } = require('../utils/utils.js')
+const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_INDEX_PATH = 'index.html'
-const RESOURCE_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzLWFsdAp0aXRsZTogUmVzb3VyY2UgUm9vbQotLS0='
 
 class Resource {
   constructor(accessToken, siteName) {
@@ -33,7 +33,13 @@ class Resource {
       const IsomerFile = new File(this.accessToken, this.siteName)
       const resourceType = new ResourceCategoryType(resourceRoomName, resourceName)
       IsomerFile.setFileType(resourceType)
-      return IsomerFile.create(`${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
+      const resourceObject = {
+        layout: 'resources-alt',
+        title: deslugifyCollectionName(resourceName)
+      }
+      const resourceFrontMatter = yaml.stringify(resourceObject);
+      const resourceIndexContent = ['---\n', resourceFrontMatter, '---'].join('');
+      return IsomerFile.create(`${RESOURCE_INDEX_PATH}`, Base64.encode(resourceIndexContent))
     } catch (err) {
       throw err
     }

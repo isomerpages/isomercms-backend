@@ -76,6 +76,18 @@ class Resource {
         }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
+
+      // We also need to update the title in the index.html file
+      const IsomerFile = new File(this.accessToken, this.siteName)
+      const resourceType = new ResourceCategoryType(resourceRoomName, newResourceName)
+      IsomerFile.setFileType(resourceType)
+      const { content, sha } = await IsomerFile.read(RESOURCE_INDEX_PATH)
+      const decodedContent = Base64.decode(content)
+      const resourceFrontMatterObj = yaml.parse(decodedContent.split('---')[1])
+      resourceFrontMatterObj.title = deslugifyCollectionName(newResourceName)
+      const resourceFrontMatter = yaml.stringify(resourceFrontMatterObj);
+      const resourceIndexContent = ['---\n', resourceFrontMatter, '---'].join('');
+      await IsomerFile.update(RESOURCE_INDEX_PATH, Base64.encode(resourceIndexContent), sha)
     } catch (err) {
       throw err
     }

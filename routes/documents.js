@@ -5,8 +5,9 @@ const router = express.Router();
 const { File, DocumentType } = require('../classes/File.js');
 const { MediaFile } = require('../classes/MediaFile.js');
 const { 
-  attachReadRouteHandlerWrapper, 
-  attachWriteRouteHandlerWrapper
+  attachReadRouteHandlerWrapper,
+  attachWriteRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
 } = require('../middleware/routeHandler')
 
 const extractDirectoryAndFileName = (documentName) => {

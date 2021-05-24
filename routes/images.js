@@ -4,7 +4,8 @@ const router = express.Router();
 // Import middleware
 const { 
   attachReadRouteHandlerWrapper, 
-  attachWriteRouteHandlerWrapper, 
+  attachWriteRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
 } = require('../middleware/routeHandler')
 
 // Import classes 

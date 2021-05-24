@@ -1,14 +1,14 @@
 const Bluebird = require('bluebird')
 const _ = require('lodash')
+const yaml = require('yaml')
 
 // Import classes 
 const { File, ResourceCategoryType, ResourcePageType } = require('../classes/File.js')
 const { Directory, ResourceRoomType } = require('../classes/Directory.js')
-const { getCommitAndTreeSha, getTree, sendTree } = require('../utils/utils.js')
+const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('../utils/utils.js')
 
 // Constants
 const RESOURCE_INDEX_PATH = 'index.html'
-const RESOURCE_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzLWFsdAp0aXRsZTogUmVzb3VyY2UgUm9vbQotLS0='
 
 class Resource {
   constructor(accessToken, siteName) {
@@ -33,7 +33,13 @@ class Resource {
       const IsomerFile = new File(this.accessToken, this.siteName)
       const resourceType = new ResourceCategoryType(resourceRoomName, resourceName)
       IsomerFile.setFileType(resourceType)
-      return IsomerFile.create(`${RESOURCE_INDEX_PATH}`, RESOURCE_INDEX_CONTENT)
+      const resourceObject = {
+        layout: 'resources-alt',
+        title: deslugifyCollectionName(resourceName)
+      }
+      const resourceFrontMatter = yaml.stringify(resourceObject);
+      const resourceIndexContent = ['---\n', resourceFrontMatter, '---'].join('');
+      return IsomerFile.create(`${RESOURCE_INDEX_PATH}`, Base64.encode(resourceIndexContent))
     } catch (err) {
       throw err
     }
@@ -70,6 +76,18 @@ class Resource {
         }
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
+
+      // We also need to update the title in the index.html file
+      const IsomerFile = new File(this.accessToken, this.siteName)
+      const resourceType = new ResourceCategoryType(resourceRoomName, newResourceName)
+      IsomerFile.setFileType(resourceType)
+      const { content, sha } = await IsomerFile.read(RESOURCE_INDEX_PATH)
+      const decodedContent = Base64.decode(content)
+      const resourceFrontMatterObj = yaml.parse(decodedContent.split('---')[1])
+      resourceFrontMatterObj.title = deslugifyCollectionName(newResourceName)
+      const resourceFrontMatter = yaml.stringify(resourceFrontMatterObj);
+      const resourceIndexContent = ['---\n', resourceFrontMatter, '---'].join('');
+      await IsomerFile.update(RESOURCE_INDEX_PATH, Base64.encode(resourceIndexContent), sha)
     } catch (err) {
       throw err
     }

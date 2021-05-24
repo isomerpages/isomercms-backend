@@ -134,7 +134,7 @@ async function renameDocument (req, res, next) {
   res.status(200).send('OK')
 }
 
-// Move image
+// Move document
 async function moveDocument (req, res, next) {
   const { accessToken } = req
 
@@ -160,7 +160,7 @@ router.post('/:siteName/documents', attachWriteRouteHandlerWrapper(createNewDocu
 router.get('/:siteName/documents/:documentName', attachReadRouteHandlerWrapper(readDocument))
 router.post('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(updateDocument))
 router.delete('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(deleteDocument))
-router.post('/:siteName/documents/:documentName/rename/:newDocumentName', attachWriteRouteHandlerWrapper(renameDocument))
-router.post('/:siteName/documents/:documentName/move/:newDocumentName', attachWriteRouteHandlerWrapper(moveDocument))
+router.post('/:siteName/documents/:documentName/rename/:newDocumentName', attachRollbackRouteHandlerWrapper(renameDocument))
+router.post('/:siteName/documents/:documentName/move/:newDocumentName', attachRollbackRouteHandlerWrapper(moveDocument))
 
 module.exports = router;

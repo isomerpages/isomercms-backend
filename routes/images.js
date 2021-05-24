@@ -162,7 +162,7 @@ router.post('/:siteName/images', attachWriteRouteHandlerWrapper(createNewImage))
 router.get('/:siteName/images/:imageName', attachReadRouteHandlerWrapper(readImage))
 router.post('/:siteName/images/:imageName', attachWriteRouteHandlerWrapper(updateImage))
 router.delete('/:siteName/images/:imageName', attachWriteRouteHandlerWrapper(deleteImage))
-router.post('/:siteName/images/:imageName/rename/:newImageName', attachWriteRouteHandlerWrapper(renameImage))
-router.post('/:siteName/images/:imageName/move/:newImageName', attachWriteRouteHandlerWrapper(moveImage))
+router.post('/:siteName/images/:imageName/rename/:newImageName', attachRollbackRouteHandlerWrapper(renameImage))
+router.post('/:siteName/images/:imageName/move/:newImageName', attachRollbackRouteHandlerWrapper(moveImage))
 
 module.exports = router;

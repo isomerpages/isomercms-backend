@@ -94,6 +94,7 @@ auth.get('/v1/sites/:siteName/documents/:documentName', verifyJwt)
 auth.post('/v1/sites/:siteName/documents/:documentName', verifyJwt)
 auth.delete('/v1/sites/:siteName/documents/:documentName', verifyJwt)
 auth.post('/v1/sites/:siteName/documents/:documentName/rename/:newDocumentName', verifyJwt)
+auth.post('/v1/sites/:siteName/documents/:documentName/move/:newDocumentName', verifyJwt)
 
 // Images
 auth.get('/v1/sites/:siteName/images', verifyJwt)
@@ -102,6 +103,7 @@ auth.get('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.post('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.delete('/v1/sites/:siteName/images/:imageName', verifyJwt)
 auth.post('/v1/sites/:siteName/images/:imageName/rename/:newImageName', verifyJwt)
+auth.post('/v1/sites/:siteName/images/:imageName/move/:newImageName', verifyJwt)
 
 // Media subfolders
 auth.post('/v1/sites/:siteName/media/:mediaType/:folderPath', verifyJwt)

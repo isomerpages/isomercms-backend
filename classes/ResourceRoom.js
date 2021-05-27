@@ -10,7 +10,6 @@ const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = requ
 
 // Constants
 const RESOURCE_ROOM_INDEX_PATH = 'index.html'
-const RESOURCE_ROOM_INDEX_CONTENT = 'LS0tCmxheW91dDogcmVzb3VyY2VzCnRpdGxlOiBSZXNvdXJjZSBSb29tCi0tLQ=='
 const NAV_FILE_NAME = 'navigation.yml'
 
 class ResourceRoom {
@@ -45,7 +44,13 @@ class ResourceRoom {
       const IsomerIndexFile = new File(this.accessToken, this.siteName)
       const resourceType = new ResourceType(resourceRoom)
       IsomerIndexFile.setFileType(resourceType)
-      await IsomerIndexFile.create(RESOURCE_ROOM_INDEX_PATH, RESOURCE_ROOM_INDEX_CONTENT)
+      const resourceRoomObject = {
+        layout: 'resources',
+        title: deslugifyCollectionName(resourceRoom)
+      }
+      const resourceRoomFrontMatter = yaml.stringify(resourceRoomObject);
+      const resourceRoomIndexContent = ['---\n', resourceRoomFrontMatter, '---'].join('');
+      await IsomerIndexFile.create(RESOURCE_ROOM_INDEX_PATH, Base64.encode(resourceRoomIndexContent))
 
       await config.update(newContent, sha)
 
@@ -74,13 +79,15 @@ class ResourceRoom {
       const commitMessage = `Rename resource room from ${resourceRoomName} to ${newResourceRoom}`
       // Add resource room to config
     	const config = new Config(this.accessToken, this.siteName)
-    	const { content, sha } = await config.read()
-    	const contentObject = yaml.parse(Base64.decode(content))
+    	const { content: configContent, sha: configSha } = await config.read()
+    	const contentObject = yaml.parse(Base64.decode(configContent))
 
       // Obtain existing resourceRoomName
       const resourceRoomName = contentObject.resources_name
       contentObject.resources_name = newResourceRoom
       const newContent = Base64.encode(yaml.stringify(contentObject))
+      
+      await config.update(newContent, configSha)
       
       // Rename resource room in nav if it exists
       const nav = new File(this.accessToken, this.siteName)
@@ -120,7 +127,17 @@ class ResourceRoom {
       })
       await sendTree(newGitTree, currentCommitSha, this.siteName, this.accessToken, commitMessage);
 
-      await config.update(newContent, sha)
+      // We also need to update the title in the index.html file
+      const IsomerFile = new File(this.accessToken, this.siteName)
+      const resourceType = new ResourceType(resourceRoomName)
+      IsomerFile.setFileType(resourceType)
+      const { content: resourceFileContent, sha: resourceFileSha } = await IsomerFile.read(RESOURCE_ROOM_INDEX_PATH)
+      const decodedContent = Base64.decode(resourceFileContent)
+      const resourceFrontMatterObj = yaml.parse(decodedContent.split('---')[1])
+      resourceFrontMatterObj.title = deslugifyCollectionName(newResourceRoom)
+      const resourceFrontMatter = yaml.stringify(resourceFrontMatterObj);
+      const resourceIndexContent = ['---\n', resourceFrontMatter, '---'].join('');
+      await IsomerFile.update(RESOURCE_ROOM_INDEX_PATH, Base64.encode(resourceIndexContent), resourceFileSha)
 
       return newResourceRoom
     } catch (err) {

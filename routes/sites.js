@@ -78,13 +78,15 @@ async function getSites (req, res, next) {
         const {
           updated_at,
           permissions,
-          name
+          name,
+          private
         } = repoData
 
         return {
           lastUpdated: timeDiff(updated_at),
           permissions,
           repoName: name,
+          isPrivate: private
         }
       }).filter((repoData) => repoData.permissions.push === true && !ISOMER_ADMIN_REPOS.includes(repoData.repoName))
   })

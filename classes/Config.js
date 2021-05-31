@@ -64,7 +64,7 @@ class CollectionConfig extends Config {
   constructor(accessToken, siteName, collectionName) {
     super(accessToken, siteName)
     this.collectionName = collectionName
-    this.endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/_${collectionName}/collection.yml`
+    this.endpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${siteName}/contents/_${encodeURIComponent(collectionName)}/collection.yml`
   }
 
   async create(content) {
@@ -118,6 +118,7 @@ class CollectionConfig extends Config {
     return { content: contentObject, sha }
   }
 
+  // item -> URI decoded item name
   async addItemToOrder(item, index) {
     const collectionName = this.collectionName
     const { content, sha } = await this.read()

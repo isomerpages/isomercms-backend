@@ -60,9 +60,10 @@ class File {
     }
   }
 
+  // fileName -> URI decoded fileName
   async create(fileName, content) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const endpoint = `${this.baseEndpoint}/${encodeURI(fileName)}`
 
       const params = {
         "message": `Create file: ${fileName}`,
@@ -87,7 +88,7 @@ class File {
 
   async read(fileName) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const endpoint = `${this.baseEndpoint}/${encodeURI(fileName)}`
 
       const params = {
         "ref": BRANCH_REF,
@@ -113,7 +114,7 @@ class File {
 
   async update(fileName, content, sha) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const endpoint = `${this.baseEndpoint}/${encodeURI(fileName)}`
 
       const params = {
         "message": `Update file: ${fileName}`,
@@ -139,7 +140,7 @@ class File {
 
   async delete (fileName, sha) {
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+      const endpoint = `${this.baseEndpoint}/${encodeURI(fileName)}`
 
       const params = {
         "message": `Delete file: ${fileName}`,
@@ -173,7 +174,7 @@ class PageType {
 
 class CollectionPageType {
   constructor(collectionName) {
-    this.folderName = `_${collectionName}`
+    this.folderName = `_${encodeURI(collectionName)}`
   }
   getFolderName() {
     return this.folderName
@@ -182,7 +183,7 @@ class CollectionPageType {
 
 class ResourcePageType {
   constructor(resourceRoomName, resourceName) {
-    this.folderName = `${resourceRoomName}/${resourceName}/_posts`
+    this.folderName = `${resourceRoomName}/${encodeURIComponent(resourceName)}/_posts`
   }
   getFolderName() {
     return this.folderName
@@ -191,7 +192,7 @@ class ResourcePageType {
 
 class ResourceCategoryType {
   constructor(resourceRoomName, resourceName) {
-    this.folderName = `${resourceRoomName}/${resourceName}`
+    this.folderName = `${resourceRoomName}/${encodeURIComponent(resourceName)}`
   }
   getFolderName() {
     return this.folderName

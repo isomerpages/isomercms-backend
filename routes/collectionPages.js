@@ -102,47 +102,44 @@ async function listCollectionPagesDetails(req, res, next) {
 async function createCollectionPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, collectionName, pageName: encodedPageName } = req.params
+  const { siteName, collectionName, pageName: decodedPageName } = req.params
   const { content: pageContent } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
   
   const IsomerFile = new File(accessToken, siteName)
   const collectionPageType = new CollectionPageType(collectionName)
   IsomerFile.setFileType(collectionPageType)
-  await IsomerFile.create(pageName, Base64.encode(pageContent))
+  await IsomerFile.create(decodedPageName, Base64.encode(pageContent))
 
   const config = new CollectionConfig(accessToken, siteName, collectionName)
-  await config.addItemToOrder(pageName)
+  await config.addItemToOrder(decodedPageName)
 
-  res.status(200).json({collectionName, pageName, pageContent })
+  res.status(200).json({collectionName, decodedPageName, pageContent })
 }
 
 // Read page in collection
 async function readCollectionPage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName, collectionName } = req.params
-  const pageName = decodeURIComponent(encodedPageName)
+  const { siteName, pageName: decodedPageName, collectionName } = req.params
 
   const IsomerFile = new File(accessToken, siteName)
   const collectionPageType = new CollectionPageType(collectionName)
   IsomerFile.setFileType(collectionPageType)
-  const { sha, content: encodedContent } = await IsomerFile.read(pageName)
+  const { sha, content: encodedContent } = await IsomerFile.read(decodedPageName)
   const content = Base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content
 
-  res.status(200).json({ collectionName, pageName, sha, content })
+  res.status(200).json({ collectionName, decodedPageName, sha, content })
 }
 
 // Update page in collection
 async function updateCollectionPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName, collectionName } = req.params
+  const { siteName, pageName: decodedPageName, collectionName } = req.params
   const { content: pageContent, sha } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
 
   // TO-DO:
   // Validate pageName and content
@@ -150,28 +147,27 @@ async function updateCollectionPage (req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const collectionPageType = new CollectionPageType(collectionName)
   IsomerFile.setFileType(collectionPageType)
-  const { newSha } = await IsomerFile.update(pageName, Base64.encode(pageContent), sha)
+  const { newSha } = await IsomerFile.update(decodedPageName, Base64.encode(pageContent), sha)
 
-  res.status(200).json({ collectionName, pageName, pageContent, sha: newSha })
+  res.status(200).json({ collectionName, decodedPageName, pageContent, sha: newSha })
 }
 
 // Delete page in collection
 async function deleteCollectionPage (req, res, next) {
   const { accessToken, currentCommitSha, treeSha } = req
 
-  const { siteName, pageName: encodedPageName, collectionName } = req.params
+  const { siteName, pageName: decodedPageName, collectionName } = req.params
   const { sha } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
   // TO-DO:
   // Validate that collection exists
 
   const IsomerFile = new File(accessToken, siteName)
   const collectionPageType = new CollectionPageType(collectionName)
   IsomerFile.setFileType(collectionPageType)
-  await IsomerFile.delete(pageName, sha)
+  await IsomerFile.delete(decodedPageName, sha)
 
   const collectionConfig = new CollectionConfig(accessToken, siteName, collectionName)
-  await collectionConfig.deleteItemFromOrder(pageName)
+  await collectionConfig.deleteItemFromOrder(decodedPageName)
 
   res.status(200).send('OK')
 }
@@ -180,11 +176,8 @@ async function deleteCollectionPage (req, res, next) {
 async function renameCollectionPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName, collectionName, newPageName: encodedNewPageName } = req.params
+  const { siteName, pageName: decodedPageName, collectionName, newPageName: decodedNewPageName } = req.params
   const { sha, content: pageContent } = req.body
-
-  const pageName = decodeURIComponent(encodedPageName)
-  const newPageName = decodeURIComponent(encodedNewPageName)
 
   const collectionConfig = new CollectionConfig(accessToken, siteName, collectionName)
   // TO-DO:
@@ -196,12 +189,12 @@ async function renameCollectionPage (req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const collectionPageType = new CollectionPageType(collectionName)
   IsomerFile.setFileType(collectionPageType)
-  const { sha: newSha } = await IsomerFile.create(newPageName, Base64.encode(pageContent))
-  await IsomerFile.delete(pageName, sha)
-  await collectionConfig.updateItemInOrder(pageName, newPageName)
+  const { sha: newSha } = await IsomerFile.create(decodedNewPageName, Base64.encode(pageContent))
+  await IsomerFile.delete(decodedPageName, sha)
+  await collectionConfig.updateItemInOrder(decodedPageName, decodedNewPageName)
 
 
-  res.status(200).json({ collectionName, pageName: newPageName, pageContent, sha: newSha })
+  res.status(200).json({ collectionName, pageName: decodedNewPageName, pageContent, sha: newSha })
 }
 
 router.get('/:siteName/collections/:collectionName', attachReadRouteHandlerWrapper(listCollectionPages))

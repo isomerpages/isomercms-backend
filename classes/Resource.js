@@ -60,7 +60,7 @@ class Resource {
         if (item.path === resourceName) {
           newGitTree.push({
             ...item,
-            path: `${resourceRoomName}/${newResourceName}`
+            path: `${resourceRoomName}/${encodeURIComponent(newResourceName)}`
           })
         } else {
           newGitTree.push({

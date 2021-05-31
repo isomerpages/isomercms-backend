@@ -73,10 +73,10 @@ async function moveFiles (req, res, next) {
   const { accessToken } = req
   const { siteName, collectionPath, targetPath } = req.params
   const { files } = req.body
-  const processedCollectionPathTokens = decodeURIComponent(collectionPath).split('/')
+  const processedCollectionPathTokens = collectionPath.split('/')
   const collectionName = processedCollectionPathTokens[0]
   const collectionSubfolderName = processedCollectionPathTokens[1]
-  const processedTargetPathTokens = decodeURIComponent(targetPath).split('/')
+  const processedTargetPathTokens = targetPath.split('/')
   const targetCollectionName = processedTargetPathTokens[0]
   const targetSubfolderName = processedTargetPathTokens[1]
 
@@ -90,8 +90,8 @@ async function moveFiles (req, res, next) {
 
   const oldIsomerFile = new File(accessToken, siteName)
   const newIsomerFile = new File(accessToken, siteName)
-  const oldCollectionPageType = new CollectionPageType(decodeURIComponent(collectionPath))
-  const newCollectionPageType = targetCollectionName === 'pages' ? new PageType() : new CollectionPageType(decodeURIComponent(targetPath))
+  const oldCollectionPageType = new CollectionPageType(collectionPath)
+  const newCollectionPageType = targetCollectionName === 'pages' ? new PageType() : new CollectionPageType(targetPath)
   oldIsomerFile.setFileType(oldCollectionPageType)
   newIsomerFile.setFileType(newCollectionPageType)
   const oldConfig = new CollectionConfig(accessToken, siteName, collectionName)

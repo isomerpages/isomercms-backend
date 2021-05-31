@@ -34,45 +34,42 @@ async function listPages (req, res, next) {
 async function createPage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName } = req.params
+  const { siteName, pageName: decodedPageName } = req.params
   const { content: pageContent } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  await IsomerFile.create(pageName, Base64.encode(pageContent))
+  await IsomerFile.create(decodedPageName, Base64.encode(pageContent))
 
-  res.status(200).json({ pageName, pageContent })
+  res.status(200).json({ decodedPageName, pageContent })
 }
 
 // Read page
 async function readPage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName } = req.params
-  const pageName = decodeURIComponent(encodedPageName)
+  const { siteName, pageName: decodedPageName } = req.params
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  const { sha, content: encodedContent } = await IsomerFile.read(pageName)
+  const { sha, content: encodedContent } = await IsomerFile.read(decodedPageName)
 
   const content = Base64.decode(encodedContent)
 
   // TO-DO:
   // Validate content
 
-  res.status(200).json({ pageName, sha, content })
+  res.status(200).json({ decodedPageName, sha, content })
 }
 
 // Update page
 async function updatePage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName } = req.params
+  const { siteName, pageName: decodedPageName } = req.params
   const { content: pageContent, sha } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
 
   // TO-DO:
   // Validate pageName and content
@@ -80,23 +77,22 @@ async function updatePage(req, res, next) {
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  const { newSha } = await IsomerFile.update(pageName, Base64.encode(pageContent), sha)
+  const { newSha } = await IsomerFile.update(decodedPageName, Base64.encode(pageContent), sha)
 
-  res.status(200).json({ pageName, pageContent, sha: newSha })
+  res.status(200).json({ decodedPageName, pageContent, sha: newSha })
 }
 
 // Delete page
 async function deletePage (req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName } = req.params
+  const { siteName, pageName: decodedPageName } = req.params
   const { sha } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  await IsomerFile.delete(pageName, sha)
+  await IsomerFile.delete(decodedPageName, sha)
 
   res.status(200).send('OK')
 }
@@ -105,21 +101,19 @@ async function deletePage (req, res, next) {
 async function renamePage(req, res, next) {
   const { accessToken } = req
 
-  const { siteName, pageName: encodedPageName, newPageName: encodedNewPageName } = req.params
+  const { siteName, pageName: decodedPageName, newPageName: decodedNewPageName } = req.params
   const { sha, content: pageContent } = req.body
 
   // TO-DO:
   // Validate pageName and content
-  const pageName = decodeURIComponent(encodedPageName)
-  const newPageName = decodeURIComponent(encodedNewPageName)
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
   IsomerFile.setFileType(pageType)
-  const { sha: newSha } = await IsomerFile.create(newPageName, Base64.encode(pageContent))
-  await IsomerFile.delete(pageName, sha)
+  const { sha: newSha } = await IsomerFile.create(decodedPageName, Base64.encode(pageContent))
+  await IsomerFile.delete(decodedPageName, sha)
 
-  res.status(200).json({ pageName: newPageName, pageContent, sha: newSha })
+  res.status(200).json({ pageName: decodedPageName, pageContent, sha: newSha })
 }
 
 // Move unlinked pages
@@ -127,7 +121,7 @@ async function moveUnlinkedPages (req, res, next) {
   const { accessToken } = req
   const { siteName, newPagePath } = req.params
   const { files } = req.body
-  const processedTargetPathTokens = decodeURIComponent(newPagePath).split('/')
+  const processedTargetPathTokens = newPagePath.split('/')
   const targetCollectionName = processedTargetPathTokens[0]
   const targetSubfolderName = processedTargetPathTokens[1]
 
@@ -142,7 +136,7 @@ async function moveUnlinkedPages (req, res, next) {
   const oldIsomerFile = new File(accessToken, siteName)
   const newIsomerFile = new File(accessToken, siteName)
   const oldPageType = new PageType()
-  const newCollectionPageType = new CollectionPageType(decodeURIComponent(newPagePath))
+  const newCollectionPageType = new CollectionPageType(newPagePath)
   oldIsomerFile.setFileType(oldPageType)
   newIsomerFile.setFileType(newCollectionPageType)
   const newConfig = new CollectionConfig(accessToken, siteName, targetCollectionName)
@@ -155,9 +149,9 @@ async function moveUnlinkedPages (req, res, next) {
   }
 
   // We can't perform these operations concurrently because of conflict issues
-  for (const fileName of files) {
-    const { content, sha } = await oldIsomerFile.read(fileName)
-    await oldIsomerFile.delete(fileName, sha)
+  for (const decodedFileName of files) {
+    const { content, sha } = await oldIsomerFile.read(decodedFileName)
+    await oldIsomerFile.delete(decodedFileName, sha)
     if (targetSubfolderName) {
       // Adding third nav to front matter, to be removed after template rewrite
       const [ _, encodedFrontMatter, pageContent ] = Base64.decode(content).split('---')
@@ -166,12 +160,12 @@ async function moveUnlinkedPages (req, res, next) {
       const newFrontMatter = yaml.stringify(frontMatter)
       const newContent = ['---\n', newFrontMatter, '---', pageContent].join('')
       const newEncodedContent = Base64.encode(newContent)
-      await newIsomerFile.create(fileName, newEncodedContent)
+      await newIsomerFile.create(decodedFileName, newEncodedContent)
     } else {
-      await newIsomerFile.create(fileName, content)
+      await newIsomerFile.create(decodedFileName, content)
     }
     // Update collection.yml files
-    await newConfig.addItemToOrder(`${targetSubfolderName ? `${targetSubfolderName}/` : ''}${fileName}`)
+    await newConfig.addItemToOrder(`${targetSubfolderName ? `${targetSubfolderName}/` : ''}${decodedFileName}`)
   }
 
   res.status(200).send('OK')

@@ -141,9 +141,9 @@ async function revertCommit(originalCommitSha, repo, accessToken, branchRef='sta
 */
 function deslugifyCollectionName(collectionName) {
   return collectionName
-    .split('-')
-    .map((string) => string.charAt(0).toUpperCase() + string.slice(1)) // capitalize first letter
-    .join(' '); // join it back together
+    // .split('-')
+    // .map((string) => string.charAt(0).toUpperCase() + string.slice(1)) // capitalize first letter
+    // .join(' '); // join it back together
 }
 
 module.exports = {

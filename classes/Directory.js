@@ -19,7 +19,7 @@ class Directory {
   setDirType(dirType) {
     this.dirType = dirType
     const folderPath = dirType.getFolderName()
-    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${folderPath}`
+    this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/contents/${encodeURI(folderPath)}`
   }
 
   async list() {

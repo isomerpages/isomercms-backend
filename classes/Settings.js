@@ -94,6 +94,7 @@ class Settings {
       is_government: configContent.is_government,
       facebook_pixel: configContent['facebook-pixel'],
       google_analytics: configContent.google_analytics,
+      linkedin_insights: configContent['linkedin-insights'],
       resources_name: configContent.resources_name,
       colors: configContent.colors,
     }
@@ -145,9 +146,29 @@ class Settings {
     }
 
     if (!_.isEmpty(footerSettings)) {
+      // We want to remove empty footer settings entirely so they don't show up in the actual site
+      const clonedFooterSettings = _.cloneDeep(footerSettings)
+      const clonedFooterContent = _.cloneDeep(footerContent)
+      Object.keys(footerSettings).forEach((setting) => {
+        if (setting === 'social_media') {
+          const socials = footerSettings[setting]
+          Object.keys(socials).forEach((social) => {
+            if (!socials[social]) {
+              delete clonedFooterSettings[setting][social]
+              delete clonedFooterContent[setting][social]
+            }
+          })
+        } else {
+          // Check for empty string because false value exists
+          if (footerSettings[setting] === '') {
+            delete clonedFooterSettings[setting]
+            delete clonedFooterContent[setting]
+          }
+        }
+      })
       settingsObj.footer = {
-        payload: footerSettings,
-        currentData: footerContent,
+        payload: clonedFooterSettings,
+        currentData: clonedFooterContent,
       }
     }
     

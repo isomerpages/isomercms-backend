@@ -2,7 +2,11 @@
 const express = require("express")
 
 // Logger
+<<<<<<< HEAD
 const logger = require("../logger/logger")
+=======
+const logger = require('@logger/logger')
+>>>>>>> refactor: replace imports with aliases for Middleware
 
 const apiLogger = express.Router()
 

@@ -2,7 +2,11 @@
 const { serializeError } = require("serialize-error")
 
 // Import logger
+<<<<<<< HEAD
 const logger = require("../logger/logger")
+=======
+const logger = require('@logger/logger');
+>>>>>>> refactor: replace imports with aliases for Middleware
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()

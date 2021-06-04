@@ -16,9 +16,6 @@
     "parserOptions": {
         "ecmaVersion": 12
     },
-    "rules": {
-        "no-underscore-dangle": "off"
-    },
     "globals": {
         "Base64": true
     },
@@ -34,5 +31,51 @@
                 ["@utils", "./utils"]
             ]
         }
+    },
+    "rules": {
+        "no-underscore-dangle": "off",
+        "import/order": [
+            "error",
+            {
+                "alphabetize": {
+                    "order": "asc",
+                    "caseInsensitive": true
+                },
+                "newlines-between": "always",
+                "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
+                "pathGroups": [
+                    {
+                        "pattern": "@logger/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@errors/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@middleware/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@classes/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@routes/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@utils/**",
+                        "group": "internal",
+                        "position": "before"
+                    }
+                ]
+            }
+        ]
     }
 }

@@ -1,10 +1,18 @@
 // Import classes
 const {
+<<<<<<< HEAD
   File,
   PageType,
   CollectionPageType,
   DataType,
 } = require("../classes/File")
+=======
+    File,
+    PageType,
+    CollectionPageType,
+    DataType,
+} = require('@classes/File')
+>>>>>>> refactor: replace imports with aliases for utils
 
 const readPageUtilFunc = async (accessToken, siteName, pageName) => {
   const IsomerFile = new File(accessToken, siteName)

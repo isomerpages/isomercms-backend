@@ -1,12 +1,5 @@
-<<<<<<< HEAD
 const { File, ImageType, DocumentType } = require("./File.js")
 const { getTree, sendTree } = require("../utils/utils.js")
-=======
-const _ = require('lodash')
-
-const { File, ImageType, DocumentType } = require('@classes/File.js')
-const { getTree, sendTree } = require('@utils/utils.js')
->>>>>>> refactor: replace imports with aliases for Classes
 
 class MediaSubfolder {
   constructor(accessToken, siteName, fileType) {

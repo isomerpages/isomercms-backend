@@ -1,6 +1,5 @@
 const express = require("express")
 
-<<<<<<< HEAD
 const router = express.Router()
 
 // Import classes
@@ -11,16 +10,6 @@ const {
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("../middleware/routeHandler")
-=======
-// Import classes 
-const { File, DocumentType } = require('@classes/File.js');
-const { MediaFile } = require('@classes/MediaFile.js');
-const { 
-  attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
-  attachRollbackRouteHandlerWrapper,
-} = require('@middleware/routeHandler')
->>>>>>> refactor: replace imports with aliases for Routes
 
 const extractDirectoryAndFileName = (documentName) => {
   let documentDirectory

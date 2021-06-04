@@ -1,6 +1,5 @@
 const express = require("express")
 
-<<<<<<< HEAD
 const router = express.Router()
 const Bluebird = require("bluebird")
 
@@ -15,18 +14,6 @@ const {
 // Import classes
 const { CollectionConfig } = require("../classes/Config")
 const { Collection } = require("../classes/Collection")
-=======
-const { getTree, sendTree } = require('@utils/utils.js')
-
-// Import middleware
-const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('@middleware/routeHandler')
-
-// Import classes
-const { CollectionConfig } = require('@classes/Config')
-const { Collection } = require('@classes/Collection');
-
-const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
->>>>>>> refactor: replace imports with aliases for Routes
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {

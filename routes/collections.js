@@ -4,7 +4,6 @@ const router = express.Router()
 const yaml = require("yaml")
 
 // Import middleware
-<<<<<<< HEAD
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
@@ -17,20 +16,6 @@ const { File, CollectionPageType, PageType } = require("../classes/File")
 const { Subfolder } = require("../classes/Subfolder")
 
 const { deslugifyCollectionName } = require("../utils/utils")
-=======
-const { 
-  attachReadRouteHandlerWrapper, 
-  attachRollbackRouteHandlerWrapper 
-} = require('@middleware/routeHandler')
-
-// Import classes 
-const { Collection } = require('@classes/Collection.js');
-const { CollectionConfig } = require('@classes/Config.js');
-const { File, CollectionPageType, PageType } = require('@classes/File');
-const { Subfolder } = require('@classes/Subfolder');
-
-const { deslugifyCollectionName } = require('@utils/utils');
->>>>>>> refactor: replace imports with aliases for Routes
 
 // List collections
 async function listCollections(req, res) {

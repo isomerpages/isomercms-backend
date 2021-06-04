@@ -6,17 +6,10 @@ const router = express.Router()
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
-<<<<<<< HEAD
 } = require("../middleware/routeHandler")
 
 // Import classes
 const { File, HomepageType } = require("../classes/File.js")
-=======
-} = require('@middleware/routeHandler')
-
-// Import classes 
-const { File, HomepageType } = require('@classes/File.js')
->>>>>>> refactor: replace imports with aliases for Routes
 
 // Constants
 const HOMEPAGE_INDEX_PATH = "index.md" // Empty string

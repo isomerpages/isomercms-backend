@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const express = require("express")
 
 const router = express.Router()
@@ -11,19 +10,6 @@ const { AuthError } = require("../errors/AuthError")
 
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
-=======
-const express = require('express');
-const router = express.Router();
-const axios = require('axios');
-const validateStatus = require('@utils/axios-utils')
-const queryString = require('query-string');
-
-// Import error
-const { AuthError } = require('@errors/AuthError')
-
-// Import middleware
-const { attachReadRouteHandlerWrapper } = require('@middleware/routeHandler')
->>>>>>> refactor: replace imports with aliases for Routes
 
 const { CLIENT_ID } = process.env
 const { CLIENT_SECRET } = process.env
@@ -33,12 +19,7 @@ const { FRONTEND_URL } = process.env
 
 const jwtUtils = require("../utils/jwt-utils")
 
-<<<<<<< HEAD
 const COOKIE_NAME = "isomercms"
-=======
-const jwtUtils = require('@utils/jwt-utils')
-const COOKIE_NAME = 'isomercms'
->>>>>>> refactor: replace imports with aliases for Routes
 
 async function githubAuth(req, res) {
   const { code, state } = req.query

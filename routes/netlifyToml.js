@@ -4,17 +4,10 @@ const router = express.Router()
 const toml = require("toml")
 
 // Import middleware
-<<<<<<< HEAD
 const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
 
 // Import classes
 const { NetlifyToml } = require("../classes/NetlifyToml")
-=======
-const { attachReadRouteHandlerWrapper } = require('@middleware/routeHandler')
-
-// Import classes 
-const { NetlifyToml } = require('@classes/NetlifyToml')
->>>>>>> refactor: replace imports with aliases for Routes
 
 // List resources
 async function getNetlifyToml(req, res) {

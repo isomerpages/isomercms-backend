@@ -4,7 +4,6 @@ const yaml = require("yaml")
 const router = express.Router()
 
 // Import middleware
-<<<<<<< HEAD
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
@@ -12,12 +11,6 @@ const {
 
 // Import Classes
 const { File, DataType } = require("../classes/File.js")
-=======
-const { attachReadRouteHandlerWrapper, attachWriteRouteHandlerWrapper } = require('@middleware/routeHandler')
-
-// Import Classes
-const { File, DataType } = require('@classes/File.js')
->>>>>>> refactor: replace imports with aliases for Routes
 
 const NAVIGATION_PATH = "navigation.yml"
 

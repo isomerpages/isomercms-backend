@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const axios = require("axios")
 const validateStatus = require("../utils/axios-utils")
 
@@ -8,15 +7,6 @@ const {
   ConflictError,
   inputNameConflictErrorMsg,
 } = require("../errors/ConflictError")
-=======
-const axios = require('axios');
-const _ = require('lodash')
-const validateStatus = require('@utils/axios-utils')
-
-// Import error
-const { NotFoundError } = require('@errors/NotFoundError')
-const { ConflictError, inputNameConflictErrorMsg } = require('@errors/ConflictError')
->>>>>>> refactor: replace imports with aliases for Classes
 
 const { GITHUB_ORG_NAME } = process.env
 const { BRANCH_REF } = process.env

@@ -1,6 +1,5 @@
 const express = require("express")
 
-<<<<<<< HEAD
 const router = express.Router()
 
 // Import classes
@@ -9,11 +8,6 @@ const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("../middleware/routeHandler")
-=======
-// Import classes 
-const { ResourceRoom } = require('@classes/ResourceRoom.js');
-const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('@middleware/routeHandler');
->>>>>>> refactor: replace imports with aliases for Routes
 
 // Get resource room name
 async function getResourceRoomName(req, res) {

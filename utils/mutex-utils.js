@@ -1,13 +1,8 @@
 const AWS = require("aws-sdk")
 const { serializeError } = require("serialize-error")
 
-<<<<<<< HEAD
 const logger = require("../logger/logger")
 const { ConflictError } = require("../errors/ConflictError")
-=======
-const logger = require('@logger/logger')
-const { ConflictError } = require('@errors/ConflictError')
->>>>>>> refactor: replace imports with aliases for utils
 
 // Env vars
 const { NODE_ENV, MUTEX_TABLE_NAME } = process.env

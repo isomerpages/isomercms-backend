@@ -3,15 +3,9 @@ const express = require("express")
 const router = express.Router()
 
 // Import middleware
-<<<<<<< HEAD
 const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
 
 const { Directory, FolderType } = require("../classes/Directory.js")
-=======
-const { attachReadRouteHandlerWrapper } = require('@middleware/routeHandler')
-
-const { Directory, FolderType } = require('@classes/Directory.js');
->>>>>>> refactor: replace imports with aliases for Routes
 
 // List pages and directories in folder
 async function listDirectoryContent(req, res) {

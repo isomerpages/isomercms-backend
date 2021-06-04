@@ -3,7 +3,6 @@ const express = require("express")
 const router = express.Router()
 
 // Import middleware
-<<<<<<< HEAD
 const {
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
@@ -11,15 +10,6 @@ const {
 
 // Import classes
 const { MediaSubfolder } = require("../classes/MediaSubfolder")
-=======
-const { 
-  attachWriteRouteHandlerWrapper, 
-  attachRollbackRouteHandlerWrapper 
-} = require('@middleware/routeHandler')
-
-// Import classes 
-const { MediaSubfolder } = require('@classes/MediaSubfolder.js');
->>>>>>> refactor: replace imports with aliases for Routes
 
 // Create new collection
 async function createSubfolder(req, res) {

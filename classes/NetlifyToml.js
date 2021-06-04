@@ -1,16 +1,8 @@
-<<<<<<< HEAD
 const axios = require("axios")
 const validateStatus = require("../utils/axios-utils")
 
 // Import error
 const { NotFoundError } = require("../errors/NotFoundError")
-=======
-const axios = require('axios')
-const validateStatus = require('@utils/axios-utils')
-
-// Import error
-const { NotFoundError } = require('@errors/NotFoundError')
->>>>>>> refactor: replace imports with aliases for Classes
 
 const { GITHUB_BUILD_ORG_NAME } = process.env
 const { GITHUB_BUILD_REPO_NAME } = process.env

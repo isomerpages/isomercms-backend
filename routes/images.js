@@ -7,19 +7,11 @@ const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-<<<<<<< HEAD
 } = require("../middleware/routeHandler")
 
 // Import classes
 const { File, ImageType } = require("../classes/File")
 const { MediaFile } = require("../classes/MediaFile")
-=======
-} = require('@middleware/routeHandler')
-
-// Import classes 
-const { File, ImageType } = require('@classes/File.js')
-const { MediaFile } = require('@classes/MediaFile.js');
->>>>>>> refactor: replace imports with aliases for Routes
 
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory

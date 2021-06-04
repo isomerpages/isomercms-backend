@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const express = require("express")
 
 const router = express.Router()
@@ -9,18 +8,6 @@ const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
 
 // Import error
 const { NotFoundError } = require("../errors/NotFoundError")
-=======
-const express = require('express');
-const router = express.Router();
-const axios = require('axios');
-const Bluebird = require('bluebird');
-const _ = require('lodash');
-const { attachReadRouteHandlerWrapper } = require('@middleware/routeHandler');
-const { flatten } = require('lodash');
-
-// Import error
-const { NotFoundError } = require('@errors/NotFoundError')
->>>>>>> refactor: replace imports with aliases for Routes
 
 const GH_MAX_REPO_COUNT = 100
 const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3

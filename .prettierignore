@@ -2,3 +2,8 @@
 node_modules/
 .vscode/
 .github/
+docs/
+.eslintrc.json
+.eslintIgnore
+.prettierrc.json
+.prettierignore

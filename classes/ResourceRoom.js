@@ -3,6 +3,7 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 
 // Import Classes
+<<<<<<< HEAD
 const { Config } = require("./Config.js")
 const { Resource } = require("./Resource.js")
 const { File, ResourceType, DataType } = require("./File.js")
@@ -12,6 +13,12 @@ const {
   sendTree,
   deslugifyCollectionName,
 } = require("../utils/utils.js")
+=======
+const { Config } = require('@classes/Config.js')
+const { Resource } = require('@classes/Resource.js')
+const { File, ResourceType, DataType } = require('@classes/File.js')
+const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('@utils/utils.js')
+>>>>>>> refactor: replace imports with aliases for Classes
 
 // Constants
 const RESOURCE_ROOM_INDEX_PATH = "index.html"

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const yaml = require("yaml")
 require("bluebird")
 require("lodash")
@@ -26,6 +27,21 @@ const ISOMER_TEMPLATE_PROTECTED_DIRS = [
   "misc",
   "pages",
 ]
+=======
+const yaml = require('yaml')
+const Bluebird = require('bluebird')
+const _ = require('lodash')
+
+const { CollectionConfig } = require('@classes/Config.js')
+const { File, CollectionPageType, DataType } = require('@classes/File.js')
+const { Directory, RootType } = require('@classes/Directory.js')
+const { ConflictError, protectedFolderConflictErrorMsg } = require('@errors/ConflictError')
+const { getCommitAndTreeSha, getTree, sendTree, deslugifyCollectionName } = require('@utils/utils.js')
+
+const NAV_FILE_NAME = 'navigation.yml'
+const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
+const ISOMER_TEMPLATE_PROTECTED_DIRS = ['data', 'includes', 'site', 'layouts', 'files', 'images', 'misc', 'pages']
+>>>>>>> refactor: replace imports with aliases for Classes
 
 class Collection {
   constructor(accessToken, siteName) {

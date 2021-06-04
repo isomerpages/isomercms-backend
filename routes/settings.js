@@ -3,6 +3,7 @@ const express = require("express")
 const router = express.Router()
 
 // Import middleware
+<<<<<<< HEAD
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
@@ -10,6 +11,12 @@ const {
 
 // Import Classes
 const { Settings } = require("../classes/Settings.js")
+=======
+const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('@middleware/routeHandler')
+
+// Import Classes
+const { Settings } = require('@classes/Settings.js')
+>>>>>>> refactor: replace imports with aliases for Routes
 
 async function getSettings(req, res) {
   const { accessToken } = req

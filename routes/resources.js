@@ -3,6 +3,7 @@ const express = require("express")
 const router = express.Router()
 
 // Import middleware
+<<<<<<< HEAD
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
@@ -15,6 +16,14 @@ const { File, ResourcePageType } = require("../classes/File")
 
 // Import errors
 const { NotFoundError } = require("../errors/NotFoundError")
+=======
+const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('@middleware/routeHandler')
+
+// Import classes 
+const { ResourceRoom } = require('@classes/ResourceRoom.js')
+const { Resource } = require('@classes/Resource.js')
+const { File, ResourcePageType } = require('@classes/File');
+>>>>>>> refactor: replace imports with aliases for Routes
 
 // List resources
 async function listResources(req, res) {

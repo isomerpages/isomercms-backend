@@ -2,56 +2,30 @@ const axios = require("axios")
 
 const { GITHUB_ORG_NAME } = process.env
 
-/**
- * A function to deslugify a collection page's file name, taken from isomercms-frontend src/utils
- */
-function deslugifyCollectionPage(collectionPageName) {
-  // split the collection page name
-  const pageName = collectionPageName
-    .split(".")[0] // remove the file extension
-    .split("-")
-
-  // unlinked pages are special collections where, the file name doesn't start with a number
-  // if the first character of the first element in pageName is not a number, then it is an
-  // unlinked page
-  return isNaN(pageName[0][0])
-    ? pageName
-        .map((string) => string.charAt(0).toUpperCase() + string.slice(1)) // capitalize first letter
-        .join(" ") // join it back together
-    : pageName
-        .slice(1)
-        .map((string) => string.charAt(0).toUpperCase() + string.slice(1)) // capitalize first letter
-        .join(" ") // join it back together
-}
-
 async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
-  try {
-    const headers = {
-      Authorization: `token ${accessToken}`,
-      Accept: "application/json",
-    }
-    // Get the commits of the repo
-    const { data: commits } = await axios.get(
-      `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/commits`,
-      {
-        params: {
-          ref: branchRef,
-        },
-        headers,
-      }
-    )
-    // Get the tree sha of the latest commit
-    const {
-      commit: {
-        tree: { sha: treeSha },
-      },
-    } = commits[0]
-    const currentCommitSha = commits[0].sha
-
-    return { treeSha, currentCommitSha }
-  } catch (err) {
-    throw err
+  const headers = {
+    Authorization: `token ${accessToken}`,
+    Accept: "application/json",
   }
+  // Get the commits of the repo
+  const { data: commits } = await axios.get(
+    `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/commits`,
+    {
+      params: {
+        ref: branchRef,
+      },
+      headers,
+    }
+  )
+  // Get the tree sha of the latest commit
+  const {
+    commit: {
+      tree: { sha: treeSha },
+    },
+  } = commits[0]
+  const currentCommitSha = commits[0].sha
+
+  return { treeSha, currentCommitSha }
 }
 
 // retrieve the tree from given tree sha
@@ -62,32 +36,28 @@ async function getTree(
   isRecursive,
   branchRef = "staging"
 ) {
-  try {
-    const headers = {
-      Authorization: `token ${accessToken}`,
-      Accept: "application/json",
-    }
-
-    const params = {
-      ref: branchRef,
-    }
-
-    if (isRecursive) params.recursive = true
-
-    const {
-      data: { tree: gitTree },
-    } = await axios.get(
-      `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`,
-      {
-        params,
-        headers,
-      }
-    )
-
-    return gitTree
-  } catch (err) {
-    throw err
+  const headers = {
+    Authorization: `token ${accessToken}`,
+    Accept: "application/json",
   }
+
+  const params = {
+    ref: branchRef,
+  }
+
+  if (isRecursive) params.recursive = true
+
+  const {
+    data: { tree: gitTree },
+  } = await axios.get(
+    `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`,
+    {
+      params,
+      headers,
+    }
+  )
+
+  return gitTree
 }
 
 // send the new tree object back to Github and point the latest commit on the staging branch to it
@@ -192,7 +162,6 @@ function deslugifyCollectionName(collectionName) {
 }
 
 module.exports = {
-  deslugifyCollectionPage,
   deslugifyCollectionName,
   getCommitAndTreeSha,
   getTree,

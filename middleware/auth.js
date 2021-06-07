@@ -1,6 +1,5 @@
 // Imports
 const express = require("express")
-const { verify } = require("jsonwebtoken")
 const jwtUtils = require("../utils/jwt-utils")
 
 // Import logger
@@ -19,9 +18,12 @@ function noVerify(req, res, next) {
 const verifyJwt = (req, res, next) => {
   try {
     const { isomercms } = req.cookies
-    const { access_token, user_id } = jwtUtils.verifyToken(isomercms)
-    req.accessToken = access_token
-    req.userId = user_id
+    const {
+      access_token: retrievedToken,
+      user_id: retrievedId,
+    } = jwtUtils.verifyToken(isomercms)
+    req.accessToken = retrievedToken
+    req.userId = retrievedId
   } catch (err) {
     logger.error("Authentication error")
     if (err.name === "TokenExpiredError") {
@@ -37,16 +39,16 @@ const verifyJwt = (req, res, next) => {
 
 // Extracts access_token if any, else set access_token to null
 const whoamiAuth = (req, res, next) => {
-  let access_token
+  let retrievedToken
   try {
     const { isomercms } = req.cookies
-    access_token = jwtUtils.verifyToken(isomercms).access_token
+    retrievedToken = jwtUtils.verifyToken(isomercms).access_token
   } catch (err) {
-    access_token = undefined
+    retrievedToken = undefined
   } finally {
-    req.accessToken = access_token
-    return next("router")
+    req.accessToken = retrievedToken
   }
+  return next("router")
 }
 
 // Login and logout

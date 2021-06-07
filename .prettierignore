@@ -7,3 +7,5 @@ docs/
 .eslintIgnore
 .prettierrc.json
 .prettierignore
+package-lock.json
+package.json

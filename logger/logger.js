@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 // Imports
 const Bluebird = require("bluebird")
 const moment = require("moment-timezone")
@@ -23,6 +25,10 @@ const WinstonCloudWatch = require("winston-cloudwatch")
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
 const IS_PROD_ENV = NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV"
 
+function timestampGenerator() {
+  return moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
+}
+
 // Retrieve EC2 instance since that is the cloudwatch log stream name
 async function getEc2InstanceId() {
   let id
@@ -39,9 +45,6 @@ async function getEc2InstanceId() {
   return id
 }
 
-function timestampGenerator() {
-  return moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
-}
 class CloudWatchLogger {
   constructor() {
     this._logger = winston.createLogger()

@@ -1,5 +1,4 @@
 const axios = require("axios")
-const _ = require("lodash")
 const validateStatus = require("../utils/axios-utils")
 
 // Import error
@@ -29,40 +28,38 @@ class File {
   }
 
   async list() {
-    try {
-      const endpoint = `${this.baseEndpoint}`
+    const endpoint = `${this.baseEndpoint}`
 
-      const params = {
-        ref: BRANCH_REF,
-      }
+    const params = {
+      ref: BRANCH_REF,
+    }
 
-      const resp = await axios.get(endpoint, {
-        validateStatus,
-        params,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
+    const resp = await axios.get(endpoint, {
+      validateStatus,
+      params,
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (resp.status !== 200) return {}
+
+    const files = resp.data
+      .filter((object) => {
+        return object.type === "file"
       })
-
-      if (resp.status !== 200) return {}
-
-      const files = resp.data.map((object) => {
+      .map((object) => {
         const pathNameSplit = object.path.split("/")
         const fileName = pathNameSplit[pathNameSplit.length - 1]
-        if (object.type === "file") {
-          return {
-            path: encodeURIComponent(object.path),
-            fileName,
-            sha: object.sha,
-          }
+        return {
+          path: encodeURIComponent(object.path),
+          fileName,
+          sha: object.sha,
         }
       })
 
-      return _.compact(files)
-    } catch (err) {
-      throw err
-    }
+    return files
   }
 
   async create(fileName, content) {
@@ -92,29 +89,25 @@ class File {
   }
 
   async read(fileName) {
-    try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+    const endpoint = `${this.baseEndpoint}/${fileName}`
 
-      const params = {
-        ref: BRANCH_REF,
-      }
-
-      const resp = await axios.get(endpoint, {
-        validateStatus,
-        params,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
-      })
-      if (resp.status === 404) throw new NotFoundError("File does not exist")
-
-      const { content, sha } = resp.data
-
-      return { content, sha }
-    } catch (err) {
-      throw err
+    const params = {
+      ref: BRANCH_REF,
     }
+
+    const resp = await axios.get(endpoint, {
+      validateStatus,
+      params,
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+    if (resp.status === 404) throw new NotFoundError("File does not exist")
+
+    const { content, sha } = resp.data
+
+    return { content, sha }
   }
 
   async update(fileName, content, sha) {

@@ -7,15 +7,15 @@ const yaml = require("yaml")
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { Collection } = require("../classes/Collection.js")
-const { CollectionConfig } = require("../classes/Config.js")
-const { File, CollectionPageType, PageType } = require("../classes/File")
-const { Subfolder } = require("../classes/Subfolder")
+const { Collection } = require("@classes/Collection.js")
+const { CollectionConfig } = require("@classes/Config.js")
+const { File, CollectionPageType, PageType } = require("@classes/File")
+const { Subfolder } = require("@classes/Subfolder")
 
-const { deslugifyCollectionName } = require("../utils/utils")
+const { deslugifyCollectionName } = require("@utils/utils")
 
 // List collections
 async function listCollections(req, res) {

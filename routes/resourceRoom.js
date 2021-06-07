@@ -3,11 +3,11 @@ const express = require("express")
 const router = express.Router()
 
 // Import classes
-const { ResourceRoom } = require("../classes/ResourceRoom.js")
+const { ResourceRoom } = require("@classes/ResourceRoom.js")
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Get resource room name
 async function getResourceRoomName(req, res) {

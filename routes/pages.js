@@ -8,15 +8,15 @@ const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { File, PageType, CollectionPageType } = require("../classes/File.js")
-const { Collection } = require("../classes/Collection.js")
-const { CollectionConfig } = require("../classes/Config")
-const { Subfolder } = require("../classes/Subfolder")
+const { File, PageType, CollectionPageType } = require("@classes/File.js")
+const { Collection } = require("@classes/Collection.js")
+const { CollectionConfig } = require("@classes/Config")
+const { Subfolder } = require("@classes/Subfolder")
 
-const { deslugifyCollectionName } = require("../utils/utils")
+const { deslugifyCollectionName } = require("@utils/utils")
 
 async function listPages(req, res) {
   const { accessToken } = req

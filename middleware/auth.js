@@ -1,12 +1,12 @@
 // Imports
 const express = require("express")
-const jwtUtils = require("../utils/jwt-utils")
+const jwtUtils = require("@utils/jwt-utils")
 
 // Import logger
-const logger = require("../logger/logger")
+const logger = require("@logger/logger")
 
 // Import errors
-const { AuthError } = require("../errors/AuthError")
+const { AuthError } = require("@errors/AuthError")
 
 // Instantiate router object
 const auth = express.Router()

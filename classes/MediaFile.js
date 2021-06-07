@@ -1,12 +1,12 @@
 const axios = require("axios")
-const validateStatus = require("../utils/axios-utils")
+const validateStatus = require("@utils/axios-utils")
 
 // Import error
-const { NotFoundError } = require("../errors/NotFoundError")
+const { NotFoundError } = require("@errors/NotFoundError")
 const {
   ConflictError,
   inputNameConflictErrorMsg,
-} = require("../errors/ConflictError")
+} = require("@errors/ConflictError")
 
 // Constants
 const GITHUB_ORG_NAME = "isomerpages"

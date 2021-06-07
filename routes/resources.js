@@ -6,15 +6,15 @@ const router = express.Router()
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { ResourceRoom } = require("../classes/ResourceRoom")
-const { Resource } = require("../classes/Resource")
-const { File, ResourcePageType } = require("../classes/File")
+const { ResourceRoom } = require("@classes/ResourceRoom")
+const { Resource } = require("@classes/Resource")
+const { File, ResourcePageType } = require("@classes/File")
 
 // Import errors
-const { NotFoundError } = require("../errors/NotFoundError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 // List resources
 async function listResources(req, res) {

@@ -4,10 +4,10 @@ const router = express.Router()
 const axios = require("axios")
 const Bluebird = require("bluebird")
 const _ = require("lodash")
-const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
+const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 // Import error
-const { NotFoundError } = require("../errors/NotFoundError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 const GH_MAX_REPO_COUNT = 100
 const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3

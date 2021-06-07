@@ -1,18 +1,18 @@
 const yaml = require("yaml")
 require("bluebird")
 require("lodash")
-const { CollectionConfig } = require("./Config.js")
-const { File, DataType } = require("./File.js")
-const { Directory, RootType } = require("./Directory.js")
+const { CollectionConfig } = require("@classes/Config.js")
+const { File, DataType } = require("@classes/File.js")
+const { Directory, RootType } = require("@classes/Directory.js")
 const {
   ConflictError,
   protectedFolderConflictErrorMsg,
-} = require("../errors/ConflictError")
+} = require("@errors/ConflictError")
 const {
   getTree,
   sendTree,
   deslugifyCollectionName,
-} = require("../utils/utils.js")
+} = require("@utils/utils.js")
 
 const NAV_FILE_NAME = "navigation.yml"
 const ISOMER_TEMPLATE_DIRS = ["_data", "_includes", "_site", "_layouts"]

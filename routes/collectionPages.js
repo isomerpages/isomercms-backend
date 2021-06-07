@@ -10,18 +10,18 @@ const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { Collection } = require("../classes/Collection")
-const { CollectionConfig } = require("../classes/Config")
-const { File, CollectionPageType } = require("../classes/File")
+const { Collection } = require("@classes/Collection")
+const { CollectionConfig } = require("@classes/Config")
+const { File, CollectionPageType } = require("@classes/File")
 
 // Import utils
-const { readCollectionPageUtilFunc } = require("../utils/route-utils")
+const { readCollectionPageUtilFunc } = require("@utils/route-utils")
 
 // Import errors
-const { NotFoundError } = require("../errors/NotFoundError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 // List pages in collection
 async function listCollectionPages(req, res) {

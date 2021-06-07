@@ -3,13 +3,13 @@ const express = require("express")
 const router = express.Router()
 
 // Import classes
-const { File, DocumentType } = require("../classes/File.js")
-const { MediaFile } = require("../classes/MediaFile.js")
+const { File, DocumentType } = require("@classes/File.js")
+const { MediaFile } = require("@classes/MediaFile.js")
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 const extractDirectoryAndFileName = (documentName) => {
   let documentDirectory

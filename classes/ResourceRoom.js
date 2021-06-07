@@ -3,15 +3,15 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 
 // Import Classes
-const { Config } = require("./Config.js")
-const { Resource } = require("./Resource.js")
-const { File, ResourceType, DataType } = require("./File.js")
+const { Config } = require("@classes/Config.js")
+const { Resource } = require("@classes/Resource.js")
+const { File, ResourceType, DataType } = require("@classes/File.js")
 const {
   getCommitAndTreeSha,
   getTree,
   sendTree,
   deslugifyCollectionName,
-} = require("../utils/utils.js")
+} = require("@utils/utils.js")
 
 // Constants
 const RESOURCE_ROOM_INDEX_PATH = "index.html"

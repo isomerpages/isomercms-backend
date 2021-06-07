@@ -9,11 +9,68 @@
         "airbnb-base",
         "plugin:prettier/recommended"
     ],
+    "plugins": ["import"],
     "parserOptions": {
         "ecmaVersion": 12
     },
     "rules": {
-        "no-underscore-dangle": "off"
+        "no-underscore-dangle": "off",
+        "import/order": [
+            "error",
+            {
+                "alphabetize": {
+                    "order": "asc",
+                    "caseInsensitive": true
+                },
+                "newlines-between": "always",
+                "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
+                "pathGroups": [
+                    {
+                        "pattern": "@logger/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@errors/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@middleware/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@classes/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@routes/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
+                        "pattern": "@utils/**",
+                        "group": "internal",
+                        "position": "before"
+                    }
+                ]
+            }
+        ]
+    },
+    "settings": {
+        "import/resolver": {
+          "alias": [
+                ["@root", "./"],
+                ["@classes", "./classes"],
+                ["@errors", "./errors"],
+                ["@logger", "./logger"],
+                ["@middleware", "./middleware"],
+                ["@routes", "./routes"],
+                ["@utils", "./utils"]
+            ]
+        }
     },
     "globals": {
         "Base64": true

@@ -1,7 +1,6 @@
 const express = require("express")
 
 const router = express.Router()
-const Bluebird = require("bluebird")
 const yaml = require("yaml")
 
 // Import middleware
@@ -19,18 +18,18 @@ const { Subfolder } = require("../classes/Subfolder")
 const { deslugifyCollectionName } = require("../utils/utils")
 
 // List collections
-async function listCollections(req, res, next) {
+async function listCollections(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
   const collections = await IsomerCollection.list()
 
-  res.status(200).json({ collections })
+  return res.status(200).json({ collections })
 }
 
 // Create new collection
-async function createNewCollection(req, res, next) {
+async function createNewCollection(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
   const { collectionName } = req.body
@@ -38,11 +37,11 @@ async function createNewCollection(req, res, next) {
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.create(collectionName)
 
-  res.status(200).json({ collectionName })
+  return res.status(200).json({ collectionName })
 }
 
 // Delete collection
-async function deleteCollection(req, res, next) {
+async function deleteCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
@@ -52,11 +51,11 @@ async function deleteCollection(req, res, next) {
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
 
-  res.status(200).json({ collectionName })
+  return res.status(200).json({ collectionName })
 }
 
 // Rename collection
-async function renameCollection(req, res, next) {
+async function renameCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
@@ -71,11 +70,11 @@ async function renameCollection(req, res, next) {
     treeSha
   )
 
-  res.status(200).json({ collectionName, newCollectionName })
+  return res.status(200).json({ collectionName, newCollectionName })
 }
 
 // Move files in collection
-async function moveFiles(req, res, next) {
+async function moveFiles(req, res) {
   const { accessToken } = req
   const { siteName, collectionPath, targetPath } = req.params
   const { files } = req.body
@@ -129,14 +128,19 @@ async function moveFiles(req, res, next) {
   }
 
   // We can't perform these operations concurrently because of conflict issues
+
+  // To fix after refactoring
+  /* eslint-disable no-await-in-loop, no-restricted-syntax */
   for (const fileName of files) {
     const { content, sha } = await oldIsomerFile.read(fileName)
     await oldIsomerFile.delete(fileName, sha)
     if (targetSubfolderName || collectionSubfolderName) {
       // Modifying third nav in front matter, to be removed after template rewrite
-      const [_, encodedFrontMatter, pageContent] = Base64.decode(content).split(
-        "---"
-      )
+
+      // eslint-disable-next-line no-unused-vars
+      const [unused, encodedFrontMatter, pageContent] = Base64.decode(
+        content
+      ).split("---")
       const frontMatter = yaml.parse(encodedFrontMatter)
       if (targetSubfolderName)
         frontMatter.third_nav_title = deslugifyCollectionName(
@@ -163,7 +167,7 @@ async function moveFiles(req, res, next) {
       )
   }
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 router.get(

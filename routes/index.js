@@ -7,8 +7,8 @@ const { CLIENT_ID } = process.env
 const { REDIRECT_URI } = process.env
 
 /* GET home page. */
-function getCmsHomepage(req, res, next) {
-  res.status(200).json({
+function getCmsHomepage(req, res) {
+  return res.status(200).json({
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     state: uuid(),

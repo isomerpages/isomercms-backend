@@ -1,27 +1,29 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express")
 
-// Import classes 
-const { File, DocumentType } = require('../classes/File.js');
-const { MediaFile } = require('../classes/MediaFile.js');
-const { 
+const router = express.Router()
+
+// Import classes
+const { File, DocumentType } = require("../classes/File.js")
+const { MediaFile } = require("../classes/MediaFile.js")
+const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require('../middleware/routeHandler')
+} = require("../middleware/routeHandler")
 
 const extractDirectoryAndFileName = (documentName) => {
-  let documentDirectory, documentFileName
+  let documentDirectory
+  let documentFileName
 
   // documentName contains the file path excluding the media folder, e.g. subfolder1/subfolder2/file.pdf
-  const pathArr = documentName.split('/')
+  const pathArr = documentName.split("/")
   if (pathArr.length === 1) {
     // documentName only contains the file name
-    documentDirectory = 'files'
+    documentDirectory = "files"
     documentFileName = documentName
   } else if (pathArr.length > 1) {
     // We discard the name of the file for the directory
-    documentDirectory = `files/${pathArr.slice(0, -1).join('/')}`
+    documentDirectory = `files/${pathArr.slice(0, -1).join("/")}`
     documentFileName = pathArr[pathArr.length - 1]
   }
   return {
@@ -31,7 +33,7 @@ const extractDirectoryAndFileName = (documentName) => {
 }
 
 // List documents
-async function listDocuments (req, res, next) {
+async function listDocuments(req, res, next) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -39,12 +41,12 @@ async function listDocuments (req, res, next) {
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   const documents = await IsomerFile.list()
-  
+
   res.status(200).json({ documents })
 }
 
 // Create new document
-async function createNewDocument (req, res, next) {
+async function createNewDocument(req, res, next) {
   const { accessToken } = req
 
   const { siteName } = req.params
@@ -61,12 +63,14 @@ async function createNewDocument (req, res, next) {
 }
 
 // Read document
-async function readDocument (req, res, next) {
+async function readDocument(req, res, next) {
   const { accessToken } = req
   const { siteName, documentName } = req.params
 
   // get document directory
-  const { documentDirectory, documentFileName } = extractDirectoryAndFileName(documentName)
+  const { documentDirectory, documentFileName } = extractDirectoryAndFileName(
+    documentName
+  )
 
   const IsomerDocumentFile = new MediaFile(accessToken, siteName)
   IsomerDocumentFile.setFileTypeToDocument(documentDirectory)
@@ -79,7 +83,7 @@ async function readDocument (req, res, next) {
 }
 
 // Update document
-async function updateDocument (req, res, next) {
+async function updateDocument(req, res, next) {
   const { accessToken } = req
 
   const { siteName, documentName } = req.params
@@ -92,12 +96,12 @@ async function updateDocument (req, res, next) {
   const documentType = new DocumentType()
   IsomerFile.setFileType(documentType)
   const { newSha } = await IsomerFile.update(documentName, content, sha)
-  
+
   res.status(200).json({ documentName, content, sha: newSha })
 }
 
 // Delete document
-async function deleteDocument (req, res, next) {
+async function deleteDocument(req, res, next) {
   const { accessToken } = req
 
   const { siteName, documentName } = req.params
@@ -108,11 +112,11 @@ async function deleteDocument (req, res, next) {
   IsomerFile.setFileType(documentType)
   await IsomerFile.delete(documentName, sha)
 
-  res.status(200).send('OK')
+  res.status(200).send("OK")
 }
 
 // Rename document
-async function renameDocument (req, res, next) {
+async function renameDocument(req, res, next) {
   const { accessToken } = req
 
   const { siteName, documentName, newDocumentName } = req.params
@@ -120,8 +124,14 @@ async function renameDocument (req, res, next) {
   // TO-DO:
   // Validate documentName and content
 
-  const { documentDirectory: oldDocumentDirectory, documentFileName: oldDocumentFileName } = extractDirectoryAndFileName(documentName)
-  const { documentDirectory: newDocumentDirectory, documentFileName: newDocumentFileName } = extractDirectoryAndFileName(newDocumentName)
+  const {
+    documentDirectory: oldDocumentDirectory,
+    documentFileName: oldDocumentFileName,
+  } = extractDirectoryAndFileName(documentName)
+  const {
+    documentDirectory: newDocumentDirectory,
+    documentFileName: newDocumentFileName,
+  } = extractDirectoryAndFileName(newDocumentName)
 
   const oldIsomerDocumentFile = new MediaFile(accessToken, siteName)
   oldIsomerDocumentFile.setFileTypeToDocument(oldDocumentDirectory)
@@ -132,18 +142,24 @@ async function renameDocument (req, res, next) {
   newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
   await newIsomerDocumentFile.create(newDocumentFileName, content)
 
-  res.status(200).send('OK')
+  res.status(200).send("OK")
 }
 
 // Move document
-async function moveDocument (req, res, next) {
+async function moveDocument(req, res, next) {
   const { accessToken } = req
 
   const { siteName, documentName, newDocumentName } = req.params
 
-  const { documentDirectory: oldDocumentDirectory, documentFileName: oldDocumentFileName } = extractDirectoryAndFileName(documentName)
-  const { documentDirectory: newDocumentDirectory, documentFileName: newDocumentFileName } = extractDirectoryAndFileName(newDocumentName)
-  
+  const {
+    documentDirectory: oldDocumentDirectory,
+    documentFileName: oldDocumentFileName,
+  } = extractDirectoryAndFileName(documentName)
+  const {
+    documentDirectory: newDocumentDirectory,
+    documentFileName: newDocumentFileName,
+  } = extractDirectoryAndFileName(newDocumentName)
+
   const oldIsomerDocumentFile = new MediaFile(accessToken, siteName)
   oldIsomerDocumentFile.setFileTypeToDocument(oldDocumentDirectory)
   const { sha, content } = await oldIsomerDocumentFile.read(oldDocumentFileName)
@@ -153,15 +169,33 @@ async function moveDocument (req, res, next) {
   newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
   await newIsomerDocumentFile.create(newDocumentFileName, content)
 
-  res.status(200).send('OK')
+  res.status(200).send("OK")
 }
 
-router.get('/:siteName/documents', attachReadRouteHandlerWrapper(listDocuments))
-router.post('/:siteName/documents', attachWriteRouteHandlerWrapper(createNewDocument))
-router.get('/:siteName/documents/:documentName', attachReadRouteHandlerWrapper(readDocument))
-router.post('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(updateDocument))
-router.delete('/:siteName/documents/:documentName', attachWriteRouteHandlerWrapper(deleteDocument))
-router.post('/:siteName/documents/:documentName/rename/:newDocumentName', attachRollbackRouteHandlerWrapper(renameDocument))
-router.post('/:siteName/documents/:documentName/move/:newDocumentName', attachRollbackRouteHandlerWrapper(moveDocument))
+router.get("/:siteName/documents", attachReadRouteHandlerWrapper(listDocuments))
+router.post(
+  "/:siteName/documents",
+  attachWriteRouteHandlerWrapper(createNewDocument)
+)
+router.get(
+  "/:siteName/documents/:documentName",
+  attachReadRouteHandlerWrapper(readDocument)
+)
+router.post(
+  "/:siteName/documents/:documentName",
+  attachWriteRouteHandlerWrapper(updateDocument)
+)
+router.delete(
+  "/:siteName/documents/:documentName",
+  attachWriteRouteHandlerWrapper(deleteDocument)
+)
+router.post(
+  "/:siteName/documents/:documentName/rename/:newDocumentName",
+  attachRollbackRouteHandlerWrapper(renameDocument)
+)
+router.post(
+  "/:siteName/documents/:documentName/move/:newDocumentName",
+  attachRollbackRouteHandlerWrapper(moveDocument)
+)
 
-module.exports = router;
+module.exports = router

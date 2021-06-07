@@ -1,49 +1,53 @@
 // Imports
-const Bluebird = require('bluebird')
-const moment = require('moment-timezone')
+const Bluebird = require("bluebird")
+const moment = require("moment-timezone")
 
 // Env vars
 const { NODE_ENV } = process.env
 
 // AWS
-const AWS = require('aws-sdk')
+const AWS = require("aws-sdk")
 
-const AWS_REGION_NAME = 'ap-southeast-1'
+const AWS_REGION_NAME = "ap-southeast-1"
 AWS.config.update({ region: AWS_REGION_NAME })
 const awsMetadata = new AWS.MetadataService()
-const metadataRequest = Bluebird.promisify(awsMetadata.request.bind(awsMetadata))
+const metadataRequest = Bluebird.promisify(
+  awsMetadata.request.bind(awsMetadata)
+)
 
 // Logging tools
-const winston = require('winston')
-const WinstonCloudWatch = require('winston-cloudwatch')
+const winston = require("winston")
+const WinstonCloudWatch = require("winston-cloudwatch")
 
 // Constants
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
-const IS_PROD_ENV = NODE_ENV !== 'LOCAL_DEV' && NODE_ENV !== 'DEV'
+const IS_PROD_ENV = NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV"
 
 // Retrieve EC2 instance since that is the cloudwatch log stream name
-async function getEc2InstanceId () {
+async function getEc2InstanceId() {
   let id
   try {
-    id = await metadataRequest('/latest/meta-data/instance-id').timeout(1000)
+    id = await metadataRequest("/latest/meta-data/instance-id").timeout(1000)
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.log(timestampGenerator(), 'Error getting ec2 instance id. This script is probably not running on ec2')
+    console.log(
+      timestampGenerator(),
+      "Error getting ec2 instance id. This script is probably not running on ec2"
+    )
     throw error
   }
   return id
 }
 
-function timestampGenerator () {
-  return moment().tz('Asia/Singapore')
-    .format('YYYY-MM-DD HH:mm:ss')
+function timestampGenerator() {
+  return moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
 }
 class CloudWatchLogger {
-  constructor () {
+  constructor() {
     this._logger = winston.createLogger()
   }
 
-  async init () {
+  async init() {
     if (IS_PROD_ENV) {
       try {
         // attempt to log directly to cloudwatch
@@ -55,7 +59,7 @@ class CloudWatchLogger {
           logGroupName,
           logStreamName,
           awsRegion,
-          stderrLevels: ['error'],
+          stderrLevels: ["error"],
           format: winston.format.simple(),
           handleExceptions: true,
         }
@@ -63,35 +67,37 @@ class CloudWatchLogger {
         this._logger.add(new WinstonCloudWatch(cloudwatchConfig))
       } catch (err) {
         console.error(`${timestampGenerator()} ${err.message}`)
-        console.error(`${timestampGenerator()} Failed to initiate CloudWatch logger`)
+        console.error(
+          `${timestampGenerator()} Failed to initiate CloudWatch logger`
+        )
       }
     }
   }
 
   // this method is used to log non-error messages, replacing console.log
-  async info (logMessage) {
+  async info(logMessage) {
     // eslint-disable-next-line no-console
     console.log(`${timestampGenerator()} ${logMessage}`)
 
     if (IS_PROD_ENV) {
-        try {
-            await this._logger.info(`${timestampGenerator()} ${logMessage}`)
-        } catch (err) {
-            console.error(`${timestampGenerator()} ${err.message}`)
-        }
+      try {
+        await this._logger.info(`${timestampGenerator()} ${logMessage}`)
+      } catch (err) {
+        console.error(`${timestampGenerator()} ${err.message}`)
+      }
     }
   }
 
   // this method is used to log error messages and write to stderr, replacing console.error
-  async error (errMessage) {
+  async error(errMessage) {
     console.error(`${timestampGenerator()} ${errMessage}`)
 
     if (IS_PROD_ENV) {
-        try {
-            await this._logger.error(`${timestampGenerator()} ${errMessage}`)
-        } catch (err) {
-            console.error(`${timestampGenerator()} ${err.message}`)
-        }
+      try {
+        await this._logger.error(`${timestampGenerator()} ${errMessage}`)
+      } catch (err) {
+        console.error(`${timestampGenerator()} ${err.message}`)
+      }
     }
   }
 }

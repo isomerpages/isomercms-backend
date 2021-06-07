@@ -1,12 +1,16 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express")
 
-// Import classes 
-const { ResourceRoom } = require('../classes/ResourceRoom.js');
-const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler');
+const router = express.Router()
+
+// Import classes
+const { ResourceRoom } = require("../classes/ResourceRoom.js")
+const {
+  attachReadRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
+} = require("../middleware/routeHandler")
 
 // Get resource room name
-async function getResourceRoomName (req, res, next) {
+async function getResourceRoomName(req, res, next) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -17,7 +21,7 @@ async function getResourceRoomName (req, res, next) {
 }
 
 // Create resource room
-async function createResourceRoom (req, res, next) {
+async function createResourceRoom(req, res, next) {
   const { accessToken } = req
   const { siteName } = req.params
   const { resourceRoom } = req.body
@@ -53,12 +57,24 @@ async function deleteResourceRoom(req, res, next) {
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   await IsomerResourceRoom.delete()
 
-  res.status(200).send('OK')
+  res.status(200).send("OK")
 }
 
-router.get('/:siteName/resource-room', attachReadRouteHandlerWrapper(getResourceRoomName))
-router.post('/:siteName/resource-room', attachRollbackRouteHandlerWrapper(createResourceRoom))
-router.post('/:siteName/resource-room/:resourceRoom', attachRollbackRouteHandlerWrapper(renameResourceRoom))
-router.delete('/:siteName/resource-room', attachRollbackRouteHandlerWrapper(deleteResourceRoom))
+router.get(
+  "/:siteName/resource-room",
+  attachReadRouteHandlerWrapper(getResourceRoomName)
+)
+router.post(
+  "/:siteName/resource-room",
+  attachRollbackRouteHandlerWrapper(createResourceRoom)
+)
+router.post(
+  "/:siteName/resource-room/:resourceRoom",
+  attachRollbackRouteHandlerWrapper(renameResourceRoom)
+)
+router.delete(
+  "/:siteName/resource-room",
+  attachRollbackRouteHandlerWrapper(deleteResourceRoom)
+)
 
-module.exports = router;
+module.exports = router

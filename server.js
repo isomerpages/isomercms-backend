@@ -1,51 +1,53 @@
-const createError = require('http-errors');
-const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
-const cors = require('cors');
+const createError = require("http-errors")
+const express = require("express")
+const path = require("path")
+const cookieParser = require("cookie-parser")
+const logger = require("morgan")
+const cors = require("cors")
 
 // Env vars
-const FRONTEND_URL = process.env.FRONTEND_URL
+const { FRONTEND_URL } = process.env
 
 // Import middleware
-const { apiLogger } = require('./middleware/apiLogger')
-const { auth } = require('./middleware/auth')
-const { errorHandler } = require('./middleware/errorHandler')
+const { apiLogger } = require("./middleware/apiLogger")
+const { auth } = require("./middleware/auth")
+const { errorHandler } = require("./middleware/errorHandler")
 
 // Import routes
-const indexRouter = require('./routes/index')
-const authRouter = require('./routes/auth')
-const sitesRouter = require('./routes/sites')
-const pagesRouter = require('./routes/pages')
-const collectionsRouter = require('./routes/collections')
-const collectionPagesRouter = require('./routes/collectionPages')
-const directoryRouter = require('./routes/directory')
-const foldersRouter = require('./routes/folders')
-const resourceRoomRouter = require('./routes/resourceRoom')
-const resourcesRouter = require('./routes/resources')
-const resourcePagesRouter = require('./routes/resourcePages')
-const imagesRouter = require('./routes/images')
-const documentsRouter = require('./routes/documents')
-const mediaSubfolderRouter = require('./routes/mediaSubfolder')
-const menuRouter = require('./routes/menus')
-const homepageRouter = require('./routes/homepage')
-const menuDirectoryRouter = require('./routes/menuDirectory')
-const settingsRouter = require('./routes/settings')
-const navigationRouter = require('./routes/navigation')
-const netlifyTomlRouter = require('./routes/netlifyToml')
+const indexRouter = require("./routes/index")
+const authRouter = require("./routes/auth")
+const sitesRouter = require("./routes/sites")
+const pagesRouter = require("./routes/pages")
+const collectionsRouter = require("./routes/collections")
+const collectionPagesRouter = require("./routes/collectionPages")
+const directoryRouter = require("./routes/directory")
+const foldersRouter = require("./routes/folders")
+const resourceRoomRouter = require("./routes/resourceRoom")
+const resourcesRouter = require("./routes/resources")
+const resourcePagesRouter = require("./routes/resourcePages")
+const imagesRouter = require("./routes/images")
+const documentsRouter = require("./routes/documents")
+const mediaSubfolderRouter = require("./routes/mediaSubfolder")
+const menuRouter = require("./routes/menus")
+const homepageRouter = require("./routes/homepage")
+const menuDirectoryRouter = require("./routes/menuDirectory")
+const settingsRouter = require("./routes/settings")
+const navigationRouter = require("./routes/navigation")
+const netlifyTomlRouter = require("./routes/netlifyToml")
 
-const app = express();
+const app = express()
 
-app.use(logger('dev'));
-app.use(cors({
-  'origin': FRONTEND_URL,
-  'credentials': true,
-}))
-app.use(express.json({ limit: '7mb'}));
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(logger("dev"))
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+)
+app.use(express.json({ limit: "7mb" }))
+app.use(express.urlencoded({ extended: false }))
+app.use(cookieParser())
+app.use(express.static(path.join(__dirname, "public")))
 
 // Use auth middleware
 app.use(auth)
@@ -54,33 +56,33 @@ app.use(auth)
 app.use(apiLogger)
 
 // Routes layer setup
-app.use('/v1', indexRouter);
-app.use('/v1/auth', authRouter);
-app.use('/v1/sites', sitesRouter)
-app.use('/v1/sites', pagesRouter)
-app.use('/v1/sites', collectionsRouter)
-app.use('/v1/sites', collectionPagesRouter)
-app.use('/v1/sites', directoryRouter)
-app.use('/v1/sites', foldersRouter)
-app.use('/v1/sites', resourceRoomRouter)
-app.use('/v1/sites', resourcesRouter)
-app.use('/v1/sites', resourcePagesRouter)
-app.use('/v1/sites', imagesRouter)
-app.use('/v1/sites', documentsRouter)
-app.use('/v1/sites', mediaSubfolderRouter)
-app.use('/v1/sites', menuRouter)
-app.use('/v1/sites', homepageRouter)
-app.use('/v1/sites', menuDirectoryRouter)
-app.use('/v1/sites', settingsRouter)
-app.use('/v1/sites', navigationRouter)
-app.use('/v1/sites', netlifyTomlRouter)
+app.use("/v1", indexRouter)
+app.use("/v1/auth", authRouter)
+app.use("/v1/sites", sitesRouter)
+app.use("/v1/sites", pagesRouter)
+app.use("/v1/sites", collectionsRouter)
+app.use("/v1/sites", collectionPagesRouter)
+app.use("/v1/sites", directoryRouter)
+app.use("/v1/sites", foldersRouter)
+app.use("/v1/sites", resourceRoomRouter)
+app.use("/v1/sites", resourcesRouter)
+app.use("/v1/sites", resourcePagesRouter)
+app.use("/v1/sites", imagesRouter)
+app.use("/v1/sites", documentsRouter)
+app.use("/v1/sites", mediaSubfolderRouter)
+app.use("/v1/sites", menuRouter)
+app.use("/v1/sites", homepageRouter)
+app.use("/v1/sites", menuDirectoryRouter)
+app.use("/v1/sites", settingsRouter)
+app.use("/v1/sites", navigationRouter)
+app.use("/v1/sites", netlifyTomlRouter)
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+app.use(function (req, res, next) {
+  next(createError(404))
+})
 
 // error handler
-app.use(errorHandler);
+app.use(errorHandler)
 
-module.exports = app;
+module.exports = app

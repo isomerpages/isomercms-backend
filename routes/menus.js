@@ -1,24 +1,24 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express")
+
+const router = express.Router()
 
 // Import middleware
-const { 
-  attachReadRouteHandlerWrapper, 
+const {
+  attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
-} = require('../middleware/routeHandler')
+} = require("../middleware/routeHandler")
 
-
-// Import classes 
-const { File, DataType } = require('../classes/File.js')
+// Import classes
+const { File, DataType } = require("../classes/File.js")
 
 // List menus
-async function listMenu (req, res, next) {
+async function listMenu(req, res, next) {
   const { accessToken } = req
 
   const { siteName } = req.params
 
   const IsomerFile = new File(accessToken, siteName)
-  const dataType =  new DataType()
+  const dataType = new DataType()
   IsomerFile.setFileType(dataType)
   const menus = await IsomerFile.list()
 
@@ -29,13 +29,13 @@ async function listMenu (req, res, next) {
 }
 
 // Read menu
-async function readMenu (req, res, next) {
+async function readMenu(req, res, next) {
   const { accessToken } = req
 
   const { siteName, menuName } = req.params
 
   const IsomerFile = new File(accessToken, siteName)
-  const dataType =  new DataType()
+  const dataType = new DataType()
   IsomerFile.setFileType(dataType)
   const { sha, content } = await IsomerFile.read(menuName)
 
@@ -46,7 +46,7 @@ async function readMenu (req, res, next) {
 }
 
 // Update menu
-async function updateMenu (req, res, next) {
+async function updateMenu(req, res, next) {
   const { accessToken } = req
 
   const { siteName, menuName } = req.params
@@ -56,14 +56,20 @@ async function updateMenu (req, res, next) {
   // Validate menuName and content
 
   const IsomerFile = new File(accessToken, siteName)
-  const dataType =  new DataType()
+  const dataType = new DataType()
   IsomerFile.setFileType(dataType)
   const { newSha } = await IsomerFile.update(menuName, content, sha)
 
   res.status(200).json({ menuName, content, sha: newSha })
 }
-router.get('/:siteName/menus', attachReadRouteHandlerWrapper(listMenu))
-router.get('/:siteName/menus/:menuName', attachReadRouteHandlerWrapper(readMenu))
-router.post('/:siteName/menus/:menuName', attachWriteRouteHandlerWrapper(updateMenu))
+router.get("/:siteName/menus", attachReadRouteHandlerWrapper(listMenu))
+router.get(
+  "/:siteName/menus/:menuName",
+  attachReadRouteHandlerWrapper(readMenu)
+)
+router.post(
+  "/:siteName/menus/:menuName",
+  attachWriteRouteHandlerWrapper(updateMenu)
+)
 
-module.exports = router;
+module.exports = router

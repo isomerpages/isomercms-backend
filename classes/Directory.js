@@ -1,12 +1,12 @@
-const axios = require('axios');
-const _ = require('lodash')
-const validateStatus = require('../utils/axios-utils')
+const axios = require("axios")
+const _ = require("lodash")
+const validateStatus = require("../utils/axios-utils")
 
-const { BadRequestError } = require('../errors/BadRequestError');
-const { NotFoundError } = require('../errors/NotFoundError');
+const { BadRequestError } = require("../errors/BadRequestError")
+const { NotFoundError } = require("../errors/NotFoundError")
 
-const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
-const BRANCH_REF = process.env.BRANCH_REF
+const { GITHUB_ORG_NAME } = process.env
+const { BRANCH_REF } = process.env
 
 class Directory {
   constructor(accessToken, siteName) {
@@ -27,7 +27,7 @@ class Directory {
       const endpoint = `${this.baseEndpoint}`
 
       const params = {
-        "ref": BRANCH_REF,
+        ref: BRANCH_REF,
       }
 
       const resp = await axios.get(endpoint, {
@@ -35,15 +35,19 @@ class Directory {
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       })
 
-  
       if (resp.status !== 200) {
         if (this.dirType instanceof FolderType) {
-          if (resp.status === 404) throw new NotFoundError(`Path ${this.dirType.getFolderName()} was not found!`)
-          throw new BadRequestError(`Path ${this.dirType.getFolderName()} was invalid!`)
+          if (resp.status === 404)
+            throw new NotFoundError(
+              `Path ${this.dirType.getFolderName()} was not found!`
+            )
+          throw new BadRequestError(
+            `Path ${this.dirType.getFolderName()} was invalid!`
+          )
         }
         return {}
       }
@@ -51,18 +55,13 @@ class Directory {
       if (this.dirType instanceof FolderType) {
         // Validation
         if (!Array.isArray(resp.data)) {
-          throw new BadRequestError(`The provided path, ${endpoint}, is not a directory`)
+          throw new BadRequestError(
+            `The provided path, ${endpoint}, is not a directory`
+          )
         }
 
         const filesOrDirs = resp.data.map((fileOrDir) => {
-          const {
-            name,
-            path,
-            sha,
-            size,
-            content,
-            type,
-          } = fileOrDir
+          const { name, path, sha, size, content, type } = fileOrDir
           return {
             name,
             path,
@@ -75,15 +74,15 @@ class Directory {
 
         return _.compact(filesOrDirs)
       }
-  
+
       if (this.dirType instanceof ResourceRoomType) {
-        const directories = resp.data.map(object => {
+        const directories = resp.data.map((object) => {
           const pathNameSplit = object.path.split("/")
           const dirName = pathNameSplit[pathNameSplit.length - 1]
-          if (object.type === 'dir') {
+          if (object.type === "dir") {
             return {
               path: encodeURIComponent(object.path),
-              dirName
+              dirName,
             }
           }
         })
@@ -99,7 +98,7 @@ class Directory {
 
 class RootType {
   constructor() {
-    this.folderName = ''
+    this.folderName = ""
   }
 
   getFolderName() {

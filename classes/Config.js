@@ -1,14 +1,17 @@
-const axios = require('axios');
-const validateStatus = require('../utils/axios-utils')
-const yaml = require('yaml')
-const _ = require('lodash')
+const axios = require("axios")
+const yaml = require("yaml")
+const _ = require("lodash")
+const validateStatus = require("../utils/axios-utils")
 
 // Import error
-const { NotFoundError } = require('../errors/NotFoundError')
-const { ConflictError, inputNameConflictErrorMsg } = require('../errors/ConflictError')
+const { NotFoundError } = require("../errors/NotFoundError")
+const {
+  ConflictError,
+  inputNameConflictErrorMsg,
+} = require("../errors/ConflictError")
 
-const GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
-const BRANCH_REF = process.env.BRANCH_REF
+const { GITHUB_ORG_NAME } = process.env
+const { BRANCH_REF } = process.env
 
 class Config {
   constructor(accessToken, siteName) {
@@ -19,25 +22,25 @@ class Config {
 
   async read() {
     try {
-    const params = {
-      "ref": BRANCH_REF,
-    }
-      
-      const resp = await axios.get(this.endpoint, {
-      validateStatus,
-      params,
-      headers: {
-        Authorization: `token ${this.accessToken}`,
-        "Content-Type": "application/json"
+      const params = {
+        ref: BRANCH_REF,
       }
+
+      const resp = await axios.get(this.endpoint, {
+        validateStatus,
+        params,
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json",
+        },
       })
 
-      if (resp.status === 404) throw new NotFoundError ('Config page does not exist')
+      if (resp.status === 404)
+        throw new NotFoundError("Config page does not exist")
 
       const { content, sha } = resp.data
 
       return { content, sha }
-
     } catch (err) {
       throw err
     }
@@ -45,17 +48,17 @@ class Config {
 
   async update(newContent, sha) {
     const params = {
-      "message": 'Edit config',
-      "content": newContent,
-      "branch": BRANCH_REF,
-      "sha": sha
+      message: "Edit config",
+      content: newContent,
+      branch: BRANCH_REF,
+      sha,
     }
 
     await axios.put(this.endpoint, params, {
       headers: {
         Authorization: `token ${this.accessToken}`,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     })
   }
 }
@@ -70,44 +73,45 @@ class CollectionConfig extends Config {
   async create(content) {
     try {
       const params = {
-        "message": `Create file: _${this.collectionName}/collection.yml`,
-        "content": content,
-        "branch": BRANCH_REF,	
+        message: `Create file: _${this.collectionName}/collection.yml`,
+        content,
+        branch: BRANCH_REF,
       }
-      
+
       const resp = await axios.put(this.endpoint, params, {
-          headers: {
+        headers: {
           Authorization: `token ${this.accessToken}`,
-        "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       })
-    
+
       return { sha: resp.data.content.sha }
     } catch (err) {
       const { status } = err.response
-      if (status === 422 || status === 409) throw new ConflictError(inputNameConflictErrorMsg(fileName))
+      if (status === 422 || status === 409)
+        throw new ConflictError(inputNameConflictErrorMsg(fileName))
       throw err.response
     }
   }
-  
-  async delete (sha) {
+
+  async delete(sha) {
     try {
       const params = {
-        "message": `Delete file: _${this.collectionName}/collection.yml`,
-        "branch": BRANCH_REF,
-        "sha": sha
+        message: `Delete file: _${this.collectionName}/collection.yml`,
+        branch: BRANCH_REF,
+        sha,
       }
-  
+
       await axios.delete(this.endpoint, {
         params,
         headers: {
           Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       })
     } catch (err) {
-      const status = err.response.status
-      if (status === 404) throw new NotFoundError ('File does not exist')
+      const { status } = err.response
+      if (status === 404) throw new NotFoundError("File does not exist")
       throw err
     }
   }
@@ -119,17 +123,18 @@ class CollectionConfig extends Config {
   }
 
   async addItemToOrder(item, index) {
-    const collectionName = this.collectionName
+    const { collectionName } = this
     const { content, sha } = await this.read()
 
     let newIndex = index
     if (index === undefined) {
-      if (item.split('/').length === 2) {
+      if (item.split("/").length === 2) {
         // if file in subfolder, get index of last file in subfolder
-        newIndex = _.findLastIndex(
-          content.collections[collectionName].order,
-          (f) => f.split('/')[0] === item.split('/')[0]
-        ) + 1
+        newIndex =
+          _.findLastIndex(
+            content.collections[collectionName].order,
+            (f) => f.split("/")[0] === item.split("/")[0]
+          ) + 1
       } else {
         // get index of last file in collection
         newIndex = content.collections[collectionName].order.length
@@ -137,36 +142,38 @@ class CollectionConfig extends Config {
     }
     content.collections[collectionName].order.splice(newIndex, 0, item)
     const newContent = Base64.encode(yaml.stringify(content))
-    
+
     await this.update(newContent, sha)
   }
 
   async deleteItemFromOrder(item) {
-    const collectionName = this.collectionName
+    const { collectionName } = this
     const { content, sha } = await this.read()
     const index = content.collections[collectionName].order.indexOf(item)
     content.collections[collectionName].order.splice(index, 1)
     const newContent = Base64.encode(yaml.stringify(content))
-    
+
     await this.update(newContent, sha)
     return { index, item }
   }
 
   async updateItemInOrder(oldItem, newItem) {
-    const collectionName = this.collectionName
+    const { collectionName } = this
     const { content, sha } = await this.read()
     const index = content.collections[collectionName].order.indexOf(oldItem)
     content.collections[collectionName].order.splice(index, 1)
     content.collections[collectionName].order.splice(index, 0, newItem)
     const newContent = Base64.encode(yaml.stringify(content))
-    
+
     await this.update(newContent, sha)
   }
 
   async deleteSubfolderFromOrder(subfolder) {
-    const collectionName = this.collectionName
+    const { collectionName } = this
     const { content, sha } = await this.read()
-    const filteredOrder = content.collections[collectionName].order.filter(item => !item.includes(`${subfolder}/`))
+    const filteredOrder = content.collections[collectionName].order.filter(
+      (item) => !item.includes(`${subfolder}/`)
+    )
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = filteredOrder
     const newContent = Base64.encode(yaml.stringify(newContentObject))
@@ -175,12 +182,15 @@ class CollectionConfig extends Config {
   }
 
   async renameSubfolderInOrder(subfolder, newSubfolderName) {
-    const collectionName = this.collectionName
+    const { collectionName } = this
     const { content, sha } = await this.read()
-    const renamedOrder = content.collections[collectionName].order.map(item => {
-      if (item.includes(`${subfolder}/`)) return `${newSubfolderName}/${item.split('/')[1]}`
-      return item
-    })
+    const renamedOrder = content.collections[collectionName].order.map(
+      (item) => {
+        if (item.includes(`${subfolder}/`))
+          return `${newSubfolderName}/${item.split("/")[1]}`
+        return item
+      }
+    )
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = renamedOrder
     const newContent = Base64.encode(yaml.stringify(newContentObject))

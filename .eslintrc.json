@@ -14,5 +14,8 @@
     },
     "rules": {
         "no-underscore-dangle": "off"
+    },
+    "globals": {
+        "Base64": true
     }
 }

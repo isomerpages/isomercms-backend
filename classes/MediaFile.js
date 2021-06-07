@@ -1,5 +1,4 @@
 const axios = require("axios")
-const _ = require("lodash")
 const validateStatus = require("../utils/axios-utils")
 
 // Import error
@@ -12,12 +11,31 @@ const {
 // Constants
 const GITHUB_ORG_NAME = "isomerpages"
 
+class ImageType {
+  constructor(directory) {
+    this.folderName = directory || "images"
+  }
+
+  getFolderName() {
+    return this.folderName
+  }
+}
+
+class DocumentType {
+  constructor(directory) {
+    this.folderName = directory || "files"
+  }
+
+  getFolderName() {
+    return this.folderName
+  }
+}
+
 class MediaFile {
   constructor(accessToken, siteName) {
     this.accessToken = accessToken
     this.siteName = siteName
     this.baseEndpoint = null
-    this.blobEndpoint = null
     this.fileType = null
   }
 
@@ -40,35 +58,31 @@ class MediaFile {
   }
 
   async list() {
-    try {
-      const endpoint = `${this.baseEndpoint}`
+    const endpoint = `${this.baseEndpoint}`
 
-      const resp = await axios.get(endpoint, {
-        validateStatus,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
+    const resp = await axios.get(endpoint, {
+      validateStatus,
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (resp.status !== 200) return {}
+
+    return resp.data
+      .filter((object) => {
+        return object.type === "file"
       })
-
-      if (resp.status !== 200) return {}
-
-      const files = resp.data.map((object) => {
+      .map((object) => {
         const pathNameSplit = object.path.split("/")
         const fileName = pathNameSplit[pathNameSplit.length - 1]
-        if (object.type === "file") {
-          return {
-            path: encodeURIComponent(object.path),
-            fileName,
-            sha: object.sha,
-          }
+        return {
+          path: encodeURIComponent(object.path),
+          fileName,
+          sha: object.sha,
         }
       })
-
-      return _.compact(files)
-    } catch (err) {
-      throw err
-    }
   }
 
   async create(fileName, content) {
@@ -98,102 +112,71 @@ class MediaFile {
   }
 
   async read(fileName) {
-    try {
-      /**
-       * Images that are bigger than 1 MB needs to be retrieved
-       * via Github Blob API. The content can only be retrieved through
-       * the `sha` of the file.
-       * The code below takes the `fileName`,
-       * lists all the files in the image directory
-       * and filters it down to get the sha of the file
-       */
-      const images = await this.list()
-      const imageSha = images.filter((image) => image.fileName === fileName)[0]
-        .sha
+    /**
+     * Images that are bigger than 1 MB needs to be retrieved
+     * via Github Blob API. The content can only be retrieved through
+     * the `sha` of the file.
+     * The code below takes the `fileName`,
+     * lists all the files in the image directory
+     * and filters it down to get the sha of the file
+     */
+    const images = await this.list()
+    const imageSha = images.filter((image) => image.fileName === fileName)[0]
+      .sha
 
-      const blobEndpoint = `${this.baseBlobEndpoint}/${imageSha}`
+    const blobEndpoint = `${this.baseBlobEndpoint}/${imageSha}`
 
-      const resp = await axios.get(blobEndpoint, {
-        validateStatus,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-        },
-      })
+    const resp = await axios.get(blobEndpoint, {
+      validateStatus,
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+      },
+    })
 
-      if (resp.status === 404) throw new NotFoundError("Image does not exist")
+    if (resp.status === 404) throw new NotFoundError("Image does not exist")
 
-      const { content, sha } = resp.data
+    const { content, sha } = resp.data
 
-      return { content, sha }
-    } catch (err) {
-      throw err
-    }
+    return { content, sha }
   }
 
   async update(fileName, content, sha) {
-    try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+    const endpoint = `${this.baseEndpoint}/${fileName}`
 
-      const params = {
-        message: `Update file: ${fileName}`,
-        content,
-        branch: "staging",
-        sha,
-      }
-
-      const resp = await axios.put(endpoint, params, {
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      return { newSha: resp.data.commit.sha }
-    } catch (err) {
-      throw err
+    const params = {
+      message: `Update file: ${fileName}`,
+      content,
+      branch: "staging",
+      sha,
     }
+
+    const resp = await axios.put(endpoint, params, {
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    return { newSha: resp.data.commit.sha }
   }
 
   async delete(fileName, sha) {
-    try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
+    const endpoint = `${this.baseEndpoint}/${fileName}`
 
-      const params = {
-        message: `Delete file: ${fileName}`,
-        branch: "staging",
-        sha,
-      }
-
-      await axios.delete(endpoint, {
-        data: params,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
-      })
-    } catch (err) {
-      throw err
+    const params = {
+      message: `Delete file: ${fileName}`,
+      branch: "staging",
+      sha,
     }
+
+    await axios.delete(endpoint, {
+      data: params,
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
   }
 }
 
-class ImageType {
-  constructor(directory) {
-    this.folderName = directory || "images"
-  }
-
-  getFolderName() {
-    return this.folderName
-  }
-}
-
-class DocumentType {
-  constructor(directory) {
-    this.folderName = directory || "files"
-  }
-
-  getFolderName() {
-    return this.folderName
-  }
-}
 module.exports = { MediaFile }

@@ -159,12 +159,10 @@ class Settings {
               delete clonedFooterContent[setting][social]
             }
           })
-        } else {
+        } else if (footerSettings[setting] === "") {
           // Check for empty string because false value exists
-          if (footerSettings[setting] === "") {
-            delete clonedFooterSettings[setting]
-            delete clonedFooterContent[setting]
-          }
+          delete clonedFooterSettings[setting]
+          delete clonedFooterContent[setting]
         }
       })
       settingsObj.footer = {
@@ -182,11 +180,13 @@ class Settings {
 
     const updatedSettingsObjArr = Object.keys(settingsObj).map(
       (settingsObjKey) => {
-        const { payload, currentData } = settingsObj[settingsObjKey]
+        const { payload: retrievedPayload, currentData } = settingsObj[
+          settingsObjKey
+        ]
         const clonedSettingsObj = _.cloneDeep(currentData)
-        Object.keys(payload).forEach(
-          (setting) => (clonedSettingsObj[setting] = payload[setting])
-        )
+        Object.keys(retrievedPayload).forEach((setting) => {
+          clonedSettingsObj[setting] = retrievedPayload[setting]
+        })
         return {
           type: settingsObjKey,
           settingsObj: clonedSettingsObj,
@@ -196,8 +196,8 @@ class Settings {
 
     const updatedSettingsObj = {}
     updatedSettingsObjArr.forEach((setting) => {
-      const { type, settingsObj } = setting
-      updatedSettingsObj[`${type}SettingsObj`] = settingsObj
+      const { type, settingsObj: retrievedSettingsObj } = setting
+      updatedSettingsObj[`${type}SettingsObj`] = retrievedSettingsObj
     })
 
     const {

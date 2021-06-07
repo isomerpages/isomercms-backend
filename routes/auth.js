@@ -1,7 +1,5 @@
-const express = require("express")
-
-const router = express.Router()
 const axios = require("axios")
+const express = require("express")
 const queryString = require("query-string")
 
 // Import error
@@ -11,14 +9,15 @@ const { AuthError } = require("@errors/AuthError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const validateStatus = require("@utils/axios-utils")
+const jwtUtils = require("@utils/jwt-utils")
+
+const router = express.Router()
 
 const { CLIENT_ID } = process.env
 const { CLIENT_SECRET } = process.env
 const { REDIRECT_URI } = process.env
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
 const { FRONTEND_URL } = process.env
-
-const jwtUtils = require("@utils/jwt-utils")
 
 const COOKIE_NAME = "isomercms"
 

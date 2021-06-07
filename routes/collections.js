@@ -1,6 +1,4 @@
 const express = require("express")
-
-const router = express.Router()
 const yaml = require("yaml")
 
 // Import middleware
@@ -16,6 +14,8 @@ const { File, CollectionPageType, PageType } = require("@classes/File")
 const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
+
+const router = express.Router()
 
 // List collections
 async function listCollections(req, res) {

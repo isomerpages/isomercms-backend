@@ -24,7 +24,6 @@ class File {
     this.baseEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${
       this.siteName
     }/contents${this.folderPath ? "/" : ""}${this.folderPath}`
-    this.baseBlobEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${this.siteName}/git/blobs`
   }
 
   async list() {

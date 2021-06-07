@@ -1,41 +1,47 @@
-const express = require('express');
-const router = express.Router();
-const axios = require('axios');
-const validateStatus = require('../utils/axios-utils')
-const queryString = require('query-string');
+const express = require("express")
+
+const router = express.Router()
+const axios = require("axios")
+const queryString = require("query-string")
+const validateStatus = require("../utils/axios-utils")
 
 // Import error
-const { AuthError } = require('../errors/AuthError')
+const { AuthError } = require("../errors/AuthError")
 
 // Import middleware
-const { attachReadRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
 
-const CLIENT_ID = process.env.CLIENT_ID
-const CLIENT_SECRET = process.env.CLIENT_SECRET
-const REDIRECT_URI = process.env.REDIRECT_URI
+const { CLIENT_ID } = process.env
+const { CLIENT_SECRET } = process.env
+const { REDIRECT_URI } = process.env
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
-const FRONTEND_URL = process.env.FRONTEND_URL
+const { FRONTEND_URL } = process.env
 
-const jwtUtils = require('../utils/jwt-utils')
-const COOKIE_NAME = 'isomercms'
+const jwtUtils = require("../utils/jwt-utils")
 
-async function githubAuth (req, res, next) {
+const COOKIE_NAME = "isomercms"
+
+async function githubAuth(req, res, next) {
   const { code, state } = req.query
   const params = {
-    code: code,
+    code,
     redirect_uri: REDIRECT_URI,
-    state: state
+    state,
   }
 
-  const resp = await axios.post('https://github.com/login/oauth/access_token', params, {
-    auth: {
-      username: CLIENT_ID,
-      password: CLIENT_SECRET,
-    },
-  })
+  const resp = await axios.post(
+    "https://github.com/login/oauth/access_token",
+    params,
+    {
+      auth: {
+        username: CLIENT_ID,
+        password: CLIENT_SECRET,
+      },
+    }
+  )
 
-  const access_token = queryString.parse(resp.data).access_token
-  if (!access_token) throw new AuthError ('Access token not found')
+  const { access_token } = queryString.parse(resp.data)
+  if (!access_token) throw new AuthError("Access token not found")
 
   // Retrieve user information to put into access token
   const endpoint = `https://api.github.com/user`
@@ -43,9 +49,9 @@ async function githubAuth (req, res, next) {
     validateStatus,
     headers: {
       Authorization: `token ${access_token}`,
-      Accept: 'application/vnd.github.v3+json',
-      "Content-Type": "application/json"
-    }
+      Accept: "application/vnd.github.v3+json",
+      "Content-Type": "application/json",
+    },
   })
 
   let userId
@@ -53,16 +59,17 @@ async function githubAuth (req, res, next) {
 
   const authTokenExpiry = new Date()
   authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
-  
-  let cookieSettings = {
-    path: '/',
+
+  const cookieSettings = {
+    path: "/",
     expires: authTokenExpiry,
     httpOnly: true,
     sameSite: true,
-    secure: process.env.NODE_ENV !== 'DEV' && process.env.NODE_ENV !== 'LOCAL_DEV',
+    secure:
+      process.env.NODE_ENV !== "DEV" && process.env.NODE_ENV !== "LOCAL_DEV",
   }
 
-  const token = jwtUtils.signToken({access_token, user_id: userId})
+  const token = jwtUtils.signToken({ access_token, user_id: userId })
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
 
@@ -71,8 +78,8 @@ async function githubAuth (req, res, next) {
 
 async function logout(req, res) {
   let cookieSettings
-    cookieSettings = {
-      path: '/',
+  cookieSettings = {
+    path: "/",
   }
   res.clearCookie(COOKIE_NAME, cookieSettings)
   res.sendStatus(200)
@@ -82,15 +89,15 @@ async function whoami(req, res) {
   const { accessToken } = req
 
   // Make a call to github
-  const endpoint = 'https://api.github.com/user'
+  const endpoint = "https://api.github.com/user"
 
   let userId
   try {
     const resp = await axios.get(endpoint, {
       headers: {
         Authorization: `token ${accessToken}`,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     })
     userId = resp.data.login
   } catch (err) {
@@ -100,8 +107,8 @@ async function whoami(req, res) {
   }
 }
 
-router.get('/', attachReadRouteHandlerWrapper(githubAuth));
-router.get('/logout', attachReadRouteHandlerWrapper(logout));
-router.get('/whoami', attachReadRouteHandlerWrapper(whoami));
+router.get("/", attachReadRouteHandlerWrapper(githubAuth))
+router.get("/logout", attachReadRouteHandlerWrapper(logout))
+router.get("/whoami", attachReadRouteHandlerWrapper(whoami))
 
-module.exports = router;
+module.exports = router

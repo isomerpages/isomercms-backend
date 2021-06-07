@@ -3,7 +3,7 @@
 /**
  * Module dependencies.
  */
-
+require('module-alias/register')
 const app = require('@root/server');
 const debug = require('debug')('isomercms:server');
 const http = require('http');

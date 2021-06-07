@@ -21,29 +21,25 @@ class Config {
   }
 
   async read() {
-    try {
-      const params = {
-        ref: BRANCH_REF,
-      }
-
-      const resp = await axios.get(this.endpoint, {
-        validateStatus,
-        params,
-        headers: {
-          Authorization: `token ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (resp.status === 404)
-        throw new NotFoundError("Config page does not exist")
-
-      const { content, sha } = resp.data
-
-      return { content, sha }
-    } catch (err) {
-      throw err
+    const params = {
+      ref: BRANCH_REF,
     }
+
+    const resp = await axios.get(this.endpoint, {
+      validateStatus,
+      params,
+      headers: {
+        Authorization: `token ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (resp.status === 404)
+      throw new NotFoundError("Config page does not exist")
+
+    const { content, sha } = resp.data
+
+    return { content, sha }
   }
 
   async update(newContent, sha) {
@@ -89,7 +85,9 @@ class CollectionConfig extends Config {
     } catch (err) {
       const { status } = err.response
       if (status === 422 || status === 409)
-        throw new ConflictError(inputNameConflictErrorMsg(fileName))
+        throw new ConflictError(
+          inputNameConflictErrorMsg(`${this.collectionName}/collection.yml`)
+        )
       throw err.response
     }
   }

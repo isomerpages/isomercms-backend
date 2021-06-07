@@ -12,5 +12,8 @@
         "ecmaVersion": 12
     },
     "rules": {
+    },
+    "globals": {
+        "Base64": true
     }
 }

@@ -196,7 +196,7 @@ class Settings {
 
     const updatedSettingsObj = {}
     updatedSettingsObjArr.forEach((setting) => {
-      const { type, retrievedSettingsObj } = setting
+      const { type, settingsObj: retrievedSettingsObj } = setting
       updatedSettingsObj[`${type}SettingsObj`] = retrievedSettingsObj
     })
 

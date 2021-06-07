@@ -28,9 +28,7 @@ const resourcePagesRouter = require("./routes/resourcePages")
 const imagesRouter = require("./routes/images")
 const documentsRouter = require("./routes/documents")
 const mediaSubfolderRouter = require("./routes/mediaSubfolder")
-const menuRouter = require("./routes/menus")
 const homepageRouter = require("./routes/homepage")
-const menuDirectoryRouter = require("./routes/menuDirectory")
 const settingsRouter = require("./routes/settings")
 const navigationRouter = require("./routes/navigation")
 const netlifyTomlRouter = require("./routes/netlifyToml")
@@ -70,15 +68,13 @@ app.use("/v1/sites", resourcePagesRouter)
 app.use("/v1/sites", imagesRouter)
 app.use("/v1/sites", documentsRouter)
 app.use("/v1/sites", mediaSubfolderRouter)
-app.use("/v1/sites", menuRouter)
 app.use("/v1/sites", homepageRouter)
-app.use("/v1/sites", menuDirectoryRouter)
 app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
+app.use((req, res, next) => {
   next(createError(404))
 })
 

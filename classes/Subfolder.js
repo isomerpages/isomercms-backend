@@ -26,23 +26,19 @@ class Subfolder {
   }
 
   async create(subfolderName) {
-    try {
-      // Update collection.yml
-      const collectionConfig = new CollectionConfig(
-        this.accessToken,
-        this.siteName,
-        this.collectionName
-      )
-      await collectionConfig.addItemToOrder(`${subfolderName}/.keep`)
+    // Update collection.yml
+    const collectionConfig = new CollectionConfig(
+      this.accessToken,
+      this.siteName,
+      this.collectionName
+    )
+    await collectionConfig.addItemToOrder(`${subfolderName}/.keep`)
 
-      // Create placeholder file
-      const IsomerFile = new File(this.accessToken, this.siteName)
-      const dataType = new CollectionPageType(this.collectionName)
-      IsomerFile.setFileType(dataType)
-      await IsomerFile.create(`${subfolderName}/.keep`, "")
-    } catch (err) {
-      throw err
-    }
+    // Create placeholder file
+    const IsomerFile = new File(this.accessToken, this.siteName)
+    const dataType = new CollectionPageType(this.collectionName)
+    IsomerFile.setFileType(dataType)
+    await IsomerFile.create(`${subfolderName}/.keep`, "")
   }
 }
 

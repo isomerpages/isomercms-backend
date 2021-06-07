@@ -1,7 +1,7 @@
+const Bluebird = require("bluebird")
 const { Base64 } = require("js-base64")
 const _ = require("lodash")
 const yaml = require("yaml")
-const Bluebird = require("bluebird")
 
 // import classes
 const { Config } = require("@classes/Config.js")

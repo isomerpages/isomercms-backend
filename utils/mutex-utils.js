@@ -2,6 +2,7 @@ const AWS = require("aws-sdk")
 const { serializeError } = require("serialize-error")
 
 const logger = require("@logger/logger")
+
 const { ConflictError } = require("@errors/ConflictError")
 
 // Env vars

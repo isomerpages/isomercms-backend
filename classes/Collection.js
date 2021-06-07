@@ -1,13 +1,16 @@
 const yaml = require("yaml")
+
 require("bluebird")
 require("lodash")
-const { CollectionConfig } = require("@classes/Config.js")
-const { File, DataType } = require("@classes/File.js")
-const { Directory, RootType } = require("@classes/Directory.js")
 const {
   ConflictError,
   protectedFolderConflictErrorMsg,
 } = require("@errors/ConflictError")
+
+const { CollectionConfig } = require("@classes/Config.js")
+const { Directory, RootType } = require("@classes/Directory.js")
+const { File, DataType } = require("@classes/File.js")
+
 const {
   getTree,
   sendTree,

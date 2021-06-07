@@ -1,12 +1,14 @@
 const axios = require("axios")
-const validateStatus = require("@utils/axios-utils")
 
-// Import error
-const { NotFoundError } = require("@errors/NotFoundError")
 const {
   ConflictError,
   inputNameConflictErrorMsg,
 } = require("@errors/ConflictError")
+const { NotFoundError } = require("@errors/NotFoundError")
+
+const validateStatus = require("@utils/axios-utils")
+
+// Import error
 
 const { GITHUB_ORG_NAME } = process.env
 const { BRANCH_REF } = process.env

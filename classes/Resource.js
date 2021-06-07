@@ -3,8 +3,13 @@ const _ = require("lodash")
 const yaml = require("yaml")
 
 // Import classes
-const { File, ResourceCategoryType, ResourcePageType } = require("@classes/File.js")
 const { Directory, ResourceRoomType } = require("@classes/Directory.js")
+const {
+  File,
+  ResourceCategoryType,
+  ResourcePageType,
+} = require("@classes/File.js")
+
 const {
   getCommitAndTreeSha,
   getTree,

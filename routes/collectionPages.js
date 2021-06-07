@@ -2,10 +2,12 @@ const express = require("express")
 
 const router = express.Router()
 const Bluebird = require("bluebird")
-const yaml = require("yaml")
 const _ = require("lodash")
+const yaml = require("yaml")
 
 // Import middleware
+const { NotFoundError } = require("@errors/NotFoundError")
+
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
@@ -21,7 +23,6 @@ const { File, CollectionPageType } = require("@classes/File")
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
 
 // Import errors
-const { NotFoundError } = require("@errors/NotFoundError")
 
 // List pages in collection
 async function listCollectionPages(req, res) {

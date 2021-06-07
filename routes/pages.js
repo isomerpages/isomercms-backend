@@ -11,9 +11,9 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { File, PageType, CollectionPageType } = require("@classes/File.js")
 const { Collection } = require("@classes/Collection.js")
 const { CollectionConfig } = require("@classes/Config")
+const { File, PageType, CollectionPageType } = require("@classes/File.js")
 const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")

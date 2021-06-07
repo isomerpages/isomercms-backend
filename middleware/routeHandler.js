@@ -1,6 +1,6 @@
 const { backOff } = require("exponential-backoff")
-const { lock, unlock } = require("@utils/mutex-utils")
 
+const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
 // Used when there are no write API calls to the repo on GitHub

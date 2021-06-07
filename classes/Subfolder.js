@@ -1,6 +1,6 @@
 const { CollectionConfig } = require("@classes/Config.js")
-const { File, CollectionPageType } = require("@classes/File.js")
 const { Directory, FolderType } = require("@classes/Directory.js")
+const { File, CollectionPageType } = require("@classes/File.js")
 
 class Subfolder {
   constructor(accessToken, siteName, collectionName) {

@@ -3,6 +3,8 @@ const express = require("express")
 const router = express.Router()
 
 // Import middleware
+const { NotFoundError } = require("@errors/NotFoundError")
+
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
@@ -11,9 +13,8 @@ const {
 
 // Import classes
 const { File, ResourcePageType } = require("@classes/File.js")
-const { ResourceRoom } = require("@classes/ResourceRoom.js")
 const { Resource } = require("@classes/Resource.js")
-const { NotFoundError } = require("@errors/NotFoundError")
+const { ResourceRoom } = require("@classes/ResourceRoom.js")
 
 // List pages in resource
 async function listResourcePages(req, res) {

@@ -3,13 +3,14 @@ const express = require("express")
 const router = express.Router()
 const axios = require("axios")
 const queryString = require("query-string")
-const validateStatus = require("@utils/axios-utils")
 
 // Import error
 const { AuthError } = require("@errors/AuthError")
 
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const validateStatus = require("@utils/axios-utils")
 
 const { CLIENT_ID } = process.env
 const { CLIENT_SECRET } = process.env

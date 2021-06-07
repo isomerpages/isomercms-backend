@@ -3,8 +3,6 @@ const express = require("express")
 const router = express.Router()
 const Bluebird = require("bluebird")
 
-const { getTree, sendTree } = require("@utils/utils.js")
-
 // Import middleware
 const {
   attachReadRouteHandlerWrapper,
@@ -12,8 +10,10 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { CollectionConfig } = require("@classes/Config")
 const { Collection } = require("@classes/Collection")
+const { CollectionConfig } = require("@classes/Config")
+
+const { getTree, sendTree } = require("@utils/utils.js")
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {

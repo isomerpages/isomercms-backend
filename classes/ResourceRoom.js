@@ -1,11 +1,12 @@
-const yaml = require("yaml")
 const Bluebird = require("bluebird")
 const _ = require("lodash")
+const yaml = require("yaml")
 
 // Import Classes
 const { Config } = require("@classes/Config.js")
-const { Resource } = require("@classes/Resource.js")
 const { File, ResourceType, DataType } = require("@classes/File.js")
+const { Resource } = require("@classes/Resource.js")
+
 const {
   getCommitAndTreeSha,
   getTree,

@@ -15,10 +15,8 @@ const {
 const { CollectionConfig } = require("../classes/Config")
 const { Collection } = require("../classes/Collection")
 
-const ISOMER_TEMPLATE_DIRS = ["_data", "_includes", "_site", "_layouts"]
-
 // List pages and directories from all folders
-async function listAllFolderContent(req, res, next) {
+async function listAllFolderContent(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -28,20 +26,16 @@ async function listAllFolderContent(req, res, next) {
   const allFolderContent = []
 
   await Bluebird.map(allFolders, async (collectionName) => {
-    try {
-      const config = new CollectionConfig(accessToken, siteName, collectionName)
-      const { sha, content } = await config.read()
-      allFolderContent.push({ name: collectionName, sha, content })
-    } catch (err) {
-      console.log(err)
-    }
+    const config = new CollectionConfig(accessToken, siteName, collectionName)
+    const { sha, content } = await config.read()
+    allFolderContent.push({ name: collectionName, sha, content })
   })
 
-  res.status(200).json({ allFolderContent })
+  return res.status(200).json({ allFolderContent })
 }
 
 // Delete subfolder
-async function deleteSubfolder(req, res, next) {
+async function deleteSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, folderName, subfolderName } = req.params
 
@@ -88,11 +82,11 @@ async function deleteSubfolder(req, res, next) {
   )
   await collectionConfig.deleteSubfolderFromOrder(subfolderName)
 
-  res.status(200).send("Ok")
+  return res.status(200).send("OK")
 }
 
 // Rename subfolder
-async function renameSubfolder(req, res, next) {
+async function renameSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, folderName, subfolderName, newSubfolderName } = req.params
 
@@ -148,7 +142,7 @@ async function renameSubfolder(req, res, next) {
   )
   await collectionConfig.renameSubfolderInOrder(subfolderName, newSubfolderName)
 
-  res.status(200).send("Ok")
+  return res.status(200).send("OK")
 }
 
 router.get(

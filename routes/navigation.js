@@ -1,4 +1,3 @@
-const { Base64 } = require("js-base64")
 const express = require("express")
 const yaml = require("yaml")
 
@@ -15,7 +14,7 @@ const { File, DataType } = require("../classes/File.js")
 
 const NAVIGATION_PATH = "navigation.yml"
 
-async function getNavigation(req, res, next) {
+async function getNavigation(req, res) {
   const { accessToken } = req
 
   const { siteName } = req.params
@@ -25,13 +24,13 @@ async function getNavigation(req, res, next) {
   IsomerFile.setFileType(dataType)
   const { content, sha } = await IsomerFile.read(NAVIGATION_PATH)
 
-  res.status(200).json({
+  return res.status(200).json({
     sha,
     content: yaml.parse(Base64.decode(content)),
   })
 }
 
-async function updateNavigation(req, res, next) {
+async function updateNavigation(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -46,7 +45,7 @@ async function updateNavigation(req, res, next) {
     sha
   )
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 router.get(

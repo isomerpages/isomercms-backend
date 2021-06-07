@@ -9,10 +9,10 @@ const {
 } = require("../middleware/routeHandler")
 
 // Import classes
-const { MediaSubfolder } = require("../classes/MediaSubfolder.js")
+const { MediaSubfolder } = require("../classes/MediaSubfolder")
 
 // Create new collection
-async function createSubfolder(req, res, next) {
+async function createSubfolder(req, res) {
   const { accessToken } = req
   const { siteName, mediaType, folderPath } = req.params
 
@@ -25,11 +25,11 @@ async function createSubfolder(req, res, next) {
   )
   await IsomerMediaSubfolder.create(processedFolderPath)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Delete collection
-async function deleteSubfolder(req, res, next) {
+async function deleteSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, mediaType, folderPath } = req.params
 
@@ -46,11 +46,11 @@ async function deleteSubfolder(req, res, next) {
     treeSha
   )
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Rename collection
-async function renameSubfolder(req, res, next) {
+async function renameSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, mediaType, oldFolderPath, newFolderPath } = req.params
 
@@ -69,7 +69,7 @@ async function renameSubfolder(req, res, next) {
     treeSha
   )
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 router.post(

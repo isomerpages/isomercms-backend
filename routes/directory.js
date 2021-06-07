@@ -8,7 +8,7 @@ const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
 const { Directory, FolderType } = require("../classes/Directory.js")
 
 // List pages and directories in folder
-async function listDirectoryContent(req, res, next) {
+async function listDirectoryContent(req, res) {
   const { accessToken } = req
   const { siteName, path } = req.params
 
@@ -18,12 +18,8 @@ async function listDirectoryContent(req, res, next) {
   const folderType = new FolderType(decodedPath)
   IsomerDirectory.setDirType(folderType)
   let directoryContents = []
-  try {
-    directoryContents = await IsomerDirectory.list()
-  } catch (err) {
-    console.log(err)
-  }
-  res.status(200).json({ directoryContents })
+  directoryContents = await IsomerDirectory.list()
+  return res.status(200).json({ directoryContents })
 }
 
 router.get(

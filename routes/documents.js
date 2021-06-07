@@ -33,7 +33,7 @@ const extractDirectoryAndFileName = (documentName) => {
 }
 
 // List documents
-async function listDocuments(req, res, next) {
+async function listDocuments(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -42,11 +42,11 @@ async function listDocuments(req, res, next) {
   IsomerFile.setFileType(documentType)
   const documents = await IsomerFile.list()
 
-  res.status(200).json({ documents })
+  return res.status(200).json({ documents })
 }
 
 // Create new document
-async function createNewDocument(req, res, next) {
+async function createNewDocument(req, res) {
   const { accessToken } = req
 
   const { siteName } = req.params
@@ -59,11 +59,11 @@ async function createNewDocument(req, res, next) {
   IsomerDocumentFile.setFileTypeToDocument(documentDirectory)
   const { sha } = await IsomerDocumentFile.create(documentName, content)
 
-  res.status(200).json({ documentName, content, sha })
+  return res.status(200).json({ documentName, content, sha })
 }
 
 // Read document
-async function readDocument(req, res, next) {
+async function readDocument(req, res) {
   const { accessToken } = req
   const { siteName, documentName } = req.params
 
@@ -79,11 +79,11 @@ async function readDocument(req, res, next) {
   // TO-DO:
   // Validate content
 
-  res.status(200).json({ documentName, sha, content })
+  return res.status(200).json({ documentName, sha, content })
 }
 
 // Update document
-async function updateDocument(req, res, next) {
+async function updateDocument(req, res) {
   const { accessToken } = req
 
   const { siteName, documentName } = req.params
@@ -97,11 +97,11 @@ async function updateDocument(req, res, next) {
   IsomerFile.setFileType(documentType)
   const { newSha } = await IsomerFile.update(documentName, content, sha)
 
-  res.status(200).json({ documentName, content, sha: newSha })
+  return res.status(200).json({ documentName, content, sha: newSha })
 }
 
 // Delete document
-async function deleteDocument(req, res, next) {
+async function deleteDocument(req, res) {
   const { accessToken } = req
 
   const { siteName, documentName } = req.params
@@ -112,11 +112,11 @@ async function deleteDocument(req, res, next) {
   IsomerFile.setFileType(documentType)
   await IsomerFile.delete(documentName, sha)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Rename document
-async function renameDocument(req, res, next) {
+async function renameDocument(req, res) {
   const { accessToken } = req
 
   const { siteName, documentName, newDocumentName } = req.params
@@ -142,11 +142,11 @@ async function renameDocument(req, res, next) {
   newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
   await newIsomerDocumentFile.create(newDocumentFileName, content)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Move document
-async function moveDocument(req, res, next) {
+async function moveDocument(req, res) {
   const { accessToken } = req
 
   const { siteName, documentName, newDocumentName } = req.params
@@ -169,7 +169,7 @@ async function moveDocument(req, res, next) {
   newIsomerDocumentFile.setFileTypeToDocument(newDocumentDirectory)
   await newIsomerDocumentFile.create(newDocumentFileName, content)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 router.get("/:siteName/documents", attachReadRouteHandlerWrapper(listDocuments))

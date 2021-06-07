@@ -16,7 +16,7 @@ const { Resource } = require("../classes/Resource.js")
 const { NotFoundError } = require("../errors/NotFoundError")
 
 // List pages in resource
-async function listResourcePages(req, res, next) {
+async function listResourcePages(req, res) {
   const { accessToken } = req
   const { siteName, resourceName } = req.params
 
@@ -35,11 +35,11 @@ async function listResourcePages(req, res, next) {
   IsomerFile.setFileType(resourcePageType)
   const resourcePages = await IsomerFile.list()
 
-  res.status(200).json({ resourcePages })
+  return res.status(200).json({ resourcePages })
 }
 
 // Create new page in resource
-async function createNewResourcePage(req, res, next) {
+async function createNewResourcePage(req, res) {
   const { accessToken } = req
 
   const { siteName, resourceName, pageName } = req.params
@@ -64,11 +64,11 @@ async function createNewResourcePage(req, res, next) {
 
   const { sha } = await IsomerFile.create(pageName, Base64.encode(pageContent))
 
-  res.status(200).json({ resourceName, pageName, pageContent, sha })
+  return res.status(200).json({ resourceName, pageName, pageContent, sha })
 }
 
 // Read page in resource
-async function readResourcePage(req, res, next) {
+async function readResourcePage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName, resourceName } = req.params
@@ -84,13 +84,13 @@ async function readResourcePage(req, res, next) {
   // TO-DO:
   // Validate content
 
-  res
+  return res
     .status(200)
     .json({ resourceRoomName, resourceName, pageName, sha, content })
 }
 
 // Update page in resource
-async function updateResourcePage(req, res, next) {
+async function updateResourcePage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName, resourceName } = req.params
@@ -110,11 +110,13 @@ async function updateResourcePage(req, res, next) {
     sha
   )
 
-  res.status(200).json({ resourceName, pageName, pageContent, sha: newSha })
+  return res
+    .status(200)
+    .json({ resourceName, pageName, pageContent, sha: newSha })
 }
 
 // Delete page in resource
-async function deleteResourcePage(req, res, next) {
+async function deleteResourcePage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName, resourceName } = req.params
@@ -127,11 +129,11 @@ async function deleteResourcePage(req, res, next) {
   IsomerFile.setFileType(resourcePageType)
   await IsomerFile.delete(pageName, sha)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Rename page in resource
-async function renameResourcePage(req, res, next) {
+async function renameResourcePage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName, resourceName, newPageName } = req.params
@@ -154,7 +156,7 @@ async function renameResourcePage(req, res, next) {
   )
   await IsomerFile.delete(pageName, sha)
 
-  res
+  return res
     .status(200)
     .json({ resourceName, pageName: newPageName, pageContent, sha: newSha })
 }

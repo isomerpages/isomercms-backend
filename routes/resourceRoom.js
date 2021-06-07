@@ -10,18 +10,18 @@ const {
 } = require("../middleware/routeHandler")
 
 // Get resource room name
-async function getResourceRoomName(req, res, next) {
+async function getResourceRoomName(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   const resourceRoom = await IsomerResourceRoom.get()
 
-  res.status(200).json({ resourceRoom })
+  return res.status(200).json({ resourceRoom })
 }
 
 // Create resource room
-async function createResourceRoom(req, res, next) {
+async function createResourceRoom(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
   const { resourceRoom } = req.body
@@ -32,11 +32,11 @@ async function createResourceRoom(req, res, next) {
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   await IsomerResourceRoom.create(resourceRoom)
 
-  res.status(200).json({ resourceRoom })
+  return res.status(200).json({ resourceRoom })
 }
 
 // Rename resource room name
-async function renameResourceRoom(req, res, next) {
+async function renameResourceRoom(req, res) {
   const { accessToken } = req
   const { siteName, resourceRoom } = req.params
 
@@ -46,18 +46,18 @@ async function renameResourceRoom(req, res, next) {
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   await IsomerResourceRoom.rename(resourceRoom)
 
-  res.status(200).json({ resourceRoom })
+  return res.status(200).json({ resourceRoom })
 }
 
 // Delete resource room
-async function deleteResourceRoom(req, res, next) {
+async function deleteResourceRoom(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   await IsomerResourceRoom.delete()
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 router.get(

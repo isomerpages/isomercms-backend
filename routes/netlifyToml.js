@@ -10,7 +10,7 @@ const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
 const { NetlifyToml } = require("../classes/NetlifyToml")
 
 // List resources
-async function getNetlifyToml(req, res, next) {
+async function getNetlifyToml(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -25,7 +25,7 @@ async function getNetlifyToml(req, res, next) {
   // Under our current assumption, we apply the first set of access rules to all paths
   const netlifyTomlHeaderValues = netlifyTomlReadableContent.headers[0].values
 
-  res.status(200).json({ netlifyTomlHeaderValues })
+  return res.status(200).json({ netlifyTomlHeaderValues })
 }
 
 router.get(

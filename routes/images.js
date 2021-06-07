@@ -10,8 +10,8 @@ const {
 } = require("../middleware/routeHandler")
 
 // Import classes
-const { File, ImageType } = require("../classes/File.js")
-const { MediaFile } = require("../classes/MediaFile.js")
+const { File, ImageType } = require("../classes/File")
+const { MediaFile } = require("../classes/MediaFile")
 
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory
@@ -35,7 +35,7 @@ const extractDirectoryAndFileName = (imageName) => {
 }
 
 // List images
-async function listImages(req, res, next) {
+async function listImages(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -44,11 +44,11 @@ async function listImages(req, res, next) {
   IsomerFile.setFileType(imageType)
   const images = await IsomerFile.list()
 
-  res.status(200).json({ images })
+  return res.status(200).json({ images })
 }
 
 // Create new image
-async function createNewImage(req, res, next) {
+async function createNewImage(req, res) {
   const { accessToken } = req
 
   const { siteName } = req.params
@@ -61,11 +61,11 @@ async function createNewImage(req, res, next) {
   IsomerImageFile.setFileTypeToImage(imageDirectory)
   const { sha } = await IsomerImageFile.create(imageName, content)
 
-  res.status(200).json({ imageName, content, sha })
+  return res.status(200).json({ imageName, content, sha })
 }
 
 // Read image
-async function readImage(req, res, next) {
+async function readImage(req, res) {
   const { accessToken } = req
 
   const { siteName, imageName } = req.params
@@ -83,11 +83,11 @@ async function readImage(req, res, next) {
   // TO-DO:
   // Validate content
 
-  res.status(200).json({ imageName, sha, content })
+  return res.status(200).json({ imageName, sha, content })
 }
 
 // Update image
-async function updateImage(req, res, next) {
+async function updateImage(req, res) {
   const { accessToken } = req
 
   const { siteName, imageName } = req.params
@@ -101,11 +101,11 @@ async function updateImage(req, res, next) {
   IsomerFile.setFileType(imageType)
   const { newSha } = await IsomerFile.update(imageName, content, sha)
 
-  res.status(200).json({ imageName, content, sha: newSha })
+  return res.status(200).json({ imageName, content, sha: newSha })
 }
 
 // Delete image
-async function deleteImage(req, res, next) {
+async function deleteImage(req, res) {
   const { accessToken } = req
 
   const { siteName, imageName } = req.params
@@ -116,11 +116,11 @@ async function deleteImage(req, res, next) {
   IsomerFile.setFileType(imageType)
   await IsomerFile.delete(imageName, sha)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Rename image
-async function renameImage(req, res, next) {
+async function renameImage(req, res) {
   const { accessToken } = req
 
   const { siteName, imageName, newImageName } = req.params
@@ -145,11 +145,11 @@ async function renameImage(req, res, next) {
   newIsomerImageFile.setFileTypeToImage(newImageDirectory)
   await newIsomerImageFile.create(newImageFileName, content)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Move image
-async function moveImage(req, res, next) {
+async function moveImage(req, res) {
   const { accessToken } = req
 
   const { siteName, imageName, newImageName } = req.params
@@ -172,7 +172,7 @@ async function moveImage(req, res, next) {
   newIsomerImageFile.setFileTypeToImage(newImageDirectory)
   await newIsomerImageFile.create(newImageFileName, content)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 router.get("/:siteName/images", attachReadRouteHandlerWrapper(listImages))
 router.post("/:siteName/images", attachWriteRouteHandlerWrapper(createNewImage))

@@ -1,8 +1,6 @@
 const express = require("express")
 
 const router = express.Router()
-const Bluebird = require("bluebird")
-const _ = require("lodash")
 const yaml = require("yaml")
 
 // Import middleware
@@ -20,7 +18,7 @@ const { Subfolder } = require("../classes/Subfolder")
 
 const { deslugifyCollectionName } = require("../utils/utils")
 
-async function listPages(req, res, next) {
+async function listPages(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -29,10 +27,10 @@ async function listPages(req, res, next) {
   IsomerFile.setFileType(pageType)
   const simplePages = await IsomerFile.list()
 
-  res.status(200).json({ pages: simplePages })
+  return res.status(200).json({ pages: simplePages })
 }
 
-async function createPage(req, res, next) {
+async function createPage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName: encodedPageName } = req.params
@@ -44,11 +42,11 @@ async function createPage(req, res, next) {
   IsomerFile.setFileType(pageType)
   await IsomerFile.create(pageName, Base64.encode(pageContent))
 
-  res.status(200).json({ pageName, pageContent })
+  return res.status(200).json({ pageName, pageContent })
 }
 
 // Read page
-async function readPage(req, res, next) {
+async function readPage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName: encodedPageName } = req.params
@@ -64,11 +62,11 @@ async function readPage(req, res, next) {
   // TO-DO:
   // Validate content
 
-  res.status(200).json({ pageName, sha, content })
+  return res.status(200).json({ pageName, sha, content })
 }
 
 // Update page
-async function updatePage(req, res, next) {
+async function updatePage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName: encodedPageName } = req.params
@@ -87,11 +85,11 @@ async function updatePage(req, res, next) {
     sha
   )
 
-  res.status(200).json({ pageName, pageContent, sha: newSha })
+  return res.status(200).json({ pageName, pageContent, sha: newSha })
 }
 
 // Delete page
-async function deletePage(req, res, next) {
+async function deletePage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName: encodedPageName } = req.params
@@ -103,11 +101,11 @@ async function deletePage(req, res, next) {
   IsomerFile.setFileType(pageType)
   await IsomerFile.delete(pageName, sha)
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 // Rename page
-async function renamePage(req, res, next) {
+async function renamePage(req, res) {
   const { accessToken } = req
 
   const {
@@ -131,11 +129,13 @@ async function renamePage(req, res, next) {
   )
   await IsomerFile.delete(pageName, sha)
 
-  res.status(200).json({ pageName: newPageName, pageContent, sha: newSha })
+  return res
+    .status(200)
+    .json({ pageName: newPageName, pageContent, sha: newSha })
 }
 
 // Move unlinked pages
-async function moveUnlinkedPages(req, res, next) {
+async function moveUnlinkedPages(req, res) {
   const { accessToken } = req
   const { siteName, newPagePath } = req.params
   const { files } = req.body
@@ -177,15 +177,19 @@ async function moveUnlinkedPages(req, res, next) {
       await IsomerSubfolder.create(targetSubfolderName)
   }
 
+  // To fix after refactoring
+  /* eslint-disable no-await-in-loop, no-restricted-syntax */
   // We can't perform these operations concurrently because of conflict issues
   for (const fileName of files) {
     const { content, sha } = await oldIsomerFile.read(fileName)
     await oldIsomerFile.delete(fileName, sha)
     if (targetSubfolderName) {
       // Adding third nav to front matter, to be removed after template rewrite
-      const [_, encodedFrontMatter, pageContent] = Base64.decode(content).split(
-        "---"
-      )
+
+      // eslint-disable-next-line no-unused-vars
+      const [unused, encodedFrontMatter, pageContent] = Base64.decode(
+        content
+      ).split("---")
       const frontMatter = yaml.parse(encodedFrontMatter)
       frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
       const newFrontMatter = yaml.stringify(frontMatter)
@@ -201,7 +205,7 @@ async function moveUnlinkedPages(req, res, next) {
     )
   }
 
-  res.status(200).send("OK")
+  return res.status(200).send("OK")
 }
 
 router.get("/:siteName/pages", attachReadRouteHandlerWrapper(listPages))

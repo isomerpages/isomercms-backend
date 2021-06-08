@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+      "target": "es2017",
+      "allowSyntheticDefaultImports": false,
+      "jsx": "react",
+      "baseUrl": "./",
+      "paths": {
+        "@root/*": ["./*"],
+        "@classes/*": ["./classes/*"],
+        "@errors/*": ["./errors/*"],
+        "@logger/*": ["./logger/*"],
+        "@middleware/*": ["./middleware/*"],
+        "@routes/*": ["./routes/*"],
+        "@utils/*": ["./utils/*"]
+      }
+    },
+    "exclude": ["node_modules", "dist"]
+}

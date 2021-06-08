@@ -1,5 +1,5 @@
 // Import base error
-const { BaseIsomerError } = require("./BaseError")
+const { BaseIsomerError } = require("@errors/BaseError")
 
 class AuthError extends BaseIsomerError {
   constructor(message) {

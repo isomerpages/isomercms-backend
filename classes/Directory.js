@@ -1,9 +1,10 @@
 const axios = require("axios")
 const _ = require("lodash")
-const validateStatus = require("../utils/axios-utils")
 
-const { BadRequestError } = require("../errors/BadRequestError")
-const { NotFoundError } = require("../errors/NotFoundError")
+const { BadRequestError } = require("@errors/BadRequestError")
+const { NotFoundError } = require("@errors/NotFoundError")
+
+const validateStatus = require("@utils/axios-utils")
 
 const { GITHUB_ORG_NAME } = process.env
 const { BRANCH_REF } = process.env

@@ -1,5 +1,6 @@
-const { File, ImageType, DocumentType } = require("./File.js")
-const { getTree, sendTree } = require("../utils/utils.js")
+const { File, ImageType, DocumentType } = require("@classes/File.js")
+
+const { getTree, sendTree } = require("@utils/utils.js")
 
 class MediaSubfolder {
   constructor(accessToken, siteName, fileType) {

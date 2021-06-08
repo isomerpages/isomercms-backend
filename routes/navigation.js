@@ -7,10 +7,10 @@ const router = express.Router()
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import Classes
-const { File, DataType } = require("../classes/File.js")
+const { File, DataType } = require("@classes/File.js")
 
 const NAVIGATION_PATH = "navigation.yml"
 

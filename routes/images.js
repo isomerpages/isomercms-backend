@@ -7,11 +7,11 @@ const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { File, ImageType } = require("../classes/File")
-const { MediaFile } = require("../classes/MediaFile")
+const { File, ImageType } = require("@classes/File")
+const { MediaFile } = require("@classes/MediaFile")
 
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory

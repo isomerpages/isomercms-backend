@@ -1,11 +1,11 @@
+const Bluebird = require("bluebird")
 const { Base64 } = require("js-base64")
 const _ = require("lodash")
 const yaml = require("yaml")
-const Bluebird = require("bluebird")
 
 // import classes
-const { Config } = require("./Config.js")
-const { File, DataType, HomepageType } = require("./File.js")
+const { Config } = require("@classes/Config.js")
+const { File, DataType, HomepageType } = require("@classes/File.js")
 
 // Constants
 const FOOTER_PATH = "footer.yml"

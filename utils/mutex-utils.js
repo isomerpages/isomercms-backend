@@ -1,8 +1,9 @@
 const AWS = require("aws-sdk")
 const { serializeError } = require("serialize-error")
 
-const logger = require("../logger/logger")
-const { ConflictError } = require("../errors/ConflictError")
+const logger = require("@logger/logger")
+
+const { ConflictError } = require("@errors/ConflictError")
 
 // Env vars
 const { NODE_ENV, MUTEX_TABLE_NAME } = process.env

@@ -3,9 +3,9 @@ const express = require("express")
 const router = express.Router()
 
 // Import middleware
-const { attachReadRouteHandlerWrapper } = require("../middleware/routeHandler")
+const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { Directory, FolderType } = require("../classes/Directory.js")
+const { Directory, FolderType } = require("@classes/Directory.js")
 
 // List pages and directories in folder
 async function listDirectoryContent(req, res) {

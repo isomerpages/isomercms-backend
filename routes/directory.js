@@ -18,7 +18,14 @@ async function listDirectoryContent(req, res) {
   const folderType = new FolderType(decodedPath)
   IsomerDirectory.setDirType(folderType)
   let directoryContents = []
-  directoryContents = await IsomerDirectory.list()
+
+  // try catch should be removed during refactor
+  // .list() should return an empty array instead of throwing error
+  try {
+    directoryContents = await IsomerDirectory.list()
+  } catch (e) { // directory does not exist, catch error
+    console.log(e)
+  }
   return res.status(200).json({ directoryContents })
 }
 

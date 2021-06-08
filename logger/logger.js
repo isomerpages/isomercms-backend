@@ -1,25 +1,22 @@
 /* eslint-disable no-console */
-
 // Imports
+const AWS = require("aws-sdk")
 const Bluebird = require("bluebird")
 const moment = require("moment-timezone")
+// Logging tools
+const winston = require("winston")
+const WinstonCloudWatch = require("winston-cloudwatch")
 
 // Env vars
 const { NODE_ENV } = process.env
 
 // AWS
-const AWS = require("aws-sdk")
-
 const AWS_REGION_NAME = "ap-southeast-1"
 AWS.config.update({ region: AWS_REGION_NAME })
 const awsMetadata = new AWS.MetadataService()
 const metadataRequest = Bluebird.promisify(
   awsMetadata.request.bind(awsMetadata)
 )
-
-// Logging tools
-const winston = require("winston")
-const WinstonCloudWatch = require("winston-cloudwatch")
 
 // Constants
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`

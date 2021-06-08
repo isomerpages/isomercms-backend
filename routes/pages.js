@@ -1,6 +1,4 @@
 const express = require("express")
-
-const router = express.Router()
 const yaml = require("yaml")
 
 // Import middleware
@@ -8,15 +6,17 @@ const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { File, PageType, CollectionPageType } = require("../classes/File.js")
-const { Collection } = require("../classes/Collection.js")
-const { CollectionConfig } = require("../classes/Config")
-const { Subfolder } = require("../classes/Subfolder")
+const { Collection } = require("@classes/Collection.js")
+const { CollectionConfig } = require("@classes/Config")
+const { File, PageType, CollectionPageType } = require("@classes/File.js")
+const { Subfolder } = require("@classes/Subfolder")
 
-const { deslugifyCollectionName } = require("../utils/utils")
+const { deslugifyCollectionName } = require("@utils/utils")
+
+const router = express.Router()
 
 async function listPages(req, res) {
   const { accessToken } = req

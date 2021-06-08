@@ -1,10 +1,10 @@
 const express = require("express")
-
-const router = express.Router()
 const uuid = require("uuid/v4")
 
 const { CLIENT_ID } = process.env
 const { REDIRECT_URI } = process.env
+
+const router = express.Router()
 
 /* GET home page. */
 function getCmsHomepage(req, res) {

@@ -1,5 +1,5 @@
-const _ = require("lodash")
 const jwt = require("jsonwebtoken")
+const _ = require("lodash")
 
 const { JWT_SECRET } = process.env
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()

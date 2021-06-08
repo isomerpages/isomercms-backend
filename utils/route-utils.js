@@ -4,7 +4,7 @@ const {
   PageType,
   CollectionPageType,
   DataType,
-} = require("../classes/File")
+} = require("@classes/File")
 
 const readPageUtilFunc = async (accessToken, siteName, pageName) => {
   const IsomerFile = new File(accessToken, siteName)

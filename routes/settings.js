@@ -6,10 +6,10 @@ const router = express.Router()
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import Classes
-const { Settings } = require("../classes/Settings.js")
+const { Settings } = require("@classes/Settings.js")
 
 async function getSettings(req, res) {
   const { accessToken } = req

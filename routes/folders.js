@@ -1,19 +1,19 @@
-const express = require("express")
-
-const router = express.Router()
 const Bluebird = require("bluebird")
-
-const { getTree, sendTree } = require("../utils/utils.js")
+const express = require("express")
 
 // Import middleware
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { CollectionConfig } = require("../classes/Config")
-const { Collection } = require("../classes/Collection")
+const { Collection } = require("@classes/Collection")
+const { CollectionConfig } = require("@classes/Config")
+
+const { getTree, sendTree } = require("@utils/utils.js")
+
+const router = express.Router()
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {

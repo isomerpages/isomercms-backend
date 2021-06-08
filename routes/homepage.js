@@ -6,10 +6,10 @@ const router = express.Router()
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { File, HomepageType } = require("../classes/File.js")
+const { File, HomepageType } = require("@classes/File.js")
 
 // Constants
 const HOMEPAGE_INDEX_PATH = "index.md" // Empty string

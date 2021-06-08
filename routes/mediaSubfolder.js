@@ -6,10 +6,10 @@ const router = express.Router()
 const {
   attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("../middleware/routeHandler")
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { MediaSubfolder } = require("../classes/MediaSubfolder")
+const { MediaSubfolder } = require("@classes/MediaSubfolder")
 
 // Create new collection
 async function createSubfolder(req, res) {

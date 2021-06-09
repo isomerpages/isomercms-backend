@@ -18,6 +18,17 @@ const Read = async ({ pageName, collectionName }, reqDetails) => {
     return { content, sha }
 }
 
+const Update = async ({ fileContent, pageName, collectionName, sha }, reqDetails) => {
+    const path = genFolderUrl(pageName, collectionName, reqDetails.siteName)
+    const { sha: newSha } = await MdPageService.Update({ fileContent, path, sha }, reqDetails)
+
+    // Do folder page-specific stuff, if any
+
+    // for now
+    return { newSha }
+}
+
 module.exports = {
     Read,
+    Update,
 }

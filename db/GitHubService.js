@@ -34,8 +34,19 @@ const Read = async ({ accessToken, url }) => {
     })
 }
 
-const Update = async () => {
+const Update = async ({ accessToken, fileContent, sha, url }) => {
+    const params = {
+        message: `Update file: ${url}`,
+        content: fileContent,
+        branch: BRANCH_REF,
+        sha,
+    }
 
+    return axiosInstance.put(url, params, {
+        headers: {
+          Authorization: `token ${accessToken}`,
+        },
+    })
 }
 
 const Delete = async () => {
@@ -44,4 +55,5 @@ const Delete = async () => {
 
 module.exports = {
     Read,
+    Update,
 }

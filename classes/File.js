@@ -129,6 +129,8 @@ class File {
         },
       })
 
+      console.log(resp)
+
       return { newSha: resp.data.commit.sha }
     } catch (err) {
       const { status } = err.response

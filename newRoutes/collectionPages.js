@@ -163,22 +163,17 @@ async function readCollectionPage(req, res) {
 // Update page in collection
 async function updateCollectionPage(req, res) {
   const { accessToken } = req
-
-  const { siteName, pageName: encodedPageName, collectionName } = req.params
+  const { siteName, pageName, collectionName } = req.params // no need for decoding - express does it automatically
+    
   const { content: pageContent, sha } = req.body
-  const pageName = decodeURIComponent(encodedPageName)
 
   // TO-DO:
   // Validate pageName and content
 
-  const IsomerFile = new File(accessToken, siteName)
-  const collectionPageType = new CollectionPageType(collectionName)
-  IsomerFile.setFileType(collectionPageType)
-  const { newSha } = await IsomerFile.update(
-    pageName,
-    Base64.encode(pageContent),
-    sha
-  )
+  const reqDetails = { accessToken, siteName }
+  const opts = { pageName, collectionName, fileContent: pageContent, sha }
+
+  const { newSha } = await FolderPageService.Update(opts, reqDetails)
 
   return res
     .status(200)

@@ -2,6 +2,8 @@ const { NotFoundError } = require("@errors/NotFoundError")
 
 const GitHubService = require('../db/GitHubService')
 
+// Job is simply to deal with file outputs from and to GitHub
+
 const Read = async ({ path }, { accessToken }) => {
     const resp = await GitHubService.Read({ accessToken, url: path })
     

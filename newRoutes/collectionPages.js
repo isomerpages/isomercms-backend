@@ -20,7 +20,10 @@ const { File, CollectionPageType } = require("@classes/File")
 
 // Import utils
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
-const { encode } = require("base-64")
+
+const FolderPageService = require('../fileServices/MdPageServices/FolderPageService')
+const FolderYmlService = require('../fileServices/YmlFileServices/FolderYmlService')
+
 
 const router = express.Router()
 
@@ -133,20 +136,23 @@ async function createCollectionPage(req, res) {
   return res.status(200).json({ collectionName, pageName, pageContent })
 }
 
+// assumes that our files are either md or yml
+const isMdFile = (pageName) => pageName.split('.')[1] === 'md'
+
 // Read page in collection
 async function readCollectionPage(req, res) {
   const { accessToken } = req
+  const { siteName, pageName, collectionName } = req.params // no need for decoding - express does it automatically
 
-  const { siteName, pageName: encodedPageName, collectionName } = req.params
-  const pageName = decodeURIComponent(encodedPageName)
-  console.log(pageName, encodedPageName)
+  const reqDetails = { accessToken, siteName }
+  const opts = { pageName, collectionName }
 
-  const IsomerFile = new File(accessToken, siteName)
-  const collectionPageType = new CollectionPageType(collectionName)
-  IsomerFile.setFileType(collectionPageType)
-  console.log(IsomerFile, "ISOMER FILE")
-  const { sha, content: encodedContent } = await IsomerFile.read(pageName)
-  const content = Base64.decode(encodedContent)
+  console.log(' ')
+  console.log(' HI HI')
+  
+  const isMd = isMdFile(pageName)
+
+  const { sha, content} = isMd ? await FolderPageService.Read(opts, reqDetails) : await FolderYmlService.Read(opts, reqDetails)
 
   // TO-DO:
   // Validate content

@@ -16,7 +16,10 @@ const { errorHandler } = require("@middleware/errorHandler")
 
 // Import routes
 const authRouter = require("@routes/auth")
-const collectionPagesRouter = require("@routes/collectionPages")
+
+const collectionPagesRouter = require("./newRoutes/collectionPages")
+// const collectionPagesRouter = require("./routes/collectionPages")
+
 const collectionsRouter = require("@routes/collections")
 const directoryRouter = require("@routes/directory")
 const documentsRouter = require("@routes/documents")

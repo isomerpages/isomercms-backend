@@ -12,6 +12,23 @@ const List = async ({ path }, { accessToken }) => {
     return { data: resp.data }
 }
 
+const Rename = async ({ oldDirectoryName, newDirectoryName, message }, reqDetails) => {
+    const gitTree = await GitHubService.GetRepoState({ isRecursive: false }, reqDetails)
+
+    const newGitTree = gitTree.map((item) => {
+        if (item.path === oldDirectoryName) {
+          return {
+            ...item,
+            path: newDirectoryName,
+          }
+        }
+        return item
+    })
+
+    await GitHubService.UpdateRepoState({ gitTree: newGitTree, message }, reqDetails)
+}
+
 module.exports = {
     List,
+    Rename,
 }

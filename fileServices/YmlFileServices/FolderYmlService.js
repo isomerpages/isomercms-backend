@@ -4,12 +4,12 @@ const genGhContentUrl = (siteName, path) => {
     return `${siteName}/contents/${path}`
 }
 
-const genFolderUrl = (pageName, collectionName, siteName) => {
-    return genGhContentUrl(siteName, `_${collectionName}/${pageName}`)
+const genFolderYmlUrl = (collectionName, siteName) => {
+    return genGhContentUrl(siteName, `_${collectionName}/collection.yml`)
 }
 
-const Read = async ({ pageName, collectionName }, reqDetails) => {
-    const path = genFolderUrl(pageName, collectionName, reqDetails.siteName)
+const Read = async ({ collectionName }, reqDetails) => {
+    const path = genFolderYmlUrl(collectionName, reqDetails.siteName)
     const { content, sha } = await YmlFileService.Read({ path }, reqDetails)
 
     // Do folder yml specific stuff, if any
@@ -18,6 +18,15 @@ const Read = async ({ pageName, collectionName }, reqDetails) => {
     return { content, sha }
 }
 
+const Update = async ({ collectionName, fileContent, sha }, reqDetails) => {
+    const path = genFolderYmlUrl(collectionName, reqDetails.siteName)
+
+    const { newSha } = await YmlFileService.Update({ fileContent, path, sha }, reqDetails)
+
+    return { newSha }
+}
+
 module.exports = {
     Read,
+    Update,
 }

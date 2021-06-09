@@ -20,8 +20,6 @@ const genGhContentUrl = (siteName, path) => {
 const List = async (reqDetails) => {
     const path = genGhContentUrl(reqDetails.siteName, '')
     const { data } = await BaseDirectoryService.List({ path }, reqDetails)
-
-    console.log(data)
     const filesOrDirs = data.map((fileOrDir) => {
         const { name, path, sha, size, content, type } = fileOrDir
         return {

@@ -16,6 +16,7 @@ const { Subfolder } = require("@classes/Subfolder")
 const { deslugifyCollectionName } = require("@utils/utils")
 
 const FolderDirectoryService = require('../directoryServices/RootFolderService')
+const FolderService = require('../directoryServices/FolderService')
 
 
 const router = express.Router()
@@ -32,6 +33,23 @@ async function listCollections(req, res) {
   
     return res.status(200).json({ collections: data })
 }
+
+// Rename collection
+async function renameCollection(req, res) {
+  // TO-DO: Verify that collection exists
+  
+  // Remove collection from config file
+  const { accessToken, currentCommitSha, treeSha } = req
+  const { siteName, collectionName, newCollectionName } = req.params
+
+  const reqDetails = { accessToken, currentCommitSha, siteName, treeSha }
+  const opts = { oldCollectionName: collectionName, newCollectionName }
+  await FolderService.Rename(opts, reqDetails)
+
+  return res.status(200).json({ collectionName, newCollectionName })
+}
+
+
 
 // Create new collection
 async function createNewCollection(req, res) {
@@ -57,25 +75,6 @@ async function deleteCollection(req, res) {
   await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
 
   return res.status(200).json({ collectionName })
-}
-
-// Rename collection
-async function renameCollection(req, res) {
-  // TO-DO: Verify that collection exists
-
-  // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = req
-  const { siteName, collectionName, newCollectionName } = req.params
-
-  const IsomerCollection = new Collection(accessToken, siteName)
-  await IsomerCollection.rename(
-    collectionName,
-    newCollectionName,
-    currentCommitSha,
-    treeSha
-  )
-
-  return res.status(200).json({ collectionName, newCollectionName })
 }
 
 // Move files in collection

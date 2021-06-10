@@ -60,6 +60,7 @@
     "@logger": "logger",
     "@middleware": "middleware",
     "@routes": "routes",
-    "@utils": "utils"
+    "@utils": "utils",
+    "@services": "services"
   }
 }

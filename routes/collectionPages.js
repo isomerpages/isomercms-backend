@@ -20,6 +20,7 @@ const { File, CollectionPageType } = require("@classes/File")
 
 // Import utils
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
+const { CollectionPageService } = require("../services/routes/CollectionPageService")
 
 const router = express.Router()
 
@@ -121,13 +122,8 @@ async function createCollectionPage(req, res) {
   const { content: pageContent } = req.body
   const pageName = decodeURIComponent(encodedPageName)
 
-  const IsomerFile = new File(accessToken, siteName)
-  const collectionPageType = new CollectionPageType(collectionName)
-  IsomerFile.setFileType(collectionPageType)
-  await IsomerFile.create(pageName, Base64.encode(pageContent))
-
-  const config = new CollectionConfig(accessToken, siteName, collectionName)
-  await config.addItemToOrder(pageName)
+  const IsomerFile = new CollectionPageService(accessToken, siteName)
+  await IsomerFile.create(pageName, collectionName, pageContent)
 
   return res.status(200).json({ collectionName, pageName, pageContent })
 }

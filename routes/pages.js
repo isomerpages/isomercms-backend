@@ -15,6 +15,7 @@ const { File, PageType, CollectionPageType } = require("@classes/File.js")
 const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
+const { UnlinkedPageService } = require("../services/routes/UnlinkedPageService")
 
 const router = express.Router()
 
@@ -52,12 +53,8 @@ async function readPage(req, res) {
   const { siteName, pageName: encodedPageName } = req.params
   const pageName = decodeURIComponent(encodedPageName)
 
-  const IsomerFile = new File(accessToken, siteName)
-  const pageType = new PageType()
-  IsomerFile.setFileType(pageType)
-  const { sha, content: encodedContent } = await IsomerFile.read(pageName)
-
-  const content = Base64.decode(encodedContent)
+  const IsomerFile = new UnlinkedPageService(accessToken, siteName)
+  const { sha, content } = await IsomerFile.read(pageName)
 
   // TO-DO:
   // Validate content

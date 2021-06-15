@@ -12,7 +12,7 @@ const { Collection } = require("@classes/Collection")
 const { CollectionConfig } = require("@classes/Config")
 const { File, CollectionPageType } = require("@classes/File")
 
-const { getTree, sendTree } = require("@utils/utils.js")
+const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils.js")
 
 
 const router = express.Router()
@@ -128,7 +128,7 @@ async function renameSubfolder(req, res) {
     // Modify `third_nav_title` and save as new file in newSubfolderName
     const newFrontMatter = {
       ...frontMatter,
-      third_nav_title: newSubfolderName
+      third_nav_title: deslugifyCollectionName(newSubfolderName)
     }
 
     const newContent = ["---\n", yaml.stringify(newFrontMatter), "---\n", mdBody].join("")

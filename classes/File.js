@@ -1,3 +1,5 @@
+/* eslint max-classes-per-file: ["error", 10] */
+
 const axios = require("axios")
 
 const {
@@ -47,9 +49,7 @@ class File {
     if (resp.status !== 200) return {}
 
     const files = resp.data
-      .filter((object) => {
-        return object.type === "file"
-      })
+      .filter((object) => object.type === "file")
       .map((object) => {
         const pathNameSplit = object.path.split("/")
         const fileName = pathNameSplit[pathNameSplit.length - 1]

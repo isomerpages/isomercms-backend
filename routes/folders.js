@@ -1,7 +1,7 @@
 const Bluebird = require("bluebird")
 const express = require("express")
+const yaml = require("yaml")
 
-// Import middleware
 const {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
@@ -10,8 +10,10 @@ const {
 // Import classes
 const { Collection } = require("@classes/Collection")
 const { CollectionConfig } = require("@classes/Config")
+const { File, CollectionPageType } = require("@classes/File")
 
-const { getTree, sendTree } = require("@utils/utils.js")
+const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils.js")
+
 
 const router = express.Router()
 
@@ -87,52 +89,59 @@ async function deleteSubfolder(req, res) {
 
 // Rename subfolder
 async function renameSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = req
+  const { accessToken } = req
   const { siteName, folderName, subfolderName, newSubfolderName } = req.params
 
-  // Rename subfolder
-  const commitMessage = `Rename subfolder ${folderName}/${subfolderName} to ${folderName}/${newSubfolderName}`
-  const isRecursive = true
-  const gitTree = await getTree(siteName, accessToken, treeSha, isRecursive)
-  const baseTreeWithoutFolder = gitTree.filter(
-    (item) =>
-      // keep all root-level items except for tree object of folder whose subfolder is to be deleted
-      !item.path.includes("/") && item.path !== `_${folderName}`
-  )
-  const folderTreeWithRenamedSubfolder = gitTree
-    .filter((item) =>
-      // get all folder items
-      item.path.includes(`_${folderName}`)
-    )
-    .filter(
-      (item) =>
-        // remove tree objects of folder and subfolder to be renamed
-        item.path !== `_${folderName}` &&
-        item.path !== `_${folderName}/${subfolderName}`
-    )
-    .map((item) => {
-      // rename all subfolder items
-      if (item.path.includes(`_${folderName}/${subfolderName}`)) {
-        const pathArr = item.path.split("/")
-        return {
-          ...item,
-          path: `_${folderName}/${newSubfolderName}/${pathArr[2]}`,
-        }
-      }
-      return item
-    })
+  // Rename subfolder by:
+  // 1. Creating new files in the newSubfolderName folder
+  // 2. Modifying the `third_nav_title` of each new file to reflect the newSubfolderName
+  // 3. Delete existing files in the previous subfolderName folder
+  const currentSubfolderPath = `${folderName}/${subfolderName}`
+  const CurrentIsomerFile = new File(accessToken, siteName)
+  const currDataType = new CollectionPageType(currentSubfolderPath)
+  CurrentIsomerFile.setFileType(currDataType)
 
-  const newGitTree = [
-    ...baseTreeWithoutFolder,
-    ...folderTreeWithRenamedSubfolder,
-  ]
-  await sendTree(
-    newGitTree,
-    currentCommitSha,
-    siteName,
-    accessToken,
-    commitMessage
-  )
+  const newSubfolderPath = `${folderName}/${newSubfolderName}`
+  const NewIsomerFile = new File(accessToken, siteName)
+  const newDataType = new CollectionPageType(newSubfolderPath)
+  NewIsomerFile.setFileType(newDataType)
+
+  const filesToBeModified = await CurrentIsomerFile.list()
+
+  await Bluebird.mapSeries(filesToBeModified, async(fileInfo) => {
+    const { fileName } = fileInfo
+
+    // Read existing file content
+    const { content, sha } = await CurrentIsomerFile.read(fileName)
+
+    // Handle keep file differently
+    if (fileName === '.keep') {
+      await NewIsomerFile.create(fileName, content)
+      return CurrentIsomerFile.delete(fileName, sha)
+    }
+
+    const decodedContent = Base64.decode(content)
+    const results = decodedContent.split("---")
+    const frontMatter = yaml.parse(results[1]) // get the front matter as an object
+    const mdBody = results.slice(2).join("---")
+
+    // Modify `third_nav_title` and save as new file in newSubfolderName
+    const newFrontMatter = {
+      ...frontMatter,
+      third_nav_title: deslugifyCollectionName(newSubfolderName)
+    }
+
+    const newContent = ["---\n", yaml.stringify(newFrontMatter), "---\n", mdBody].join("")
+
+    const encodedNewContent = Base64.encode(newContent)
+    
+    await NewIsomerFile.create(fileName, encodedNewContent)
+
+    // Delete existing file in subfolderName
+    return CurrentIsomerFile.delete(fileName, sha)
+
+  })
+
 
   // // Update collection config
   const collectionConfig = new CollectionConfig(

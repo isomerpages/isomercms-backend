@@ -90,9 +90,7 @@ class Collection {
   async delete(collectionName, currentCommitSha, treeSha) {
     const commitMessage = `Delete collection ${collectionName}`
     const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
-    const newGitTree = gitTree.filter((item) => {
-      return item.path !== `_${collectionName}`
-    })
+    const newGitTree = gitTree.filter((item) => item.path !== `_${collectionName}`)
     await sendTree(
       newGitTree,
       currentCommitSha,
@@ -126,29 +124,6 @@ class Collection {
     treeSha
   ) {
     const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
-
-    // Rename collection in nav if it exists
-    const nav = new File(this.accessToken, this.siteName)
-    const dataType = new DataType()
-    nav.setFileType(dataType)
-    const { content: navContent, sha: navSha } = await nav.read(NAV_FILE_NAME)
-    const navContentObject = yaml.parse(Base64.decode(navContent))
-
-    const newNavLinks = navContentObject.links.map((link) => {
-      if (link.collection === oldCollectionName) {
-        return {
-          title: deslugifyCollectionName(newCollectionName),
-          collection: newCollectionName,
-        }
-      }
-      return link
-    })
-    const newNavContentObject = {
-      ...navContentObject,
-      links: newNavLinks,
-    }
-    const newNavContent = Base64.encode(yaml.stringify(newNavContentObject))
-    await nav.update(NAV_FILE_NAME, newNavContent, navSha)
 
     const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
     const oldCollectionDirectoryName = `_${oldCollectionName}`
@@ -189,6 +164,31 @@ class Collection {
       yaml.stringify(newConfigContentObject)
     )
     await collectionConfig.update(newConfigContent, configSha)
+
+    // Rename collection in nav if it exists
+    const nav = new File(this.accessToken, this.siteName)
+    const dataType = new DataType()
+    nav.setFileType(dataType)
+    const { content: navContent, sha: navSha } = await nav.read(NAV_FILE_NAME)
+    const navContentObject = yaml.parse(Base64.decode(navContent))
+
+    const newNavLinks = navContentObject.links.map((link) => {
+      if (link.collection === oldCollectionName) {
+        return {
+          title: deslugifyCollectionName(newCollectionName),
+          collection: newCollectionName,
+        }
+      }
+      return link
+    })
+
+    const newNavContentObject = {
+      ...navContentObject,
+      links: newNavLinks,
+    }
+
+    const newNavContent = Base64.encode(yaml.stringify(newNavContentObject))
+    await nav.update(NAV_FILE_NAME, newNavContent, navSha)
   }
 }
 

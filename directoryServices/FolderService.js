@@ -25,7 +25,7 @@ const List = async ({ directoryName }, reqDetails) => {
 const Rename = async ({ oldCollectionName, newCollectionName }, reqDetails) => {
     const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
 
-    // update nav file
+    // update nav file - this should be collapsed into the NavYmlService.Update
     const { content: navContentObj, sha: navSha } = await NavYmlService.Read(reqDetails)
     const newNavLinks = navContentObj.links.map((link) => {
         if (link.collection === oldCollectionName) {
@@ -45,7 +45,7 @@ const Rename = async ({ oldCollectionName, newCollectionName }, reqDetails) => {
     // update directories
     await BaseDirectoryService.Rename({ oldDirectoryName: `_${oldCollectionName}`, newDirectoryName: `_${newCollectionName}`, message: commitMessage }, reqDetails)
 
-    // update collection config
+    // update collection config - this should be collapsed into the FolderConfigYmlService.Update method
     const { content: collectionConfigObj, sha: collectionConfigSha } = await FolderConfigYmlService.Read({ collectionName: newCollectionName }, reqDetails)
     const newConfigContentObj = {
         collections: {

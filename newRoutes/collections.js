@@ -37,7 +37,7 @@ async function listCollections(req, res) {
 // Rename collection
 async function renameCollection(req, res) {
   // TO-DO: Verify that collection exists
-  
+``
   // Remove collection from config file
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, collectionName, newCollectionName } = req.params

@@ -57,9 +57,6 @@ async function readCollectionPage(req, res) {
 
   const reqDetails = { accessToken, siteName }
   const opts = { pageName, collectionName }
-
-  console.log(' ')
-  console.log(' HI HI')
   
   const isMd = isMdFile(pageName)
 

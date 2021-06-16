@@ -23,6 +23,7 @@ const Update = async ({ fileContent, pageName, collectionName, sha }, reqDetails
     const { sha: newSha } = await MdPageService.Update({ fileContent, path, sha }, reqDetails)
 
     // Do folder page-specific stuff, if any
+    await FolderYmlService.Update()
 
     // for now
     return { newSha }

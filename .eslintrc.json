@@ -9,7 +9,7 @@
         "airbnb-base",
         "prettier"
     ],
-    "plugins": ["import"],
+    "plugins": ["only-warn", "import"],
     "parserOptions": {
         "ecmaVersion": 12
     },

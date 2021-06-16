@@ -1,5 +1,3 @@
-/* eslint max-classes-per-file: ["error", 10] */
-
 const axios = require("axios")
 
 const {

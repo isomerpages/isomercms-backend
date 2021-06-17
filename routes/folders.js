@@ -1,119 +1,170 @@
-const express = require('express');
-const router = express.Router();
-const Bluebird = require('bluebird')
+const Bluebird = require("bluebird")
+const express = require("express")
+const yaml = require("yaml")
 
-const { getTree, sendTree } = require('../utils/utils.js')
-
-// Import middleware
-const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const {
+  attachReadRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
+} = require("@middleware/routeHandler")
 
 // Import classes
-const { CollectionConfig } = require('../classes/Config')
-const { Collection } = require('../classes/Collection');
+const { Collection } = require("@classes/Collection")
+const { CollectionConfig } = require("@classes/Config")
+const { File, CollectionPageType } = require("@classes/File")
 
-const ISOMER_TEMPLATE_DIRS = ['_data', '_includes', '_site', '_layouts']
+const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils.js")
+
+
+const router = express.Router()
 
 // List pages and directories from all folders
-async function listAllFolderContent (req, res, next) {
-    const { accessToken } = req
-    const { siteName } = req.params
+async function listAllFolderContent(req, res) {
+  const { accessToken } = req
+  const { siteName } = req.params
 
-    const IsomerCollection = new Collection(accessToken, siteName)
-    const allFolders = IsomerCollection.list()
+  const IsomerCollection = new Collection(accessToken, siteName)
+  const allFolders = IsomerCollection.list()
 
-    const allFolderContent = []
-    
-    await Bluebird.map(allFolders, async (collectionName) => {
-        try {
-            const config = new CollectionConfig(accessToken, siteName, collectionName)
-            const { sha, content } = await config.read()
-            allFolderContent.push({ name: collectionName, sha, content })
-        } catch (err) {
-            console.log(err)
-        }
-    })
+  const allFolderContent = []
 
-    res.status(200).json({ allFolderContent })
+  await Bluebird.map(allFolders, async (collectionName) => {
+    const config = new CollectionConfig(accessToken, siteName, collectionName)
+    const { sha, content } = await config.read()
+    allFolderContent.push({ name: collectionName, sha, content })
+  })
+
+  return res.status(200).json({ allFolderContent })
 }
 
 // Delete subfolder
-async function deleteSubfolder (req, res, next) {
-    const { accessToken, currentCommitSha, treeSha } = req
-    const { siteName, folderName, subfolderName } = req.params
+async function deleteSubfolder(req, res) {
+  const { accessToken, currentCommitSha, treeSha } = req
+  const { siteName, folderName, subfolderName } = req.params
 
-    // Delete subfolder
-    const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`
-    const isRecursive = true
-    const gitTree = await getTree(siteName, accessToken, treeSha, isRecursive)
-    const baseTreeWithoutFolder = gitTree.filter(item => (
-        // keep all root-level items except for tree object of folder whose subfolder is to be deleted
-       !item.path.includes('/') && item.path !== `_${folderName}`
-    ))
-    const folderTreeWithoutSubfolder = gitTree.filter(item => (
-        // get all folder items
-        item.path.includes(`_${folderName}`)
-    )).filter(item => (
+  // Delete subfolder
+  const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`
+  const isRecursive = true
+  const gitTree = await getTree(siteName, accessToken, treeSha, isRecursive)
+  const baseTreeWithoutFolder = gitTree.filter(
+    (item) =>
+      // keep all root-level items except for tree object of folder whose subfolder is to be deleted
+      !item.path.includes("/") && item.path !== `_${folderName}`
+  )
+  const folderTreeWithoutSubfolder = gitTree
+    .filter((item) =>
+      // get all folder items
+      item.path.includes(`_${folderName}`)
+    )
+    .filter(
+      (item) =>
         // remove tree objects of folder and subfolder to be renamed
-        item.path !== `_${folderName}` && item.path !== `_${folderName}/${subfolderName}`
-    )).filter(item => (
+        item.path !== `_${folderName}` &&
+        item.path !== `_${folderName}/${subfolderName}`
+    )
+    .filter(
+      (item) =>
         // exclude all subfolder items
         !item.path.includes(`_${folderName}/${subfolderName}`)
-    ))
+    )
 
-    const newGitTree = [...baseTreeWithoutFolder, ...folderTreeWithoutSubfolder]
-    await sendTree(newGitTree, currentCommitSha, siteName, accessToken, commitMessage)
+  const newGitTree = [...baseTreeWithoutFolder, ...folderTreeWithoutSubfolder]
+  await sendTree(
+    newGitTree,
+    currentCommitSha,
+    siteName,
+    accessToken,
+    commitMessage
+  )
 
-    // Update collection config
-    const collectionConfig = new CollectionConfig(accessToken, siteName, folderName)
-    await collectionConfig.deleteSubfolderFromOrder(subfolderName)
+  // Update collection config
+  const collectionConfig = new CollectionConfig(
+    accessToken,
+    siteName,
+    folderName
+  )
+  await collectionConfig.deleteSubfolderFromOrder(subfolderName)
 
-    res.status(200).send('Ok')
+  return res.status(200).send("OK")
 }
 
 // Rename subfolder
-async function renameSubfolder (req, res, next) {
-    const { accessToken, currentCommitSha, treeSha } = req
-    const { siteName, folderName, subfolderName, newSubfolderName } = req.params
+async function renameSubfolder(req, res) {
+  const { accessToken } = req
+  const { siteName, folderName, subfolderName, newSubfolderName } = req.params
 
-    // Rename subfolder
-    const commitMessage = `Rename subfolder ${folderName}/${subfolderName} to ${folderName}/${newSubfolderName}`
-    const isRecursive = true
-    const gitTree = await getTree(siteName, accessToken, treeSha, isRecursive)
-    const baseTreeWithoutFolder = gitTree.filter(item => (
-        // keep all root-level items except for tree object of folder whose subfolder is to be deleted
-       !item.path.includes('/') && item.path !== `_${folderName}`
-    ))
-    const folderTreeWithRenamedSubfolder= gitTree.filter(item => (
-        // get all folder items
-        item.path.includes(`_${folderName}`)
-    )).filter(item => (
-        // remove tree objects of folder and subfolder to be renamed
-        item.path !== `_${folderName}` && item.path !== `_${folderName}/${subfolderName}`
-    )).map(item => {
-        // rename all subfolder items
-        if (item.path.includes(`_${folderName}/${subfolderName}`)) {
-            const pathArr = item.path.split('/')
-            return {
-                ...item,
-                path: `_${folderName}/${newSubfolderName}/${pathArr[2]}`,
-            }
-        }
-        return item
-    })
+  // Rename subfolder by:
+  // 1. Creating new files in the newSubfolderName folder
+  // 2. Modifying the `third_nav_title` of each new file to reflect the newSubfolderName
+  // 3. Delete existing files in the previous subfolderName folder
+  const currentSubfolderPath = `${folderName}/${subfolderName}`
+  const CurrentIsomerFile = new File(accessToken, siteName)
+  const currDataType = new CollectionPageType(currentSubfolderPath)
+  CurrentIsomerFile.setFileType(currDataType)
+
+  const newSubfolderPath = `${folderName}/${newSubfolderName}`
+  const NewIsomerFile = new File(accessToken, siteName)
+  const newDataType = new CollectionPageType(newSubfolderPath)
+  NewIsomerFile.setFileType(newDataType)
+
+  const filesToBeModified = await CurrentIsomerFile.list()
+
+  await Bluebird.mapSeries(filesToBeModified, async(fileInfo) => {
+    const { fileName } = fileInfo
+
+    // Read existing file content
+    const { content, sha } = await CurrentIsomerFile.read(fileName)
+
+    // Handle keep file differently
+    if (fileName === '.keep') {
+      await NewIsomerFile.create(fileName, content)
+      return CurrentIsomerFile.delete(fileName, sha)
+    }
+
+    const decodedContent = Base64.decode(content)
+    const results = decodedContent.split("---")
+    const frontMatter = yaml.parse(results[1]) // get the front matter as an object
+    const mdBody = results.slice(2).join("---")
+
+    // Modify `third_nav_title` and save as new file in newSubfolderName
+    const newFrontMatter = {
+      ...frontMatter,
+      third_nav_title: deslugifyCollectionName(newSubfolderName)
+    }
+
+    const newContent = ["---\n", yaml.stringify(newFrontMatter), "---\n", mdBody].join("")
+
+    const encodedNewContent = Base64.encode(newContent)
+    
+    await NewIsomerFile.create(fileName, encodedNewContent)
+
+    // Delete existing file in subfolderName
+    return CurrentIsomerFile.delete(fileName, sha)
+
+  })
 
 
-    const newGitTree = [...baseTreeWithoutFolder, ...folderTreeWithRenamedSubfolder]
-    await sendTree(newGitTree, currentCommitSha, siteName, accessToken, commitMessage)
+  // // Update collection config
+  const collectionConfig = new CollectionConfig(
+    accessToken,
+    siteName,
+    folderName
+  )
+  await collectionConfig.renameSubfolderInOrder(subfolderName, newSubfolderName)
 
-    // // Update collection config
-    const collectionConfig = new CollectionConfig(accessToken, siteName, folderName)
-    await collectionConfig.renameSubfolderInOrder(subfolderName, newSubfolderName)
-
-    res.status(200).send('Ok')
+  return res.status(200).send("OK")
 }
 
-router.get('/:siteName/folders/all', attachReadRouteHandlerWrapper(listAllFolderContent))
-router.delete('/:siteName/folders/:folderName/subfolder/:subfolderName', attachRollbackRouteHandlerWrapper(deleteSubfolder))
-router.post('/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName', attachRollbackRouteHandlerWrapper(renameSubfolder))
+router.get(
+  "/:siteName/folders/all",
+  attachReadRouteHandlerWrapper(listAllFolderContent)
+)
+router.delete(
+  "/:siteName/folders/:folderName/subfolder/:subfolderName",
+  attachRollbackRouteHandlerWrapper(deleteSubfolder)
+)
+router.post(
+  "/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName",
+  attachRollbackRouteHandlerWrapper(renameSubfolder)
+)
 
-module.exports = router;
+module.exports = router

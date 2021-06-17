@@ -1,17 +1,25 @@
-const { backOff } = require('exponential-backoff')
-const { lock, unlock } = require('../utils/mutex-utils')
+const { backOff } = require("exponential-backoff")
 
-const { getCommitAndTreeSha, revertCommit } = require('../utils/utils.js')
+const { lock, unlock } = require("@utils/mutex-utils")
+const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
 // Used when there are no write API calls to the repo on GitHub
-const attachReadRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
+const attachReadRouteHandlerWrapper = (routeHandler) => async (
+  req,
+  res,
+  next
+) => {
   routeHandler(req, res).catch((err) => {
     next(err)
   })
 }
 
 // Used when there are write API calls to the repo on GitHub
-const attachWriteRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
+const attachWriteRouteHandlerWrapper = (routeHandler) => async (
+  req,
+  res,
+  next
+) => {
   const { siteName } = req.params
   await lock(siteName)
   routeHandler(req, res).catch(async (err) => {
@@ -21,7 +29,11 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (req, res, next) 
   await unlock(siteName)
 }
 
-const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, next) => {
+const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
+  req,
+  res,
+  next
+) => {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -29,7 +41,10 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
 
   let originalCommitSha
   try {
-    const { currentCommitSha, treeSha } = await getCommitAndTreeSha(siteName, accessToken)
+    const { currentCommitSha, treeSha } = await getCommitAndTreeSha(
+      siteName,
+      accessToken
+    )
 
     req.currentCommitSha = currentCommitSha
     req.treeSha = treeSha
@@ -41,7 +56,9 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
   }
   routeHandler(req, res).catch(async (err) => {
     try {
-      await backOff(() => revertCommit(originalCommitSha, siteName, accessToken))
+      await backOff(() =>
+        revertCommit(originalCommitSha, siteName, accessToken)
+      )
     } catch (retryErr) {
       await unlock(siteName)
       next(retryErr)
@@ -52,7 +69,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (req, res, nex
 
   await unlock(siteName)
 }
-  
+
 module.exports = {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,

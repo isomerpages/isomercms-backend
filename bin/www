@@ -3,13 +3,13 @@
 /**
  * Module dependencies.
  */
-
-const app = require('../server');
+require('module-alias/register')
+const app = require('@root/server');
 const debug = require('debug')('isomercms:server');
 const http = require('http');
 
 // Import logger
-const logger = require('../logger/logger');
+const logger = require('@logger/logger');
 
 /**
  * Get port from environment and store in Express.

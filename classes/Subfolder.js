@@ -1,6 +1,6 @@
-const { CollectionConfig } = require('./Config.js')
-const { File, CollectionPageType } = require('./File.js')
-const { Directory, FolderType } = require('./Directory.js')
+const { CollectionConfig } = require("@classes/Config.js")
+const { Directory, FolderType } = require("@classes/Directory.js")
+const { File, CollectionPageType } = require("@classes/File.js")
 
 class Subfolder {
   constructor(accessToken, siteName, collectionName) {
@@ -16,30 +16,29 @@ class Subfolder {
     const repoRootContent = await IsomerDirectory.list()
 
     const allSubfolders = repoRootContent.reduce((acc, curr) => {
-        if (curr.type === 'dir') {
-          const pathTokens = curr.path.split('/')
-          acc.push(pathTokens.slice(1).join('/'))
-        }
-        return acc
+      if (curr.type === "dir") {
+        const pathTokens = curr.path.split("/")
+        acc.push(pathTokens.slice(1).join("/"))
+      }
+      return acc
     }, [])
     return allSubfolders
   }
 
   async create(subfolderName) {
-    try {
-      // Update collection.yml
-      const collectionConfig = new CollectionConfig(this.accessToken, this.siteName, this.collectionName)
-      await collectionConfig.addItemToOrder(`${subfolderName}/.keep`)
+    // Update collection.yml
+    const collectionConfig = new CollectionConfig(
+      this.accessToken,
+      this.siteName,
+      this.collectionName
+    )
+    await collectionConfig.addItemToOrder(`${subfolderName}/.keep`)
 
-      // Create placeholder file
-      const IsomerFile = new File(this.accessToken, this.siteName)
-      const dataType = new CollectionPageType(this.collectionName)
-      IsomerFile.setFileType(dataType)
-      await IsomerFile.create(`${subfolderName}/.keep`, '')
-
-    } catch (err) {
-      throw err
-    }
+    // Create placeholder file
+    const IsomerFile = new File(this.accessToken, this.siteName)
+    const dataType = new CollectionPageType(this.collectionName)
+    IsomerFile.setFileType(dataType)
+    await IsomerFile.create(`${subfolderName}/.keep`, "")
   }
 }
 

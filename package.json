@@ -5,7 +5,11 @@
   "scripts": {
     "start": "node ./bin/www",
     "dev": "source .env && node ./bin/www",
-    "test": "jest"
+    "test": "jest",
+    "lint": "npx eslint .",
+    "format": "npx prettier --write .",
+    "check-format": "npx prettier --check .",
+    "prepare": "husky install"
   },
   "dependencies": {
     "aws-sdk": "^2.787.0",
@@ -23,6 +27,7 @@
     "js-base64": "^2.5.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
+    "module-alias": "^2.2.2",
     "moment-timezone": "^0.5.31",
     "morgan": "~1.9.1",
     "query-string": "^6.8.3",
@@ -35,11 +40,36 @@
   },
   "devDependencies": {
     "cz-conventional-changelog": "^3.3.0",
-    "jest": "^26.6.3"
+    "eslint": "^7.21.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-only-warn": "^1.0.2",
+    "eslint-plugin-prettier": "^3.3.1",
+    "husky": "^6.0.0",
+    "jest": "^26.6.3",
+    "lint-staged": "^11.0.0",
+    "prettier": "2.2.1"
   },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "_moduleAliases": {
+    "@root": ".",
+    "@classes": "classes",
+    "@errors": "errors",
+    "@logger": "logger",
+    "@middleware": "middleware",
+    "@routes": "routes",
+    "@utils": "utils"
+  },
+  "lint-staged": {
+    "**/*.(js|jsx|ts|tsx)": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

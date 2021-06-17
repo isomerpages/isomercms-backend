@@ -1,0 +1,11 @@
+.env
+node_modules/
+.vscode/
+.github/
+docs/
+.eslintrc.json
+.eslintIgnore
+.prettierrc.json
+.prettierignore
+package-lock.json
+package.json

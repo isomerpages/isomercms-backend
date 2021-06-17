@@ -1,16 +1,24 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express")
+
+const router = express.Router()
 
 // Import middleware
-const { attachReadRouteHandlerWrapper, attachRollbackRouteHandlerWrapper } = require('../middleware/routeHandler')
+const { NotFoundError } = require("@errors/NotFoundError")
 
-// Import classes 
-const { ResourceRoom } = require('../classes/ResourceRoom.js')
-const { Resource } = require('../classes/Resource.js')
-const { File, ResourcePageType } = require('../classes/File');
+const {
+  attachReadRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
+} = require("@middleware/routeHandler")
+
+// Import classes
+const { File, ResourcePageType } = require("@classes/File")
+const { Resource } = require("@classes/Resource")
+const { ResourceRoom } = require("@classes/ResourceRoom")
+
+// Import errors
 
 // List resources
-async function listResources (req, res, next) {
+async function listResources(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
@@ -20,11 +28,11 @@ async function listResources (req, res, next) {
   const IsomerResource = new Resource(accessToken, siteName)
   const resources = await IsomerResource.list(resourceRoomName)
 
-  res.status(200).json({ resourceRoomName, resources })
+  return res.status(200).json({ resourceRoomName, resources })
 }
 
 // Create new resource
-async function createNewResource (req, res, next) {
+async function createNewResource(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
   const { resourceName } = req.body
@@ -35,11 +43,11 @@ async function createNewResource (req, res, next) {
   const IsomerResource = new Resource(accessToken, siteName)
   await IsomerResource.create(resourceRoomName, resourceName)
 
-  res.status(200).json({ resourceName })
+  return res.status(200).json({ resourceName })
 }
 
 // Delete resource
-async function deleteResource (req, res, next) {
+async function deleteResource(req, res) {
   const { accessToken } = req
   const { siteName, resourceName } = req.params
 
@@ -49,11 +57,11 @@ async function deleteResource (req, res, next) {
   const IsomerResource = new Resource(accessToken, siteName)
   await IsomerResource.delete(resourceRoomName, resourceName)
 
-  res.status(200).send('OK')
+  return res.status(200).send("OK")
 }
 
 // Rename resource
-async function renameResource (req, res, next) {
+async function renameResource(req, res) {
   const { accessToken } = req
   const { siteName, resourceName, newResourceName } = req.params
 
@@ -63,11 +71,13 @@ async function renameResource (req, res, next) {
   const IsomerResource = new Resource(accessToken, siteName)
   await IsomerResource.rename(resourceRoomName, resourceName, newResourceName)
 
-  res.status(200).json({ resourceName, newResourceName })
+  return res.status(200).json({ resourceName, newResourceName })
 }
 
+// To fix after refactoring
+/* eslint-disable no-await-in-loop, no-restricted-syntax */
 // Move resource
-async function moveResources (req, res, next) {
+async function moveResources(req, res) {
   const { accessToken } = req
   const { siteName, resourceName, newResourceName } = req.params
   const { files } = req.body
@@ -77,14 +87,24 @@ async function moveResources (req, res, next) {
 
   const IsomerResource = new Resource(accessToken, siteName)
   const resources = await IsomerResource.list(resourceRoomName)
-  const resourceCategories = resources.map(resource => resource.dirName)
-  if (!resourceCategories.includes(resourceName)) throw new NotFoundError(`Resource category ${resourceName} was not found!`)
-  if (!resourceCategories.includes(newResourceName)) throw new NotFoundError(`Resource category ${newResourceName} was not found!`)
+  const resourceCategories = resources.map((resource) => resource.dirName)
+  if (!resourceCategories.includes(resourceName))
+    throw new NotFoundError(`Resource category ${resourceName} was not found!`)
+  if (!resourceCategories.includes(newResourceName))
+    throw new NotFoundError(
+      `Resource category ${newResourceName} was not found!`
+    )
 
   const oldIsomerFile = new File(accessToken, siteName)
   const newIsomerFile = new File(accessToken, siteName)
-  const oldResourcePageType = new ResourcePageType(resourceRoomName, resourceName)
-  const newResourcePageType = new ResourcePageType(resourceRoomName, newResourceName)
+  const oldResourcePageType = new ResourcePageType(
+    resourceRoomName,
+    resourceName
+  )
+  const newResourcePageType = new ResourcePageType(
+    resourceRoomName,
+    newResourceName
+  )
   oldIsomerFile.setFileType(oldResourcePageType)
   newIsomerFile.setFileType(newResourcePageType)
 
@@ -93,13 +113,25 @@ async function moveResources (req, res, next) {
     await oldIsomerFile.delete(fileName, sha)
     await newIsomerFile.create(fileName, content)
   }
-  res.status(200).send('OK')
+  return res.status(200).send("OK")
 }
 
-router.get('/:siteName/resources', attachReadRouteHandlerWrapper(listResources))
-router.post('/:siteName/resources', attachRollbackRouteHandlerWrapper(createNewResource))
-router.delete('/:siteName/resources/:resourceName', attachRollbackRouteHandlerWrapper(deleteResource))
-router.post('/:siteName/resources/:resourceName/rename/:newResourceName', attachRollbackRouteHandlerWrapper(renameResource))
-router.post('/:siteName/resources/:resourceName/move/:newResourceName', attachRollbackRouteHandlerWrapper(moveResources))
+router.get("/:siteName/resources", attachReadRouteHandlerWrapper(listResources))
+router.post(
+  "/:siteName/resources",
+  attachRollbackRouteHandlerWrapper(createNewResource)
+)
+router.delete(
+  "/:siteName/resources/:resourceName",
+  attachRollbackRouteHandlerWrapper(deleteResource)
+)
+router.post(
+  "/:siteName/resources/:resourceName/rename/:newResourceName",
+  attachRollbackRouteHandlerWrapper(renameResource)
+)
+router.post(
+  "/:siteName/resources/:resourceName/move/:newResourceName",
+  attachRollbackRouteHandlerWrapper(moveResources)
+)
 
-module.exports = router;
+module.exports = router

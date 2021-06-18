@@ -18,7 +18,10 @@ const router = express.Router()
 const { CLIENT_ID } = process.env
 const { CLIENT_SECRET } = process.env
 const { REDIRECT_URI } = process.env
-const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
+const AUTH_TOKEN_EXPIRY_MS = parseInt(
+  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
+  10
+)
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const { FRONTEND_URL } = process.env
 

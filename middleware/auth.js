@@ -53,6 +53,7 @@ const whoamiAuth = (req, res, next) => {
 }
 
 // Login and logout
+auth.get("/v1/auth/github-redirect", noVerify)
 auth.get("/v1/auth", noVerify)
 auth.get("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)

@@ -5,6 +5,7 @@ const { JWT_SECRET } = process.env
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
 
 const jwtUtil = {
+  decodeToken: _.wrap(jwt.decode, (decode, token) => decode(token)),
   verifyToken: _.wrap(jwt.verify, (verify, token) =>
     verify(token, JWT_SECRET, { algorithms: ["HS256"] })
   ),

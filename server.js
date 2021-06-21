@@ -16,7 +16,6 @@ const { errorHandler } = require("@middleware/errorHandler")
 
 // Import routes
 const authRouter = require("@routes/auth")
-const collectionPagesRouter = require("@routes/collectionPages")
 const collectionsRouter = require("@routes/collections")
 const directoryRouter = require("@routes/directory")
 const documentsRouter = require("@routes/documents")
@@ -33,6 +32,8 @@ const resourceRoomRouter = require("@routes/resourceRoom")
 const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
+
+const collectionPagesRouter = require("./newroutes/collectionPages")
 
 const app = express()
 

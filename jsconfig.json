@@ -11,7 +11,8 @@
         "@logger/*": ["./logger/*"],
         "@middleware/*": ["./middleware/*"],
         "@routes/*": ["./routes/*"],
-        "@utils/*": ["./utils/*"]
+        "@utils/*": ["./utils/*"],
+        "@services/*": ["./services/*"],
       }
     },
     "exclude": ["node_modules", "dist"]

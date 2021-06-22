@@ -23,10 +23,24 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const getFilePath = ({ siteName, fileName, dir }) =>
-  `${siteName}/contents/${dir ? `${dir}/${fileName}` : fileName}`
+const getFilePath = ({ siteName, fileName, dir }) => {
+  if (!dir) return `${siteName}/contents/${encodeURIComponent(fileName)}`
+  const encodedDirPath = dir
+    .split("/")
+    .map((folder) => encodeURIComponent(folder))
+    .join("/")
+  return `${siteName}/contents/${encodedDirPath}/${encodeURIComponent(
+    fileName
+  )}`
+}
 
-const getFolderPath = ({ siteName, dir }) => `${siteName}/contents/${dir}`
+const getFolderPath = ({ siteName, dir }) => {
+  const encodedDirPath = dir
+    .split("/")
+    .map((folder) => encodeURIComponent(folder))
+    .join("/")
+  return `${siteName}/contents/${encodedDirPath}`
+}
 
 const Create = async (
   { accessToken, siteName },

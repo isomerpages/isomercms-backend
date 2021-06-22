@@ -50,7 +50,7 @@ const Delete = async (reqDetails, { fileName, collectionName, sha }) => {
   // Remove from collection.yml
   await CollectionYmlService.DeleteItemFromOrder(reqDetails, {
     collectionName,
-    fileName,
+    item: fileName,
   })
   return GitHubService.Delete(reqDetails, {
     sha,

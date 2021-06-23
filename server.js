@@ -18,7 +18,6 @@ const { errorHandler } = require("@middleware/errorHandler")
 const authRouter = require("@routes/auth")
 const directoryRouter = require("@routes/directory")
 const documentsRouter = require("@routes/documents")
-const foldersRouter = require("@routes/folders")
 const homepageRouter = require("@routes/homepage")
 const imagesRouter = require("@routes/images")
 const indexRouter = require("@routes/index")
@@ -34,6 +33,7 @@ const sitesRouter = require("@routes/sites")
 
 const collectionPagesRouter = require("./newroutes/collectionPages")
 const collectionsRouter = require("./newroutes/collections")
+const foldersRouter = require("./newroutes/thirdNavFolders")
 
 const app = express()
 

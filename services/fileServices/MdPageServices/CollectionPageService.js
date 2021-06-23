@@ -1,9 +1,10 @@
 const {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
-} = require("../../../utils/markdown-utils")
-const GitHubService = require("../../db/GitHubService")
-const CollectionYmlService = require("../YmlFileServices/CollectionYmlService")
+} = require("@utils/markdown-utils")
+
+const GitHubService = require("@services/db/GitHubService")
+const CollectionYmlService = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 
 const Create = async (reqDetails, { fileName, collectionName, content }) => {
   const parsedCollectionName = `_${collectionName}`

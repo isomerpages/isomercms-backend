@@ -73,7 +73,6 @@ const Create = async (
 
 const Read = async ({ accessToken, siteName }, { fileName, dir }) => {
   const endpoint = getFilePath({ siteName, fileName, dir })
-  console.log(endpoint)
 
   const params = {
     ref: BRANCH_REF,
@@ -163,9 +162,6 @@ const Delete = async ({ accessToken, siteName }, { sha, fileName, dir }) => {
       branch: BRANCH_REF,
       sha: fileSha,
     }
-
-    console.log(params)
-    console.log(endpoint)
 
     await axiosInstance.delete(endpoint, {
       params,

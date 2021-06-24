@@ -71,13 +71,8 @@ const Delete = async (
 
 const Rename = async (
   reqDetails,
-  { oldFileName, newFileName, collectionName, thirdNavTitle }
+  { oldFileName, newFileName, collectionName, thirdNavTitle, content, sha }
 ) => {
-  const { content, sha } = await Read(reqDetails, {
-    fileName: oldFileName,
-    collectionName,
-    thirdNavTitle,
-  })
   await Delete(reqDetails, {
     fileName: oldFileName,
     collectionName,

@@ -62,12 +62,8 @@ const Delete = async (reqDetails, { fileName, collectionName, sha }) => {
 
 const Rename = async (
   reqDetails,
-  { oldFileName, newFileName, collectionName }
+  { oldFileName, newFileName, collectionName, content, sha }
 ) => {
-  const { content, sha } = await Read(reqDetails, {
-    fileName: oldFileName,
-    collectionName,
-  })
   await Delete(reqDetails, { fileName: oldFileName, collectionName, sha })
   await Create(reqDetails, { fileName: newFileName, collectionName, content })
   return { newSha: sha }

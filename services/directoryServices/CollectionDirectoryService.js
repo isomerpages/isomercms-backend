@@ -3,6 +3,8 @@ const {
   protectedFolderConflictErrorMsg,
 } = require("@errors/ConflictError")
 
+const MoverService = require("@services/MoverService")
+
 const CollectionYmlService = require("../fileServices/YmlFileServices/CollectionYmlService")
 const NavYmlService = require("../fileServices/YmlFileServices/NavYmlService")
 
@@ -47,7 +49,21 @@ const Create = async (reqDetails, { directoryName, orderArray }) => {
     collectionName: directoryName,
     orderArray,
   })
-  // TODO: move files in order array if necessary
+  if (orderArray) {
+    // We can't perform these operations concurrently because of conflict issues
+    /* eslint-disable no-await-in-loop, no-restricted-syntax */
+    for (const file of orderArray) {
+      const [fileName, oldFileDirectory, oldFileThirdNav] = file
+        .split("/")
+        .reverse()
+      await MoverService.MovePage(reqDetails, {
+        fileName,
+        oldFileDirectory,
+        oldFileThirdNav,
+        newFileDirectory: directoryName,
+      })
+    }
+  }
 }
 
 const Rename = async (reqDetails, { oldDirectoryName, newDirectoryName }) => {

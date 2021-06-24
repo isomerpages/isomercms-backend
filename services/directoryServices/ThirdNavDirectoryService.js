@@ -6,8 +6,8 @@ const { deslugifyCollectionName } = require("@utils/utils.js")
 
 const GitHubService = require("@services/db/GitHubService")
 const ThirdNavPageService = require("@services/fileServices/MdPageServices/ThirdNavPageService")
-
-const CollectionYmlService = require("../fileServices/YmlFileServices/CollectionYmlService")
+const CollectionYmlService = require("@services/fileServices/YmlFileServices/CollectionYmlService")
+const MoverService = require("@services/MoverService")
 
 const BaseDirectoryService = require("./BaseDirectoryService")
 
@@ -30,43 +30,60 @@ const Create = async (
     fileName: PLACEHOLDER_FILE_NAME,
     dir,
   })
-  // TODO: move files in order array if necessary
+
+  if (orderArray) {
+    // We can't perform these operations concurrently because of conflict issues
+    /* eslint-disable no-await-in-loop, no-restricted-syntax */
+    for (const file of orderArray) {
+      const [fileName, oldFileDirectory, oldFileThirdNav] = file
+        .split("/")
+        .reverse()
+      await MoverService.MovePage(reqDetails, {
+        fileName,
+        oldFileDirectory,
+        oldFileThirdNav,
+        newFileDirectory: directoryName,
+        newFileThirdNav: thirdNavTitle,
+      })
+    }
+  }
 }
 
 const Rename = async (
   reqDetails,
   { directoryName, oldThirdNavTitle, newThirdNavTitle }
 ) => {
-  await BaseDirectoryService.Rename(reqDetails, {
-    oldDirectoryName: `_${directoryName}/${oldThirdNavTitle}`,
-    newDirectoryName: `_${directoryName}/${newThirdNavTitle}`,
-    message: `Renaming third nav folder ${oldThirdNavTitle} to ${newThirdNavTitle}`,
-  })
   const thirdNavFiles = await ListFiles(reqDetails, {
     directoryName,
-    thirdNavTitle: newThirdNavTitle,
+    thirdNavTitle: oldThirdNavTitle,
   })
 
   // We can't perform these operations concurrently because of conflict issues
   /* eslint-disable no-await-in-loop, no-restricted-syntax */
   for (const file of thirdNavFiles) {
-    const fileName = file.name
-    const { content, sha } = await ThirdNavPageService.Read(reqDetails, {
-      fileName,
-      collectionName: directoryName,
-      thirdNavTitle: newThirdNavTitle,
-    })
-    const { frontMatter, pageContent } = retrieveDataFromMarkdown(content)
-    frontMatter.third_nav_title = deslugifyCollectionName(newThirdNavTitle)
-    const newContent = convertDataToMarkdown(frontMatter, pageContent)
-    await ThirdNavPageService.Update(reqDetails, {
-      fileName,
-      collectionName: directoryName,
-      thirdNavTitle: newThirdNavTitle,
-      content: newContent,
-      sha,
+    await MoverService.MovePage(reqDetails, {
+      fileName: file.name,
+      oldFileDirectory: directoryName,
+      oldFileThirdNav: oldThirdNavTitle,
+      newFileDirectory: directoryName,
+      newFileThirdNav: newThirdNavTitle,
     })
   }
+
+  const { sha } = await GitHubService.Read(reqDetails, {
+    fileName: PLACEHOLDER_FILE_NAME,
+    dir: `_${directoryName}/${oldThirdNavTitle}`,
+  })
+  await GitHubService.Delete(reqDetails, {
+    fileName: PLACEHOLDER_FILE_NAME,
+    dir: `_${directoryName}/${oldThirdNavTitle}`,
+    sha,
+  })
+  await GitHubService.Create(reqDetails, {
+    content: "",
+    fileName: PLACEHOLDER_FILE_NAME,
+    dir: `_${directoryName}/${newThirdNavTitle}`,
+  })
 
   await CollectionYmlService.RenameSubfolderInOrder(reqDetails, {
     collectionName: directoryName,

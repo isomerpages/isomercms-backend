@@ -74,9 +74,10 @@ const DeleteItemFromOrder = async (reqDetails, { collectionName, item }) => {
   const { content, sha } = await Read(reqDetails, { collectionName })
 
   const index = content.collections[collectionName].order.indexOf(item)
-  content.collections[collectionName].order.splice(index, 1)
-
-  return Update(reqDetails, { collectionName, fileContent: content, sha })
+  if (index !== -1) {
+    content.collections[collectionName].order.splice(index, 1)
+    return Update(reqDetails, { collectionName, fileContent: content, sha })
+  }
 }
 
 const UpdateItemInOrder = async (

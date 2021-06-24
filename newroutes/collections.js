@@ -1,5 +1,4 @@
 const express = require("express")
-const yaml = require("yaml")
 
 // Import middleware
 const {
@@ -8,14 +7,8 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { Collection } = require("@classes/Collection.js")
-const { CollectionConfig } = require("@classes/Config.js")
-const { File, CollectionPageType, PageType } = require("@classes/File")
-const { Subfolder } = require("@classes/Subfolder")
-
-const { deslugifyCollectionName } = require("@utils/utils")
-
 const CollectionDirectoryService = require("@services/directoryServices/CollectionDirectoryService")
+const MoverService = require("@services/MoverService")
 
 const router = express.Router()
 
@@ -86,84 +79,18 @@ async function moveFiles(req, res) {
   const targetCollectionName = processedTargetPathTokens[0]
   const targetSubfolderName = processedTargetPathTokens[1]
 
-  const IsomerCollection = new Collection(accessToken, siteName)
-  const collections = await IsomerCollection.list()
-
-  // Check if collection already exists
-  if (
-    !collections.includes(targetCollectionName) &&
-    targetCollectionName !== "pages"
-  ) {
-    await IsomerCollection.create(targetCollectionName)
-  }
-
-  const oldIsomerFile = new File(accessToken, siteName)
-  const newIsomerFile = new File(accessToken, siteName)
-  const oldCollectionPageType = new CollectionPageType(
-    decodeURIComponent(collectionPath)
-  )
-  const newCollectionPageType =
-    targetCollectionName === "pages"
-      ? new PageType()
-      : new CollectionPageType(decodeURIComponent(targetPath))
-  oldIsomerFile.setFileType(oldCollectionPageType)
-  newIsomerFile.setFileType(newCollectionPageType)
-  const oldConfig = new CollectionConfig(accessToken, siteName, collectionName)
-  const newConfig =
-    targetCollectionName === "pages"
-      ? null
-      : new CollectionConfig(accessToken, siteName, targetCollectionName)
-
-  if (newConfig && targetSubfolderName) {
-    // Check if subfolder exists
-    const IsomerSubfolder = new Subfolder(
-      accessToken,
-      siteName,
-      targetCollectionName
-    )
-    const subfolders = await IsomerSubfolder.list()
-    if (!subfolders.includes(targetSubfolderName))
-      await IsomerSubfolder.create(targetSubfolderName)
-  }
-
-  // We can't perform these operations concurrently because of conflict issues
-
-  // To fix after refactoring
   /* eslint-disable no-await-in-loop, no-restricted-syntax */
   for (const fileName of files) {
-    const { content, sha } = await oldIsomerFile.read(fileName)
-    await oldIsomerFile.delete(fileName, sha)
-    if (targetSubfolderName || collectionSubfolderName) {
-      // Modifying third nav in front matter, to be removed after template rewrite
-
-      // eslint-disable-next-line no-unused-vars
-      const [unused, encodedFrontMatter, pageContent] = Base64.decode(
-        content
-      ).split("---")
-      const frontMatter = yaml.parse(encodedFrontMatter)
-      if (targetSubfolderName)
-        frontMatter.third_nav_title = deslugifyCollectionName(
-          targetSubfolderName
-        )
-      else delete frontMatter.third_nav_title
-      const newFrontMatter = yaml.stringify(frontMatter)
-      const newContent = ["---\n", newFrontMatter, "---", pageContent].join("")
-      const newEncodedContent = Base64.encode(newContent)
-      await newIsomerFile.create(fileName, newEncodedContent)
-    } else {
-      await newIsomerFile.create(fileName, content)
-    }
-
-    // Update collection.yml files
-    await oldConfig.deleteItemFromOrder(
-      `${
-        collectionSubfolderName ? `${collectionSubfolderName}/` : ""
-      }${fileName}`
+    await MoverService.MovePage(
+      { accessToken, siteName },
+      {
+        fileName,
+        oldFileDirectory: collectionName,
+        oldFileThirdNav: collectionSubfolderName,
+        newFileDirectory: targetCollectionName,
+        newFileThirdNav: targetSubfolderName,
+      }
     )
-    if (newConfig)
-      await newConfig.addItemToOrder(
-        `${targetSubfolderName ? `${targetSubfolderName}/` : ""}${fileName}`
-      )
   }
 
   return res.status(200).send("OK")

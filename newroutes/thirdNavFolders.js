@@ -1,6 +1,5 @@
 const Bluebird = require("bluebird")
 const express = require("express")
-const yaml = require("yaml")
 
 const {
   attachReadRouteHandlerWrapper,
@@ -10,9 +9,6 @@ const {
 // Import classes
 const { Collection } = require("@classes/Collection")
 const { CollectionConfig } = require("@classes/Config")
-const { File, CollectionPageType } = require("@classes/File")
-
-const { deslugifyCollectionName } = require("@utils/utils.js")
 
 const ThirdNavDirectoryService = require("@services/directoryServices/ThirdNavDirectoryService")
 

@@ -228,7 +228,7 @@ async function renameCollectionPage(req, res) {
     collectionName,
     newPageName: encodedNewPageName,
   } = req.params
-  const { content: pageContent } = req.body
+  const { sha, content: pageContent } = req.body
 
   const pageName = decodeURIComponent(encodedPageName)
   const newPageName = decodeURIComponent(encodedNewPageName)
@@ -244,6 +244,8 @@ async function renameCollectionPage(req, res) {
         newFileName: parsedNewPageName,
         thirdNavTitle,
         collectionName,
+        content: pageContent,
+        sha,
       }
     )
 
@@ -253,7 +255,13 @@ async function renameCollectionPage(req, res) {
   }
   const { newSha } = await CollectionPageService.Rename(
     { siteName, accessToken },
-    { oldFileName: pageName, newFileName: newPageName, collectionName }
+    {
+      oldFileName: pageName,
+      newFileName: newPageName,
+      collectionName,
+      content: pageContent,
+      sha,
+    }
   )
 
   return res

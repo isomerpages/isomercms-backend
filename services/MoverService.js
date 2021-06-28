@@ -26,7 +26,7 @@ const MovePage = async (
       thirdNavTitle: oldFileThirdNav,
       sha,
     })
-  } else if (oldFileDirectory) {
+  } else if (oldFileDirectory && oldFileDirectory !== "pages") {
     const { content, sha } = await CollectionPageService.Read(reqDetails, {
       fileName,
       collectionName: oldFileDirectory,
@@ -52,7 +52,7 @@ const MovePage = async (
       thirdNavTitle: newFileThirdNav,
       content: fileContent,
     })
-  } else if (newFileDirectory) {
+  } else if (newFileDirectory && newFileDirectory !== "pages") {
     await CollectionPageService.Create(reqDetails, {
       fileName,
       collectionName: newFileDirectory,

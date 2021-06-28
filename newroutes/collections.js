@@ -31,7 +31,7 @@ async function createNewCollection(req, res) {
 
   await CollectionDirectoryService.Create(
     { siteName, accessToken },
-    { directoryName: collectionName, orderArray: files }
+    { collectionName, orderArray: files }
   )
 
   return res.status(200).json({ collectionName })
@@ -43,7 +43,7 @@ async function deleteCollection(req, res) {
 
   await CollectionDirectoryService.Delete(
     { siteName, accessToken, treeSha, currentCommitSha },
-    { directoryName: collectionName }
+    { collectionName }
   )
 
   return res.status(200).json({ collectionName })
@@ -59,7 +59,7 @@ async function renameCollection(req, res) {
 
   await CollectionDirectoryService.Rename(
     { siteName, accessToken, treeSha, currentCommitSha },
-    { oldDirectoryName: collectionName, newDirectoryName: newCollectionName }
+    { oldCollectionName: collectionName, newCollectionName }
   )
 
   return res.status(200).json({ collectionName, newCollectionName })
@@ -85,9 +85,9 @@ async function moveFiles(req, res) {
       { accessToken, siteName },
       {
         fileName,
-        oldFileDirectory: collectionName,
+        oldFileCollection: collectionName,
         oldFileThirdNav: collectionSubfolderName,
-        newFileDirectory: targetCollectionName,
+        newFileCollection: targetCollectionName,
         newFileThirdNav: targetSubfolderName,
       }
     )

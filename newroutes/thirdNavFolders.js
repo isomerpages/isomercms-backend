@@ -41,7 +41,7 @@ async function createSubfolder(req, res) {
 
   await ThirdNavDirectoryService.Create(
     { accessToken, siteName },
-    { directoryName: collectionName, thirdNavTitle, orderArray: files }
+    { collectionName, thirdNavTitle, orderArray: files }
   )
 
   return res.status(200).send("OK")
@@ -54,7 +54,7 @@ async function deleteSubfolder(req, res) {
 
   await ThirdNavDirectoryService.Delete(
     { accessToken, currentCommitSha, treeSha, siteName },
-    { directoryName: folderName, thirdNavTitle: subfolderName }
+    { collectionName: folderName, thirdNavTitle: subfolderName }
   )
 
   return res.status(200).send("OK")
@@ -68,7 +68,7 @@ async function renameSubfolder(req, res) {
   await ThirdNavDirectoryService.Rename(
     { accessToken, currentCommitSha, treeSha, siteName },
     {
-      directoryName: folderName,
+      collectionName: folderName,
       oldThirdNavTitle: subfolderName,
       newThirdNavTitle: newSubfolderName,
     }

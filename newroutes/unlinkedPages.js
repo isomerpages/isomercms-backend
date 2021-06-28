@@ -132,7 +132,7 @@ async function moveUnlinkedPages(req, res) {
       { accessToken, siteName },
       {
         fileName,
-        newFileDirectory: targetCollectionName,
+        newFileCollection: targetCollectionName,
         newFileThirdNav: targetSubfolderName,
       }
     )

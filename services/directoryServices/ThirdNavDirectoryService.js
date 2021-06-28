@@ -12,18 +12,18 @@ const BaseDirectoryService = require("./BaseDirectoryService")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
-const ListFiles = async (reqDetails, { directoryName, thirdNavTitle }) => {
+const ListFiles = async (reqDetails, { collectionName, thirdNavTitle }) => {
   const files = await BaseDirectoryService.List(reqDetails, {
-    directoryName: `_${directoryName}/${thirdNavTitle}`,
+    directoryName: `_${collectionName}/${thirdNavTitle}`,
   })
   return files.filter((file) => file.name !== PLACEHOLDER_FILE_NAME)
 }
 
 const Create = async (
   reqDetails,
-  { directoryName, thirdNavTitle, orderArray }
+  { collectionName, thirdNavTitle, orderArray }
 ) => {
-  const parsedDir = `_${directoryName}/${thirdNavTitle}`
+  const parsedDir = `_${collectionName}/${thirdNavTitle}`
   await GitHubService.Create(reqDetails, {
     content: "",
     fileName: PLACEHOLDER_FILE_NAME,
@@ -31,7 +31,7 @@ const Create = async (
   })
 
   await CollectionYmlService.AddItemToOrder(reqDetails, {
-    collectionName: directoryName,
+    collectionName,
     item: `${thirdNavTitle}/${PLACEHOLDER_FILE_NAME}`,
   })
 
@@ -39,14 +39,14 @@ const Create = async (
     // We can't perform these operations concurrently because of conflict issues
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of orderArray) {
-      const [fileName, oldFileDirectory, oldFileThirdNav] = file
+      const [fileName, oldFileCollection, oldFileThirdNav] = file
         .split("/")
         .reverse()
       await MoverService.MovePage(reqDetails, {
         fileName,
-        oldFileDirectory,
+        oldFileCollection,
         oldFileThirdNav,
-        newFileDirectory: directoryName,
+        newFileCollection: collectionName,
         newFileThirdNav: thirdNavTitle,
       })
     }
@@ -55,10 +55,10 @@ const Create = async (
 
 const Rename = async (
   reqDetails,
-  { directoryName, oldThirdNavTitle, newThirdNavTitle }
+  { collectionName, oldThirdNavTitle, newThirdNavTitle }
 ) => {
   const thirdNavFiles = await ListFiles(reqDetails, {
-    directoryName,
+    collectionName,
     thirdNavTitle: oldThirdNavTitle,
   })
 
@@ -67,43 +67,43 @@ const Rename = async (
   for (const file of thirdNavFiles) {
     await MoverService.MovePage(reqDetails, {
       fileName: file.name,
-      oldFileDirectory: directoryName,
+      oldFileCollection: collectionName,
       oldFileThirdNav: oldThirdNavTitle,
-      newFileDirectory: directoryName,
+      newFileCollection: collectionName,
       newFileThirdNav: newThirdNavTitle,
     })
   }
 
   const { sha } = await GitHubService.Read(reqDetails, {
     fileName: PLACEHOLDER_FILE_NAME,
-    directoryName: `_${directoryName}/${oldThirdNavTitle}`,
+    directoryName: `_${collectionName}/${oldThirdNavTitle}`,
   })
   await GitHubService.Delete(reqDetails, {
     fileName: PLACEHOLDER_FILE_NAME,
-    directoryName: `_${directoryName}/${oldThirdNavTitle}`,
+    directoryName: `_${collectionName}/${oldThirdNavTitle}`,
     sha,
   })
   await GitHubService.Create(reqDetails, {
     content: "",
     fileName: PLACEHOLDER_FILE_NAME,
-    directoryName: `_${directoryName}/${newThirdNavTitle}`,
+    directoryName: `_${collectionName}/${newThirdNavTitle}`,
   })
 
   await CollectionYmlService.RenameSubfolderInOrder(reqDetails, {
-    collectionName: directoryName,
+    collectionName,
     oldSubfolder: oldThirdNavTitle,
     newSubfolder: newThirdNavTitle,
   })
 }
 
-const Delete = async (reqDetails, { directoryName, thirdNavTitle }) => {
-  const dir = `_${directoryName}/${thirdNavTitle}`
+const Delete = async (reqDetails, { collectionName, thirdNavTitle }) => {
+  const dir = `_${collectionName}/${thirdNavTitle}`
   await BaseDirectoryService.Delete(reqDetails, {
     directoryName: dir,
     message: `Deleting third nav folder ${thirdNavTitle}`,
   })
   await CollectionYmlService.DeleteSubfolderFromOrder(reqDetails, {
-    collectionName: directoryName,
+    collectionName,
     subfolder: thirdNavTitle,
   })
 }

@@ -6,9 +6,9 @@ const MovePage = async (
   reqDetails,
   {
     fileName,
-    oldFileDirectory,
+    oldFileCollection,
     oldFileThirdNav,
-    newFileDirectory,
+    newFileCollection,
     newFileThirdNav,
   }
 ) => {
@@ -16,25 +16,25 @@ const MovePage = async (
   if (oldFileThirdNav) {
     const { content, sha } = await ThirdNavPageService.Read(reqDetails, {
       fileName,
-      collectionName: oldFileDirectory,
+      collectionName: oldFileCollection,
       thirdNavTitle: oldFileThirdNav,
     })
     fileContent = content
     await ThirdNavPageService.Delete(reqDetails, {
       fileName,
-      collectionName: oldFileDirectory,
+      collectionName: oldFileCollection,
       thirdNavTitle: oldFileThirdNav,
       sha,
     })
-  } else if (oldFileDirectory && oldFileDirectory !== "pages") {
+  } else if (oldFileCollection && oldFileCollection !== "pages") {
     const { content, sha } = await CollectionPageService.Read(reqDetails, {
       fileName,
-      collectionName: oldFileDirectory,
+      collectionName: oldFileCollection,
     })
     fileContent = content
     await CollectionPageService.Delete(reqDetails, {
       fileName,
-      collectionName: oldFileDirectory,
+      collectionName: oldFileCollection,
       sha,
     })
   } else {
@@ -48,14 +48,14 @@ const MovePage = async (
   if (newFileThirdNav) {
     await ThirdNavPageService.Create(reqDetails, {
       fileName,
-      collectionName: newFileDirectory,
+      collectionName: newFileCollection,
       thirdNavTitle: newFileThirdNav,
       content: fileContent,
     })
-  } else if (newFileDirectory && newFileDirectory !== "pages") {
+  } else if (newFileCollection && newFileCollection !== "pages") {
     await CollectionPageService.Create(reqDetails, {
       fileName,
-      collectionName: newFileDirectory,
+      collectionName: newFileCollection,
       content: fileContent,
     })
   } else {

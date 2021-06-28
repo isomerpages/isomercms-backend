@@ -37,49 +37,49 @@ const ListAllCollections = async (reqDetails) => {
   }, [])
 }
 
-const ListFiles = async (reqDetails, { directoryName }) =>
+const ListFiles = async (reqDetails, { collectionName }) =>
   CollectionYmlService.ListContents(reqDetails, {
-    collectionName: directoryName,
+    collectionName,
   })
 
-const Create = async (reqDetails, { directoryName, orderArray }) => {
-  if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(directoryName))
-    throw new ConflictError(protectedFolderConflictErrorMsg(directoryName))
+const Create = async (reqDetails, { collectionName, orderArray }) => {
+  if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
+    throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
   await CollectionYmlService.Create(reqDetails, {
-    collectionName: directoryName,
+    collectionName,
   })
   if (orderArray) {
     // We can't perform these operations concurrently because of conflict issues
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of orderArray) {
-      const [fileName, oldFileDirectory, oldFileThirdNav] = file
+      const [fileName, oldFileCollection, oldFileThirdNav] = file
         .split("/")
         .reverse()
       await MoverService.MovePage(reqDetails, {
         fileName,
-        oldFileDirectory,
+        oldFileCollection,
         oldFileThirdNav,
-        newFileDirectory: directoryName,
+        newFileCollection: collectionName,
       })
     }
   }
 }
 
-const Rename = async (reqDetails, { oldDirectoryName, newDirectoryName }) => {
-  if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newDirectoryName))
-    throw new ConflictError(protectedFolderConflictErrorMsg(newDirectoryName))
+const Rename = async (reqDetails, { oldCollectionName, newCollectionName }) => {
+  if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newCollectionName))
+    throw new ConflictError(protectedFolderConflictErrorMsg(newCollectionName))
   await BaseDirectoryService.Rename(reqDetails, {
-    oldDirectoryName: `_${oldDirectoryName}`,
-    newDirectoryName: `_${newDirectoryName}`,
-    message: `Renaming collection ${oldDirectoryName} to ${newDirectoryName}`,
+    oldDirectoryName: `_${oldCollectionName}`,
+    newDirectoryName: `_${newCollectionName}`,
+    message: `Renaming collection ${oldCollectionName} to ${newCollectionName}`,
   })
   await CollectionYmlService.RenameCollectionInOrder(reqDetails, {
-    oldCollectionName: oldDirectoryName,
-    newCollectionName: newDirectoryName,
+    oldCollectionName,
+    newCollectionName,
   })
   await NavYmlService.RenameCollectionInNav(reqDetails, {
-    oldCollectionName: oldDirectoryName,
-    newCollectionName: newDirectoryName,
+    oldCollectionName,
+    newCollectionName,
   })
 }
 

@@ -102,7 +102,7 @@ async function renamePage(req, res) {
   const pageName = decodeURIComponent(encodedPageName)
   const newPageName = decodeURIComponent(encodedNewPageName)
 
-  await UnlinkedPageService.Rename(
+  const { newSha } = await UnlinkedPageService.Rename(
     { accessToken, siteName },
     {
       oldFileName: pageName,

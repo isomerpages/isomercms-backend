@@ -83,13 +83,13 @@ const Rename = async (reqDetails, { oldCollectionName, newCollectionName }) => {
   })
 }
 
-const Delete = async (reqDetails, { directoryName }) => {
+const Delete = async (reqDetails, { collectionName }) => {
   await BaseDirectoryService.Delete(reqDetails, {
-    directoryName: `_${directoryName}`,
-    message: `Deleting collection ${directoryName}`,
+    directoryName: `_${collectionName}`,
+    message: `Deleting collection ${collectionName}`,
   })
   await NavYmlService.DeleteCollectionInNav(reqDetails, {
-    collectionName: directoryName,
+    collectionName,
   })
 }
 

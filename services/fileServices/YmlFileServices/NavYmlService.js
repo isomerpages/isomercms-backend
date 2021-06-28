@@ -10,7 +10,7 @@ const NAV_FILE_DIR = "_data"
 const Read = async (reqDetails) => {
   const { content: unparsedContent, sha } = await GitHubService.Read(
     reqDetails,
-    { fileName: NAV_FILE_NAME, dir: NAV_FILE_DIR }
+    { fileName: NAV_FILE_NAME, directoryName: NAV_FILE_DIR }
   )
   const content = yaml.parse(unparsedContent)
   return { content, sha }
@@ -22,7 +22,7 @@ const Update = async (reqDetails, { fileContent, sha }) => {
     fileContent: stringifiedContent,
     sha,
     fileName: NAV_FILE_NAME,
-    dir: NAV_FILE_DIR,
+    directoryName: NAV_FILE_DIR,
   })
   return { newSha }
 }

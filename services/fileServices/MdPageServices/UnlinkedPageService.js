@@ -17,26 +17,26 @@ const Create = async (reqDetails, { fileName, content }) => {
   return GitHubService.Create(reqDetails, {
     content: newContent,
     fileName,
-    dir: UNLINKED_PAGE_DIR,
+    directoryName: UNLINKED_PAGE_DIR,
   })
 }
 
 const Read = async (reqDetails, { fileName }) =>
-  GitHubService.Read(reqDetails, { fileName, dir: UNLINKED_PAGE_DIR })
+  GitHubService.Read(reqDetails, { fileName, directoryName: UNLINKED_PAGE_DIR })
 
 const Update = async (reqDetails, { fileName, content, sha }) =>
   GitHubService.Update(reqDetails, {
     fileContent: content,
     sha,
     fileName,
-    dir: UNLINKED_PAGE_DIR,
+    directoryName: UNLINKED_PAGE_DIR,
   })
 
 const Delete = async (reqDetails, { fileName, sha }) =>
   GitHubService.Delete(reqDetails, {
     sha,
     fileName,
-    dir: UNLINKED_PAGE_DIR,
+    directoryName: UNLINKED_PAGE_DIR,
   })
 
 const Rename = async (

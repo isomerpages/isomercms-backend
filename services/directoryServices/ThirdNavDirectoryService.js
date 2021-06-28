@@ -5,7 +5,6 @@ const {
 const { deslugifyCollectionName } = require("@utils/utils.js")
 
 const GitHubService = require("@services/db/GitHubService")
-const ThirdNavPageService = require("@services/fileServices/MdPageServices/ThirdNavPageService")
 const CollectionYmlService = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 const MoverService = require("@services/MoverService")
 
@@ -24,11 +23,16 @@ const Create = async (
   reqDetails,
   { directoryName, thirdNavTitle, orderArray }
 ) => {
-  const dir = `_${directoryName}/${thirdNavTitle}`
+  const parsedDir = `_${directoryName}/${thirdNavTitle}`
   await GitHubService.Create(reqDetails, {
     content: "",
     fileName: PLACEHOLDER_FILE_NAME,
-    dir,
+    directoryName: parsedDir,
+  })
+
+  await CollectionYmlService.AddItemToOrder(reqDetails, {
+    collectionName: directoryName,
+    item: `${thirdNavTitle}/${PLACEHOLDER_FILE_NAME}`,
   })
 
   if (orderArray) {
@@ -72,17 +76,17 @@ const Rename = async (
 
   const { sha } = await GitHubService.Read(reqDetails, {
     fileName: PLACEHOLDER_FILE_NAME,
-    dir: `_${directoryName}/${oldThirdNavTitle}`,
+    directoryName: `_${directoryName}/${oldThirdNavTitle}`,
   })
   await GitHubService.Delete(reqDetails, {
     fileName: PLACEHOLDER_FILE_NAME,
-    dir: `_${directoryName}/${oldThirdNavTitle}`,
+    directoryName: `_${directoryName}/${oldThirdNavTitle}`,
     sha,
   })
   await GitHubService.Create(reqDetails, {
     content: "",
     fileName: PLACEHOLDER_FILE_NAME,
-    dir: `_${directoryName}/${newThirdNavTitle}`,
+    directoryName: `_${directoryName}/${newThirdNavTitle}`,
   })
 
   await CollectionYmlService.RenameSubfolderInOrder(reqDetails, {

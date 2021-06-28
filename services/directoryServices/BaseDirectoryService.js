@@ -6,7 +6,7 @@ const GitHubService = require("../db/GitHubService")
 
 const List = async (reqDetails, { directoryName }) => {
   const directoryData = await GitHubService.ReadDirectory(reqDetails, {
-    dir: directoryName,
+    directoryName,
   })
 
   const filesOrDirs = directoryData.map((fileOrDir) => {
@@ -59,7 +59,7 @@ const Delete = async (reqDetails, { directoryName, message }) => {
   const gitTree = await GitHubService.GetTree(reqDetails, { isRecursive: true })
 
   const newGitTree = gitTree.filter(
-    (item) => !(item.path.includes(`${directoryName}/`) || item.type !== "tree")
+    (item) => !(item.path.includes(`${directoryName}/`) || item.type === "tree")
   )
 
   const newCommitSha = await GitHubService.UpdateTree(reqDetails, {

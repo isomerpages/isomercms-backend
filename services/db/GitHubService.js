@@ -23,9 +23,10 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const getFilePath = ({ siteName, fileName, dir }) => {
-  if (!dir) return `${siteName}/contents/${encodeURIComponent(fileName)}`
-  const encodedDirPath = dir
+const getFilePath = ({ siteName, fileName, directoryName }) => {
+  if (!directoryName)
+    return `${siteName}/contents/${encodeURIComponent(fileName)}`
+  const encodedDirPath = directoryName
     .split("/")
     .map((folder) => encodeURIComponent(folder))
     .join("/")
@@ -34,8 +35,8 @@ const getFilePath = ({ siteName, fileName, dir }) => {
   )}`
 }
 
-const getFolderPath = ({ siteName, dir }) => {
-  const encodedDirPath = dir
+const getFolderPath = ({ siteName, directoryName }) => {
+  const encodedDirPath = directoryName
     .split("/")
     .map((folder) => encodeURIComponent(folder))
     .join("/")
@@ -44,10 +45,10 @@ const getFolderPath = ({ siteName, dir }) => {
 
 const Create = async (
   { accessToken, siteName },
-  { content, fileName, dir }
+  { content, fileName, directoryName }
 ) => {
   try {
-    const endpoint = getFilePath({ siteName, fileName, dir })
+    const endpoint = getFilePath({ siteName, fileName, directoryName })
     const encodedContent = Base64.encode(content)
 
     const params = {
@@ -71,8 +72,8 @@ const Create = async (
   }
 }
 
-const Read = async ({ accessToken, siteName }, { fileName, dir }) => {
-  const endpoint = getFilePath({ siteName, fileName, dir })
+const Read = async ({ accessToken, siteName }, { fileName, directoryName }) => {
+  const endpoint = getFilePath({ siteName, fileName, directoryName })
 
   const params = {
     ref: BRANCH_REF,
@@ -93,8 +94,8 @@ const Read = async ({ accessToken, siteName }, { fileName, dir }) => {
   return { content, sha }
 }
 
-const ReadDirectory = async ({ accessToken, siteName }, { dir }) => {
-  const endpoint = getFolderPath({ siteName, dir })
+const ReadDirectory = async ({ accessToken, siteName }, { directoryName }) => {
+  const endpoint = getFolderPath({ siteName, directoryName })
 
   const params = {
     ref: BRANCH_REF,
@@ -114,15 +115,19 @@ const ReadDirectory = async ({ accessToken, siteName }, { dir }) => {
 
 const Update = async (
   { accessToken, siteName },
-  { fileContent, sha, fileName, dir }
+  { fileContent, sha, fileName, directoryName }
 ) => {
   try {
-    const endpoint = getFilePath({ siteName, fileName, dir })
+    const endpoint = getFilePath({ siteName, fileName, directoryName })
     const encodedNewContent = Base64.encode(fileContent)
 
     let fileSha = sha
     if (!sha) {
-      const { sha: retrievedSha } = await Read({ accessToken, fileName, dir })
+      const { sha: retrievedSha } = await Read({
+        accessToken,
+        fileName,
+        directoryName,
+      })
       fileSha = retrievedSha
     }
 
@@ -147,13 +152,20 @@ const Update = async (
   }
 }
 
-const Delete = async ({ accessToken, siteName }, { sha, fileName, dir }) => {
+const Delete = async (
+  { accessToken, siteName },
+  { sha, fileName, directoryName }
+) => {
   try {
-    const endpoint = getFilePath({ siteName, fileName, dir })
+    const endpoint = getFilePath({ siteName, fileName, directoryName })
 
     let fileSha = sha
     if (!sha) {
-      const { sha: retrievedSha } = await Read({ accessToken, fileName, dir })
+      const { sha: retrievedSha } = await Read({
+        accessToken,
+        fileName,
+        directoryName,
+      })
       fileSha = retrievedSha
     }
 

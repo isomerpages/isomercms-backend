@@ -8,7 +8,7 @@ const COLLECTION_FILE_NAME = "collection.yml"
 const Read = async (reqDetails, { collectionName }) => {
   const { content: unparsedContent, sha } = await GitHubService.Read(
     reqDetails,
-    { fileName: COLLECTION_FILE_NAME, dir: `_${collectionName}` }
+    { fileName: COLLECTION_FILE_NAME, directoryName: `_${collectionName}` }
   )
   const content = yaml.parse(unparsedContent)
   return { content, sha }
@@ -20,7 +20,7 @@ const Update = async (reqDetails, { collectionName, fileContent, sha }) => {
     fileContent: stringifiedContent,
     sha,
     fileName: COLLECTION_FILE_NAME,
-    dir: `_${collectionName}`,
+    directoryName: `_${collectionName}`,
   })
   return { newSha }
 }
@@ -38,7 +38,7 @@ const Create = async (reqDetails, { collectionName, orderArray }) => {
   return GitHubService.Create(reqDetails, {
     content: stringifiedContent,
     fileName: COLLECTION_FILE_NAME,
-    dir: `_${collectionName}`,
+    directoryName: `_${collectionName}`,
   })
 }
 
@@ -164,8 +164,9 @@ const UpdateOrder = async (reqDetails, { collectionName, newOrder, sha }) => {
   }
   const stringifiedContent = yaml.stringify(contentObject)
   return GitHubService.Update(reqDetails, {
-    collectionName,
+    directoryName: `_${collectionName}`,
     fileContent: stringifiedContent,
+    fileName: COLLECTION_FILE_NAME,
     sha,
   })
 }

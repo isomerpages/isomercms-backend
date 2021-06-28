@@ -23,13 +23,16 @@ const Create = async (reqDetails, { fileName, collectionName, content }) => {
   return GitHubService.Create(reqDetails, {
     content: newContent,
     fileName,
-    dir: parsedCollectionName,
+    directoryName: parsedCollectionName,
   })
 }
 
 const Read = async (reqDetails, { fileName, collectionName }) => {
   const parsedCollectionName = `_${collectionName}`
-  return GitHubService.Read(reqDetails, { fileName, dir: parsedCollectionName })
+  return GitHubService.Read(reqDetails, {
+    fileName,
+    directoryName: parsedCollectionName,
+  })
 }
 
 const Update = async (
@@ -41,7 +44,7 @@ const Update = async (
     fileContent: content,
     sha,
     fileName,
-    dir: parsedCollectionName,
+    directoryName: parsedCollectionName,
   })
 }
 
@@ -56,7 +59,7 @@ const Delete = async (reqDetails, { fileName, collectionName, sha }) => {
   return GitHubService.Delete(reqDetails, {
     sha,
     fileName,
-    dir: parsedCollectionName,
+    directoryName: parsedCollectionName,
   })
 }
 

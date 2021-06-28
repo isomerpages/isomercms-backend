@@ -47,7 +47,6 @@ const Create = async (reqDetails, { directoryName, orderArray }) => {
     throw new ConflictError(protectedFolderConflictErrorMsg(directoryName))
   await CollectionYmlService.Create(reqDetails, {
     collectionName: directoryName,
-    orderArray,
   })
   if (orderArray) {
     // We can't perform these operations concurrently because of conflict issues

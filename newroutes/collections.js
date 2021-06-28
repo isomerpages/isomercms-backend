@@ -27,11 +27,11 @@ async function listCollections(req, res) {
 async function createNewCollection(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
-  const { collectionName } = req.body
+  const { collectionName, files } = req.body
 
   await CollectionDirectoryService.Create(
     { siteName, accessToken },
-    { directoryName: collectionName }
+    { directoryName: collectionName, orderArray: files }
   )
 
   return res.status(200).json({ collectionName })

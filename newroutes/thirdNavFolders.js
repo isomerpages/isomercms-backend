@@ -33,6 +33,20 @@ async function listAllFolderContent(req, res) {
   return res.status(200).json({ allFolderContent })
 }
 
+// Create subfolder
+async function createSubfolder(req, res) {
+  const { accessToken } = req
+  const { siteName, folderName: collectionName } = req.params
+  const { thirdNavTitle, files } = req.body
+
+  await ThirdNavDirectoryService.Create(
+    { accessToken, siteName },
+    { directoryName: collectionName, thirdNavTitle, orderArray: files }
+  )
+
+  return res.status(200).send("OK")
+}
+
 // Delete subfolder
 async function deleteSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
@@ -66,6 +80,10 @@ async function renameSubfolder(req, res) {
 router.get(
   "/:siteName/folders/all",
   attachReadRouteHandlerWrapper(listAllFolderContent)
+)
+router.post(
+  "/:siteName/folders/:folderName/subfolder",
+  attachRollbackRouteHandlerWrapper(createSubfolder)
 )
 router.delete(
   "/:siteName/folders/:folderName/subfolder/:subfolderName",

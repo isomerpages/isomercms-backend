@@ -43,9 +43,8 @@ const Create = async (reqDetails, { collectionName, orderArray }) => {
 }
 
 const ListContents = async (reqDetails, { collectionName }) => {
-  const fileDir = `_${collectionName}`
   const { content } = await Read(reqDetails, { collectionName })
-  return content.collections[fileDir].order
+  return content.collections[collectionName].order
 }
 
 const AddItemToOrder = async (reqDetails, { collectionName, item, index }) => {

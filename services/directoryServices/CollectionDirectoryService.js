@@ -1,3 +1,5 @@
+const Bluebird = require("bluebird")
+
 const {
   ConflictError,
   protectedFolderConflictErrorMsg,
@@ -41,6 +43,16 @@ const ListFiles = async (reqDetails, { collectionName }) =>
   CollectionYmlService.ListContents(reqDetails, {
     collectionName,
   })
+
+const ListAllCollectionContent = async (reqDetails) => {
+  const collections = await ListAllCollections(reqDetails)
+  const allCollectionContent = {}
+  await Bluebird.map(collections, async (collectionName) => {
+    const content = await ListFiles(reqDetails, { collectionName })
+    allCollectionContent[collectionName] = content
+  })
+  return allCollectionContent
+}
 
 const Create = async (reqDetails, { collectionName, orderArray }) => {
   if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
@@ -96,6 +108,7 @@ const Delete = async (reqDetails, { collectionName }) => {
 module.exports = {
   ListAllCollections,
   ListFiles,
+  ListAllCollectionContent,
   Create,
   Rename,
   Delete,

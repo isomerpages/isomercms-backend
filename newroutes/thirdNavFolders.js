@@ -7,9 +7,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { Collection } = require("@classes/Collection")
-const { CollectionConfig } = require("@classes/Config")
-
+const CollectionDirectoryService = require("@services/directoryServices/CollectionDirectoryService")
 const ThirdNavDirectoryService = require("@services/directoryServices/ThirdNavDirectoryService")
 
 const router = express.Router()
@@ -19,18 +17,11 @@ async function listAllFolderContent(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
-  const IsomerCollection = new Collection(accessToken, siteName)
-  const allFolders = IsomerCollection.list()
+  const allFolderContent = await CollectionDirectoryService.ListAllCollectionContent(
+    { accessToken, siteName }
+  )
 
-  const allFolderContent = []
-
-  await Bluebird.map(allFolders, async (collectionName) => {
-    const config = new CollectionConfig(accessToken, siteName, collectionName)
-    const { sha, content } = await config.read()
-    allFolderContent.push({ name: collectionName, sha, content })
-  })
-
-  return res.status(200).json({ allFolderContent })
+  return res.status(200).json(allFolderContent)
 }
 
 // Create subfolder

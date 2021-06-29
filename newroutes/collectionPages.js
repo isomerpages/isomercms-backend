@@ -1,10 +1,4 @@
-const Bluebird = require("bluebird")
 const express = require("express")
-const _ = require("lodash")
-const yaml = require("yaml")
-
-// Import errors
-const { NotFoundError } = require("@errors/NotFoundError")
 
 // Import middleware
 const {
@@ -14,93 +8,12 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { Collection } = require("@classes/Collection")
-const { File, CollectionPageType } = require("@classes/File")
-
-const { readCollectionPageUtilFunc } = require("@utils/route-utils")
-
 const CollectionPageService = require("@services/fileServices/MdPageServices/CollectionPageService")
 const ThirdNavPageService = require("@services/fileServices/MdPageServices/ThirdNavPageService")
 
 // Import utils
 
 const router = express.Router()
-
-// Get details on all pages in a collection
-async function listCollectionPagesDetails(req, res) {
-  // TODO: move into collection service
-  const { accessToken } = req
-  const { siteName, collectionName } = req.params
-
-  // Verify that collection exists
-  const IsomerCollection = new Collection(accessToken, siteName)
-  const collections = await IsomerCollection.list()
-  if (!collections.includes(collectionName))
-    throw new NotFoundError("Collection provided was not a valid collection")
-
-  // Retrieve metadata of files in collection
-  const CollectionPage = new File(accessToken, siteName)
-  const collectionPageType = new CollectionPageType(collectionName)
-  CollectionPage.setFileType(collectionPageType)
-  const collectionPages = await CollectionPage.list()
-  const collectionPagesMetadata = await Bluebird.map(
-    collectionPages,
-    async (page) => {
-      const { content } = await readCollectionPageUtilFunc(
-        accessToken,
-        siteName,
-        collectionName,
-        page.fileName
-      )
-      const frontMatter = yaml.parse(Base64.decode(content).split("---")[1])
-      return {
-        fileName: page.fileName,
-        title: frontMatter.title,
-        thirdNavTitle: frontMatter.third_nav_title,
-      }
-    }
-  )
-
-  const collectionHierarchy = collectionPagesMetadata.reduce((acc, file) => {
-    if (file.thirdNavTitle) {
-      // Check whether third nav section already exists
-      const thirdNavIteratee = { type: "third-nav", title: file.thirdNavTitle }
-      if (_.some(acc, thirdNavIteratee)) {
-        const thirdNavIdx = _.findIndex(acc, thirdNavIteratee)
-        acc[thirdNavIdx].contents.push({
-          type: "third-nav-page",
-          title: file.title,
-          fileName: file.fileName,
-        })
-        return acc
-      }
-
-      // Create new third nav section
-      acc.push({
-        type: "third-nav",
-        title: file.thirdNavTitle,
-        contents: [
-          {
-            type: "third-nav-page",
-            title: file.title,
-            fileName: file.fileName,
-          },
-        ],
-      })
-      return acc
-    }
-
-    // If no third nav title, just push into array
-    acc.push({
-      type: "page",
-      title: file.title,
-      fileName: file.fileName,
-    })
-    return acc
-  }, [])
-
-  return res.status(200).json({ collectionPages: collectionHierarchy })
-}
 
 // // Create new page in collection
 async function createCollectionPage(req, res) {
@@ -269,10 +182,6 @@ async function renameCollectionPage(req, res) {
     .json({ collectionName, pageName: newPageName, pageContent, sha: newSha })
 }
 
-router.get(
-  "/:siteName/collections/:collectionName/pages",
-  attachReadRouteHandlerWrapper(listCollectionPagesDetails)
-)
 router.post(
   "/:siteName/collections/:collectionName/pages/new/:pageName",
   attachRollbackRouteHandlerWrapper(createCollectionPage)

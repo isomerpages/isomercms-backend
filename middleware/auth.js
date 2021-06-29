@@ -81,9 +81,6 @@ auth.post(
 )
 
 // Collection pages
-auth.get("/v1/sites/:siteName/collections/:collectionName", verifyJwt)
-auth.get("/v1/sites/:siteName/collections/:collectionName/pages", verifyJwt)
-auth.post("/v1/sites/:siteName/collections/:collectionName/pages", verifyJwt) // to remove
 auth.post(
   "/v1/sites/:siteName/collections/:collectionName/pages/new/:pageName",
   verifyJwt

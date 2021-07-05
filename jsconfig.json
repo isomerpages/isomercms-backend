@@ -13,6 +13,7 @@
         "@routes/*": ["./routes/*"],
         "@utils/*": ["./utils/*"],
         "@services/*": ["./services/*"],
+        "@controllers/*": ["./controllers/*"],
       }
     },
     "exclude": ["node_modules", "dist"]

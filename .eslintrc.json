@@ -69,7 +69,8 @@
                 ["@middleware", "./middleware"],
                 ["@routes", "./routes"],
                 ["@utils", "./utils"],
-                ["@services", "./services"]
+                ["@services", "./services"],
+                ["@controllers", "./controllers"]
             ]
         }
     },

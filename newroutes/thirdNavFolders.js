@@ -7,8 +7,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const CollectionDirectoryService = require("@services/directoryServices/CollectionDirectoryService")
-const ThirdNavDirectoryService = require("@services/directoryServices/ThirdNavDirectoryService")
+const CollectionController = require("@root/controllers/CollectionController")
 
 const router = express.Router()
 
@@ -17,9 +16,10 @@ async function listAllFolderContent(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
-  const allFolderContent = await CollectionDirectoryService.ListAllCollectionContent(
-    { accessToken, siteName }
-  )
+  const allFolderContent = await CollectionController.ListAllCollectionContent({
+    accessToken,
+    siteName,
+  })
 
   return res.status(200).json(allFolderContent)
 }
@@ -30,7 +30,7 @@ async function createSubfolder(req, res) {
   const { siteName, folderName: collectionName } = req.params
   const { thirdNavTitle, files } = req.body
 
-  await ThirdNavDirectoryService.Create(
+  await CollectionController.CreateSubcollection(
     { accessToken, siteName },
     { collectionName, thirdNavTitle, orderArray: files }
   )
@@ -43,7 +43,7 @@ async function deleteSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, folderName, subfolderName } = req.params
 
-  await ThirdNavDirectoryService.Delete(
+  await CollectionController.DeleteSubcollection(
     { accessToken, currentCommitSha, treeSha, siteName },
     { collectionName: folderName, thirdNavTitle: subfolderName }
   )
@@ -56,7 +56,7 @@ async function renameSubfolder(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, folderName, subfolderName, newSubfolderName } = req.params
 
-  await ThirdNavDirectoryService.Rename(
+  await CollectionController.RenameSubcollection(
     { accessToken, currentCommitSha, treeSha, siteName },
     {
       collectionName: folderName,

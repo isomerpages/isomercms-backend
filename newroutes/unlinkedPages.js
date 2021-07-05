@@ -8,9 +8,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const UnlinkedPageDirectoryService = require("@services/directoryServices/UnlinkedPageDirectoryService")
-const UnlinkedPageService = require("@services/fileServices/MdPageServices/UnlinkedPageService")
-const MoverService = require("@services/MoverService")
+const UnlinkedPageController = require("@controllers/UnlinkedPageController")
 
 const router = express.Router()
 
@@ -18,7 +16,7 @@ async function listPages(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
-  const simplePages = await UnlinkedPageDirectoryService.ListUnlinkedPages({
+  const simplePages = await UnlinkedPageController.ListUnlinkedPages({
     accessToken,
     siteName,
   })
@@ -33,7 +31,7 @@ async function createPage(req, res) {
   const { content } = req.body
   const pageName = decodeURIComponent(encodedPageName)
 
-  await UnlinkedPageService.Create(
+  await UnlinkedPageController.CreatePage(
     { accessToken, siteName },
     { fileName: pageName, content }
   )
@@ -48,7 +46,7 @@ async function readPage(req, res) {
   const { siteName, pageName: encodedPageName } = req.params
   const pageName = decodeURIComponent(encodedPageName)
 
-  const { sha, content } = await UnlinkedPageService.Read(
+  const { sha, content } = await UnlinkedPageController.ReadPage(
     { accessToken, siteName },
     { fileName: pageName }
   )
@@ -64,7 +62,7 @@ async function updatePage(req, res) {
   const { content: pageContent, sha } = req.body
   const pageName = decodeURIComponent(encodedPageName)
 
-  const { newSha } = await UnlinkedPageService.Update(
+  const { newSha } = await UnlinkedPageController.UpdatePage(
     { accessToken, siteName },
     { fileName: pageName, content: pageContent, sha }
   )
@@ -80,7 +78,7 @@ async function deletePage(req, res) {
   const { sha } = req.body
   const pageName = decodeURIComponent(encodedPageName)
 
-  await UnlinkedPageService.Delete(
+  await UnlinkedPageController.DeletePage(
     { accessToken, siteName },
     { fileName: pageName, sha }
   )
@@ -102,10 +100,10 @@ async function renamePage(req, res) {
   const pageName = decodeURIComponent(encodedPageName)
   const newPageName = decodeURIComponent(encodedNewPageName)
 
-  const { newSha } = await UnlinkedPageService.Rename(
+  const { newSha } = await UnlinkedPageController.UpdatePage(
     { accessToken, siteName },
     {
-      oldFileName: pageName,
+      fileName: pageName,
       newFileName: newPageName,
       content: pageContent,
       sha,
@@ -126,17 +124,14 @@ async function moveUnlinkedPages(req, res) {
   const targetCollectionName = processedTargetPathTokens[0]
   const targetSubfolderName = processedTargetPathTokens[1]
 
-  /* eslint-disable no-await-in-loop, no-restricted-syntax */
-  for (const fileName of files) {
-    await MoverService.MovePage(
-      { accessToken, siteName },
-      {
-        fileName,
-        newFileCollection: targetCollectionName,
-        newFileThirdNav: targetSubfolderName,
-      }
-    )
-  }
+  await UnlinkedPageController.MovePages(
+    { accessToken, siteName },
+    {
+      files,
+      newFileCollection: targetCollectionName,
+      newFileThirdNav: targetSubfolderName,
+    }
+  )
 
   return res.status(200).send("OK")
 }

@@ -8,8 +8,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const CollectionPageService = require("@services/fileServices/MdPageServices/CollectionPageService")
-const ThirdNavPageService = require("@services/fileServices/MdPageServices/ThirdNavPageService")
+const CollectionController = require("@controllers/CollectionController")
 
 // Import utils
 
@@ -22,24 +21,18 @@ async function createCollectionPage(req, res) {
   const { siteName, collectionName, pageName: encodedPageName } = req.params
   const { content: pageContent } = req.body
   const pageName = decodeURIComponent(encodedPageName)
-
-  if (pageName.includes("/")) {
-    const [thirdNavTitle, parsedPageName] = pageName.split("/")
-    await ThirdNavPageService.Create(
-      { siteName, accessToken },
-      {
-        fileName: parsedPageName,
-        collectionName,
-        content: pageContent,
-        thirdNavTitle,
-      }
-    )
-
-    return res.status(200).json({ collectionName, pageName, pageContent })
-  }
-  await CollectionPageService.Create(
+  let thirdNavTitle
+  let parsedPageName = pageName
+  if (pageName.includes("/"))
+    [thirdNavTitle, parsedPageName] = pageName.split("/")
+  await CollectionController.CreatePage(
     { siteName, accessToken },
-    { fileName: pageName, collectionName, content: pageContent }
+    {
+      fileName: parsedPageName,
+      collectionName,
+      content: pageContent,
+      thirdNavTitle,
+    }
   )
 
   return res.status(200).json({ collectionName, pageName, pageContent })
@@ -51,20 +44,13 @@ async function readCollectionPage(req, res) {
 
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const pageName = decodeURIComponent(encodedPageName)
-
-  // TODO: split into separate endpoint for third nav page
-  if (pageName.includes("/")) {
-    const [thirdNavTitle, parsedPageName] = pageName.split("/")
-    const { sha, content } = await ThirdNavPageService.Read(
-      { siteName, accessToken },
-      { fileName: parsedPageName, collectionName, thirdNavTitle }
-    )
-
-    return res.status(200).json({ collectionName, pageName, sha, content })
-  }
-  const { sha, content } = await CollectionPageService.Read(
+  let thirdNavTitle
+  let parsedPageName = pageName
+  if (pageName.includes("/"))
+    [thirdNavTitle, parsedPageName] = pageName.split("/")
+  const { sha, content } = await CollectionController.ReadPage(
     { siteName, accessToken },
-    { fileName: pageName, collectionName }
+    { fileName: parsedPageName, collectionName, thirdNavTitle }
   )
 
   return res.status(200).json({ collectionName, pageName, sha, content })
@@ -77,29 +63,21 @@ async function updateCollectionPage(req, res) {
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const { content: pageContent, sha } = req.body
   const pageName = decodeURIComponent(encodedPageName)
-
-  // TODO: split into separate endpoint for third nav page
-  if (pageName.includes("/")) {
-    const [thirdNavTitle, parsedPageName] = pageName.split("/")
-    const { newSha } = await ThirdNavPageService.Update(
-      { siteName, accessToken },
-      {
-        fileName: parsedPageName,
-        collectionName,
-        content: pageContent,
-        thirdNavTitle,
-        sha,
-      }
-    )
-
-    return res
-      .status(200)
-      .json({ collectionName, pageName, pageContent, sha: newSha })
-  }
-  const { newSha } = await CollectionPageService.Update(
+  let thirdNavTitle
+  let parsedPageName = pageName
+  if (pageName.includes("/"))
+    [thirdNavTitle, parsedPageName] = pageName.split("/")
+  const { newSha } = await CollectionController.UpdatePage(
     { siteName, accessToken },
-    { fileName: pageName, collectionName, content: pageContent, sha }
+    {
+      fileName: parsedPageName,
+      collectionName,
+      thirdNavTitle,
+      content: pageContent,
+      sha,
+    }
   )
+
   return res
     .status(200)
     .json({ collectionName, pageName, pageContent, sha: newSha })
@@ -112,20 +90,13 @@ async function deleteCollectionPage(req, res) {
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const { sha } = req.body
   const pageName = decodeURIComponent(encodedPageName)
-
-  // TODO: split into separate endpoint for third nav page
-  if (pageName.includes("/")) {
-    const [thirdNavTitle, parsedPageName] = pageName.split("/")
-    await ThirdNavPageService.Delete(
-      { siteName, accessToken },
-      { fileName: parsedPageName, collectionName, thirdNavTitle, sha }
-    )
-
-    return res.status(200).send("OK")
-  }
-  await CollectionPageService.Delete(
+  let thirdNavTitle
+  let parsedPageName = pageName
+  if (pageName.includes("/"))
+    [thirdNavTitle, parsedPageName] = pageName.split("/")
+  await CollectionController.DeletePage(
     { siteName, accessToken },
-    { fileName: pageName, collectionName, sha }
+    { fileName: parsedPageName, collectionName, thirdNavTitle, sha }
   )
 
   return res.status(200).send("OK")
@@ -145,33 +116,23 @@ async function renameCollectionPage(req, res) {
 
   const pageName = decodeURIComponent(encodedPageName)
   const newPageName = decodeURIComponent(encodedNewPageName)
-
-  // TODO: split into separate endpoint for third nav page
+  let thirdNavTitle
+  let parsedPageName = pageName
+  let parsedNewPageName = newPageName
   if (pageName.includes("/")) {
-    const [thirdNavTitle, parsedOldPageName] = pageName.split("/")
-    const [unused, parsedNewPageName] = newPageName.split("/")
-    const { newSha } = await ThirdNavPageService.Rename(
-      { siteName, accessToken },
-      {
-        oldFileName: parsedOldPageName,
-        newFileName: parsedNewPageName,
-        thirdNavTitle,
-        collectionName,
-        content: pageContent,
-        sha,
-      }
-    )
-
-    return res
-      .status(200)
-      .json({ collectionName, pageName: newPageName, pageContent, sha: newSha })
+    const [thirdNav, oldParsedName] = pageName.split("/")
+    const [unused, newParsedName] = newPageName.split("/")
+    thirdNavTitle = thirdNav
+    parsedPageName = oldParsedName
+    parsedNewPageName = newParsedName
   }
-  const { newSha } = await CollectionPageService.Rename(
+  const { newSha } = await CollectionController.UpdatePage(
     { siteName, accessToken },
     {
-      oldFileName: pageName,
-      newFileName: newPageName,
+      fileName: parsedPageName,
+      newFileName: parsedNewPageName,
       collectionName,
+      thirdNavTitle,
       content: pageContent,
       sha,
     }

@@ -7,8 +7,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const CollectionDirectoryService = require("@services/directoryServices/CollectionDirectoryService")
-const MoverService = require("@services/MoverService")
+const CollectionController = require("@root/controllers/CollectionController")
 
 const router = express.Router()
 
@@ -16,7 +15,7 @@ async function listCollections(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
 
-  const collections = await CollectionDirectoryService.ListAllCollections({
+  const collections = await CollectionController.ListAllCollections({
     siteName,
     accessToken,
   })
@@ -29,7 +28,7 @@ async function createNewCollection(req, res) {
   const { siteName } = req.params
   const { collectionName, files } = req.body
 
-  await CollectionDirectoryService.Create(
+  await CollectionController.CreateCollection(
     { siteName, accessToken },
     { collectionName, orderArray: files }
   )
@@ -41,7 +40,7 @@ async function deleteCollection(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, collectionName } = req.params
 
-  await CollectionDirectoryService.Delete(
+  await CollectionController.DeleteCollection(
     { siteName, accessToken, treeSha, currentCommitSha },
     { collectionName }
   )
@@ -57,7 +56,7 @@ async function renameCollection(req, res) {
   const { accessToken, currentCommitSha, treeSha } = req
   const { siteName, collectionName, newCollectionName } = req.params
 
-  await CollectionDirectoryService.Rename(
+  await CollectionController.RenameCollection(
     { siteName, accessToken, treeSha, currentCommitSha },
     { oldCollectionName: collectionName, newCollectionName }
   )
@@ -79,19 +78,16 @@ async function moveFiles(req, res) {
   const targetCollectionName = processedTargetPathTokens[0]
   const targetSubfolderName = processedTargetPathTokens[1]
 
-  /* eslint-disable no-await-in-loop, no-restricted-syntax */
-  for (const fileName of files) {
-    await MoverService.MovePage(
-      { accessToken, siteName },
-      {
-        fileName,
-        oldFileCollection: collectionName,
-        oldFileThirdNav: collectionSubfolderName,
-        newFileCollection: targetCollectionName,
-        newFileThirdNav: targetSubfolderName,
-      }
-    )
-  }
+  await CollectionController.moveFiles(
+    { accessToken, siteName },
+    {
+      files,
+      oldFileCollection: collectionName,
+      oldFileThirdNav: collectionSubfolderName,
+      newFileCollection: targetCollectionName,
+      newFileThirdNav: targetSubfolderName,
+    }
+  )
 
   return res.status(200).send("OK")
 }

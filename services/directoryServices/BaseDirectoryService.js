@@ -10,13 +10,12 @@ const List = async (reqDetails, { directoryName }) => {
   })
 
   const filesOrDirs = directoryData.map((fileOrDir) => {
-    const { name, path, sha, size, content, type } = fileOrDir
+    const { name, path, sha, size, type } = fileOrDir
     return {
       name,
       path,
       sha,
       size,
-      content,
       type,
     }
   })

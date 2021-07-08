@@ -27,12 +27,16 @@ async function listCollectionFiles(req, res) {
   const { accessToken } = req
   const { siteName, collectionName, subcollectionName } = req.params
 
-  const collectionFiles = await CollectionController.ListFiles({
-    siteName,
-    accessToken,
-    collectionName,
-    thirdNavTitle: subcollectionName,
-  })
+  const collectionFiles = await CollectionController.ListFiles(
+    {
+      siteName,
+      accessToken,
+    },
+    {
+      collectionName,
+      thirdNavTitle: subcollectionName,
+    }
+  )
 
   return res.status(200).json({ files: collectionFiles })
 }

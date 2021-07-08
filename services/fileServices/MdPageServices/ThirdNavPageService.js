@@ -9,7 +9,7 @@ const CollectionYmlService = require("../YmlFileServices/CollectionYmlService")
 
 const Create = async (
   reqDetails,
-  { fileName, collectionName, thirdNavTitle, content }
+  { fileName, collectionName, thirdNavTitle, content, frontMatter }
 ) => {
   const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
 
@@ -18,16 +18,15 @@ const Create = async (
     item: `${thirdNavTitle}/${fileName}`,
   })
 
-  // TODO: consider having frontend pass frontmatter separately from page content
-  const { frontMatter, pageContent } = retrieveDataFromMarkdown(content)
   frontMatter.third_nav_title = deslugifyCollectionName(thirdNavTitle)
-  const newContent = convertDataToMarkdown(frontMatter, pageContent)
+  const newContent = convertDataToMarkdown(frontMatter, content)
 
-  return GitHubService.Create(reqDetails, {
+  const { sha } = await GitHubService.Create(reqDetails, {
     content: newContent,
     fileName,
     directoryName: parsedDirectoryName,
   })
+  return { fileName, content: { frontMatter, content }, sha }
 }
 
 const Read = async (
@@ -35,23 +34,27 @@ const Read = async (
   { fileName, collectionName, thirdNavTitle }
 ) => {
   const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
-  return GitHubService.Read(reqDetails, {
+  const { content: rawContent, sha } = await GitHubService.Read(reqDetails, {
     fileName,
     directoryName: parsedDirectoryName,
   })
+  const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
+  return { fileName, content: { frontMatter, pageBody: pageContent }, sha }
 }
 
 const Update = async (
   reqDetails,
-  { fileName, collectionName, thirdNavTitle, content, sha }
+  { fileName, collectionName, thirdNavTitle, content, frontMatter, sha }
 ) => {
   const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
-  return GitHubService.Update(reqDetails, {
-    fileContent: content,
+  const newContent = convertDataToMarkdown(frontMatter, content)
+  const { newSha } = await GitHubService.Update(reqDetails, {
+    fileContent: newContent,
     sha,
     fileName,
     directoryName: parsedDirectoryName,
   })
+  return { fileName, content: { frontMatter, content }, oldSha: sha, newSha }
 }
 
 const Delete = async (
@@ -74,7 +77,15 @@ const Delete = async (
 
 const Rename = async (
   reqDetails,
-  { oldFileName, newFileName, collectionName, thirdNavTitle, content, sha }
+  {
+    oldFileName,
+    newFileName,
+    collectionName,
+    thirdNavTitle,
+    content,
+    frontMatter,
+    sha,
+  }
 ) => {
   await Delete(reqDetails, {
     fileName: oldFileName,
@@ -82,13 +93,19 @@ const Rename = async (
     thirdNavTitle,
     sha,
   })
-  await Create(reqDetails, {
+  const { sha: newSha } = await Create(reqDetails, {
     fileName: newFileName,
     collectionName,
     thirdNavTitle,
     content,
+    frontMatter,
   })
-  return { newSha: sha }
+  return {
+    fileName: newFileName,
+    content: { frontMatter, content },
+    oldSha: sha,
+    newSha,
+  }
 }
 
 module.exports = {

@@ -212,7 +212,7 @@ const DeleteSubcollection = async (
 
 const CreatePage = async (
   reqDetails,
-  { fileName, collectionName, thirdNavTitle, content }
+  { fileName, collectionName, thirdNavTitle, content, frontMatter }
 ) => {
   if (thirdNavTitle)
     return ThirdNavPageService.Create(reqDetails, {
@@ -220,11 +220,13 @@ const CreatePage = async (
       collectionName,
       thirdNavTitle,
       content,
+      frontMatter,
     })
   return CollectionPageService.Create(reqDetails, {
     fileName,
     collectionName,
     content,
+    frontMatter,
   })
 }
 
@@ -243,16 +245,16 @@ const ReadPage = async (
 
 const UpdatePage = async (
   reqDetails,
-  { fileName, newFileName, collectionName, thirdNavTitle, content, sha }
-) => {
-  console.log(
+  {
     fileName,
     newFileName,
     collectionName,
     thirdNavTitle,
     content,
-    sha
-  )
+    frontMatter,
+    sha,
+  }
+) => {
   if (thirdNavTitle) {
     if (newFileName)
       return ThirdNavPageService.Rename(reqDetails, {
@@ -261,6 +263,7 @@ const UpdatePage = async (
         collectionName,
         thirdNavTitle,
         content,
+        frontMatter,
         sha,
       })
     return ThirdNavPageService.Update(reqDetails, {
@@ -268,6 +271,7 @@ const UpdatePage = async (
       collectionName,
       thirdNavTitle,
       content,
+      frontMatter,
       sha,
     })
   }
@@ -277,12 +281,14 @@ const UpdatePage = async (
       newFileName,
       collectionName,
       content,
+      frontMatter,
       sha,
     })
   return CollectionPageService.Update(reqDetails, {
     fileName,
     collectionName,
     content,
+    frontMatter,
     sha,
   })
 }

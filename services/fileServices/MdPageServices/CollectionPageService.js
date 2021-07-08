@@ -6,7 +6,10 @@ const {
 const GitHubService = require("@services/db/GitHubService")
 const CollectionYmlService = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 
-const Create = async (reqDetails, { fileName, collectionName, content }) => {
+const Create = async (
+  reqDetails,
+  { fileName, collectionName, content, frontMatter }
+) => {
   const parsedCollectionName = `_${collectionName}`
 
   await CollectionYmlService.AddItemToOrder(reqDetails, {
@@ -15,37 +18,40 @@ const Create = async (reqDetails, { fileName, collectionName, content }) => {
   })
 
   // We want to make sure that the front matter has no third nav title parameter
-  // TODO: consider having frontend pass frontmatter separately from page content
-  const { frontMatter, pageContent } = retrieveDataFromMarkdown(content)
   delete frontMatter.third_nav_title
-  const newContent = convertDataToMarkdown(frontMatter, pageContent)
+  const newContent = convertDataToMarkdown(frontMatter, content)
 
-  return GitHubService.Create(reqDetails, {
+  const { sha } = await GitHubService.Create(reqDetails, {
     content: newContent,
     fileName,
     directoryName: parsedCollectionName,
   })
+  return { fileName, content: { frontMatter, content }, sha }
 }
 
 const Read = async (reqDetails, { fileName, collectionName }) => {
   const parsedCollectionName = `_${collectionName}`
-  return GitHubService.Read(reqDetails, {
+  const { content: rawContent, sha } = await GitHubService.Read(reqDetails, {
     fileName,
     directoryName: parsedCollectionName,
   })
+  const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
+  return { fileName, content: { frontMatter, pageBody: pageContent }, sha }
 }
 
 const Update = async (
   reqDetails,
-  { fileName, collectionName, content, sha }
+  { fileName, collectionName, content, frontMatter, sha }
 ) => {
   const parsedCollectionName = `_${collectionName}`
-  return GitHubService.Update(reqDetails, {
-    fileContent: content,
+  const newContent = convertDataToMarkdown(frontMatter, content)
+  const { newSha } = await GitHubService.Update(reqDetails, {
+    fileContent: newContent,
     sha,
     fileName,
     directoryName: parsedCollectionName,
   })
+  return { fileName, content: { frontMatter, content }, oldSha: sha, newSha }
 }
 
 const Delete = async (reqDetails, { fileName, collectionName, sha }) => {
@@ -65,11 +71,21 @@ const Delete = async (reqDetails, { fileName, collectionName, sha }) => {
 
 const Rename = async (
   reqDetails,
-  { oldFileName, newFileName, collectionName, content, sha }
+  { oldFileName, newFileName, collectionName, content, frontMatter, sha }
 ) => {
   await Delete(reqDetails, { fileName: oldFileName, collectionName, sha })
-  await Create(reqDetails, { fileName: newFileName, collectionName, content })
-  return { newSha: sha }
+  const { sha: newSha } = await Create(reqDetails, {
+    fileName: newFileName,
+    collectionName,
+    content,
+    frontMatter,
+  })
+  return {
+    fileName: newFileName,
+    content: { frontMatter, content },
+    oldSha: sha,
+    newSha,
+  }
 }
 
 module.exports = {

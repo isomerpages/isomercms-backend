@@ -23,6 +23,20 @@ async function listCollections(req, res) {
   return res.status(200).json({ collections })
 }
 
+async function listCollectionFiles(req, res) {
+  const { accessToken } = req
+  const { siteName, collectionName, subcollectionName } = req.params
+
+  const collectionFiles = await CollectionController.ListFiles({
+    siteName,
+    accessToken,
+    collectionName,
+    thirdNavTitle: subcollectionName,
+  })
+
+  return res.status(200).json({ files: collectionFiles })
+}
+
 async function createNewCollection(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
@@ -99,6 +113,14 @@ router.get(
 router.post(
   "/:siteName/collections",
   attachRollbackRouteHandlerWrapper(createNewCollection)
+)
+router.get(
+  "/:siteName/collections/:collectionName",
+  attachReadRouteHandlerWrapper(listCollectionFiles)
+)
+router.get(
+  "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  attachReadRouteHandlerWrapper(listCollectionFiles)
 )
 router.delete(
   "/:siteName/collections/:collectionName",

@@ -81,16 +81,25 @@ auth.post(
 )
 
 // Collection pages
+auth.post("/v1/sites/:siteName/collections/:collectionName/pages", verifyJwt)
 auth.post(
-  "/v1/sites/:siteName/collections/:collectionName/pages/new/:pageName",
+  "/v1/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
   verifyJwt
 )
 auth.get(
   "/v1/sites/:siteName/collections/:collectionName/pages/:pageName",
   verifyJwt
 )
+auth.get(
+  "/v1/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
 auth.post(
   "/v1/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v1/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
   verifyJwt
 )
 auth.delete(
@@ -105,6 +114,11 @@ auth.post(
 // Collections
 auth.get("/v1/sites/:siteName/collections", verifyJwt)
 auth.post("/v1/sites/:siteName/collections", verifyJwt)
+auth.get("/v1/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.get(
+  "/v1/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
 auth.delete("/v1/sites/:siteName/collections/:collectionName", verifyJwt)
 auth.post(
   "/v1/sites/:siteName/collections/:collectionName/rename/:newCollectionName",

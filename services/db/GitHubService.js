@@ -144,7 +144,7 @@ const Update = async (
       },
     })
 
-    return { newSha: resp.data.commit.sha }
+    return { newSha: resp.data.content.sha }
   } catch (err) {
     const { status } = err.response
     if (status === 404) throw new NotFoundError("File does not exist")

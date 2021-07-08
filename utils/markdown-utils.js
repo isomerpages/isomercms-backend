@@ -9,7 +9,7 @@ const retrieveDataFromMarkdown = (fileContent) => {
 
 const convertDataToMarkdown = (frontMatter, pageContent) => {
   const newFrontMatter = yaml.stringify(frontMatter)
-  const newContent = ["---\n", newFrontMatter, "---", pageContent].join("")
+  const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")
   return newContent
 }
 

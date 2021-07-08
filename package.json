@@ -68,7 +68,9 @@
     "@logger": "logger",
     "@middleware": "middleware",
     "@routes": "routes",
-    "@utils": "utils"
+    "@utils": "utils",
+    "@loaders": "loaders",
+    "@database": "database"
   },
   "lint-staged": {
     "**/*.(js|jsx|ts|tsx)": [

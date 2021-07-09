@@ -10,6 +10,12 @@ const {
 // Import classes
 const CollectionController = require("@controllers/CollectionController")
 
+const {
+  CreatePageRequestSchema,
+  UpdatePageRequestSchema,
+  DeletePageRequestSchema,
+} = require("./RequestSchema")
+
 const router = express.Router()
 
 // Create new page in collection
@@ -17,6 +23,8 @@ async function createCollectionPage(req, res) {
   const { accessToken } = req
 
   const { siteName, collectionName, subcollectionName } = req.params
+  const { error } = CreatePageRequestSchema.validate(req.body)
+  if (error) throw error
   const { newFileName, pageBody, frontMatter } = req.body
   const createResp = await CollectionController.CreatePage(
     { siteName, accessToken },
@@ -50,6 +58,8 @@ async function updateCollectionPage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName, collectionName, subcollectionName } = req.params
+  const { error } = UpdatePageRequestSchema.validate(req.body)
+  if (error) throw error
   const { frontMatter, pageBody, sha, newFileName } = req.body
   const updateResp = await CollectionController.UpdatePage(
     { siteName, accessToken },
@@ -72,6 +82,8 @@ async function deleteCollectionPage(req, res) {
   const { accessToken } = req
 
   const { siteName, pageName, collectionName, subcollectionName } = req.params
+  const { error } = DeletePageRequestSchema.validate(req.body)
+  if (error) throw error
   const { sha } = req.body
   await CollectionController.DeletePage(
     { siteName, accessToken },

@@ -26,7 +26,7 @@ const Create = async (
     fileName,
     directoryName: parsedCollectionName,
   })
-  return { fileName, content: { frontMatter, content }, sha }
+  return { fileName, content: { frontMatter, pageBody: content }, sha }
 }
 
 const Read = async (reqDetails, { fileName, collectionName }) => {
@@ -51,7 +51,12 @@ const Update = async (
     fileName,
     directoryName: parsedCollectionName,
   })
-  return { fileName, content: { frontMatter, content }, oldSha: sha, newSha }
+  return {
+    fileName,
+    content: { frontMatter, pageBody: content },
+    oldSha: sha,
+    newSha,
+  }
 }
 
 const Delete = async (reqDetails, { fileName, collectionName, sha }) => {
@@ -82,7 +87,7 @@ const Rename = async (
   })
   return {
     fileName: newFileName,
-    content: { frontMatter, content },
+    content: { frontMatter, pageBody: content },
     oldSha: sha,
     newSha,
   }

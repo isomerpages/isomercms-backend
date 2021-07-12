@@ -34,6 +34,8 @@ const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
 
+const collectionPagesV2Router = require("./newroutes/collectionPages")
+
 const app = express()
 
 app.use(logger("dev"))
@@ -73,6 +75,8 @@ app.use("/v1/sites", homepageRouter)
 app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
+
+app.use("/v2/sites", collectionPagesV2Router)
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

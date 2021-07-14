@@ -124,7 +124,8 @@ async function logout(req, res) {
     },
   })
 
-  if (resp.status === 404) throw new AuthError("Could not log out of Github")
+  if (resp.status === 404)
+    throw new AuthError("Could not invalidate Github token")
 
   const cookieSettings = {
     path: "/",

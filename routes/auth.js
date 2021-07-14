@@ -113,6 +113,19 @@ async function githubAuth(req, res) {
 }
 
 async function logout(req, res) {
+  const { accessToken } = req
+  const endpoint = `https://api.github.com/applications/${CLIENT_ID}/token`
+  const resp = await axios.delete(endpoint, {
+    data: { access_token: accessToken },
+    headers: { Accept: "application/vnd.github.v3+json" },
+    auth: {
+      username: CLIENT_ID,
+      password: CLIENT_SECRET,
+    },
+  })
+
+  if (resp.status === 404) throw new AuthError("Could not log out of Github")
+
   const cookieSettings = {
     path: "/",
   }

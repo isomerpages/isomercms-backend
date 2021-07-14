@@ -1,4 +1,4 @@
-const { lock, unlock } = require("@utils/mutex-utils")
+const { lock, unlock } = require("../mutex-utils")
 
 const REPO_NAME = "test-repo-name"
 

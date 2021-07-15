@@ -113,6 +113,20 @@ async function githubAuth(req, res) {
 }
 
 async function logout(req, res) {
+  const { accessToken } = req
+  const endpoint = `https://api.github.com/applications/${CLIENT_ID}/token`
+  const resp = await axios.delete(endpoint, {
+    data: { access_token: accessToken },
+    headers: { Accept: "application/vnd.github.v3+json" },
+    auth: {
+      username: CLIENT_ID,
+      password: CLIENT_SECRET,
+    },
+  })
+
+  if (resp.status === 404)
+    throw new AuthError("Could not invalidate Github token")
+
   const cookieSettings = {
     path: "/",
   }
@@ -144,7 +158,7 @@ async function whoami(req, res) {
 
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
-router.get("/logout", attachReadRouteHandlerWrapper(logout))
+router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get("/whoami", attachReadRouteHandlerWrapper(whoami))
 
 module.exports = router

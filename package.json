@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
+    "dev:services": "docker compose up -d",
     "dev": "source .env && node ./bin/www",
     "test": "jest",
     "lint": "npx eslint .",

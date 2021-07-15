@@ -28,7 +28,7 @@ jobs:
           prod = os.environ['PRODUCTION_BRANCH']
           staging = os.environ['STAGING_BRANCH']
           dev = os.environ['DEV_BRANCH']
-          if ref == prod:
+          if ref == prod or ref == staging or ref == dev:
             print('::set-output name=proceed::true')
           else:
             print('::set-output name=proceed::false')

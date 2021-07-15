@@ -10,7 +10,7 @@ const getDbConfig = () => {
     // Connection settings
     database: parsed.database || "isomercms_dev",
     host: parsed.host || "localhost",
-    user: parsed.user,
+    username: parsed.user,
     password: parsed.password,
     port: parsed.port || 5432,
 

@@ -144,7 +144,7 @@ async function whoami(req, res) {
 
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
-router.get("/logout", attachReadRouteHandlerWrapper(logout))
+router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get("/whoami", attachReadRouteHandlerWrapper(whoami))
 
 module.exports = router

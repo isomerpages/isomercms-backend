@@ -104,7 +104,7 @@ async function githubAuth(req, res) {
   }
 
   const token = jwtUtils.signToken({
-    access_token: accessToken,
+    access_token: jwtUtils.encryptToken(accessToken),
     user_id: userId,
   })
 

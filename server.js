@@ -34,7 +34,40 @@ const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
 
-const collectionPagesV2Router = require("./newroutes/collectionPages")
+const { CollectionController } = require("@controllers/CollectionController")
+const { GitHubService } = require("@services/db/GitHubService")
+const {
+  CollectionPageService,
+} = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  ThirdNavPageService,
+} = require("@services/fileServices/MdPageServices/ThirdNavPageService")
+const {
+  CollectionYmlService,
+} = require("@services/fileServices/YmlFileServices/CollectionYmlService")
+const {
+  NavYmlService,
+} = require("@services/fileServices/YmlFileServices/NavYmlService")
+
+const { CollectionPagesRouter } = require("./newroutes/collectionPages")
+
+const gitHubService = new GitHubService()
+const collectionYmlService = new CollectionYmlService({ gitHubService })
+const collectionPageService = new CollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const thirdNavPageService = new ThirdNavPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const collectionController = new CollectionController({
+  collectionPageService,
+  thirdNavPageService,
+})
+const collectionPagesV2Router = new CollectionPagesRouter({
+  collectionController,
+})
 
 const app = express()
 
@@ -76,7 +109,7 @@ app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
 
-app.use("/v2/sites", collectionPagesV2Router)
+app.use("/v2/sites", collectionPagesV2Router.getRouter())
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

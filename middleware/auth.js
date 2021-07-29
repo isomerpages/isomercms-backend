@@ -6,8 +6,13 @@ const logger = require("@logger/logger")
 
 // Import errors
 const { AuthError } = require("@errors/AuthError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 const jwtUtils = require("@utils/jwt-utils")
+
+// Import services
+const AuthService = require("@services/AuthService")
+const SiteService = require("@services/SiteService")
 
 // Instantiate router object
 const auth = express.Router()
@@ -35,7 +40,7 @@ const verifyJwt = (req, res, next) => {
     }
     throw new Error(err)
   }
-  return next("router")
+  return next()
 }
 
 // Extracts access_token if any, else set access_token to null
@@ -52,6 +57,34 @@ const whoamiAuth = (req, res, next) => {
   return next("router")
 }
 
+// Replace access token with site access token if it is available
+const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
+  const { accessToken: userAccessToken, userId } = req
+  const { siteName } = req.params
+
+  // Check if site is onboarded to Isomer identity, otherwise continue using user access token
+  const site = await SiteService.getBySiteName(siteName)
+  if (!site) {
+    logger.info(
+      `Site ${siteName} does not exists in site table. Default to using user access token.`
+    )
+    return next()
+  }
+
+  logger.info(`Verifying user's access to ${siteName}`)
+  if (!AuthService.hasAccessToSite(siteName, userId, userAccessToken)) {
+    throw new NotFoundError("Site does not exist")
+  }
+
+  const siteAccessToken = await SiteService.getSiteAccessToken(siteName)
+  req.accessToken = siteAccessToken
+  logger.info(
+    `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
+  )
+
+  return next()
+}
+
 // Login and logout
 auth.get("/v1/auth/github-redirect", noVerify)
 auth.get("/v1/auth", noVerify)
@@ -60,6 +93,9 @@ auth.get("/v1/auth/whoami", whoamiAuth)
 
 // Index
 auth.get("/v1", noVerify)
+
+// Inject site access token if available
+auth.use("/v1/sites/:siteName", verifyJwt, useSiteAccessTokenIfAvailable)
 
 // Homepage
 auth.get("/v1/sites/:siteName/homepage", verifyJwt)

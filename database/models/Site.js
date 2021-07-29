@@ -24,10 +24,6 @@ module.exports = (sequelize) => {
         allowNull: false,
         type: DataTypes.TEXT,
       },
-      repoName: {
-        allowNull: false,
-        type: DataTypes.TEXT,
-      },
       apiTokenName: {
         allowNull: false,
         type: DataTypes.TEXT,

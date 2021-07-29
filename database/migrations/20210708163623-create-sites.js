@@ -11,10 +11,6 @@ module.exports = {
         allowNull: false,
         type: Sequelize.TEXT,
       },
-      repo_name: {
-        allowNull: false,
-        type: Sequelize.TEXT,
-      },
       api_token_name: {
         allowNull: false,
         type: Sequelize.TEXT,

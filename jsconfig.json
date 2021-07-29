@@ -13,7 +13,8 @@
         "@routes/*": ["./routes/*"],
         "@utils/*": ["./utils/*"],
         "@loaders/*": ["./loaders/*"],
-        "@database/*": ["./database/*"]
+        "@database/*": ["./database/*"],
+        "@services/*": ["./services/*"]
       }
     },
     "exclude": ["node_modules", "dist"]

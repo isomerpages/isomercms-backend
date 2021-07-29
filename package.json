@@ -71,7 +71,8 @@
     "@routes": "routes",
     "@utils": "utils",
     "@loaders": "loaders",
-    "@database": "database"
+    "@database": "database",
+    "@services": "services"
   },
   "lint-staged": {
     "**/*.(js|jsx|ts|tsx)": [

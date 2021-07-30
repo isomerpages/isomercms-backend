@@ -2,6 +2,7 @@ const axios = require("axios")
 const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
+const validator = require("validator")
 
 const logger = require("@logger/logger")
 
@@ -46,7 +47,7 @@ async function clearAllCookies(res) {
 
 async function sendOtp(req, res) {
   const { email } = req.body
-  if (!email) {
+  if (!email || !validator.isEmail(email)) {
     throw new BadRequestError("Please provide a valid email")
   }
 
@@ -64,7 +65,8 @@ async function sendOtp(req, res) {
 
 async function verifyOtp(req, res) {
   const { email, otp } = req.body
-  if (!email) throw new BadRequestError("Please provide email")
+  if (!email || !validator.isEmail(email))
+    throw new BadRequestError("Please provide email")
   if (!otp) throw new BadRequestError("Please provide OTP")
 
   if (!authService.verifyOtp(email, otp)) {

@@ -27,11 +27,22 @@ const verifyJwt = (req, res, next) => {
     const {
       access_token: retrievedToken,
       user_id: retrievedId,
+      isomer_user_id: isomerUserId,
     } = jwtUtils.verifyToken(isomercms)
+
+    if (!isomerUserId) {
+      const notLoggedInError = new Error("User not logged in with email")
+      notLoggedInError.name = "NotLoggedInError"
+      throw notLoggedInError
+    }
+
     req.accessToken = retrievedToken
     req.userId = retrievedId
   } catch (err) {
     logger.error("Authentication error")
+    if (err.name === "NotLoggedInError") {
+      throw new AuthError(err.message)
+    }
     if (err.name === "TokenExpiredError") {
       throw new AuthError("JWT token has expired")
     }
@@ -48,7 +59,14 @@ const whoamiAuth = (req, res, next) => {
   let retrievedToken
   try {
     const { isomercms } = req.cookies
-    retrievedToken = jwtUtils.verifyToken(isomercms).access_token
+    const {
+      access_token: accessToken,
+      isomer_user_id: isomerUserId,
+    } = jwtUtils.verifyToken(isomercms)
+    if (!accessToken || !isomerUserId) {
+      throw new Error("Invalid token")
+    }
+    retrievedToken = accessToken
   } catch (err) {
     retrievedToken = undefined
   } finally {

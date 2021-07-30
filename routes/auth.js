@@ -3,8 +3,11 @@ const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
+const logger = require("@logger/logger")
+
 // Import error
 const { AuthError } = require("@errors/AuthError")
+const { BadRequestError } = require("@errors/BadRequestError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 
 // Import middleware
@@ -12,6 +15,10 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
+
+// Import services
+const authService = require("@services/AuthService")
+const userService = require("@services/UserService")
 
 const router = express.Router()
 
@@ -28,7 +35,43 @@ const { FRONTEND_URL } = process.env
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
-async function authRedirect(req, res) {
+async function clearAllCookies(res) {
+  const cookieSettings = {
+    path: "/",
+  }
+
+  res.clearCookie(COOKIE_NAME, cookieSettings)
+  res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
+}
+
+async function sendOtp(req, res) {
+  const { email } = req.body
+  if (!email) {
+    throw new BadRequestError("Please provide a valid email")
+  }
+
+  try {
+    if (!authService.canSendOtp(email)) {
+      throw new Error(`Invalid email ${email}`)
+    }
+    await authService.sendOtp(email)
+    return res.sendStatus(200)
+  } catch (err) {
+    logger.error(err.message)
+    throw new AuthError("Unable to send OTP")
+  }
+}
+
+async function verifyOtp(req, res) {
+  const { email, otp } = req.body
+  if (!email) throw new BadRequestError("Please provide email")
+  if (!otp) throw new BadRequestError("Please provide OTP")
+
+  if (!authService.verifyOtp(email, otp)) {
+    throw new AuthError("Invalid OTP")
+  }
+
+  // If OTP is valid, redirect to github login
   const state = uuid()
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&state=${state}&scope=repo`
 
@@ -42,20 +85,25 @@ async function authRedirect(req, res) {
       process.env.NODE_ENV !== "DEV" && process.env.NODE_ENV !== "LOCAL_DEV",
   }
 
-  const token = jwtUtils.signToken({ state })
+  // Include user email in the cookie
+  const token = jwtUtils.signToken({ state, email })
 
   res.cookie(CSRF_COOKIE_NAME, token, cookieSettings)
-  return res.redirect(githubAuthUrl)
+  return res.status(200).json({ githubAuthUrl })
 }
 
 async function githubAuth(req, res) {
   const csrfState = req.cookies[CSRF_COOKIE_NAME]
   const { code, state } = req.query
 
-  const isCsrfValid =
-    jwtUtils.verifyToken(csrfState) &&
-    jwtUtils.decodeToken(csrfState).state === state
-  if (!isCsrfValid) throw new ForbiddenError()
+  let email
+  try {
+    const decoded = jwtUtils.verifyToken(csrfState)
+    if (decoded.state !== state) throw new Error("State does not match")
+    email = decoded.email
+  } catch (err) {
+    throw new ForbiddenError()
+  }
 
   const params = {
     code,
@@ -91,6 +139,10 @@ async function githubAuth(req, res) {
   let userId
   if (userResp.data) userId = userResp.data.login
 
+  // Find or create user after GitHub auth passes
+  const user = await userService.findOrCreate(email)
+  if (!user) throw Error("Failed to create user")
+
   const authTokenExpiry = new Date()
   authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
 
@@ -106,6 +158,7 @@ async function githubAuth(req, res) {
   const token = jwtUtils.signToken({
     access_token: accessToken,
     user_id: userId,
+    isomer_user_id: user.id,
   })
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
@@ -113,11 +166,7 @@ async function githubAuth(req, res) {
 }
 
 async function logout(req, res) {
-  const cookieSettings = {
-    path: "/",
-  }
-  res.clearCookie(COOKIE_NAME, cookieSettings)
-  res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
+  clearAllCookies(res)
   return res.sendStatus(200)
 }
 
@@ -127,7 +176,6 @@ async function whoami(req, res) {
   // Make a call to github
   const endpoint = "https://api.github.com/user"
 
-  let userId
   try {
     const resp = await axios.get(endpoint, {
       headers: {
@@ -135,14 +183,17 @@ async function whoami(req, res) {
         "Content-Type": "application/json",
       },
     })
-    userId = resp.data.login
+    const userId = resp.data.login
+    return res.status(200).json({ userId })
   } catch (err) {
-    userId = undefined
+    clearAllCookies(res)
+    // Return a 401 os that user will be redirected to logout
+    return res.sendStatus(401)
   }
-  return res.status(200).json({ userId })
 }
 
-router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
+router.post("/otp", attachReadRouteHandlerWrapper(sendOtp))
+router.post("/login", attachReadRouteHandlerWrapper(verifyOtp))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.get("/logout", attachReadRouteHandlerWrapper(logout))
 router.get("/whoami", attachReadRouteHandlerWrapper(whoami))

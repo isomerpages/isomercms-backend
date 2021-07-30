@@ -37,12 +37,14 @@ class AuthService {
 
   async sendOtp(email) {
     const otp = this.otp.generate(email)
-    const html = `Your OTP is <b>${otp}</b>. It will expire in 5 minutes.
+    const expiry = this.otp.getExpiryMinutes()
+
+    const html = `Your OTP is <b>${otp}</b>. It will expire in ${expiry} minutes.
       Please use this to login to your account.`
     await this.mailer.sendMail(email, html)
   }
 
-  async verifyOtp(email, otp) {
+  verifyOtp(email, otp) {
     return this.otp.verify(email, otp)
   }
 }

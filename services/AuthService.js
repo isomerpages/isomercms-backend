@@ -2,13 +2,20 @@ const axios = require("axios")
 
 const mailClient = require("@services/MailClient")
 const totpGenerator = require("@services/TotpGenerator")
+const userService = require("@services/UserService")
 
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+// Allowed domains is a semicolon separate list of domains (e.g. .gov.sg, @agency.com.sg, etc)
+// that are allowed to login.
+const { DOMAIN_WHITELIST } = process.env
 
 class AuthService {
   constructor(otp, mailer) {
     this.otp = otp
     this.mailer = mailer
+    this.whitelistDomains = (DOMAIN_WHITELIST || ".gov.sg")
+      .split(";")
+      .map((domain) => domain.toLowerCase().trim())
   }
 
   async hasAccessToSite(siteName, userId, accessToken) {
@@ -31,8 +38,15 @@ class AuthService {
     }
   }
 
-  canSendOtp(email) {
-    return true
+  async canSendOtp(email) {
+    const hasMatchDomain =
+      this.whitelistDomains.filter((domain) => email.endsWith(domain)).length >
+      0
+    const user = await userService.findByEmail(email)
+
+    // Send OTP if either the user's email match a whitelisted domain or the user already
+    // been explicitly whitelisted by adding an entry in the users table.
+    return hasMatchDomain || user !== null
   }
 
   async sendOtp(email) {
@@ -49,4 +63,4 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService(totpGenerator, mailClient)
+module.exports = new AuthService(totpGenerator, mailClient, userService)

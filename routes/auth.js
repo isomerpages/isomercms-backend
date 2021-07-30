@@ -51,7 +51,7 @@ async function sendOtp(req, res) {
   }
 
   try {
-    if (!authService.canSendOtp(email)) {
+    if (!(await authService.canSendOtp(email))) {
       throw new Error(`Invalid email ${email}`)
     }
     await authService.sendOtp(email)

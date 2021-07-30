@@ -1,9 +1,12 @@
 const axios = require("axios")
 
+const logger = require("@logger/logger")
+
 const mailClient = require("@services/MailClient")
 const totpGenerator = require("@services/TotpGenerator")
 const userService = require("@services/UserService")
 
+const IS_LOCAL_DEV = process.env.NODE_ENV === "LOCAL_DEV"
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 // Allowed domains is a semicolon separate list of domains (e.g. .gov.sg, @agency.com.sg, etc)
 // that are allowed to login.
@@ -53,8 +56,9 @@ class AuthService {
     const otp = this.otp.generate(email)
     const expiry = this.otp.getExpiryMinutes()
 
-    const html = `Your OTP is <b>${otp}</b>. It will expire in ${expiry} minutes.
-      Please use this to login to your account.`
+    const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${expiry} minutes. Please use this to login to your account.</p>
+    <p>If your OTP does not work, please request for a new OTP.</p>
+    <p>IsomerCMS Support Team</p>`
     await this.mailer.sendMail(email, html)
   }
 
@@ -63,4 +67,8 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService(totpGenerator, mailClient, userService)
+module.exports = new AuthService(
+  totpGenerator,
+  IS_LOCAL_DEV ? { sendMail: (_email, html) => logger.info(html) } : mailClient,
+  userService
+)

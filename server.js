@@ -3,6 +3,7 @@ const path = require("path")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const express = require("express")
+const helmet = require("helmet")
 const createError = require("http-errors")
 const logger = require("morgan")
 
@@ -35,6 +36,7 @@ const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
 
 const app = express()
+app.use(helmet())
 
 app.use(logger("dev"))
 app.use(

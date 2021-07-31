@@ -31,4 +31,4 @@ class MailClient {
   }
 }
 
-module.exports = new MailClient()
+module.exports = MailClient

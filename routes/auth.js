@@ -18,8 +18,7 @@ const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 // Import services
-const authService = require("@services/AuthService")
-const userService = require("@services/UserService")
+const { authService, userService } = require("@services")
 
 const router = express.Router()
 

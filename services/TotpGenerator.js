@@ -1,7 +1,5 @@
 const { totp } = require("otplib")
 
-const { OTP_EXPIRY, OTP_SECRET } = process.env
-
 class TotpGenerator {
   constructor(secret, expiry) {
     this.secret = secret
@@ -38,4 +36,4 @@ class TotpGenerator {
   }
 }
 
-module.exports = new TotpGenerator(OTP_SECRET, OTP_EXPIRY)
+module.exports = TotpGenerator

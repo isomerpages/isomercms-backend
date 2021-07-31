@@ -1,21 +1,15 @@
 const axios = require("axios")
 
-const logger = require("@logger/logger")
-
-const mailClient = require("@services/MailClient")
-const totpGenerator = require("@services/TotpGenerator")
-const userService = require("@services/UserService")
-
-const IS_LOCAL_DEV = process.env.NODE_ENV === "LOCAL_DEV"
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 // Allowed domains is a semicolon separate list of domains (e.g. .gov.sg, @agency.com.sg, etc)
 // that are allowed to login.
 const { DOMAIN_WHITELIST } = process.env
 
 class AuthService {
-  constructor(otp, mailer) {
+  constructor(otp, mailer, userService) {
     this.otp = otp
     this.mailer = mailer
+    this.userService = userService
     this.whitelistDomains = (DOMAIN_WHITELIST || ".gov.sg")
       .split(";")
       .map((domain) => domain.toLowerCase().trim())
@@ -45,7 +39,7 @@ class AuthService {
     const hasMatchDomain =
       this.whitelistDomains.filter((domain) => email.endsWith(domain)).length >
       0
-    const user = await userService.findByEmail(email)
+    const user = await this.userService.findByEmail(email)
 
     // Send OTP if either the user's email match a whitelisted domain or the user already
     // been explicitly whitelisted by adding an entry in the users table.
@@ -67,8 +61,4 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService(
-  totpGenerator,
-  IS_LOCAL_DEV ? { sendMail: (_email, html) => logger.info(html) } : mailClient,
-  userService
-)
+module.exports = AuthService

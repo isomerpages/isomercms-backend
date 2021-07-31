@@ -1,20 +1,18 @@
-const db = require("@database/models")
-
 class UserService {
-  constructor(model) {
-    this.model = model
+  constructor(repository) {
+    this.repository = repository
   }
 
   async findByEmail(email) {
-    return this.model.findOne({ where: { email } })
+    return this.repository.findOne({ where: { email } })
   }
 
   async findOrCreate(email, contactNumber) {
-    const [user] = await this.model.findOrCreate({
+    const [user] = await this.repository.findOrCreate({
       where: { email, contactNumber: contactNumber || null },
     })
     return user
   }
 }
 
-module.exports = new UserService(db.User)
+module.exports = UserService

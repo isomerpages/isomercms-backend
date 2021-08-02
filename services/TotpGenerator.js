@@ -11,7 +11,7 @@ class TotpGenerator {
     // of the time step. It will be valid for (5 - 4) + 5 = 6 minutes instead of
     // expiring in 1 minute.
     this.generator = totp.clone({
-      step: expiry * 60,
+      step: this.expiry * 60,
       window: [1, 0],
     })
   }

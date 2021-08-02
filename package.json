@@ -12,7 +12,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "aws-sdk": "^2.787.0",
+    "aws-sdk": "^2.946.0",
     "axios": "^0.21.1",
     "base-64": "^0.1.0",
     "bluebird": "^3.7.0",
@@ -23,6 +23,7 @@
     "dotenv": "^8.1.0",
     "exponential-backoff": "^3.1.0",
     "express": "~4.16.1",
+    "helmet": "^4.6.0",
     "http-errors": "~1.6.3",
     "js-base64": "^2.5.1",
     "jsonwebtoken": "^8.5.1",

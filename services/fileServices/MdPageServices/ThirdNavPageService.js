@@ -30,7 +30,7 @@ class ThirdNavPageService {
       fileName,
       directoryName: parsedDirectoryName,
     })
-    return { fileName, content: { frontMatter, content }, sha }
+    return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
   async Read(reqDetails, { fileName, collectionName, thirdNavTitle }) {
@@ -58,7 +58,12 @@ class ThirdNavPageService {
       fileName,
       directoryName: parsedDirectoryName,
     })
-    return { fileName, content: { frontMatter, content }, oldSha: sha, newSha }
+    return {
+      fileName,
+      content: { frontMatter, pageBody: content },
+      oldSha: sha,
+      newSha,
+    }
   }
 
   async Delete(reqDetails, { fileName, collectionName, thirdNavTitle, sha }) {
@@ -103,7 +108,7 @@ class ThirdNavPageService {
     })
     return {
       fileName: newFileName,
-      content: { frontMatter, content },
+      content: { frontMatter, pageBody: content },
       oldSha: sha,
       newSha,
     }

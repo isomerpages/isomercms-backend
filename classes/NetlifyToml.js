@@ -16,7 +16,7 @@ class NetlifyToml {
   }
 
   async read() {
-    const endpoint = `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/netlify.toml`
+    const endpoint = `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/overrides/netlify.toml`
 
     const resp = await axios.get(endpoint, {
       validateStatus,

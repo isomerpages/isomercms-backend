@@ -1,4 +1,10 @@
+const createDOMPurify = require("dompurify")
 const FileType = require("file-type")
+const isSvg = require("is-svg")
+const { JSDOM } = require("jsdom")
+
+const { window } = new JSDOM("")
+const DOMPurify = createDOMPurify(window)
 
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
@@ -7,16 +13,25 @@ const ALLOWED_FILE_EXTENSIONS = [
   "gif",
   "tif",
   "bmp",
-  "svg",
   "ico",
 ]
 
 const validateAndSanitizeFileUpload = async (content) => {
-  const fileType = await FileType.fromBuffer(Buffer.from(content, "base64"))
+  const fileBuffer = Buffer.from(content, "base64")
+  const detectedFileType = await FileType.fromBuffer(fileBuffer)
 
-  if (!fileType || !ALLOWED_FILE_EXTENSIONS.includes(fileType.ext))
-    return undefined
-  return fileType
+  if (isSvg(fileBuffer)) {
+    const sanitizedBuffer = DOMPurify.sanitize(fileBuffer)
+    return Buffer.from(sanitizedBuffer, "utf8").toString("base64")
+  }
+  if (
+    detectedFileType &&
+    ALLOWED_FILE_EXTENSIONS.includes(detectedFileType.ext)
+  ) {
+    return content
+  }
+
+  return undefined
 }
 
-module.exports = { validateAndSanitizeFileUpload, ALLOWED_FILE_EXTENSIONS }
+module.exports = { validateAndSanitizeFileUpload }

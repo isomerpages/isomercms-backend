@@ -8,10 +8,7 @@ const { MediaTypeError } = require("@errors/MediaTypeError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
-const {
-  validateAndSanitizeFileUpload,
-  ALLOWED_FILE_EXTENSIONS,
-} = require("@utils/file-upload-utils")
+const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
 // Import error
 
@@ -91,18 +88,16 @@ class MediaFile {
   }
 
   async create(fileName, content) {
-    if (!(await validateAndSanitizeFileUpload(content)))
-      throw new MediaTypeError(
-        `File extension is not within the approved list: ${JSON.stringify(
-          ALLOWED_FILE_EXTENSIONS
-        )}`
-      )
+    const sanitizedContent = await validateAndSanitizeFileUpload(content)
+    if (!sanitizedContent) {
+      throw new MediaTypeError(`File extension is not within the approved list`)
+    }
 
     const endpoint = `${this.baseEndpoint}/${fileName}`
 
     const params = {
       message: `Create file: ${fileName}`,
-      content,
+      content: sanitizedContent,
       branch: "staging",
     }
 

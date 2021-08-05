@@ -9,13 +9,13 @@ class CollectionYmlService {
   }
 
   async Read(reqDetails, { collectionName }) {
-    const {
-      content: unparsedContent,
-      sha,
-    } = await this.GitHubService.Read(reqDetails, {
-      fileName: COLLECTION_FILE_NAME,
-      directoryName: `_${collectionName}`,
-    })
+    const { content: unparsedContent, sha } = await this.GitHubService.Read(
+      reqDetails,
+      {
+        fileName: COLLECTION_FILE_NAME,
+        directoryName: `_${collectionName}`,
+      }
+    )
     const content = yaml.parse(unparsedContent)
     return { content, sha }
   }
@@ -60,14 +60,14 @@ class CollectionYmlService {
     if (index === undefined) {
       if (item.split("/").length === 2) {
         // if file in subfolder, get index of last file in subfolder
-        newIndex =
-          _.findLastIndex(
-            content.collections[collectionName].order,
-            (f) => f.split("/")[0] === item.split("/")[0]
-          ) + 1
+        newIndex = _.findIndex(
+          content.collections[collectionName].order,
+          (f) => f.split("/")[0] === item.split("/")[0]
+        )
+        if (newIndex === -1) newIndex = 0
       } else {
         // get index of last file in collection
-        newIndex = content.collections[collectionName].order.length
+        newIndex = 0
       }
     }
     content.collections[collectionName].order.splice(newIndex, 0, item)

@@ -24,6 +24,10 @@ axiosInstance.interceptors.request.use((config) => ({
 }))
 
 class GitHubService {
+  constructor({ axiosInstance }) {
+    this.axiosInstance = axiosInstance
+  }
+
   getFilePath({ siteName, fileName, directoryName }) {
     if (!directoryName)
       return `${siteName}/contents/${encodeURIComponent(fileName)}`
@@ -58,7 +62,7 @@ class GitHubService {
         branch: BRANCH_REF,
       }
 
-      const resp = await axiosInstance.put(endpoint, params, {
+      const resp = await this.axiosInstance.put(endpoint, params, {
         headers: {
           Authorization: `token ${accessToken}`,
         },
@@ -80,7 +84,7 @@ class GitHubService {
       ref: BRANCH_REF,
     }
 
-    const resp = await axiosInstance.get(endpoint, {
+    const resp = await this.axiosInstance.get(endpoint, {
       validateStatus,
       params,
       headers: {
@@ -102,7 +106,7 @@ class GitHubService {
       ref: BRANCH_REF,
     }
 
-    const resp = await axiosInstance.get(endpoint, {
+    const resp = await this.axiosInstance.get(endpoint, {
       validateStatus,
       params,
       headers: {
@@ -139,7 +143,7 @@ class GitHubService {
         sha: fileSha,
       }
 
-      const resp = await axiosInstance.put(endpoint, params, {
+      const resp = await this.axiosInstance.put(endpoint, params, {
         headers: {
           Authorization: `token ${accessToken}`,
         },
@@ -173,7 +177,7 @@ class GitHubService {
         sha: fileSha,
       }
 
-      await axiosInstance.delete(endpoint, {
+      await this.axiosInstance.delete(endpoint, {
         params,
         headers: {
           Authorization: `token ${accessToken}`,
@@ -221,7 +225,7 @@ class GitHubService {
 
     const {
       data: { tree: gitTree },
-    } = await axiosInstance.get(url, {
+    } = await this.axiosInstance.get(url, {
       params,
       headers: { Authorization: `token ${accessToken}` },
     })
@@ -239,7 +243,11 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
 
-    const resp = await axiosInstance.post(url, { tree: gitTree }, { headers })
+    const resp = await this.axiosInstance.post(
+      url,
+      { tree: gitTree },
+      { headers }
+    )
 
     const {
       data: { sha: newTreeSha },
@@ -247,7 +255,7 @@ class GitHubService {
 
     const commitEndpoint = `${siteName}/git/commits`
 
-    const newCommitResp = await axiosInstance.post(
+    const newCommitResp = await this.axiosInstance.post(
       commitEndpoint,
       {
         message: message || `isomerCMS updated ${siteName} state`,

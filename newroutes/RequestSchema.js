@@ -7,13 +7,13 @@ const FrontMatterSchema = Joi.object({
 
 const CreatePageRequestSchema = Joi.object().keys({
   frontMatter: FrontMatterSchema,
-  pageBody: Joi.string().required(),
+  pageBody: Joi.string().allow(""),
   newFileName: Joi.string().required(),
 })
 
 const UpdatePageRequestSchema = Joi.object().keys({
   frontMatter: FrontMatterSchema,
-  pageBody: Joi.string().required(),
+  pageBody: Joi.string().allow(""),
   sha: Joi.string().required(),
   newFileName: Joi.string().required(),
 })

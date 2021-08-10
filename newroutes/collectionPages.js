@@ -1,6 +1,8 @@
 const express = require("express")
 
 // Import middleware
+const { BadRequestError } = require("@errors/BadRequestError")
+
 const {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
@@ -32,7 +34,7 @@ class CollectionPagesRouter {
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
-    if (error) throw error
+    if (error) throw new BadRequestError(error.message)
     const { newFileName, pageBody, frontMatter } = req.body
     const createResp = await this.CollectionController.CreatePage(
       { siteName, accessToken },
@@ -67,7 +69,7 @@ class CollectionPagesRouter {
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
-    if (error) throw error
+    if (error) throw new BadRequestError(error)
     const { frontMatter, pageBody, sha, newFileName } = req.body
     const updateResp = await this.CollectionController.UpdatePage(
       { siteName, accessToken },
@@ -91,7 +93,7 @@ class CollectionPagesRouter {
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
-    if (error) throw error
+    if (error) throw new BadRequestError(error)
     const { sha } = req.body
     await this.CollectionController.DeletePage(
       { siteName, accessToken },

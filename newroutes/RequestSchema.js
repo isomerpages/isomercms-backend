@@ -5,15 +5,18 @@ const FrontMatterSchema = Joi.object({
   permalink: Joi.string().required(),
 })
 
-const CreatePageRequestSchema = Joi.object().keys({
+const ContentSchema = Joi.object({
   frontMatter: FrontMatterSchema,
   pageBody: Joi.string().allow(""),
+})
+
+const CreatePageRequestSchema = Joi.object().keys({
+  content: ContentSchema,
   newFileName: Joi.string().required(),
 })
 
 const UpdatePageRequestSchema = Joi.object().keys({
-  frontMatter: FrontMatterSchema,
-  pageBody: Joi.string().allow(""),
+  content: ContentSchema,
   sha: Joi.string().required(),
   newFileName: Joi.string().required(),
 })

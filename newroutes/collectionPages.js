@@ -35,7 +35,10 @@ class CollectionPagesRouter {
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    const { newFileName, pageBody, frontMatter } = req.body
+    const {
+      content: { frontMatter, pageBody },
+      newFileName,
+    } = req.body
     const createResp = await this.CollectionController.CreatePage(
       { siteName, accessToken },
       {
@@ -70,7 +73,11 @@ class CollectionPagesRouter {
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error)
-    const { frontMatter, pageBody, sha, newFileName } = req.body
+    const {
+      content: { frontMatter, pageBody },
+      sha,
+      newFileName,
+    } = req.body
     const updateResp = await this.CollectionController.UpdatePage(
       { siteName, accessToken },
       {

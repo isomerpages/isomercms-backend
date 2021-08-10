@@ -29,6 +29,7 @@ describe("Third Nav Page Service", () => {
   const mockCollectionYmlService = {
     AddItemToOrder: jest.fn(),
     DeleteItemFromOrder: jest.fn(),
+    UpdateItemInOrder: jest.fn(),
   }
 
   jest.mock("@utils/markdown-utils", () => ({
@@ -210,15 +211,19 @@ describe("Third Nav Page Service", () => {
         oldSha,
         newSha: sha,
       })
+      expect(mockCollectionYmlService.UpdateItemInOrder).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          collectionName,
+          oldItem: `${thirdNavTitle}/${oldFileName}`,
+          newItem: `${thirdNavTitle}/${fileName}`,
+        }
+      )
       expect(mockGithubService.Delete).toHaveBeenCalledWith(reqDetails, {
         fileName: oldFileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockCollectionYmlService.AddItemToOrder).toHaveBeenCalledWith(
-        reqDetails,
-        collectionYmlObj
-      )
       expect(mockGithubService.Create).toHaveBeenCalledWith(reqDetails, {
         content: mockMarkdownContent,
         fileName,

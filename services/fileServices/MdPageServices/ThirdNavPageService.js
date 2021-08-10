@@ -93,19 +93,29 @@ class ThirdNavPageService {
       sha,
     }
   ) {
-    await this.Delete(reqDetails, {
-      fileName: oldFileName,
+    const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
+
+    await this.CollectionYmlService.UpdateItemInOrder(reqDetails, {
       collectionName,
-      thirdNavTitle,
+      oldItem: `${thirdNavTitle}/${oldFileName}`,
+      newItem: `${thirdNavTitle}/${newFileName}`,
+    })
+
+    await this.GitHubService.Delete(reqDetails, {
       sha,
+      fileName: oldFileName,
+      directoryName: parsedDirectoryName,
     })
-    const { sha: newSha } = await this.Create(reqDetails, {
+
+    frontMatter.third_nav_title = deslugifyCollectionName(thirdNavTitle)
+    const newContent = convertDataToMarkdown(frontMatter, content)
+
+    const { sha: newSha } = await this.GitHubService.Create(reqDetails, {
+      content: newContent,
       fileName: newFileName,
-      collectionName,
-      thirdNavTitle,
-      content,
-      frontMatter,
+      directoryName: parsedDirectoryName,
     })
+
     return {
       fileName: newFileName,
       content: { frontMatter, pageBody: content },

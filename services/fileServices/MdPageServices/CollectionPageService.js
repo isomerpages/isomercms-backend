@@ -81,16 +81,28 @@ class CollectionPageService {
     reqDetails,
     { oldFileName, newFileName, collectionName, content, frontMatter, sha }
   ) {
-    await this.Delete(reqDetails, {
-      fileName: oldFileName,
+    const parsedCollectionName = `_${collectionName}`
+
+    await this.CollectionYmlService.UpdateItemInOrder(reqDetails, {
       collectionName,
-      sha,
+      oldItem: oldFileName,
+      newItem: newFileName,
     })
-    const { sha: newSha } = await this.Create(reqDetails, {
+
+    await this.GitHubService.Delete(reqDetails, {
+      sha,
+      fileName: oldFileName,
+      directoryName: parsedCollectionName,
+    })
+
+    // We want to make sure that the front matter has no third nav title parameter
+    delete frontMatter.third_nav_title
+    const newContent = convertDataToMarkdown(frontMatter, content)
+
+    const { sha: newSha } = await this.GitHubService.Create(reqDetails, {
+      content: newContent,
       fileName: newFileName,
-      collectionName,
-      content,
-      frontMatter,
+      directoryName: parsedCollectionName,
     })
     return {
       fileName: newFileName,

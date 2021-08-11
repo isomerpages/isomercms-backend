@@ -9,23 +9,23 @@ const PLACEHOLDER_FILE_NAME = ".keep"
 
 class CollectionController {
   constructor({ collectionPageService, subcollectionPageService }) {
-    this.CollectionPageService = collectionPageService
-    this.SubcollectionPageService = subcollectionPageService
+    this.collectionPageService = collectionPageService
+    this.subcollectionPageService = subcollectionPageService
   }
 
-  async CreatePage(
+  async createPage(
     reqDetails,
     { fileName, collectionName, subcollectionName, content, frontMatter }
   ) {
     if (subcollectionName)
-      return this.SubcollectionPageService.Create(reqDetails, {
+      return this.subcollectionPageService.create(reqDetails, {
         fileName,
         collectionName,
         subcollectionName,
         content,
         frontMatter,
       })
-    return this.CollectionPageService.Create(reqDetails, {
+    return this.collectionPageService.create(reqDetails, {
       fileName,
       collectionName,
       content,
@@ -33,20 +33,20 @@ class CollectionController {
     })
   }
 
-  async ReadPage(reqDetails, { fileName, collectionName, subcollectionName }) {
+  async readPage(reqDetails, { fileName, collectionName, subcollectionName }) {
     if (subcollectionName)
-      return this.SubcollectionPageService.Read(reqDetails, {
+      return this.subcollectionPageService.read(reqDetails, {
         fileName,
         collectionName,
         subcollectionName,
       })
-    return this.CollectionPageService.Read(reqDetails, {
+    return this.collectionPageService.read(reqDetails, {
       fileName,
       collectionName,
     })
   }
 
-  async UpdatePage(
+  async updatePage(
     reqDetails,
     {
       fileName,
@@ -60,7 +60,7 @@ class CollectionController {
   ) {
     if (subcollectionName) {
       if (newFileName)
-        return this.SubcollectionPageService.Rename(reqDetails, {
+        return this.subcollectionPageService.rename(reqDetails, {
           oldFileName: fileName,
           newFileName,
           collectionName,
@@ -69,7 +69,7 @@ class CollectionController {
           frontMatter,
           sha,
         })
-      return this.SubcollectionPageService.Update(reqDetails, {
+      return this.subcollectionPageService.update(reqDetails, {
         fileName,
         collectionName,
         subcollectionName,
@@ -79,7 +79,7 @@ class CollectionController {
       })
     }
     if (newFileName)
-      return this.CollectionPageService.Rename(reqDetails, {
+      return this.collectionPageService.rename(reqDetails, {
         oldFileName: fileName,
         newFileName,
         collectionName,
@@ -87,7 +87,7 @@ class CollectionController {
         frontMatter,
         sha,
       })
-    return this.CollectionPageService.Update(reqDetails, {
+    return this.collectionPageService.update(reqDetails, {
       fileName,
       collectionName,
       content,
@@ -96,18 +96,18 @@ class CollectionController {
     })
   }
 
-  async DeletePage(
+  async deletePage(
     reqDetails,
     { fileName, collectionName, subcollectionName, sha }
   ) {
     if (subcollectionName)
-      return this.SubcollectionPageService.Delete(reqDetails, {
+      return this.subcollectionPageService.delete(reqDetails, {
         fileName,
         collectionName,
         subcollectionName,
         sha,
       })
-    return this.CollectionPageService.Delete(reqDetails, {
+    return this.collectionPageService.delete(reqDetails, {
       fileName,
       collectionName,
       sha,

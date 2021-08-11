@@ -10,10 +10,10 @@ const { CollectionPagesRouter } = require("../collectionPages")
 
 describe("Collection Pages Router", () => {
   const mockController = {
-    CreatePage: jest.fn(),
-    ReadPage: jest.fn(),
-    UpdatePage: jest.fn(),
-    DeletePage: jest.fn(),
+    createPage: jest.fn(),
+    readPage: jest.fn(),
+    updatePage: jest.fn(),
+    deletePage: jest.fn(),
   }
 
   const router = new CollectionPagesRouter({
@@ -103,7 +103,7 @@ describe("Collection Pages Router", () => {
         .post(`/${siteName}/collections/${collectionName}/pages`)
         .send(pageDetails)
         .expect(200)
-      expect(mockController.CreatePage).toHaveBeenCalledWith(
+      expect(mockController.createPage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -123,7 +123,7 @@ describe("Collection Pages Router", () => {
         )
         .send(pageDetails)
         .expect(200)
-      expect(mockController.CreatePage).toHaveBeenCalledWith(
+      expect(mockController.createPage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -131,7 +131,7 @@ describe("Collection Pages Router", () => {
   })
 
   describe("readCollectionPage", () => {
-    mockController.ReadPage.mockReturnValue({
+    mockController.readPage.mockReturnValue({
       sha: mockSha,
       content: mockContent,
     })
@@ -144,7 +144,7 @@ describe("Collection Pages Router", () => {
       await request(app)
         .get(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .expect(200)
-      expect(mockController.ReadPage).toHaveBeenCalledWith(
+      expect(mockController.readPage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -161,7 +161,7 @@ describe("Collection Pages Router", () => {
           `/${siteName}/collections/${collectionName}/subcollections/${subcollectionName}/pages/${fileName}`
         )
         .expect(200)
-      expect(mockController.ReadPage).toHaveBeenCalledWith(
+      expect(mockController.readPage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -204,7 +204,7 @@ describe("Collection Pages Router", () => {
         .post(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .send(updatePageDetails)
         .expect(200)
-      expect(mockController.UpdatePage).toHaveBeenCalledWith(
+      expect(mockController.updatePage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -223,7 +223,7 @@ describe("Collection Pages Router", () => {
         .post(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .send(renamePageDetails)
         .expect(200)
-      expect(mockController.UpdatePage).toHaveBeenCalledWith(
+      expect(mockController.updatePage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -244,7 +244,7 @@ describe("Collection Pages Router", () => {
         )
         .send(updatePageDetails)
         .expect(200)
-      expect(mockController.UpdatePage).toHaveBeenCalledWith(
+      expect(mockController.updatePage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -266,7 +266,7 @@ describe("Collection Pages Router", () => {
         )
         .send(renamePageDetails)
         .expect(200)
-      expect(mockController.UpdatePage).toHaveBeenCalledWith(
+      expect(mockController.updatePage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -295,7 +295,7 @@ describe("Collection Pages Router", () => {
         .delete(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .send(pageDetails)
         .expect(200)
-      expect(mockController.DeletePage).toHaveBeenCalledWith(
+      expect(mockController.deletePage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -314,7 +314,7 @@ describe("Collection Pages Router", () => {
         )
         .send(pageDetails)
         .expect(200)
-      expect(mockController.DeletePage).toHaveBeenCalledWith(
+      expect(mockController.deletePage).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )

@@ -35,10 +35,9 @@ describe("Collection Yml Service", () => {
   // const mockRawContent = `collections:\n  ${collectionName}:\n    output: true\n    order:\n      - ${fileName}.md\n      - ${subcollectionName}/${subcollectionFileName}.md`
 
   const mockGithubService = {
-    Create: jest.fn(),
-    Read: jest.fn(),
-    Update: jest.fn(),
-    Delete: jest.fn(),
+    create: jest.fn(),
+    read: jest.fn(),
+    update: jest.fn(),
   }
 
   const service = new CollectionYmlService({
@@ -50,15 +49,15 @@ describe("Collection Yml Service", () => {
   })
 
   describe("Read", () => {
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha,
     }),
       it("Reading a collection.yml file works correctly", async () => {
         await expect(
-          service.Read(reqDetails, { collectionName })
+          service.read(reqDetails, { collectionName })
         ).resolves.toMatchObject({ content: mockParsedContent, sha })
-        expect(mockGithubService.Read).toHaveBeenCalledWith(reqDetails, {
+        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
           fileName: COLLECTION_FILE_NAME,
           directoryName,
         })
@@ -67,10 +66,10 @@ describe("Collection Yml Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
     it("Updating raw content works correctly", async () => {
       await expect(
-        service.Update(reqDetails, {
+        service.update(reqDetails, {
           collectionName,
           fileContent: mockParsedContent,
           sha: oldSha,
@@ -78,7 +77,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: mockRawContent,
@@ -89,7 +88,7 @@ describe("Collection Yml Service", () => {
 
   describe("Create", () => {
     beforeEach(() => {
-      mockGithubService.Create.mockReturnValueOnce({ sha })
+      mockGithubService.create.mockReturnValueOnce({ sha })
     })
     it("Creating a collection.yml file with no specified files works correctly", async () => {
       const content = yaml.stringify({
@@ -101,13 +100,13 @@ describe("Collection Yml Service", () => {
         },
       })
       await expect(
-        service.Create(reqDetails, {
+        service.create(reqDetails, {
           collectionName,
         })
       ).resolves.toMatchObject({
         sha,
       })
-      expect(mockGithubService.Create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
         content,
         fileName: COLLECTION_FILE_NAME,
         directoryName,
@@ -123,14 +122,14 @@ describe("Collection Yml Service", () => {
         },
       })
       await expect(
-        service.Create(reqDetails, {
+        service.create(reqDetails, {
           collectionName,
           orderArray,
         })
       ).resolves.toMatchObject({
         sha,
       })
-      expect(mockGithubService.Create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
         content,
         fileName: COLLECTION_FILE_NAME,
         directoryName,
@@ -139,7 +138,7 @@ describe("Collection Yml Service", () => {
   })
 
   describe("ListContents", () => {
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha,
     })
@@ -155,8 +154,8 @@ describe("Collection Yml Service", () => {
   describe("AddItemToOrder", () => {
     const oldSha = "54321"
     beforeEach(() => {
-      mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-      mockGithubService.Read.mockReturnValueOnce({
+      mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+      mockGithubService.read.mockReturnValueOnce({
         content: mockRawContent,
         sha: oldSha,
       })
@@ -176,7 +175,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -198,7 +197,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -221,7 +220,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -246,7 +245,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -271,7 +270,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -283,8 +282,8 @@ describe("Collection Yml Service", () => {
   describe("DeleteItemFromOrder", () => {
     const oldSha = "54321"
     beforeEach(() => {
-      mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-      mockGithubService.Read.mockReturnValueOnce({
+      mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+      mockGithubService.read.mockReturnValueOnce({
         content: mockRawContent,
         sha: oldSha,
       })
@@ -298,14 +297,14 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.DeleteItemFromOrder(reqDetails, {
+        service.deleteItemFromOrder(reqDetails, {
           collectionName,
           item: `${fileName}.md`,
         })
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -320,14 +319,14 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.DeleteItemFromOrder(reqDetails, {
+        service.deleteItemFromOrder(reqDetails, {
           collectionName,
           item: itemName,
         })
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -341,19 +340,19 @@ describe("Collection Yml Service", () => {
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
       await expect(
-        service.DeleteItemFromOrder(reqDetails, {
+        service.deleteItemFromOrder(reqDetails, {
           collectionName,
           item: itemName,
         })
       )
-      expect(mockGithubService.Update).not.toHaveBeenCalled()
+      expect(mockGithubService.update).not.toHaveBeenCalled()
     })
   })
 
   describe("UpdateItemInOrder", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -368,7 +367,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.UpdateItemInOrder(reqDetails, {
+        service.updateItemInOrder(reqDetails, {
           collectionName,
           oldItem: `${fileName}2.md`,
           newItem: renamedItem,
@@ -376,7 +375,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -387,8 +386,8 @@ describe("Collection Yml Service", () => {
 
   describe("RenameCollectionInOrder", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -402,14 +401,14 @@ describe("Collection Yml Service", () => {
       }
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.RenameCollectionInOrder(reqDetails, {
+        service.renameCollectionInOrder(reqDetails, {
           oldCollectionName: collectionName,
           newCollectionName: renamedCollection,
         })
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName: `_${renamedCollection}`,
         fileContent: modifiedRawContent,
@@ -420,8 +419,8 @@ describe("Collection Yml Service", () => {
 
   describe("DeleteSubfolderFromOrder", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -434,14 +433,14 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.DeleteSubfolderFromOrder(reqDetails, {
+        service.deleteSubfolderFromOrder(reqDetails, {
           collectionName,
           subfolder: subcollectionName,
         })
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -452,8 +451,8 @@ describe("Collection Yml Service", () => {
 
   describe("RenameSubfolderInOrder", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -467,7 +466,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.RenameSubfolderInOrder(reqDetails, {
+        service.renameSubfolderInOrder(reqDetails, {
           collectionName,
           oldSubfolder: subcollectionName,
           newSubfolder: renamedSubcollection,
@@ -475,7 +474,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,
@@ -486,8 +485,8 @@ describe("Collection Yml Service", () => {
 
   describe("UpdateOrder", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.Read.mockReturnValueOnce({
+    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.read.mockReturnValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -504,7 +503,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = newOrder
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.UpdateOrder(reqDetails, {
+        service.updateOrder(reqDetails, {
           collectionName,
           newOrder,
           sha: oldSha,
@@ -512,7 +511,7 @@ describe("Collection Yml Service", () => {
       ).resolves.toMatchObject({
         newSha: sha,
       })
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName: COLLECTION_FILE_NAME,
         directoryName,
         fileContent: modifiedRawContent,

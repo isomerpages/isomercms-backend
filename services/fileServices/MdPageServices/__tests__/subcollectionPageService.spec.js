@@ -20,16 +20,16 @@ describe("Subcollection Page Service", () => {
   }
 
   const mockGithubService = {
-    Create: jest.fn(),
-    Read: jest.fn(),
-    Update: jest.fn(),
-    Delete: jest.fn(),
+    create: jest.fn(),
+    read: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
   }
 
   const mockCollectionYmlService = {
-    AddItemToOrder: jest.fn(),
-    DeleteItemFromOrder: jest.fn(),
-    UpdateItemInOrder: jest.fn(),
+    addItemToOrder: jest.fn(),
+    deleteItemFromOrder: jest.fn(),
+    updateItemInOrder: jest.fn(),
   }
 
   jest.mock("@utils/markdown-utils", () => ({
@@ -54,10 +54,10 @@ describe("Subcollection Page Service", () => {
   })
 
   describe("Create", () => {
-    mockGithubService.Create.mockReturnValue({ sha })
+    mockGithubService.create.mockReturnValue({ sha })
     it("Creating pages works correctly", async () => {
       await expect(
-        service.Create(reqDetails, {
+        service.create(reqDetails, {
           fileName,
           collectionName,
           subcollectionName,
@@ -73,11 +73,11 @@ describe("Subcollection Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockCollectionYmlService.AddItemToOrder).toHaveBeenCalledWith(
+      expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
         reqDetails,
         collectionYmlObj
       )
-      expect(mockGithubService.Create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
         content: mockMarkdownContent,
         fileName,
         directoryName,
@@ -89,7 +89,7 @@ describe("Subcollection Page Service", () => {
         third_nav_title: "mock-third-nav",
       }
       await expect(
-        service.Create(reqDetails, {
+        service.create(reqDetails, {
           fileName,
           collectionName,
           subcollectionName,
@@ -105,11 +105,11 @@ describe("Subcollection Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockCollectionYmlService.AddItemToOrder).toHaveBeenCalledWith(
+      expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
         reqDetails,
         collectionYmlObj
       )
-      expect(mockGithubService.Create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
         content: mockMarkdownContent,
         fileName,
         directoryName,
@@ -118,13 +118,13 @@ describe("Subcollection Page Service", () => {
   })
 
   describe("Read", () => {
-    mockGithubService.Read.mockReturnValue({
+    mockGithubService.read.mockReturnValue({
       content: mockMarkdownContent,
       sha,
     }),
       it("Reading pages works correctly", async () => {
         await expect(
-          service.Read(reqDetails, {
+          service.read(reqDetails, {
             fileName,
             collectionName,
             subcollectionName,
@@ -137,7 +137,7 @@ describe("Subcollection Page Service", () => {
         expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
           mockMarkdownContent
         )
-        expect(mockGithubService.Read).toHaveBeenCalledWith(reqDetails, {
+        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
           fileName,
           directoryName,
         })
@@ -146,10 +146,10 @@ describe("Subcollection Page Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.Update.mockReturnValue({ newSha: sha })
+    mockGithubService.update.mockReturnValue({ newSha: sha })
     it("Updating page content works correctly", async () => {
       await expect(
-        service.Update(reqDetails, {
+        service.update(reqDetails, {
           fileName,
           collectionName,
           subcollectionName,
@@ -167,7 +167,7 @@ describe("Subcollection Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockGithubService.Update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
         fileContent: mockMarkdownContent,
@@ -179,14 +179,14 @@ describe("Subcollection Page Service", () => {
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
       await expect(
-        service.Delete(reqDetails, {
+        service.delete(reqDetails, {
           fileName,
           collectionName,
           subcollectionName,
           sha,
         })
       )
-      expect(mockGithubService.Delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
         sha,
@@ -197,10 +197,10 @@ describe("Subcollection Page Service", () => {
   describe("Rename", () => {
     const oldSha = "54321"
     const oldFileName = "test-old-file"
-    mockGithubService.Create.mockReturnValue({ sha })
+    mockGithubService.create.mockReturnValue({ sha })
     it("Renaming pages works correctly", async () => {
       await expect(
-        service.Rename(reqDetails, {
+        service.rename(reqDetails, {
           oldFileName,
           newFileName: fileName,
           collectionName,
@@ -215,7 +215,7 @@ describe("Subcollection Page Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockCollectionYmlService.UpdateItemInOrder).toHaveBeenCalledWith(
+      expect(mockCollectionYmlService.updateItemInOrder).toHaveBeenCalledWith(
         reqDetails,
         {
           collectionName,
@@ -223,12 +223,12 @@ describe("Subcollection Page Service", () => {
           newItem: `${subcollectionName}/${fileName}`,
         }
       )
-      expect(mockGithubService.Delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName: oldFileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockGithubService.Create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
         content: mockMarkdownContent,
         fileName,
         directoryName,

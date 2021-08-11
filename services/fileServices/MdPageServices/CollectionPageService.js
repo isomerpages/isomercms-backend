@@ -12,7 +12,7 @@ class CollectionPageService {
   async create(reqDetails, { fileName, collectionName, content, frontMatter }) {
     const parsedCollectionName = `_${collectionName}`
 
-    await this.collectionYmlService.AddItemToOrder(reqDetails, {
+    await this.collectionYmlService.addItemToOrder(reqDetails, {
       collectionName,
       item: fileName,
     })

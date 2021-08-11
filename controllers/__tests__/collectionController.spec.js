@@ -9,7 +9,7 @@ describe("Collection Controller", () => {
     Rename: jest.fn(),
   }
 
-  const mockThirdNavPageService = {
+  const mockSubcollectionPageService = {
     Create: jest.fn(),
     Read: jest.fn(),
     Update: jest.fn(),
@@ -19,14 +19,14 @@ describe("Collection Controller", () => {
 
   const controller = new CollectionController({
     collectionPageService: mockCollectionPageService,
-    thirdNavPageService: mockThirdNavPageService,
+    subcollectionPageService: mockSubcollectionPageService,
   })
 
   const siteName = "test-site"
   const accessToken = "test-token"
   const fileName = "test-file"
   const collectionName = "collection"
-  const thirdNavTitle = "subcollection"
+  const subcollectionName = "subcollection"
   const content = "test"
   const frontMatter = {
     title: "fileTitle",
@@ -54,21 +54,24 @@ describe("Collection Controller", () => {
       )
     })
 
-    it("Routes page creation to third nav page service correctly", async () => {
+    it("Routes page creation to subcollection page service correctly", async () => {
       await controller.CreatePage(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         content,
         frontMatter,
       })
-      expect(mockThirdNavPageService.Create).toHaveBeenCalledWith(reqDetails, {
-        fileName,
-        collectionName,
-        thirdNavTitle,
-        content,
-        frontMatter,
-      })
+      expect(mockSubcollectionPageService.Create).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          fileName,
+          collectionName,
+          subcollectionName,
+          content,
+          frontMatter,
+        }
+      )
     })
   })
 
@@ -81,17 +84,20 @@ describe("Collection Controller", () => {
       })
     })
 
-    it("Routes page reading to third nav page service correctly", async () => {
+    it("Routes page reading to subcollection page service correctly", async () => {
       await controller.ReadPage(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
       })
-      expect(mockThirdNavPageService.Read).toHaveBeenCalledWith(reqDetails, {
-        fileName,
-        collectionName,
-        thirdNavTitle,
-      })
+      expect(mockSubcollectionPageService.Read).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          fileName,
+          collectionName,
+          subcollectionName,
+        }
+      )
     })
   })
 
@@ -133,44 +139,50 @@ describe("Collection Controller", () => {
       )
     })
 
-    it("Routes page modification to third nav page service correctly", async () => {
+    it("Routes page modification to subcollection page service correctly", async () => {
       await controller.UpdatePage(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         content,
         frontMatter,
         sha,
       })
-      expect(mockThirdNavPageService.Update).toHaveBeenCalledWith(reqDetails, {
-        fileName,
-        collectionName,
-        thirdNavTitle,
-        content,
-        frontMatter,
-        sha,
-      })
+      expect(mockSubcollectionPageService.Update).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          fileName,
+          collectionName,
+          subcollectionName,
+          content,
+          frontMatter,
+          sha,
+        }
+      )
     })
 
-    it("Routes page renaming to third nav page service correctly", async () => {
+    it("Routes page renaming to subcollection page service correctly", async () => {
       await controller.UpdatePage(reqDetails, {
         fileName,
         newFileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         content,
         frontMatter,
         sha,
       })
-      expect(mockThirdNavPageService.Rename).toHaveBeenCalledWith(reqDetails, {
-        oldFileName: fileName,
-        newFileName,
-        collectionName,
-        thirdNavTitle,
-        content,
-        frontMatter,
-        sha,
-      })
+      expect(mockSubcollectionPageService.Rename).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          oldFileName: fileName,
+          newFileName,
+          collectionName,
+          subcollectionName,
+          content,
+          frontMatter,
+          sha,
+        }
+      )
     })
   })
 
@@ -183,19 +195,22 @@ describe("Collection Controller", () => {
       )
     })
 
-    it("Routes page deletion to third nav page service correctly", async () => {
+    it("Routes page deletion to subcollection page service correctly", async () => {
       await controller.DeletePage(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         sha,
       })
-      expect(mockThirdNavPageService.Delete).toHaveBeenCalledWith(reqDetails, {
-        fileName,
-        collectionName,
-        thirdNavTitle,
-        sha,
-      })
+      expect(mockSubcollectionPageService.Delete).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          fileName,
+          collectionName,
+          subcollectionName,
+          sha,
+        }
+      )
     })
   })
 })

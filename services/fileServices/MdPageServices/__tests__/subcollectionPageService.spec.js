@@ -1,10 +1,10 @@
-describe("Third Nav Page Service", () => {
+describe("Subcollection Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const fileName = "test-file"
   const collectionName = "collection"
-  const thirdNavTitle = "subcollection"
-  const directoryName = `_${collectionName}/${thirdNavTitle}`
+  const subcollectionName = "subcollection"
+  const directoryName = `_${collectionName}/${subcollectionName}`
   const mockContent = "test"
   const mockMarkdownContent = "---test---"
   const mockFrontMatter = {
@@ -16,7 +16,7 @@ describe("Third Nav Page Service", () => {
   const reqDetails = { siteName, accessToken }
   const collectionYmlObj = {
     collectionName,
-    item: `${thirdNavTitle}/${fileName}`,
+    item: `${subcollectionName}/${fileName}`,
   }
 
   const mockGithubService = {
@@ -39,8 +39,8 @@ describe("Third Nav Page Service", () => {
     }),
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
-  const { ThirdNavPageService } = require("../ThirdNavPageService")
-  const service = new ThirdNavPageService({
+  const { SubcollectionPageService } = require("../SubcollectionPageService")
+  const service = new SubcollectionPageService({
     gitHubService: mockGithubService,
     collectionYmlService: mockCollectionYmlService,
   })
@@ -60,7 +60,7 @@ describe("Third Nav Page Service", () => {
         service.Create(reqDetails, {
           fileName,
           collectionName,
-          thirdNavTitle,
+          subcollectionName,
           content: mockContent,
           frontMatter: mockFrontMatter,
         })
@@ -83,8 +83,8 @@ describe("Third Nav Page Service", () => {
         directoryName,
       })
     })
-    it("Creating a page which specifies a third nav in the front matter removes the third_nav_title parameter", async () => {
-      const mockFrontMatterWithThirdNav = {
+    it("Creating a page which specifies a subcollection in the front matter removes the third_nav_title parameter", async () => {
+      const mockFrontMatterWithSubcollection = {
         ...mockFrontMatter,
         third_nav_title: "mock-third-nav",
       }
@@ -92,9 +92,9 @@ describe("Third Nav Page Service", () => {
         service.Create(reqDetails, {
           fileName,
           collectionName,
-          thirdNavTitle,
+          subcollectionName,
           content: mockContent,
-          frontMatter: mockFrontMatterWithThirdNav,
+          frontMatter: mockFrontMatterWithSubcollection,
         })
       ).resolves.toMatchObject({
         fileName,
@@ -124,7 +124,11 @@ describe("Third Nav Page Service", () => {
     }),
       it("Reading pages works correctly", async () => {
         await expect(
-          service.Read(reqDetails, { fileName, collectionName, thirdNavTitle })
+          service.Read(reqDetails, {
+            fileName,
+            collectionName,
+            subcollectionName,
+          })
         ).resolves.toMatchObject({
           fileName,
           content: { frontMatter: mockFrontMatter, pageBody: mockContent },
@@ -148,7 +152,7 @@ describe("Third Nav Page Service", () => {
         service.Update(reqDetails, {
           fileName,
           collectionName,
-          thirdNavTitle,
+          subcollectionName,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,
@@ -178,7 +182,7 @@ describe("Third Nav Page Service", () => {
         service.Delete(reqDetails, {
           fileName,
           collectionName,
-          thirdNavTitle,
+          subcollectionName,
           sha,
         })
       )
@@ -200,7 +204,7 @@ describe("Third Nav Page Service", () => {
           oldFileName,
           newFileName: fileName,
           collectionName,
-          thirdNavTitle,
+          subcollectionName,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,
@@ -215,8 +219,8 @@ describe("Third Nav Page Service", () => {
         reqDetails,
         {
           collectionName,
-          oldItem: `${thirdNavTitle}/${oldFileName}`,
-          newItem: `${thirdNavTitle}/${fileName}`,
+          oldItem: `${subcollectionName}/${oldFileName}`,
+          newItem: `${subcollectionName}/${fileName}`,
         }
       )
       expect(mockGithubService.Delete).toHaveBeenCalledWith(reqDetails, {

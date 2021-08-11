@@ -109,11 +109,11 @@ describe("Collection Pages Router", () => {
       )
     })
 
-    it("accepts valid third nav page create requests and returns the details of the file created", async () => {
+    it("accepts valid subcollection page create requests and returns the details of the file created", async () => {
       const expectedControllerInput = {
         fileName: pageDetails.newFileName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
         content: pageDetails.content.pageBody,
         frontMatter: pageDetails.content.frontMatter,
       }
@@ -150,11 +150,11 @@ describe("Collection Pages Router", () => {
       )
     })
 
-    it("retrieves third nav page details", async () => {
+    it("retrieves subcollection page details", async () => {
       const expectedControllerInput = {
         fileName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
       }
       await request(app)
         .get(
@@ -229,11 +229,11 @@ describe("Collection Pages Router", () => {
       )
     })
 
-    it("accepts valid third nav page update requests and returns the details of the file updated", async () => {
+    it("accepts valid subcollection page update requests and returns the details of the file updated", async () => {
       const expectedControllerInput = {
         fileName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
         content: updatePageDetails.content.pageBody,
         frontMatter: updatePageDetails.content.frontMatter,
         sha: updatePageDetails.sha,
@@ -250,12 +250,12 @@ describe("Collection Pages Router", () => {
       )
     })
 
-    it("accepts valid third nav page rename requests and returns the details of the file updated", async () => {
+    it("accepts valid subcollection page rename requests and returns the details of the file updated", async () => {
       const expectedControllerInput = {
         fileName,
         newFileName: renamePageDetails.newFileName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
         content: renamePageDetails.content.pageBody,
         frontMatter: renamePageDetails.content.frontMatter,
         sha: renamePageDetails.sha,
@@ -301,11 +301,11 @@ describe("Collection Pages Router", () => {
       )
     })
 
-    it("accepts valid third nav page delete requests", async () => {
+    it("accepts valid subcollection page delete requests", async () => {
       const expectedControllerInput = {
         fileName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
         sha: pageDetails.sha,
       }
       await request(app)

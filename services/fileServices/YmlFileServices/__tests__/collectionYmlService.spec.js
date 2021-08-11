@@ -144,7 +144,7 @@ describe("Collection Yml Service", () => {
     })
     it("Parses the collection.yml file and returns an array of files", async () => {
       await expect(
-        service.ListContents(reqDetails, {
+        service.listContents(reqDetails, {
           collectionName,
         })
       ).resolves.toMatchObject(orderArray)
@@ -168,7 +168,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.AddItemToOrder(reqDetails, {
+        service.addItemToOrder(reqDetails, {
           collectionName,
           item: newFileName,
         })
@@ -190,7 +190,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.AddItemToOrder(reqDetails, {
+        service.addItemToOrder(reqDetails, {
           collectionName,
           item: newFileName,
         })
@@ -213,7 +213,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.AddItemToOrder(reqDetails, {
+        service.addItemToOrder(reqDetails, {
           collectionName,
           item: newFileName,
         })
@@ -237,7 +237,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.AddItemToOrder(reqDetails, {
+        service.addItemToOrder(reqDetails, {
           collectionName,
           item: newFileName,
           index: addedIndex,
@@ -262,7 +262,7 @@ describe("Collection Yml Service", () => {
       modifiedParsedContent.collections[collectionName].order = expectedArray
       const modifiedRawContent = yaml.stringify(modifiedParsedContent)
       await expect(
-        service.AddItemToOrder(reqDetails, {
+        service.addItemToOrder(reqDetails, {
           collectionName,
           item: newFileName,
           index: addedIndex,

@@ -7,24 +7,24 @@ const NAV_FILE_DIR = "_data"
 
 class NavYmlService {
   constructor({ gitHubService }) {
-    this.GitHubService = gitHubService
+    this.gitHubService = gitHubService
   }
 
-  async Read(reqDetails) {
-    const {
-      content: unparsedContent,
-      sha,
-    } = await this.GitHubService.Read(reqDetails, {
-      fileName: NAV_FILE_NAME,
-      directoryName: NAV_FILE_DIR,
-    })
+  async read(reqDetails) {
+    const { content: unparsedContent, sha } = await this.gitHubService.read(
+      reqDetails,
+      {
+        fileName: NAV_FILE_NAME,
+        directoryName: NAV_FILE_DIR,
+      }
+    )
     const content = yaml.parse(unparsedContent)
     return { content, sha }
   }
 
-  async Update(reqDetails, { fileContent, sha }) {
+  async update(reqDetails, { fileContent, sha }) {
     const stringifiedContent = yaml.stringify(fileContent)
-    const { newSha } = await this.GitHubService.Update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(reqDetails, {
       fileContent: stringifiedContent,
       sha,
       fileName: NAV_FILE_NAME,
@@ -33,20 +33,20 @@ class NavYmlService {
     return { newSha }
   }
 
-  async CreateCollectionInNav(reqDetails, { collectionName }) {
-    const { content, sha } = await this.Read(reqDetails)
+  async createCollectionInNav(reqDetails, { collectionName }) {
+    const { content, sha } = await this.read(reqDetails)
     content.links.push({
       title: deslugifyCollectionName(collectionName),
       collection: collectionName,
     })
-    return this.Update(reqDetails, { fileContent: content, sha })
+    return this.update(reqDetails, { fileContent: content, sha })
   }
 
-  async RenameCollectionInNav(
+  async renameCollectionInNav(
     reqDetails,
     { oldCollectionName, newCollectionName }
   ) {
-    const { content, sha } = await this.Read(reqDetails)
+    const { content, sha } = await this.read(reqDetails)
     const newNavLinks = content.links.map((link) => {
       if (link.collection === oldCollectionName) {
         return {
@@ -60,11 +60,11 @@ class NavYmlService {
       ...content,
       links: newNavLinks,
     }
-    return this.Update(reqDetails, { fileContent: newNavContentObject, sha })
+    return this.update(reqDetails, { fileContent: newNavContentObject, sha })
   }
 
-  async DeleteCollectionInNav(reqDetails, { collectionName }) {
-    const { content, sha } = await this.Read(reqDetails)
+  async deleteCollectionInNav(reqDetails, { collectionName }) {
+    const { content, sha } = await this.read(reqDetails)
     const newNavLinks = content.links.filter(
       (link) => link.collection !== collectionName
     )
@@ -72,7 +72,7 @@ class NavYmlService {
       ...content,
       links: newNavLinks,
     }
-    return this.Update(reqDetails, { fileContent: newNavContentObject, sha })
+    return this.update(reqDetails, { fileContent: newNavContentObject, sha })
   }
 }
 

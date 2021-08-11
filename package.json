@@ -67,7 +67,8 @@
     "@routes": "routes",
     "@utils": "utils",
     "@services": "services",
-    "@controllers": "controllers"
+    "@controllers": "controllers",
+    "@validators": "validators"
   },
   "lint-staged": {
     "**/*.(js|jsx|ts|tsx)": [

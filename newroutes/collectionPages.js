@@ -13,11 +13,11 @@ const {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
-} = require("./RequestSchema")
+} = require("@validators/RequestSchema")
 
 class CollectionPagesRouter {
   constructor({ collectionController }) {
-    this.CollectionController = collectionController
+    this.collectionController = collectionController
 
     const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this))
     // Bind all methods
@@ -39,7 +39,7 @@ class CollectionPagesRouter {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const createResp = await this.CollectionController.CreatePage(
+    const createResp = await this.collectionController.createPage(
       { siteName, accessToken },
       {
         fileName: newFileName,
@@ -58,7 +58,7 @@ class CollectionPagesRouter {
     const { accessToken } = req
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
-    const { sha, content } = await this.CollectionController.ReadPage(
+    const { sha, content } = await this.collectionController.readPage(
       { siteName, accessToken },
       { fileName: pageName, collectionName, subcollectionName }
     )
@@ -78,7 +78,7 @@ class CollectionPagesRouter {
       sha,
       newFileName,
     } = req.body
-    const updateResp = await this.CollectionController.UpdatePage(
+    const updateResp = await this.collectionController.updatePage(
       { siteName, accessToken },
       {
         fileName: pageName,
@@ -102,7 +102,7 @@ class CollectionPagesRouter {
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error)
     const { sha } = req.body
-    await this.CollectionController.DeletePage(
+    await this.collectionController.deletePage(
       { siteName, accessToken },
       {
         fileName: pageName,

@@ -7,17 +7,17 @@ const {
 
 class SubcollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
-    this.GitHubService = gitHubService
-    this.CollectionYmlService = collectionYmlService
+    this.gitHubService = gitHubService
+    this.collectionYmlService = collectionYmlService
   }
 
-  async Create(
+  async create(
     reqDetails,
     { fileName, collectionName, subcollectionName, content, frontMatter }
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
-    await this.CollectionYmlService.AddItemToOrder(reqDetails, {
+    await this.collectionYmlService.addItemToOrder(reqDetails, {
       collectionName,
       item: `${subcollectionName}/${fileName}`,
     })
@@ -25,7 +25,7 @@ class SubcollectionPageService {
     frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha } = await this.GitHubService.Create(reqDetails, {
+    const { sha } = await this.gitHubService.create(reqDetails, {
       content: newContent,
       fileName,
       directoryName: parsedDirectoryName,
@@ -33,9 +33,9 @@ class SubcollectionPageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async Read(reqDetails, { fileName, collectionName, subcollectionName }) {
+  async read(reqDetails, { fileName, collectionName, subcollectionName }) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
-    const { content: rawContent, sha } = await this.GitHubService.Read(
+    const { content: rawContent, sha } = await this.gitHubService.read(
       reqDetails,
       {
         fileName,
@@ -46,13 +46,13 @@ class SubcollectionPageService {
     return { fileName, content: { frontMatter, pageBody: pageContent }, sha }
   }
 
-  async Update(
+  async update(
     reqDetails,
     { fileName, collectionName, subcollectionName, content, frontMatter, sha }
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const newContent = convertDataToMarkdown(frontMatter, content)
-    const { newSha } = await this.GitHubService.Update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(reqDetails, {
       fileContent: newContent,
       sha,
       fileName,
@@ -66,25 +66,25 @@ class SubcollectionPageService {
     }
   }
 
-  async Delete(
+  async delete(
     reqDetails,
     { fileName, collectionName, subcollectionName, sha }
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     // Remove from collection.yml
-    await this.CollectionYmlService.DeleteItemFromOrder(reqDetails, {
+    await this.collectionYmlService.deleteItemFromOrder(reqDetails, {
       collectionName,
       item: `${subcollectionName}/${fileName}`,
     })
-    return this.GitHubService.Delete(reqDetails, {
+    return this.gitHubService.delete(reqDetails, {
       sha,
       fileName,
       directoryName: parsedDirectoryName,
     })
   }
 
-  async Rename(
+  async rename(
     reqDetails,
     {
       oldFileName,
@@ -98,13 +98,13 @@ class SubcollectionPageService {
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
-    await this.CollectionYmlService.UpdateItemInOrder(reqDetails, {
+    await this.collectionYmlService.updateItemInOrder(reqDetails, {
       collectionName,
       oldItem: `${subcollectionName}/${oldFileName}`,
       newItem: `${subcollectionName}/${newFileName}`,
     })
 
-    await this.GitHubService.Delete(reqDetails, {
+    await this.gitHubService.delete(reqDetails, {
       sha,
       fileName: oldFileName,
       directoryName: parsedDirectoryName,
@@ -113,7 +113,7 @@ class SubcollectionPageService {
     frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha: newSha } = await this.GitHubService.Create(reqDetails, {
+    const { sha: newSha } = await this.gitHubService.create(reqDetails, {
       content: newContent,
       fileName: newFileName,
       directoryName: parsedDirectoryName,

@@ -1,12 +1,3 @@
-const Bluebird = require("bluebird")
-
-const {
-  ConflictError,
-  protectedFolderConflictErrorMsg,
-} = require("@errors/ConflictError")
-
-const PLACEHOLDER_FILE_NAME = ".keep"
-
 class CollectionController {
   constructor({ collectionPageService, subcollectionPageService }) {
     this.CollectionPageService = collectionPageService

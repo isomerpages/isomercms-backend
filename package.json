@@ -82,7 +82,8 @@
       "^@routes/(.*)": "<rootDir>/routes/$1",
       "^@utils/(.*)": "<rootDir>/utils/$1",
       "^@services/(.*)": "<rootDir>/services/$1",
-      "^@controllers/(.*)": "<rootDir>/controllers/$1"
+      "^@controllers/(.*)": "<rootDir>/controllers/$1",
+      "^@validators/(.*)": "<rootDir>/validators/$1"
     }
   },
   "lint-staged": {

@@ -5,7 +5,7 @@ const {
   convertDataToMarkdown,
 } = require("../../../utils/markdown-utils")
 
-class ThirdNavPageService {
+class SubcollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
     this.GitHubService = gitHubService
     this.CollectionYmlService = collectionYmlService
@@ -13,16 +13,16 @@ class ThirdNavPageService {
 
   async Create(
     reqDetails,
-    { fileName, collectionName, thirdNavTitle, content, frontMatter }
+    { fileName, collectionName, subcollectionName, content, frontMatter }
   ) {
-    const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.CollectionYmlService.AddItemToOrder(reqDetails, {
       collectionName,
-      item: `${thirdNavTitle}/${fileName}`,
+      item: `${subcollectionName}/${fileName}`,
     })
 
-    frontMatter.third_nav_title = deslugifyCollectionName(thirdNavTitle)
+    frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
     const { sha } = await this.GitHubService.Create(reqDetails, {
@@ -33,8 +33,8 @@ class ThirdNavPageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async Read(reqDetails, { fileName, collectionName, thirdNavTitle }) {
-    const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
+  async Read(reqDetails, { fileName, collectionName, subcollectionName }) {
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const { content: rawContent, sha } = await this.GitHubService.Read(
       reqDetails,
       {
@@ -48,9 +48,9 @@ class ThirdNavPageService {
 
   async Update(
     reqDetails,
-    { fileName, collectionName, thirdNavTitle, content, frontMatter, sha }
+    { fileName, collectionName, subcollectionName, content, frontMatter, sha }
   ) {
-    const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { newSha } = await this.GitHubService.Update(reqDetails, {
       fileContent: newContent,
@@ -66,13 +66,16 @@ class ThirdNavPageService {
     }
   }
 
-  async Delete(reqDetails, { fileName, collectionName, thirdNavTitle, sha }) {
-    const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
+  async Delete(
+    reqDetails,
+    { fileName, collectionName, subcollectionName, sha }
+  ) {
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     // Remove from collection.yml
     await this.CollectionYmlService.DeleteItemFromOrder(reqDetails, {
       collectionName,
-      item: `${thirdNavTitle}/${fileName}`,
+      item: `${subcollectionName}/${fileName}`,
     })
     return this.GitHubService.Delete(reqDetails, {
       sha,
@@ -87,18 +90,18 @@ class ThirdNavPageService {
       oldFileName,
       newFileName,
       collectionName,
-      thirdNavTitle,
+      subcollectionName,
       content,
       frontMatter,
       sha,
     }
   ) {
-    const parsedDirectoryName = `_${collectionName}/${thirdNavTitle}`
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.CollectionYmlService.UpdateItemInOrder(reqDetails, {
       collectionName,
-      oldItem: `${thirdNavTitle}/${oldFileName}`,
-      newItem: `${thirdNavTitle}/${newFileName}`,
+      oldItem: `${subcollectionName}/${oldFileName}`,
+      newItem: `${subcollectionName}/${newFileName}`,
     })
 
     await this.GitHubService.Delete(reqDetails, {
@@ -107,7 +110,7 @@ class ThirdNavPageService {
       directoryName: parsedDirectoryName,
     })
 
-    frontMatter.third_nav_title = deslugifyCollectionName(thirdNavTitle)
+    frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
     const { sha: newSha } = await this.GitHubService.Create(reqDetails, {
@@ -125,4 +128,4 @@ class ThirdNavPageService {
   }
 }
 
-module.exports = { ThirdNavPageService }
+module.exports = { SubcollectionPageService }

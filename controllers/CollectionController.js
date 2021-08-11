@@ -8,20 +8,20 @@ const {
 const PLACEHOLDER_FILE_NAME = ".keep"
 
 class CollectionController {
-  constructor({ collectionPageService, thirdNavPageService }) {
+  constructor({ collectionPageService, subcollectionPageService }) {
     this.CollectionPageService = collectionPageService
-    this.ThirdNavPageService = thirdNavPageService
+    this.SubcollectionPageService = subcollectionPageService
   }
 
   async CreatePage(
     reqDetails,
-    { fileName, collectionName, thirdNavTitle, content, frontMatter }
+    { fileName, collectionName, subcollectionName, content, frontMatter }
   ) {
-    if (thirdNavTitle)
-      return this.ThirdNavPageService.Create(reqDetails, {
+    if (subcollectionName)
+      return this.SubcollectionPageService.Create(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         content,
         frontMatter,
       })
@@ -33,12 +33,12 @@ class CollectionController {
     })
   }
 
-  async ReadPage(reqDetails, { fileName, collectionName, thirdNavTitle }) {
-    if (thirdNavTitle)
-      return this.ThirdNavPageService.Read(reqDetails, {
+  async ReadPage(reqDetails, { fileName, collectionName, subcollectionName }) {
+    if (subcollectionName)
+      return this.SubcollectionPageService.Read(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
       })
     return this.CollectionPageService.Read(reqDetails, {
       fileName,
@@ -52,27 +52,27 @@ class CollectionController {
       fileName,
       newFileName,
       collectionName,
-      thirdNavTitle,
+      subcollectionName,
       content,
       frontMatter,
       sha,
     }
   ) {
-    if (thirdNavTitle) {
+    if (subcollectionName) {
       if (newFileName)
-        return this.ThirdNavPageService.Rename(reqDetails, {
+        return this.SubcollectionPageService.Rename(reqDetails, {
           oldFileName: fileName,
           newFileName,
           collectionName,
-          thirdNavTitle,
+          subcollectionName,
           content,
           frontMatter,
           sha,
         })
-      return this.ThirdNavPageService.Update(reqDetails, {
+      return this.SubcollectionPageService.Update(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         content,
         frontMatter,
         sha,
@@ -98,13 +98,13 @@ class CollectionController {
 
   async DeletePage(
     reqDetails,
-    { fileName, collectionName, thirdNavTitle, sha }
+    { fileName, collectionName, subcollectionName, sha }
   ) {
-    if (thirdNavTitle)
-      return this.ThirdNavPageService.Delete(reqDetails, {
+    if (subcollectionName)
+      return this.SubcollectionPageService.Delete(reqDetails, {
         fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         sha,
       })
     return this.CollectionPageService.Delete(reqDetails, {

@@ -46,7 +46,7 @@ class CollectionPagesRouter {
         collectionName,
         content: pageBody,
         frontMatter,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
       }
     )
 
@@ -60,7 +60,7 @@ class CollectionPagesRouter {
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { sha, content } = await this.CollectionController.ReadPage(
       { siteName, accessToken },
-      { fileName: pageName, collectionName, thirdNavTitle: subcollectionName }
+      { fileName: pageName, collectionName, subcollectionName }
     )
 
     return res.status(200).json({ collectionName, pageName, sha, content })
@@ -84,7 +84,7 @@ class CollectionPagesRouter {
         fileName: pageName,
         newFileName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
         content: pageBody,
         frontMatter,
         sha,
@@ -107,7 +107,7 @@ class CollectionPagesRouter {
       {
         fileName: pageName,
         collectionName,
-        thirdNavTitle: subcollectionName,
+        subcollectionName,
         sha,
       }
     )

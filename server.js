@@ -48,13 +48,13 @@ axiosInstance.interceptors.request.use((config) => ({
 }))
 
 const { CollectionController } = require("@controllers/CollectionController")
+const {
+  SubcollectionPageService,
+} = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
-const {
-  ThirdNavPageService,
-} = require("@services/fileServices/MdPageServices/ThirdNavPageService")
 const {
   CollectionYmlService,
 } = require("@services/fileServices/YmlFileServices/CollectionYmlService")
@@ -70,13 +70,13 @@ const collectionPageService = new CollectionPageService({
   gitHubService,
   collectionYmlService,
 })
-const thirdNavPageService = new ThirdNavPageService({
+const subcollectionPageService = new SubcollectionPageService({
   gitHubService,
   collectionYmlService,
 })
 const collectionController = new CollectionController({
   collectionPageService,
-  thirdNavPageService,
+  subcollectionPageService,
 })
 const collectionPagesV2Router = new CollectionPagesRouter({
   collectionController,

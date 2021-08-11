@@ -48,7 +48,7 @@ class GitHubService {
     return `${siteName}/contents/${encodedDirPath}`
   }
 
-  async Create(
+  async create(
     { accessToken, siteName },
     { content, fileName, directoryName }
   ) {
@@ -77,7 +77,7 @@ class GitHubService {
     }
   }
 
-  async Read({ accessToken, siteName }, { fileName, directoryName }) {
+  async read({ accessToken, siteName }, { fileName, directoryName }) {
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
@@ -99,7 +99,7 @@ class GitHubService {
     return { content, sha }
   }
 
-  async ReadDirectory({ accessToken, siteName }, { directoryName }) {
+  async readDirectory({ accessToken, siteName }, { directoryName }) {
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
@@ -118,7 +118,7 @@ class GitHubService {
     return resp.data
   }
 
-  async Update(
+  async update(
     { accessToken, siteName },
     { fileContent, sha, fileName, directoryName }
   ) {
@@ -128,7 +128,7 @@ class GitHubService {
 
       let fileSha = sha
       if (!sha) {
-        const { sha: retrievedSha } = await this.Read({
+        const { sha: retrievedSha } = await this.read({
           accessToken,
           fileName,
           directoryName,
@@ -157,13 +157,13 @@ class GitHubService {
     }
   }
 
-  async Delete({ accessToken, siteName }, { sha, fileName, directoryName }) {
+  async delete({ accessToken, siteName }, { sha, fileName, directoryName }) {
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
       let fileSha = sha
       if (!sha) {
-        const { sha: retrievedSha } = await this.Read({
+        const { sha: retrievedSha } = await this.read({
           accessToken,
           fileName,
           directoryName,
@@ -190,7 +190,7 @@ class GitHubService {
     }
   }
 
-  async GetRepoState({ accessToken, siteName }) {
+  async getRepoState({ accessToken, siteName }) {
     const endpoint = `${siteName}/commits`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -214,7 +214,7 @@ class GitHubService {
     return { treeSha, currentCommitSha }
   }
 
-  async GetTree({ accessToken, siteName, treeSha }, { isRecursive }) {
+  async getTree({ accessToken, siteName, treeSha }, { isRecursive }) {
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
@@ -233,7 +233,7 @@ class GitHubService {
     return gitTree
   }
 
-  async UpdateTree(
+  async updateTree(
     { accessToken, currentCommitSha, siteName },
     { gitTree, message }
   ) {
@@ -270,7 +270,7 @@ class GitHubService {
     return newCommitSha
   }
 
-  async UpdateRepoState({ accessToken, siteName }, { commitSha }) {
+  async updateRepoState({ accessToken, siteName }, { commitSha }) {
     const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
     const headers = {
       Authorization: `token ${accessToken}`,

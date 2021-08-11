@@ -3,6 +3,7 @@ const Joi = require("joi")
 const FrontMatterSchema = Joi.object({
   title: Joi.string().required(),
   permalink: Joi.string().required(),
+  third_nav_title: Joi.string(),
 })
 
 const ContentSchema = Joi.object({

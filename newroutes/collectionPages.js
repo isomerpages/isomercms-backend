@@ -13,7 +13,7 @@ const {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
-} = require("./RequestSchema")
+} = require("@validators/RequestSchema")
 
 class CollectionPagesRouter {
   constructor({ collectionController }) {

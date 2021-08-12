@@ -105,14 +105,14 @@ const config = convict({
       },
     },
     resource: {
-      indexPath: {
+      indexFilePath: {
         doc: "Path to index file",
         format: String,
         default: "index.html",
       },
     },
     resourceRoom: {
-      indexPath: {
+      indexFilePath: {
         doc: "Path to index file",
         format: String,
         default: "index.html",

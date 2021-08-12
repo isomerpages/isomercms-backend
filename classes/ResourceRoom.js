@@ -2,6 +2,8 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 const yaml = require("yaml")
 
+const config = require("@config/config")
+
 // Import Classes
 const { Config } = require("@classes/Config.js")
 const { File, ResourceType, DataType } = require("@classes/File.js")
@@ -15,8 +17,8 @@ const {
 } = require("@utils/utils.js")
 
 // Constants
-const RESOURCE_ROOM_INDEX_PATH = "index.html"
-const NAV_FILE_NAME = "navigation.yml"
+const RESOURCE_ROOM_INDEX_PATH = config.get("app.resourceRoom.indexFilePath")
+const NAV_FILE_NAME = config.get("app.navFilePath")
 
 class ResourceRoom {
   constructor(accessToken, siteName) {
@@ -197,9 +199,9 @@ class ResourceRoom {
     const resources = await IsomerResource.list(resourceRoomName)
 
     if (!_.isEmpty(resources)) {
-      await Bluebird.map(resources, async (resource) => {
-        return IsomerResource.delete(resourceRoomName, resource.dirName)
-      })
+      await Bluebird.map(resources, async (resource) =>
+        IsomerResource.delete(resourceRoomName, resource.dirName)
+      )
     }
 
     // Delete index file in resourceRoom

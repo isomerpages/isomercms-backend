@@ -2,6 +2,8 @@ const yaml = require("yaml")
 
 require("bluebird")
 require("lodash")
+const config = require("@config/config")
+
 const {
   ConflictError,
   protectedFolderConflictErrorMsg,
@@ -17,18 +19,9 @@ const {
   deslugifyCollectionName,
 } = require("@utils/utils.js")
 
-const NAV_FILE_NAME = "navigation.yml"
-const ISOMER_TEMPLATE_DIRS = ["_data", "_includes", "_site", "_layouts"]
-const ISOMER_TEMPLATE_PROTECTED_DIRS = [
-  "data",
-  "includes",
-  "site",
-  "layouts",
-  "files",
-  "images",
-  "misc",
-  "pages",
-]
+const NAV_FILE_NAME = config.get("app.navFilePath")
+const ISOMER_TEMPLATE_DIRS = config.get("app.templateDirs")
+const ISOMER_TEMPLATE_PROTECTED_DIRS = config.get("app.protectedDirs")
 
 class Collection {
   constructor(accessToken, siteName) {
@@ -90,7 +83,9 @@ class Collection {
   async delete(collectionName, currentCommitSha, treeSha) {
     const commitMessage = `Delete collection ${collectionName}`
     const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
-    const newGitTree = gitTree.filter((item) => item.path !== `_${collectionName}`)
+    const newGitTree = gitTree.filter(
+      (item) => item.path !== `_${collectionName}`
+    )
     await sendTree(
       newGitTree,
       currentCommitSha,

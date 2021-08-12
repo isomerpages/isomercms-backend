@@ -1,13 +1,15 @@
 const axios = require("axios")
 const _ = require("lodash")
 
+const config = require("@config/config")
+
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
 
-const { GITHUB_ORG_NAME } = process.env
-const { BRANCH_REF } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
+const BRANCH_REF = config.get("github.branchRef")
 
 class RootType {
   constructor() {
@@ -107,9 +109,7 @@ class Directory {
 
     if (this.dirType instanceof ResourceRoomType) {
       const directories = resp.data
-        .filter((object) => {
-          return object.type === "dir"
-        })
+        .filter((object) => object.type === "dir")
         .map((object) => {
           const pathNameSplit = object.path.split("/")
           const dirName = pathNameSplit[pathNameSplit.length - 1]

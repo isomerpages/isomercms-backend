@@ -1,13 +1,15 @@
 const axios = require("axios")
 
+const config = require("@config/config")
+
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
 
 // Import error
 
-const { GITHUB_BUILD_ORG_NAME } = process.env
-const { GITHUB_BUILD_REPO_NAME } = process.env
+const GITHUB_BUILD_ORG_NAME = config.get("github.buildOrgName")
+const GITHUB_BUILD_REPO_NAME = config.get("github.buildRepo")
 
 class NetlifyToml {
   constructor(accessToken, siteName) {

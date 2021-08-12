@@ -3,14 +3,16 @@ const { Base64 } = require("js-base64")
 const _ = require("lodash")
 const yaml = require("yaml")
 
+const config = require("@config/config")
+
 // import classes
 const { Config } = require("@classes/Config.js")
 const { File, DataType, HomepageType } = require("@classes/File.js")
 
 // Constants
-const FOOTER_PATH = "footer.yml"
-const NAVIGATION_PATH = "navigation.yml"
-const HOMEPAGE_INDEX_PATH = "index.md" // Empty string
+const FOOTER_PATH = config.get("app.footerFilePath")
+const NAVIGATION_PATH = config.get("app.navFilePath")
+const HOMEPAGE_INDEX_PATH = config.get("app.homepageIndexFilePath") // Empty string
 
 const retrieveSettingsFiles = async (
   accessToken,

@@ -1,5 +1,7 @@
 const axios = require("axios")
 
+const config = require("@config/config")
+
 const {
   ConflictError,
   inputNameConflictErrorMsg,
@@ -13,7 +15,7 @@ const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 // Import error
 
 // Constants
-const GITHUB_ORG_NAME = "isomerpages"
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 class ImageType {
   constructor(directory) {

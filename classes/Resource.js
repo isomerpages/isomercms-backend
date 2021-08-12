@@ -2,6 +2,8 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 const yaml = require("yaml")
 
+const config = require("@config/config")
+
 // Import classes
 const { Directory, ResourceRoomType } = require("@classes/Directory.js")
 const {
@@ -18,7 +20,7 @@ const {
 } = require("@utils/utils.js")
 
 // Constants
-const RESOURCE_INDEX_PATH = "index.html"
+const RESOURCE_INDEX_PATH = config.get("app.resource.indexFilePath")
 
 class Resource {
   constructor(accessToken, siteName) {

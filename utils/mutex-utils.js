@@ -1,13 +1,15 @@
 const AWS = require("aws-sdk")
 const { serializeError } = require("serialize-error")
 
+const config = require("@config/config")
+
 const logger = require("@logger/logger")
 
 const { ConflictError } = require("@errors/ConflictError")
 
 // Env vars
-const { NODE_ENV, MUTEX_TABLE_NAME } = process.env
-const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
+const MUTEX_ENABLED = config.get("mutex.enabled")
+const MUTEX_TABLE_NAME = config.get("mutex.tableName")
 const mockMutexObj = {}
 
 // Dynamodb constants
@@ -29,7 +31,7 @@ const lock = async (siteName) => {
     const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME =
       Math.floor(new Date().valueOf() / 1000) + 60
 
-    if (!IS_LOCAL_DEV) {
+    if (MUTEX_ENABLED) {
       const params = {
         TableName: MUTEX_TABLE_NAME,
         Item: {
@@ -55,7 +57,7 @@ const lock = async (siteName) => {
 }
 
 const unlock = async (siteName) => {
-  if (IS_LOCAL_DEV) return mockUnlock(siteName)
+  if (!MUTEX_ENABLED) return mockUnlock(siteName)
 
   try {
     const params = {

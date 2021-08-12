@@ -1,6 +1,8 @@
 const axios = require("axios")
 
-const { GITHUB_ORG_NAME } = process.env
+const config = require("@config/config")
+
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
   const headers = {

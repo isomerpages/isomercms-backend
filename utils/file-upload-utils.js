@@ -3,18 +3,12 @@ const FileType = require("file-type")
 const isSvg = require("is-svg")
 const { JSDOM } = require("jsdom")
 
+const config = require("@config/config")
+
 const { window } = new JSDOM("")
 const DOMPurify = createDOMPurify(window)
 
-const ALLOWED_FILE_EXTENSIONS = [
-  "pdf",
-  "png",
-  "jpg",
-  "gif",
-  "tif",
-  "bmp",
-  "ico",
-]
+const ALLOWED_FILE_EXTENSIONS = config.get("app.allowedFileExtensions")
 
 const validateAndSanitizeFileUpload = async (content) => {
   const fileBuffer = Buffer.from(content, "base64")

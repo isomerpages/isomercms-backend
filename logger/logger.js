@@ -7,11 +7,10 @@ const moment = require("moment-timezone")
 const winston = require("winston")
 const WinstonCloudWatch = require("winston-cloudwatch")
 
-// Env vars
-const { NODE_ENV } = process.env
+const config = require("@config/config")
 
 // AWS
-const AWS_REGION_NAME = "ap-southeast-1"
+const AWS_REGION_NAME = config.get("aws.region")
 AWS.config.update({ region: AWS_REGION_NAME })
 const awsMetadata = new AWS.MetadataService()
 const metadataRequest = Bluebird.promisify(
@@ -19,8 +18,8 @@ const metadataRequest = Bluebird.promisify(
 )
 
 // Constants
-const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
-const IS_PROD_ENV = NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV"
+const LOG_GROUP_NAME = `${config.get("aws.beanstalkEnvName")}/nodejs.log`
+const IS_PROD_ENV = config.get("app.isProduction")
 
 function timestampGenerator() {
   return moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")

@@ -5,6 +5,13 @@ const { NODE_ENV } = process.env
 const isLocalDev = NODE_ENV === "LOCAL_DEV"
 
 convict.addFormat({
+  name: "required-string",
+  validate: (val) => {
+    if (!val) throw new Error("value cannot be empty, null or undefined")
+    if (typeof val !== "string") throw new Error("value must be a string")
+  },
+})
+convict.addFormat({
   name: "required-remote-string",
   validate: (val) => {
     // Only validate if not running locally
@@ -13,10 +20,6 @@ convict.addFormat({
   },
 })
 
-// Values set to default value null and are not nullable are required values
-// that should be passed in on application startup. These are values that do
-// not have good default values that works across all environments. Validation
-// will fail to start if a value is not provided.
 const config = convict({
   app: {
     isProduction: {
@@ -27,7 +30,7 @@ const config = convict({
     frontendUrl: {
       doc: "URL of frontend used for redrection",
       env: "FRONTEND_URL",
-      format: String,
+      format: "required-string",
       default: null,
     },
     navFilePath: {
@@ -137,44 +140,44 @@ const config = convict({
     orgName: {
       doc: "GitHub organization that owns all site repositories",
       env: "GITHUB_ORG_NAME",
-      format: String,
+      format: "required-string",
       default: "isomerpages",
     },
     buildOrgName: {
       doc: "GitHub organization that owns the build repository",
       env: "GITHUB_BUILD_ORG_NAME",
-      format: String,
+      format: "required-string",
       default: "opengovsg",
     },
     buildRepo: {
       doc: "Name of the build GitHub repository",
       env: "GITHUB_BUILD_REPO_NAME",
-      format: String,
+      format: "required-string",
       default: "isomer-build",
     },
     clientId: {
       doc: "GitHub OAuth app Client ID",
       env: "CLIENT_ID",
-      format: String,
+      format: "required-string",
       default: null,
     },
     clientSecret: {
       doc: "GitHub OAuth app Client secret",
       env: "CLIENT_SECRET",
       sensitive: true,
-      format: String,
+      format: "required-string",
       default: null,
     },
     redirectUrl: {
       doc: "URL to redirect to after authentication with GitHub",
       env: "REDIRECT_URI",
-      format: String,
+      format: "required-string",
       default: null,
     },
     branchRef: {
       doc: "Git branch to use for saving modifications to site",
       env: "BRANCH_REF",
-      format: String,
+      format: "required-string",
       default: "staging",
     },
   },
@@ -182,13 +185,13 @@ const config = convict({
     cookieName: {
       doc: "Name of session cookie",
       env: "COOKIE_NAME",
-      format: String,
+      format: "required-string",
       default: "isomercms",
     },
     csrfCookieName: {
       doc: "Name of CSRF cookie",
       env: "CSRF_COOKIE_NAME",
-      format: String,
+      format: "required-string",
       default: "isomer-csrf",
     },
     csrfTokenExpiry: {
@@ -207,14 +210,14 @@ const config = convict({
       doc: "Secret used to sign auth tokens",
       env: "JWT_SECRET",
       sensitive: true,
-      format: String,
+      format: "required-string",
       default: null,
     },
     encryptionSecret: {
       doc: "Secret used to encrypt access GitHub access token",
       env: "ENCRYPTION_SECRET",
       sensitive: true,
-      format: String,
+      format: "required-string",
       default: null,
     },
   },

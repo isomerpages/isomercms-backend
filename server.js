@@ -7,8 +7,10 @@ const helmet = require("helmet")
 const createError = require("http-errors")
 const logger = require("morgan")
 
+const config = require("@config/config")
+
 // Env vars
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
 
 // Import middleware
 const { apiLogger } = require("@middleware/apiLogger")

@@ -3,6 +3,8 @@ const yaml = require("yaml")
 
 const router = express.Router()
 
+const config = require("@config/config")
+
 // Import middleware
 const {
   attachReadRouteHandlerWrapper,
@@ -12,7 +14,7 @@ const {
 // Import Classes
 const { File, DataType } = require("@classes/File.js")
 
-const NAVIGATION_PATH = "navigation.yml"
+const NAVIGATION_PATH = config.get("app.navFilePath")
 
 async function getNavigation(req, res) {
   const { accessToken } = req

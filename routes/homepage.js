@@ -2,6 +2,8 @@ const express = require("express")
 
 const router = express.Router()
 
+const config = require("@config/config")
+
 // Import middleware
 const {
   attachReadRouteHandlerWrapper,
@@ -12,7 +14,7 @@ const {
 const { File, HomepageType } = require("@classes/File.js")
 
 // Constants
-const HOMEPAGE_INDEX_PATH = "index.md" // Empty string
+const HOMEPAGE_INDEX_PATH = config.get("app.homepageIndexFilePath")
 
 // Read homepage index file
 async function readHomepage(req, res) {

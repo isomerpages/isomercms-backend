@@ -1,8 +1,10 @@
 const express = require("express")
 const uuid = require("uuid/v4")
 
-const { CLIENT_ID } = process.env
-const { REDIRECT_URI } = process.env
+const config = require("@config/config")
+
+const CLIENT_ID = config.get("github.clientId")
+const REDIRECT_URI = config.get("github.redirectUrl")
 
 const router = express.Router()
 

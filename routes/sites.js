@@ -3,6 +3,8 @@ const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
 
+const config = require("@config/config")
+
 // Import error
 const { NotFoundError } = require("@errors/NotFoundError")
 
@@ -10,26 +12,10 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const router = express.Router()
 
-const GH_MAX_REPO_COUNT = 100
-const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
-const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
-const ISOMER_ADMIN_REPOS = [
-  "isomercms-backend",
-  "isomercms-frontend",
-  "isomer-redirection",
-  "isomerpages-template",
-  "isomer-conversion-scripts",
-  "isomer-wysiwyg",
-  "isomer-slackbot",
-  "isomer-tooling",
-  "generate-site",
-  "travisci-scripts",
-  "recommender-train",
-  "editor",
-  "ci-test",
-  "infra",
-  "markdown-helper",
-]
+const GH_MAX_REPO_COUNT = config.get("app.sites.pageSize")
+const ISOMERPAGES_REPO_PAGE_COUNT = config.get("app.sites.pageCount")
+const ISOMER_ADMIN_REPOS = config.get("app.sites.adminRepos")
+const ISOMER_GITHUB_ORG_NAME = config.get("github.orgName")
 
 // timeDiff tells us when a repo was last updated in terms of days (for e.g. 2 days ago,
 // today)

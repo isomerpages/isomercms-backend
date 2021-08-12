@@ -3,25 +3,12 @@ const axios = require("axios")
 const validateStatus = require("@utils/axios-utils")
 
 const BRANCH_REF = "staging"
-const { GITHUB_ORG_NAME } = process.env
 
 const {
   ConflictError,
   inputNameConflictErrorMsg,
 } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
-
-const axiosInstance = axios.create({
-  baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
-})
-
-axiosInstance.interceptors.request.use((config) => ({
-  ...config,
-  headers: {
-    ...config.headers,
-    "Content-Type": "application/json",
-  },
-}))
 
 class GitHubService {
   constructor({ axiosInstance }) {

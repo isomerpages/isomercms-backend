@@ -1,3 +1,4 @@
+const autoBind = require("auto-bind")
 const express = require("express")
 
 // Import middleware
@@ -18,14 +19,8 @@ const {
 class CollectionPagesRouter {
   constructor({ collectionController }) {
     this.collectionController = collectionController
-
-    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this))
-    // Bind all methods
-    methods
-      .filter((method) => method !== "constructor")
-      .forEach((method) => {
-        this[method] = this[method].bind(this)
-      })
+    // We need to bind all methods because we don't invoke them from the class directly
+    autoBind(this)
   }
 
   // Create new page in collection

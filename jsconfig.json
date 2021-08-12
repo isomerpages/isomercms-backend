@@ -6,6 +6,7 @@
       "baseUrl": "./",
       "paths": {
         "@root/*": ["./*"],
+        "@config/*": ["./config/*"],
         "@classes/*": ["./classes/*"],
         "@errors/*": ["./errors/*"],
         "@logger/*": ["./logger/*"],

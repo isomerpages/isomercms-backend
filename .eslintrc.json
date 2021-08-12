@@ -26,6 +26,11 @@
                 "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
                 "pathGroups": [
                     {
+                        "pattern": "@config/**",
+                        "group": "internal",
+                        "position": "before"
+                    },
+                    {
                         "pattern": "@logger/**",
                         "group": "internal",
                         "position": "before"
@@ -63,6 +68,7 @@
         "import/resolver": {
           "alias": [
                 ["@root", "./"],
+                ["@config", "./config"],
                 ["@classes", "./classes"],
                 ["@errors", "./errors"],
                 ["@logger", "./logger"],

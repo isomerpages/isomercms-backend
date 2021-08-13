@@ -115,11 +115,10 @@ class GitHubService {
 
       let fileSha = sha
       if (!sha) {
-        const { sha: retrievedSha } = await this.read({
-          accessToken,
-          fileName,
-          directoryName,
-        })
+        const { sha: retrievedSha } = await this.read(
+          { accessToken, siteName },
+          { fileName, directoryName }
+        )
         fileSha = retrievedSha
       }
 
@@ -138,6 +137,7 @@ class GitHubService {
 
       return { newSha: resp.data.content.sha }
     } catch (err) {
+      if (err instanceof NotFoundError) throw err
       const { status } = err.response
       if (status === 404) throw new NotFoundError("File does not exist")
       throw err

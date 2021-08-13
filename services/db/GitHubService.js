@@ -186,7 +186,7 @@ class GitHubService {
       ref: BRANCH_REF,
     }
     // Get the commits of the repo
-    const { data: commits } = await axios.get(endpoint, {
+    const { data: commits } = await this.axiosInstance.get(endpoint, {
       params,
       headers,
     })
@@ -263,7 +263,7 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
 
-    await axiosInstance.patch(
+    await this.axiosInstance.patch(
       refEndpoint,
       { sha: commitSha, force: true },
       { headers }

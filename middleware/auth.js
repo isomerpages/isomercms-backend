@@ -12,44 +12,70 @@ const jwtUtils = require("@utils/jwt-utils")
 // Instantiate router object
 const auth = express.Router()
 
+const { E2E_TEST_REPO, E2E_TEST_SECRET } = process.env
+
 function noVerify(req, res, next) {
   next("router")
 }
 
+function verifyE2E(req) {
+  const { isomercmsE2E } = req.cookies
+  const repo = req.url.split("/")[3] // urls take the form "/v1/sites/<repo>/<path>""
+  let isValidE2E
+
+  if (isomercmsE2E) {
+    if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError(`Bad credentials`)
+    if (repo !== E2E_TEST_REPO)
+      throw new AuthError(`E2E tests can only access the ${E2E_TEST_REPO} repo`)
+    isValidE2E = true
+  }
+
+  return isValidE2E
+}
+
 const verifyJwt = (req, res, next) => {
-  try {
-    const { isomercms } = req.cookies
-    const {
-      access_token: retrievedToken,
-      user_id: retrievedId,
-    } = jwtUtils.verifyToken(isomercms)
-    req.accessToken = jwtUtils.decryptToken(retrievedToken)
-    req.userId = retrievedId
-  } catch (err) {
-    logger.error("Authentication error")
-    if (err.name === "TokenExpiredError") {
-      throw new AuthError("JWT token has expired")
+  const { isomercms } = req.cookies
+  const isValidE2E = verifyE2E(req)
+
+  if (!isValidE2E) {
+    try {
+      const {
+        access_token: retrievedToken,
+        user_id: retrievedId,
+      } = jwtUtils.verifyToken(isomercms)
+      req.accessToken = jwtUtils.decryptToken(retrievedToken)
+      req.userId = retrievedId
+    } catch (err) {
+      logger.error("Authentication error")
+      if (err.name === "TokenExpiredError") {
+        throw new AuthError("JWT token has expired")
+      }
+      if (err.name === "JsonWebTokenError") {
+        throw new AuthError(err.message)
+      }
+      throw new Error(err)
     }
-    if (err.name === "JsonWebTokenError") {
-      throw new AuthError(err.message)
-    }
-    throw new Error(err)
   }
   return next("router")
 }
 
 // Extracts access_token if any, else set access_token to null
 const whoamiAuth = (req, res, next) => {
-  let retrievedToken
-  try {
-    const { isomercms } = req.cookies
-    const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
-    retrievedToken = jwtUtils.decryptToken(verifiedToken)
-  } catch (err) {
-    retrievedToken = undefined
-  } finally {
-    req.accessToken = retrievedToken
+  const isValidE2E = verifyE2E(req)
+
+  if (!isValidE2E) {
+    let retrievedToken
+    try {
+      const { isomercms } = req.cookies
+      const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+      retrievedToken = jwtUtils.decryptToken(verifiedToken)
+    } catch (err) {
+      retrievedToken = undefined
+    } finally {
+      req.accessToken = retrievedToken
+    }
   }
+
   return next("router")
 }
 

@@ -14,6 +14,7 @@ const auth = express.Router()
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
+const ALLOWED_URLS = ["/v1/sites", "/v1/auth/whoami"]
 
 function noVerify(req, res, next) {
   next("router")
@@ -27,7 +28,7 @@ function verifyE2E(req) {
 
   if (isomercmsE2E) {
     if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError(`Bad credentials`)
-    if (repo !== E2E_TEST_REPO || req.url === "/v1/sites")
+    if (!(repo === E2E_TEST_REPO || ALLOWED_URLS.includes(req.url)))
       throw new AuthError(`E2E tests can only access the ${E2E_TEST_REPO} repo`)
     isValidE2E = true
   }

@@ -12,7 +12,8 @@ const jwtUtils = require("@utils/jwt-utils")
 // Instantiate router object
 const auth = express.Router()
 
-const { E2E_TEST_REPO, E2E_TEST_SECRET } = process.env
+const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
+const E2E_TEST_USER = "e2e-test"
 
 function noVerify(req, res, next) {
   next("router")
@@ -20,12 +21,13 @@ function noVerify(req, res, next) {
 
 function verifyE2E(req) {
   const { isomercmsE2E } = req.cookies
-  const repo = req.url.split("/")[3] // urls take the form "/v1/sites/<repo>/<path>""
+  const urlTokens = req.url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
+  const repo = urlTokens[3]
   let isValidE2E
 
   if (isomercmsE2E) {
     if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError(`Bad credentials`)
-    if (repo !== E2E_TEST_REPO)
+    if (repo !== E2E_TEST_REPO || req.url === "/v1/sites")
       throw new AuthError(`E2E tests can only access the ${E2E_TEST_REPO} repo`)
     isValidE2E = true
   }
@@ -37,7 +39,10 @@ const verifyJwt = (req, res, next) => {
   const { isomercms } = req.cookies
   const isValidE2E = verifyE2E(req)
 
-  if (!isValidE2E) {
+  if (isValidE2E) {
+    req.accessToken = E2E_TEST_GH_TOKEN
+    req.userId = E2E_TEST_USER
+  } else {
     try {
       const {
         access_token: retrievedToken,
@@ -63,7 +68,10 @@ const verifyJwt = (req, res, next) => {
 const whoamiAuth = (req, res, next) => {
   const isValidE2E = verifyE2E(req)
 
-  if (!isValidE2E) {
+  if (isValidE2E) {
+    req.accessToken = E2E_TEST_GH_TOKEN
+    req.userId = E2E_TEST_USER
+  } else {
     let retrievedToken
     try {
       const { isomercms } = req.cookies

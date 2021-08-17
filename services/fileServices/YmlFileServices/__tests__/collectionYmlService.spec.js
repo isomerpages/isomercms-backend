@@ -252,7 +252,7 @@ describe("Collection Yml Service", () => {
       })
     })
 
-    it("Adding an third nav page with unspecified index adds it at that position", async () => {
+    it("Adding an third nav page with a specified index adds it at that position", async () => {
       const addedIndex = 2
       const newFileName = "new-subcollection/.keep"
       const expectedArray = [...orderArray]

@@ -104,7 +104,7 @@ async function githubAuth(req, res) {
   }
 
   const token = jwtUtils.signToken({
-    access_token: accessToken,
+    access_token: jwtUtils.encryptToken(accessToken),
     user_id: userId,
   })
 
@@ -144,7 +144,7 @@ async function whoami(req, res) {
 
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
-router.get("/logout", attachReadRouteHandlerWrapper(logout))
+router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get("/whoami", attachReadRouteHandlerWrapper(whoami))
 
 module.exports = router

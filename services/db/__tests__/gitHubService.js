@@ -12,7 +12,7 @@ const { GitHubService } = require("../GitHubService")
 
 const BRANCH_REF = "staging"
 
-describe("Collection Yml Service", () => {
+describe("Github Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const fileName = "test-file"

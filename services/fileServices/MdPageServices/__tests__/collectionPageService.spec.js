@@ -175,6 +175,13 @@ describe("Collection Page Service", () => {
         directoryName,
         sha,
       })
+      expect(mockCollectionYmlService.deleteItemFromOrder).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          collectionName,
+          item: fileName,
+        }
+      )
     })
   })
 

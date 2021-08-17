@@ -191,6 +191,13 @@ describe("Subcollection Page Service", () => {
         directoryName,
         sha,
       })
+      expect(mockCollectionYmlService.deleteItemFromOrder).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          collectionName,
+          item: `${subcollectionName}/${fileName}`,
+        }
+      )
     })
   })
 

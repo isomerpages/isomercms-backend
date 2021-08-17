@@ -4,9 +4,11 @@ const {
   ConflictError,
   inputNameConflictErrorMsg,
 } = require("@errors/ConflictError")
+const { MediaTypeError } = require("@errors/MediaTypeError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
+const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
 // Import error
 
@@ -73,9 +75,7 @@ class MediaFile {
     if (resp.status !== 200) return {}
 
     return resp.data
-      .filter((object) => {
-        return object.type === "file"
-      })
+      .filter((object) => object.type === "file")
       .map((object) => {
         const pathNameSplit = object.path.split("/")
         const fileName = pathNameSplit[pathNameSplit.length - 1]
@@ -88,15 +88,20 @@ class MediaFile {
   }
 
   async create(fileName, content) {
+    const sanitizedContent = await validateAndSanitizeFileUpload(content)
+    if (!sanitizedContent) {
+      throw new MediaTypeError(`File extension is not within the approved list`)
+    }
+
+    const endpoint = `${this.baseEndpoint}/${fileName}`
+
+    const params = {
+      message: `Create file: ${fileName}`,
+      content: sanitizedContent,
+      branch: "staging",
+    }
+
     try {
-      const endpoint = `${this.baseEndpoint}/${fileName}`
-
-      const params = {
-        message: `Create file: ${fileName}`,
-        content,
-        branch: "staging",
-      }
-
       const resp = await axios.put(endpoint, params, {
         headers: {
           Authorization: `token ${this.accessToken}`,

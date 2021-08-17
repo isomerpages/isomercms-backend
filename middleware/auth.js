@@ -23,7 +23,7 @@ const verifyJwt = (req, res, next) => {
       access_token: retrievedToken,
       user_id: retrievedId,
     } = jwtUtils.verifyToken(isomercms)
-    req.accessToken = retrievedToken
+    req.accessToken = jwtUtils.decryptToken(retrievedToken)
     req.userId = retrievedId
   } catch (err) {
     logger.error("Authentication error")
@@ -43,7 +43,8 @@ const whoamiAuth = (req, res, next) => {
   let retrievedToken
   try {
     const { isomercms } = req.cookies
-    retrievedToken = jwtUtils.verifyToken(isomercms).access_token
+    const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+    retrievedToken = jwtUtils.decryptToken(verifiedToken)
   } catch (err) {
     retrievedToken = undefined
   } finally {
@@ -55,7 +56,7 @@ const whoamiAuth = (req, res, next) => {
 // Login and logout
 auth.get("/v1/auth/github-redirect", noVerify)
 auth.get("/v1/auth", noVerify)
-auth.get("/v1/auth/logout", noVerify)
+auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
 
 // Index

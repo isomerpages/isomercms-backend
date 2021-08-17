@@ -59,14 +59,14 @@ class CollectionYmlService {
     let newIndex = index
     if (index === undefined) {
       if (item.split("/").length === 2) {
-        // if file in subfolder, get index of last file in subfolder
+        // if file in subcollection, get index of first file in subcollection
         newIndex = _.findIndex(
           content.collections[collectionName].order,
           (f) => f.split("/")[0] === item.split("/")[0]
         )
         if (newIndex === -1) newIndex = 0
       } else {
-        // get index of last file in collection
+        // get index of first file in collection
         newIndex = 0
       }
     }

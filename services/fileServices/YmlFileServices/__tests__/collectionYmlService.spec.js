@@ -32,7 +32,6 @@ describe("Collection Yml Service", () => {
     },
   }
   const mockRawContent = yaml.stringify(mockParsedContent)
-  // const mockRawContent = `collections:\n  ${collectionName}:\n    output: true\n    order:\n      - ${fileName}.md\n      - ${subcollectionName}/${subcollectionFileName}.md`
 
   const mockGithubService = {
     create: jest.fn(),

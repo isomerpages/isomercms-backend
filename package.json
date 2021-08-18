@@ -12,7 +12,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "aws-sdk": "^2.946.0",
+    "aws-sdk": "^2.955.0",
     "axios": "^0.21.1",
     "base-64": "^0.1.0",
     "bluebird": "^3.7.2",

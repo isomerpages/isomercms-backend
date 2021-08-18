@@ -1,4 +1,6 @@
-const { CollectionYmlService } = require("../CollectionYmlService")
+const {
+  CollectionYmlService,
+} = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 
 const COLLECTION_FILE_NAME = "collection.yml"
 const yaml = require("yaml")

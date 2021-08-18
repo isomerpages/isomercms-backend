@@ -39,7 +39,9 @@ describe("Subcollection Page Service", () => {
     }),
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
-  const { SubcollectionPageService } = require("../SubcollectionPageService")
+  const {
+    SubcollectionPageService,
+  } = require("@services/fileServices/MdPageServices/SubcollectionPageService")
   const service = new SubcollectionPageService({
     gitHubService: mockGithubService,
     collectionYmlService: mockCollectionYmlService,

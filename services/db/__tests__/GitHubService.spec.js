@@ -1,14 +1,11 @@
 const { Base64 } = require("js-base64")
 
-const {
-  ConflictError,
-  inputNameConflictErrorMsg,
-} = require("@errors/ConflictError")
+const { ConflictError } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
 
-const { GitHubService } = require("../GitHubService")
+const { GitHubService } = require("@services/db/GitHubService")
 
 const BRANCH_REF = "staging"
 

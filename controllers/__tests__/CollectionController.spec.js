@@ -1,4 +1,4 @@
-const { CollectionController } = require("../CollectionController")
+const { CollectionController } = require("@controllers/CollectionController")
 
 describe("Collection Controller", () => {
   const mockCollectionPageService = {

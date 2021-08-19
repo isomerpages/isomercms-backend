@@ -1,41 +1,45 @@
+const { deslugifyCollectionName } = require("@utils/utils")
+
 const {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
-} = require("@utils/markdown-utils")
+} = require("../../../utils/markdown-utils")
 
-class CollectionPageService {
+class SubcollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
     this.gitHubService = gitHubService
     this.collectionYmlService = collectionYmlService
   }
 
-  async create(reqDetails, { fileName, collectionName, content, frontMatter }) {
-    const parsedCollectionName = `_${collectionName}`
+  async create(
+    reqDetails,
+    { fileName, collectionName, subcollectionName, content, frontMatter }
+  ) {
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.addItemToOrder(reqDetails, {
       collectionName,
-      item: fileName,
+      item: `${subcollectionName}/${fileName}`,
     })
 
-    // We want to make sure that the front matter has no third nav title parameter
-    delete frontMatter.third_nav_title
+    frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
     const { sha } = await this.gitHubService.create(reqDetails, {
       content: newContent,
       fileName,
-      directoryName: parsedCollectionName,
+      directoryName: parsedDirectoryName,
     })
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async read(reqDetails, { fileName, collectionName }) {
-    const parsedCollectionName = `_${collectionName}`
+  async read(reqDetails, { fileName, collectionName, subcollectionName }) {
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const { content: rawContent, sha } = await this.gitHubService.read(
       reqDetails,
       {
         fileName,
-        directoryName: parsedCollectionName,
+        directoryName: parsedDirectoryName,
       }
     )
     const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
@@ -44,15 +48,15 @@ class CollectionPageService {
 
   async update(
     reqDetails,
-    { fileName, collectionName, content, frontMatter, sha }
+    { fileName, collectionName, subcollectionName, content, frontMatter, sha }
   ) {
-    const parsedCollectionName = `_${collectionName}`
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { newSha } = await this.gitHubService.update(reqDetails, {
       fileContent: newContent,
       sha,
       fileName,
-      directoryName: parsedCollectionName,
+      directoryName: parsedDirectoryName,
     })
     return {
       fileName,
@@ -62,48 +66,59 @@ class CollectionPageService {
     }
   }
 
-  async delete(reqDetails, { fileName, collectionName, sha }) {
-    const parsedCollectionName = `_${collectionName}`
+  async delete(
+    reqDetails,
+    { fileName, collectionName, subcollectionName, sha }
+  ) {
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     // Remove from collection.yml
     await this.collectionYmlService.deleteItemFromOrder(reqDetails, {
       collectionName,
-      item: fileName,
+      item: `${subcollectionName}/${fileName}`,
     })
     return this.gitHubService.delete(reqDetails, {
       sha,
       fileName,
-      directoryName: parsedCollectionName,
+      directoryName: parsedDirectoryName,
     })
   }
 
   async rename(
     reqDetails,
-    { oldFileName, newFileName, collectionName, content, frontMatter, sha }
+    {
+      oldFileName,
+      newFileName,
+      collectionName,
+      subcollectionName,
+      content,
+      frontMatter,
+      sha,
+    }
   ) {
-    const parsedCollectionName = `_${collectionName}`
+    const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.updateItemInOrder(reqDetails, {
       collectionName,
-      oldItem: oldFileName,
-      newItem: newFileName,
+      oldItem: `${subcollectionName}/${oldFileName}`,
+      newItem: `${subcollectionName}/${newFileName}`,
     })
 
     await this.gitHubService.delete(reqDetails, {
       sha,
       fileName: oldFileName,
-      directoryName: parsedCollectionName,
+      directoryName: parsedDirectoryName,
     })
 
-    // We want to make sure that the front matter has no third nav title parameter
-    delete frontMatter.third_nav_title
+    frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
     const { sha: newSha } = await this.gitHubService.create(reqDetails, {
       content: newContent,
       fileName: newFileName,
-      directoryName: parsedCollectionName,
+      directoryName: parsedDirectoryName,
     })
+
     return {
       fileName: newFileName,
       content: { frontMatter, pageBody: content },
@@ -113,4 +128,4 @@ class CollectionPageService {
   }
 }
 
-module.exports = { CollectionPageService }
+module.exports = { SubcollectionPageService }

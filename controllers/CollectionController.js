@@ -1,122 +1,109 @@
-const Bluebird = require("bluebird")
+class CollectionController {
+  constructor({ collectionPageService, subcollectionPageService }) {
+    this.collectionPageService = collectionPageService
+    this.subcollectionPageService = subcollectionPageService
+  }
 
-const {
-  ConflictError,
-  protectedFolderConflictErrorMsg,
-} = require("@errors/ConflictError")
-
-const GitHubService = require("@services/db/GitHubService")
-const CollectionPageService = require("@services/fileServices/MdPageServices/CollectionPageService")
-const ThirdNavPageService = require("@services/fileServices/MdPageServices/ThirdNavPageService")
-const CollectionYmlService = require("@services/fileServices/YmlFileServices/CollectionYmlService")
-const NavYmlService = require("@services/fileServices/YmlFileServices/NavYmlService")
-
-const PLACEHOLDER_FILE_NAME = ".keep"
-
-const CreatePage = async (
-  reqDetails,
-  { fileName, collectionName, thirdNavTitle, content, frontMatter }
-) => {
-  if (thirdNavTitle)
-    return ThirdNavPageService.Create(reqDetails, {
+  async createPage(
+    reqDetails,
+    { fileName, collectionName, subcollectionName, content, frontMatter }
+  ) {
+    if (subcollectionName)
+      return this.subcollectionPageService.create(reqDetails, {
+        fileName,
+        collectionName,
+        subcollectionName,
+        content,
+        frontMatter,
+      })
+    return this.collectionPageService.create(reqDetails, {
       fileName,
       collectionName,
-      thirdNavTitle,
       content,
       frontMatter,
     })
-  return CollectionPageService.Create(reqDetails, {
-    fileName,
-    collectionName,
-    content,
-    frontMatter,
-  })
-}
+  }
 
-const ReadPage = async (
-  reqDetails,
-  { fileName, collectionName, thirdNavTitle }
-) => {
-  if (thirdNavTitle)
-    return ThirdNavPageService.Read(reqDetails, {
+  async readPage(reqDetails, { fileName, collectionName, subcollectionName }) {
+    if (subcollectionName)
+      return this.subcollectionPageService.read(reqDetails, {
+        fileName,
+        collectionName,
+        subcollectionName,
+      })
+    return this.collectionPageService.read(reqDetails, {
       fileName,
       collectionName,
-      thirdNavTitle,
     })
-  return CollectionPageService.Read(reqDetails, { fileName, collectionName })
-}
-
-const UpdatePage = async (
-  reqDetails,
-  {
-    fileName,
-    newFileName,
-    collectionName,
-    thirdNavTitle,
-    content,
-    frontMatter,
-    sha,
   }
-) => {
-  if (thirdNavTitle) {
-    if (newFileName)
-      return ThirdNavPageService.Rename(reqDetails, {
-        oldFileName: fileName,
-        newFileName,
+
+  async updatePage(
+    reqDetails,
+    {
+      fileName,
+      newFileName,
+      collectionName,
+      subcollectionName,
+      content,
+      frontMatter,
+      sha,
+    }
+  ) {
+    if (subcollectionName) {
+      if (newFileName)
+        return this.subcollectionPageService.rename(reqDetails, {
+          oldFileName: fileName,
+          newFileName,
+          collectionName,
+          subcollectionName,
+          content,
+          frontMatter,
+          sha,
+        })
+      return this.subcollectionPageService.update(reqDetails, {
+        fileName,
         collectionName,
-        thirdNavTitle,
+        subcollectionName,
         content,
         frontMatter,
         sha,
       })
-    return ThirdNavPageService.Update(reqDetails, {
+    }
+    if (newFileName)
+      return this.collectionPageService.rename(reqDetails, {
+        oldFileName: fileName,
+        newFileName,
+        collectionName,
+        content,
+        frontMatter,
+        sha,
+      })
+    return this.collectionPageService.update(reqDetails, {
       fileName,
       collectionName,
-      thirdNavTitle,
       content,
       frontMatter,
       sha,
     })
   }
-  if (newFileName)
-    return CollectionPageService.Rename(reqDetails, {
-      oldFileName: fileName,
-      newFileName,
-      collectionName,
-      content,
-      frontMatter,
-      sha,
-    })
-  return CollectionPageService.Update(reqDetails, {
-    fileName,
-    collectionName,
-    content,
-    frontMatter,
-    sha,
-  })
-}
 
-const DeletePage = async (
-  reqDetails,
-  { fileName, collectionName, thirdNavTitle, sha }
-) => {
-  if (thirdNavTitle)
-    return ThirdNavPageService.Delete(reqDetails, {
+  async deletePage(
+    reqDetails,
+    { fileName, collectionName, subcollectionName, sha }
+  ) {
+    if (subcollectionName)
+      return this.subcollectionPageService.delete(reqDetails, {
+        fileName,
+        collectionName,
+        subcollectionName,
+        sha,
+      })
+    return this.collectionPageService.delete(reqDetails, {
       fileName,
       collectionName,
-      thirdNavTitle,
       sha,
     })
-  return CollectionPageService.Delete(reqDetails, {
-    fileName,
-    collectionName,
-    sha,
-  })
+  }
 }
 
-module.exports = {
-  CreatePage,
-  ReadPage,
-  UpdatePage,
-  DeletePage,
-}
+module.exports = { CollectionController }

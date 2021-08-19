@@ -12,6 +12,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "auto-bind": "^4.0.0",
     "aws-sdk": "^2.946.0",
     "axios": "^0.21.1",
     "base-64": "^0.1.0",
@@ -39,6 +40,7 @@
     "morgan": "~1.10.0",
     "query-string": "^6.14.1",
     "serialize-error": "^7.0.1",
+    "supertest": "^6.1.3",
     "toml": "^3.0.0",
     "uuid": "^3.3.3",
     "winston": "^3.3.3",
@@ -73,7 +75,22 @@
     "@routes": "routes",
     "@utils": "utils",
     "@services": "services",
-    "@controllers": "controllers"
+    "@controllers": "controllers",
+    "@validators": "validators"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^@root/(.*)": "<rootDir>/$1",
+      "^@classes/(.*)": "<rootDir>/classes/$1",
+      "^@errors/(.*)": "<rootDir>/errors/$1",
+      "^@logger/(.*)": "<rootDir>/logger/$1",
+      "^@middleware/(.*)": "<rootDir>/middleware/$1",
+      "^@routes/(.*)": "<rootDir>/routes/$1",
+      "^@utils/(.*)": "<rootDir>/utils/$1",
+      "^@services/(.*)": "<rootDir>/services/$1",
+      "^@controllers/(.*)": "<rootDir>/controllers/$1",
+      "^@validators/(.*)": "<rootDir>/validators/$1"
+    }
   },
   "lint-staged": {
     "**/*.(js|jsx|ts|tsx)": [

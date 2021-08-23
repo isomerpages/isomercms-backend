@@ -35,14 +35,14 @@ class AuthService {
     }
   }
 
-  async canSendOtp(email) {
+  async canSendEmailOtp(email) {
     const hasMatchDomain =
       this.whitelistDomains.filter((domain) => email.endsWith(domain)).length >
       0
     return hasMatchDomain
   }
 
-  async sendOtp(email) {
+  async sendEmailOtp(email) {
     const otp = this.otp.generate(email)
     const expiry = this.otp.getExpiryMinutes()
 
@@ -52,7 +52,7 @@ class AuthService {
     await this.mailer.sendMail(email, html)
   }
 
-  verifyOtp(email, otp) {
+  verifyEmailOtp(email, otp) {
     return this.otp.verify(email, otp)
   }
 }

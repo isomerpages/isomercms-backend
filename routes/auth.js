@@ -2,13 +2,9 @@ const axios = require("axios")
 const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
-const validator = require("validator")
-
-const logger = require("@logger/logger")
 
 // Import error
 const { AuthError } = require("@errors/AuthError")
-const { BadRequestError } = require("@errors/BadRequestError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 
 // Import middleware
@@ -18,7 +14,7 @@ const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 // Import services
-const { authService, userService } = require("@services")
+const { userService } = require("@services")
 
 const router = express.Router()
 
@@ -42,24 +38,6 @@ async function clearAllCookies(res) {
 
   res.clearCookie(COOKIE_NAME, cookieSettings)
   res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
-}
-
-async function sendOtp(req, res) {
-  const { email } = req.body
-  if (!email || !validator.isEmail(email)) {
-    throw new BadRequestError("Please provide a valid email")
-  }
-
-  try {
-    if (!(await authService.canSendOtp(email))) {
-      throw new Error(`Invalid email ${email}`)
-    }
-    await authService.sendOtp(email)
-    return res.sendStatus(200)
-  } catch (err) {
-    logger.error(err.message)
-    throw new AuthError("Unable to send OTP")
-  }
 }
 
 async function authRedirect(req, res) {
@@ -185,18 +163,6 @@ async function whoami(req, res) {
   }
 }
 
-async function verifyOtp(req, res) {
-  const { email, otp } = req.body
-  if (!authService.verifyOtp(email, otp)) {
-    throw new AuthError("Invalid OTP")
-  }
-
-  await userService.updateUserByGitHubId(req.userId, { email })
-  return res.sendStatus(200)
-}
-
-router.post("/otp", attachReadRouteHandlerWrapper(sendOtp))
-router.post("/verifyOtp", attachReadRouteHandlerWrapper(verifyOtp))
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))

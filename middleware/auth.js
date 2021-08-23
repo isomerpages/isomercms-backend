@@ -102,8 +102,6 @@ auth.get("/v1/auth", noVerify)
 auth.get("/v1/auth/github-redirect", noVerify)
 auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
-auth.post("/v1/auth/otp", verifyJwt)
-auth.post("/v1/auth/verifyOtp", verifyJwt)
 
 // Index
 auth.get("/v1", noVerify)
@@ -310,6 +308,10 @@ auth.get("/v1/sites", verifyJwt)
 auth.get("/v1/sites/:siteName", verifyJwt)
 auth.get("/v1/sites/:siteName/lastUpdated", verifyJwt)
 auth.get("/v1/sites/:siteName/stagingUrl", verifyJwt)
+
+// Users
+auth.post("/v1/user/email/otp", verifyJwt)
+auth.post("/v1/user/email/verifyOtp", verifyJwt)
 
 auth.use((req, res, next) => {
   if (!req.route) {

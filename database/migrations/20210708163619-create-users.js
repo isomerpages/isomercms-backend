@@ -8,7 +8,7 @@ module.exports = {
         type: Sequelize.BIGINT,
       },
       email: {
-        allowNull: false,
+        allowNull: true,
         unique: true,
         type: Sequelize.TEXT,
         validate: {
@@ -16,7 +16,7 @@ module.exports = {
         },
       },
       github_id: {
-        allowNull: true,
+        allowNull: false,
         unique: true,
         type: Sequelize.TEXT,
         validate: {

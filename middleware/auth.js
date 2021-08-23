@@ -99,10 +99,11 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
 
 // Login and logout
 auth.get("/v1/auth", noVerify)
-auth.post("/v1/auth/otp", noVerify)
 auth.get("/v1/auth/github-redirect", noVerify)
 auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
+auth.post("/v1/auth/otp", verifyJwt)
+auth.post("/v1/auth/verifyOtp", verifyJwt)
 
 // Index
 auth.get("/v1", noVerify)

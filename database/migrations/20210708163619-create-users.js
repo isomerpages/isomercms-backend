@@ -15,6 +15,14 @@ module.exports = {
           isEmail: true,
         },
       },
+      github_id: {
+        allowNull: true,
+        unique: true,
+        type: Sequelize.TEXT,
+        validate: {
+          notEmpty: true,
+        },
+      },
       contact_number: {
         allowNull: true,
         type: Sequelize.STRING(255),

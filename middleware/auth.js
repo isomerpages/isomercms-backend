@@ -35,7 +35,7 @@ const verifyJwt = (req, res, next) => {
       throw notLoggedInError
     }
 
-    req.accessToken = retrievedToken
+    req.accessToken = jwtUtils.decryptToken(retrievedToken)
     req.userId = retrievedId
   } catch (err) {
     logger.error("Authentication error")
@@ -59,13 +59,13 @@ const whoamiAuth = (req, res, next) => {
   try {
     const { isomercms } = req.cookies
     const {
-      access_token: accessToken,
+      access_token: verifiedToken,
       isomer_user_id: isomerUserId,
     } = jwtUtils.verifyToken(isomercms)
-    if (!accessToken || !isomerUserId) {
+    if (!verifiedToken || !isomerUserId) {
       throw new Error("Invalid token")
     }
-    retrievedToken = accessToken
+    retrievedToken = jwtUtils.decryptToken(verifiedToken)
   } catch (err) {
     retrievedToken = undefined
   } finally {
@@ -106,7 +106,7 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
 auth.get("/v1/auth", noVerify)
 auth.post("/v1/auth/otp", noVerify)
 auth.post("/v1/auth/login", noVerify)
-auth.get("/v1/auth/logout", noVerify)
+auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
 
 // Index
@@ -155,6 +155,37 @@ auth.delete(
 )
 auth.post(
   "/v1/sites/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName",
+  verifyJwt
+)
+
+// New collection pages
+auth.post("/v2/sites/:siteName/collections/:collectionName/pages", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
   verifyJwt
 )
 

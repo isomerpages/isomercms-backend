@@ -83,7 +83,9 @@ async function verifyOtp(req, res) {
     expires: csrfTokenExpiry,
     httpOnly: true,
     secure:
-      process.env.NODE_ENV !== "DEV" && process.env.NODE_ENV !== "LOCAL_DEV",
+      process.env.NODE_ENV !== "DEV" &&
+      process.env.NODE_ENV !== "LOCAL_DEV" &&
+      process.env.NODE_ENV !== "test",
   }
 
   // Include user email in the cookie
@@ -153,11 +155,13 @@ async function githubAuth(req, res) {
     httpOnly: true,
     sameSite: true,
     secure:
-      process.env.NODE_ENV !== "DEV" && process.env.NODE_ENV !== "LOCAL_DEV",
+      process.env.NODE_ENV !== "DEV" &&
+      process.env.NODE_ENV !== "LOCAL_DEV" &&
+      process.env.NODE_ENV !== "test",
   }
 
   const token = jwtUtils.signToken({
-    access_token: accessToken,
+    access_token: jwtUtils.encryptToken(accessToken),
     user_id: userId,
     isomer_user_id: user.id,
   })
@@ -196,7 +200,7 @@ async function whoami(req, res) {
 router.post("/otp", attachReadRouteHandlerWrapper(sendOtp))
 router.post("/login", attachReadRouteHandlerWrapper(verifyOtp))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
-router.get("/logout", attachReadRouteHandlerWrapper(logout))
+router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get("/whoami", attachReadRouteHandlerWrapper(whoami))
 
 module.exports = router

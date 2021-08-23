@@ -185,7 +185,18 @@ async function whoami(req, res) {
   }
 }
 
+async function verifyOtp(req, res) {
+  const { email, otp } = req.body
+  if (!authService.verifyOtp(email, otp)) {
+    throw new AuthError("Invalid OTP")
+  }
+
+  await userService.updateUserByGitHubId(req.userId, { email })
+  return res.sendStatus(200)
+}
+
 router.post("/otp", attachReadRouteHandlerWrapper(sendOtp))
+router.post("/verifyOtp", attachReadRouteHandlerWrapper(verifyOtp))
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))

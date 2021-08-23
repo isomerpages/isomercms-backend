@@ -7,9 +7,9 @@ class UserService {
     return this.repository.findOne({ where: { email } })
   }
 
-  async findOrCreate(email, contactNumber) {
+  async findOrCreate(githubId, contactNumber) {
     const [user] = await this.repository.findOrCreate({
-      where: { email, contactNumber: contactNumber || null },
+      where: { githubId, contactNumber: contactNumber || null },
     })
     return user
   }

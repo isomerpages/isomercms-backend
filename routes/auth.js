@@ -62,17 +62,7 @@ async function sendOtp(req, res) {
   }
 }
 
-async function verifyOtp(req, res) {
-  const { email, otp } = req.body
-  if (!email || !validator.isEmail(email))
-    throw new BadRequestError("Please provide email")
-  if (!otp) throw new BadRequestError("Please provide OTP")
-
-  if (!authService.verifyOtp(email, otp)) {
-    throw new AuthError("Invalid OTP")
-  }
-
-  // If OTP is valid, redirect to github login
+async function authRedirect(req, res) {
   const state = uuid()
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&state=${state}&scope=repo`
 
@@ -88,22 +78,19 @@ async function verifyOtp(req, res) {
       process.env.NODE_ENV !== "test",
   }
 
-  // Include user email in the cookie
-  const token = jwtUtils.signToken({ state, email })
+  const token = jwtUtils.signToken({ state })
 
   res.cookie(CSRF_COOKIE_NAME, token, cookieSettings)
-  return res.status(200).json({ githubAuthUrl })
+  return res.redirect(githubAuthUrl)
 }
 
 async function githubAuth(req, res) {
   const csrfState = req.cookies[CSRF_COOKIE_NAME]
   const { code, state } = req.query
 
-  let email
   try {
     const decoded = jwtUtils.verifyToken(csrfState)
     if (decoded.state !== state) throw new Error("State does not match")
-    email = decoded.email
   } catch (err) {
     throw new ForbiddenError()
   }
@@ -139,11 +126,11 @@ async function githubAuth(req, res) {
     },
   })
 
-  let userId
-  if (userResp.data) userId = userResp.data.login
+  const githubId = userResp.data && userResp.data.login
+  console.log(githubId)
 
-  // Find or create user after GitHub auth passes
-  const user = await userService.findOrCreate(email)
+  // Find or create user after GitHub auth passes using github id
+  const user = await userService.findOrCreate(githubId)
   if (!user) throw Error("Failed to create user")
 
   const authTokenExpiry = new Date()
@@ -162,7 +149,7 @@ async function githubAuth(req, res) {
 
   const token = jwtUtils.signToken({
     access_token: jwtUtils.encryptToken(accessToken),
-    user_id: userId,
+    user_id: githubId,
     isomer_user_id: user.id,
   })
 
@@ -198,7 +185,7 @@ async function whoami(req, res) {
 }
 
 router.post("/otp", attachReadRouteHandlerWrapper(sendOtp))
-router.post("/login", attachReadRouteHandlerWrapper(verifyOtp))
+router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get("/whoami", attachReadRouteHandlerWrapper(whoami))

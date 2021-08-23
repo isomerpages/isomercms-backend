@@ -58,13 +58,8 @@ const whoamiAuth = (req, res, next) => {
   let retrievedToken
   try {
     const { isomercms } = req.cookies
-    const {
-      access_token: verifiedToken,
-      isomer_user_id: isomerUserId,
-    } = jwtUtils.verifyToken(isomercms)
-    if (!verifiedToken || !isomerUserId) {
-      throw new Error("Invalid token")
-    }
+    const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+    if (!verifiedToken) throw new Error("Invalid token")
     retrievedToken = jwtUtils.decryptToken(verifiedToken)
   } catch (err) {
     retrievedToken = undefined
@@ -105,7 +100,7 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
 // Login and logout
 auth.get("/v1/auth", noVerify)
 auth.post("/v1/auth/otp", noVerify)
-auth.post("/v1/auth/login", noVerify)
+auth.get("/v1/auth/github-redirect", noVerify)
 auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
 

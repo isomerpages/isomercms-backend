@@ -21,7 +21,7 @@ module.exports = (sequelize) => {
         type: DataTypes.BIGINT,
       },
       email: {
-        allowNull: false,
+        allowNull: true,
         unique: true,
         type: DataTypes.TEXT,
         validate: {
@@ -29,7 +29,7 @@ module.exports = (sequelize) => {
         },
       },
       githubId: {
-        allowNull: true,
+        allowNull: false,
         unique: true,
         type: DataTypes.TEXT,
         validate: {

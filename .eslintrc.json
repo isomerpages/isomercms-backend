@@ -54,6 +54,11 @@
                         "pattern": "@utils/**",
                         "group": "internal",
                         "position": "before"
+                    },
+                    {
+                      "pattern": "@validators/**",
+                      "group": "internal",
+                      "position": "before"
                     }
                 ]
             }
@@ -70,7 +75,10 @@
                 ["@routes", "./routes"],
                 ["@utils", "./utils"],
                 ["@loaders", "./loaders"],
-                ["@database", "./database"]
+                ["@database", "./database"],
+                ["@services", "./services"],
+                ["@controllers", "./controllers"],
+                ["@validators", "./validators"]
             ]
         }
     },

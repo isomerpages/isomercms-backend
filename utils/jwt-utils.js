@@ -1,7 +1,10 @@
+const CryptoJS = require("crypto-js")
+const AES = require("crypto-js/aes")
 const jwt = require("jsonwebtoken")
 const _ = require("lodash")
 
 const { JWT_SECRET } = process.env
+const { ENCRYPTION_SECRET } = process.env
 const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
 
 const jwtUtil = {
@@ -14,6 +17,12 @@ const jwtUtil = {
       algorithm: "HS256",
       expiresIn: AUTH_TOKEN_EXPIRY_MS,
     })
+  ),
+  encryptToken: _.wrap(AES.encrypt, (encrypt, token) =>
+    encrypt(token, ENCRYPTION_SECRET).toString()
+  ),
+  decryptToken: _.wrap(AES.decrypt, (decrypt, token) =>
+    decrypt(token, ENCRYPTION_SECRET).toString(CryptoJS.enc.Utf8)
   ),
 }
 

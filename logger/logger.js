@@ -20,7 +20,9 @@ const metadataRequest = Bluebird.promisify(
 
 // Constants
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
-const IS_PROD_ENV = NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV"
+const IS_PROD_ENV =
+  NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV" && NODE_ENV !== "test"
+const IS_TEST_ENV = NODE_ENV === "test"
 
 function timestampGenerator() {
   return moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
@@ -76,8 +78,10 @@ class CloudWatchLogger {
 
   // this method is used to log non-error messages, replacing console.log
   async info(logMessage) {
-    // eslint-disable-next-line no-console
-    console.log(`${timestampGenerator()} ${logMessage}`)
+    if (!IS_TEST_ENV) {
+      // eslint-disable-next-line no-console
+      console.log(`${timestampGenerator()} ${logMessage}`)
+    }
 
     if (IS_PROD_ENV) {
       try {
@@ -90,7 +94,9 @@ class CloudWatchLogger {
 
   // this method is used to log error messages and write to stderr, replacing console.error
   async error(errMessage) {
-    console.error(`${timestampGenerator()} ${errMessage}`)
+    if (!IS_TEST_ENV) {
+      console.error(`${timestampGenerator()} ${errMessage}`)
+    }
 
     if (IS_PROD_ENV) {
       try {

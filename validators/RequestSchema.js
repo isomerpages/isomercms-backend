@@ -4,7 +4,7 @@ const FrontMatterSchema = Joi.object({
   title: Joi.string().required(),
   permalink: Joi.string().required(),
   third_nav_title: Joi.string(),
-})
+}).unknown(true)
 
 const ContentSchema = Joi.object({
   frontMatter: FrontMatterSchema.required(),

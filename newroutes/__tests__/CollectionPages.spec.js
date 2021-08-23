@@ -139,24 +139,23 @@ describe("Collection Pages Router", () => {
   })
 
   describe("readCollectionPage", () => {
-    mockCollectionPageService.read.mockReturnValue({
+    const expectedResponse = {
       sha: mockSha,
       content: mockContent,
-    })
+    }
+    mockCollectionPageService.read.mockResolvedValue(expectedResponse)
 
-    mockSubcollectionPageService.read.mockReturnValue({
-      sha: mockSha,
-      content: mockContent,
-    })
+    mockSubcollectionPageService.read.mockResolvedValue(expectedResponse)
 
     it("retrieves collection page details", async () => {
       const expectedControllerInput = {
         fileName,
         collectionName,
       }
-      await request(app)
+      const resp = await request(app)
         .get(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .expect(200)
+      expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockCollectionPageService.read).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
@@ -169,11 +168,12 @@ describe("Collection Pages Router", () => {
         collectionName,
         subcollectionName,
       }
-      await request(app)
+      const resp = await request(app)
         .get(
           `/${siteName}/collections/${collectionName}/subcollections/${subcollectionName}/pages/${fileName}`
         )
         .expect(200)
+      expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput

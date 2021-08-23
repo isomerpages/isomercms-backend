@@ -57,6 +57,9 @@ const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
 const {
+  UnlinkedPageService,
+} = require("@services/fileServices/MdPageServices/UnlinkedPageService")
+const {
   CollectionYmlService,
 } = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 const {
@@ -64,6 +67,7 @@ const {
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
+const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
@@ -75,12 +79,17 @@ const subcollectionPageService = new SubcollectionPageService({
   gitHubService,
   collectionYmlService,
 })
+const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+
 const collectionController = new CollectionController({
   collectionPageService,
   subcollectionPageService,
 })
 const collectionPagesV2Router = new CollectionPagesRouter({
   collectionController,
+})
+const unlinkedPagesRouter = new UnlinkedPagesRouter({
+  unlinkedPageService,
 })
 
 const app = express()
@@ -125,6 +134,7 @@ app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
 
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
+app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

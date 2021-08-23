@@ -39,11 +39,7 @@ class AuthService {
     const hasMatchDomain =
       this.whitelistDomains.filter((domain) => email.endsWith(domain)).length >
       0
-    const user = await this.userService.findByEmail(email)
-
-    // Send OTP if either the user's email match a whitelisted domain or the user already
-    // been explicitly whitelisted by adding an entry in the users table.
-    return hasMatchDomain || user !== null
+    return hasMatchDomain
   }
 
   async sendOtp(email) {

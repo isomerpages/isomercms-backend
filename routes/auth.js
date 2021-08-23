@@ -127,7 +127,6 @@ async function githubAuth(req, res) {
   })
 
   const githubId = userResp.data && userResp.data.login
-  console.log(githubId)
 
   // Find or create user after GitHub auth passes using github id
   const user = await userService.findOrCreate(githubId)
@@ -176,7 +175,9 @@ async function whoami(req, res) {
       },
     })
     const userId = resp.data.login
-    return res.status(200).json({ userId })
+
+    const { email } = await userService.findByGitHubId(userId)
+    return res.status(200).json({ userId, email })
   } catch (err) {
     clearAllCookies(res)
     // Return a 401 os that user will be redirected to logout

@@ -48,7 +48,6 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const { CollectionController } = require("@controllers/CollectionController")
 const {
   SubcollectionPageService,
 } = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")

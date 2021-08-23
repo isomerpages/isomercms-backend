@@ -11,6 +11,8 @@ class UnlinkedPageService {
   }
 
   async create(reqDetails, { fileName, content, frontMatter }) {
+    // Ensure that third_nav_title is removed for files that are being moved from collections
+    delete frontMatter.third_nav_title
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { sha } = await this.gitHubService.create(reqDetails, {
       content: newContent,

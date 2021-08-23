@@ -1,13 +1,15 @@
 const path = require("path")
 
+const axios = require("axios")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const express = require("express")
+const helmet = require("helmet")
 const createError = require("http-errors")
 const logger = require("morgan")
 
 // Env vars
-const { FRONTEND_URL } = process.env
+const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
 
 // Import middleware
 const { apiLogger } = require("@middleware/apiLogger")
@@ -34,7 +36,55 @@ const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
 
+const axiosInstance = axios.create({
+  baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
+})
+
+axiosInstance.interceptors.request.use((config) => ({
+  ...config,
+  headers: {
+    ...config.headers,
+    "Content-Type": "application/json",
+  },
+}))
+
+const { CollectionController } = require("@controllers/CollectionController")
+const {
+  SubcollectionPageService,
+} = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
+const { GitHubService } = require("@services/db/GitHubService")
+const {
+  CollectionPageService,
+} = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  CollectionYmlService,
+} = require("@services/fileServices/YmlFileServices/CollectionYmlService")
+const {
+  NavYmlService,
+} = require("@services/fileServices/YmlFileServices/NavYmlService")
+
+const { CollectionPagesRouter } = require("./newroutes/collectionPages")
+
+const gitHubService = new GitHubService({ axiosInstance })
+const collectionYmlService = new CollectionYmlService({ gitHubService })
+const collectionPageService = new CollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const subcollectionPageService = new SubcollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const collectionController = new CollectionController({
+  collectionPageService,
+  subcollectionPageService,
+})
+const collectionPagesV2Router = new CollectionPagesRouter({
+  collectionController,
+})
+
 const app = express()
+app.use(helmet())
 
 app.use(logger("dev"))
 app.use(
@@ -73,6 +123,8 @@ app.use("/v1/sites", homepageRouter)
 app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
+
+app.use("/v2/sites", collectionPagesV2Router.getRouter())
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

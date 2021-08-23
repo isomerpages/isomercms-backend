@@ -28,6 +28,14 @@ module.exports = (sequelize) => {
           isEmail: true,
         },
       },
+      githubId: {
+        allowNull: true,
+        unique: true,
+        type: DataTypes.TEXT,
+        validate: {
+          notEmpty: true,
+        },
+      },
       contactNumber: {
         allowNull: true,
         type: DataTypes.STRING(255),

@@ -14,7 +14,9 @@
         "@utils/*": ["./utils/*"],
         "@loaders/*": ["./loaders/*"],
         "@database/*": ["./database/*"],
-        "@services/*": ["./services/*"]
+        "@services/*": ["./services/*"],
+        "@controllers/*": ["./controllers/*"],
+        "@validators/*": ["./validators/*"]
       }
     },
     "exclude": ["node_modules", "dist"]

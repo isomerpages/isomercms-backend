@@ -50,6 +50,14 @@ class UserService {
     await this.mailer.sendMail(email, html)
   }
 
+  async sendSmsOtp(mobileNumber) {
+    const otp = this.otp.generate(mobileNumber)
+    const expiry = this.otp.getExpiryMinutes()
+
+    const message = `Your OTP is ${otp}. It will expire in ${expiry} minutes. Please use this to verify your mobile number`
+    await this.smsClient.sendSms(mobileNumber, message)
+  }
+
   verifyOtp(value, otp) {
     return this.otp.verify(value, otp)
   }

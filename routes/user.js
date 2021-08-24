@@ -11,7 +11,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 // Import services
-const { authService, userService } = require("@services/identity")
+const { userService } = require("@services/identity")
 
 const router = express.Router()
 
@@ -22,10 +22,10 @@ async function sendEmailOtp(req, res) {
   }
 
   try {
-    if (!(await authService.canSendEmailOtp(email))) {
+    if (!(await userService.canSendEmailOtp(email))) {
       throw new Error(`Invalid email ${email}`)
     }
-    await authService.sendEmailOtp(email)
+    await userService.sendEmailOtp(email)
     return res.sendStatus(200)
   } catch (err) {
     logger.error(err.message)
@@ -35,7 +35,7 @@ async function sendEmailOtp(req, res) {
 
 async function verifyEmailOtp(req, res) {
   const { email, otp } = req.body
-  if (!authService.verifyEmailOtp(email, otp)) {
+  if (!userService.verifyOtp(email, otp)) {
     throw new AuthError("Invalid OTP")
   }
 
@@ -43,7 +43,32 @@ async function verifyEmailOtp(req, res) {
   return res.sendStatus(200)
 }
 
+async function sendMobileNumberOtp(req, res) {
+  const { mobile } = req.body
+  if (!mobile || !validator.isMobilePhone(mobile)) {
+    throw new BadRequestError("Please provide a valid mobile number")
+  }
+
+  await userService.sendSmsOtp(mobile)
+  return res.sendStatus(200)
+}
+
+async function verifyMobileNumberOtp(req, res) {
+  const { mobile, otp } = req.body
+  if (!userService.verifyOtp(mobile, otp)) {
+    throw new AuthError("Invalid OTP")
+  }
+
+  await userService.updateUserByGitHubId(req.userId, { contactNumber: mobile })
+  return res.sendStatus(200)
+}
+
 router.post("/email/otp", attachReadRouteHandlerWrapper(sendEmailOtp))
 router.post("/email/verifyOtp", attachReadRouteHandlerWrapper(verifyEmailOtp))
+router.post("/mobile/otp", attachReadRouteHandlerWrapper(sendMobileNumberOtp))
+router.post(
+  "/mobile/verifyOtp",
+  attachReadRouteHandlerWrapper(verifyMobileNumberOtp)
+)
 
 module.exports = router

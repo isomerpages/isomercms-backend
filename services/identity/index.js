@@ -5,6 +5,7 @@ const db = require("@database/models")
 const AuthService = require("./AuthService")
 const MailClient = require("./MailClient")
 const SiteService = require("./SiteService")
+const SmsClient = require("./SmsClient")
 const TokenStore = require("./TokenStore")
 const TotpGenerator = require("./TotpGenerator")
 const UserService = require("./UserService")
@@ -23,12 +24,16 @@ const totpGenerator = new TotpGenerator({
 const mailer = IS_LOCAL_DEV
   ? { sendMail: (_email, html) => logger.info(html) }
   : new MailClient()
+const smsClient = IS_LOCAL_DEV
+  ? { sendSms: (_mobileNumber, message) => logger.info(message) }
+  : new SmsClient()
 
 const siteService = new SiteService({ repository: db.Site, tokenStore })
 const userService = new UserService({
   repository: db.User,
   otp: totpGenerator,
   mailer,
+  smsClient,
 })
 const authService = new AuthService()
 

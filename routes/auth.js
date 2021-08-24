@@ -154,8 +154,8 @@ async function whoami(req, res) {
     })
     const userId = resp.data.login
 
-    const { email } = await userService.findByGitHubId(userId)
-    return res.status(200).json({ userId, email })
+    const { email, contactNumber } = await userService.findByGitHubId(userId)
+    return res.status(200).json({ userId, email, contactNumber })
   } catch (err) {
     clearAllCookies(res)
     // Return a 401 os that user will be redirected to logout

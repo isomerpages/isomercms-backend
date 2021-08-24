@@ -312,6 +312,8 @@ auth.get("/v1/sites/:siteName/stagingUrl", verifyJwt)
 // Users
 auth.post("/v1/user/email/otp", verifyJwt)
 auth.post("/v1/user/email/verifyOtp", verifyJwt)
+auth.post("/v1/user/mobile/otp", verifyJwt)
+auth.post("/v1/user/mobile/verifyOtp", verifyJwt)
 
 auth.use((req, res, next) => {
   if (!req.route) {

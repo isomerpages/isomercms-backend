@@ -48,7 +48,6 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const { CollectionController } = require("@controllers/CollectionController")
 const {
   SubcollectionPageService,
 } = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
@@ -81,15 +80,12 @@ const subcollectionPageService = new SubcollectionPageService({
 })
 const unlinkedPageService = new UnlinkedPageService({ gitHubService })
 
-const collectionController = new CollectionController({
-  collectionPageService,
-  subcollectionPageService,
-})
-const collectionPagesV2Router = new CollectionPagesRouter({
-  collectionController,
-})
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
+})
+const collectionPagesV2Router = new CollectionPagesRouter({
+  collectionPageService,
+  subcollectionPageService,
 })
 
 const app = express()

@@ -52,7 +52,7 @@ describe("Collection Page Service", () => {
   })
 
   describe("Create", () => {
-    mockGithubService.create.mockReturnValue({ sha })
+    mockGithubService.create.mockResolvedValue({ sha })
     it("Creating pages works correctly", async () => {
       await expect(
         service.create(reqDetails, {
@@ -114,7 +114,7 @@ describe("Collection Page Service", () => {
   })
 
   describe("Read", () => {
-    mockGithubService.read.mockReturnValue({
+    mockGithubService.read.mockResolvedValue({
       content: mockMarkdownContent,
       sha,
     }),
@@ -138,7 +138,7 @@ describe("Collection Page Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValue({ newSha: sha })
+    mockGithubService.update.mockResolvedValue({ newSha: sha })
     it("Updating page content works correctly", async () => {
       await expect(
         service.update(reqDetails, {
@@ -190,7 +190,7 @@ describe("Collection Page Service", () => {
   describe("Rename", () => {
     const oldSha = "54321"
     const oldFileName = "test-old-file"
-    mockGithubService.create.mockReturnValue({ sha })
+    mockGithubService.create.mockResolvedValue({ sha })
     it("Renaming pages works correctly", async () => {
       await expect(
         service.rename(reqDetails, {

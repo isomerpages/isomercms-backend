@@ -4,7 +4,6 @@ const validator = require("validator")
 const logger = require("@logger/logger")
 
 // Import error
-const { AuthError } = require("@errors/AuthError")
 const { BadRequestError } = require("@errors/BadRequestError")
 
 // Import middleware
@@ -29,14 +28,14 @@ async function sendEmailOtp(req, res) {
     return res.sendStatus(200)
   } catch (err) {
     logger.error(err.message)
-    throw new AuthError("Unable to send OTP")
+    throw new BadRequestError("Unable to send OTP")
   }
 }
 
 async function verifyEmailOtp(req, res) {
   const { email, otp } = req.body
   if (!userService.verifyOtp(email, otp)) {
-    throw new AuthError("Invalid OTP")
+    throw new BadRequestError("Invalid OTP")
   }
 
   await userService.updateUserByGitHubId(req.userId, { email })
@@ -56,7 +55,7 @@ async function sendMobileNumberOtp(req, res) {
 async function verifyMobileNumberOtp(req, res) {
   const { mobile, otp } = req.body
   if (!userService.verifyOtp(mobile, otp)) {
-    throw new AuthError("Invalid OTP")
+    throw new BadRequestError("Invalid OTP")
   }
 
   await userService.updateUserByGitHubId(req.userId, { contactNumber: mobile })

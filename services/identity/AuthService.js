@@ -6,7 +6,7 @@ const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const { DOMAIN_WHITELIST } = process.env
 
 class AuthService {
-  constructor(otp, mailer, userService) {
+  constructor({ otp, mailer, userService }) {
     this.otp = otp
     this.mailer = mailer
     this.userService = userService

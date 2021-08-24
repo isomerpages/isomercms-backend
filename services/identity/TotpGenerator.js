@@ -1,7 +1,7 @@
 const { totp } = require("otplib")
 
 class TotpGenerator {
-  constructor(secret, expiry) {
+  constructor({ secret, expiry }) {
     this.secret = secret
     this.expiry = expiry || 5
     // We divide expiry window by half and accept otps from the previous window

@@ -1,5 +1,5 @@
 class UserService {
-  constructor(repository) {
+  constructor({ repository }) {
     this.repository = repository
   }
 

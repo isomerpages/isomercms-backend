@@ -1,5 +1,5 @@
 class SiteService {
-  constructor(repository, tokenStore) {
+  constructor({ repository, tokenStore }) {
     this.repository = repository
     this.tokenStore = tokenStore
   }

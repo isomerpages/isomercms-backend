@@ -11,7 +11,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 // Import services
-const { authService, userService } = require("@services")
+const { authService, userService } = require("@services/identity")
 
 const router = express.Router()
 

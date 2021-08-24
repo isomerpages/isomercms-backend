@@ -19,16 +19,17 @@ const totpGenerator = new TotpGenerator({
   secret: OTP_SECRET,
   expiry: OTP_EXPIRY,
 })
-const mailClient = new MailClient()
+
+const mailer = IS_LOCAL_DEV
+  ? { sendMail: (_email, html) => logger.info(html) }
+  : new MailClient()
 
 const siteService = new SiteService({ repository: db.Site, tokenStore })
-const userService = new UserService({ repository: db.User })
-const authService = new AuthService({
+const userService = new UserService({
+  repository: db.User,
   otp: totpGenerator,
-  mailer: IS_LOCAL_DEV
-    ? { sendMail: (_email, html) => logger.info(html) }
-    : mailClient,
-  userService,
+  mailer,
 })
+const authService = new AuthService()
 
 module.exports = { authService, siteService, userService }

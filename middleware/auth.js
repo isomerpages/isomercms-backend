@@ -11,7 +11,7 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const jwtUtils = require("@utils/jwt-utils")
 
 // Import services
-const { authService, siteService } = require("@services")
+const { authService, siteService } = require("@services/identity")
 
 // Instantiate router object
 const auth = express.Router()

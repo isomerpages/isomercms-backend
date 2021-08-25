@@ -30,7 +30,7 @@ class CollectionDirectoryService {
   }
 
   convertYmlToObjOrder(fileOrder) {
-    const currSubcollectionName = ""
+    let currSubcollectionName = ""
     const currSubcollectionFiles = []
     const processedFiles = []
     fileOrder.forEach((filePath) => {

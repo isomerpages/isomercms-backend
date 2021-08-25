@@ -1,3 +1,5 @@
+const { deslugifyCollectionName } = require("@utils/utils")
+
 describe("Subcollection Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
@@ -57,14 +59,14 @@ describe("Subcollection Page Service", () => {
 
   describe("Create", () => {
     mockGithubService.create.mockResolvedValue({ sha })
-    it("Creating pages works correctly", async () => {
+    it("Creating a page with no third nav title in the front matter correctly adds it in", async () => {
       await expect(
         service.create(reqDetails, {
           fileName,
           collectionName,
           subcollectionName,
           content: mockContent,
-          frontMatter: mockFrontMatter,
+          frontMatter: { ...mockFrontMatter },
         })
       ).resolves.toMatchObject({
         fileName,
@@ -72,7 +74,10 @@ describe("Subcollection Page Service", () => {
         sha,
       })
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
-        mockFrontMatter,
+        {
+          ...mockFrontMatter,
+          third_nav_title: deslugifyCollectionName(subcollectionName),
+        },
         mockContent
       )
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
@@ -85,7 +90,7 @@ describe("Subcollection Page Service", () => {
         directoryName,
       })
     })
-    it("Creating a page which specifies a subcollection in the front matter removes the third_nav_title parameter", async () => {
+    it("Creating a page which specifies a different subcollection in the front matter works correctly", async () => {
       const mockFrontMatterWithSubcollection = {
         ...mockFrontMatter,
         third_nav_title: "mock-third-nav",
@@ -96,7 +101,7 @@ describe("Subcollection Page Service", () => {
           collectionName,
           subcollectionName,
           content: mockContent,
-          frontMatter: mockFrontMatterWithSubcollection,
+          frontMatter: { ...mockFrontMatterWithSubcollection },
         })
       ).resolves.toMatchObject({
         fileName,
@@ -104,7 +109,10 @@ describe("Subcollection Page Service", () => {
         sha,
       })
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
-        mockFrontMatter,
+        {
+          ...mockFrontMatterWithSubcollection,
+          third_nav_title: deslugifyCollectionName(subcollectionName),
+        },
         mockContent
       )
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(

@@ -59,7 +59,7 @@ describe("Collection Page Service", () => {
           fileName,
           collectionName,
           content: mockContent,
-          frontMatter: mockFrontMatter,
+          frontMatter: { ...mockFrontMatter },
         })
       ).resolves.toMatchObject({
         fileName,
@@ -67,7 +67,7 @@ describe("Collection Page Service", () => {
         sha,
       })
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
-        mockFrontMatter,
+        { ...mockFrontMatter },
         mockContent
       )
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
@@ -98,7 +98,7 @@ describe("Collection Page Service", () => {
         sha,
       })
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
-        mockFrontMatter,
+        { ...mockFrontMatter },
         mockContent
       )
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(

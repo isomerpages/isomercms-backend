@@ -53,6 +53,15 @@ const {
 } = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
+  BaseDirectoryService,
+} = require("@services/directoryServices/BaseDirectoryService")
+const {
+  CollectionDirectoryService,
+} = require("@services/directoryServices/CollectionDirectoryService")
+const {
+  SubcollectionDirectoryService,
+} = require("@services/directoryServices/SubcollectionDirectoryService")
+const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
 const {
@@ -64,12 +73,15 @@ const {
 const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
+const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
+const { CollectionsRouter } = require("./newroutes/collections")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
+const navYmlService = new NavYmlService({ gitHubService })
 const collectionPageService = new CollectionPageService({
   gitHubService,
   collectionYmlService,
@@ -79,6 +91,24 @@ const subcollectionPageService = new SubcollectionPageService({
   collectionYmlService,
 })
 const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const moverService = new MoverService({
+  unlinkedPageService,
+  collectionPageService,
+  subcollectionPageService,
+})
+const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const collectionDirectoryService = new CollectionDirectoryService({
+  baseDirectoryService,
+  navYmlService,
+  collectionYmlService,
+  moverService,
+})
+const subcollectionDirectoryService = new SubcollectionDirectoryService({
+  baseDirectoryService,
+  collectionYmlService,
+  moverService,
+  subcollectionPageService,
+})
 
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
@@ -86,6 +116,10 @@ const unlinkedPagesRouter = new UnlinkedPagesRouter({
 const collectionPagesV2Router = new CollectionPagesRouter({
   collectionPageService,
   subcollectionPageService,
+})
+const collectionsV2Router = new CollectionsRouter({
+  collectionDirectoryService,
+  subcollectionDirectoryService,
 })
 
 const app = express()
@@ -131,6 +165,7 @@ app.use("/v1/sites", netlifyTomlRouter)
 
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
+app.use("/v2/sites", collectionsV2Router.getRouter())
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

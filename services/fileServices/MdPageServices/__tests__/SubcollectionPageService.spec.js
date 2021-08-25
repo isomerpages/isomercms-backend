@@ -58,8 +58,8 @@ describe("Subcollection Page Service", () => {
   })
 
   describe("Create", () => {
-    mockGithubService.create.mockResolvedValue({ sha })
     it("Creating a page with no third nav title in the front matter correctly adds it in", async () => {
+      mockGithubService.create.mockResolvedValueOnce({ sha })
       await expect(
         service.create(reqDetails, {
           fileName,
@@ -91,6 +91,7 @@ describe("Subcollection Page Service", () => {
       })
     })
     it("Creating a page which specifies a different subcollection in the front matter works correctly", async () => {
+      mockGithubService.create.mockResolvedValueOnce({ sha })
       const mockFrontMatterWithSubcollection = {
         ...mockFrontMatter,
         third_nav_title: "mock-third-nav",
@@ -128,7 +129,7 @@ describe("Subcollection Page Service", () => {
   })
 
   describe("Read", () => {
-    mockGithubService.read.mockResolvedValue({
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockMarkdownContent,
       sha,
     }),
@@ -156,7 +157,7 @@ describe("Subcollection Page Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockResolvedValue({ newSha: sha })
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
     it("Updating page content works correctly", async () => {
       await expect(
         service.update(reqDetails, {
@@ -214,7 +215,7 @@ describe("Subcollection Page Service", () => {
   describe("Rename", () => {
     const oldSha = "54321"
     const oldFileName = "test-old-file"
-    mockGithubService.create.mockResolvedValue({ sha })
+    mockGithubService.create.mockResolvedValueOnce({ sha })
     it("Renaming pages works correctly", async () => {
       await expect(
         service.rename(reqDetails, {
@@ -251,5 +252,49 @@ describe("Subcollection Page Service", () => {
         directoryName,
       })
     })
+  })
+
+  describe("Update Subcollection", () => {
+    const oldSha = "54321"
+    const newSubcollectionName = "new-subcollection"
+    const newDirectory = `_${collectionName}/${newSubcollectionName}`
+    mockGithubService.read.mockResolvedValueOnce({
+      content: mockMarkdownContent,
+      sha: oldSha,
+    })
+    mockGithubService.create.mockResolvedValueOnce({ sha })
+    mockGithubService.delete.mockResolvedValueOnce({
+      content: mockMarkdownContent,
+      sha: oldSha,
+    }),
+      it("Updating the subcollection of a page works correctly", async () => {
+        await expect(
+          service.updateSubcollection(reqDetails, {
+            fileName,
+            collectionName,
+            oldSubcollectionName: subcollectionName,
+            newSubcollectionName,
+          })
+        ).resolves.toMatchObject({
+          sha,
+        })
+        expect(convertDataToMarkdown).toHaveBeenCalledWith(
+          {
+            ...mockFrontMatter,
+            third_nav_title: deslugifyCollectionName(newSubcollectionName),
+          },
+          mockContent
+        )
+        expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+          fileName,
+          directoryName,
+          sha: oldSha,
+        })
+        expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+          content: mockMarkdownContent,
+          fileName,
+          directoryName: newDirectory,
+        })
+      })
   })
 })

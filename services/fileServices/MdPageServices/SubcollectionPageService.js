@@ -126,6 +126,36 @@ class SubcollectionPageService {
       newSha,
     }
   }
+
+  // Used for updating the third_nav_title only without touching the collection.yml
+  async updateSubcollection(
+    reqDetails,
+    { fileName, collectionName, oldSubcollectionName, newSubcollectionName }
+  ) {
+    const {
+      sha,
+      content: { frontMatter, pageBody },
+    } = await this.read(reqDetails, {
+      fileName,
+      collectionName,
+      subcollectionName: oldSubcollectionName,
+    })
+
+    const parsedOldDirectoryName = `_${collectionName}/${oldSubcollectionName}`
+    const parsedNewDirectoryName = `_${collectionName}/${newSubcollectionName}`
+    frontMatter.third_nav_title = deslugifyCollectionName(newSubcollectionName)
+    const newContent = convertDataToMarkdown(frontMatter, pageBody)
+    await this.gitHubService.delete(reqDetails, {
+      sha,
+      fileName,
+      directoryName: parsedOldDirectoryName,
+    })
+    return this.gitHubService.create(reqDetails, {
+      content: newContent,
+      fileName,
+      directoryName: parsedNewDirectoryName,
+    })
+  }
 }
 
 module.exports = { SubcollectionPageService }

@@ -30,37 +30,39 @@ class CollectionDirectoryService {
   }
 
   convertYmlToObjOrder(fileOrder) {
+    function addSubcollection() {
+      if (currSubcollectionName !== "") {
+        processedFiles.push({
+          name: currSubcollectionName,
+          type: "dir",
+          children: currSubcollectionFiles,
+        })
+        currSubcollectionName = ""
+        currSubcollectionFiles = []
+      }
+    }
+
     let currSubcollectionName = ""
-    const currSubcollectionFiles = []
+    let currSubcollectionFiles = []
     const processedFiles = []
+
     fileOrder.forEach((filePath) => {
       if (filePath.includes("/")) {
         const [subcollectionName, fileName] = filePath.split("/")
         if (subcollectionName !== currSubcollectionName) {
-          if (currSubcollectionName !== "") {
-            processedFiles.push({
-              name: currSubcollectionName,
-              type: "dir",
-              children: currSubcollectionFiles,
-            })
-          }
+          addSubcollection()
           currSubcollectionName = subcollectionName
         }
-        if (fileName !== ".keep") processedFiles.push(fileName)
+        if (fileName !== ".keep") currSubcollectionFiles.push(fileName)
       } else {
+        addSubcollection()
         processedFiles.push({
           name: filePath,
           type: "file",
         })
       }
     })
-    if (currSubcollectionName !== "") {
-      processedFiles.push({
-        name: currSubcollectionName,
-        type: "dir",
-        children: currSubcollectionFiles,
-      })
-    }
+    addSubcollection()
     return processedFiles
   }
 

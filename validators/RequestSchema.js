@@ -1,5 +1,6 @@
 const Joi = require("joi")
 
+// Pages
 const FrontMatterSchema = Joi.object({
   title: Joi.string().required(),
   permalink: Joi.string().required(),
@@ -26,8 +27,33 @@ const DeletePageRequestSchema = Joi.object().keys({
   sha: Joi.string().required(),
 })
 
+// Collections
+const FileSchema = Joi.object().keys({
+  name: Joi.string().required(),
+  type: Joi.string().valid("file").required(),
+  children: Joi.array().items(Joi.string()),
+})
+
+const ItemSchema = FileSchema.keys({
+  type: Joi.string().valid("file", "dir").required(),
+})
+
+const CreateDirectoryRequestSchema = Joi.object().keys({
+  newDirectoryName: Joi.string().required(),
+  items: Joi.array().items(FileSchema),
+})
+
+const RenameDirectoryRequestSchema = Joi.object().keys({
+  newDirectoryName: Joi.string().required(),
+})
+
+const ReorderDirectoryRequestSchema = Joi.array().items(ItemSchema)
+
 module.exports = {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
+  CreateDirectoryRequestSchema,
+  RenameDirectoryRequestSchema,
+  ReorderDirectoryRequestSchema,
 }

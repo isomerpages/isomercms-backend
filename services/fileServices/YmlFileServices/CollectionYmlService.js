@@ -166,7 +166,8 @@ class CollectionYmlService {
     })
   }
 
-  async updateOrder(reqDetails, { collectionName, newOrder, sha }) {
+  async updateOrder(reqDetails, { collectionName, newOrder }) {
+    const { sha } = await this.read(reqDetails, { collectionName })
     const contentObject = {
       collections: {
         [collectionName]: {

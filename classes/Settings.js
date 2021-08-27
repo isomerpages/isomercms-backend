@@ -99,6 +99,7 @@ class Settings {
     const configFieldsRequired = {
       url: configContent.url,
       title: configContent.title,
+      description: configContent.description,
       favicon: configContent.favicon,
       shareicon: configContent.shareicon,
       is_government: configContent.is_government,
@@ -211,11 +212,16 @@ class Settings {
       const newConfigContent = Base64.encode(yaml.stringify(configSettingsObj))
       await configResp.update(newConfigContent, config.sha)
 
-      // Update title in homepage as well if it's changed
-      if (configContent.title !== configSettingsObj.title) {
+      // Update title and description in homepage as well if it's changed
+      const hasTitleChanged = configContent.title !== configSettingsObj.title
+      const hasDescriptionChanged =
+        configContent.description !== configSettingsObj.description
+      if (hasTitleChanged || hasDescriptionChanged) {
         const { content: homepageContentObj, sha } = homepage
 
-        homepageContentObj.title = configSettings.title
+        if (hasTitleChanged) homepageContentObj.title = configSettings.title
+        if (hasDescriptionChanged)
+          homepageContentObj.description = configSettings.description
         const homepageFrontMatter = yaml.stringify(homepageContentObj)
 
         const homepageContent = ["---\n", homepageFrontMatter, "---"].join("")

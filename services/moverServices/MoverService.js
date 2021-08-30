@@ -19,64 +19,76 @@ class MoverService {
       newFileSubcollection,
     }
   ) {
-    let fileContent
+    let fileFrontMatter
+    let fileBody
     if (oldFileSubcollection) {
-      const { content, sha } = await this.subcollectionPageService.read(
-        reqDetails,
-        {
-          fileName,
-          collectionName: oldFileCollection,
-          subcollectionTitle: oldFileSubcollection,
-        }
-      )
-      fileContent = content
+      const {
+        content: { frontMatter, pageBody },
+        sha,
+      } = await this.subcollectionPageService.read(reqDetails, {
+        fileName,
+        collectionName: oldFileCollection,
+        subcollectionName: oldFileSubcollection,
+      })
+      fileFrontMatter = frontMatter
+      fileBody = pageBody
       await this.subcollectionPageService.delete(reqDetails, {
         fileName,
         collectionName: oldFileCollection,
-        subcollectionTitle: oldFileSubcollection,
+        subcollectionName: oldFileSubcollection,
         sha,
       })
-    } else if (oldFileCollection && oldFileCollection !== "pages") {
-      const { content, sha } = await this.collectionPageService.read(
-        reqDetails,
-        {
-          fileName,
-          collectionName: oldFileCollection,
-        }
-      )
-      fileContent = content
+    } else if (oldFileCollection) {
+      const {
+        content: { frontMatter, pageBody },
+        sha,
+      } = await this.collectionPageService.read(reqDetails, {
+        fileName,
+        collectionName: oldFileCollection,
+      })
+      fileFrontMatter = frontMatter
+      fileBody = pageBody
       await this.collectionPageService.delete(reqDetails, {
         fileName,
         collectionName: oldFileCollection,
         sha,
       })
     } else {
-      const { content, sha } = await this.unlinkedPageService.read(reqDetails, {
+      const {
+        content: { frontMatter, pageBody },
+        sha,
+      } = await this.unlinkedPageService.read(reqDetails, {
         fileName,
       })
-      fileContent = content
+      fileFrontMatter = frontMatter
+      fileBody = pageBody
       await this.unlinkedPageService.delete(reqDetails, { fileName, sha })
     }
 
+    let createResp
     if (newFileSubcollection) {
-      await this.subcollectionPageService.create(reqDetails, {
+      createResp = await this.subcollectionPageService.create(reqDetails, {
         fileName,
         collectionName: newFileCollection,
-        subcollectionTitle: newFileSubcollection,
-        content: fileContent,
+        subcollectionName: newFileSubcollection,
+        content: fileBody,
+        frontMatter: fileFrontMatter,
       })
-    } else if (newFileCollection && newFileCollection !== "pages") {
-      await this.collectionPageService.create(reqDetails, {
+    } else if (newFileCollection) {
+      createResp = await this.collectionPageService.create(reqDetails, {
         fileName,
         collectionName: newFileCollection,
-        content: fileContent,
+        content: fileBody,
+        frontMatter: fileFrontMatter,
       })
     } else {
-      await this.unlinkedPageService.create(reqDetails, {
+      createResp = await this.unlinkedPageService.create(reqDetails, {
         fileName,
-        content: fileContent,
+        content: fileBody,
+        frontMatter: fileFrontMatter,
       })
     }
+    return createResp
   }
 }
 

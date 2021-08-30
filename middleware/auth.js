@@ -16,7 +16,7 @@ const auth = express.Router()
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
-const ALLOWED_URLS = ["/v1/sites", "/v1/auth/whoami"]
+const GENERAL_ACCESS_PATHS = ["/v1/sites", "/v1/auth/whoami"]
 
 function noVerify(req, res, next) {
   next("router")
@@ -32,7 +32,7 @@ function verifyE2E(req) {
 
     // Throw an error if accessing a repo other than e2e-test-repo
     // Otherwise, allow access only to paths available to all users
-    if (!ALLOWED_URLS.includes(req.url)) {
+    if (!GENERAL_ACCESS_PATHS.includes(req.url)) {
       if (urlTokens.length >= 3) {
         const repo = urlTokens[3]
         if (repo !== E2E_TEST_REPO)

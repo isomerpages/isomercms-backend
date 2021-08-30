@@ -6,11 +6,13 @@ class SubcollectionDirectoryService {
     collectionYmlService,
     moverService,
     subcollectionPageService,
+    gitHubService,
   }) {
     this.baseDirectoryService = baseDirectoryService
     this.collectionYmlService = collectionYmlService
     this.moverService = moverService
     this.subcollectionPageService = subcollectionPageService
+    this.gitHubService = gitHubService
   }
 
   async listFiles(reqDetails, { collectionName, subcollectionName }) {

@@ -108,6 +108,7 @@ const subcollectionDirectoryService = new SubcollectionDirectoryService({
   collectionYmlService,
   moverService,
   subcollectionPageService,
+  gitHubService,
 })
 
 const unlinkedPagesRouter = new UnlinkedPagesRouter({

@@ -76,6 +76,14 @@ class SubcollectionDirectoryService {
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of files) {
       const fileName = file.name
+      if (fileName === PLACEHOLDER_FILE_NAME) {
+        await this.gitHubService.delete(reqDetails, {
+          sha: file.sha,
+          fileName,
+          directoryName: dir,
+        })
+        continue
+      }
       await this.subcollectionPageService.updateSubcollection(reqDetails, {
         fileName,
         collectionName,
@@ -83,6 +91,11 @@ class SubcollectionDirectoryService {
         newSubcollectionName: newDirectoryName,
       })
     }
+    await this.gitHubService.create(reqDetails, {
+      content: "",
+      fileName: PLACEHOLDER_FILE_NAME,
+      directoryName: `_${collectionName}/${newDirectoryName}`,
+    })
     await this.collectionYmlService.renameSubfolderInOrder(reqDetails, {
       collectionName,
       oldSubfolder: subcollectionName,

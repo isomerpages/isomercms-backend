@@ -91,7 +91,7 @@ class CollectionsRouter {
 
   // Rename collection/subcollection
   async renameCollectionDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = RenameDirectoryRequestSchema.validate(req.body)
@@ -99,7 +99,7 @@ class CollectionsRouter {
     const { newDirectoryName } = req.body
     if (subcollectionName) {
       await this.subcollectionDirectoryService.renameDirectory(
-        { siteName, accessToken },
+        { siteName, accessToken, currentCommitSha, treeSha },
         {
           collectionName,
           subcollectionName,
@@ -108,7 +108,7 @@ class CollectionsRouter {
       )
     } else {
       await this.collectionDirectoryService.renameDirectory(
-        { siteName, accessToken },
+        { siteName, accessToken, currentCommitSha, treeSha },
         {
           collectionName,
           newDirectoryName,
@@ -121,12 +121,12 @@ class CollectionsRouter {
 
   // Delete collection/subcollection
   async deleteCollectionDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
     const { siteName, collectionName, subcollectionName } = req.params
     if (subcollectionName) {
       await this.subcollectionDirectoryService.deleteDirectory(
-        { siteName, accessToken },
+        { siteName, accessToken, currentCommitSha, treeSha },
         {
           collectionName,
           subcollectionName,
@@ -134,7 +134,7 @@ class CollectionsRouter {
       )
     } else {
       await this.collectionDirectoryService.deleteDirectory(
-        { siteName, accessToken },
+        { siteName, accessToken, currentCommitSha, treeSha },
         {
           collectionName,
         }
@@ -145,7 +145,7 @@ class CollectionsRouter {
 
   // Reorder collection/subcollection
   async reorderCollectionDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = ReorderDirectoryRequestSchema.validate(req.body)
@@ -154,7 +154,7 @@ class CollectionsRouter {
     let reorderResp
     if (subcollectionName) {
       reorderResp = await this.subcollectionDirectoryService.reorderDirectory(
-        { siteName, accessToken },
+        { siteName, accessToken, currentCommitSha, treeSha },
         {
           collectionName,
           subcollectionName,
@@ -163,7 +163,7 @@ class CollectionsRouter {
       )
     } else {
       reorderResp = await this.collectionDirectoryService.reorderDirectory(
-        { siteName, accessToken },
+        { siteName, accessToken, currentCommitSha, treeSha },
         {
           collectionName,
           objArray: items,

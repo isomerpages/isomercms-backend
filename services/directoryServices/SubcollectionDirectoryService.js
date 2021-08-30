@@ -19,12 +19,13 @@ class SubcollectionDirectoryService {
     })
     const subcollectionFiles = files.filter(
       (fileName) =>
-        fileName.includes(`${subcollectionName}/`) &&
+        fileName.startsWith(`${subcollectionName}/`) &&
         !fileName.includes(`/.keep`)
     )
 
+    const subcollectionNameLength = `${subcollectionName}/`.length
     return subcollectionFiles.map((fileName) => ({
-      name: fileName,
+      name: fileName.substring(subcollectionNameLength),
       type: "file",
     }))
   }

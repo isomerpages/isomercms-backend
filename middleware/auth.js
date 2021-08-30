@@ -9,6 +9,8 @@ const { AuthError } = require("@errors/AuthError")
 
 const jwtUtils = require("@utils/jwt-utils")
 
+const { BadRequestError } = require("@root/errors/BadRequestError")
+
 // Instantiate router object
 const auth = express.Router()
 
@@ -23,13 +25,25 @@ function noVerify(req, res, next) {
 function verifyE2E(req) {
   const { isomercmsE2E } = req.cookies
   const urlTokens = req.url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
-  const repo = urlTokens[3]
   let isValidE2E
 
   if (isomercmsE2E) {
-    if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError(`Bad credentials`)
-    if (!(repo === E2E_TEST_REPO || ALLOWED_URLS.includes(req.url)))
-      throw new AuthError(`E2E tests can only access the ${E2E_TEST_REPO} repo`)
+    if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError("Bad credentials")
+
+    // Throw an error if accessing a repo other than e2e-test-repo
+    // Otherwise, allow access only to paths available to all users
+    if (!ALLOWED_URLS.includes(req.url)) {
+      if (urlTokens.length >= 3) {
+        const repo = urlTokens[3]
+        if (repo !== E2E_TEST_REPO)
+          throw new AuthError(
+            `E2E tests can only access the ${E2E_TEST_REPO} repo`
+          )
+      } else {
+        throw new BadRequestError("Invalid path")
+      }
+    }
+
     isValidE2E = true
   }
 

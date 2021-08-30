@@ -47,7 +47,9 @@ const RenameDirectoryRequestSchema = Joi.object().keys({
   newDirectoryName: Joi.string().required(),
 })
 
-const ReorderDirectoryRequestSchema = Joi.array().items(ItemSchema)
+const ReorderDirectoryRequestSchema = Joi.object().keys({
+  items: Joi.array().items(ItemSchema),
+})
 
 module.exports = {
   CreatePageRequestSchema,

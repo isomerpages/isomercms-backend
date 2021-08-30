@@ -6,7 +6,6 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
@@ -151,7 +150,7 @@ class CollectionsRouter {
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = ReorderDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    const objArray = req.body
+    const { items } = req.body
     let reorderResp
     if (subcollectionName) {
       reorderResp = await this.subcollectionDirectoryService.reorderDirectory(
@@ -159,7 +158,7 @@ class CollectionsRouter {
         {
           collectionName,
           subcollectionName,
-          objArray,
+          objArray: items,
         }
       )
     } else {
@@ -167,7 +166,7 @@ class CollectionsRouter {
         { siteName, accessToken },
         {
           collectionName,
-          objArray,
+          objArray: items,
         }
       )
     }

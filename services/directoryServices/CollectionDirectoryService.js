@@ -92,7 +92,10 @@ class CollectionDirectoryService {
         !ISOMER_TEMPLATE_DIRS.includes(curr.name) &&
         curr.name.slice(0, 1) === "_"
       )
-        acc.push(curr.path.slice(1))
+        acc.push({
+          name: curr.path.slice(1),
+          type: "dir",
+        })
       return acc
     }, [])
   }

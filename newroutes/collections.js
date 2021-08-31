@@ -13,6 +13,7 @@ const {
   CreateDirectoryRequestSchema,
   RenameDirectoryRequestSchema,
   ReorderDirectoryRequestSchema,
+  MoveDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
 class CollectionsRouter {
@@ -173,6 +174,39 @@ class CollectionsRouter {
     return res.status(200).json(reorderResp)
   }
 
+  // Reorder collection/subcollection
+  async moveCollectionDirectoryPages(req, res) {
+    const { accessToken } = req
+
+    const { siteName, collectionName, subcollectionName } = req.params
+    const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)
+    if (error) throw new BadRequestError(error.message)
+    const { items } = req.body
+    if (subcollectionName) {
+      await this.subcollectionDirectoryService.movePages(
+        { siteName, accessToken },
+        {
+          collectionName,
+          subcollectionName,
+          targetCollectionName,
+          targetSubcollectionName,
+          objArray: items,
+        }
+      )
+    } else {
+      await this.collectionDirectoryService.movePages(
+        { siteName, accessToken },
+        {
+          collectionName,
+          targetCollectionName,
+          targetSubcollectionName,
+          objArray: items,
+        }
+      )
+    }
+    return res.status(200).send("OK")
+  }
+
   getRouter() {
     const router = express.Router()
 
@@ -219,6 +253,14 @@ class CollectionsRouter {
     router.post(
       "/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
       attachRollbackRouteHandlerWrapper(this.reorderCollectionDirectory)
+    )
+    router.post(
+      "/:siteName/collections/:collectionName/move",
+      attachRollbackRouteHandlerWrapper(this.moveCollectionDirectoryPages)
+    )
+    router.post(
+      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
+      attachRollbackRouteHandlerWrapper(this.moveCollectionDirectoryPages)
     )
 
     return router

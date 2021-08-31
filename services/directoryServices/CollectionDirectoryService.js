@@ -164,6 +164,23 @@ class CollectionDirectoryService {
     })
     return objArray
   }
+
+  async movePages(
+    reqDetails,
+    { collectionName, targetCollectionName, targetSubcollectionName, objArray }
+  ) {
+    // We can't perform these operations concurrently because of conflict issues
+    /* eslint-disable no-await-in-loop, no-restricted-syntax */
+    for (const file of objArray) {
+      const fileName = file.name
+      await this.moverService.movePage(reqDetails, {
+        fileName,
+        oldFileCollection: collectionName,
+        newFileCollection: targetCollectionName,
+        newFileSubcollection: targetSubcollectionName,
+      })
+    }
+  }
 }
 
 module.exports = { CollectionDirectoryService }

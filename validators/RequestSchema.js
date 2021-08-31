@@ -31,11 +31,11 @@ const DeletePageRequestSchema = Joi.object().keys({
 const FileSchema = Joi.object().keys({
   name: Joi.string().required(),
   type: Joi.string().valid("file").required(),
-  children: Joi.array().items(Joi.string()),
 })
 
 const ItemSchema = FileSchema.keys({
   type: Joi.string().valid("file", "dir").required(),
+  children: Joi.array().items(Joi.string()),
 })
 
 const CreateDirectoryRequestSchema = Joi.object().keys({
@@ -51,6 +51,14 @@ const ReorderDirectoryRequestSchema = Joi.object().keys({
   items: Joi.array().items(ItemSchema),
 })
 
+const MoveDirectoryPagesRequestSchema = Joi.object().keys({
+  target: Joi.object().keys({
+    collectionName: Joi.string(),
+    subcollectionName: Joi.string(),
+  }),
+  items: Joi.array().items(FileSchema),
+})
+
 module.exports = {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
@@ -58,4 +66,5 @@ module.exports = {
   CreateDirectoryRequestSchema,
   RenameDirectoryRequestSchema,
   ReorderDirectoryRequestSchema,
+  MoveDirectoryPagesRequestSchema,
 }

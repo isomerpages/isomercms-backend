@@ -24,10 +24,16 @@ const extractRequiredConfigFields = (config) => ({
 })
 
 class SettingsRouter {
-  constructor({ configYmlService, footerYmlService, navYmlService }) {
+  constructor({
+    configYmlService,
+    footerYmlService,
+    navYmlService,
+    homepagePageService,
+  }) {
     this.configYmlService = configYmlService
     this.footerYmlService = footerYmlService
     this.navYmlService = navYmlService
+    this.homepagePageService = homepagePageService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -37,13 +43,8 @@ class SettingsRouter {
     const { siteName } = req.params
     const reqDetails = { siteName, accessToken }
 
-    const [config, footer, navigation] = await Bluebird.map(
-      [
-        this.configYmlService.read(reqDetails),
-        this.footerYmlService.read(reqDetails),
-        this.navYmlService.read(reqDetails),
-      ],
-      async (fileOp) => await fileOp
+    const { config, footer, navigation } = await this.retrieveSettingsFiles(
+      reqDetails
     )
 
     // retrieve only the relevant config and index fields
@@ -52,17 +53,46 @@ class SettingsRouter {
     // retrieve footer sha since we are sending the footer object wholesale
     const footerSha = footer.sha
 
-    return res.status(200).json({
-      settings: {
-        configFieldsRequired,
-        footerContent: footer.content,
-        navigationContent: { logo: navigation.content.logo },
-        footerSha,
-      },
-    })
+    const settings = {
+      configFieldsRequired,
+      footerContent: footer.content,
+      navigationContent: { logo: navigation.content.logo },
+      footerSha,
+    }
+    return res.status(200).json({ settings })
   }
 
-  async updateSettingsPage(req, res) {}
+  async updateSettingsPage(req, res) {
+    const { accessToken, body } = req
+    const { siteName } = req.params
+    const reqDetails = { siteName, accessToken }
+  }
+
+  async retrieveSettingsFiles(reqDetails, shouldRetrieveHomepage) {
+    const fileRetrievalObj = {
+      config: this.configYmlService.read(reqDetails),
+      footer: this.footerYmlService.read(reqDetails),
+      navigation: this.navYmlService.read(reqDetails),
+      homepage: this.homepagePageService.read(reqDetails),
+    }
+
+    const [config, footer, navigation, homepage] = await Bluebird.map(
+      Object.keys(fileRetrievalObj),
+      async (fileOpKey) => {
+        if (fileOpKey === "homepage" && !shouldRetrieveHomepage) {
+          return
+        }
+        return await fileRetrievalObj[fileOpKey]
+      }
+    )
+
+    return {
+      config,
+      footer,
+      navigation,
+      homepage,
+    }
+  }
 
   getRouter() {
     const router = express.Router()

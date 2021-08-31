@@ -286,10 +286,12 @@ auth.get("/v1/sites/:siteName/stagingUrl", verifyJwt)
 // V2 Endpoints
 
 // Unlinked pages
-auth.post("/v2/sites/:siteName/pages", verifyJwt)
-auth.get("/v2/sites/:siteName/pages/:pageName", verifyJwt)
-auth.post("/v2/sites/:siteName/pages/:pageName", verifyJwt)
-auth.delete("/v2/sites/:siteName/pages/:pageName", verifyJwt)
+auth.get("/v2/sites/:siteName/pages", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/pages", verifyJwt)
+auth.get("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.delete("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/move", verifyJwt)
 
 // Collection pages
 auth.post("/v2/sites/:siteName/collections/:collectionName/pages", verifyJwt)
@@ -347,6 +349,11 @@ auth.delete(
 auth.post("/v2/sites/:siteName/collections/:collectionName/reorder", verifyJwt)
 auth.post(
   "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName/move", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
   verifyJwt
 )
 

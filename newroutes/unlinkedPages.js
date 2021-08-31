@@ -132,7 +132,13 @@ class UnlinkedPagesRouter {
     const { siteName } = req.params
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    const { items } = req.body
+    const {
+      items,
+      target: {
+        collectionName: targetCollectionName,
+        subCollectionName: targetSubcollectionName,
+      },
+    } = req.body
     await this.unlinkedPagesDirectoryService.movePages(
       { siteName, accessToken },
       {

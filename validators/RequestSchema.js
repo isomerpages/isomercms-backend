@@ -54,7 +54,7 @@ const ReorderDirectoryRequestSchema = Joi.object().keys({
 const MoveDirectoryPagesRequestSchema = Joi.object().keys({
   target: Joi.object().keys({
     collectionName: Joi.string(),
-    subcollectionName: Joi.string(),
+    subCollectionName: Joi.string(),
   }),
   items: Joi.array().items(FileSchema),
 })

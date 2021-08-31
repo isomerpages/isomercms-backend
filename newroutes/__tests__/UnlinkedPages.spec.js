@@ -25,19 +25,19 @@ describe("Unlinked Pages Router", () => {
 
   // We can use read route handler here because we don't need to lock the repo
   app.post(
-    "/:siteName/pages",
+    "/:siteName/pages/pages",
     attachReadRouteHandlerWrapper(router.createUnlinkedPage)
   )
   app.get(
-    "/:siteName/pages/:pageName",
+    "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.readUnlinkedPage)
   )
   app.post(
-    "/:siteName/pages/:pageName",
+    "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.updateUnlinkedPage)
   )
   app.delete(
-    "/:siteName/pages/:pageName",
+    "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteUnlinkedPage)
   )
   app.use(errorHandler)
@@ -67,7 +67,7 @@ describe("Unlinked Pages Router", () => {
     }
 
     it("rejects create requests with invalid body", async () => {
-      await request(app).post(`/${siteName}/pages`).send({}).expect(400)
+      await request(app).post(`/${siteName}/pages/pages`).send({}).expect(400)
     })
 
     it("accepts valid unlinked page creation requests and returns the details of the file created", async () => {
@@ -77,7 +77,7 @@ describe("Unlinked Pages Router", () => {
         frontMatter: createPageDetails.content.frontMatter,
       }
       await request(app)
-        .post(`/${siteName}/pages`)
+        .post(`/${siteName}/pages/pages`)
         .send(createPageDetails)
         .expect(200)
       expect(mockService.create).toHaveBeenCalledWith(
@@ -97,7 +97,7 @@ describe("Unlinked Pages Router", () => {
       const expectedServiceInput = {
         fileName,
       }
-      await request(app).get(`/${siteName}/pages/${fileName}`).expect(200)
+      await request(app).get(`/${siteName}/pages/pages/${fileName}`).expect(200)
       expect(mockService.read).toHaveBeenCalledWith(
         reqDetails,
         expectedServiceInput
@@ -123,7 +123,7 @@ describe("Unlinked Pages Router", () => {
 
     it("rejects update requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/pages/${fileName}`)
+        .post(`/${siteName}/pages/pages/${fileName}`)
         .send({})
         .expect(400)
     })
@@ -136,7 +136,7 @@ describe("Unlinked Pages Router", () => {
         sha: updatePageDetails.sha,
       }
       await request(app)
-        .post(`/${siteName}/pages/${fileName}`)
+        .post(`/${siteName}/pages/pages/${fileName}`)
         .send(updatePageDetails)
         .expect(200)
       expect(mockService.update).toHaveBeenCalledWith(
@@ -154,7 +154,7 @@ describe("Unlinked Pages Router", () => {
         sha: renamePageDetails.sha,
       }
       await request(app)
-        .post(`/${siteName}/pages/${fileName}`)
+        .post(`/${siteName}/pages/pages/${fileName}`)
         .send(renamePageDetails)
         .expect(200)
       expect(mockService.rename).toHaveBeenCalledWith(
@@ -171,7 +171,7 @@ describe("Unlinked Pages Router", () => {
 
     it("rejects delete requests with invalid body", async () => {
       await request(app)
-        .delete(`/${siteName}/pages/${fileName}`)
+        .delete(`/${siteName}/pages/pages/${fileName}`)
         .send({})
         .expect(400)
     })
@@ -182,7 +182,7 @@ describe("Unlinked Pages Router", () => {
         sha: deletePageDetails.sha,
       }
       await request(app)
-        .delete(`/${siteName}/pages/${fileName}`)
+        .delete(`/${siteName}/pages/pages/${fileName}`)
         .send(deletePageDetails)
         .expect(200)
       expect(mockService.delete).toHaveBeenCalledWith(

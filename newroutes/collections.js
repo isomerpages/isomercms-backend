@@ -174,7 +174,7 @@ class CollectionsRouter {
     return res.status(200).json(reorderResp)
   }
 
-  // Reorder collection/subcollection
+  // Move collection/subcollection pages
   async moveCollectionDirectoryPages(req, res) {
     const { accessToken } = req
 

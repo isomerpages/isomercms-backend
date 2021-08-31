@@ -62,6 +62,9 @@ const {
   SubcollectionDirectoryService,
 } = require("@services/directoryServices/SubcollectionDirectoryService")
 const {
+  UnlinkedPagesDirectoryService,
+} = require("@services/directoryServices/UnlinkedPagesDirectoryService")
+const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
 const {
@@ -97,6 +100,10 @@ const moverService = new MoverService({
   subcollectionPageService,
 })
 const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const unlinkedPagesDirectoryService = new UnlinkedPagesDirectoryService({
+  baseDirectoryService,
+  moverService,
+})
 const collectionDirectoryService = new CollectionDirectoryService({
   baseDirectoryService,
   navYmlService,
@@ -113,6 +120,7 @@ const subcollectionDirectoryService = new SubcollectionDirectoryService({
 
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
+  unlinkedPagesDirectoryService,
 })
 const collectionPagesV2Router = new CollectionPagesRouter({
   collectionPageService,

@@ -14,6 +14,7 @@ const {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
+  MoveDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
 class UnlinkedPagesRouter {

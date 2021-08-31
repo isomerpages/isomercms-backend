@@ -126,11 +126,11 @@ class SubcollectionDirectoryService {
       collectionName,
     })
     const insertPos = files.findIndex((fileName) =>
-      fileName.includes(`${subcollection}/`)
+      fileName.includes(`${subcollectionName}/`)
     )
     // We do this step separately to account for subcollections which may not have the .keep file
     const filteredFiles = files.filter(
-      (fileName) => !fileName.includes(`${subcollection}/`)
+      (fileName) => !fileName.includes(`${subcollectionName}/`)
     )
     filteredFiles.splice(insertPos, 0, ...newSubcollectionOrder)
 

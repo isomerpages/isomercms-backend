@@ -1,6 +1,7 @@
 const autoBind = require("auto-bind")
 const Bluebird = require("bluebird")
 const express = require("express")
+const _ = require("lodash")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 
@@ -22,6 +23,14 @@ const extractRequiredConfigFields = (config) => ({
   resources_name: config.resources_name,
   colors: config.colors,
 })
+
+const mergeUpdatedData = (currentData, updatedData) => {
+  const clonedCurrentData = _.cloneDeep(currentData)
+  Object.keys(updatedData).forEach((field) => {
+    clonedCurrentData[field] = updatedData[field]
+  })
+  return clonedCurrentData
+}
 
 class SettingsRouter {
   constructor({
@@ -66,6 +75,86 @@ class SettingsRouter {
     const { accessToken, body } = req
     const { siteName } = req.params
     const reqDetails = { siteName, accessToken }
+
+    const {
+      config,
+      footer,
+      navigation,
+      homepage,
+    } = await this.retrieveSettingsFiles(reqDetails, true)
+
+    // extract data
+    const {
+      configSettings: updatedConfigContent,
+      footerSettings: updatedFooterContent,
+      navigationSettings: updatedNavigationContent,
+    } = body
+
+    if (!_.isEmpty(updatedConfigContent)) {
+      const mergedConfigContent = mergeUpdatedData(
+        config.content,
+        updatedConfigContent
+      )
+      await this.configYmlService.update(reqDetails, {
+        fileContent: mergedConfigContent,
+        sha: config.sha,
+      })
+
+      // update homepage title only if necessary
+      if (config.content.title !== updatedConfigContent.title) {
+        const updatedHomepageFrontMatter = _.cloneDeep(
+          homepage.content.frontMatter
+        )
+        updatedHomepageFrontMatter.title = updatedConfigContent.title
+        await this.homepagePageService.update(reqDetails, {
+          content: homepage.content.pageBody,
+          frontMatter: updatedHomepageFrontMatter,
+          sha: homepage.sha,
+        })
+      }
+    }
+
+    if (!_.isEmpty(updatedFooterContent)) {
+      const clonedFooterContent = _.cloneDeep(footer.content)
+      const clonedUpdatedFooterContent = _.cloneDeep(updatedFooterContent)
+      Object.keys(updatedFooterContent).forEach((field) => {
+        if (field === "social_media") {
+          const socials = updatedFooterContent[field]
+          Object.keys(socials).forEach((social) => {
+            if (!socials[social]) {
+              delete clonedFooterContent[field][social]
+              delete clonedUpdatedFooterContent[field][social]
+            }
+          })
+        } else if (updatedFooterContent[field] === "") {
+          // Check for empty string because false value exists
+          delete clonedFooterContent[field]
+          delete clonedUpdatedFooterContent[field]
+        }
+      })
+
+      const mergedFooterContent = mergeUpdatedData(
+        clonedFooterContent,
+        clonedUpdatedFooterContent
+      )
+      await this.footerYmlService.update(reqDetails, {
+        fileContent: mergedFooterContent,
+        sha: footer.sha,
+      })
+    }
+
+    if (!_.isEmpty(updatedNavigationContent)) {
+      const mergedNavigationContent = mergeUpdatedData(
+        navigation.content,
+        updatedNavigationContent
+      )
+      await this.navYmlService.update(reqDetails, {
+        fileContent: mergedNavigationContent,
+        sha: navigation.sha,
+      })
+    }
+
+    return res.status(200).send("OK")
   }
 
   async retrieveSettingsFiles(reqDetails, shouldRetrieveHomepage) {

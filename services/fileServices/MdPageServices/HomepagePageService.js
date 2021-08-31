@@ -18,7 +18,7 @@ class HomepagePageService {
       }
     )
     const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
-    return { fileName, content: { frontMatter, pageBody: pageContent }, sha }
+    return { content: { frontMatter, pageBody: pageContent }, sha }
   }
 
   async update(reqDetails, { content, frontMatter, sha }) {
@@ -29,7 +29,6 @@ class HomepagePageService {
       fileName: HOMEPAGE_FILE_NAME,
     })
     return {
-      fileName,
       content: { frontMatter, pageBody: content },
       oldSha: sha,
       newSha,

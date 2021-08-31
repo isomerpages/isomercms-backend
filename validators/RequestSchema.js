@@ -107,6 +107,43 @@ const MoveResourceDirectoryPagesRequestSchema = Joi.object().keys({
     .required(),
   items: Joi.array().items(FileSchema).required(),
 })
+const UpdateSettingsRequestSchema = Joi.object().keys({
+  configSettings: Joi.object().keys({
+    colors: Joi.object().keys({
+      "primary-color": Joi.string(),
+      "secondary-color": Joi.string(),
+      "media-colors": Joi.array().items(
+        Joi.object().keys({
+          title: Joi.string(),
+          color: Joi.string(),
+        })
+      ),
+    }),
+    favicon: Joi.string(),
+    "facebook-pixel": Joi.string(),
+    google_analytics: Joi.string(),
+    "linkedin-insights": Joi.string(),
+    is_government: Joi.boolean(),
+    shareicon: Joi.string(),
+    title: Joi.string(),
+  }),
+  footerSettings: Joi.object().keys({
+    contact_us: Joi.string(),
+    feedback: Joi.string(),
+    faq: Joi.string(),
+    show_reach: Joi.boolean(),
+    social_media: Joi.object().keys({
+      facebook: Joi.string(),
+      twitter: Joi.string(),
+      youtube: Joi.string(),
+      instagram: Joi.string(),
+      linkedin: Joi.string(),
+    }),
+  }),
+  navigationSettings: Joi.object().keys({
+    logo: Joi.string(),
+  }),
+})
 
 module.exports = {
   CreatePageRequestSchema,
@@ -122,4 +159,5 @@ module.exports = {
   CreateResourceDirectoryRequestSchema,
   RenameResourceDirectoryRequestSchema,
   MoveResourceDirectoryPagesRequestSchema,
+  UpdateSettingsRequestSchema,
 }

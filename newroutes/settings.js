@@ -11,6 +11,8 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
+const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
+
 const extractRequiredConfigFields = (config) => ({
   url: config.url,
   title: config.title,
@@ -74,6 +76,10 @@ class SettingsRouter {
   async updateSettingsPage(req, res) {
     const { accessToken, body } = req
     const { siteName } = req.params
+
+    const { error } = UpdateSettingsRequestSchema.validate(req.body)
+    if (error) throw new BadRequestError(error)
+
     const reqDetails = { siteName, accessToken }
 
     const {

@@ -64,6 +64,8 @@ describe("Settings Router", () => {
   app.use(errorHandler)
 
   const siteName = "test-site"
+  const accessToken = undefined // Can't set request fields - will always be undefined
+  const reqDetails = { siteName, accessToken }
 
   const config = {
     content: configContent,
@@ -94,7 +96,7 @@ describe("Settings Router", () => {
     it("retrieves settings data", async () => {
       const expectedResponse = {
         configSettings: configResponse,
-        footerSettings: footerContent,
+        footerSettings: footerResponse,
         navigationSettings: navigationResponse,
       }
       const resp = await request(app).get(`/${siteName}/settings`).expect(200)
@@ -111,41 +113,199 @@ describe("Settings Router", () => {
     mockNavYmlService.read.mockResolvedValue(navigation)
     mockHomepagePageService.read.mockResolvedValue(homepage)
 
-    // come up with merged data - for e.g. expect the navYmlService to not be called at all
-    // if no  changes to nav
-    // it("updates only config data if non-title config field is updated", async () => {
-    //   const resp = await request(app)
-    //     .post(`/${siteName}/settings`)
-    //     .send()
-    //     .expect(200)
-    // })
+    const updatedFbPixelValue = `${configContent["facebook-pixel"]}test`
+    const updatedTitleValue = `${configContent.title}test`
+    const updatedFaq = `${footerContent.faq}test`
+    const updatedLogo = `${navigationContent.logo}test`
 
-    // it("updates both homepage and config data when only title field is updated", async () => {
-    //   const resp = await request(app)
-    //     .post(`/${siteName}/settings`)
-    //     .send()
-    //     .expect(200)
-    // })
+    it("rejects requests with invalid body", async () => {
+      await request(app).post(`/${siteName}/settings`).send({}).expect(400)
+    })
 
-    // it("updates only footer data when only footer fields are updated", async () => {
-    //   const resp = await request(app)
-    //     .post(`/${siteName}/settings`)
-    //     .send()
-    //     .expect(200)
-    // })
+    it("updates only config data if non-title config field is updated", async () => {
+      const requestObject = {
+        configSettings: { "facebook-pixel": updatedFbPixelValue },
+        footerSettings: {},
+        navigationSettings: {},
+      }
+      const expectedConfigServiceInput = {
+        fileContent: {
+          ...configContent,
+          "facebook-pixel": updatedFbPixelValue,
+        },
+        sha: configSha,
+      }
 
-    // it("updates only navigation data when only navigation fields are updated", async () => {
-    //   const resp = await request(app)
-    //     .post(`/${siteName}/settings`)
-    //     .send()
-    //     .expect(200)
-    // })
+      await request(app)
+        .post(`/${siteName}/settings`)
+        .send(requestObject)
+        .expect(200)
 
-    // it("updates config, homepage, navigation, and footer data when all fields are updated", async () => {
-    //   const resp = await request(app)
-    //     .post(`/${siteName}/settings`)
-    //     .send()
-    //     .expect(200)
-    // })
+      expect(mockConfigYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedConfigServiceInput
+      )
+      expect(mockFooterYmlService.update).not.toHaveBeenCalled()
+      expect(mockNavYmlService.update).not.toHaveBeenCalled()
+      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
+    })
+
+    it("updates both homepage and config data when only title field is updated", async () => {
+      const requestObject = {
+        configSettings: { title: updatedTitleValue },
+        footerSettings: {},
+        navigationSettings: {},
+      }
+      const expectedConfigServiceInput = {
+        fileContent: {
+          ...configContent,
+          title: updatedTitleValue,
+        },
+        sha: configSha,
+      }
+      const expectedHomepageServiceInput = {
+        content: homepageContent.pageBody,
+        frontMatter: {
+          ...homepageContent.frontMatter,
+          title: updatedTitleValue,
+        },
+        sha: homepage.sha,
+      }
+
+      await request(app)
+        .post(`/${siteName}/settings`)
+        .send(requestObject)
+        .expect(200)
+
+      expect(mockConfigYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedConfigServiceInput
+      )
+      expect(mockFooterYmlService.update).not.toHaveBeenCalled()
+      expect(mockNavYmlService.update).not.toHaveBeenCalled()
+      expect(mockHomepagePageService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedHomepageServiceInput
+      )
+    })
+
+    it("updates only footer data when only footer fields are updated", async () => {
+      const requestObject = {
+        configSettings: {},
+        footerSettings: { faq: updatedFaq },
+        navigationSettings: {},
+      }
+      const expectedFooterServiceInput = {
+        fileContent: {
+          ...footerContent,
+          faq: updatedFaq,
+        },
+        sha: footerSha,
+      }
+
+      await request(app)
+        .post(`/${siteName}/settings`)
+        .send(requestObject)
+        .expect(200)
+
+      expect(mockConfigYmlService.update).not.toHaveBeenCalled()
+      expect(mockFooterYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedFooterServiceInput
+      )
+      expect(mockNavYmlService.update).not.toHaveBeenCalled()
+      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
+    })
+
+    it("updates only navigation data when only navigation fields are updated", async () => {
+      const requestObject = {
+        configSettings: {},
+        footerSettings: {},
+        navigationSettings: { logo: updatedLogo },
+      }
+      const expectedNavigationServiceInput = {
+        fileContent: {
+          ...navigationContent,
+          logo: updatedLogo,
+        },
+        sha: navigationSha,
+      }
+
+      await request(app)
+        .post(`/${siteName}/settings`)
+        .send(requestObject)
+        .expect(200)
+
+      expect(mockConfigYmlService.update).not.toHaveBeenCalled()
+      expect(mockFooterYmlService.update).not.toHaveBeenCalled()
+      expect(mockNavYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedNavigationServiceInput
+      )
+      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
+    })
+
+    it("updates config, homepage, navigation, and footer data when all fields are updated", async () => {
+      const requestObject = {
+        configSettings: {
+          "facebook-pixel": updatedFbPixelValue,
+          title: updatedTitleValue,
+        },
+        footerSettings: { faq: updatedFaq },
+        navigationSettings: { logo: updatedLogo },
+      }
+      const expectedConfigServiceInput = {
+        fileContent: {
+          ...configContent,
+          "facebook-pixel": updatedFbPixelValue,
+          title: updatedTitleValue,
+        },
+        sha: configSha,
+      }
+      const expectedFooterServiceInput = {
+        fileContent: {
+          ...footerContent,
+          faq: updatedFaq,
+        },
+        sha: footerSha,
+      }
+      const expectedNavigationServiceInput = {
+        fileContent: {
+          ...navigationContent,
+          logo: updatedLogo,
+        },
+        sha: navigationSha,
+      }
+      const expectedHomepageServiceInput = {
+        content: homepageContent.pageBody,
+        frontMatter: {
+          ...homepageContent.frontMatter,
+          title: updatedTitleValue,
+        },
+        sha: homepage.sha,
+      }
+
+      await request(app)
+        .post(`/${siteName}/settings`)
+        .send(requestObject)
+        .expect(200)
+
+      expect(mockConfigYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedConfigServiceInput
+      )
+      expect(mockFooterYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedFooterServiceInput
+      )
+      expect(mockNavYmlService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedNavigationServiceInput
+      )
+      expect(mockHomepagePageService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedHomepageServiceInput
+      )
+    })
   })
 })

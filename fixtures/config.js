@@ -56,7 +56,21 @@ const configContent = {
 
 const configSha = "configsha"
 
+const configResponse = {
+  url: configContent.url,
+  title: configContent.title,
+  favicon: configContent.favicon,
+  shareicon: configContent.shareicon,
+  is_government: configContent.is_government,
+  facebook_pixel: configContent["facebook-pixel"],
+  google_analytics: configContent.google_analytics,
+  linkedin_insights: configContent["linkedin-insights"],
+  resources_name: configContent.resources_name,
+  colors: configContent.colors,
+}
+
 module.exports = {
   configContent,
   configSha,
+  configResponse,
 }

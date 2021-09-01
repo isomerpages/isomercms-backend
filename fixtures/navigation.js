@@ -13,7 +13,12 @@ const navigationContent = {
 
 const navigationSha = "navigationSha"
 
+const navigationResponse = {
+  logo: navigationContent.logo,
+}
+
 module.exports = {
   navigationContent,
   navigationSha,
+  navigationResponse,
 }

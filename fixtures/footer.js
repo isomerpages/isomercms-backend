@@ -14,7 +14,12 @@ const footerContent = {
 
 const footerSha = "footerSha"
 
+const footerResponse = {
+  ...footerContent,
+}
+
 module.exports = {
   footerContent,
   footerSha,
+  footerResponse,
 }

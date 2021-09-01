@@ -4,12 +4,21 @@ const request = require("supertest")
 const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { configContent, configSha } = require("../../fixtures/config")
-const { footerContent, footerSha } = require("../../fixtures/footer")
+const {
+  configContent,
+  configSha,
+  configResponse,
+} = require("../../fixtures/config")
+const {
+  footerContent,
+  footerSha,
+  footerResponse,
+} = require("../../fixtures/footer")
 const { homepageContent, homepageSha } = require("../../fixtures/homepage")
 const {
   navigationContent,
   navigationSha,
+  navigationResponse,
 } = require("../../fixtures/navigation")
 const { SettingsRouter } = require("../settings.js")
 
@@ -83,7 +92,16 @@ describe("Settings Router", () => {
     mockNavYmlService.read.mockResolvedValue(navigation)
 
     it("retrieves settings data", async () => {
+      const expectedResponse = {
+        configSettings: configResponse,
+        footerSettings: footerContent,
+        navigationSettings: navigationResponse,
+      }
       const resp = await request(app).get(`/${siteName}/settings`).expect(200)
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockConfigYmlService.read).toHaveBeenCalled()
+      expect(mockFooterYmlService.read).toHaveBeenCalled()
+      expect(mockNavYmlService.read).toHaveBeenCalled()
     })
   })
 
@@ -95,39 +113,39 @@ describe("Settings Router", () => {
 
     // come up with merged data - for e.g. expect the navYmlService to not be called at all
     // if no  changes to nav
-    it("updates only config data if non-title config field is updated", async () => {
-      const resp = await request(app)
-        .post(`/${siteName}/settings`)
-        .send()
-        .expect(200)
-    })
+    // it("updates only config data if non-title config field is updated", async () => {
+    //   const resp = await request(app)
+    //     .post(`/${siteName}/settings`)
+    //     .send()
+    //     .expect(200)
+    // })
 
-    it("updates both homepage and config data when only title field is updated", async () => {
-      const resp = await request(app)
-        .post(`/${siteName}/settings`)
-        .send()
-        .expect(200)
-    })
+    // it("updates both homepage and config data when only title field is updated", async () => {
+    //   const resp = await request(app)
+    //     .post(`/${siteName}/settings`)
+    //     .send()
+    //     .expect(200)
+    // })
 
-    it("updates only footer data when only footer fields are updated", async () => {
-      const resp = await request(app)
-        .post(`/${siteName}/settings`)
-        .send()
-        .expect(200)
-    })
+    // it("updates only footer data when only footer fields are updated", async () => {
+    //   const resp = await request(app)
+    //     .post(`/${siteName}/settings`)
+    //     .send()
+    //     .expect(200)
+    // })
 
-    it("updates only navigation data when only navigation fields are updated", async () => {
-      const resp = await request(app)
-        .post(`/${siteName}/settings`)
-        .send()
-        .expect(200)
-    })
+    // it("updates only navigation data when only navigation fields are updated", async () => {
+    //   const resp = await request(app)
+    //     .post(`/${siteName}/settings`)
+    //     .send()
+    //     .expect(200)
+    // })
 
-    it("updates config, homepage, navigation, and footer data when all fields are updated", async () => {
-      const resp = await request(app)
-        .post(`/${siteName}/settings`)
-        .send()
-        .expect(200)
-    })
+    // it("updates config, homepage, navigation, and footer data when all fields are updated", async () => {
+    //   const resp = await request(app)
+    //     .post(`/${siteName}/settings`)
+    //     .send()
+    //     .expect(200)
+    // })
   })
 })

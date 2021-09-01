@@ -147,6 +147,8 @@ class CollectionDirectoryService {
   }
 
   async deleteDirectory(reqDetails, { collectionName }) {
+    if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
+      throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
     await this.baseDirectoryService.delete(reqDetails, {
       directoryName: `_${collectionName}`,
       message: `Deleting collection ${collectionName}`,

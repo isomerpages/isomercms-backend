@@ -1,3 +1,5 @@
+const { deslugifyCollectionName } = require("@utils/utils")
+
 const PLACEHOLDER_FILE_NAME = ".keep"
 
 class SubcollectionDirectoryService {
@@ -36,7 +38,8 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, objArray }
   ) {
-    const parsedDir = `_${collectionName}/${subcollectionName}`
+    const parsedSubcollectionName = deslugifyCollectionName(subcollectionName)
+    const parsedDir = `_${collectionName}/${parsedSubcollectionName}`
     await this.gitHubService.create(reqDetails, {
       content: "",
       fileName: PLACEHOLDER_FILE_NAME,
@@ -45,7 +48,7 @@ class SubcollectionDirectoryService {
 
     await this.collectionYmlService.addItemToOrder(reqDetails, {
       collectionName,
-      item: `${subcollectionName}/${PLACEHOLDER_FILE_NAME}`,
+      item: `${parsedSubcollectionName}/${PLACEHOLDER_FILE_NAME}`,
     })
 
     if (objArray) {
@@ -57,7 +60,7 @@ class SubcollectionDirectoryService {
           fileName,
           oldFileCollection: collectionName,
           newFileCollection: collectionName,
-          newFileSubcollection: subcollectionName,
+          newFileSubcollection: parsedSubcollectionName,
         })
       }
     }

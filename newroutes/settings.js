@@ -14,6 +14,7 @@ const {
 const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
 
 const extractConfigFields = (config) => ({
+  url: config.content.url,
   title: config.content.title,
   favicon: config.content.favicon,
   shareicon: config.content.shareicon,

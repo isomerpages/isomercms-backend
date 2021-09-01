@@ -1,6 +1,6 @@
 const configContent = {
   title: "abcdefg",
-  url: "",
+  url: "https://abc.gov.sg",
   favicon: "/images/isomer-logo.svg",
   colors: {
     "primary-color": "#d10404",

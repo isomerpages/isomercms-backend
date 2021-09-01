@@ -110,7 +110,6 @@ class SubcollectionPageService {
       directoryName: parsedDirectoryName,
     })
 
-    frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
     const { sha: newSha } = await this.gitHubService.create(reqDetails, {

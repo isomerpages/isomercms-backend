@@ -120,27 +120,9 @@ class SettingsRouter {
     }
 
     if (!_.isEmpty(updatedFooterContent)) {
-      const clonedFooterContent = _.cloneDeep(footer.content)
-      const clonedUpdatedFooterContent = _.cloneDeep(updatedFooterContent)
-      Object.keys(updatedFooterContent).forEach((field) => {
-        if (field === "social_media") {
-          const socials = updatedFooterContent[field]
-          Object.keys(socials).forEach((social) => {
-            if (!socials[social]) {
-              delete clonedFooterContent[field][social]
-              delete clonedUpdatedFooterContent[field][social]
-            }
-          })
-        } else if (updatedFooterContent[field] === "") {
-          // Check for empty string because false value exists
-          delete clonedFooterContent[field]
-          delete clonedUpdatedFooterContent[field]
-        }
-      })
-
       const mergedFooterContent = mergeUpdatedData(
-        clonedFooterContent,
-        clonedUpdatedFooterContent
+        footer.content,
+        updatedFooterContent
       )
       await this.footerYmlService.update(reqDetails, {
         fileContent: mergedFooterContent,

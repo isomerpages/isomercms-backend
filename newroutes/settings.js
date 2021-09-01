@@ -103,7 +103,10 @@ class SettingsRouter {
       })
 
       // update homepage title only if necessary
-      if (config.content.title !== updatedConfigContent.title) {
+      if (
+        updatedConfigContent.title &&
+        config.content.title !== updatedConfigContent.title
+      ) {
         const updatedHomepageFrontMatter = _.cloneDeep(
           homepage.content.frontMatter
         )

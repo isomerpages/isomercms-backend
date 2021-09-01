@@ -123,7 +123,7 @@ class SubcollectionDirectoryService {
     { collectionName, subcollectionName, objArray }
   ) {
     const newSubcollectionOrder = [`${subcollectionName}/.keep`].concat(
-      objArray.map((obj) => obj.name)
+      objArray.map((obj) => `${subcollectionName}/${obj.name}`)
     )
     const files = await this.collectionYmlService.listContents(reqDetails, {
       collectionName,

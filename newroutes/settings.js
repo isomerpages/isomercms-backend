@@ -13,17 +13,20 @@ const {
 
 const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
 
-const extractRequiredConfigFields = (config) => ({
-  url: config.url,
-  title: config.title,
-  favicon: config.favicon,
-  shareicon: config.shareicon,
-  is_government: config.is_government,
-  facebook_pixel: config["facebook-pixel"],
-  google_analytics: config.google_analytics,
-  linkedin_insights: config["linkedin-insights"],
-  resources_name: config.resources_name,
-  colors: config.colors,
+const extractConfigFields = (config) => ({
+  title: config.content.title,
+  favicon: config.content.favicon,
+  shareicon: config.content.shareicon,
+  is_government: config.content.is_government,
+  facebook_pixel: config.content["facebook-pixel"],
+  google_analytics: config.content.google_analytics,
+  linkedin_insights: config.content["linkedin-insights"],
+  resources_name: config.content.resources_name,
+  colors: config.content.colors,
+})
+const extractFooterFields = (footer) => footer.content
+const extractNavFields = (navigation) => ({
+  logo: navigation.content.logo,
 })
 
 const mergeUpdatedData = (currentData, updatedData) => {
@@ -58,19 +61,11 @@ class SettingsRouter {
       reqDetails
     )
 
-    // retrieve only the relevant config and index fields
-    const configFieldsRequired = extractRequiredConfigFields(config.content)
-
-    // retrieve footer sha since we are sending the footer object wholesale
-    const footerSha = footer.sha
-
-    const settings = {
-      configFieldsRequired,
-      footerContent: footer.content,
-      navigationContent: { logo: navigation.content.logo },
-      footerSha,
-    }
-    return res.status(200).json({ settings })
+    return res.status(200).json({
+      configSettings: extractConfigFields(config),
+      footerSettings: extractFooterFields(footer),
+      navigationSettings: extractNavFields(navigation),
+    })
   }
 
   async updateSettingsPage(req, res) {

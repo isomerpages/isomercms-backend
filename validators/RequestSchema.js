@@ -48,15 +48,17 @@ const RenameDirectoryRequestSchema = Joi.object().keys({
 })
 
 const ReorderDirectoryRequestSchema = Joi.object().keys({
-  items: Joi.array().items(ItemSchema),
+  items: Joi.array().items(ItemSchema).required(),
 })
 
 const MoveDirectoryPagesRequestSchema = Joi.object().keys({
-  target: Joi.object().keys({
-    collectionName: Joi.string(),
-    subCollectionName: Joi.string(),
-  }),
-  items: Joi.array().items(FileSchema),
+  target: Joi.object()
+    .keys({
+      collectionName: Joi.string(),
+      subCollectionName: Joi.string(),
+    })
+    .required(),
+  items: Joi.array().items(FileSchema).required(),
 })
 
 module.exports = {

@@ -15,8 +15,14 @@ describe("Unlinked Pages Router", () => {
     rename: jest.fn(),
   }
 
+  const mockUnlinkedPagesDirectoryService = {
+    listAllUnlinkedPages: jest.fn(),
+    movePages: jest.fn(),
+  }
+
   const router = new UnlinkedPagesRouter({
     unlinkedPageService: mockService,
+    unlinkedPagesDirectoryService: mockUnlinkedPagesDirectoryService,
   })
 
   const app = express()
@@ -24,6 +30,10 @@ describe("Unlinked Pages Router", () => {
   app.use(express.urlencoded({ extended: false }))
 
   // We can use read route handler here because we don't need to lock the repo
+  app.get(
+    "/:siteName/pages",
+    attachReadRouteHandlerWrapper(router.listAllUnlinkedPages)
+  )
   app.post(
     "/:siteName/pages/pages",
     attachReadRouteHandlerWrapper(router.createUnlinkedPage)
@@ -40,6 +50,10 @@ describe("Unlinked Pages Router", () => {
     "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteUnlinkedPage)
   )
+  app.post(
+    "/:siteName/pages/move",
+    attachReadRouteHandlerWrapper(router.moveUnlinkedPages)
+  )
   app.use(errorHandler)
 
   const siteName = "test-site"
@@ -52,6 +66,39 @@ describe("Unlinked Pages Router", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  describe("listAllUnlinkedPages", () => {
+    const listPageResp = [
+      {
+        name: "testfile",
+        type: "file",
+      },
+      {
+        name: "testfile1",
+        type: "file",
+      },
+      {
+        name: "testsub",
+        type: "dir",
+        children: ["file1", "file2"],
+      },
+      {
+        name: "testfile2",
+        type: "file",
+      },
+    ]
+
+    it("returns the list of unlinked pages", async () => {
+      mockUnlinkedPagesDirectoryService.listAllUnlinkedPages.mockResolvedValueOnce(
+        listPageResp
+      )
+      const resp = await request(app).get(`/${siteName}/pages`).expect(200)
+      expect(resp.body).toStrictEqual(listPageResp)
+      expect(
+        mockUnlinkedPagesDirectoryService.listAllUnlinkedPages
+      ).toHaveBeenCalledWith(reqDetails)
+    })
   })
 
   describe("createUnlinkedPage", () => {
@@ -192,5 +239,76 @@ describe("Unlinked Pages Router", () => {
     })
   })
 
-  // TO-DO: Add listUnlinkedPages tests
+  describe("moveUnlinkedPages", () => {
+    const collectionName = "collection"
+    const subCollectionName = "subcollection"
+    const items = [
+      {
+        name: "testfile",
+        type: "file",
+      },
+      {
+        name: "testfile1",
+        type: "file",
+      },
+    ]
+    const expectedRequestInput = {
+      target: {
+        collectionName,
+      },
+      items,
+    }
+    it("rejects move requests with invalid body", async () => {
+      await request(app).post(`/${siteName}/pages/move`).send({}).expect(400)
+    })
+
+    it("rejects move requests with invalid body", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send({
+          ...expectedRequestInput,
+          items: items.concat({ name: "testdir", type: "dir" }),
+        })
+        .expect(400)
+    })
+
+    it("rejects move requests with invalid body", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send({ items })
+        .expect(400)
+    })
+
+    it("accepts valid unlinked page move requests to collections", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send(expectedRequestInput)
+        .expect(200)
+      expect(mockUnlinkedPagesDirectoryService.movePages).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          targetCollectionName: collectionName,
+          objArray: items,
+        }
+      )
+    })
+
+    it("accepts valid unlinked page move requests to subcollections", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send({
+          ...expectedRequestInput,
+          target: { collectionName, subCollectionName },
+        })
+        .expect(200)
+      expect(mockUnlinkedPagesDirectoryService.movePages).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          targetCollectionName: collectionName,
+          targetSubcollectionName: subCollectionName,
+          objArray: items,
+        }
+      )
+    })
+  })
 })

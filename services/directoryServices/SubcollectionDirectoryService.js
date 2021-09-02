@@ -71,6 +71,7 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, newDirectoryName }
   ) {
+    const parsedNewName = deslugifyCollectionName(newDirectoryName)
     const dir = `_${collectionName}/${subcollectionName}`
     const files = await this.baseDirectoryService.list(reqDetails, {
       directoryName: dir,
@@ -91,18 +92,18 @@ class SubcollectionDirectoryService {
         fileName,
         collectionName,
         oldSubcollectionName: subcollectionName,
-        newSubcollectionName: newDirectoryName,
+        newSubcollectionName: parsedNewName,
       })
     }
     await this.gitHubService.create(reqDetails, {
       content: "",
       fileName: PLACEHOLDER_FILE_NAME,
-      directoryName: `_${collectionName}/${newDirectoryName}`,
+      directoryName: `_${collectionName}/${parsedNewName}`,
     })
     await this.collectionYmlService.renameSubfolderInOrder(reqDetails, {
       collectionName,
       oldSubfolder: subcollectionName,
-      newSubfolder: newDirectoryName,
+      newSubfolder: parsedNewName,
     })
   }
 

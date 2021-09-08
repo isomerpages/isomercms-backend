@@ -99,8 +99,8 @@ jobs:
         - name: Deploy to EB
           uses: opengovsg/beanstalk-deploy@v11
           with:
-            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID_FOR_DEPLOYMENT }}
-            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_DEPLOYMENT }}
+            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID_FOR_CICD }}
+            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_CICD }}
             application_name: ${{ steps.select_eb_vars.outputs.eb_app }}
             environment_name: ${{ steps.select_eb_vars.outputs.eb_env }}
             version_description: ${{ steps.get_desc.output.desc }}

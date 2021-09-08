@@ -132,6 +132,8 @@ app.use("/v1/sites", netlifyTomlRouter)
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 
+app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
+
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
   next(createError(404))

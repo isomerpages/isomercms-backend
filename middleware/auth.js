@@ -53,6 +53,9 @@ const whoamiAuth = (req, res, next) => {
   return next("router")
 }
 
+// Health check
+auth.get("/v2/ping", noVerify)
+
 // Login and logout
 auth.get("/v1/auth/github-redirect", noVerify)
 auth.get("/v1/auth", noVerify)

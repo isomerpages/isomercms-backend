@@ -6,11 +6,9 @@ on:
 env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
-  DEV_BRANCH: refs/heads/staging-dev
   EB_APP: isomer-cms
   EB_ENV_PRODUCTION: isomercms-backend-prod
   EB_ENV_STAGING: cms-backend-staging
-  EB_ENV_DEV: isomercms-backend-staging-dev
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 jobs:
   gatekeep:
@@ -27,8 +25,7 @@ jobs:
           ref = os.environ['GITHUB_REF']
           prod = os.environ['PRODUCTION_BRANCH']
           staging = os.environ['STAGING_BRANCH']
-          dev = os.environ['DEV_BRANCH']
-          if ref == prod or ref == staging or ref == dev:
+          if ref == prod or ref == staging:
             print('::set-output name=proceed::true')
           else:
             print('::set-output name=proceed::false')
@@ -81,20 +78,15 @@ jobs:
             branch = os.environ['GITHUB_REF']
             production = os.environ['PRODUCTION_BRANCH']
             staging = os.environ['STAGING_BRANCH']
-            dev = os.environ['DEV_BRANCH']
             eb_app = os.environ['EB_APP']
             eb_env_production = os.environ['EB_ENV_PRODUCTION']
             eb_env_staging = os.environ['EB_ENV_STAGING']
-            eb_env_dev = os.environ['EB_ENV_DEV']
             if branch == production:
               print('::set-output name=eb_app::' + eb_app)
               print('::set-output name=eb_env::' + eb_env_production)
             elif branch == staging:
               print('::set-output name=eb_app::' + eb_app)
               print('::set-output name=eb_env::' + eb_env_staging)
-            elif branch == dev:
-              print('::set-output name=eb_app::' + eb_app)
-              print('::set-output name=eb_env::' + eb_env_dev)
           id: select_eb_vars
         - name: Deploy to EB
           uses: opengovsg/beanstalk-deploy@v11

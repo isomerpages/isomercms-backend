@@ -52,7 +52,7 @@ jobs:
         - name: Install NPM
           run: npm ci
         - name: Zip application
-          run: zip -r "deploy.zip" * .ebextensions .platform -x .env-example .gitignore package-lock.json
+          run: zip -r "deploy.zip" * .platform -x .env-example .gitignore package-lock.json
         - name: Get timestamp
           shell: bash
           run: echo "##[set-output name=timestamp;]$(env TZ=Asia/Singapore date '+%Y%m%d%H%M%S')"

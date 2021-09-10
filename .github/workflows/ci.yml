@@ -8,7 +8,7 @@ env:
   STAGING_BRANCH: refs/heads/staging
   DEV_BRANCH: refs/heads/staging-dev
   EB_APP: isomer-cms
-  EB_ENV_PRODUCTION: isomercms-backend-prod
+  EB_ENV_PRODUCTION: cms-backend-prod
   EB_ENV_STAGING: isomercms-backend-staging
   EB_ENV_DEV: isomercms-backend-staging-dev
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}

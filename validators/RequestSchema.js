@@ -128,6 +128,7 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
       is_government: Joi.boolean(),
       shareicon: Joi.string().allow(""),
       title: Joi.string().allow(""),
+      description: Joi.string().allow(""),
     })
     .required(),
   footerSettings: Joi.object()

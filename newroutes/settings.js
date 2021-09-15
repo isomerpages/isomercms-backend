@@ -13,8 +13,19 @@ const {
 
 const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
 
+const shouldUpdateHomepage = (updatedConfigContent, configContent) => {
+  if (
+    (updatedConfigContent.title &&
+      configContent.title !== updatedConfigContent.title) ||
+    (updatedConfigContent.description &&
+      configContent.description !== updatedConfigContent.description)
+  )
+    return true
+  return false
+}
 const extractConfigFields = (config) => ({
   url: config.content.url,
+  description: config.content.description,
   title: config.content.title,
   favicon: config.content.favicon,
   shareicon: config.content.shareicon,
@@ -103,14 +114,13 @@ class SettingsRouter {
       })
 
       // update homepage title only if necessary
-      if (
-        updatedConfigContent.title &&
-        config.content.title !== updatedConfigContent.title
-      ) {
+      if (shouldUpdateHomepage(updatedConfigContent, config.content)) {
         const updatedHomepageFrontMatter = _.cloneDeep(
           homepage.content.frontMatter
         )
         updatedHomepageFrontMatter.title = updatedConfigContent.title
+        updatedHomepageFrontMatter.description =
+          updatedConfigContent.description
         await this.homepagePageService.update(reqDetails, {
           content: homepage.content.pageBody,
           frontMatter: updatedHomepageFrontMatter,

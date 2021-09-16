@@ -1,4 +1,5 @@
 const rawConfigContent = `title: abcdefg
+description: "Brief site description here"
 url: https://abc.gov.sg
 favicon: /images/isomer-logo.svg
 colors:
@@ -61,6 +62,7 @@ linkedin-insights: "12345"
 
 const configContent = {
   title: "abcdefg",
+  description: "Brief site description here",
   url: "https://abc.gov.sg",
   favicon: "/images/isomer-logo.svg",
   colors: {

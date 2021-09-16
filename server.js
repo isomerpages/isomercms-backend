@@ -99,6 +99,7 @@ const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
 const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
+const { SettingsService } = require("./services/configServices/settingsService")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
@@ -145,6 +146,13 @@ const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
 
+const settingsService = new SettingsService({
+  homepagePageService,
+  configYmlService,
+  footerYmlService,
+  navYmlService,
+})
+
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
   unlinkedPagesDirectoryService,
@@ -163,12 +171,7 @@ const resourcePagesV2Router = new ResourcePagesRouter({
 const resourceDirectoryV2Router = new ResourceCategoriesRouter({
   resourceDirectoryService,
 })
-const settingsV2Router = new SettingsRouter({
-  homepagePageService,
-  configYmlService,
-  footerYmlService,
-  navYmlService,
-})
+const settingsV2Router = new SettingsRouter({ settingsService })
 
 const app = express()
 app.use(helmet())

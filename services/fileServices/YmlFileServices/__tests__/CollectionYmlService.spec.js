@@ -50,7 +50,7 @@ describe("Collection Yml Service", () => {
   })
 
   describe("Read", () => {
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha,
     }),
@@ -67,7 +67,7 @@ describe("Collection Yml Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
     it("Updating raw content works correctly", async () => {
       await expect(
         service.update(reqDetails, {
@@ -89,7 +89,7 @@ describe("Collection Yml Service", () => {
 
   describe("Create", () => {
     beforeEach(() => {
-      mockGithubService.create.mockReturnValueOnce({ sha })
+      mockGithubService.create.mockResolvedValueOnce({ sha })
     })
     it("Creating a collection.yml file with no specified files works correctly", async () => {
       const content = yaml.stringify({
@@ -139,7 +139,7 @@ describe("Collection Yml Service", () => {
   })
 
   describe("ListContents", () => {
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha,
     })
@@ -155,8 +155,8 @@ describe("Collection Yml Service", () => {
   describe("AddItemToOrder", () => {
     const oldSha = "54321"
     beforeEach(() => {
-      mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-      mockGithubService.read.mockReturnValueOnce({
+      mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+      mockGithubService.read.mockResolvedValueOnce({
         content: mockRawContent,
         sha: oldSha,
       })
@@ -283,8 +283,8 @@ describe("Collection Yml Service", () => {
   describe("DeleteItemFromOrder", () => {
     const oldSha = "54321"
     beforeEach(() => {
-      mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-      mockGithubService.read.mockReturnValueOnce({
+      mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+      mockGithubService.read.mockResolvedValueOnce({
         content: mockRawContent,
         sha: oldSha,
       })
@@ -352,8 +352,8 @@ describe("Collection Yml Service", () => {
 
   describe("UpdateItemInOrder", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -387,8 +387,8 @@ describe("Collection Yml Service", () => {
 
   describe("RenameCollectionInOrder", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -420,8 +420,8 @@ describe("Collection Yml Service", () => {
 
   describe("DeleteSubfolderFromOrder", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -452,8 +452,8 @@ describe("Collection Yml Service", () => {
 
   describe("RenameSubfolderInOrder", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })
@@ -486,8 +486,8 @@ describe("Collection Yml Service", () => {
 
   describe("UpdateOrder", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockReturnValueOnce({ newSha: sha })
-    mockGithubService.read.mockReturnValueOnce({
+    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+    mockGithubService.read.mockResolvedValueOnce({
       content: mockRawContent,
       sha: oldSha,
     })

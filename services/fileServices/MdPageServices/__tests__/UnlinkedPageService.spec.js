@@ -1,9 +1,8 @@
-describe("Collection Page Service", () => {
+describe("Unlinked Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const fileName = "test-file"
-  const collectionName = "collection"
-  const directoryName = `_${collectionName}`
+  const directoryName = "pages"
   const mockContent = "test"
   const mockMarkdownContent = "---test---"
   const mockFrontMatter = {
@@ -13,19 +12,12 @@ describe("Collection Page Service", () => {
   const sha = "12345"
 
   const reqDetails = { siteName, accessToken }
-  const collectionYmlObj = { collectionName, item: fileName }
 
   const mockGithubService = {
     create: jest.fn(),
     read: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-  }
-
-  const mockCollectionYmlService = {
-    addItemToOrder: jest.fn(),
-    deleteItemFromOrder: jest.fn(),
-    updateItemInOrder: jest.fn(),
   }
 
   jest.mock("@utils/markdown-utils", () => ({
@@ -36,11 +28,10 @@ describe("Collection Page Service", () => {
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
   const {
-    CollectionPageService,
-  } = require("@services/fileServices/MdPageServices/CollectionPageService")
-  const service = new CollectionPageService({
+    UnlinkedPageService,
+  } = require("@services/fileServices/MdPageServices/UnlinkedPageService")
+  const service = new UnlinkedPageService({
     gitHubService: mockGithubService,
-    collectionYmlService: mockCollectionYmlService,
   })
   const {
     retrieveDataFromMarkdown,
@@ -57,7 +48,6 @@ describe("Collection Page Service", () => {
       await expect(
         service.create(reqDetails, {
           fileName,
-          collectionName,
           content: mockContent,
           frontMatter: mockFrontMatter,
         })
@@ -69,41 +59,6 @@ describe("Collection Page Service", () => {
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
         mockFrontMatter,
         mockContent
-      )
-      expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
-        reqDetails,
-        collectionYmlObj
-      )
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
-        content: mockMarkdownContent,
-        fileName,
-        directoryName,
-      })
-    })
-    it("Creating a page which specifies a third nav in the front matter removes the third_nav_title parameter", async () => {
-      const mockFrontMatterWithThirdNav = {
-        ...mockFrontMatter,
-        third_nav_title: "mock-third-nav",
-      }
-      await expect(
-        service.create(reqDetails, {
-          fileName,
-          collectionName,
-          content: mockContent,
-          frontMatter: mockFrontMatterWithThirdNav,
-        })
-      ).resolves.toMatchObject({
-        fileName,
-        content: { frontMatter: mockFrontMatter, pageBody: mockContent },
-        sha,
-      })
-      expect(convertDataToMarkdown).toHaveBeenCalledWith(
-        mockFrontMatter,
-        mockContent
-      )
-      expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
-        reqDetails,
-        collectionYmlObj
       )
       expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
         content: mockMarkdownContent,
@@ -120,7 +75,7 @@ describe("Collection Page Service", () => {
     }),
       it("Reading pages works correctly", async () => {
         await expect(
-          service.read(reqDetails, { fileName, collectionName })
+          service.read(reqDetails, { fileName })
         ).resolves.toMatchObject({
           fileName,
           content: { frontMatter: mockFrontMatter, pageBody: mockContent },
@@ -143,7 +98,6 @@ describe("Collection Page Service", () => {
       await expect(
         service.update(reqDetails, {
           fileName,
-          collectionName,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,
@@ -169,21 +123,12 @@ describe("Collection Page Service", () => {
 
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
-      await expect(
-        service.delete(reqDetails, { fileName, collectionName, sha })
-      )
+      await expect(service.delete(reqDetails, { fileName, sha }))
       expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
         sha,
       })
-      expect(mockCollectionYmlService.deleteItemFromOrder).toHaveBeenCalledWith(
-        reqDetails,
-        {
-          collectionName,
-          item: fileName,
-        }
-      )
     })
   })
 
@@ -196,7 +141,6 @@ describe("Collection Page Service", () => {
         service.rename(reqDetails, {
           oldFileName,
           newFileName: fileName,
-          collectionName,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,
@@ -207,14 +151,6 @@ describe("Collection Page Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockCollectionYmlService.updateItemInOrder).toHaveBeenCalledWith(
-        reqDetails,
-        {
-          collectionName,
-          oldItem: oldFileName,
-          newItem: fileName,
-        }
-      )
       expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName: oldFileName,
         directoryName,
@@ -227,4 +163,6 @@ describe("Collection Page Service", () => {
       })
     })
   })
+
+  // TO-DO: Add tests for the list method
 })

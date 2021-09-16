@@ -2,9 +2,9 @@ const yaml = require("yaml")
 
 const retrieveDataFromMarkdown = (fileContent) => {
   // eslint-disable-next-line no-unused-vars
-  const [unused, encodedFrontMatter, pageContent] = fileContent.split("---")
+  const [unused, encodedFrontMatter, ...pageContent] = fileContent.split("---")
   const frontMatter = yaml.parse(encodedFrontMatter)
-  return { frontMatter, pageContent }
+  return { frontMatter, pageContent: pageContent.join("---") }
 }
 
 const convertDataToMarkdown = (frontMatter, pageContent) => {

@@ -17,8 +17,9 @@ const {
 } = require("@validators/RequestSchema")
 
 class CollectionPagesRouter {
-  constructor({ collectionController }) {
-    this.collectionController = collectionController
+  constructor({ collectionPageService, subcollectionPageService }) {
+    this.collectionPageService = collectionPageService
+    this.subcollectionPageService = subcollectionPageService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -34,16 +35,24 @@ class CollectionPagesRouter {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const createResp = await this.collectionController.createPage(
-      { siteName, accessToken },
-      {
+    const reqDetails = { siteName, accessToken }
+    let createResp
+    if (subcollectionName) {
+      createResp = await this.subcollectionPageService.create(reqDetails, {
         fileName: newFileName,
         collectionName,
         content: pageBody,
         frontMatter,
         subcollectionName,
-      }
-    )
+      })
+    } else {
+      createResp = await this.collectionPageService.create(reqDetails, {
+        fileName: newFileName,
+        collectionName,
+        content: pageBody,
+        frontMatter,
+      })
+    }
 
     return res.status(200).json(createResp)
   }
@@ -53,12 +62,22 @@ class CollectionPagesRouter {
     const { accessToken } = req
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
-    const { sha, content } = await this.collectionController.readPage(
-      { siteName, accessToken },
-      { fileName: pageName, collectionName, subcollectionName }
-    )
 
-    return res.status(200).json({ collectionName, pageName, sha, content })
+    const reqDetails = { siteName, accessToken }
+    let readResp
+    if (subcollectionName) {
+      readResp = await this.subcollectionPageService.read(reqDetails, {
+        fileName: pageName,
+        collectionName,
+        subcollectionName,
+      })
+    } else {
+      readResp = await this.collectionPageService.read(reqDetails, {
+        fileName: pageName,
+        collectionName,
+      })
+    }
+    return res.status(200).json(readResp)
   }
 
   // Update page in collection
@@ -73,18 +92,48 @@ class CollectionPagesRouter {
       sha,
       newFileName,
     } = req.body
-    const updateResp = await this.collectionController.updatePage(
-      { siteName, accessToken },
-      {
-        fileName: pageName,
+    const reqDetails = { siteName, accessToken }
+    let updateResp
+    if (subcollectionName) {
+      if (newFileName) {
+        updateResp = await this.subcollectionPageService.rename(reqDetails, {
+          oldFileName: pageName,
+          newFileName,
+          collectionName,
+          subcollectionName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        })
+      } else {
+        updateResp = await this.subcollectionPageService.update(reqDetails, {
+          fileName: pageName,
+          collectionName,
+          subcollectionName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        })
+      }
+    }
+    if (newFileName) {
+      updateResp = await this.collectionPageService.rename(reqDetails, {
+        oldFileName: pageName,
         newFileName,
         collectionName,
-        subcollectionName,
         content: pageBody,
         frontMatter,
         sha,
-      }
-    )
+      })
+    } else {
+      updateResp = await this.collectionPageService.update(reqDetails, {
+        fileName: pageName,
+        collectionName,
+        content: pageBody,
+        frontMatter,
+        sha,
+      })
+    }
 
     return res.status(200).json(updateResp)
   }
@@ -97,15 +146,21 @@ class CollectionPagesRouter {
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error)
     const { sha } = req.body
-    await this.collectionController.deletePage(
-      { siteName, accessToken },
-      {
+    const reqDetails = { siteName, accessToken }
+    if (subcollectionName) {
+      await this.subcollectionPageService.delete(reqDetails, {
         fileName: pageName,
         collectionName,
         subcollectionName,
         sha,
-      }
-    )
+      })
+    } else {
+      await this.collectionPageService.delete(reqDetails, {
+        fileName: pageName,
+        collectionName,
+        sha,
+      })
+    }
 
     return res.status(200).send("OK")
   }

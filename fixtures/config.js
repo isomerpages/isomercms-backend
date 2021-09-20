@@ -16,7 +16,6 @@ colors:
       color: "#22b0c3"
     - title: media-color-five
       color: "#0b3033"
-description: An Isomer site of the Singapore Government
 permalink: none
 baseurl: ""
 exclude:
@@ -76,7 +75,6 @@ const configContent = {
       { title: "media-color-five", color: "#0b3033" },
     ],
   },
-  description: "An Isomer site of the Singapore Government",
   permalink: "none",
   baseurl: "",
   exclude: [

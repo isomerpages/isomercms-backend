@@ -68,9 +68,11 @@ class SettingsService {
         const updatedHomepageFrontMatter = _.cloneDeep(
           homepage.content.frontMatter
         )
-        updatedHomepageFrontMatter.title = updatedConfigContent.title
-        updatedHomepageFrontMatter.description =
-          updatedConfigContent.description
+        if (updatedConfigContent.title)
+          updatedHomepageFrontMatter.title = updatedConfigContent.title
+        if (updatedConfigContent.description)
+          updatedHomepageFrontMatter.description =
+            updatedConfigContent.description
         await this.homepagePageService.update(reqDetails, {
           content: homepage.content.pageBody,
           frontMatter: updatedHomepageFrontMatter,

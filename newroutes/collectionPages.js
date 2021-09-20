@@ -115,26 +115,28 @@ class CollectionPagesRouter {
           sha,
         })
       }
-    }
-    if (newFileName) {
-      updateResp = await this.collectionPageService.rename(reqDetails, {
-        oldFileName: pageName,
-        newFileName,
-        collectionName,
-        content: pageBody,
-        frontMatter,
-        sha,
-      })
     } else {
-      updateResp = await this.collectionPageService.update(reqDetails, {
-        fileName: pageName,
-        collectionName,
-        content: pageBody,
-        frontMatter,
-        sha,
-      })
+    /* eslint-disable no-lonely-if */
+      if (newFileName) {
+        updateResp = await this.collectionPageService.rename(reqDetails, {
+          oldFileName: pageName,
+          newFileName,
+          collectionName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        })
+      } else {
+        updateResp = await this.collectionPageService.update(reqDetails, {
+          fileName: pageName,
+          collectionName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        })
+      }
     }
-
+    /* eslint-enable no-lonely-if */
     return res.status(200).json(updateResp)
   }
 

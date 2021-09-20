@@ -120,6 +120,7 @@ const configSha = "configsha"
 const configResponse = {
   url: configContent.url,
   title: configContent.title,
+  description: configContent.description,
   favicon: configContent.favicon,
   shareicon: configContent.shareicon,
   is_government: configContent.is_government,

@@ -20,34 +20,24 @@ const {
   navigationSha,
   navigationResponse,
 } = require("../../fixtures/navigation")
+const {
+  SettingsService,
+} = require("../../services/configServices/SettingsService")
 const { SettingsRouter } = require("../settings.js")
 
 describe("Settings Router", () => {
-  const mockConfigYmlService = {
-    read: jest.fn(),
-    update: jest.fn(),
-  }
-
-  const mockFooterYmlService = {
-    read: jest.fn(),
-    update: jest.fn(),
-  }
-
-  const mockNavYmlService = {
-    read: jest.fn(),
-    update: jest.fn(),
-  }
-
-  const mockHomepagePageService = {
-    read: jest.fn(),
-    update: jest.fn(),
+  const mockSettingsService = {
+    retrieveSettingsFiles: jest.fn(),
+    updateSettingsFiles: jest.fn(),
+    shouldUpdateHomepage: jest.fn(),
+    mergeUpdatedData: jest.fn(),
+    extractConfigFields: SettingsService.extractConfigFields,
+    extractFooterFields: SettingsService.extractFooterFields,
+    extractNavFields: SettingsService.extractNavFields,
   }
 
   const router = new SettingsRouter({
-    homepagePageService: mockHomepagePageService,
-    configYmlService: mockConfigYmlService,
-    footerYmlService: mockFooterYmlService,
-    navYmlService: mockNavYmlService,
+    settingsService: mockSettingsService,
   })
 
   const app = express()
@@ -64,8 +54,6 @@ describe("Settings Router", () => {
   app.use(errorHandler)
 
   const siteName = "test-site"
-  const accessToken = undefined // Can't set request fields - will always be undefined
-  const reqDetails = { siteName, accessToken }
 
   const config = {
     content: configContent,
@@ -89,9 +77,11 @@ describe("Settings Router", () => {
   })
 
   describe("readSettingsPage", () => {
-    mockConfigYmlService.read.mockResolvedValue(config)
-    mockFooterYmlService.read.mockResolvedValue(footer)
-    mockNavYmlService.read.mockResolvedValue(navigation)
+    mockSettingsService.retrieveSettingsFiles.mockResolvedValue({
+      config,
+      footer,
+      navigation,
+    })
 
     it("retrieves settings data", async () => {
       const expectedResponse = {
@@ -101,17 +91,17 @@ describe("Settings Router", () => {
       }
       const resp = await request(app).get(`/${siteName}/settings`).expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockConfigYmlService.read).toHaveBeenCalled()
-      expect(mockFooterYmlService.read).toHaveBeenCalled()
-      expect(mockNavYmlService.read).toHaveBeenCalled()
+      expect(mockSettingsService.retrieveSettingsFiles).toHaveBeenCalled()
     })
   })
 
   describe("updateSettingsPage", () => {
-    mockConfigYmlService.read.mockResolvedValue(config)
-    mockFooterYmlService.read.mockResolvedValue(footer)
-    mockNavYmlService.read.mockResolvedValue(navigation)
-    mockHomepagePageService.read.mockResolvedValue(homepage)
+    mockSettingsService.retrieveSettingsFiles.mockResolvedValue({
+      config,
+      footer,
+      navigation,
+      homepage,
+    })
 
     const updatedFbPixelValue = `${configContent["facebook-pixel"]}test`
     const updatedTitleValue = `${configContent.title}test`
@@ -122,167 +112,14 @@ describe("Settings Router", () => {
       await request(app).post(`/${siteName}/settings`).send({}).expect(400)
     })
 
-    it("updates only config data if non-title config field is updated", async () => {
-      const requestObject = {
-        configSettings: { "facebook-pixel": updatedFbPixelValue },
-        footerSettings: {},
-        navigationSettings: {},
-      }
-      const expectedConfigServiceInput = {
-        fileContent: {
-          ...configContent,
-          "facebook-pixel": updatedFbPixelValue,
-        },
-        sha: configSha,
-      }
-
-      await request(app)
-        .post(`/${siteName}/settings`)
-        .send(requestObject)
-        .expect(200)
-
-      expect(mockConfigYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedConfigServiceInput
-      )
-      expect(mockFooterYmlService.update).not.toHaveBeenCalled()
-      expect(mockNavYmlService.update).not.toHaveBeenCalled()
-      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
-    })
-
-    it("updates both homepage and config data when only title field is updated", async () => {
-      const requestObject = {
-        configSettings: { title: updatedTitleValue },
-        footerSettings: {},
-        navigationSettings: {},
-      }
-      const expectedConfigServiceInput = {
-        fileContent: {
-          ...configContent,
-          title: updatedTitleValue,
-        },
-        sha: configSha,
-      }
-      const expectedHomepageServiceInput = {
-        content: homepageContent.pageBody,
-        frontMatter: {
-          ...homepageContent.frontMatter,
-          title: updatedTitleValue,
-        },
-        sha: homepage.sha,
-      }
-
-      await request(app)
-        .post(`/${siteName}/settings`)
-        .send(requestObject)
-        .expect(200)
-
-      expect(mockConfigYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedConfigServiceInput
-      )
-      expect(mockFooterYmlService.update).not.toHaveBeenCalled()
-      expect(mockNavYmlService.update).not.toHaveBeenCalled()
-      expect(mockHomepagePageService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedHomepageServiceInput
-      )
-    })
-
-    it("updates only footer data when only footer fields are updated", async () => {
-      const requestObject = {
-        configSettings: {},
-        footerSettings: { faq: updatedFaq },
-        navigationSettings: {},
-      }
-      const expectedFooterServiceInput = {
-        fileContent: {
-          ...footerContent,
-          faq: updatedFaq,
-        },
-        sha: footerSha,
-      }
-
-      await request(app)
-        .post(`/${siteName}/settings`)
-        .send(requestObject)
-        .expect(200)
-
-      expect(mockConfigYmlService.update).not.toHaveBeenCalled()
-      expect(mockFooterYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedFooterServiceInput
-      )
-      expect(mockNavYmlService.update).not.toHaveBeenCalled()
-      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
-    })
-
-    it("updates only navigation data when only navigation fields are updated", async () => {
-      const requestObject = {
-        configSettings: {},
-        footerSettings: {},
-        navigationSettings: { logo: updatedLogo },
-      }
-      const expectedNavigationServiceInput = {
-        fileContent: {
-          ...navigationContent,
-          logo: updatedLogo,
-        },
-        sha: navigationSha,
-      }
-
-      await request(app)
-        .post(`/${siteName}/settings`)
-        .send(requestObject)
-        .expect(200)
-
-      expect(mockConfigYmlService.update).not.toHaveBeenCalled()
-      expect(mockFooterYmlService.update).not.toHaveBeenCalled()
-      expect(mockNavYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedNavigationServiceInput
-      )
-      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
-    })
-
-    it("updates config, homepage, navigation, and footer data when all fields are updated", async () => {
+    it("successfully updates settings", async () => {
       const requestObject = {
         configSettings: {
-          "facebook-pixel": updatedFbPixelValue,
           title: updatedTitleValue,
+          "facebook-pixel": updatedFbPixelValue,
         },
         footerSettings: { faq: updatedFaq },
         navigationSettings: { logo: updatedLogo },
-      }
-      const expectedConfigServiceInput = {
-        fileContent: {
-          ...configContent,
-          "facebook-pixel": updatedFbPixelValue,
-          title: updatedTitleValue,
-        },
-        sha: configSha,
-      }
-      const expectedFooterServiceInput = {
-        fileContent: {
-          ...footerContent,
-          faq: updatedFaq,
-        },
-        sha: footerSha,
-      }
-      const expectedNavigationServiceInput = {
-        fileContent: {
-          ...navigationContent,
-          logo: updatedLogo,
-        },
-        sha: navigationSha,
-      }
-      const expectedHomepageServiceInput = {
-        content: homepageContent.pageBody,
-        frontMatter: {
-          ...homepageContent.frontMatter,
-          title: updatedTitleValue,
-        },
-        sha: homepage.sha,
       }
 
       await request(app)
@@ -290,22 +127,8 @@ describe("Settings Router", () => {
         .send(requestObject)
         .expect(200)
 
-      expect(mockConfigYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedConfigServiceInput
-      )
-      expect(mockFooterYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedFooterServiceInput
-      )
-      expect(mockNavYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedNavigationServiceInput
-      )
-      expect(mockHomepagePageService.update).toHaveBeenCalledWith(
-        reqDetails,
-        expectedHomepageServiceInput
-      )
+      expect(mockSettingsService.retrieveSettingsFiles).toHaveBeenCalled()
+      expect(mockSettingsService.updateSettingsFiles).toHaveBeenCalled()
     })
   })
 })

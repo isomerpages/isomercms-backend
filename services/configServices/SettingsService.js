@@ -115,7 +115,15 @@ class SettingsService {
     return false
   }
 
-  extractConfigFields(config) {
+  mergeUpdatedData(currentData, updatedData) {
+    const clonedCurrentData = _.cloneDeep(currentData)
+    Object.keys(updatedData).forEach((field) => {
+      clonedCurrentData[field] = updatedData[field]
+    })
+    return clonedCurrentData
+  }
+
+  static extractConfigFields(config) {
     return {
       url: config.content.url,
       description: config.content.description,
@@ -131,22 +139,14 @@ class SettingsService {
     }
   }
 
-  extractFooterFields(footer) {
+  static extractFooterFields(footer) {
     return footer.content
   }
 
-  extractNavFields(navigation) {
+  static extractNavFields(navigation) {
     return {
       logo: navigation.content.logo,
     }
-  }
-
-  mergeUpdatedData(currentData, updatedData) {
-    const clonedCurrentData = _.cloneDeep(currentData)
-    Object.keys(updatedData).forEach((field) => {
-      clonedCurrentData[field] = updatedData[field]
-    })
-    return clonedCurrentData
   }
 }
 

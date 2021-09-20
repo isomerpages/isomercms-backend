@@ -12,6 +12,10 @@ const {
 
 const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
 
+const {
+  SettingsService,
+} = require("../services/configServices/SettingsService")
+
 class SettingsRouter {
   constructor({ settingsService }) {
     this.settingsService = settingsService
@@ -31,9 +35,9 @@ class SettingsRouter {
     } = await this.settingsService.retrieveSettingsFiles(reqDetails)
 
     return res.status(200).json({
-      configSettings: this.settingsService.extractConfigFields(config),
-      footerSettings: this.settingsService.extractFooterFields(footer),
-      navigationSettings: this.settingsService.extractNavFields(navigation),
+      configSettings: SettingsService.extractConfigFields(config),
+      footerSettings: SettingsService.extractFooterFields(footer),
+      navigationSettings: SettingsService.extractNavFields(navigation),
     })
   }
 

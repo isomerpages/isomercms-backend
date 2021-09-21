@@ -1,7 +1,10 @@
+const { BadRequestError } = require("@errors/BadRequestError")
 const {
   ConflictError,
   protectedFolderConflictErrorMsg,
 } = require("@errors/ConflictError")
+
+const { slugifyCollectionName } = require("@utils/utils")
 
 const ISOMER_TEMPLATE_DIRS = ["_data", "_includes", "_site", "_layouts"]
 const ISOMER_TEMPLATE_PROTECTED_DIRS = [
@@ -111,8 +114,15 @@ class CollectionDirectoryService {
   async createDirectory(reqDetails, { collectionName, objArray }) {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
       throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
+    if (/[^a-zA-Z0-9- ]/g.test(collectionName)) {
+      // Contains non-allowed characters
+      throw new BadRequestError(
+        "Special characters not allowed in collection name"
+      )
+    }
+    const slugifiedCollectionName = slugifyCollectionName(collectionName)
     await this.collectionYmlService.create(reqDetails, {
-      collectionName,
+      collectionName: slugifiedCollectionName,
     })
     if (objArray) {
       const orderArray = this.convertObjToYmlOrder(objArray)
@@ -121,7 +131,7 @@ class CollectionDirectoryService {
       for (const fileName of orderArray) {
         await this.moverService.movePage(reqDetails, {
           fileName,
-          newFileCollection: collectionName,
+          newFileCollection: slugifiedCollectionName,
         })
       }
     }

@@ -135,7 +135,10 @@ class CollectionDirectoryService {
         })
       }
     }
-    return objArray || []
+    return {
+      newDirectoryName: slugifiedCollectionName,
+      items: objArray || [],
+    }
   }
 
   async renameDirectory(reqDetails, { collectionName, newDirectoryName }) {

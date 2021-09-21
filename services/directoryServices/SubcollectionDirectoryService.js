@@ -64,7 +64,10 @@ class SubcollectionDirectoryService {
         })
       }
     }
-    return objArray || []
+    return {
+      newDirectoryName: parsedSubcollectionName,
+      items: objArray || [],
+    }
   }
 
   async renameDirectory(

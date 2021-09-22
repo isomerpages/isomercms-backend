@@ -63,6 +63,7 @@ async function getTree(
 // send the new tree object back to Github and point the latest commit on the staging branch to it
 async function sendTree(
   gitTree,
+  baseTreeSha,
   currentCommitSha,
   repo,
   accessToken,
@@ -77,6 +78,7 @@ async function sendTree(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees`,
     {
       tree: gitTree,
+      base_tree: baseTreeSha,
     },
     {
       headers,

@@ -36,17 +36,17 @@ class MediaSubfolder {
     )
     const directoryName = `${this.mediaFolderName}/${subfolderPath}`
     const newGitTree = gitTree
-      .filter((item) => {
-        return !item.path.includes(directoryName)
-      })
-      .filter((item) => {
-        return !(
-          item.type === "tree" && item.path.includes(this.mediaFolderName)
-        )
-      })
-
+      .filter(
+        (item) =>
+          item.type !== "tree" && item.path.startsWith(`${directoryName}/`)
+      )
+      .map((item) => ({
+        ...item,
+        sha: null,
+      }))
     await sendTree(
       newGitTree,
+      treeSha,
       currentCommitSha,
       this.siteName,
       this.accessToken,
@@ -72,19 +72,19 @@ class MediaSubfolder {
           ...item,
           path: newDirectoryName,
         })
-      } else if (item.path.includes(oldDirectoryName)) {
-        // We don't want to include these because they use the old path, they are included with the renamed tree
       } else if (
-        item.type === "tree" &&
-        item.path.includes(this.mediaFolderName)
+        item.path.startsWith(`${oldDirectoryName}/`) &&
+        item.type !== "tree"
       ) {
-        // We don't include any other trees - we reconstruct them by adding all their individual files instead
-      } else {
-        newGitTree.push(item)
+        newGitTree.push({
+          ...item,
+          sha: null,
+        })
       }
     })
     await sendTree(
       newGitTree,
+      treeSha,
       currentCommitSha,
       this.siteName,
       this.accessToken,

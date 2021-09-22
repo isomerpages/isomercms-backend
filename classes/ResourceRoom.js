@@ -121,18 +121,32 @@ class ResourceRoom {
       this.siteName,
       this.accessToken
     )
-    const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
-    const newGitTree = gitTree.map((item) => {
+    const gitTree = await getTree(
+      this.siteName,
+      this.accessToken,
+      treeSha,
+      true
+    )
+    const newGitTree = []
+    gitTree.forEach((item) => {
       if (item.path === resourceRoomName) {
-        return {
+        newGitTree.push({
           ...item,
           path: newResourceRoom,
-        }
+        })
+      } else if (
+        item.path.startsWith(`${resourceRoomName}/`) &&
+        item.type !== "tree"
+      ) {
+        newGitTree.push({
+          ...item,
+          sha: null,
+        })
       }
-      return item
     })
     await sendTree(
       newGitTree,
+      treeSha,
       currentCommitSha,
       this.siteName,
       this.accessToken,
@@ -197,9 +211,9 @@ class ResourceRoom {
     const resources = await IsomerResource.list(resourceRoomName)
 
     if (!_.isEmpty(resources)) {
-      await Bluebird.map(resources, async (resource) => {
-        return IsomerResource.delete(resourceRoomName, resource.dirName)
-      })
+      await Bluebird.map(resources, async (resource) =>
+        IsomerResource.delete(resourceRoomName, resource.dirName)
+      )
     }
 
     // Delete index file in resourceRoom

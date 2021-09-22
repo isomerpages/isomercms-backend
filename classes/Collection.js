@@ -89,10 +89,24 @@ class Collection {
 
   async delete(collectionName, currentCommitSha, treeSha) {
     const commitMessage = `Delete collection ${collectionName}`
-    const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
-    const newGitTree = gitTree.filter((item) => item.path !== `_${collectionName}`)
+    const gitTree = await getTree(
+      this.siteName,
+      this.accessToken,
+      treeSha,
+      true
+    )
+    const newGitTree = gitTree
+      .filter(
+        (item) =>
+          item.type !== "tree" && item.path.startsWith(`_${collectionName}/`)
+      )
+      .map((item) => ({
+        ...item,
+        sha: null,
+      }))
     await sendTree(
       newGitTree,
+      treeSha,
       currentCommitSha,
       this.siteName,
       this.accessToken,
@@ -125,20 +139,34 @@ class Collection {
   ) {
     const commitMessage = `Rename collection from ${oldCollectionName} to ${newCollectionName}`
 
-    const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
+    const gitTree = await getTree(
+      this.siteName,
+      this.accessToken,
+      treeSha,
+      true
+    )
     const oldCollectionDirectoryName = `_${oldCollectionName}`
     const newCollectionDirectoryName = `_${newCollectionName}`
-    const newGitTree = gitTree.map((item) => {
+    const newGitTree = []
+    gitTree.forEach((item) => {
       if (item.path === oldCollectionDirectoryName) {
-        return {
+        newGitTree.push({
           ...item,
           path: newCollectionDirectoryName,
-        }
+        })
+      } else if (
+        item.path.startsWith(`${oldCollectionDirectoryName}/`) &&
+        item.type !== "tree"
+      ) {
+        newGitTree.push({
+          ...item,
+          sha: null,
+        })
       }
-      return item
     })
     await sendTree(
       newGitTree,
+      treeSha,
       currentCommitSha,
       this.siteName,
       this.accessToken,

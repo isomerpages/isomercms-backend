@@ -39,12 +39,14 @@ class BaseDirectoryService {
           path: newDirectoryName,
         })
       } else if (
-        item.type !== "tree" &&
-        !item.path.startsWith(`${oldDirectoryName}/`)
+        item.path.startsWith(`${oldDirectoryName}/`) &&
+        item.type !== "tree"
       ) {
-        // We don't include any other trees - we reconstruct them by adding all their individual files instead
-        // Files which are children of the renamed tree are covered by adding the renamed tree
-        newGitTree.push(item)
+        // Delete old files
+        newGitTree.push({
+          ...item,
+          sha: null,
+        })
       }
     })
 
@@ -62,10 +64,16 @@ class BaseDirectoryService {
       isRecursive: true,
     })
 
-    const newGitTree = gitTree.filter(
-      (item) =>
-        !(item.path.startsWith(`${directoryName}/`) || item.type === "tree")
-    )
+    // Retrieve removed items and set their sha to null
+    const newGitTree = gitTree
+      .filter(
+        (item) =>
+          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
+      )
+      .map((item) => ({
+        ...item,
+        sha: null,
+      }))
 
     const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
       gitTree: newGitTree,

@@ -221,7 +221,7 @@ class GitHubService {
   }
 
   async updateTree(
-    { accessToken, currentCommitSha, siteName },
+    { accessToken, currentCommitSha, treeSha, siteName },
     { gitTree, message }
   ) {
     const url = `${siteName}/git/trees`
@@ -232,7 +232,10 @@ class GitHubService {
 
     const resp = await this.axiosInstance.post(
       url,
-      { tree: gitTree },
+      {
+        tree: gitTree,
+        base_tree: treeSha,
+      },
       { headers }
     )
 

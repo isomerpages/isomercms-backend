@@ -68,7 +68,11 @@ class Resource {
     const newGitTree = []
     gitTree.forEach((item) => {
       // We need to append resource room to the file path because the path is relative to the subtree
-      if (item.path === `${resourceRoomName}/${resourceName}`) {
+      if (
+        item.path === `${resourceRoomName}/${resourceName}` &&
+        item.type === "tree"
+      ) {
+        // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
           path: `${resourceRoomName}/${newResourceName}`,
@@ -77,6 +81,7 @@ class Resource {
         item.path.startsWith(`${resourceRoomName}/${resourceName}/`) &&
         item.type !== "tree"
       ) {
+        // Delete old subdirectory items
         newGitTree.push({
           ...item,
           sha: null,

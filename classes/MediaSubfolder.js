@@ -67,7 +67,8 @@ class MediaSubfolder {
     const newDirectoryName = `${this.mediaFolderName}/${newSubfolderPath}`
     const newGitTree = []
     gitTree.forEach((item) => {
-      if (item.path === oldDirectoryName) {
+      if (item.path === oldDirectoryName && item.type === "tree") {
+        // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
           path: newDirectoryName,
@@ -76,6 +77,7 @@ class MediaSubfolder {
         item.path.startsWith(`${oldDirectoryName}/`) &&
         item.type !== "tree"
       ) {
+        // Delete old subdirectory items
         newGitTree.push({
           ...item,
           sha: null,

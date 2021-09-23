@@ -149,7 +149,8 @@ class Collection {
     const newCollectionDirectoryName = `_${newCollectionName}`
     const newGitTree = []
     gitTree.forEach((item) => {
-      if (item.path === oldCollectionDirectoryName) {
+      if (item.path === oldCollectionDirectoryName && item.type === "tree") {
+        // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
           path: newCollectionDirectoryName,
@@ -158,6 +159,7 @@ class Collection {
         item.path.startsWith(`${oldCollectionDirectoryName}/`) &&
         item.type !== "tree"
       ) {
+        // Delete old subdirectory items
         newGitTree.push({
           ...item,
           sha: null,

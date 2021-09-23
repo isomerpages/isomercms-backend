@@ -129,7 +129,8 @@ class ResourceRoom {
     )
     const newGitTree = []
     gitTree.forEach((item) => {
-      if (item.path === resourceRoomName) {
+      if (item.path === resourceRoomName && item.type === "tree") {
+        // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
           path: newResourceRoom,
@@ -138,6 +139,7 @@ class ResourceRoom {
         item.path.startsWith(`${resourceRoomName}/`) &&
         item.type !== "tree"
       ) {
+        // Delete old subdirectory items
         newGitTree.push({
           ...item,
           sha: null,

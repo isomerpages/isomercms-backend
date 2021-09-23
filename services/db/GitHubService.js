@@ -140,6 +140,10 @@ class GitHubService {
       if (err instanceof NotFoundError) throw err
       const { status } = err.response
       if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
       throw err
     }
   }
@@ -173,6 +177,10 @@ class GitHubService {
     } catch (err) {
       const { status } = err.response
       if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
       throw err
     }
   }

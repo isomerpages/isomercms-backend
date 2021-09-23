@@ -131,6 +131,10 @@ class File {
     } catch (err) {
       const { status } = err.response
       if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
       throw err
     }
   }

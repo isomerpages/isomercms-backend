@@ -6,6 +6,8 @@ describe("Base Directory Service", () => {
   const subcollectionName = `subcollection`
   const sha = "12345"
   const message = "message"
+  const currentCommitSha = "98765"
+  const treeSha = "00000"
 
   const mockedTree = [
     {
@@ -42,7 +44,7 @@ describe("Base Directory Service", () => {
     },
   ]
 
-  const reqDetails = { siteName, accessToken }
+  const reqDetails = { siteName, accessToken, currentCommitSha, treeSha }
 
   const mockGithubService = {
     readDirectory: jest.fn(),
@@ -105,11 +107,13 @@ describe("Base Directory Service", () => {
       },
       {
         type: "file",
-        path: "_normal/file.md",
+        path: `${directoryName}/file.md`,
+        sha: null,
       },
       {
         type: "file",
-        path: `_to-keep/${directoryName}/${subcollectionName}/file.md`,
+        path: `${directoryName}/${subcollectionName}/file.md`,
+        sha: null,
       },
     ]
     mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
@@ -142,11 +146,13 @@ describe("Base Directory Service", () => {
     const mockedDeletedTree = [
       {
         type: "file",
-        path: "_normal/file.md",
+        path: `${directoryName}/file.md`,
+        sha: null,
       },
       {
         type: "file",
-        path: `_to-keep/${directoryName}/${subcollectionName}/file.md`,
+        path: `${directoryName}/${subcollectionName}/file.md`,
+        sha: null,
       },
     ]
     mockGithubService.getTree.mockResolvedValueOnce(mockedTree)

@@ -169,9 +169,28 @@ describe("Collection Directory Service", () => {
         service.createDirectory(reqDetails, {
           collectionName,
         })
-      ).resolves.toMatchObject([])
+      ).resolves.toMatchObject({
+        newDirectoryName: collectionName,
+        items: [],
+      })
       expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
         collectionName,
+      })
+    })
+
+    it("Creating a collection directory slugifies the collection name", async () => {
+      const originalCollectionName = "Test Collection"
+      const slugifiedCollectionName = "test-collection"
+      await expect(
+        service.createDirectory(reqDetails, {
+          collectionName: originalCollectionName,
+        })
+      ).resolves.toMatchObject({
+        newDirectoryName: slugifiedCollectionName,
+        items: [],
+      })
+      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
+        collectionName: slugifiedCollectionName,
       })
     })
 
@@ -181,7 +200,10 @@ describe("Collection Directory Service", () => {
           collectionName,
           objArray,
         })
-      ).resolves.toMatchObject(objArray)
+      ).resolves.toMatchObject({
+        newDirectoryName: collectionName,
+        items: objArray,
+      })
       expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
         collectionName,
       })
@@ -189,6 +211,29 @@ describe("Collection Directory Service", () => {
         expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
           fileName: file.name,
           newFileCollection: collectionName,
+        })
+      })
+    })
+
+    it("Creating a directory slugifies the name and adds the specified files correctly", async () => {
+      const originalCollectionName = "Test Collection"
+      const slugifiedCollectionName = "test-collection"
+      await expect(
+        service.createDirectory(reqDetails, {
+          collectionName: originalCollectionName,
+          objArray,
+        })
+      ).resolves.toMatchObject({
+        newDirectoryName: slugifiedCollectionName,
+        items: objArray,
+      })
+      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
+        collectionName: slugifiedCollectionName,
+      })
+      objArray.forEach((file) => {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+          fileName: file.name,
+          newFileCollection: slugifiedCollectionName,
         })
       })
     })

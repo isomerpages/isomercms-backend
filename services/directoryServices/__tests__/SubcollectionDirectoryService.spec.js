@@ -6,7 +6,7 @@ describe("Subcollection Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const collectionName = "collection"
-  const subcollectionName = "Subcollection"
+  const subcollectionName = "Subcollection name"
 
   const objArray = [
     {
@@ -103,7 +103,10 @@ describe("Subcollection Directory Service", () => {
           collectionName,
           subcollectionName,
         })
-      ).resolves.toMatchObject([])
+      ).resolves.toMatchObject({
+        newDirectoryName: subcollectionName,
+        items: [],
+      })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
@@ -125,7 +128,10 @@ describe("Subcollection Directory Service", () => {
           subcollectionName,
           objArray,
         })
-      ).resolves.toMatchObject(objArray)
+      ).resolves.toMatchObject({
+        newDirectoryName: subcollectionName,
+        items: objArray,
+      })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
@@ -157,7 +163,10 @@ describe("Subcollection Directory Service", () => {
           subcollectionName: originalTitle,
           objArray,
         })
-      ).resolves.toMatchObject(objArray)
+      ).resolves.toMatchObject({
+        newDirectoryName: subcollectionName,
+        items: objArray,
+      })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,

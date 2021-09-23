@@ -33,7 +33,8 @@ class BaseDirectoryService {
     const newGitTree = []
 
     gitTree.forEach((item) => {
-      if (item.path === oldDirectoryName) {
+      if (item.path === oldDirectoryName && item.type === "tree") {
+        // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
           path: newDirectoryName,

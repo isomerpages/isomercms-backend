@@ -157,14 +157,24 @@ class MediaFile {
       sha,
     }
 
-    const resp = await axios.put(endpoint, params, {
-      headers: {
-        Authorization: `token ${this.accessToken}`,
-        "Content-Type": "application/json",
-      },
-    })
+    try {
+      const resp = await axios.put(endpoint, params, {
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      })
 
-    return { newSha: resp.data.commit.sha }
+      return { newSha: resp.data.commit.sha }
+    } catch (err) {
+      const { status } = err.response
+      if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
+      throw err
+    }
   }
 
   async delete(fileName, sha) {
@@ -176,13 +186,23 @@ class MediaFile {
       sha,
     }
 
-    await axios.delete(endpoint, {
-      data: params,
-      headers: {
-        Authorization: `token ${this.accessToken}`,
-        "Content-Type": "application/json",
-      },
-    })
+    try {
+      await axios.delete(endpoint, {
+        data: params,
+        headers: {
+          Authorization: `token ${this.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      })
+    } catch (err) {
+      const { status } = err.response
+      if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
+      throw err
+    }
   }
 }
 

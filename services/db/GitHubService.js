@@ -100,7 +100,7 @@ class GitHubService {
         Authorization: `token ${accessToken}`,
       },
     })
-    if (resp.status === 404) throw new NotFoundError("File does not exist")
+    if (resp.status === 404) throw new NotFoundError("Directory does not exist")
 
     return resp.data
   }

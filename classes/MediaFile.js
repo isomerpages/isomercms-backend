@@ -135,9 +135,9 @@ class MediaFile {
     const files = await this.list()
     const targetfile = files.find((file) => file.fileName === fileName)
     if (!targetfile) throw new NotFoundError("Media file does not exist")
-    const imageSha = targetfile.sha
+    const fileSha = targetfile.sha
 
-    const blobEndpoint = `${this.baseBlobEndpoint}/${imageSha}`
+    const blobEndpoint = `${this.baseBlobEndpoint}/${fileSha}`
 
     const resp = await axios.get(blobEndpoint, {
       validateStatus,

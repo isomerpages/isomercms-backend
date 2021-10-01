@@ -132,9 +132,10 @@ class MediaFile {
      * lists all the files in the image directory
      * and filters it down to get the sha of the file
      */
-    const images = await this.list()
-    const imageSha = images.filter((image) => image.fileName === fileName)[0]
-      .sha
+    const files = await this.list()
+    const targetfile = files.find((file) => file.fileName === fileName)
+    if (!targetfile) throw new NotFoundError("Media file does not exist")
+    const imageSha = targetfile.sha
 
     const blobEndpoint = `${this.baseBlobEndpoint}/${imageSha}`
 
@@ -145,7 +146,8 @@ class MediaFile {
       },
     })
 
-    if (resp.status === 404) throw new NotFoundError("Image does not exist")
+    if (resp.status === 404)
+      throw new NotFoundError("Media file does not exist")
 
     const { content, sha } = resp.data
 

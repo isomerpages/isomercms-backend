@@ -1,5 +1,6 @@
 const axios = require("axios")
 
+const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
   inputNameConflictErrorMsg,
@@ -44,7 +45,11 @@ class File {
       },
     })
 
-    if (resp.status !== 200) return {}
+    if (resp.status !== 200) {
+      if (resp.status === 404)
+        throw new NotFoundError("Directory does not exist")
+      throw new BaseIsomerError(resp)
+    }
 
     const files = resp.data
       .filter((object) => object.type === "file")

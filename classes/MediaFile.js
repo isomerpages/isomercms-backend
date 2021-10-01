@@ -1,5 +1,6 @@
 const axios = require("axios")
 
+const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
   inputNameConflictErrorMsg,
@@ -72,7 +73,11 @@ class MediaFile {
       },
     })
 
-    if (resp.status !== 200) return {}
+    if (resp.status !== 200) {
+      if (resp.status === 404)
+        throw new NotFoundError("Media Directory does not exist")
+      throw new BaseIsomerError(resp)
+    }
 
     return resp.data
       .filter((object) => object.type === "file")

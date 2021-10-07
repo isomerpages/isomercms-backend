@@ -1,4 +1,7 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 const { deslugifyCollectionName } = require("@utils/utils")
+const { titleSpecialCharCheck } = require("@utils/validators")
 
 const {
   retrieveDataFromMarkdown,
@@ -15,6 +18,8 @@ class SubcollectionPageService {
     reqDetails,
     { fileName, collectionName, subcollectionName, content, frontMatter }
   ) {
+    if (titleSpecialCharCheck(fileName))
+      throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.addItemToOrder(reqDetails, {
@@ -96,6 +101,8 @@ class SubcollectionPageService {
       sha,
     }
   ) {
+    if (titleSpecialCharCheck(newFileName))
+      throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.updateItemInOrder(reqDetails, {

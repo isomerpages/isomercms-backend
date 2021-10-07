@@ -1,4 +1,7 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 const { deslugifyCollectionName } = require("@utils/utils")
+const { titleSpecialCharCheck } = require("@utils/validators")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
@@ -38,6 +41,10 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, objArray }
   ) {
+    if (titleSpecialCharCheck(subcollectionName))
+      throw new BadRequestError(
+        "Special characters not allowed in directory name"
+      )
     const parsedSubcollectionName = deslugifyCollectionName(subcollectionName)
     const parsedDir = `_${collectionName}/${parsedSubcollectionName}`
     await this.gitHubService.create(reqDetails, {
@@ -74,6 +81,10 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, newDirectoryName }
   ) {
+    if (titleSpecialCharCheck(subcollectionName))
+      throw new BadRequestError(
+        "Special characters not allowed in directory name"
+      )
     const parsedNewName = deslugifyCollectionName(newDirectoryName)
     const dir = `_${collectionName}/${subcollectionName}`
     const files = await this.baseDirectoryService.list(reqDetails, {

@@ -142,6 +142,12 @@ class CollectionDirectoryService {
   }
 
   async renameDirectory(reqDetails, { collectionName, newDirectoryName }) {
+    if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
+      // Contains non-allowed characters
+      throw new BadRequestError(
+        "Special characters not allowed in collection name"
+      )
+    }
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newDirectoryName))
       throw new ConflictError(protectedFolderConflictErrorMsg(newDirectoryName))
     await this.baseDirectoryService.rename(reqDetails, {

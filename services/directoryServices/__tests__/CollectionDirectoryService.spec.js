@@ -1,3 +1,4 @@
+const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
 
 describe("Collection Directory Service", () => {
@@ -164,6 +165,14 @@ describe("Collection Directory Service", () => {
       ).rejects.toThrowError(ConflictError)
     })
 
+    it("rejects collections with special characters", async () => {
+      await expect(
+        service.createDirectory(reqDetails, {
+          collectionName: "dir/dir",
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
+
     it("Creating a directory with no specified files works correctly", async () => {
       await expect(
         service.createDirectory(reqDetails, {
@@ -248,6 +257,15 @@ describe("Collection Directory Service", () => {
           newDirectoryName: "files",
         })
       ).rejects.toThrowError(ConflictError)
+    })
+
+    it("rejects collections with special characters", async () => {
+      await expect(
+        service.renameDirectory(reqDetails, {
+          collectionName,
+          newDirectoryName: "dir/dir",
+        })
+      ).rejects.toThrowError(BadRequestError)
     })
 
     it("Renaming a collection works correctly", async () => {

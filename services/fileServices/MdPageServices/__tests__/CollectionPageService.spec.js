@@ -1,7 +1,9 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 describe("Collection Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const fileName = "test-file"
+  const fileName = "test file"
   const collectionName = "collection"
   const directoryName = `_${collectionName}`
   const mockContent = "test"
@@ -53,6 +55,17 @@ describe("Collection Page Service", () => {
 
   describe("Create", () => {
     mockGithubService.create.mockResolvedValue({ sha })
+
+    it("rejects page names with special characters", async () => {
+      await expect(
+        service.create(reqDetails, {
+          fileName: "file/file",
+          collectionName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Creating pages works correctly", async () => {
       await expect(
         service.create(reqDetails, {
@@ -191,6 +204,18 @@ describe("Collection Page Service", () => {
     const oldSha = "54321"
     const oldFileName = "test-old-file"
     mockGithubService.create.mockResolvedValue({ sha })
+
+    it("rejects renaming to page names with special characters", async () => {
+      await expect(
+        service.rename(reqDetails, {
+          oldFileName,
+          newFileName: "file/file",
+          collectionName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Renaming pages works correctly", async () => {
       await expect(
         service.rename(reqDetails, {

@@ -1,4 +1,4 @@
-const { ConflictError } = require("@errors/ConflictError")
+const { BadRequestError } = require("@errors/BadRequestError")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
@@ -97,6 +97,14 @@ describe("Subcollection Directory Service", () => {
 
   describe("CreateDirectory", () => {
     const parsedDir = `_${collectionName}/${subcollectionName}`
+    it("rejects subcollection names with special characters", async () => {
+      await expect(
+        service.createDirectory(reqDetails, {
+          collectionName,
+          subcollectionName: "dir/dir",
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Creating a directory with no specified files works correctly", async () => {
       await expect(
         service.createDirectory(reqDetails, {
@@ -155,8 +163,8 @@ describe("Subcollection Directory Service", () => {
     })
 
     it("Creating a directory deslugifies the title", async () => {
-      const originalTitle = `hEllo-there!`
-      const expectedTitle = `HEllo There!`
+      const originalTitle = `hEllo there`
+      const expectedTitle = `HEllo there`
       await expect(
         service.createDirectory(reqDetails, {
           collectionName,
@@ -164,7 +172,7 @@ describe("Subcollection Directory Service", () => {
           objArray,
         })
       ).resolves.toMatchObject({
-        newDirectoryName: subcollectionName,
+        newDirectoryName: expectedTitle,
         items: objArray,
       })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
@@ -216,6 +224,16 @@ describe("Subcollection Directory Service", () => {
       },
     ]
 
+    it("rejects subcollection names with special characters", async () => {
+      await expect(
+        service.renameDirectory(reqDetails, {
+          collectionName,
+          subcollectionName,
+          newDirectoryName: "dir/dir",
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
+
     it("Renaming a subcollection works correctly", async () => {
       const newDirectoryName = "New Dir"
       mockBaseDirectoryService.list.mockResolvedValueOnce(readDirResp)
@@ -262,8 +280,8 @@ describe("Subcollection Directory Service", () => {
     })
 
     it("Renaming a subcollection slugifies the title correctly", async () => {
-      const originalTitle = `hEllo-there!`
-      const expectedTitle = `HEllo There!`
+      const originalTitle = `hEllo there`
+      const expectedTitle = `HEllo there`
       mockBaseDirectoryService.list.mockResolvedValueOnce(readDirResp)
       await expect(
         service.renameDirectory(reqDetails, {

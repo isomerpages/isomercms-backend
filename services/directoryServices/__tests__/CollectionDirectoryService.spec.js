@@ -294,6 +294,34 @@ describe("Collection Directory Service", () => {
         }
       )
     })
+    it("Renaming a collection slugifies the new name correctly", async () => {
+      const originalCollectionName = "Test Collection"
+      const slugifiedCollectionName = "test-collection"
+      await expect(
+        service.renameDirectory(reqDetails, {
+          collectionName: originalCollectionName,
+          newDirectoryName: slugifiedCollectionName,
+        })
+      ).resolves.not.toThrowError()
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
+        oldDirectoryName: `_${originalCollectionName}`,
+        newDirectoryName: `_${slugifiedCollectionName}`,
+        message: `Renaming collection ${originalCollectionName} to ${slugifiedCollectionName}`,
+      })
+      expect(
+        mockCollectionYmlService.renameCollectionInOrder
+      ).toHaveBeenCalledWith(reqDetails, {
+        oldCollectionName: originalCollectionName,
+        newCollectionName: slugifiedCollectionName,
+      })
+      expect(mockNavYmlService.renameCollectionInNav).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          oldCollectionName: originalCollectionName,
+          newCollectionName: slugifiedCollectionName,
+        }
+      )
+    })
   })
 
   describe("DeleteDirectory", () => {

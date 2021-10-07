@@ -81,7 +81,7 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, newDirectoryName }
   ) {
-    if (titleSpecialCharCheck(subcollectionName))
+    if (titleSpecialCharCheck(newDirectoryName))
       throw new BadRequestError(
         "Special characters not allowed in directory name"
       )

@@ -150,18 +150,19 @@ class CollectionDirectoryService {
     }
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newDirectoryName))
       throw new ConflictError(protectedFolderConflictErrorMsg(newDirectoryName))
+    const slugifiedNewCollectionName = slugifyCollectionName(newDirectoryName)
     await this.baseDirectoryService.rename(reqDetails, {
       oldDirectoryName: `_${collectionName}`,
-      newDirectoryName: `_${newDirectoryName}`,
-      message: `Renaming collection ${collectionName} to ${newDirectoryName}`,
+      newDirectoryName: `_${slugifiedNewCollectionName}`,
+      message: `Renaming collection ${collectionName} to ${slugifiedNewCollectionName}`,
     })
     await this.collectionYmlService.renameCollectionInOrder(reqDetails, {
       oldCollectionName: collectionName,
-      newCollectionName: newDirectoryName,
+      newCollectionName: slugifiedNewCollectionName,
     })
     await this.navYmlService.renameCollectionInNav(reqDetails, {
       oldCollectionName: collectionName,
-      newCollectionName: newDirectoryName,
+      newCollectionName: slugifiedNewCollectionName,
     })
   }
 

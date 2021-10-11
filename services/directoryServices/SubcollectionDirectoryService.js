@@ -93,6 +93,7 @@ class SubcollectionDirectoryService {
     // We can't perform these operations concurrently because of conflict issues
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of files) {
+      if (file.type !== "file") continue
       const fileName = file.name
       if (fileName === PLACEHOLDER_FILE_NAME) {
         await this.gitHubService.delete(reqDetails, {

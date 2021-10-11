@@ -1,6 +1,13 @@
-const specialCharactersRegexTest = /[~!@#$%^&*_+\-./\\\`:;~{}()[\]"'<>,?]/
+const specialCharactersRegexTest = /[~%^*_+\-./\\`;~{}[\]"<>]/
 
-const titleSpecialCharCheck = (title) => specialCharactersRegexTest.test(title)
+const titleSpecialCharCheck = (title, isFile = false) => {
+  let testTitle = title
+  if (isFile) {
+    // Remove .md
+    testTitle = title.replace(/.md$/, "")
+  }
+  return specialCharactersRegexTest.test(testTitle)
+}
 
 module.exports = {
   titleSpecialCharCheck,

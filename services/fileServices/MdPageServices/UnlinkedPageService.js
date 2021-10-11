@@ -15,7 +15,7 @@ class UnlinkedPageService {
 
   async create(reqDetails, { fileName, content, frontMatter }) {
     // Ensure that third_nav_title is removed for files that are being moved from collections
-    if (titleSpecialCharCheck(fileName))
+    if (titleSpecialCharCheck(fileName, true))
       throw new BadRequestError("Special characters not allowed in file name")
     delete frontMatter.third_nav_title
     const newContent = convertDataToMarkdown(frontMatter, content)
@@ -67,7 +67,7 @@ class UnlinkedPageService {
     reqDetails,
     { oldFileName, newFileName, content, frontMatter, sha }
   ) {
-    if (titleSpecialCharCheck(newFileName))
+    if (titleSpecialCharCheck(newFileName, true))
       throw new BadRequestError("Special characters not allowed in file name")
     const newContent = convertDataToMarkdown(frontMatter, content)
     await this.gitHubService.delete(reqDetails, {

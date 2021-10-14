@@ -1,9 +1,11 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 const { deslugifyCollectionName } = require("@utils/utils")
 
 describe("Subcollection Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const fileName = "test-file"
+  const fileName = "test file.md"
   const collectionName = "collection"
   const subcollectionName = "subcollection"
   const directoryName = `_${collectionName}/${subcollectionName}`
@@ -58,6 +60,17 @@ describe("Subcollection Page Service", () => {
   })
 
   describe("Create", () => {
+    it("rejects page names with special characters", async () => {
+      await expect(
+        service.create(reqDetails, {
+          fileName: "file/file.md",
+          collectionName,
+          subcollectionName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Creating a page with no third nav title in the front matter correctly adds it in", async () => {
       mockGithubService.create.mockResolvedValueOnce({ sha })
       await expect(
@@ -214,8 +227,21 @@ describe("Subcollection Page Service", () => {
 
   describe("Rename", () => {
     const oldSha = "54321"
-    const oldFileName = "test-old-file"
+    const oldFileName = "test-old-file.md"
     mockGithubService.create.mockResolvedValueOnce({ sha })
+
+    it("rejects renaming to page names with special characters", async () => {
+      await expect(
+        service.rename(reqDetails, {
+          oldFileName,
+          newFileName: "file/file.md",
+          collectionName,
+          subcollectionName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Renaming pages works correctly", async () => {
       await expect(
         service.rename(reqDetails, {

@@ -157,37 +157,6 @@ auth.post(
   verifyJwt
 )
 
-// New collection pages
-auth.post("/v2/sites/:siteName/collections/:collectionName/pages", verifyJwt)
-auth.post(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
-  verifyJwt
-)
-auth.get(
-  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-  verifyJwt
-)
-auth.get(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-  verifyJwt
-)
-auth.post(
-  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-  verifyJwt
-)
-auth.post(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-  verifyJwt
-)
-auth.delete(
-  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-  verifyJwt
-)
-auth.delete(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-  verifyJwt
-)
-
 // Collections
 auth.get("/v1/sites/:siteName/collections", verifyJwt)
 auth.post("/v1/sites/:siteName/collections", verifyJwt)
@@ -313,6 +282,80 @@ auth.get("/v1/sites", verifyJwt)
 auth.get("/v1/sites/:siteName", verifyJwt)
 auth.get("/v1/sites/:siteName/lastUpdated", verifyJwt)
 auth.get("/v1/sites/:siteName/stagingUrl", verifyJwt)
+
+// V2 Endpoints
+
+// Unlinked pages
+auth.get("/v2/sites/:siteName/pages", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/pages", verifyJwt)
+auth.get("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.delete("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/move", verifyJwt)
+
+// Collection pages
+auth.post("/v2/sites/:siteName/collections/:collectionName/pages", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+
+// Collections
+auth.get("/v2/sites/:siteName/collections", verifyJwt)
+auth.get("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
+auth.delete("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName/reorder", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName/move", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
+  verifyJwt
+)
 
 auth.use((req, res, next) => {
   if (!req.route) {

@@ -13,21 +13,14 @@ describe("Github Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const fileName = "test-file"
-  const subcollectionFileName = "test-subcollection-file"
   const collectionName = "collection"
   const subcollectionName = "subcollection"
   const directoryName = `_${collectionName}`
   const sha = "12345"
+  const treeSha = "98765"
   const content = "test-content"
 
   const reqDetails = { siteName, accessToken }
-  const orderArray = [
-    `${fileName}.md`,
-    `${subcollectionName}/.keep`,
-    `${subcollectionName}/${subcollectionFileName}.md`,
-    `${subcollectionName}/${subcollectionFileName}2.md`,
-    `${fileName}2.md`,
-  ]
 
   const authHeader = {
     headers: {
@@ -517,13 +510,16 @@ describe("Github Service", () => {
         .mockResolvedValueOnce(secondResp)
       await expect(
         service.updateTree(
-          { accessToken, siteName, currentCommitSha: sha },
+          { accessToken, siteName, currentCommitSha: sha, treeSha },
           { gitTree, message }
         )
       ).resolves.toEqual(secondSha)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         url,
-        { tree: gitTree },
+        {
+          tree: gitTree,
+          base_tree: treeSha,
+        },
         authHeader
       )
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(

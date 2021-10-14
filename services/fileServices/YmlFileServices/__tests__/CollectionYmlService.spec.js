@@ -507,7 +507,6 @@ describe("Collection Yml Service", () => {
         service.updateOrder(reqDetails, {
           collectionName,
           newOrder,
-          sha: oldSha,
         })
       ).resolves.toMatchObject({
         newSha: sha,

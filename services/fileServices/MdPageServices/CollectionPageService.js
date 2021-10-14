@@ -1,7 +1,11 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 const {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
+
+const { titleSpecialCharCheck } = require("@validators/validators")
 
 class CollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
@@ -10,6 +14,8 @@ class CollectionPageService {
   }
 
   async create(reqDetails, { fileName, collectionName, content, frontMatter }) {
+    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
+      throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 
     await this.collectionYmlService.addItemToOrder(reqDetails, {
@@ -81,6 +87,8 @@ class CollectionPageService {
     reqDetails,
     { oldFileName, newFileName, collectionName, content, frontMatter, sha }
   ) {
+    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
+      throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 
     await this.collectionYmlService.updateItemInOrder(reqDetails, {

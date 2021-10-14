@@ -13,7 +13,7 @@ class CollectionPageService {
   }
 
   async create(reqDetails, { fileName, collectionName, content, frontMatter }) {
-    if (titleSpecialCharCheck(fileName, true))
+    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 
@@ -86,7 +86,7 @@ class CollectionPageService {
     reqDetails,
     { oldFileName, newFileName, collectionName, content, frontMatter, sha }
   ) {
-    if (titleSpecialCharCheck(newFileName, true))
+    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 

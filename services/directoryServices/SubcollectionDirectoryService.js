@@ -41,7 +41,7 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, objArray }
   ) {
-    if (titleSpecialCharCheck(subcollectionName))
+    if (titleSpecialCharCheck({ title: subcollectionName, isFile: false }))
       throw new BadRequestError(
         "Special characters not allowed in directory name"
       )
@@ -81,7 +81,7 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, newDirectoryName }
   ) {
-    if (titleSpecialCharCheck(newDirectoryName))
+    if (titleSpecialCharCheck({ title: newDirectoryName, isFile: false }))
       throw new BadRequestError(
         "Special characters not allowed in directory name"
       )

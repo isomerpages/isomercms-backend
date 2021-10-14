@@ -1,6 +1,6 @@
 const specialCharactersRegexTest = /[~%^*_+\-./\\`;~{}[\]"<>]/
 
-const titleSpecialCharCheck = (title, isFile = false) => {
+const titleSpecialCharCheck = ({ title, isFile = false }) => {
   let testTitle = title
   if (isFile) {
     // Remove .md

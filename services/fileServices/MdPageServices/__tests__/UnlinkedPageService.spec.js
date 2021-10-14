@@ -1,7 +1,9 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 describe("Unlinked Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const fileName = "test-file"
+  const fileName = "test file.md"
   const directoryName = "pages"
   const mockContent = "test"
   const mockMarkdownContent = "---test---"
@@ -44,6 +46,15 @@ describe("Unlinked Page Service", () => {
 
   describe("Create", () => {
     mockGithubService.create.mockResolvedValue({ sha })
+    it("rejects page names with special characters", async () => {
+      await expect(
+        service.create(reqDetails, {
+          fileName: "file/file.md",
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Creating pages works correctly", async () => {
       await expect(
         service.create(reqDetails, {
@@ -134,8 +145,18 @@ describe("Unlinked Page Service", () => {
 
   describe("Rename", () => {
     const oldSha = "54321"
-    const oldFileName = "test-old-file"
+    const oldFileName = "test-old-file.md"
     mockGithubService.create.mockResolvedValue({ sha })
+    it("rejects renaming to page names with special characters", async () => {
+      await expect(
+        service.rename(reqDetails, {
+          oldFileName,
+          newFileName: "file/file.md",
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
     it("Renaming pages works correctly", async () => {
       await expect(
         service.rename(reqDetails, {

@@ -15,8 +15,14 @@ describe("Unlinked Pages Router", () => {
     rename: jest.fn(),
   }
 
+  const mockUnlinkedPagesDirectoryService = {
+    listAllUnlinkedPages: jest.fn(),
+    movePages: jest.fn(),
+  }
+
   const router = new UnlinkedPagesRouter({
     unlinkedPageService: mockService,
+    unlinkedPagesDirectoryService: mockUnlinkedPagesDirectoryService,
   })
 
   const app = express()
@@ -24,21 +30,29 @@ describe("Unlinked Pages Router", () => {
   app.use(express.urlencoded({ extended: false }))
 
   // We can use read route handler here because we don't need to lock the repo
-  app.post(
+  app.get(
     "/:siteName/pages",
+    attachReadRouteHandlerWrapper(router.listAllUnlinkedPages)
+  )
+  app.post(
+    "/:siteName/pages/pages",
     attachReadRouteHandlerWrapper(router.createUnlinkedPage)
   )
   app.get(
-    "/:siteName/pages/:pageName",
+    "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.readUnlinkedPage)
   )
   app.post(
-    "/:siteName/pages/:pageName",
+    "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.updateUnlinkedPage)
   )
   app.delete(
-    "/:siteName/pages/:pageName",
+    "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteUnlinkedPage)
+  )
+  app.post(
+    "/:siteName/pages/move",
+    attachReadRouteHandlerWrapper(router.moveUnlinkedPages)
   )
   app.use(errorHandler)
 
@@ -54,6 +68,39 @@ describe("Unlinked Pages Router", () => {
     jest.clearAllMocks()
   })
 
+  describe("listAllUnlinkedPages", () => {
+    const listPageResp = [
+      {
+        name: "testfile",
+        type: "file",
+      },
+      {
+        name: "testfile1",
+        type: "file",
+      },
+      {
+        name: "testsub",
+        type: "dir",
+        children: ["file1", "file2"],
+      },
+      {
+        name: "testfile2",
+        type: "file",
+      },
+    ]
+
+    it("returns the list of unlinked pages", async () => {
+      mockUnlinkedPagesDirectoryService.listAllUnlinkedPages.mockResolvedValueOnce(
+        listPageResp
+      )
+      const resp = await request(app).get(`/${siteName}/pages`).expect(200)
+      expect(resp.body).toStrictEqual(listPageResp)
+      expect(
+        mockUnlinkedPagesDirectoryService.listAllUnlinkedPages
+      ).toHaveBeenCalledWith(reqDetails)
+    })
+  })
+
   describe("createUnlinkedPage", () => {
     const createPageDetails = {
       newFileName: "newFile",
@@ -67,7 +114,7 @@ describe("Unlinked Pages Router", () => {
     }
 
     it("rejects create requests with invalid body", async () => {
-      await request(app).post(`/${siteName}/pages`).send({}).expect(400)
+      await request(app).post(`/${siteName}/pages/pages`).send({}).expect(400)
     })
 
     it("accepts valid unlinked page creation requests and returns the details of the file created", async () => {
@@ -77,7 +124,7 @@ describe("Unlinked Pages Router", () => {
         frontMatter: createPageDetails.content.frontMatter,
       }
       await request(app)
-        .post(`/${siteName}/pages`)
+        .post(`/${siteName}/pages/pages`)
         .send(createPageDetails)
         .expect(200)
       expect(mockService.create).toHaveBeenCalledWith(
@@ -97,7 +144,7 @@ describe("Unlinked Pages Router", () => {
       const expectedServiceInput = {
         fileName,
       }
-      await request(app).get(`/${siteName}/pages/${fileName}`).expect(200)
+      await request(app).get(`/${siteName}/pages/pages/${fileName}`).expect(200)
       expect(mockService.read).toHaveBeenCalledWith(
         reqDetails,
         expectedServiceInput
@@ -123,7 +170,7 @@ describe("Unlinked Pages Router", () => {
 
     it("rejects update requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/pages/${fileName}`)
+        .post(`/${siteName}/pages/pages/${fileName}`)
         .send({})
         .expect(400)
     })
@@ -136,7 +183,7 @@ describe("Unlinked Pages Router", () => {
         sha: updatePageDetails.sha,
       }
       await request(app)
-        .post(`/${siteName}/pages/${fileName}`)
+        .post(`/${siteName}/pages/pages/${fileName}`)
         .send(updatePageDetails)
         .expect(200)
       expect(mockService.update).toHaveBeenCalledWith(
@@ -154,7 +201,7 @@ describe("Unlinked Pages Router", () => {
         sha: renamePageDetails.sha,
       }
       await request(app)
-        .post(`/${siteName}/pages/${fileName}`)
+        .post(`/${siteName}/pages/pages/${fileName}`)
         .send(renamePageDetails)
         .expect(200)
       expect(mockService.rename).toHaveBeenCalledWith(
@@ -171,7 +218,7 @@ describe("Unlinked Pages Router", () => {
 
     it("rejects delete requests with invalid body", async () => {
       await request(app)
-        .delete(`/${siteName}/pages/${fileName}`)
+        .delete(`/${siteName}/pages/pages/${fileName}`)
         .send({})
         .expect(400)
     })
@@ -182,7 +229,7 @@ describe("Unlinked Pages Router", () => {
         sha: deletePageDetails.sha,
       }
       await request(app)
-        .delete(`/${siteName}/pages/${fileName}`)
+        .delete(`/${siteName}/pages/pages/${fileName}`)
         .send(deletePageDetails)
         .expect(200)
       expect(mockService.delete).toHaveBeenCalledWith(
@@ -192,5 +239,76 @@ describe("Unlinked Pages Router", () => {
     })
   })
 
-  // TO-DO: Add listUnlinkedPages tests
+  describe("moveUnlinkedPages", () => {
+    const collectionName = "collection"
+    const subCollectionName = "subcollection"
+    const items = [
+      {
+        name: "testfile",
+        type: "file",
+      },
+      {
+        name: "testfile1",
+        type: "file",
+      },
+    ]
+    const expectedRequestInput = {
+      target: {
+        collectionName,
+      },
+      items,
+    }
+    it("rejects move requests with invalid body", async () => {
+      await request(app).post(`/${siteName}/pages/move`).send({}).expect(400)
+    })
+
+    it("rejects move requests with invalid body", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send({
+          ...expectedRequestInput,
+          items: items.concat({ name: "testdir", type: "dir" }),
+        })
+        .expect(400)
+    })
+
+    it("rejects move requests with invalid body", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send({ items })
+        .expect(400)
+    })
+
+    it("accepts valid unlinked page move requests to collections", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send(expectedRequestInput)
+        .expect(200)
+      expect(mockUnlinkedPagesDirectoryService.movePages).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          targetCollectionName: collectionName,
+          objArray: items,
+        }
+      )
+    })
+
+    it("accepts valid unlinked page move requests to subcollections", async () => {
+      await request(app)
+        .post(`/${siteName}/pages/move`)
+        .send({
+          ...expectedRequestInput,
+          target: { collectionName, subCollectionName },
+        })
+        .expect(200)
+      expect(mockUnlinkedPagesDirectoryService.movePages).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          targetCollectionName: collectionName,
+          targetSubcollectionName: subCollectionName,
+          objArray: items,
+        }
+      )
+    })
+  })
 })

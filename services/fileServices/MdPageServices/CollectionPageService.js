@@ -4,7 +4,8 @@ const {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
-const { titleSpecialCharCheck } = require("@utils/validators")
+
+const { titleSpecialCharCheck } = require("@validators/validators")
 
 class CollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {

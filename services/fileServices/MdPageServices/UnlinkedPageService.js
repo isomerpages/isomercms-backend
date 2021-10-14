@@ -4,7 +4,8 @@ const {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
-const { titleSpecialCharCheck } = require("@utils/validators")
+
+const { titleSpecialCharCheck } = require("@validators/validators")
 
 const UNLINKED_PAGES_DIRECTORY_NAME = "pages"
 

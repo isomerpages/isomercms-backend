@@ -1,7 +1,8 @@
 const { BadRequestError } = require("@errors/BadRequestError")
 
 const { deslugifyCollectionName } = require("@utils/utils")
-const { titleSpecialCharCheck } = require("@utils/validators")
+
+const { titleSpecialCharCheck } = require("@validators/validators")
 
 const {
   retrieveDataFromMarkdown,

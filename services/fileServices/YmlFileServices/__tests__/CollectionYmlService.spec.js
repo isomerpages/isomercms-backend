@@ -345,7 +345,7 @@ describe("Collection Yml Service", () => {
           collectionName,
           item: itemName,
         })
-      )
+      ).resolves.not.toThrow()
       expect(mockGithubService.update).not.toHaveBeenCalled()
     })
   })

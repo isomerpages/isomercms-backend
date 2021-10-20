@@ -133,7 +133,7 @@ describe("Settings Service", () => {
           updatedFooterContent: updatedContent.footerSettings,
           updatedNavigationContent: updatedContent.navigationSettings,
         })
-      )
+      ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
         reqDetails,
@@ -177,7 +177,7 @@ describe("Settings Service", () => {
           updatedFooterContent: updatedContent.footerSettings,
           updatedNavigationContent: updatedContent.navigationSettings,
         })
-      )
+      ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
         reqDetails,
@@ -224,7 +224,7 @@ describe("Settings Service", () => {
           updatedFooterContent: updatedContent.footerSettings,
           updatedNavigationContent: updatedContent.navigationSettings,
         })
-      )
+      ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
         reqDetails,
@@ -299,7 +299,7 @@ describe("Settings Service", () => {
           updatedFooterContent: updatedContent.footerSettings,
           updatedNavigationContent: updatedContent.navigationSettings,
         })
-      )
+      ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).not.toHaveBeenCalled()
       expect(mockFooterYmlService.update).not.toHaveBeenCalled()
@@ -364,7 +364,7 @@ describe("Settings Service", () => {
           updatedFooterContent: updatedContent.footerSettings,
           updatedNavigationContent: updatedContent.navigationSettings,
         })
-      )
+      ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
         reqDetails,

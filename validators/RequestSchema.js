@@ -90,6 +90,24 @@ const MoveDirectoryPagesRequestSchema = Joi.object().keys({
   items: Joi.array().items(FileSchema).required(),
 })
 
+// Resource categories
+const CreateResourceDirectoryRequestSchema = Joi.object().keys({
+  newDirectoryName: Joi.string().required(),
+})
+
+const RenameResourceDirectoryRequestSchema = Joi.object().keys({
+  newDirectoryName: Joi.string().required(),
+})
+
+const MoveResourceDirectoryPagesRequestSchema = Joi.object().keys({
+  target: Joi.object()
+    .keys({
+      resourceCategory: Joi.string().required(),
+    })
+    .required(),
+  items: Joi.array().items(FileSchema).required(),
+})
+
 module.exports = {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
@@ -101,4 +119,7 @@ module.exports = {
   RenameDirectoryRequestSchema,
   ReorderDirectoryRequestSchema,
   MoveDirectoryPagesRequestSchema,
+  CreateResourceDirectoryRequestSchema,
+  RenameResourceDirectoryRequestSchema,
+  MoveResourceDirectoryPagesRequestSchema,
 }

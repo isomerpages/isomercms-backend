@@ -375,6 +375,32 @@ auth.post(
   verifyJwt
 )
 
+// Resource Categories
+auth.get(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/move",
+  verifyJwt
+)
+
 auth.use((req, res, next) => {
   if (!req.route) {
     return res.status(404).send("Unauthorised for unknown route")

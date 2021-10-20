@@ -143,6 +143,8 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
         youtube: Joi.string().allow(""),
         instagram: Joi.string().allow(""),
         linkedin: Joi.string().allow(""),
+        telegram: Joi.string().allow(""),
+        tiktok: Joi.string().allow(""),
       }),
     })
     .required(),

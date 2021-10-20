@@ -103,6 +103,9 @@ const { SettingsService } = require("./services/configServices/settingsService")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
+const homepagePageService = new HomepagePageService({ gitHubService })
+const configYmlService = new ConfigYmlService({ gitHubService })
+const footerYmlService = new FooterYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
 const collectionPageService = new CollectionPageService({
   gitHubService,

@@ -100,7 +100,7 @@ class GitHubService {
         Authorization: `token ${accessToken}`,
       },
     })
-    if (resp.status === 404) throw new NotFoundError("File does not exist")
+    if (resp.status === 404) throw new NotFoundError("Directory does not exist")
 
     return resp.data
   }
@@ -140,6 +140,10 @@ class GitHubService {
       if (err instanceof NotFoundError) throw err
       const { status } = err.response
       if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
       throw err
     }
   }
@@ -173,6 +177,10 @@ class GitHubService {
     } catch (err) {
       const { status } = err.response
       if (status === 404) throw new NotFoundError("File does not exist")
+      if (status === 409)
+        throw new ConflictError(
+          "File has been changed recently, please try again"
+        )
       throw err
     }
   }
@@ -221,7 +229,7 @@ class GitHubService {
   }
 
   async updateTree(
-    { accessToken, currentCommitSha, siteName },
+    { accessToken, currentCommitSha, treeSha, siteName },
     { gitTree, message }
   ) {
     const url = `${siteName}/git/trees`
@@ -232,7 +240,10 @@ class GitHubService {
 
     const resp = await this.axiosInstance.post(
       url,
-      { tree: gitTree },
+      {
+        tree: gitTree,
+        base_tree: treeSha,
+      },
       { headers }
     )
 

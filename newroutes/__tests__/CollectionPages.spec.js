@@ -7,15 +7,25 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const { CollectionPagesRouter } = require("../collectionPages")
 
 describe("Collection Pages Router", () => {
-  const mockController = {
-    createPage: jest.fn(),
-    readPage: jest.fn(),
-    updatePage: jest.fn(),
-    deletePage: jest.fn(),
+  const mockCollectionPageService = {
+    create: jest.fn(),
+    read: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    rename: jest.fn(),
+  }
+
+  const mockSubcollectionPageService = {
+    create: jest.fn(),
+    read: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    rename: jest.fn(),
   }
 
   const router = new CollectionPagesRouter({
-    collectionController: mockController,
+    collectionPageService: mockCollectionPageService,
+    subcollectionPageService: mockSubcollectionPageService,
   })
 
   const app = express()
@@ -91,7 +101,7 @@ describe("Collection Pages Router", () => {
     })
 
     it("accepts valid collection page create requests and returns the details of the file created", async () => {
-      const expectedControllerInput = {
+      const expectedServiceInput = {
         fileName: pageDetails.newFileName,
         collectionName,
         content: pageDetails.content.pageBody,
@@ -101,14 +111,14 @@ describe("Collection Pages Router", () => {
         .post(`/${siteName}/collections/${collectionName}/pages`)
         .send(pageDetails)
         .expect(200)
-      expect(mockController.createPage).toHaveBeenCalledWith(
+      expect(mockCollectionPageService.create).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
 
     it("accepts valid subcollection page create requests and returns the details of the file created", async () => {
-      const expectedControllerInput = {
+      const expectedServiceInput = {
         fileName: pageDetails.newFileName,
         collectionName,
         subcollectionName,
@@ -121,28 +131,32 @@ describe("Collection Pages Router", () => {
         )
         .send(pageDetails)
         .expect(200)
-      expect(mockController.createPage).toHaveBeenCalledWith(
+      expect(mockSubcollectionPageService.create).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
   })
 
   describe("readCollectionPage", () => {
-    mockController.readPage.mockReturnValue({
+    const expectedResponse = {
       sha: mockSha,
       content: mockContent,
-    })
+    }
+    mockCollectionPageService.read.mockResolvedValue(expectedResponse)
+
+    mockSubcollectionPageService.read.mockResolvedValue(expectedResponse)
 
     it("retrieves collection page details", async () => {
       const expectedControllerInput = {
         fileName,
         collectionName,
       }
-      await request(app)
+      const resp = await request(app)
         .get(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .expect(200)
-      expect(mockController.readPage).toHaveBeenCalledWith(
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockCollectionPageService.read).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -154,12 +168,13 @@ describe("Collection Pages Router", () => {
         collectionName,
         subcollectionName,
       }
-      await request(app)
+      const resp = await request(app)
         .get(
           `/${siteName}/collections/${collectionName}/subcollections/${subcollectionName}/pages/${fileName}`
         )
         .expect(200)
-      expect(mockController.readPage).toHaveBeenCalledWith(
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
         reqDetails,
         expectedControllerInput
       )
@@ -191,7 +206,7 @@ describe("Collection Pages Router", () => {
     })
 
     it("accepts valid collection page update requests and returns the details of the file updated", async () => {
-      const expectedControllerInput = {
+      const expectedServiceInput = {
         fileName,
         collectionName,
         content: updatePageDetails.content.pageBody,
@@ -202,15 +217,15 @@ describe("Collection Pages Router", () => {
         .post(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .send(updatePageDetails)
         .expect(200)
-      expect(mockController.updatePage).toHaveBeenCalledWith(
+      expect(mockCollectionPageService.update).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
 
     it("accepts valid collection page rename requests and returns the details of the file updated", async () => {
-      const expectedControllerInput = {
-        fileName,
+      const expectedServiceInput = {
+        oldFileName: fileName,
         newFileName: renamePageDetails.newFileName,
         collectionName,
         content: renamePageDetails.content.pageBody,
@@ -221,14 +236,14 @@ describe("Collection Pages Router", () => {
         .post(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .send(renamePageDetails)
         .expect(200)
-      expect(mockController.updatePage).toHaveBeenCalledWith(
+      expect(mockCollectionPageService.rename).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
 
     it("accepts valid subcollection page update requests and returns the details of the file updated", async () => {
-      const expectedControllerInput = {
+      const expectedServiceInput = {
         fileName,
         collectionName,
         subcollectionName,
@@ -242,15 +257,15 @@ describe("Collection Pages Router", () => {
         )
         .send(updatePageDetails)
         .expect(200)
-      expect(mockController.updatePage).toHaveBeenCalledWith(
+      expect(mockSubcollectionPageService.update).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
 
     it("accepts valid subcollection page rename requests and returns the details of the file updated", async () => {
-      const expectedControllerInput = {
-        fileName,
+      const expectedServiceInput = {
+        oldFileName: fileName,
         newFileName: renamePageDetails.newFileName,
         collectionName,
         subcollectionName,
@@ -264,9 +279,9 @@ describe("Collection Pages Router", () => {
         )
         .send(renamePageDetails)
         .expect(200)
-      expect(mockController.updatePage).toHaveBeenCalledWith(
+      expect(mockSubcollectionPageService.rename).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
   })
@@ -284,7 +299,7 @@ describe("Collection Pages Router", () => {
     })
 
     it("accepts valid collection page delete requests", async () => {
-      const expectedControllerInput = {
+      const expectedServiceInput = {
         fileName,
         collectionName,
         sha: pageDetails.sha,
@@ -293,14 +308,14 @@ describe("Collection Pages Router", () => {
         .delete(`/${siteName}/collections/${collectionName}/pages/${fileName}`)
         .send(pageDetails)
         .expect(200)
-      expect(mockController.deletePage).toHaveBeenCalledWith(
+      expect(mockCollectionPageService.delete).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
 
     it("accepts valid subcollection page delete requests", async () => {
-      const expectedControllerInput = {
+      const expectedServiceInput = {
         fileName,
         collectionName,
         subcollectionName,
@@ -312,9 +327,9 @@ describe("Collection Pages Router", () => {
         )
         .send(pageDetails)
         .expect(200)
-      expect(mockController.deletePage).toHaveBeenCalledWith(
+      expect(mockSubcollectionPageService.delete).toHaveBeenCalledWith(
         reqDetails,
-        expectedControllerInput
+        expectedServiceInput
       )
     })
   })

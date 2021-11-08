@@ -42,7 +42,7 @@
     "pg": "^8.6.0",
     "pg-connection-string": "^2.5.0",
     "query-string": "^6.14.1",
-    "sequelize": "^6.6.5",
+    "sequelize": "^6.9.0",
     "serialize-error": "^7.0.1",
     "slugify": "^1.6.0",
     "supertest": "^6.1.3",

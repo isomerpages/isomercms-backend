@@ -1,0 +1,9 @@
+## E2E Tests
+To run the E2E tests successfully, you will need to define the following environment variables:
+```
+export E2E_TEST_REPO="e2e-test-repo"
+export E2E_TEST_SECRET="blahblahblah" // this should match the value of CYPRESS_COOKIE_VALUE on 
+// the frontend
+export E2E_TEST_GH_TOKEN="" // this can be your own personal GH access token, or  the token from our 
+// specialized E2E test user
+```

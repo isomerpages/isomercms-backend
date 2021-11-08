@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "dev:services": "docker compose up -d",
     "dev": "source .env && node ./bin/www",
-    "test": "jest",
+    "test": "source .env && jest",
     "lint": "npx eslint .",
     "format": "npx prettier --write .",
     "check-format": "npx prettier --check .",
@@ -16,7 +16,7 @@
     "@aws-sdk/client-secrets-manager": "^3.24.0",
     "auto-bind": "^4.0.0",
     "aws-sdk": "^2.946.0",
-    "axios": "^0.21.1",
+    "axios": "^0.21.3",
     "base-64": "^0.1.0",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
@@ -32,9 +32,9 @@
     "helmet": "^4.6.0",
     "http-errors": "~1.8.0",
     "is-svg": "^4.3.1",
+    "joi": "^17.4.0",
     "js-base64": "^2.6.4",
     "jsdom": "^16.7.0",
-    "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
     "module-alias": "^2.2.2",
@@ -46,12 +46,13 @@
     "query-string": "^6.14.1",
     "sequelize": "^6.6.5",
     "serialize-error": "^7.0.1",
+    "slugify": "^1.6.0",
     "supertest": "^6.1.3",
     "toml": "^3.0.0",
     "uuid": "^3.3.3",
     "validator": "^13.6.0",
     "winston": "^3.3.3",
-    "winston-cloudwatch": "^2.5.2",
+    "winston-cloudwatch": "^3.1.0",
     "yaml": "^1.10.2"
   },
   "devDependencies": {
@@ -64,7 +65,7 @@
     "eslint-plugin-only-warn": "^1.0.2",
     "eslint-plugin-prettier": "^3.4.0",
     "husky": "^6.0.0",
-    "jest": "^26.6.3",
+    "jest": "^27.2.2",
     "lint-staged": "^11.1.2",
     "prettier": "2.2.1",
     "sequelize-cli": "^6.2.0"
@@ -85,7 +86,6 @@
     "@loaders": "loaders",
     "@database": "database",
     "@services": "services",
-    "@controllers": "controllers",
     "@validators": "validators"
   },
   "jest": {
@@ -100,7 +100,6 @@
       "^@loaders/(.*)": "<rootDir>/loaders/$1",
       "^@database/(.*)": "<rootDir>/database/$1",
       "^@services/(.*)": "<rootDir>/services/$1",
-      "^@controllers/(.*)": "<rootDir>/controllers/$1",
       "^@validators/(.*)": "<rootDir>/validators/$1"
     }
   },
@@ -109,5 +108,8 @@
       "eslint --fix",
       "prettier --write"
     ]
+  },
+  "engines": {
+    "node": ">=14.17.5"
   }
 }

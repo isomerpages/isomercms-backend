@@ -11,61 +11,106 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const jwtUtils = require("@utils/jwt-utils")
 
 // Import services
+const { BadRequestError } = require("@root/errors/BadRequestError")
 const { authService, siteService } = require("@services/identity")
 
 // Instantiate router object
 const auth = express.Router()
 
+const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
+const E2E_TEST_USER = "e2e-test"
+const GENERAL_ACCESS_PATHS = ["/v1/sites", "/v1/auth/whoami"]
+
 function noVerify(req, res, next) {
   next("router")
 }
 
-const verifyJwt = (req, res, next) => {
-  try {
-    const { isomercms } = req.cookies
-    const {
-      access_token: retrievedToken,
-      user_id: retrievedId,
-      isomer_user_id: isomerUserId,
-    } = jwtUtils.verifyToken(isomercms)
+function verifyE2E(req) {
+  const { isomercmsE2E } = req.cookies
+  const urlTokens = req.url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
+  let isValidE2E
 
-    if (!isomerUserId) {
-      const notLoggedInError = new Error("User not logged in with email")
-      notLoggedInError.name = "NotLoggedInError"
-      throw notLoggedInError
+  if (isomercmsE2E) {
+    if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError("Bad credentials")
+
+    // Throw an error if accessing a repo other than e2e-test-repo
+    // Otherwise, allow access only to paths available to all users
+    if (!GENERAL_ACCESS_PATHS.includes(req.url)) {
+      if (urlTokens.length >= 3) {
+        const repo = urlTokens[3]
+        if (repo !== E2E_TEST_REPO)
+          throw new AuthError(
+            `E2E tests can only access the ${E2E_TEST_REPO} repo`
+          )
+      } else {
+        throw new BadRequestError("Invalid path")
+      }
     }
 
-    req.accessToken = jwtUtils.decryptToken(retrievedToken)
-    req.userId = retrievedId
-  } catch (err) {
-    logger.error("Authentication error")
-    if (err.name === "NotLoggedInError") {
-      throw new AuthError(err.message)
-    }
-    if (err.name === "TokenExpiredError") {
-      throw new AuthError("JWT token has expired")
-    }
-    if (err.name === "JsonWebTokenError") {
-      throw new AuthError(err.message)
-    }
-    throw new Error(err)
+    isValidE2E = true
   }
+
+  return isValidE2E
+}
+
+const verifyJwt = (req, res, next) => {
+  const { isomercms } = req.cookies
+  const isValidE2E = verifyE2E(req)
+
+  if (isValidE2E) {
+    req.accessToken = E2E_TEST_GH_TOKEN
+    req.userId = E2E_TEST_USER
+  } else {
+    try {
+      const {
+        access_token: retrievedToken,
+        user_id: retrievedId,
+        isomer_user_id: isomerUserId,
+      } = jwtUtils.verifyToken(isomercms)
+
+      if (!isomerUserId) {
+        const notLoggedInError = new Error("User not logged in with email")
+        notLoggedInError.name = "NotLoggedInError"
+        throw notLoggedInError
+      }
+
+      req.accessToken = jwtUtils.decryptToken(retrievedToken)
+      req.userId = retrievedId
+    } catch (err) {
+      logger.error("Authentication error")
+      if (err.name === "NotLoggedInError") {
+        throw new AuthError(err.message)
+      }
+      if (err.name === "TokenExpiredError") {
+        throw new AuthError("JWT token has expired")
+      }
+    }
+  }
+
   return next()
 }
 
 // Extracts access_token if any, else set access_token to null
 const whoamiAuth = (req, res, next) => {
-  let retrievedToken
-  try {
-    const { isomercms } = req.cookies
-    const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
-    if (!verifiedToken) throw new Error("Invalid token")
-    retrievedToken = jwtUtils.decryptToken(verifiedToken)
-  } catch (err) {
-    retrievedToken = undefined
-  } finally {
-    req.accessToken = retrievedToken
+  const isValidE2E = verifyE2E(req)
+
+  if (isValidE2E) {
+    req.accessToken = E2E_TEST_GH_TOKEN
+    req.userId = E2E_TEST_USER
+  } else {
+    let retrievedToken
+    try {
+      const { isomercms } = req.cookies
+      const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+      if (!verifiedToken) throw new Error("Invalid token")
+      retrievedToken = jwtUtils.decryptToken(verifiedToken)
+    } catch (err) {
+      retrievedToken = undefined
+    } finally {
+      req.accessToken = retrievedToken
+    }
   }
+
   return next("router")
 }
 
@@ -96,6 +141,9 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
 
   return next()
 }
+
+// Health check
+auth.get("/v2/ping", noVerify)
 
 // Login and logout
 auth.get("/v1/auth", noVerify)
@@ -149,37 +197,6 @@ auth.delete(
 )
 auth.post(
   "/v1/sites/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName",
-  verifyJwt
-)
-
-// New collection pages
-auth.post("/v2/sites/:siteName/collections/:collectionName/pages", verifyJwt)
-auth.post(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
-  verifyJwt
-)
-auth.get(
-  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-  verifyJwt
-)
-auth.get(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-  verifyJwt
-)
-auth.post(
-  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-  verifyJwt
-)
-auth.post(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-  verifyJwt
-)
-auth.delete(
-  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-  verifyJwt
-)
-auth.delete(
-  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
   verifyJwt
 )
 
@@ -314,6 +331,80 @@ auth.post("/v1/user/email/otp", verifyJwt)
 auth.post("/v1/user/email/verifyOtp", verifyJwt)
 auth.post("/v1/user/mobile/otp", verifyJwt)
 auth.post("/v1/user/mobile/verifyOtp", verifyJwt)
+
+// V2 Endpoints
+
+// Unlinked pages
+auth.get("/v2/sites/:siteName/pages", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/pages", verifyJwt)
+auth.get("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.delete("/v2/sites/:siteName/pages/pages/:pageName", verifyJwt)
+auth.post("/v2/sites/:siteName/pages/move", verifyJwt)
+
+// Collection pages
+auth.post("/v2/sites/:siteName/collections/:collectionName/pages", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+  verifyJwt
+)
+
+// Collections
+auth.get("/v2/sites/:siteName/collections", verifyJwt)
+auth.get("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.get(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
+auth.delete("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
+auth.delete(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName/reorder", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
+  verifyJwt
+)
+auth.post("/v2/sites/:siteName/collections/:collectionName/move", verifyJwt)
+auth.post(
+  "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
+  verifyJwt
+)
 
 auth.use((req, res, next) => {
   if (!req.route) {

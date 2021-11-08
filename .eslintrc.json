@@ -78,7 +78,6 @@
                 ["@loaders", "./loaders"],
                 ["@database", "./database"],
                 ["@services", "./services"],
-                ["@controllers", "./controllers"],
                 ["@validators", "./validators"]
             ]
         }

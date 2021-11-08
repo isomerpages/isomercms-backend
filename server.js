@@ -49,25 +49,43 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const { CollectionController } = require("@controllers/CollectionController")
 const {
   SubcollectionPageService,
 } = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
+  BaseDirectoryService,
+} = require("@services/directoryServices/BaseDirectoryService")
+const {
+  CollectionDirectoryService,
+} = require("@services/directoryServices/CollectionDirectoryService")
+const {
+  SubcollectionDirectoryService,
+} = require("@services/directoryServices/SubcollectionDirectoryService")
+const {
+  UnlinkedPagesDirectoryService,
+} = require("@services/directoryServices/UnlinkedPagesDirectoryService")
+const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  UnlinkedPageService,
+} = require("@services/fileServices/MdPageServices/UnlinkedPageService")
 const {
   CollectionYmlService,
 } = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
+const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
+const { CollectionsRouter } = require("./newroutes/collections")
+const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
+const navYmlService = new NavYmlService({ gitHubService })
 const collectionPageService = new CollectionPageService({
   gitHubService,
   collectionYmlService,
@@ -76,12 +94,42 @@ const subcollectionPageService = new SubcollectionPageService({
   gitHubService,
   collectionYmlService,
 })
-const collectionController = new CollectionController({
+const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const moverService = new MoverService({
+  unlinkedPageService,
   collectionPageService,
   subcollectionPageService,
 })
+const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const unlinkedPagesDirectoryService = new UnlinkedPagesDirectoryService({
+  baseDirectoryService,
+  moverService,
+})
+const collectionDirectoryService = new CollectionDirectoryService({
+  baseDirectoryService,
+  navYmlService,
+  collectionYmlService,
+  moverService,
+})
+const subcollectionDirectoryService = new SubcollectionDirectoryService({
+  baseDirectoryService,
+  collectionYmlService,
+  moverService,
+  subcollectionPageService,
+  gitHubService,
+})
+
+const unlinkedPagesRouter = new UnlinkedPagesRouter({
+  unlinkedPageService,
+  unlinkedPagesDirectoryService,
+})
 const collectionPagesV2Router = new CollectionPagesRouter({
-  collectionController,
+  collectionPageService,
+  subcollectionPageService,
+})
+const collectionsV2Router = new CollectionsRouter({
+  collectionDirectoryService,
+  subcollectionDirectoryService,
 })
 
 const app = express()
@@ -127,6 +175,10 @@ app.use("/v1/sites", netlifyTomlRouter)
 app.use("/v1/user", userRouter)
 
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
+app.use("/v2/sites", unlinkedPagesRouter.getRouter())
+app.use("/v2/sites", collectionsV2Router.getRouter())
+
+app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

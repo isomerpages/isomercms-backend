@@ -1,4 +1,5 @@
 const axios = require("axios")
+const slugify = require("slugify")
 
 const { GITHUB_ORG_NAME } = process.env
 
@@ -63,6 +64,7 @@ async function getTree(
 // send the new tree object back to Github and point the latest commit on the staging branch to it
 async function sendTree(
   gitTree,
+  baseTreeSha,
   currentCommitSha,
   repo,
   accessToken,
@@ -77,6 +79,7 @@ async function sendTree(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees`,
     {
       tree: gitTree,
+      base_tree: baseTreeSha,
     },
     {
       headers,
@@ -151,6 +154,9 @@ async function revertCommit(
   )
 }
 
+function slugifyCollectionName(collectionName) {
+  return slugify(collectionName, { lower: true }).replace(/[^a-zA-Z0-9-]/g, "")
+}
 /**
  * A function to deslugify a collection's name
  */
@@ -162,6 +168,7 @@ function deslugifyCollectionName(collectionName) {
 }
 
 module.exports = {
+  slugifyCollectionName,
   deslugifyCollectionName,
   getCommitAndTreeSha,
   getTree,

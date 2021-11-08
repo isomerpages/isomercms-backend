@@ -12,8 +12,11 @@ const { Collection } = require("@classes/Collection")
 const { CollectionConfig } = require("@classes/Config")
 const { File, CollectionPageType } = require("@classes/File")
 
-const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils.js")
-
+const {
+  getTree,
+  sendTree,
+  deslugifyCollectionName,
+} = require("@utils/utils.js")
 
 const router = express.Router()
 
@@ -45,31 +48,19 @@ async function deleteSubfolder(req, res) {
   const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`
   const isRecursive = true
   const gitTree = await getTree(siteName, accessToken, treeSha, isRecursive)
-  const baseTreeWithoutFolder = gitTree.filter(
-    (item) =>
-      // keep all root-level items except for tree object of folder whose subfolder is to be deleted
-      !item.path.includes("/") && item.path !== `_${folderName}`
-  )
-  const folderTreeWithoutSubfolder = gitTree
-    .filter((item) =>
-      // get all folder items
-      item.path.includes(`_${folderName}`)
-    )
+  const newGitTree = gitTree
     .filter(
       (item) =>
-        // remove tree objects of folder and subfolder to be renamed
-        item.path !== `_${folderName}` &&
-        item.path !== `_${folderName}/${subfolderName}`
+        item.type !== "tree" &&
+        item.path.startsWith(`_${folderName}/${subfolderName}/`)
     )
-    .filter(
-      (item) =>
-        // exclude all subfolder items
-        !item.path.includes(`_${folderName}/${subfolderName}`)
-    )
-
-  const newGitTree = [...baseTreeWithoutFolder, ...folderTreeWithoutSubfolder]
+    .map((item) => ({
+      ...item,
+      sha: null,
+    }))
   await sendTree(
     newGitTree,
+    treeSha,
     currentCommitSha,
     siteName,
     accessToken,
@@ -108,14 +99,14 @@ async function renameSubfolder(req, res) {
 
   const filesToBeModified = await CurrentIsomerFile.list()
 
-  await Bluebird.mapSeries(filesToBeModified, async(fileInfo) => {
+  await Bluebird.mapSeries(filesToBeModified, async (fileInfo) => {
     const { fileName } = fileInfo
 
     // Read existing file content
     const { content, sha } = await CurrentIsomerFile.read(fileName)
 
     // Handle keep file differently
-    if (fileName === '.keep') {
+    if (fileName === ".keep") {
       await NewIsomerFile.create(fileName, content)
       return CurrentIsomerFile.delete(fileName, sha)
     }
@@ -128,20 +119,23 @@ async function renameSubfolder(req, res) {
     // Modify `third_nav_title` and save as new file in newSubfolderName
     const newFrontMatter = {
       ...frontMatter,
-      third_nav_title: deslugifyCollectionName(newSubfolderName)
+      third_nav_title: deslugifyCollectionName(newSubfolderName),
     }
 
-    const newContent = ["---\n", yaml.stringify(newFrontMatter), "---\n", mdBody].join("")
+    const newContent = [
+      "---\n",
+      yaml.stringify(newFrontMatter),
+      "---\n",
+      mdBody,
+    ].join("")
 
     const encodedNewContent = Base64.encode(newContent)
-    
+
     await NewIsomerFile.create(fileName, encodedNewContent)
 
     // Delete existing file in subfolderName
     return CurrentIsomerFile.delete(fileName, sha)
-
   })
-
 
   // // Update collection config
   const collectionConfig = new CollectionConfig(

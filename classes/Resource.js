@@ -59,38 +59,38 @@ class Resource {
       this.siteName,
       this.accessToken
     )
-    const gitTree = await getTree(this.siteName, this.accessToken, treeSha)
-    const newGitTree = []
-    let resourceRoomTreeSha
-    // Retrieve all git trees of other items
-    gitTree.forEach((item) => {
-      if (item.path === resourceRoomName) {
-        resourceRoomTreeSha = item.sha
-      } else {
-        newGitTree.push(item)
-      }
-    })
-    const resourceRoomTree = await getTree(
+    const gitTree = await getTree(
       this.siteName,
       this.accessToken,
-      resourceRoomTreeSha
+      treeSha,
+      true
     )
-    resourceRoomTree.forEach((item) => {
+    const newGitTree = []
+    gitTree.forEach((item) => {
       // We need to append resource room to the file path because the path is relative to the subtree
-      if (item.path === resourceName) {
+      if (
+        item.path === `${resourceRoomName}/${resourceName}` &&
+        item.type === "tree"
+      ) {
+        // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
           path: `${resourceRoomName}/${newResourceName}`,
         })
-      } else {
+      } else if (
+        item.path.startsWith(`${resourceRoomName}/${resourceName}/`) &&
+        item.type !== "tree"
+      ) {
+        // Delete old subdirectory items
         newGitTree.push({
           ...item,
-          path: `${resourceRoomName}/${item.path}`,
+          sha: null,
         })
       }
     })
     await sendTree(
       newGitTree,
+      treeSha,
       currentCommitSha,
       this.siteName,
       this.accessToken,

@@ -1,4 +1,8 @@
+const { BadRequestError } = require("@errors/BadRequestError")
+
 const { deslugifyCollectionName } = require("@utils/utils")
+
+const { titleSpecialCharCheck } = require("@validators/validators")
 
 const {
   retrieveDataFromMarkdown,
@@ -15,6 +19,8 @@ class SubcollectionPageService {
     reqDetails,
     { fileName, collectionName, subcollectionName, content, frontMatter }
   ) {
+    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
+      throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.addItemToOrder(reqDetails, {
@@ -96,6 +102,8 @@ class SubcollectionPageService {
       sha,
     }
   ) {
+    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
+      throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.updateItemInOrder(reqDetails, {
@@ -110,7 +118,6 @@ class SubcollectionPageService {
       directoryName: parsedDirectoryName,
     })
 
-    frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
     const { sha: newSha } = await this.gitHubService.create(reqDetails, {
@@ -125,6 +132,36 @@ class SubcollectionPageService {
       oldSha: sha,
       newSha,
     }
+  }
+
+  // Used for updating the third_nav_title only without touching the collection.yml
+  async updateSubcollection(
+    reqDetails,
+    { fileName, collectionName, oldSubcollectionName, newSubcollectionName }
+  ) {
+    const {
+      sha,
+      content: { frontMatter, pageBody },
+    } = await this.read(reqDetails, {
+      fileName,
+      collectionName,
+      subcollectionName: oldSubcollectionName,
+    })
+
+    const parsedOldDirectoryName = `_${collectionName}/${oldSubcollectionName}`
+    const parsedNewDirectoryName = `_${collectionName}/${newSubcollectionName}`
+    frontMatter.third_nav_title = deslugifyCollectionName(newSubcollectionName)
+    const newContent = convertDataToMarkdown(frontMatter, pageBody)
+    await this.gitHubService.delete(reqDetails, {
+      sha,
+      fileName,
+      directoryName: parsedOldDirectoryName,
+    })
+    return this.gitHubService.create(reqDetails, {
+      content: newContent,
+      fileName,
+      directoryName: parsedNewDirectoryName,
+    })
   }
 }
 

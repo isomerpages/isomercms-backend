@@ -35,6 +35,7 @@ const resourceRoomRouter = require("@routes/resourceRoom")
 const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
+const userRouter = require("@routes/user")
 
 const axiosInstance = axios.create({
   baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
@@ -171,6 +172,7 @@ app.use("/v1/sites", homepageRouter)
 app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
+app.use("/v1/user", userRouter)
 
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())

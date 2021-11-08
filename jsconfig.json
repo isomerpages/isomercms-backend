@@ -13,9 +13,10 @@
         "@routes/*": ["./routes/*"],
         "@utils/*": ["./utils/*"],
         "@loaders/*": ["./loaders/*"],
-        "@database/*": ["./database/*"]
+        "@database/*": ["./database/*"],
         "@services/*": ["./services/*"],
-        "@validators/*": ["./validators/*"],
+        "@controllers/*": ["./controllers/*"],
+        "@validators/*": ["./validators/*"]
       }
     },
     "exclude": ["node_modules", "dist"]

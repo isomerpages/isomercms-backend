@@ -65,20 +65,28 @@ const verifyJwt = (req, res, next) => {
       const {
         access_token: retrievedToken,
         user_id: retrievedId,
+        isomer_user_id: isomerUserId,
       } = jwtUtils.verifyToken(isomercms)
+
+      if (!isomerUserId) {
+        const notLoggedInError = new Error("User not logged in with email")
+        notLoggedInError.name = "NotLoggedInError"
+        throw notLoggedInError
+      }
+
       req.accessToken = jwtUtils.decryptToken(retrievedToken)
       req.userId = retrievedId
     } catch (err) {
       logger.error("Authentication error")
+      if (err.name === "NotLoggedInError") {
+        throw new AuthError(err.message)
+      }
       if (err.name === "TokenExpiredError") {
         throw new AuthError("JWT token has expired")
       }
-      if (err.name === "JsonWebTokenError") {
-        throw new AuthError(err.message)
-      }
-      throw new Error(err)
     }
   }
+
   return next()
 }
 
@@ -94,6 +102,7 @@ const whoamiAuth = (req, res, next) => {
     try {
       const { isomercms } = req.cookies
       const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+      if (!verifiedToken) throw new Error("Invalid token")
       retrievedToken = jwtUtils.decryptToken(verifiedToken)
     } catch (err) {
       retrievedToken = undefined
@@ -137,8 +146,8 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
 auth.get("/v2/ping", noVerify)
 
 // Login and logout
-auth.get("/v1/auth/github-redirect", noVerify)
 auth.get("/v1/auth", noVerify)
+auth.get("/v1/auth/github-redirect", noVerify)
 auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
 
@@ -316,6 +325,12 @@ auth.get("/v1/sites", verifyJwt)
 auth.get("/v1/sites/:siteName", verifyJwt)
 auth.get("/v1/sites/:siteName/lastUpdated", verifyJwt)
 auth.get("/v1/sites/:siteName/stagingUrl", verifyJwt)
+
+// Users
+auth.post("/v1/user/email/otp", verifyJwt)
+auth.post("/v1/user/email/verifyOtp", verifyJwt)
+auth.post("/v1/user/mobile/otp", verifyJwt)
+auth.post("/v1/user/mobile/verifyOtp", verifyJwt)
 
 // V2 Endpoints
 

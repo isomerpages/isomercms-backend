@@ -84,7 +84,7 @@ const { CollectionsRouter } = require("./newroutes/collections")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 const { UsersRouter } = require("./newroutes/users")
 
-const { userService } = initializeIdentityServices({ axiosInstance })
+const { usersService } = initializeIdentityServices({ axiosInstance })
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
@@ -133,7 +133,7 @@ const collectionsV2Router = new CollectionsRouter({
   collectionDirectoryService,
   subcollectionDirectoryService,
 })
-const usersRouter = new UsersRouter({ userService })
+const usersRouter = new UsersRouter({ usersService })
 
 const app = express()
 app.use(helmet())

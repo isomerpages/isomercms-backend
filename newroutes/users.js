@@ -9,8 +9,8 @@ const { BadRequestError } = require("@errors/BadRequestError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 class UsersRouter {
-  constructor({ userService }) {
-    this.userService = userService
+  constructor({ usersService }) {
+    this.usersService = usersService
     autoBind(this)
   }
 
@@ -21,10 +21,10 @@ class UsersRouter {
     }
 
     try {
-      if (!(await this.userService.canSendEmailOtp(email))) {
+      if (!(await this.usersService.canSendEmailOtp(email))) {
         throw new Error(`Invalid email ${email}`)
       }
-      await this.userService.sendEmailOtp(email)
+      await this.usersService.sendEmailOtp(email)
       return res.sendStatus(200)
     } catch (err) {
       logger.error(err.message)
@@ -34,11 +34,11 @@ class UsersRouter {
 
   async verifyEmailOtp(req, res) {
     const { email, otp } = req.body
-    if (!this.userService.verifyOtp(email, otp)) {
+    if (!this.usersService.verifyOtp(email, otp)) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.userService.updateUserByGitHubId(req.userId, { email })
+    await this.usersService.updateUserByGitHubId(req.userId, { email })
     return res.sendStatus(200)
   }
 
@@ -48,17 +48,17 @@ class UsersRouter {
       throw new BadRequestError("Please provide a valid mobile number")
     }
 
-    await this.userService.sendSmsOtp(mobile)
+    await this.usersService.sendSmsOtp(mobile)
     return res.sendStatus(200)
   }
 
   async verifyMobileNumberOtp(req, res) {
     const { mobile, otp } = req.body
-    if (!this.userService.verifyOtp(mobile, otp)) {
+    if (!this.usersService.verifyOtp(mobile, otp)) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.userService.updateUserByGitHubId(req.userId, {
+    await this.usersService.updateUserByGitHubId(req.userId, {
       contactNumber: mobile,
     })
     return res.sendStatus(200)

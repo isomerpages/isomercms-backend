@@ -12,7 +12,7 @@ const jwtUtils = require("@utils/jwt-utils")
 
 // Import services
 const { BadRequestError } = require("@root/errors/BadRequestError")
-const { authService, siteService } = require("@services/identity")
+const identityServices = require("@services/identity")
 
 // Instantiate router object
 const auth = express.Router()
@@ -116,11 +116,12 @@ const whoamiAuth = (req, res, next) => {
 
 // Replace access token with site access token if it is available
 const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
+  const { authService, sitesService } = identityServices
   const { accessToken: userAccessToken, userId } = req
   const { siteName } = req.params
 
   // Check if site is onboarded to Isomer identity, otherwise continue using user access token
-  const site = await siteService.getBySiteName(siteName)
+  const site = await sitesService.getBySiteName(siteName)
   if (!site) {
     logger.info(
       `Site ${siteName} does not exists in site table. Default to using user access token.`
@@ -133,7 +134,7 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
     throw new NotFoundError("Site does not exist")
   }
 
-  const siteAccessToken = await siteService.getSiteAccessToken(siteName)
+  const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
   req.accessToken = siteAccessToken
   logger.info(
     `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`

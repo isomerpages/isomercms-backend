@@ -2,7 +2,7 @@
 // that are allowed to login.
 const { DOMAIN_WHITELIST } = process.env
 
-class UserService {
+class UsersService {
   constructor({ otp, mailer, smsClient, repository }) {
     this.repository = repository
     this.otp = otp
@@ -63,4 +63,4 @@ class UserService {
   }
 }
 
-module.exports = UserService
+module.exports = UsersService

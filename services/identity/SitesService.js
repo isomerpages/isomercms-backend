@@ -1,4 +1,4 @@
-class SiteService {
+class SitesService {
   constructor({ repository, tokenStore }) {
     this.repository = repository
     this.tokenStore = tokenStore
@@ -18,4 +18,4 @@ class SiteService {
   }
 }
 
-module.exports = SiteService
+module.exports = SitesService

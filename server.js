@@ -35,7 +35,6 @@ const resourceRoomRouter = require("@routes/resourceRoom")
 const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
-const userRouter = require("@routes/user")
 
 const axiosInstance = axios.create({
   baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
@@ -77,12 +76,15 @@ const {
 const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
+const { initializeIdentityServices } = require("@services/identity")
 const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
+const { UsersRouter } = require("./newroutes/users")
 
+const { userService } = initializeIdentityServices({ axiosInstance })
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
@@ -131,6 +133,7 @@ const collectionsV2Router = new CollectionsRouter({
   collectionDirectoryService,
   subcollectionDirectoryService,
 })
+const usersRouter = new UsersRouter({ userService })
 
 const app = express()
 app.use(helmet())
@@ -172,7 +175,7 @@ app.use("/v1/sites", homepageRouter)
 app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
-app.use("/v1/user", userRouter)
+app.use("/v1/user", usersRouter.getRouter())
 
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())

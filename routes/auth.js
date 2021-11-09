@@ -14,7 +14,7 @@ const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 // Import services
-const { userService } = require("@services/identity")
+const identityServices = require("@services/identity")
 
 const router = express.Router()
 
@@ -107,7 +107,7 @@ async function githubAuth(req, res) {
   const githubId = userResp.data && userResp.data.login
 
   // Find or create user after GitHub auth passes using github id
-  const user = await userService.findOrCreate(githubId)
+  const user = await identityServices.usersService.findOrCreate(githubId)
   if (!user) throw Error("Failed to create user")
 
   const authTokenExpiry = new Date()
@@ -154,7 +154,10 @@ async function whoami(req, res) {
     })
     const userId = resp.data.login
 
-    const { email, contactNumber } = await userService.findByGitHubId(userId)
+    const {
+      email,
+      contactNumber,
+    } = await identityServices.usersService.findByGitHubId(userId)
     return res.status(200).json({ userId, email, contactNumber })
   } catch (err) {
     clearAllCookies(res)

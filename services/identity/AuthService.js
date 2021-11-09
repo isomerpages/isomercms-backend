@@ -1,13 +1,13 @@
-const axios = require("axios")
-
-const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
-
 class AuthService {
+  constructor({ axiosInstance }) {
+    this.client = axiosInstance
+  }
+
   async hasAccessToSite(siteName, userId, accessToken) {
-    const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
+    const endpoint = `/${siteName}/collaborators/${userId}`
 
     try {
-      await axios.get(endpoint, {
+      await this.client.get(endpoint, {
         headers: {
           Authorization: `token ${accessToken}`,
           "Content-Type": "application/json",

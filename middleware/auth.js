@@ -324,6 +324,24 @@ auth.delete(
   verifyJwt
 )
 
+// Resource Pages
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  verifyJwt
+)
+
 // Collections
 auth.get("/v2/sites/:siteName/collections", verifyJwt)
 auth.get("/v2/sites/:siteName/collections/:collectionName", verifyJwt)
@@ -354,6 +372,32 @@ auth.post(
 auth.post("/v2/sites/:siteName/collections/:collectionName/move", verifyJwt)
 auth.post(
   "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
+  verifyJwt
+)
+
+// Resource Categories
+auth.get(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/move",
   verifyJwt
 )
 

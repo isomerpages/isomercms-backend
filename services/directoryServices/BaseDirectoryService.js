@@ -84,6 +84,47 @@ class BaseDirectoryService {
       commitSha: newCommitSha,
     })
   }
+
+  // Move files which do not require modification of content
+  async moveFiles(
+    reqDetails,
+    { oldDirectoryName, newDirectoryName, targetFiles, message }
+  ) {
+    const gitTree = await this.gitHubService.getTree(reqDetails, {
+      isRecursive: true,
+    })
+
+    const newGitTree = []
+
+    gitTree.forEach((item) => {
+      if (
+        item.path.startsWith(`${oldDirectoryName}/`) &&
+        item.type !== "tree"
+      ) {
+        const fileName = item.path.split(`${oldDirectoryName}/`)[1]
+        if (targetFiles.includes(fileName)) {
+          // Add file to target directory
+          newGitTree.push({
+            ...item,
+            path: `${newDirectoryName}/${fileName}`,
+          })
+          // Delete old file
+          newGitTree.push({
+            ...item,
+            sha: null,
+          })
+        }
+      }
+    })
+
+    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
+      gitTree: newGitTree,
+      message,
+    })
+    await this.gitHubService.updateRepoState(reqDetails, {
+      commitSha: newCommitSha,
+    })
+  }
 }
 
 module.exports = { BaseDirectoryService }

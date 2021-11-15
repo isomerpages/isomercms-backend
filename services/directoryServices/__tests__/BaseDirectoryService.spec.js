@@ -40,6 +40,14 @@ describe("Base Directory Service", () => {
     },
     {
       type: "file",
+      path: `${directoryName}/${subcollectionName}/file2.md`,
+    },
+    {
+      type: "file",
+      path: `${directoryName}/${subcollectionName}/file3.md`,
+    },
+    {
+      type: "file",
       path: `_to-keep/${directoryName}/${subcollectionName}/file.md`,
     },
   ]
@@ -115,6 +123,16 @@ describe("Base Directory Service", () => {
         path: `${directoryName}/${subcollectionName}/file.md`,
         sha: null,
       },
+      {
+        type: "file",
+        path: `${directoryName}/${subcollectionName}/file2.md`,
+        sha: null,
+      },
+      {
+        type: "file",
+        path: `${directoryName}/${subcollectionName}/file3.md`,
+        sha: null,
+      },
     ]
     mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
@@ -154,6 +172,16 @@ describe("Base Directory Service", () => {
         path: `${directoryName}/${subcollectionName}/file.md`,
         sha: null,
       },
+      {
+        type: "file",
+        path: `${directoryName}/${subcollectionName}/file2.md`,
+        sha: null,
+      },
+      {
+        type: "file",
+        path: `${directoryName}/${subcollectionName}/file3.md`,
+        sha: null,
+      },
     ]
     mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
@@ -169,6 +197,55 @@ describe("Base Directory Service", () => {
       })
       expect(mockGithubService.updateTree).toHaveBeenCalledWith(reqDetails, {
         gitTree: mockedDeletedTree,
+        message,
+      })
+      expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          commitSha: sha,
+        }
+      )
+    })
+  })
+
+  describe("Move Files", () => {
+    const targetDir = "_target-dir"
+    const mockedMovedTree = [
+      {
+        type: "file",
+        path: `${targetDir}/file.md`,
+      },
+      {
+        type: "file",
+        path: `${directoryName}/${subcollectionName}/file.md`,
+        sha: null,
+      },
+      {
+        type: "file",
+        path: `${targetDir}/file2.md`,
+      },
+      {
+        type: "file",
+        path: `${directoryName}/${subcollectionName}/file2.md`,
+        sha: null,
+      },
+    ]
+    mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
+    mockGithubService.updateTree.mockResolvedValueOnce(sha)
+    it("Moving files in directories works correctly", async () => {
+      await expect(
+        service.moveFiles(reqDetails, {
+          oldDirectoryName: `${directoryName}/${subcollectionName}`,
+          newDirectoryName: targetDir,
+          targetFiles: ["file.md", "file2.md"],
+          message,
+        })
+      ).resolves.not.toThrow()
+      expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
+        isRecursive: true,
+      })
+      expect(mockGithubService.updateTree).toHaveBeenCalledWith(reqDetails, {
+        gitTree: mockedMovedTree,
         message,
       })
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(

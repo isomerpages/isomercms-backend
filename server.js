@@ -77,11 +77,11 @@ const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
 const {
-  ResourcePageService,
-} = require("@services/fileServices/MdPageServices/ResourcePageService")
-const {
   HomepagePageService,
 } = require("@services/fileServices/MdPageServices/HomepagePageService")
+const {
+  ResourcePageService,
+} = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
   UnlinkedPageService,
 } = require("@services/fileServices/MdPageServices/UnlinkedPageService")
@@ -144,10 +144,6 @@ const resourceDirectoryService = new ResourceDirectoryService({
   baseDirectoryService,
   gitHubService,
 })
-const homepagePageService = new HomepagePageService({ gitHubService })
-const configYmlService = new ConfigYmlService({ gitHubService })
-const footerYmlService = new FooterYmlService({ gitHubService })
-const navYmlService = new NavYmlService({ gitHubService })
 
 const settingsService = new SettingsService({
   homepagePageService,

@@ -379,6 +379,11 @@ auth.post(
   verifyJwt
 )
 
+// Resource Room
+auth.post("/v2/sites/:siteName/resourceRoom", verifyJwt)
+auth.post("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
+auth.delete("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
+
 // Resource Categories
 auth.get(
   "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",

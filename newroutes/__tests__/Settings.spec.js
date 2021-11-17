@@ -85,9 +85,9 @@ describe("Settings Router", () => {
 
     it("retrieves settings data", async () => {
       const expectedResponse = {
-        configSettings: configResponse,
-        footerSettings: footerResponse,
-        navigationSettings: navigationResponse,
+        ...configResponse,
+        ...footerResponse,
+        ...navigationResponse,
       }
       const resp = await request(app).get(`/${siteName}/settings`).expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
@@ -108,18 +108,12 @@ describe("Settings Router", () => {
     const updatedFaq = `${footerContent.faq}test`
     const updatedLogo = `${navigationContent.logo}test`
 
-    it("rejects requests with invalid body", async () => {
-      await request(app).post(`/${siteName}/settings`).send({}).expect(400)
-    })
-
     it("successfully updates settings", async () => {
       const requestObject = {
-        configSettings: {
-          title: updatedTitleValue,
-          "facebook-pixel": updatedFbPixelValue,
-        },
-        footerSettings: { faq: updatedFaq },
-        navigationSettings: { logo: updatedLogo },
+        title: updatedTitleValue,
+        "facebook-pixel": updatedFbPixelValue,
+        faq: updatedFaq,
+        logo: updatedLogo,
       }
 
       await request(app)

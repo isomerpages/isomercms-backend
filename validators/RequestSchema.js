@@ -139,8 +139,8 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
     linkedin: Joi.string().allow(""),
     telegram: Joi.string().allow(""),
     tiktok: Joi.string().allow(""),
-    logo: Joi.string(),
   }),
+  logo: Joi.string().allow(""),
 })
 
 module.exports = {

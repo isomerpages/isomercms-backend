@@ -5,6 +5,7 @@ const express = require("express")
 const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
+  attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
@@ -18,6 +19,18 @@ class ResourceRoomRouter {
     this.resourceRoomDirectoryService = resourceRoomDirectoryService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
+  }
+
+  // Get resource room name
+  async getResourceRoomDirectory(req, res) {
+    const { accessToken } = req
+
+    const { siteName } = req.params
+    const getResp = await this.resourceRoomDirectoryService.getResourceRoomDirectory(
+      { siteName, accessToken }
+    )
+
+    return res.status(200).json(getResp)
   }
 
   // Create new resource room
@@ -74,6 +87,10 @@ class ResourceRoomRouter {
   getRouter() {
     const router = express.Router()
 
+    router.get(
+      "/:siteName/resourceRoom",
+      attachReadRouteHandlerWrapper(this.getResourceRoomDirectory)
+    )
     router.post(
       "/:siteName/resourceRoom",
       attachRollbackRouteHandlerWrapper(this.createResourceRoomDirectory)

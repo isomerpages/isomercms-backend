@@ -15,6 +15,15 @@ class ResourceRoomDirectoryService {
     this.gitHubService = gitHubService
   }
 
+  async getResourceRoomDirectory(reqDetails) {
+    const config = await this.configYmlService.read(reqDetails)
+    return {
+      resourceRoomName: config.content.resources_name
+        ? config.content.resources_name
+        : null,
+    }
+  }
+
   async createResourceRoomDirectory(reqDetails, { resourceRoomName }) {
     if (/[^a-zA-Z0-9- ]/g.test(resourceRoomName)) {
       // Contains non-allowed characters

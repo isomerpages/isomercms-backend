@@ -109,50 +109,38 @@ const MoveResourceDirectoryPagesRequestSchema = Joi.object().keys({
   items: Joi.array().items(FileSchema).required(),
 })
 const UpdateSettingsRequestSchema = Joi.object().keys({
-  configSettings: Joi.object()
-    .keys({
-      colors: Joi.object().keys({
-        "primary-color": Joi.string().required(),
-        "secondary-color": Joi.string().required(),
-        "media-colors": Joi.array().items(
-          Joi.object().keys({
-            title: Joi.string().required(),
-            color: Joi.string().allow(""),
-          })
-        ),
-      }),
-      favicon: Joi.string(),
-      "facebook-pixel": Joi.string().allow(""),
-      google_analytics: Joi.string().allow(""),
-      "linkedin-insights": Joi.string().allow(""),
-      is_government: Joi.boolean(),
-      shareicon: Joi.string().allow(""),
-      title: Joi.string().allow(""),
-      description: Joi.string().allow(""),
-    })
-    .required(),
-  footerSettings: Joi.object()
-    .keys({
-      contact_us: Joi.string().allow(""),
-      feedback: Joi.string().allow(""),
-      faq: Joi.string().allow(""),
-      show_reach: Joi.boolean(),
-      social_media: Joi.object().keys({
-        facebook: Joi.string().allow(""),
-        twitter: Joi.string().allow(""),
-        youtube: Joi.string().allow(""),
-        instagram: Joi.string().allow(""),
-        linkedin: Joi.string().allow(""),
-        telegram: Joi.string().allow(""),
-        tiktok: Joi.string().allow(""),
-      }),
-    })
-    .required(),
-  navigationSettings: Joi.object()
-    .keys({
-      logo: Joi.string(),
-    })
-    .required(),
+  colors: Joi.object().keys({
+    "primary-color": Joi.string().required(),
+    "secondary-color": Joi.string().required(),
+    "media-colors": Joi.array().items(
+      Joi.object().keys({
+        title: Joi.string().required(),
+        color: Joi.string().allow(""),
+      })
+    ),
+  }),
+  favicon: Joi.string(),
+  "facebook-pixel": Joi.string().allow(""),
+  google_analytics: Joi.string().allow(""),
+  "linkedin-insights": Joi.string().allow(""),
+  is_government: Joi.boolean(),
+  shareicon: Joi.string().allow(""),
+  title: Joi.string().allow(""),
+  description: Joi.string().allow(""),
+  contact_us: Joi.string().allow(""),
+  feedback: Joi.string().allow(""),
+  faq: Joi.string().allow(""),
+  show_reach: Joi.boolean(),
+  social_media: Joi.object().keys({
+    facebook: Joi.string().allow(""),
+    twitter: Joi.string().allow(""),
+    youtube: Joi.string().allow(""),
+    instagram: Joi.string().allow(""),
+    linkedin: Joi.string().allow(""),
+    telegram: Joi.string().allow(""),
+    tiktok: Joi.string().allow(""),
+    logo: Joi.string(),
+  }),
 })
 
 module.exports = {

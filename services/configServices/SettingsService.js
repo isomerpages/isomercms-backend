@@ -148,6 +148,57 @@ class SettingsService {
       logo: navigation.content.logo,
     }
   }
+
+  static retrieveSettingsFields(settings) {
+    const configParams = [
+      "url",
+      "description",
+      "title",
+      "favicon",
+      "shareicon",
+      "is_government",
+      "facebook-pixel",
+      "google_analytics",
+      "linkedin-insights",
+      "resources_name",
+      "colors",
+    ]
+    const footerParams = [
+      "contact_us",
+      "show_reach",
+      "feedback",
+      "faq",
+      "social_media",
+    ]
+    const navigationParams = ["logo"]
+
+    const configContent = configParams.reduce(
+      (acc, curr) => ({
+        ...acc,
+        ...(curr in settings && { [curr]: settings[curr] }),
+      }),
+      {}
+    )
+    const footerContent = footerParams.reduce(
+      (acc, curr) => ({
+        ...acc,
+        ...(curr in settings && { [curr]: settings[curr] }),
+      }),
+      {}
+    )
+    const navigationContent = navigationParams.reduce(
+      (acc, curr) => ({
+        ...acc,
+        ...(curr in settings && { [curr]: settings[curr] }),
+      }),
+      {}
+    )
+    return {
+      configContent,
+      footerContent,
+      navigationContent,
+    }
+  }
 }
 
 module.exports = { SettingsService }

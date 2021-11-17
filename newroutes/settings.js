@@ -35,9 +35,9 @@ class SettingsRouter {
     } = await this.settingsService.retrieveSettingsFiles(reqDetails)
 
     return res.status(200).json({
-      configSettings: SettingsService.extractConfigFields(config),
-      footerSettings: SettingsService.extractFooterFields(footer),
-      navigationSettings: SettingsService.extractNavFields(navigation),
+      ...SettingsService.extractConfigFields(config),
+      ...SettingsService.extractFooterFields(footer),
+      ...SettingsService.extractNavFields(navigation),
     })
   }
 
@@ -58,11 +58,12 @@ class SettingsRouter {
     } = await this.settingsService.retrieveSettingsFiles(reqDetails, true)
 
     // extract data
+    const settings = body
     const {
-      configSettings: updatedConfigContent,
-      footerSettings: updatedFooterContent,
-      navigationSettings: updatedNavigationContent,
-    } = body
+      configContent: updatedConfigContent,
+      footerContent: updatedFooterContent,
+      navigationContent: updatedNavigationContent,
+    } = SettingsService.retrieveSettingsFields(settings)
 
     await this.settingsService.updateSettingsFiles({
       reqDetails,

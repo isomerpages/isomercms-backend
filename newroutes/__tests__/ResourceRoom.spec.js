@@ -8,6 +8,7 @@ const { ResourceRoomRouter } = require("../resourceRoom")
 
 describe("Resource Room Router", () => {
   const mockResourceRoomDirectoryService = {
+    getResourceRoomDirectory: jest.fn(),
     createResourceRoomDirectory: jest.fn(),
     renameResourceRoomDirectory: jest.fn(),
     deleteResourceRoomDirectory: jest.fn(),
@@ -22,6 +23,10 @@ describe("Resource Room Router", () => {
   app.use(express.urlencoded({ extended: false }))
 
   // We can use read route handler here because we don't need to lock the repo
+  app.get(
+    "/:siteName/resourceRoom",
+    attachReadRouteHandlerWrapper(router.getResourceRoomDirectory)
+  )
   app.post(
     "/:siteName/resourceRoom",
     attachReadRouteHandlerWrapper(router.createResourceRoomDirectory)
@@ -50,6 +55,21 @@ describe("Resource Room Router", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  describe("getResourceRoomDirectory", () => {
+    it("returns the details of the resource room", async () => {
+      mockResourceRoomDirectoryService.getResourceRoomDirectory.mockResolvedValueOnce(
+        { resourceRoomName }
+      )
+      const resp = await request(app)
+        .get(`/${siteName}/resourceRoom`)
+        .expect(200)
+      expect(resp.body).toStrictEqual({ resourceRoomName })
+      expect(
+        mockResourceRoomDirectoryService.getResourceRoomDirectory
+      ).toHaveBeenCalledWith(reqDetails)
+    })
   })
 
   describe("createResourceRoomDirectory", () => {

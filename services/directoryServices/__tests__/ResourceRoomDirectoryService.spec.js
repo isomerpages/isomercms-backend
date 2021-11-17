@@ -65,6 +65,21 @@ describe("Resource Directory Service", () => {
     jest.clearAllMocks()
   })
 
+  describe("GetResourceRoomDirectory", () => {
+    mockConfigYmlService.read.mockResolvedValueOnce({
+      content: mockConfigContent,
+      sha,
+    })
+    it("Getting the resource room name works correctly", async () => {
+      await expect(
+        service.getResourceRoomDirectory(reqDetails)
+      ).resolves.toMatchObject({
+        resourceRoomName: mockConfigContent.resources_name,
+      })
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
+    })
+  })
+
   describe("CreateResourceRoomDirectory", () => {
     it("rejects resource room names with special characters", async () => {
       await expect(

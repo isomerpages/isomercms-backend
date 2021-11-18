@@ -1,4 +1,5 @@
 const { BadRequestError } = require("@errors/BadRequestError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 const INDEX_FILE_NAME = "index.html"
 
@@ -142,6 +143,15 @@ describe("Resource Directory Service", () => {
       await expect(
         service.listFiles(reqDetails, { resourceRoomName, resourceCategory })
       ).resolves.toMatchObject(expectedResp)
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: `${directoryName}/_posts`,
+      })
+    })
+    mockBaseDirectoryService.list.mockRejectedValue(new NotFoundError(""))
+    it("ListFiles returns an empty array if a NotFoundError is thrown", async () => {
+      await expect(
+        service.listFiles(reqDetails, { resourceRoomName, resourceCategory })
+      ).resolves.toMatchObject([])
       expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
         directoryName: `${directoryName}/_posts`,
       })

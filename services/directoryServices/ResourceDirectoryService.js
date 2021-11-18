@@ -1,4 +1,5 @@
 const { BadRequestError } = require("@errors/BadRequestError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 const {
   retrieveDataFromMarkdown,
@@ -33,14 +34,19 @@ class ResourceDirectoryService {
   }
 
   async listFiles(reqDetails, { resourceRoomName, resourceCategory }) {
-    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
-      directoryName: `${this.getResourceDirectoryPath({
-        resourceRoomName,
-        resourceCategory,
-      })}/_posts`,
-    })
+    let files = []
+    try {
+      files = await this.baseDirectoryService.list(reqDetails, {
+        directoryName: `${this.getResourceDirectoryPath({
+          resourceRoomName,
+          resourceCategory,
+        })}/_posts`,
+      })
+    } catch (error) {
+      if (!(error instanceof NotFoundError)) throw error
+    }
 
-    return filesOrDirs.reduce((acc, curr) => {
+    return files.reduce((acc, curr) => {
       if (curr.type === "file")
         acc.push({
           name: curr.name,

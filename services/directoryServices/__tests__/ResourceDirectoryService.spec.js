@@ -112,6 +112,29 @@ describe("Resource Directory Service", () => {
   })
 
   describe("ListFiles", () => {
+    const listDirResp = [
+      {
+        name: "index.html",
+        path: `${resourceRoomName}/index.html`,
+        sha: "test-sha0",
+        size: 10,
+        type: "file",
+      },
+      {
+        name: resourceCategory,
+        path: `${resourceRoomName}/${resourceCategory}`,
+        sha: "test-sha4",
+        size: 10,
+        type: "dir",
+      },
+      {
+        name: `category-2`,
+        path: `${resourceRoomName}/category-2`,
+        sha: "test-sha5",
+        size: 10,
+        type: "dir",
+      },
+    ]
     const listResp = [
       {
         name: "2021-10-13-file-example-title1.md",
@@ -138,22 +161,42 @@ describe("Resource Directory Service", () => {
         type: "file",
       },
     ]
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)
     mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
     it("ListFiles returns all files in the category", async () => {
       await expect(
         service.listFiles(reqDetails, { resourceRoomName, resourceCategory })
       ).resolves.toMatchObject(expectedResp)
       expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
+      })
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
         directoryName: `${directoryName}/_posts`,
       })
     })
-    mockBaseDirectoryService.list.mockRejectedValue(new NotFoundError(""))
-    it("ListFiles returns an empty array if a NotFoundError is thrown", async () => {
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)
+    mockBaseDirectoryService.list.mockRejectedValueOnce(new NotFoundError(""))
+    it("ListFiles returns an empty array if resource category contains no files is thrown", async () => {
       await expect(
         service.listFiles(reqDetails, { resourceRoomName, resourceCategory })
       ).resolves.toMatchObject([])
       expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
+      })
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
         directoryName: `${directoryName}/_posts`,
+      })
+    })
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)
+    it("ListFiles returns an error if resource category does not exist", async () => {
+      await expect(
+        service.listFiles(reqDetails, {
+          resourceRoomName,
+          resourceCategory: "fake-category",
+        })
+      ).rejects.toThrowError(NotFoundError)
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
       })
     })
   })

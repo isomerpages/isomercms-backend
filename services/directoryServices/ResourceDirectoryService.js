@@ -34,6 +34,14 @@ class ResourceDirectoryService {
   }
 
   async listFiles(reqDetails, { resourceRoomName, resourceCategory }) {
+    const resourceCategories = await this.listAllResourceCategories(
+      reqDetails,
+      { resourceRoomName }
+    )
+    if (
+      !resourceCategories.find((element) => element.name === resourceCategory)
+    )
+      throw new NotFoundError("Resource category does not exist")
     let files = []
     try {
       files = await this.baseDirectoryService.list(reqDetails, {

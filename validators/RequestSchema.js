@@ -94,6 +94,7 @@ const MoveDirectoryPagesRequestSchema = Joi.object().keys({
 // Resource categories
 const CreateResourceDirectoryRequestSchema = Joi.object().keys({
   newDirectoryName: Joi.string().required(),
+  items: Joi.array().items(FileSchema),
 })
 
 const RenameResourceDirectoryRequestSchema = Joi.object().keys({

@@ -30,7 +30,7 @@ class ResourceRoomDirectoryService {
     }, [])
   }
 
-  async getResourceRoomDirectory(reqDetails) {
+  async getResourceRoomDirectoryName(reqDetails) {
     const config = await this.configYmlService.read(reqDetails)
     return {
       resourceRoomName: config.content.resources_name

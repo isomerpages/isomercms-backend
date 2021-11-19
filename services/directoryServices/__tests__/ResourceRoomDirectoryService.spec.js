@@ -116,14 +116,14 @@ describe("Resource Room Directory Service", () => {
     })
   })
 
-  describe("GetResourceRoomDirectory", () => {
+  describe("GetResourceRoomDirectoryName", () => {
     mockConfigYmlService.read.mockResolvedValueOnce({
       content: { ...mockConfigContent },
       sha,
     })
     it("Getting the resource room name works correctly", async () => {
       await expect(
-        service.getResourceRoomDirectory(reqDetails)
+        service.getResourceRoomDirectoryName(reqDetails)
       ).resolves.toMatchObject({
         resourceRoomName: mockConfigContent.resources_name,
       })

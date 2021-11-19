@@ -16,6 +16,20 @@ class ResourceRoomDirectoryService {
     this.gitHubService = gitHubService
   }
 
+  async listAllResourceCategories(reqDetails, { resourceRoomName }) {
+    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
+      directoryName: `${resourceRoomName}`,
+    })
+    return filesOrDirs.reduce((acc, curr) => {
+      if (curr.type === "dir")
+        acc.push({
+          name: curr.name,
+          type: "dir",
+        })
+      return acc
+    }, [])
+  }
+
   async getResourceRoomDirectory(reqDetails) {
     const config = await this.configYmlService.read(reqDetails)
     return {
@@ -37,8 +51,8 @@ class ResourceRoomDirectoryService {
       reqDetails
     )
     // If resource room already exists, throw error
-    if (resources_name in configContent)
-      throw ConflictError("Resource room already exists")
+    if ("resources_name" in configContent)
+      throw new ConflictError("Resource room already exists")
     configContent.resources_name = slugifiedResourceRoomName
     await this.configYmlService.update(reqDetails, {
       fileContent: configContent,
@@ -57,29 +71,6 @@ class ResourceRoomDirectoryService {
     return {
       newDirectoryName: slugifiedResourceRoomName,
     }
-  }
-
-  async getResourceRoomDirectory(reqDetails) {
-    const config = await this.configYmlService.read(reqDetails)
-    return {
-      resourceRoomName: config.content.resources_name
-        ? config.content.resources_name
-        : null,
-    }
-  }
-
-  async listAllResourceCategories(reqDetails, { resourceRoomName }) {
-    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
-      directoryName: `${resourceRoomName}`,
-    })
-    return filesOrDirs.reduce((acc, curr) => {
-      if (curr.type === "dir")
-        acc.push({
-          name: curr.name,
-          type: "dir",
-        })
-      return acc
-    }, [])
   }
 
   async renameResourceRoomDirectory(

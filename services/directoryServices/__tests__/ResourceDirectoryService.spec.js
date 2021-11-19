@@ -66,51 +66,6 @@ describe("Resource Directory Service", () => {
     jest.clearAllMocks()
   })
 
-  describe("ListAllResourceCategories", () => {
-    const listResp = [
-      {
-        name: "index.html",
-        path: `${resourceRoomName}/index.html`,
-        sha: "test-sha0",
-        size: 10,
-        type: "file",
-      },
-      {
-        name: resourceCategory,
-        path: `${resourceRoomName}/${resourceCategory}`,
-        sha: "test-sha4",
-        size: 10,
-        type: "dir",
-      },
-      {
-        name: `category-2`,
-        path: `${resourceRoomName}/category-2`,
-        sha: "test-sha5",
-        size: 10,
-        type: "dir",
-      },
-    ]
-    const expectedResp = [
-      {
-        name: resourceCategory,
-        type: "dir",
-      },
-      {
-        name: `category-2`,
-        type: "dir",
-      },
-    ]
-    mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
-    it("Listing resource categories returns the full list of resource categories", async () => {
-      await expect(
-        service.listAllResourceCategories(reqDetails, { resourceRoomName })
-      ).resolves.toMatchObject(expectedResp)
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
-        directoryName: resourceRoomName,
-      })
-    })
-  })
-
   describe("ListFiles", () => {
     const listDirResp = [
       {

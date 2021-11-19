@@ -71,9 +71,54 @@ describe("Resource Room Directory Service", () => {
     jest.clearAllMocks()
   })
 
+  describe("ListAllResourceCategories", () => {
+    const listResp = [
+      {
+        name: "index.html",
+        path: `${resourceRoomName}/index.html`,
+        sha: "test-sha0",
+        size: 10,
+        type: "file",
+      },
+      {
+        name: "category-1",
+        path: `${resourceRoomName}/category-1`,
+        sha: "test-sha4",
+        size: 10,
+        type: "dir",
+      },
+      {
+        name: `category-2`,
+        path: `${resourceRoomName}/category-2`,
+        sha: "test-sha5",
+        size: 10,
+        type: "dir",
+      },
+    ]
+    const expectedResp = [
+      {
+        name: "category-1",
+        type: "dir",
+      },
+      {
+        name: `category-2`,
+        type: "dir",
+      },
+    ]
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
+    it("Listing resource categories returns the full list of resource categories", async () => {
+      await expect(
+        service.listAllResourceCategories(reqDetails, { resourceRoomName })
+      ).resolves.toMatchObject(expectedResp)
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
+      })
+    })
+  })
+
   describe("GetResourceRoomDirectory", () => {
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockConfigContent,
+      content: { ...mockConfigContent },
       sha,
     })
     it("Getting the resource room name works correctly", async () => {
@@ -96,7 +141,7 @@ describe("Resource Room Directory Service", () => {
     })
 
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockCreateConfigContent,
+      content: { ...mockCreateConfigContent },
       sha,
     })
     it("Creating a resource room works correctly", async () => {
@@ -127,7 +172,7 @@ describe("Resource Room Directory Service", () => {
     })
 
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockCreateConfigContent,
+      content: { ...mockCreateConfigContent },
       sha,
     })
     it("Creating a resource room slugifies the name", async () => {
@@ -162,6 +207,10 @@ describe("Resource Room Directory Service", () => {
       })
     })
 
+    mockConfigYmlService.read.mockResolvedValueOnce({
+      content: { ...mockConfigContent },
+      sha,
+    })
     it("Creating a resource room throws error if one already exists", async () => {
       await expect(
         service.createResourceRoomDirectory(reqDetails, {
@@ -189,7 +238,7 @@ describe("Resource Room Directory Service", () => {
       sha,
     })
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockConfigContent,
+      content: { ...mockConfigContent },
       sha: configSha,
     })
     it("Renaming a resource room works correctly", async () => {
@@ -236,7 +285,7 @@ describe("Resource Room Directory Service", () => {
       sha,
     })
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockConfigContent,
+      content: { ...mockConfigContent },
       sha: configSha,
     })
     it("Renaming a resource room slugifies the name correctly", async () => {

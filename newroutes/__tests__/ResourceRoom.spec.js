@@ -8,6 +8,7 @@ const { ResourceRoomRouter } = require("../resourceRoom")
 
 describe("Resource Room Router", () => {
   const mockResourceRoomDirectoryService = {
+    listAllResourceCategories: jest.fn(),
     getResourceRoomDirectory: jest.fn(),
     createResourceRoomDirectory: jest.fn(),
     renameResourceRoomDirectory: jest.fn(),
@@ -23,6 +24,10 @@ describe("Resource Room Router", () => {
   app.use(express.urlencoded({ extended: false }))
 
   // We can use read route handler here because we don't need to lock the repo
+  app.get(
+    "/:siteName/resourceRoom/:resourceRoomName",
+    attachReadRouteHandlerWrapper(router.listAllResourceCategories)
+  )
   app.get(
     "/:siteName/resourceRoom",
     attachReadRouteHandlerWrapper(router.getResourceRoomDirectory)
@@ -55,6 +60,31 @@ describe("Resource Room Router", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  describe("listAllResourceCategories", () => {
+    it("lists the set of all resource categories", async () => {
+      const expectedResponse = [
+        {
+          name: "test-cat",
+          type: "dir",
+        },
+        {
+          name: "test-cate2",
+          type: "dir",
+        },
+      ]
+      mockResourceRoomDirectoryService.listAllResourceCategories.mockResolvedValueOnce(
+        expectedResponse
+      )
+      const resp = await request(app)
+        .get(`/${siteName}/resourceRoom/${resourceRoomName}`)
+        .expect(200)
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(
+        mockResourceRoomDirectoryService.listAllResourceCategories
+      ).toHaveBeenCalledWith(reqDetails, { resourceRoomName })
+    })
   })
 
   describe("getResourceRoomDirectory", () => {

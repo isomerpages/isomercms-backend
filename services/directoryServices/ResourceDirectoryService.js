@@ -20,9 +20,11 @@ class ResourceDirectoryService {
   }
 
   async listFiles(reqDetails, { resourceRoomName, resourceCategory }) {
-    const resourceCategories = await this.listAllResourceCategories(
+    const resourceCategories = await this.baseDirectoryService.list(
       reqDetails,
-      { resourceRoomName }
+      {
+        directoryName: `${resourceRoomName}`,
+      }
     )
     if (
       !resourceCategories.find((element) => element.name === resourceCategory)

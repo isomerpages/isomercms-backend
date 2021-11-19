@@ -26,10 +26,6 @@ describe("Resource Categories Router", () => {
 
   // We can use read route handler here because we don't need to lock the repo
   app.get(
-    "/:siteName/resourceRoom/:resourceRoomName/resources",
-    attachReadRouteHandlerWrapper(router.listAllResourceCategories)
-  )
-  app.get(
     "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
     attachReadRouteHandlerWrapper(router.listResourceDirectoryFiles)
   )
@@ -66,31 +62,6 @@ describe("Resource Categories Router", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-  })
-
-  describe("listAllResourceCategories", () => {
-    it("lists the set of all resource categories", async () => {
-      const expectedResponse = [
-        {
-          name: "test-cat",
-          type: "dir",
-        },
-        {
-          name: "test-cate2",
-          type: "dir",
-        },
-      ]
-      mockResourceDirectoryService.listAllResourceCategories.mockResolvedValueOnce(
-        expectedResponse
-      )
-      const resp = await request(app)
-        .get(`/${siteName}/resourceRoom/${resourceRoomName}/resources`)
-        .expect(200)
-      expect(resp.body).toStrictEqual(expectedResponse)
-      expect(
-        mockResourceDirectoryService.listAllResourceCategories
-      ).toHaveBeenCalledWith(reqDetails, { resourceRoomName })
-    })
   })
 
   describe("listResourceDirectoryFiles", () => {

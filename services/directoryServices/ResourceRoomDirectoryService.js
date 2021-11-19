@@ -1,4 +1,5 @@
 const { BadRequestError } = require("@errors/BadRequestError")
+const { ConflictError } = require("@errors/ConflictError")
 
 const {
   convertDataToMarkdown,
@@ -32,6 +33,17 @@ class ResourceRoomDirectoryService {
       )
     }
     const slugifiedResourceRoomName = slugifyCollectionName(resourceRoomName)
+    const { content: configContent, sha } = await this.configYmlService.read(
+      reqDetails
+    )
+    // If resource room already exists, throw error
+    if (resources_name in configContent)
+      throw ConflictError("Resource room already exists")
+    configContent.resources_name = slugifiedResourceRoomName
+    await this.configYmlService.update(reqDetails, {
+      fileContent: configContent,
+      sha,
+    })
     const frontMatter = {
       layout: "resources",
       title: resourceRoomName,
@@ -41,15 +53,6 @@ class ResourceRoomDirectoryService {
       content: newContent,
       fileName: INDEX_FILE_NAME,
       directoryName: slugifiedResourceRoomName,
-    })
-
-    const { content: configContent, sha } = await this.configYmlService.read(
-      reqDetails
-    )
-    configContent.resources_name = slugifiedResourceRoomName
-    await this.configYmlService.update(reqDetails, {
-      fileContent: configContent,
-      sha,
     })
     return {
       newDirectoryName: slugifiedResourceRoomName,

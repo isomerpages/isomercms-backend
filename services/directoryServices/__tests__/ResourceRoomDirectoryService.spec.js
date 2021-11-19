@@ -1,8 +1,9 @@
 const { BadRequestError } = require("@errors/BadRequestError")
+const { ConflictError } = require("@errors/ConflictError")
 
 const INDEX_FILE_NAME = "index.html"
 
-describe("Resource Directory Service", () => {
+describe("Resource Room Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const resourceRoomName = "resource-room"
@@ -12,6 +13,11 @@ describe("Resource Directory Service", () => {
   const mockFrontMatter = {
     layout: "resources",
     title: resourceRoomName,
+  }
+  const mockCreateConfigContent = {
+    title: "title",
+    url: "",
+    favicon: "img.ico",
   }
   const mockConfigContent = {
     title: "title",
@@ -90,7 +96,7 @@ describe("Resource Directory Service", () => {
     })
 
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockConfigContent,
+      content: mockCreateConfigContent,
       sha,
     })
     it("Creating a resource room works correctly", async () => {
@@ -121,7 +127,7 @@ describe("Resource Directory Service", () => {
     })
 
     mockConfigYmlService.read.mockResolvedValueOnce({
-      content: mockConfigContent,
+      content: mockCreateConfigContent,
       sha,
     })
     it("Creating a resource room slugifies the name", async () => {
@@ -154,6 +160,15 @@ describe("Resource Directory Service", () => {
         },
         sha,
       })
+    })
+
+    it("Creating a resource room throws error if one already exists", async () => {
+      await expect(
+        service.createResourceRoomDirectory(reqDetails, {
+          resourceRoomName,
+        })
+      ).rejects.toThrowError(ConflictError)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
     })
   })
 

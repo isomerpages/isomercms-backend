@@ -56,6 +56,29 @@ class ResourceRoomDirectoryService {
     }
   }
 
+  async getResourceRoomDirectory(reqDetails) {
+    const config = await this.configYmlService.read(reqDetails)
+    return {
+      resourceRoomName: config.content.resources_name
+        ? config.content.resources_name
+        : null,
+    }
+  }
+
+  async listAllResourceCategories(reqDetails, { resourceRoomName }) {
+    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
+      directoryName: `${resourceRoomName}`,
+    })
+    return filesOrDirs.reduce((acc, curr) => {
+      if (curr.type === "dir")
+        acc.push({
+          name: curr.name,
+          type: "dir",
+        })
+      return acc
+    }, [])
+  }
+
   async renameResourceRoomDirectory(
     reqDetails,
     { resourceRoomName, newDirectoryName }

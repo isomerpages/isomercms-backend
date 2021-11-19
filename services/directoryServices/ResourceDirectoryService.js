@@ -19,20 +19,6 @@ class ResourceDirectoryService {
     return `${resourceRoomName}/${resourceCategory}`
   }
 
-  async listAllResourceCategories(reqDetails, { resourceRoomName }) {
-    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
-      directoryName: `${resourceRoomName}`,
-    })
-    return filesOrDirs.reduce((acc, curr) => {
-      if (curr.type === "dir")
-        acc.push({
-          name: curr.name,
-          type: "dir",
-        })
-      return acc
-    }, [])
-  }
-
   async listFiles(reqDetails, { resourceRoomName, resourceCategory }) {
     const resourceCategories = await this.listAllResourceCategories(
       reqDetails,

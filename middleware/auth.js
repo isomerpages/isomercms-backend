@@ -382,14 +382,11 @@ auth.post(
 // Resource Room
 auth.get("/v2/sites/:siteName/resourceRoom", verifyJwt)
 auth.post("/v2/sites/:siteName/resourceRoom", verifyJwt)
+auth.get("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
 auth.post("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
 auth.delete("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
 
 // Resource Categories
-auth.get(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
-  verifyJwt
-)
 auth.get(
   "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
   verifyJwt

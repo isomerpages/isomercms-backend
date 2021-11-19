@@ -33,6 +33,24 @@ class ResourceRoomRouter {
     return res.status(200).json(getResp)
   }
 
+  // List all resource categories
+  async listAllResourceCategories(req, res) {
+    const { accessToken } = req
+
+    const { siteName, resourceRoomName } = req.params
+    const listResp = await this.resourceRoomDirectoryService.listAllResourceCategories(
+      {
+        siteName,
+        accessToken,
+      },
+      {
+        resourceRoomName,
+      }
+    )
+
+    return res.status(200).json(listResp)
+  }
+
   // Create new resource room
   async createResourceRoomDirectory(req, res) {
     const { accessToken } = req
@@ -94,6 +112,10 @@ class ResourceRoomRouter {
     router.post(
       "/:siteName/resourceRoom",
       attachRollbackRouteHandlerWrapper(this.createResourceRoomDirectory)
+    )
+    router.get(
+      "/:siteName/resourceRoom/:resourceRoomName",
+      attachRollbackRouteHandlerWrapper(this.listAllResourceCategories)
     )
     router.post(
       "/:siteName/resourceRoom/:resourceRoomName",

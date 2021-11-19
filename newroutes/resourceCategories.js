@@ -22,24 +22,6 @@ class ResourceCategoriesRouter {
     autoBind(this)
   }
 
-  // List all resource categories
-  async listAllResourceCategories(req, res) {
-    const { accessToken } = req
-
-    const { siteName, resourceRoomName } = req.params
-    const listResp = await this.resourceDirectoryService.listAllResourceCategories(
-      {
-        siteName,
-        accessToken,
-      },
-      {
-        resourceRoomName,
-      }
-    )
-
-    return res.status(200).json(listResp)
-  }
-
   // List files in a resource category
   async listResourceDirectoryFiles(req, res) {
     const { accessToken } = req
@@ -132,10 +114,6 @@ class ResourceCategoriesRouter {
   getRouter() {
     const router = express.Router()
 
-    router.get(
-      "/:siteName/resourceRoom/:resourceRoomName/resources",
-      attachReadRouteHandlerWrapper(this.listAllResourceCategories)
-    )
     router.get(
       "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
       attachReadRouteHandlerWrapper(this.listResourceDirectoryFiles)

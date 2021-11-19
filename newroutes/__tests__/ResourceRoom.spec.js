@@ -9,7 +9,7 @@ const { ResourceRoomRouter } = require("../resourceRoom")
 describe("Resource Room Router", () => {
   const mockResourceRoomDirectoryService = {
     listAllResourceCategories: jest.fn(),
-    getResourceRoomDirectory: jest.fn(),
+    getResourceRoomDirectoryName: jest.fn(),
     createResourceRoomDirectory: jest.fn(),
     renameResourceRoomDirectory: jest.fn(),
     deleteResourceRoomDirectory: jest.fn(),
@@ -30,7 +30,7 @@ describe("Resource Room Router", () => {
   )
   app.get(
     "/:siteName/resourceRoom",
-    attachReadRouteHandlerWrapper(router.getResourceRoomDirectory)
+    attachReadRouteHandlerWrapper(router.getResourceRoomDirectoryName)
   )
   app.post(
     "/:siteName/resourceRoom",
@@ -87,9 +87,9 @@ describe("Resource Room Router", () => {
     })
   })
 
-  describe("getResourceRoomDirectory", () => {
+  describe("getResourceRoomDirectoryName", () => {
     it("returns the details of the resource room", async () => {
-      mockResourceRoomDirectoryService.getResourceRoomDirectory.mockResolvedValueOnce(
+      mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName }
       )
       const resp = await request(app)
@@ -97,7 +97,7 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual({ resourceRoomName })
       expect(
-        mockResourceRoomDirectoryService.getResourceRoomDirectory
+        mockResourceRoomDirectoryService.getResourceRoomDirectoryName
       ).toHaveBeenCalledWith(reqDetails)
     })
   })

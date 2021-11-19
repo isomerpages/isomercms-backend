@@ -22,11 +22,11 @@ class ResourceRoomRouter {
   }
 
   // Get resource room name
-  async getResourceRoomDirectory(req, res) {
+  async getResourceRoomDirectoryName(req, res) {
     const { accessToken } = req
 
     const { siteName } = req.params
-    const getResp = await this.resourceRoomDirectoryService.getResourceRoomDirectory(
+    const getResp = await this.resourceRoomDirectoryService.getResourceRoomDirectoryName(
       { siteName, accessToken }
     )
 
@@ -107,7 +107,7 @@ class ResourceRoomRouter {
 
     router.get(
       "/:siteName/resourceRoom",
-      attachReadRouteHandlerWrapper(this.getResourceRoomDirectory)
+      attachReadRouteHandlerWrapper(this.getResourceRoomDirectoryName)
     )
     router.post(
       "/:siteName/resourceRoom",

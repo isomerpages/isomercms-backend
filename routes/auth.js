@@ -106,8 +106,8 @@ async function githubAuth(req, res) {
 
   const githubId = userResp.data && userResp.data.login
 
-  // Find or create user after GitHub auth passes using github id
-  const user = await identityServices.usersService.findOrCreate(githubId)
+  // Create user if does not exists. Set last logged in to current time.
+  const user = await identityServices.usersService.login(githubId)
   if (!user) throw Error("Failed to create user")
 
   const authTokenExpiry = new Date()

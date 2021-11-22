@@ -1,3 +1,5 @@
+const { sequelize } = require("@database/models")
+
 // Allowed domains is a semicolon separate list of domains (e.g. .gov.sg, @agency.com.sg, etc)
 // that are allowed to login.
 const { DOMAIN_WHITELIST } = process.env
@@ -31,6 +33,14 @@ class UsersService {
       where: { githubId },
     })
     return user
+  }
+
+  async login(githubId) {
+    return sequelize.transaction(async (transaction) => {
+      const user = await this.findOrCreate(githubId, { transaction })
+      user.lastLoggedIn = new Date()
+      return user.save({ transaction })
+    })
   }
 
   async canSendEmailOtp(email) {

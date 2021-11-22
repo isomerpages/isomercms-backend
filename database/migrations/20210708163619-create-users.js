@@ -27,6 +27,11 @@ module.exports = {
         allowNull: true,
         type: Sequelize.STRING(255),
       },
+      last_logged_in: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.fn("NOW"),
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

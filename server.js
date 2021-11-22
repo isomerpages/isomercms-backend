@@ -51,6 +51,12 @@ axiosInstance.interceptors.request.use((config) => ({
 const {
   SubcollectionPageService,
 } = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
+const {
+  ConfigYmlService,
+} = require("@root/services/fileServices/YmlFileServices/ConfigYmlService")
+const {
+  FooterYmlService,
+} = require("@root/services/fileServices/YmlFileServices/FooterYmlService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
   BaseDirectoryService,
@@ -71,6 +77,9 @@ const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
 const {
+  HomepagePageService,
+} = require("@services/fileServices/MdPageServices/HomepagePageService")
+const {
   ResourcePageService,
 } = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
@@ -88,10 +97,15 @@ const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
 const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
 const { ResourcePagesRouter } = require("./newroutes/resourcePages")
+const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
+const { SettingsService } = require("./services/configServices/settingsService")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
+const homepagePageService = new HomepagePageService({ gitHubService })
+const configYmlService = new ConfigYmlService({ gitHubService })
+const footerYmlService = new FooterYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
 const collectionPageService = new CollectionPageService({
   gitHubService,
@@ -131,6 +145,13 @@ const resourceDirectoryService = new ResourceDirectoryService({
   gitHubService,
 })
 
+const settingsService = new SettingsService({
+  homepagePageService,
+  configYmlService,
+  footerYmlService,
+  navYmlService,
+})
+
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
   unlinkedPagesDirectoryService,
@@ -149,6 +170,7 @@ const resourcePagesV2Router = new ResourcePagesRouter({
 const resourceDirectoryV2Router = new ResourceCategoriesRouter({
   resourceDirectoryService,
 })
+const settingsV2Router = new SettingsRouter({ settingsService })
 
 const app = express()
 app.use(helmet())
@@ -196,6 +218,7 @@ app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())
 app.use("/v2/sites", resourcePagesV2Router.getRouter())
 app.use("/v2/sites", resourceDirectoryV2Router.getRouter())
+app.use("/v2/sites", settingsV2Router.getRouter())
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

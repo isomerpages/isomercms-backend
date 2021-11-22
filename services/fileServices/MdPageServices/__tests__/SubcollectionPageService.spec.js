@@ -209,7 +209,7 @@ describe("Subcollection Page Service", () => {
           subcollectionName,
           sha,
         })
-      )
+      ).resolves.not.toThrow()
       expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,

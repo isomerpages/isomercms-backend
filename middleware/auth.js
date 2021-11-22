@@ -270,6 +270,10 @@ auth.post(
 auth.get("/v1/sites/:siteName/settings", verifyJwt)
 auth.post("/v1/sites/:siteName/settings", verifyJwt)
 
+// New settings
+auth.get("/v2/sites/:siteName/settings", verifyJwt)
+auth.post("/v2/sites/:siteName/settings", verifyJwt)
+
 // Navigation
 auth.get("/v1/sites/:siteName/navigation", verifyJwt)
 auth.post("/v1/sites/:siteName/navigation", verifyJwt)

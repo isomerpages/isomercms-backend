@@ -59,6 +59,9 @@ const {
   CollectionDirectoryService,
 } = require("@services/directoryServices/CollectionDirectoryService")
 const {
+  ResourceDirectoryService,
+} = require("@services/directoryServices/ResourceDirectoryService")
+const {
   SubcollectionDirectoryService,
 } = require("@services/directoryServices/SubcollectionDirectoryService")
 const {
@@ -67,6 +70,9 @@ const {
 const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  ResourcePageService,
+} = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
   UnlinkedPageService,
 } = require("@services/fileServices/MdPageServices/UnlinkedPageService")
@@ -81,6 +87,8 @@ const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
+const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
+const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 const { UsersRouter } = require("./newroutes/users")
 
@@ -97,6 +105,7 @@ const subcollectionPageService = new SubcollectionPageService({
   collectionYmlService,
 })
 const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const resourcePageService = new ResourcePageService({ gitHubService })
 const moverService = new MoverService({
   unlinkedPageService,
   collectionPageService,
@@ -120,6 +129,10 @@ const subcollectionDirectoryService = new SubcollectionDirectoryService({
   subcollectionPageService,
   gitHubService,
 })
+const resourceDirectoryService = new ResourceDirectoryService({
+  baseDirectoryService,
+  gitHubService,
+})
 
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
@@ -134,6 +147,12 @@ const collectionsV2Router = new CollectionsRouter({
   subcollectionDirectoryService,
 })
 const usersRouter = new UsersRouter({ usersService })
+const resourcePagesV2Router = new ResourcePagesRouter({
+  resourcePageService,
+})
+const resourceDirectoryV2Router = new ResourceCategoriesRouter({
+  resourceDirectoryService,
+})
 
 const app = express()
 app.use(helmet())
@@ -180,6 +199,8 @@ app.use("/v1/user", usersRouter.getRouter())
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())
+app.use("/v2/sites", resourcePagesV2Router.getRouter())
+app.use("/v2/sites", resourceDirectoryV2Router.getRouter())
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

@@ -1,0 +1,231 @@
+const express = require("express")
+const request = require("supertest")
+
+const { errorHandler } = require("@middleware/errorHandler")
+const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { ResourcePagesRouter } = require("../resourcePages")
+
+describe("Resource Pages Router", () => {
+  const mockResourcePageService = {
+    create: jest.fn(),
+    read: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    rename: jest.fn(),
+  }
+
+  const router = new ResourcePagesRouter({
+    resourcePageService: mockResourcePageService,
+  })
+
+  const app = express()
+  app.use(express.json({ limit: "7mb" }))
+  app.use(express.urlencoded({ extended: false }))
+
+  // We can use read route handler here because we don't need to lock the repo
+  app.post(
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages",
+    attachReadRouteHandlerWrapper(router.createResourcePage)
+  )
+  app.get(
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+    attachReadRouteHandlerWrapper(router.readResourcePage)
+  )
+  app.post(
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+    attachReadRouteHandlerWrapper(router.updateResourcePage)
+  )
+  app.delete(
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+    attachReadRouteHandlerWrapper(router.deleteResourcePage)
+  )
+  app.use(errorHandler)
+
+  const siteName = "test-site"
+  const resourceRoomName = "resource-room"
+  const resourceCategory = "resource-category"
+  const accessToken = undefined // Can't set request fields - will always be undefined
+  const fileName = "test-file"
+  const mockSha = "12345"
+  const mockContent = "mock-content"
+
+  const reqDetails = { siteName, accessToken }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe("createResourcePage", () => {
+    const pageDetails = {
+      newFileName: "newFile",
+      content: {
+        pageBody: "test",
+        frontMatter: {
+          title: "fileTitle",
+          date: "2021-10-13",
+          permalink: "file/permalink",
+        },
+      },
+    }
+
+    it("rejects requests with invalid body", async () => {
+      await request(app)
+        .post(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages`
+        )
+        .send({})
+        .expect(400)
+    })
+
+    it("accepts valid resource page create requests and returns the details of the file created", async () => {
+      const expectedServiceInput = {
+        fileName: pageDetails.newFileName,
+        resourceRoomName,
+        resourceCategory,
+        content: pageDetails.content.pageBody,
+        frontMatter: pageDetails.content.frontMatter,
+      }
+      await request(app)
+        .post(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages`
+        )
+        .send(pageDetails)
+        .expect(200)
+      expect(mockResourcePageService.create).toHaveBeenCalledWith(
+        reqDetails,
+        expectedServiceInput
+      )
+    })
+  })
+
+  describe("readResourcePage", () => {
+    const expectedResponse = {
+      sha: mockSha,
+      content: mockContent,
+    }
+    mockResourcePageService.read.mockResolvedValue(expectedResponse)
+    it("retrieves resource page details", async () => {
+      const expectedServiceInput = {
+        fileName,
+        resourceRoomName,
+        resourceCategory,
+      }
+      const resp = await request(app)
+        .get(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+        )
+        .expect(200)
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockResourcePageService.read).toHaveBeenCalledWith(
+        reqDetails,
+        expectedServiceInput
+      )
+    })
+  })
+
+  describe("updateResourcePage", () => {
+    const updatePageDetails = {
+      content: {
+        pageBody: "test",
+        frontMatter: {
+          title: "fileTitle",
+          permalink: "file/permalink",
+          date: "2021-10-13",
+        },
+      },
+      sha: mockSha,
+    }
+
+    const renamePageDetails = {
+      ...updatePageDetails,
+      newFileName: "new-file",
+    }
+
+    it("rejects requests with invalid body", async () => {
+      await request(app)
+        .post(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+        )
+        .send({})
+        .expect(400)
+    })
+
+    it("accepts valid resource page update requests and returns the details of the file updated", async () => {
+      const expectedServiceInput = {
+        fileName,
+        resourceRoomName,
+        resourceCategory,
+        content: updatePageDetails.content.pageBody,
+        frontMatter: updatePageDetails.content.frontMatter,
+        sha: updatePageDetails.sha,
+      }
+      await request(app)
+        .post(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+        )
+        .send(updatePageDetails)
+        .expect(200)
+      expect(mockResourcePageService.update).toHaveBeenCalledWith(
+        reqDetails,
+        expectedServiceInput
+      )
+    })
+
+    it("accepts valid resource page rename requests and returns the details of the file updated", async () => {
+      const expectedServiceInput = {
+        oldFileName: fileName,
+        newFileName: renamePageDetails.newFileName,
+        resourceRoomName,
+        resourceCategory,
+        content: renamePageDetails.content.pageBody,
+        frontMatter: renamePageDetails.content.frontMatter,
+        sha: renamePageDetails.sha,
+      }
+      await request(app)
+        .post(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+        )
+        .send(renamePageDetails)
+        .expect(200)
+      expect(mockResourcePageService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        expectedServiceInput
+      )
+    })
+  })
+
+  describe("deleteResourcePage", () => {
+    const pageDetails = {
+      sha: mockSha,
+    }
+
+    it("rejects requests with invalid body", async () => {
+      await request(app)
+        .delete(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+        )
+        .send({})
+        .expect(400)
+    })
+
+    it("accepts valid resource page delete requests", async () => {
+      const expectedServiceInput = {
+        fileName,
+        resourceRoomName,
+        resourceCategory,
+        sha: pageDetails.sha,
+      }
+      await request(app)
+        .delete(
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+        )
+        .send(pageDetails)
+        .expect(200)
+      expect(mockResourcePageService.delete).toHaveBeenCalledWith(
+        reqDetails,
+        expectedServiceInput
+      )
+    })
+  })
+})

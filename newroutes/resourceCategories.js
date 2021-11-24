@@ -90,7 +90,7 @@ class ResourceCategoriesRouter {
 
   // Move resource category
   async moveResourceDirectoryPages(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
     const { siteName, resourceRoomName, resourceCategory } = req.params
     const { error } = MoveResourceDirectoryPagesRequestSchema.validate(req.body)
@@ -100,7 +100,7 @@ class ResourceCategoriesRouter {
       target: { resourceCategory: targetResourceCategory },
     } = req.body
     await this.resourceDirectoryService.moveResourcePages(
-      { siteName, accessToken },
+      { siteName, accessToken, currentCommitSha, treeSha },
       {
         resourceRoomName,
         resourceCategory,

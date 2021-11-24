@@ -105,15 +105,35 @@ describe("Resource Directory Service", () => {
         size: 10,
         type: "file",
       },
+      {
+        name: "2021-10-06-post-Example Title2.md",
+        path: `${directoryName}/_posts/2021-10-06-post-Example Title2.md`,
+        sha: "test-sha4",
+        size: 10,
+        type: "file",
+      },
     ]
     const expectedResp = [
       {
         name: "2021-10-13-file-example-title1.md",
         type: "file",
+        resourceType: "file",
+        title: "Example Title1",
+        date: "2021-10-13",
       },
       {
         name: "2021-10-06-post-example-title.md",
         type: "file",
+        resourceType: "post",
+        title: "Example Title",
+        date: "2021-10-06",
+      },
+      {
+        name: "2021-10-06-post-Example Title2.md",
+        type: "file",
+        resourceType: "post",
+        title: "Example Title2",
+        date: "2021-10-06",
       },
     ]
     mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)

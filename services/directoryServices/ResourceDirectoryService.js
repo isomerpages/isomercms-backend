@@ -43,11 +43,32 @@ class ResourceDirectoryService {
     }
 
     return files.reduce((acc, curr) => {
-      if (curr.type === "file")
+      if (curr.type === "file") {
+        const fileName = curr.name
+        const fileNameArray = fileName.split(".md")[0]
+        const tokenArray = fileNameArray.split("-")
+        const date = tokenArray.slice(0, 3).join("-")
+
+        const resourceType = ["file", "post"].includes(tokenArray[3])
+          ? tokenArray[3]
+          : undefined
+
+        const titleTokenArray = resourceType
+          ? tokenArray.slice(4)
+          : tokenArray.slice(3)
+        const prettifiedTitleTokenArray = titleTokenArray.map(
+          (token) => token.slice(0, 1).toUpperCase() + token.slice(1)
+        )
+        const title = prettifiedTitleTokenArray.join(" ")
+
         acc.push({
           name: curr.name,
           type: "file",
+          title,
+          date,
+          resourceType,
         })
+      }
       return acc
     }, [])
   }

@@ -12,19 +12,19 @@ class ResourcePageService {
     this.gitHubService = gitHubService
   }
 
-  getResourceDirectoryPath({ resourceRoomName, resourceCategory }) {
-    return `${resourceRoomName}/${resourceCategory}/_posts`
+  getResourceDirectoryPath({ resourceRoomName, resourceCategoryName }) {
+    return `${resourceRoomName}/${resourceCategoryName}/_posts`
   }
 
   async create(
     reqDetails,
-    { fileName, resourceRoomName, resourceCategory, content, frontMatter }
+    { fileName, resourceRoomName, resourceCategoryName, content, frontMatter }
   ) {
     if (titleSpecialCharCheck({ title: fileName, isFile: true }))
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     const newContent = convertDataToMarkdown(frontMatter, content)
@@ -37,10 +37,10 @@ class ResourcePageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async read(reqDetails, { fileName, resourceRoomName, resourceCategory }) {
+  async read(reqDetails, { fileName, resourceRoomName, resourceCategoryName }) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
     const { content: rawContent, sha } = await this.gitHubService.read(
       reqDetails,
@@ -55,11 +55,18 @@ class ResourcePageService {
 
   async update(
     reqDetails,
-    { fileName, resourceRoomName, resourceCategory, content, frontMatter, sha }
+    {
+      fileName,
+      resourceRoomName,
+      resourceCategoryName,
+      content,
+      frontMatter,
+      sha,
+    }
   ) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { newSha } = await this.gitHubService.update(reqDetails, {
@@ -78,11 +85,11 @@ class ResourcePageService {
 
   async delete(
     reqDetails,
-    { fileName, resourceRoomName, resourceCategory, sha }
+    { fileName, resourceRoomName, resourceCategoryName, sha }
   ) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     return this.gitHubService.delete(reqDetails, {
@@ -98,7 +105,7 @@ class ResourcePageService {
       oldFileName,
       newFileName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       content,
       frontMatter,
       sha,
@@ -108,7 +115,7 @@ class ResourcePageService {
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     await this.gitHubService.delete(reqDetails, {

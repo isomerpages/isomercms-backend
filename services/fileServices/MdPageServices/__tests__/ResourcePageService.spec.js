@@ -5,8 +5,8 @@ describe("Resource Page Service", () => {
   const accessToken = "test-token"
   const fileName = "test file.md"
   const resourceRoomName = "resource-room"
-  const resourceCategory = "category"
-  const directoryName = `${resourceRoomName}/${resourceCategory}/_posts`
+  const resourceCategoryName = "category"
+  const directoryName = `${resourceRoomName}/${resourceCategoryName}/_posts`
   const mockContent = "test"
   const mockMarkdownContent = "---test---"
   const mockFrontMatter = {
@@ -53,7 +53,7 @@ describe("Resource Page Service", () => {
         service.create(reqDetails, {
           fileName: "file/file.md",
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           content: mockContent,
           frontMatter: { ...mockFrontMatter },
         })
@@ -64,7 +64,7 @@ describe("Resource Page Service", () => {
         service.create(reqDetails, {
           fileName,
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           content: mockContent,
           frontMatter: { ...mockFrontMatter },
         })
@@ -95,7 +95,7 @@ describe("Resource Page Service", () => {
           service.read(reqDetails, {
             fileName,
             resourceRoomName,
-            resourceCategory,
+            resourceCategoryName,
           })
         ).resolves.toMatchObject({
           fileName,
@@ -120,7 +120,7 @@ describe("Resource Page Service", () => {
         service.update(reqDetails, {
           fileName,
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,
@@ -150,7 +150,7 @@ describe("Resource Page Service", () => {
         service.delete(reqDetails, {
           fileName,
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           sha,
         })
       ).resolves.not.toThrow()
@@ -172,7 +172,7 @@ describe("Resource Page Service", () => {
           oldFileName,
           newFileName: "file/file.md",
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           content: mockContent,
           frontMatter: { ...mockFrontMatter },
         })
@@ -184,7 +184,7 @@ describe("Resource Page Service", () => {
           oldFileName,
           newFileName: fileName,
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,

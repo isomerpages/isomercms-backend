@@ -26,10 +26,10 @@ class ResourceCategoriesRouter {
   async listResourceDirectoryFiles(req, res) {
     const { accessToken } = req
 
-    const { siteName, resourceRoomName, resourceCategory } = req.params
+    const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const listResp = await this.resourceDirectoryService.listFiles(
       { siteName, accessToken },
-      { resourceRoomName, resourceCategory }
+      { resourceRoomName, resourceCategoryName }
     )
     return res.status(200).json(listResp)
   }
@@ -46,7 +46,7 @@ class ResourceCategoriesRouter {
       { siteName, accessToken },
       {
         resourceRoomName,
-        resourceCategory: newDirectoryName,
+        resourceCategoryName: newDirectoryName,
       }
     )
 
@@ -57,7 +57,7 @@ class ResourceCategoriesRouter {
   async renameResourceDirectory(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, resourceRoomName, resourceCategory } = req.params
+    const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
@@ -65,7 +65,7 @@ class ResourceCategoriesRouter {
       { siteName, accessToken, currentCommitSha, treeSha },
       {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         newDirectoryName,
       }
     )
@@ -77,12 +77,12 @@ class ResourceCategoriesRouter {
   async deleteResourceDirectory(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, resourceRoomName, resourceCategory } = req.params
+    const { siteName, resourceRoomName, resourceCategoryName } = req.params
     await this.resourceDirectoryService.deleteResourceDirectory(
       { siteName, accessToken, currentCommitSha, treeSha },
       {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
       }
     )
     return res.status(200).send("OK")
@@ -92,18 +92,18 @@ class ResourceCategoriesRouter {
   async moveResourceDirectoryPages(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, resourceRoomName, resourceCategory } = req.params
+    const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const { error } = MoveResourceDirectoryPagesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       items,
-      target: { resourceCategory: targetResourceCategory },
+      target: { resourceCategoryName: targetResourceCategory },
     } = req.body
     await this.resourceDirectoryService.moveResourcePages(
       { siteName, accessToken, currentCommitSha, treeSha },
       {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         targetResourceCategory,
         objArray: items,
       }
@@ -115,7 +115,7 @@ class ResourceCategoriesRouter {
     const router = express.Router()
 
     router.get(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
       attachReadRouteHandlerWrapper(this.listResourceDirectoryFiles)
     )
     router.post(
@@ -123,15 +123,15 @@ class ResourceCategoriesRouter {
       attachRollbackRouteHandlerWrapper(this.createResourceDirectory)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
       attachRollbackRouteHandlerWrapper(this.renameResourceDirectory)
     )
     router.delete(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
       attachRollbackRouteHandlerWrapper(this.deleteResourceDirectory)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/move",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move",
       attachRollbackRouteHandlerWrapper(this.moveResourceDirectoryPages)
     )
 

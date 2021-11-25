@@ -27,7 +27,7 @@ class ResourcePagesRouter {
   async createResourcePage(req, res) {
     const { accessToken } = req
 
-    const { siteName, resourceRoomName, resourceCategory } = req.params
+    const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const { error } = CreateResourcePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -38,7 +38,7 @@ class ResourcePagesRouter {
     const createResp = await this.resourcePageService.create(reqDetails, {
       fileName: newFileName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       content: pageBody,
       frontMatter,
     })
@@ -53,7 +53,7 @@ class ResourcePagesRouter {
     const {
       siteName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       pageName,
     } = req.params
 
@@ -61,7 +61,7 @@ class ResourcePagesRouter {
     const readResp = await this.resourcePageService.read(reqDetails, {
       fileName: pageName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     return res.status(200).json(readResp)
@@ -74,7 +74,7 @@ class ResourcePagesRouter {
     const {
       siteName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       pageName,
     } = req.params
     const { error } = UpdateResourcePageRequestSchema.validate(req.body)
@@ -91,7 +91,7 @@ class ResourcePagesRouter {
         oldFileName: pageName,
         newFileName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         content: pageBody,
         frontMatter,
         sha,
@@ -100,7 +100,7 @@ class ResourcePagesRouter {
       updateResp = await this.resourcePageService.update(reqDetails, {
         fileName: pageName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         content: pageBody,
         frontMatter,
         sha,
@@ -116,7 +116,7 @@ class ResourcePagesRouter {
     const {
       siteName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       pageName,
     } = req.params
     const { error } = DeleteResourcePageRequestSchema.validate(req.body)
@@ -126,7 +126,7 @@ class ResourcePagesRouter {
     await this.resourcePageService.delete(reqDetails, {
       fileName: pageName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       sha,
     })
 
@@ -137,19 +137,19 @@ class ResourcePagesRouter {
     const router = express.Router()
 
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
       attachRollbackRouteHandlerWrapper(this.createResourcePage)
     )
     router.get(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
       attachReadRouteHandlerWrapper(this.readResourcePage)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
       attachWriteRouteHandlerWrapper(this.updateResourcePage)
     )
     router.delete(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.deleteResourcePage)
     )
 

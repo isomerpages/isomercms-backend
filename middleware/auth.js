@@ -330,19 +330,19 @@ auth.delete(
 
 // Resource Pages
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
   verifyJwt
 )
 auth.get(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
   verifyJwt
 )
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
   verifyJwt
 )
 auth.delete(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
   verifyJwt
 )
 
@@ -388,7 +388,7 @@ auth.delete("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
 
 // Resource Categories
 auth.get(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
   verifyJwt
 )
 auth.post(
@@ -396,15 +396,15 @@ auth.post(
   verifyJwt
 )
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
   verifyJwt
 )
 auth.delete(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
   verifyJwt
 )
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/move",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move",
   verifyJwt
 )
 

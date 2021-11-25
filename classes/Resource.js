@@ -3,6 +3,8 @@ const _ = require("lodash")
 const yaml = require("yaml")
 
 // Import classes
+const { NotFoundError } = require("@errors/NotFoundError")
+
 const { Directory, ResourceRoomType } = require("@classes/Directory.js")
 const {
   File,
@@ -136,7 +138,12 @@ class Resource {
       resourceName
     )
     IsomerFile.setFileType(resourcePageType)
-    const resourcePages = await IsomerFile.list()
+    let resourcePages = []
+    try {
+      resourcePages = await IsomerFile.list()
+    } catch (error) {
+      if (!(error instanceof NotFoundError)) throw error
+    }
 
     if (_.isEmpty(resourcePages)) return
 

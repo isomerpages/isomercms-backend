@@ -1,5 +1,6 @@
 const axios = require("axios")
 
+const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
   inputNameConflictErrorMsg,
@@ -72,7 +73,11 @@ class MediaFile {
       },
     })
 
-    if (resp.status !== 200) return {}
+    if (resp.status !== 200) {
+      if (resp.status === 404)
+        throw new NotFoundError("Media Directory does not exist")
+      throw new BaseIsomerError(resp)
+    }
 
     return resp.data
       .filter((object) => object.type === "file")
@@ -127,11 +132,12 @@ class MediaFile {
      * lists all the files in the image directory
      * and filters it down to get the sha of the file
      */
-    const images = await this.list()
-    const imageSha = images.filter((image) => image.fileName === fileName)[0]
-      .sha
+    const files = await this.list()
+    const targetfile = files.find((file) => file.fileName === fileName)
+    if (!targetfile) throw new NotFoundError("Media file does not exist")
+    const fileSha = targetfile.sha
 
-    const blobEndpoint = `${this.baseBlobEndpoint}/${imageSha}`
+    const blobEndpoint = `${this.baseBlobEndpoint}/${fileSha}`
 
     const resp = await axios.get(blobEndpoint, {
       validateStatus,
@@ -140,7 +146,8 @@ class MediaFile {
       },
     })
 
-    if (resp.status === 404) throw new NotFoundError("Image does not exist")
+    if (resp.status === 404)
+      throw new NotFoundError("Media file does not exist")
 
     const { content, sha } = resp.data
 

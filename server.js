@@ -51,6 +51,13 @@ axiosInstance.interceptors.request.use((config) => ({
 const {
   SubcollectionPageService,
 } = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
+const {
+  ConfigYmlService,
+} = require("@root/services/fileServices/YmlFileServices/ConfigYmlService")
+const {
+  FooterYmlService,
+} = require("@root/services/fileServices/YmlFileServices/FooterYmlService")
+const { SettingsService } = require("@services/configServices/SettingsService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
   BaseDirectoryService,
@@ -58,6 +65,9 @@ const {
 const {
   CollectionDirectoryService,
 } = require("@services/directoryServices/CollectionDirectoryService")
+const {
+  ResourceDirectoryService,
+} = require("@services/directoryServices/ResourceDirectoryService")
 const {
   SubcollectionDirectoryService,
 } = require("@services/directoryServices/SubcollectionDirectoryService")
@@ -67,6 +77,12 @@ const {
 const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  HomepagePageService,
+} = require("@services/fileServices/MdPageServices/HomepagePageService")
+const {
+  ResourcePageService,
+} = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
   UnlinkedPageService,
 } = require("@services/fileServices/MdPageServices/UnlinkedPageService")
@@ -80,10 +96,16 @@ const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
+const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
+const { ResourcePagesRouter } = require("./newroutes/resourcePages")
+const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
+const homepagePageService = new HomepagePageService({ gitHubService })
+const configYmlService = new ConfigYmlService({ gitHubService })
+const footerYmlService = new FooterYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
 const collectionPageService = new CollectionPageService({
   gitHubService,
@@ -94,6 +116,7 @@ const subcollectionPageService = new SubcollectionPageService({
   collectionYmlService,
 })
 const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const resourcePageService = new ResourcePageService({ gitHubService })
 const moverService = new MoverService({
   unlinkedPageService,
   collectionPageService,
@@ -117,6 +140,17 @@ const subcollectionDirectoryService = new SubcollectionDirectoryService({
   subcollectionPageService,
   gitHubService,
 })
+const resourceDirectoryService = new ResourceDirectoryService({
+  baseDirectoryService,
+  gitHubService,
+})
+
+const settingsService = new SettingsService({
+  homepagePageService,
+  configYmlService,
+  footerYmlService,
+  navYmlService,
+})
 
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
@@ -130,6 +164,13 @@ const collectionsV2Router = new CollectionsRouter({
   collectionDirectoryService,
   subcollectionDirectoryService,
 })
+const resourcePagesV2Router = new ResourcePagesRouter({
+  resourcePageService,
+})
+const resourceDirectoryV2Router = new ResourceCategoriesRouter({
+  resourceDirectoryService,
+})
+const settingsV2Router = new SettingsRouter({ settingsService })
 
 const app = express()
 app.use(helmet())
@@ -175,6 +216,9 @@ app.use("/v1/sites", netlifyTomlRouter)
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())
+app.use("/v2/sites", resourcePagesV2Router.getRouter())
+app.use("/v2/sites", resourceDirectoryV2Router.getRouter())
+app.use("/v2/sites", settingsV2Router.getRouter())
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

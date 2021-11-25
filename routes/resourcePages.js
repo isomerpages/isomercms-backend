@@ -34,8 +34,12 @@ async function listResourcePages(req, res) {
   const IsomerFile = new File(accessToken, siteName)
   const resourcePageType = new ResourcePageType(resourceRoomName, resourceName)
   IsomerFile.setFileType(resourcePageType)
-  const resourcePages = await IsomerFile.list()
-
+  let resourcePages = []
+  try {
+    resourcePages = await IsomerFile.list()
+  } catch (error) {
+    if (!(error instanceof NotFoundError)) throw error
+  }
   return res.status(200).json({ resourcePages })
 }
 

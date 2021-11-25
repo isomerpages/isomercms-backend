@@ -134,7 +134,9 @@ describe("Unlinked Page Service", () => {
 
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
-      await expect(service.delete(reqDetails, { fileName, sha }))
+      await expect(
+        service.delete(reqDetails, { fileName, sha })
+      ).resolves.not.toThrow()
       expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,

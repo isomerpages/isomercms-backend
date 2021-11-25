@@ -184,7 +184,7 @@ describe("Collection Page Service", () => {
     it("Deleting pages works correctly", async () => {
       await expect(
         service.delete(reqDetails, { fileName, collectionName, sha })
-      )
+      ).resolves.not.toThrow()
       expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,

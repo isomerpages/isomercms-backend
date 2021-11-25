@@ -299,25 +299,25 @@ describe("Collection Directory Service", () => {
       const slugifiedCollectionName = "test-collection"
       await expect(
         service.renameDirectory(reqDetails, {
-          collectionName: originalCollectionName,
-          newDirectoryName: slugifiedCollectionName,
+          collectionName,
+          newDirectoryName: originalCollectionName,
         })
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: `_${originalCollectionName}`,
+        oldDirectoryName: `_${collectionName}`,
         newDirectoryName: `_${slugifiedCollectionName}`,
-        message: `Renaming collection ${originalCollectionName} to ${slugifiedCollectionName}`,
+        message: `Renaming collection ${collectionName} to ${slugifiedCollectionName}`,
       })
       expect(
         mockCollectionYmlService.renameCollectionInOrder
       ).toHaveBeenCalledWith(reqDetails, {
-        oldCollectionName: originalCollectionName,
+        oldCollectionName: collectionName,
         newCollectionName: slugifiedCollectionName,
       })
       expect(mockNavYmlService.renameCollectionInNav).toHaveBeenCalledWith(
         reqDetails,
         {
-          oldCollectionName: originalCollectionName,
+          oldCollectionName: collectionName,
           newCollectionName: slugifiedCollectionName,
         }
       )

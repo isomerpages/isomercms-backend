@@ -57,6 +57,7 @@ const {
 const {
   FooterYmlService,
 } = require("@root/services/fileServices/YmlFileServices/FooterYmlService")
+const { SettingsService } = require("@services/configServices/SettingsService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
   BaseDirectoryService,
@@ -99,7 +100,6 @@ const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
 const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
-const { SettingsService } = require("./services/configServices/settingsService")
 
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })

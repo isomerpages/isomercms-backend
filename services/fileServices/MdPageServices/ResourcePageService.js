@@ -5,7 +5,7 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { titleSpecialCharCheck, isDateValid } = require("@validators/validators")
 
 class ResourcePageService {
   constructor({ gitHubService }) {
@@ -16,6 +16,8 @@ class ResourcePageService {
     const fileNameArray = fileName.split(".md")[0]
     const tokenArray = fileNameArray.split("-")
     const date = tokenArray.slice(0, 3).join("-")
+    if (!isDateValid(date))
+      throw new BadRequestError("Special characters not allowed in file name")
 
     const type = ["file", "post"].includes(tokenArray[3])
       ? tokenArray[3]
@@ -23,6 +25,9 @@ class ResourcePageService {
 
     const titleTokenArray = type ? tokenArray.slice(4) : tokenArray.slice(3)
     const title = titleTokenArray.join("-")
+
+    if (titleSpecialCharCheck({ title, isFile: true }))
+      throw new BadRequestError("Special characters not allowed in file name")
 
     return { date, type, title }
   }
@@ -36,8 +41,6 @@ class ResourcePageService {
     { fileName, resourceRoomName, resourceCategoryName, content, frontMatter }
   ) {
     const { title } = this.retrieveResourceFileMetadata(fileName)
-    if (titleSpecialCharCheck({ title, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,
@@ -128,8 +131,6 @@ class ResourcePageService {
     }
   ) {
     const { title } = this.retrieveResourceFileMetadata(newFileName)
-    if (titleSpecialCharCheck({ title, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,

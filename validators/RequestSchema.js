@@ -41,7 +41,7 @@ const DeletePageRequestSchema = Joi.object().keys({
 // Resource Pages
 const ResourceFrontMatterSchema = Joi.object({
   title: Joi.string().required(),
-  date: Joi.string().required(),
+  date: Joi.string(),
   permalink: Joi.string(),
   layout: Joi.string().valid("post", "file"),
   file_url: Joi.string(),

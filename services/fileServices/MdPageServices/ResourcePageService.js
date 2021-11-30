@@ -12,6 +12,21 @@ class ResourcePageService {
     this.gitHubService = gitHubService
   }
 
+  retrieveResourceFileMetadata(fileName) {
+    const fileNameArray = fileName.split(".md")[0]
+    const tokenArray = fileNameArray.split("-")
+    const date = tokenArray.slice(0, 3).join("-")
+
+    const type = ["file", "post"].includes(tokenArray[3])
+      ? tokenArray[3]
+      : undefined
+
+    const titleTokenArray = type ? tokenArray.slice(4) : tokenArray.slice(3)
+    const title = titleTokenArray.join("-")
+
+    return { date, type, title }
+  }
+
   getResourceDirectoryPath({ resourceRoomName, resourceCategoryName }) {
     return `${resourceRoomName}/${resourceCategoryName}/_posts`
   }
@@ -20,7 +35,8 @@ class ResourcePageService {
     reqDetails,
     { fileName, resourceRoomName, resourceCategoryName, content, frontMatter }
   ) {
-    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
+    const { title } = this.retrieveResourceFileMetadata(fileName)
+    if (titleSpecialCharCheck({ title, isFile: true }))
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
@@ -111,7 +127,8 @@ class ResourcePageService {
       sha,
     }
   ) {
-    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
+    const { title } = this.retrieveResourceFileMetadata(newFileName)
+    if (titleSpecialCharCheck({ title, isFile: true }))
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,

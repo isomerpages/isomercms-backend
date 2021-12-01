@@ -93,9 +93,7 @@ class BaseDirectoryService {
     const gitTree = await this.gitHubService.getTree(reqDetails, {
       isRecursive: true,
     })
-
     const newGitTree = []
-
     gitTree.forEach((item) => {
       if (
         item.path.startsWith(`${oldDirectoryName}/`) &&

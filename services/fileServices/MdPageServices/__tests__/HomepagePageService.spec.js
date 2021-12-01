@@ -2,7 +2,7 @@ const {
   homepageContent: mockHomepageContent,
   homepageSha: mockHomepageSha,
   rawHomepageContent: mockRawHomepageContent,
-} = require("../../../../fixtures/homepage")
+} = require("@fixtures/homepage")
 
 describe("Homepage Page Service", () => {
   const siteName = "test-site"

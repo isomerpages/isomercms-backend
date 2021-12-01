@@ -1,18 +1,19 @@
 const { BadRequestError } = require("@errors/BadRequestError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 const INDEX_FILE_NAME = "index.html"
 
 describe("Resource Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const resourceCategory = "resource-cat"
+  const resourceCategoryName = "resource-cat"
   const resourceRoomName = "resource-room"
-  const directoryName = `${resourceRoomName}/${resourceCategory}`
+  const directoryName = `${resourceRoomName}/${resourceCategoryName}`
   const mockContent = ""
   const mockMarkdownContent = "---test---"
   const mockFrontMatter = {
     layout: "resources-alt",
-    title: resourceCategory,
+    title: resourceCategoryName,
   }
   const sha = "12345"
 
@@ -65,8 +66,8 @@ describe("Resource Directory Service", () => {
     jest.clearAllMocks()
   })
 
-  describe("ListAllResourceCategories", () => {
-    const listResp = [
+  describe("ListFiles", () => {
+    const listDirResp = [
       {
         name: "index.html",
         path: `${resourceRoomName}/index.html`,
@@ -75,8 +76,8 @@ describe("Resource Directory Service", () => {
         type: "file",
       },
       {
-        name: resourceCategory,
-        path: `${resourceRoomName}/${resourceCategory}`,
+        name: resourceCategoryName,
+        path: `${resourceRoomName}/${resourceCategoryName}`,
         sha: "test-sha4",
         size: 10,
         type: "dir",
@@ -89,28 +90,6 @@ describe("Resource Directory Service", () => {
         type: "dir",
       },
     ]
-    const expectedResp = [
-      {
-        name: resourceCategory,
-        type: "dir",
-      },
-      {
-        name: `category-2`,
-        type: "dir",
-      },
-    ]
-    mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
-    it("Listing resource categories returns the full list of resource categories", async () => {
-      await expect(
-        service.listAllResourceCategories(reqDetails, { resourceRoomName })
-      ).resolves.toMatchObject(expectedResp)
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
-        directoryName: resourceRoomName,
-      })
-    })
-  })
-
-  describe("ListFiles", () => {
     const listResp = [
       {
         name: "2021-10-13-file-example-title1.md",
@@ -126,24 +105,79 @@ describe("Resource Directory Service", () => {
         size: 10,
         type: "file",
       },
+      {
+        name: "2021-10-06-post-Example Title2.md",
+        path: `${directoryName}/_posts/2021-10-06-post-Example Title2.md`,
+        sha: "test-sha4",
+        size: 10,
+        type: "file",
+      },
     ]
     const expectedResp = [
       {
         name: "2021-10-13-file-example-title1.md",
         type: "file",
+        resourceType: "file",
+        title: "Example Title1",
+        date: "2021-10-13",
       },
       {
         name: "2021-10-06-post-example-title.md",
         type: "file",
+        resourceType: "post",
+        title: "Example Title",
+        date: "2021-10-06",
+      },
+      {
+        name: "2021-10-06-post-Example Title2.md",
+        type: "file",
+        resourceType: "post",
+        title: "Example Title2",
+        date: "2021-10-06",
       },
     ]
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)
     mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
     it("ListFiles returns all files in the category", async () => {
       await expect(
-        service.listFiles(reqDetails, { resourceRoomName, resourceCategory })
+        service.listFiles(reqDetails, {
+          resourceRoomName,
+          resourceCategoryName,
+        })
       ).resolves.toMatchObject(expectedResp)
       expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
+      })
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
         directoryName: `${directoryName}/_posts`,
+      })
+    })
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)
+    mockBaseDirectoryService.list.mockRejectedValueOnce(new NotFoundError(""))
+    it("ListFiles returns an empty array if resource category contains no files is thrown", async () => {
+      await expect(
+        service.listFiles(reqDetails, {
+          resourceRoomName,
+          resourceCategoryName,
+        })
+      ).resolves.toMatchObject([])
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
+      })
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: `${directoryName}/_posts`,
+      })
+    })
+    mockBaseDirectoryService.list.mockResolvedValueOnce(listDirResp)
+    it("ListFiles returns an error if resource category does not exist", async () => {
+      await expect(
+        service.listFiles(reqDetails, {
+          resourceRoomName,
+          resourceCategoryName: "fake-category",
+        })
+      ).rejects.toThrowError(NotFoundError)
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+        directoryName: resourceRoomName,
       })
     })
   })
@@ -153,7 +187,7 @@ describe("Resource Directory Service", () => {
       await expect(
         service.createResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory: "dir/dir",
+          resourceCategoryName: "dir/dir",
         })
       ).rejects.toThrowError(BadRequestError)
     })
@@ -162,10 +196,10 @@ describe("Resource Directory Service", () => {
       await expect(
         service.createResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
         })
       ).resolves.toMatchObject({
-        newDirectoryName: resourceCategory,
+        newDirectoryName: resourceCategoryName,
       })
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
         { ...mockFrontMatter },
@@ -184,7 +218,7 @@ describe("Resource Directory Service", () => {
       await expect(
         service.createResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory: originalCategoryName,
+          resourceCategoryName: originalCategoryName,
         })
       ).resolves.toMatchObject({
         newDirectoryName: slugifiedCategoryName,
@@ -210,7 +244,7 @@ describe("Resource Directory Service", () => {
       await expect(
         service.renameResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           newDirectoryName: "dir/dir",
         })
       ).rejects.toThrowError(BadRequestError)
@@ -223,7 +257,7 @@ describe("Resource Directory Service", () => {
       await expect(
         service.renameResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           newDirectoryName,
         })
       ).resolves.not.toThrowError()
@@ -248,7 +282,7 @@ describe("Resource Directory Service", () => {
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
         oldDirectoryName: directoryName,
         newDirectoryName: `${resourceRoomName}/${newDirectoryName}`,
-        message: `Renaming resource category ${resourceCategory} to ${newDirectoryName}`,
+        message: `Renaming resource category ${resourceCategoryName} to ${newDirectoryName}`,
       })
     })
     mockGitHubService.read.mockResolvedValueOnce({
@@ -261,7 +295,7 @@ describe("Resource Directory Service", () => {
       await expect(
         service.renameResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           newDirectoryName: originalResourceCategory,
         })
       ).resolves.not.toThrowError()
@@ -286,7 +320,7 @@ describe("Resource Directory Service", () => {
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
         oldDirectoryName: directoryName,
         newDirectoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
-        message: `Renaming resource category ${resourceCategory} to ${slugifiedResourceCategory}`,
+        message: `Renaming resource category ${resourceCategoryName} to ${slugifiedResourceCategory}`,
       })
     })
   })
@@ -296,12 +330,12 @@ describe("Resource Directory Service", () => {
       await expect(
         service.deleteResourceDirectory(reqDetails, {
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
         })
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(reqDetails, {
         directoryName,
-        message: `Deleting resource category ${resourceCategory}`,
+        message: `Deleting resource category ${resourceCategoryName}`,
       })
     })
   })
@@ -313,7 +347,7 @@ describe("Resource Directory Service", () => {
       await expect(
         service.moveResourcePages(reqDetails, {
           resourceRoomName,
-          resourceCategory,
+          resourceCategoryName,
           targetResourceCategory,
           objArray,
         })
@@ -324,7 +358,7 @@ describe("Resource Directory Service", () => {
           oldDirectoryName: `${directoryName}/_posts`,
           newDirectoryName: `${resourceRoomName}/${targetResourceCategory}/_posts`,
           targetFiles,
-          message: `Moving resource pages from ${resourceCategory} to ${targetResourceCategory}`,
+          message: `Moving resource pages from ${resourceCategoryName} to ${targetResourceCategory}`,
         }
       )
     })

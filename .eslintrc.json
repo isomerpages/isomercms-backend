@@ -75,7 +75,8 @@
                 ["@routes", "./routes"],
                 ["@utils", "./utils"],
                 ["@services", "./services"],
-                ["@validators", "./validators"]
+                ["@validators", "./validators"],
+                ["@fixtures", "./fixtures"]
             ]
         }
     },

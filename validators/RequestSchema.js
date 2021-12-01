@@ -41,9 +41,9 @@ const DeletePageRequestSchema = Joi.object().keys({
 // Resource Pages
 const ResourceFrontMatterSchema = Joi.object({
   title: Joi.string().required(),
-  date: Joi.string().required(),
-  permalink: Joi.string().required(),
-  layout: Joi.string().valid("post"),
+  date: Joi.string(),
+  permalink: Joi.string(),
+  layout: Joi.string().valid("post", "file"),
   file_url: Joi.string(),
 }).unknown(true)
 
@@ -94,6 +94,7 @@ const MoveDirectoryPagesRequestSchema = Joi.object().keys({
 // Resource categories
 const CreateResourceDirectoryRequestSchema = Joi.object().keys({
   newDirectoryName: Joi.string().required(),
+  items: Joi.array().items(FileSchema),
 })
 
 const RenameResourceDirectoryRequestSchema = Joi.object().keys({
@@ -103,7 +104,8 @@ const RenameResourceDirectoryRequestSchema = Joi.object().keys({
 const MoveResourceDirectoryPagesRequestSchema = Joi.object().keys({
   target: Joi.object()
     .keys({
-      resourceCategory: Joi.string().required(),
+      resourceRoomName: Joi.string(),
+      resourceCategoryName: Joi.string().required(),
     })
     .required(),
   items: Joi.array().items(FileSchema).required(),

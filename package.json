@@ -76,7 +76,8 @@
     "@routes": "routes",
     "@utils": "utils",
     "@services": "services",
-    "@validators": "validators"
+    "@validators": "validators",
+    "@fixtures": "fixtures"
   },
   "jest": {
     "moduleNameMapper": {
@@ -88,7 +89,8 @@
       "^@routes/(.*)": "<rootDir>/routes/$1",
       "^@utils/(.*)": "<rootDir>/utils/$1",
       "^@services/(.*)": "<rootDir>/services/$1",
-      "^@validators/(.*)": "<rootDir>/validators/$1"
+      "^@validators/(.*)": "<rootDir>/validators/$1",
+      "^@fixtures/(.*)": "<rootDir>/fixtures/$1"
     }
   },
   "lint-staged": {

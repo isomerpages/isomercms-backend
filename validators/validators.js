@@ -1,4 +1,5 @@
 const specialCharactersRegexTest = /[~%^*_+\-./\\`;~{}[\]"<>]/
+const dateRegexTest = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 
 const titleSpecialCharCheck = ({ title, isFile = false }) => {
   let testTitle = title
@@ -9,6 +10,9 @@ const titleSpecialCharCheck = ({ title, isFile = false }) => {
   return specialCharactersRegexTest.test(testTitle)
 }
 
+const isDateValid = (date) => dateRegexTest.test(date)
+
 module.exports = {
   titleSpecialCharCheck,
+  isDateValid,
 }

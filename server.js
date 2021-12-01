@@ -69,6 +69,9 @@ const {
   ResourceDirectoryService,
 } = require("@services/directoryServices/ResourceDirectoryService")
 const {
+  ResourceRoomDirectoryService,
+} = require("@services/directoryServices/ResourceRoomDirectoryService")
+const {
   SubcollectionDirectoryService,
 } = require("@services/directoryServices/SubcollectionDirectoryService")
 const {
@@ -98,6 +101,7 @@ const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
 const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
 const { ResourcePagesRouter } = require("./newroutes/resourcePages")
+const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
@@ -144,7 +148,11 @@ const resourceDirectoryService = new ResourceDirectoryService({
   baseDirectoryService,
   gitHubService,
 })
-
+const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
+  baseDirectoryService,
+  configYmlService,
+  gitHubService,
+})
 const settingsService = new SettingsService({
   homepagePageService,
   configYmlService,
@@ -169,6 +177,9 @@ const resourcePagesV2Router = new ResourcePagesRouter({
 })
 const resourceDirectoryV2Router = new ResourceCategoriesRouter({
   resourceDirectoryService,
+})
+const resourceRoomV2Router = new ResourceRoomRouter({
+  resourceRoomDirectoryService,
 })
 const settingsV2Router = new SettingsRouter({ settingsService })
 
@@ -218,6 +229,7 @@ app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())
 app.use("/v2/sites", resourcePagesV2Router.getRouter())
 app.use("/v2/sites", resourceDirectoryV2Router.getRouter())
+app.use("/v2/sites", resourceRoomV2Router.getRouter())
 app.use("/v2/sites", settingsV2Router.getRouter())
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))

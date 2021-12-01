@@ -2,7 +2,8 @@ const {
   footerContent: mockFooterContent,
   footerSha: mockFooterSha,
   rawFooterContent: mockRawFooterContent,
-} = require("../../../../fixtures/footer")
+} = require("@fixtures/footer")
+
 const { FooterYmlService } = require("../FooterYmlService")
 
 describe("Footer Yml Service", () => {

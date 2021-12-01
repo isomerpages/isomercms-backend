@@ -25,26 +25,26 @@ describe("Resource Pages Router", () => {
 
   // We can use read route handler here because we don't need to lock the repo
   app.post(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
     attachReadRouteHandlerWrapper(router.createResourcePage)
   )
   app.get(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.readResourcePage)
   )
   app.post(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.updateResourcePage)
   )
   app.delete(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteResourcePage)
   )
   app.use(errorHandler)
 
   const siteName = "test-site"
   const resourceRoomName = "resource-room"
-  const resourceCategory = "resource-category"
+  const resourceCategoryName = "resource-category"
   const accessToken = undefined // Can't set request fields - will always be undefined
   const fileName = "test-file"
   const mockSha = "12345"
@@ -72,7 +72,7 @@ describe("Resource Pages Router", () => {
     it("rejects requests with invalid body", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages`
         )
         .send({})
         .expect(400)
@@ -82,13 +82,13 @@ describe("Resource Pages Router", () => {
       const expectedServiceInput = {
         fileName: pageDetails.newFileName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         content: pageDetails.content.pageBody,
         frontMatter: pageDetails.content.frontMatter,
       }
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages`
         )
         .send(pageDetails)
         .expect(200)
@@ -109,11 +109,11 @@ describe("Resource Pages Router", () => {
       const expectedServiceInput = {
         fileName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
       }
       const resp = await request(app)
         .get(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages/${fileName}`
         )
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
@@ -145,7 +145,7 @@ describe("Resource Pages Router", () => {
     it("rejects requests with invalid body", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages/${fileName}`
         )
         .send({})
         .expect(400)
@@ -155,14 +155,14 @@ describe("Resource Pages Router", () => {
       const expectedServiceInput = {
         fileName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         content: updatePageDetails.content.pageBody,
         frontMatter: updatePageDetails.content.frontMatter,
         sha: updatePageDetails.sha,
       }
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages/${fileName}`
         )
         .send(updatePageDetails)
         .expect(200)
@@ -177,14 +177,14 @@ describe("Resource Pages Router", () => {
         oldFileName: fileName,
         newFileName: renamePageDetails.newFileName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         content: renamePageDetails.content.pageBody,
         frontMatter: renamePageDetails.content.frontMatter,
         sha: renamePageDetails.sha,
       }
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages/${fileName}`
         )
         .send(renamePageDetails)
         .expect(200)
@@ -203,7 +203,7 @@ describe("Resource Pages Router", () => {
     it("rejects requests with invalid body", async () => {
       await request(app)
         .delete(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages/${fileName}`
         )
         .send({})
         .expect(400)
@@ -213,12 +213,12 @@ describe("Resource Pages Router", () => {
       const expectedServiceInput = {
         fileName,
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         sha: pageDetails.sha,
       }
       await request(app)
         .delete(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/pages/${fileName}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/pages/${fileName}`
         )
         .send(pageDetails)
         .expect(200)

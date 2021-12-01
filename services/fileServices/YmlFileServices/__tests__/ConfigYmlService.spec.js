@@ -2,7 +2,8 @@ const {
   configContent: mockConfigContent,
   configSha: mockConfigSha,
   rawConfigContent: mockRawConfigContent,
-} = require("../../../../fixtures/config")
+} = require("@fixtures/config")
+
 const { ConfigYmlService } = require("../ConfigYmlService")
 
 describe("Config Yml Service", () => {

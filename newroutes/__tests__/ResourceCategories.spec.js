@@ -26,11 +26,7 @@ describe("Resource Categories Router", () => {
 
   // We can use read route handler here because we don't need to lock the repo
   app.get(
-    "/:siteName/resourceRoom/:resourceRoomName/resources",
-    attachReadRouteHandlerWrapper(router.listAllResourceCategories)
-  )
-  app.get(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
     attachReadRouteHandlerWrapper(router.listResourceDirectoryFiles)
   )
   app.post(
@@ -38,15 +34,15 @@ describe("Resource Categories Router", () => {
     attachReadRouteHandlerWrapper(router.createResourceDirectory)
   )
   app.post(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
     attachReadRouteHandlerWrapper(router.renameResourceDirectory)
   )
   app.delete(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
     attachReadRouteHandlerWrapper(router.deleteResourceDirectory)
   )
   app.post(
-    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/move",
+    "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move",
     attachReadRouteHandlerWrapper(router.moveResourceDirectoryPages)
   )
 
@@ -54,7 +50,7 @@ describe("Resource Categories Router", () => {
 
   const siteName = "test-site"
   const resourceRoomName = "resource-room"
-  const resourceCategory = "resource-category"
+  const resourceCategoryName = "resource-category"
 
   // Can't set request fields - will always be undefined
   const accessToken = undefined
@@ -66,31 +62,6 @@ describe("Resource Categories Router", () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-  })
-
-  describe("listAllResourceCategories", () => {
-    it("lists the set of all resource categories", async () => {
-      const expectedResponse = [
-        {
-          name: "test-cat",
-          type: "dir",
-        },
-        {
-          name: "test-cate2",
-          type: "dir",
-        },
-      ]
-      mockResourceDirectoryService.listAllResourceCategories.mockResolvedValueOnce(
-        expectedResponse
-      )
-      const resp = await request(app)
-        .get(`/${siteName}/resourceRoom/${resourceRoomName}/resources`)
-        .expect(200)
-      expect(resp.body).toStrictEqual(expectedResponse)
-      expect(
-        mockResourceDirectoryService.listAllResourceCategories
-      ).toHaveBeenCalledWith(reqDetails, { resourceRoomName })
-    })
   })
 
   describe("listResourceDirectoryFiles", () => {
@@ -114,13 +85,17 @@ describe("Resource Categories Router", () => {
       )
       const resp = await request(app)
         .get(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}`
         )
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(
-        mockResourceDirectoryService.listFiles
-      ).toHaveBeenCalledWith(reqDetails, { resourceRoomName, resourceCategory })
+      expect(mockResourceDirectoryService.listFiles).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+        }
+      )
     })
   })
 
@@ -137,7 +112,7 @@ describe("Resource Categories Router", () => {
         {}
       )
       const resourceDetails = {
-        newDirectoryName: resourceCategory,
+        newDirectoryName: resourceCategoryName,
       }
       const resp = await request(app)
         .post(`/${siteName}/resourceRoom/${resourceRoomName}/resources`)
@@ -148,7 +123,7 @@ describe("Resource Categories Router", () => {
         mockResourceDirectoryService.createResourceDirectory
       ).toHaveBeenCalledWith(reqDetails, {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
       })
     })
   })
@@ -159,7 +134,7 @@ describe("Resource Categories Router", () => {
     it("rejects requests with invalid body", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}`
         )
         .send({})
         .expect(400)
@@ -168,7 +143,7 @@ describe("Resource Categories Router", () => {
     it("accepts valid resource rename requests", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}`
         )
         .send({ newDirectoryName })
         .expect(200)
@@ -176,7 +151,7 @@ describe("Resource Categories Router", () => {
         mockResourceDirectoryService.renameResourceDirectory
       ).toHaveBeenCalledWith(reqDetails, {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         newDirectoryName,
       })
     })
@@ -186,14 +161,14 @@ describe("Resource Categories Router", () => {
     it("accepts valid resource delete requests", async () => {
       await request(app)
         .delete(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}`
         )
         .expect(200)
       expect(
         mockResourceDirectoryService.deleteResourceDirectory
       ).toHaveBeenCalledWith(reqDetails, {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
       })
     })
   })
@@ -213,7 +188,7 @@ describe("Resource Categories Router", () => {
     it("rejects move requests with invalid body", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/move`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/move`
         )
         .send({})
         .expect(400)
@@ -222,10 +197,10 @@ describe("Resource Categories Router", () => {
     it("rejects move requests with invalid body", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/move`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/move`
         )
         .send({
-          target: { resourceCategory: targetResourceCategory },
+          target: { resourceCategoryName: targetResourceCategory },
           items: items.concat({ name: "testdir", type: "dir" }),
         })
         .expect(400)
@@ -234,7 +209,7 @@ describe("Resource Categories Router", () => {
     it("rejects move requests with invalid body", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/move`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/move`
         )
         .send({ target: {}, items })
         .expect(400)
@@ -243,15 +218,18 @@ describe("Resource Categories Router", () => {
     it("accepts valid resource page move requests to another resource", async () => {
       await request(app)
         .post(
-          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategory}/move`
+          `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/move`
         )
-        .send({ items, target: { resourceCategory: targetResourceCategory } })
+        .send({
+          items,
+          target: { resourceCategoryName: targetResourceCategory },
+        })
         .expect(200)
       expect(
         mockResourceDirectoryService.moveResourcePages
       ).toHaveBeenCalledWith(reqDetails, {
         resourceRoomName,
-        resourceCategory,
+        resourceCategoryName,
         targetResourceCategory,
         objArray: items,
       })

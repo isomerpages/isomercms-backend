@@ -14,6 +14,7 @@
         "@utils/*": ["./utils/*"],
         "@services/*": ["./services/*"],
         "@validators/*": ["./validators/*"],
+        "@fixtures/*": ["./fixtures/*"],
       }
     },
     "exclude": ["node_modules", "dist"]

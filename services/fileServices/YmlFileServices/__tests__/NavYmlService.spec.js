@@ -4,7 +4,7 @@ const {
   navigationContent: mockNavigationContent,
   navigationSha: mockNavigationSha,
   rawNavigationContent: mockRawNavigationContent,
-} = require("../../../../fixtures/navigation")
+} = require("@fixtures/navigation")
 const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
@@ -21,7 +21,6 @@ describe("Nav Yml Service", () => {
   const fileName = NAV_FILE_NAME
   const collectionName = "collection"
   const directoryName = NAV_FILE_DIR
-  
 
   const reqDetails = { siteName, accessToken }
   const mockParsedContent = {

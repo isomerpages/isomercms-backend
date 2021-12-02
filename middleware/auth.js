@@ -408,6 +408,24 @@ auth.post(
   verifyJwt
 )
 
+// Media files
+auth.post(
+  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages",
+  verifyJwt
+)
+auth.get(
+  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+  verifyJwt
+)
+auth.post(
+  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+  verifyJwt
+)
+auth.delete(
+  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+  verifyJwt
+)
+
 auth.use((req, res, next) => {
   if (!req.route) {
     return res.status(404).send("Unauthorised for unknown route")

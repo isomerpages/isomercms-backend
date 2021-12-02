@@ -110,6 +110,23 @@ const MoveResourceDirectoryPagesRequestSchema = Joi.object().keys({
     .required(),
   items: Joi.array().items(FileSchema).required(),
 })
+
+// Media
+const CreateMediaFileRequestSchema = Joi.object().keys({
+  content: Joi.string().required(),
+  newFileName: Joi.string().required(),
+})
+
+const UpdateMediaFileRequestSchema = Joi.object().keys({
+  content: Joi.string().required(),
+  sha: Joi.string().required(),
+  newFileName: Joi.string(),
+})
+
+const DeleteMediaFileRequestSchema = Joi.object().keys({
+  sha: Joi.string().required(),
+})
+
 const UpdateSettingsRequestSchema = Joi.object().keys({
   colors: Joi.object().keys({
     "primary-color": Joi.string().required(),
@@ -159,5 +176,8 @@ module.exports = {
   CreateResourceDirectoryRequestSchema,
   RenameResourceDirectoryRequestSchema,
   MoveResourceDirectoryPagesRequestSchema,
+  CreateMediaFileRequestSchema,
+  UpdateMediaFileRequestSchema,
+  DeleteMediaFileRequestSchema,
   UpdateSettingsRequestSchema,
 }

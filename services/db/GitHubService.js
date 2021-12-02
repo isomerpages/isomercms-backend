@@ -27,6 +27,10 @@ class GitHubService {
     )}`
   }
 
+  getBlobPath({ siteName, fileSha }) {
+    return `${siteName}/git/blobs/${fileSha}`
+  }
+
   getFolderPath({ siteName, directoryName }) {
     const encodedDirPath = directoryName
       .split("/")
@@ -82,6 +86,34 @@ class GitHubService {
 
     const { content: encodedContent, sha } = resp.data
     const content = Base64.decode(encodedContent)
+
+    return { content, sha }
+  }
+
+  async readMedia({ accessToken, siteName }, { fileSha }) {
+    /**
+     * Files that are bigger than 1 MB needs to be retrieved
+     * via Github Blob API. The content can only be retrieved through
+     * the `sha` of the file.
+     */
+    const params = {
+      ref: BRANCH_REF,
+    }
+
+    const blobEndpoint = this.getBlobPath({ siteName, fileSha })
+
+    const resp = await this.axiosInstance.get(blobEndpoint, {
+      validateStatus,
+      params,
+      headers: {
+        Authorization: `token ${accessToken}`,
+      },
+    })
+
+    if (resp.status === 404)
+      throw new NotFoundError("Media file does not exist")
+
+    const { content, sha } = resp.data
 
     return { content, sha }
   }
@@ -183,6 +215,23 @@ class GitHubService {
         )
       throw err
     }
+  }
+
+  async getRepoInfo({ accessToken, siteName }) {
+    const endpoint = `${siteName}`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+    const params = {
+      ref: BRANCH_REF,
+    }
+    // Get the commits of the repo
+    const { data } = await this.axiosInstance.get(endpoint, {
+      params,
+      headers,
+    })
+
+    return data
   }
 
   async getRepoState({ accessToken, siteName }) {

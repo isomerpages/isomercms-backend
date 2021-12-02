@@ -408,6 +408,13 @@ auth.post(
   verifyJwt
 )
 
+// Media directories
+auth.get("/v2/sites/:siteName/media/:mediaType/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:mediaType", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:mediaType/:directoryName", verifyJwt)
+auth.delete("/v2/sites/:siteName/media/:mediaType/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:mediaType/:directoryName/move", verifyJwt)
+
 // Media files
 auth.post(
   "/v2/sites/:siteName/media/:mediaType/:directoryName/pages",

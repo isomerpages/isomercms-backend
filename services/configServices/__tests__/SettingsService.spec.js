@@ -1,10 +1,8 @@
-const { configContent, configSha } = require("../../../fixtures/config")
-const { footerContent, footerSha } = require("../../../fixtures/footer")
-const { homepageContent, homepageSha } = require("../../../fixtures/homepage")
-const {
-  navigationContent,
-  navigationSha,
-} = require("../../../fixtures/navigation")
+const { configContent, configSha } = require("@fixtures/config")
+const { footerContent, footerSha } = require("@fixtures/footer")
+const { homepageContent, homepageSha } = require("@fixtures/homepage")
+const { navigationContent, navigationSha } = require("@fixtures/navigation")
+
 const { SettingsService } = require("../SettingsService")
 
 describe("Settings Service", () => {

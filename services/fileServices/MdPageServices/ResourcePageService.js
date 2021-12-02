@@ -5,26 +5,45 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { titleSpecialCharCheck, isDateValid } = require("@validators/validators")
 
 class ResourcePageService {
   constructor({ gitHubService }) {
     this.gitHubService = gitHubService
   }
 
-  getResourceDirectoryPath({ resourceRoomName, resourceCategory }) {
-    return `${resourceRoomName}/${resourceCategory}/_posts`
+  retrieveResourceFileMetadata(fileName) {
+    const fileNameArray = fileName.split(".md")[0]
+    const tokenArray = fileNameArray.split("-")
+    const date = tokenArray.slice(0, 3).join("-")
+    if (!isDateValid(date))
+      throw new BadRequestError("Special characters not allowed in file name")
+
+    const type = ["file", "post"].includes(tokenArray[3])
+      ? tokenArray[3]
+      : undefined
+
+    const titleTokenArray = type ? tokenArray.slice(4) : tokenArray.slice(3)
+    const title = titleTokenArray.join("-")
+
+    if (titleSpecialCharCheck({ title, isFile: true }))
+      throw new BadRequestError("Special characters not allowed in file name")
+
+    return { date, type, title }
+  }
+
+  getResourceDirectoryPath({ resourceRoomName, resourceCategoryName }) {
+    return `${resourceRoomName}/${resourceCategoryName}/_posts`
   }
 
   async create(
     reqDetails,
-    { fileName, resourceRoomName, resourceCategory, content, frontMatter }
+    { fileName, resourceRoomName, resourceCategoryName, content, frontMatter }
   ) {
-    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
+    const { title } = this.retrieveResourceFileMetadata(fileName)
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     const newContent = convertDataToMarkdown(frontMatter, content)
@@ -37,10 +56,10 @@ class ResourcePageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async read(reqDetails, { fileName, resourceRoomName, resourceCategory }) {
+  async read(reqDetails, { fileName, resourceRoomName, resourceCategoryName }) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
     const { content: rawContent, sha } = await this.gitHubService.read(
       reqDetails,
@@ -55,11 +74,18 @@ class ResourcePageService {
 
   async update(
     reqDetails,
-    { fileName, resourceRoomName, resourceCategory, content, frontMatter, sha }
+    {
+      fileName,
+      resourceRoomName,
+      resourceCategoryName,
+      content,
+      frontMatter,
+      sha,
+    }
   ) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { newSha } = await this.gitHubService.update(reqDetails, {
@@ -78,11 +104,11 @@ class ResourcePageService {
 
   async delete(
     reqDetails,
-    { fileName, resourceRoomName, resourceCategory, sha }
+    { fileName, resourceRoomName, resourceCategoryName, sha }
   ) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     return this.gitHubService.delete(reqDetails, {
@@ -98,17 +124,16 @@ class ResourcePageService {
       oldFileName,
       newFileName,
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
       content,
       frontMatter,
       sha,
     }
   ) {
-    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
+    const { title } = this.retrieveResourceFileMetadata(newFileName)
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
-      resourceCategory,
+      resourceCategoryName,
     })
 
     await this.gitHubService.delete(reqDetails, {

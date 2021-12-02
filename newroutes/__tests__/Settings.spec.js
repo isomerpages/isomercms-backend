@@ -4,25 +4,16 @@ const request = require("supertest")
 const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const {
-  configContent,
-  configSha,
-  configResponse,
-} = require("../../fixtures/config")
-const {
-  footerContent,
-  footerSha,
-  footerResponse,
-} = require("../../fixtures/footer")
-const { homepageContent, homepageSha } = require("../../fixtures/homepage")
+const { configContent, configSha, configResponse } = require("@fixtures/config")
+const { footerContent, footerSha, footerResponse } = require("@fixtures/footer")
+const { homepageContent, homepageSha } = require("@fixtures/homepage")
 const {
   navigationContent,
   navigationSha,
   navigationResponse,
-} = require("../../fixtures/navigation")
-const {
-  SettingsService,
-} = require("../../services/configServices/SettingsService")
+} = require("@fixtures/navigation")
+const { SettingsService } = require("@services/configServices/SettingsService")
+
 const { SettingsRouter } = require("../settings.js")
 
 describe("Settings Router", () => {

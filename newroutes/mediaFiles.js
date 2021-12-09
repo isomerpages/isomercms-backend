@@ -57,13 +57,13 @@ class MediaFilesRouter {
 
   // Update page in collection
   async updateMediaFile(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
     const { siteName, fileName, mediaType, directoryName } = req.params
     const { error } = UpdateMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error)
     const { content, sha, newFileName } = req.body
-    const reqDetails = { siteName, accessToken }
+    const reqDetails = { siteName, accessToken, currentCommitSha, treeSha }
     let updateResp
     if (newFileName) {
       updateResp = await this.mediaFileService.rename(reqDetails, {

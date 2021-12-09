@@ -21,6 +21,9 @@ describe("Media File Service", () => {
     delete: jest.fn(),
     getRepoInfo: jest.fn(),
     readMedia: jest.fn(),
+    getTree: jest.fn(),
+    updateTree: jest.fn(),
+    updateRepoState: jest.fn(),
   }
 
   jest.mock("@utils/file-upload-utils", () => ({
@@ -194,7 +197,7 @@ describe("Media File Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
+    mockGithubService.create.mockResolvedValueOnce({ sha })
     it("Updating media file content works correctly", async () => {
       await expect(
         service.update(reqDetails, {
@@ -209,11 +212,16 @@ describe("Media File Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
-        fileContent: mockSanitizedContent,
         sha: oldSha,
+      })
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: mockSanitizedContent,
+        fileName,
+        directoryName,
+        isMedia: true,
       })
       expect(validateAndSanitizeFileUpload).toHaveBeenCalledWith(mockContent)
     })
@@ -233,9 +241,34 @@ describe("Media File Service", () => {
   })
 
   describe("Rename", () => {
-    const oldSha = "54321"
     const oldFileName = "test old file.pdf"
-    mockGithubService.create.mockResolvedValueOnce({ sha })
+    const treeSha = "treesha"
+    const mockedTree = [
+      {
+        type: "file",
+        path: `${directoryName}/${oldFileName}`,
+        sha,
+      },
+      {
+        type: "file",
+        path: `${directoryName}/file.md`,
+        sha: "sha1",
+      },
+    ]
+    const mockedMovedTree = [
+      {
+        type: "file",
+        path: `${directoryName}/${oldFileName}`,
+        sha: null,
+      },
+      {
+        type: "file",
+        path: `${directoryName}/${fileName}`,
+        sha,
+      },
+    ]
+    mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
+    mockGithubService.updateTree.mockResolvedValueOnce(treeSha)
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(
@@ -254,24 +287,26 @@ describe("Media File Service", () => {
           newFileName: fileName,
           directoryName,
           content: mockContent,
-          sha: oldSha,
+          sha,
         })
       ).resolves.toMatchObject({
         fileName,
-        content: mockContent,
-        oldSha,
+        oldSha: sha,
         newSha: sha,
       })
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
-        fileName: oldFileName,
-        directoryName,
-        sha: oldSha,
+      expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
+        isRecursive: true,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
-        content: mockContent,
-        fileName,
-        directoryName,
+      expect(mockGithubService.updateTree).toHaveBeenCalledWith(reqDetails, {
+        gitTree: mockedMovedTree,
+        message: `Renamed ${oldFileName} to ${fileName}`,
       })
+      expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          commitSha: treeSha,
+        }
+      )
     })
   })
 })

@@ -49,6 +49,7 @@ class MediaFileService {
       }`,
       name: fileName,
       sha,
+      mediaPath: `${directoryName}/${fileName}`,
     }
     if (mediaType === "images" && isPrivate) {
       // Generate blob url
@@ -69,11 +70,16 @@ class MediaFileService {
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    const { newSha } = await this.gitHubService.update(reqDetails, {
-      fileContent: sanitizedContent,
+    await this.gitHubService.delete(reqDetails, {
       sha,
       fileName,
       directoryName,
+    })
+    const { sha: newSha } = await this.gitHubService.create(reqDetails, {
+      content: sanitizedContent,
+      fileName,
+      directoryName,
+      isMedia: true,
     })
     return {
       fileName,
@@ -92,29 +98,44 @@ class MediaFileService {
     })
   }
 
-  async rename(
-    reqDetails,
-    { oldFileName, newFileName, directoryName, content, sha }
-  ) {
+  async rename(reqDetails, { oldFileName, newFileName, directoryName, sha }) {
     this.mediaNameChecks({ directoryName, fileName: oldFileName })
     this.mediaNameChecks({ directoryName, fileName: newFileName })
 
-    await this.gitHubService.delete(reqDetails, {
-      sha,
-      fileName: oldFileName,
-      directoryName,
+    const gitTree = await this.gitHubService.getTree(reqDetails, {
+      isRecursive: true,
+    })
+    const newGitTree = []
+    gitTree.forEach((item) => {
+      if (item.path.startsWith(`${directoryName}/`) && item.type !== "tree") {
+        const fileName = item.path.split(`${directoryName}/`)[1]
+        if (fileName === oldFileName) {
+          // Delete old file
+          newGitTree.push({
+            ...item,
+            sha: null,
+          })
+          // Add file to target directory
+          newGitTree.push({
+            ...item,
+            path: `${directoryName}/${newFileName}`,
+          })
+        }
+      }
     })
 
-    const { sha: newSha } = await this.gitHubService.create(reqDetails, {
-      content,
-      fileName: newFileName,
-      directoryName,
+    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
+      gitTree: newGitTree,
+      message: `Renamed ${oldFileName} to ${newFileName}`,
     })
+    await this.gitHubService.updateRepoState(reqDetails, {
+      commitSha: newCommitSha,
+    })
+
     return {
       fileName: newFileName,
-      content,
       oldSha: sha,
-      newSha,
+      newSha: sha,
     }
   }
 }

@@ -135,7 +135,7 @@ const CreateMediaFileRequestSchema = Joi.object().keys({
 })
 
 const UpdateMediaFileRequestSchema = Joi.object().keys({
-  content: Joi.string().required(),
+  content: Joi.string(),
   sha: Joi.string().required(),
   newFileName: Joi.string(),
 })

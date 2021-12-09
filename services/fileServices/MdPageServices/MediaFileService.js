@@ -29,6 +29,7 @@ class MediaFileService {
       content: sanitizedContent,
       fileName,
       directoryName,
+      isMedia: true,
     })
     return { fileName, content: sanitizedContent, sha }
   }

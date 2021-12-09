@@ -68,6 +68,7 @@ describe("Media File Service", () => {
         content: mockSanitizedContent,
         fileName,
         directoryName,
+        isMedia: true,
       })
       expect(validateAndSanitizeFileUpload).toHaveBeenCalledWith(mockContent)
     })

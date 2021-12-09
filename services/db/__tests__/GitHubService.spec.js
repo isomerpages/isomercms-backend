@@ -122,6 +122,35 @@ describe("Github Service", () => {
       )
     })
 
+    it("Creating a media file does not encode it", async () => {
+      const resp = {
+        data: {
+          content: {
+            sha,
+          },
+        },
+      }
+      mockAxiosInstance.put.mockResolvedValueOnce(resp)
+      await expect(
+        service.create(reqDetails, {
+          content,
+          fileName,
+          directoryName,
+          isMedia: true,
+        })
+      ).resolves.toMatchObject({
+        sha,
+      })
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        endpoint,
+        {
+          ...params,
+          content,
+        },
+        authHeader
+      )
+    })
+
     it("Create parses and throws the correct error in case of a conflict", async () => {
       mockAxiosInstance.put.mockImplementation(() => {
         const err = new Error()

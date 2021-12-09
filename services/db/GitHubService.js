@@ -41,11 +41,12 @@ class GitHubService {
 
   async create(
     { accessToken, siteName },
-    { content, fileName, directoryName }
+    { content, fileName, directoryName, isMedia = false }
   ) {
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
-      const encodedContent = Base64.encode(content)
+      // Validation and sanitisation of media already done
+      const encodedContent = isMedia ? content : Base64.encode(content)
 
       const params = {
         message: `Create file: ${fileName}`,

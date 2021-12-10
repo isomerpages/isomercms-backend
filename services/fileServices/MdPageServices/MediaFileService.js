@@ -36,10 +36,14 @@ class MediaFileService {
 
   async read(reqDetails, { fileName, directoryName, mediaType }) {
     const { siteName } = reqDetails
-    const { sha } = await this.gitHubService.read(reqDetails, {
-      fileName,
+    const directoryData = await this.gitHubService.readDirectory(reqDetails, {
       directoryName,
     })
+
+    const targetFile = directoryData.find(
+      (fileOrDir) => fileOrDir.name === fileName
+    )
+    const { sha } = targetFile
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       reqDetails
     )

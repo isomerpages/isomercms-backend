@@ -21,6 +21,7 @@ describe("Media File Service", () => {
     delete: jest.fn(),
     getRepoInfo: jest.fn(),
     readMedia: jest.fn(),
+    readDirectory: jest.fn(),
     getTree: jest.fn(),
     updateTree: jest.fn(),
     updateRepoState: jest.fn(),
@@ -79,120 +80,130 @@ describe("Media File Service", () => {
 
   describe("Read", () => {
     // TODO: file tests when file handling is implemented
-    mockGithubService.read.mockResolvedValueOnce({
-      content: "",
-      sha,
-    }),
-      mockGithubService.getRepoInfo.mockResolvedValueOnce({
-        private: false,
-      }),
-      mockGithubService.readMedia.mockResolvedValueOnce({
-        content: mockContent,
-      }),
-      it("Reading image files in public repos works correctly", async () => {
-        const expectedResp = {
-          mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${imageName}`,
-          name: imageName,
-          sha,
-        }
-        await expect(
-          service.read(reqDetails, {
-            fileName: imageName,
-            directoryName,
-            mediaType: "images",
-          })
-        ).resolves.toMatchObject(expectedResp)
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+    const imageDirResp = [
+      {
+        name: imageName,
+        sha,
+      },
+      {
+        name: "image2.png",
+        sha: "image2sha",
+      },
+    ]
+    const fileDirResp = [
+      {
+        name: fileName,
+        sha,
+      },
+      {
+        name: "file2.pdf",
+        sha: "file2sha",
+      },
+    ]
+    mockGithubService.readDirectory.mockResolvedValueOnce(imageDirResp)
+    mockGithubService.getRepoInfo.mockResolvedValueOnce({
+      private: false,
+    })
+    mockGithubService.readMedia.mockResolvedValueOnce({
+      content: mockContent,
+    })
+    it("Reading image files in public repos works correctly", async () => {
+      const expectedResp = {
+        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${imageName}`,
+        name: imageName,
+        sha,
+      }
+      await expect(
+        service.read(reqDetails, {
           fileName: imageName,
           directoryName,
+          mediaType: "images",
         })
-        expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      ).resolves.toMatchObject(expectedResp)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
+        directoryName,
       })
-    mockGithubService.read.mockResolvedValueOnce({
-      content: "",
-      sha,
-    }),
-      mockGithubService.getRepoInfo.mockResolvedValueOnce({
-        private: false,
-      }),
-      it("Reading svg files in public repos adds sanitisation", async () => {
-        const svgName = "image.svg"
-        const expectedResp = {
-          mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${svgName}?sanitize=true`,
-          name: svgName,
-          sha,
-        }
-        await expect(
-          service.read(reqDetails, {
-            fileName: svgName,
-            directoryName,
-            mediaType: "images",
-          })
-        ).resolves.toMatchObject(expectedResp)
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+    })
+    const svgName = "image.svg"
+    mockGithubService.readDirectory.mockResolvedValueOnce([
+      ...imageDirResp,
+      {
+        sha,
+        name: svgName,
+      },
+    ])
+    mockGithubService.getRepoInfo.mockResolvedValueOnce({
+      private: false,
+    })
+    it("Reading svg files in public repos adds sanitisation", async () => {
+      const expectedResp = {
+        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${svgName}?sanitize=true`,
+        name: svgName,
+        sha,
+      }
+      await expect(
+        service.read(reqDetails, {
           fileName: svgName,
           directoryName,
+          mediaType: "images",
         })
-        expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      ).resolves.toMatchObject(expectedResp)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
+        directoryName,
       })
-    mockGithubService.read.mockResolvedValueOnce({
-      content: "",
-      sha,
-    }),
-      mockGithubService.getRepoInfo.mockResolvedValueOnce({
-        private: true,
-      }),
-      it("Reading image files in private repos works correctly", async () => {
-        const expectedResp = {
-          mediaUrl: `data:image/png;base64,${mockContent}`,
-          name: imageName,
-          sha,
-        }
-        await expect(
-          service.read(reqDetails, {
-            fileName: imageName,
-            directoryName,
-            mediaType: "images",
-          })
-        ).resolves.toMatchObject(expectedResp)
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+    })
+    mockGithubService.readDirectory.mockResolvedValueOnce(imageDirResp)
+    mockGithubService.getRepoInfo.mockResolvedValueOnce({
+      private: true,
+    })
+    it("Reading image files in private repos works correctly", async () => {
+      const expectedResp = {
+        mediaUrl: `data:image/png;base64,${mockContent}`,
+        name: imageName,
+        sha,
+      }
+      await expect(
+        service.read(reqDetails, {
           fileName: imageName,
           directoryName,
+          mediaType: "images",
         })
-        expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
-        expect(mockGithubService.readMedia).toHaveBeenCalledWith(reqDetails, {
-          fileSha: sha,
-        })
+      ).resolves.toMatchObject(expectedResp)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
+        directoryName,
       })
-    mockGithubService.read.mockResolvedValueOnce({
-      content: "",
-      sha,
-    }),
-      mockGithubService.getRepoInfo.mockResolvedValueOnce({
-        private: false,
-      }),
-      mockGithubService.readMedia.mockResolvedValueOnce({
-        content: mockContent,
-      }),
-      it("Reading files in public repos works correctly", async () => {
-        const expectedResp = {
-          mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${fileName}`,
-          name: fileName,
-          sha,
-        }
-        await expect(
-          service.read(reqDetails, {
-            fileName,
-            directoryName,
-            mediaType: "files",
-          })
-        ).resolves.toMatchObject(expectedResp)
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockGithubService.readMedia).toHaveBeenCalledWith(reqDetails, {
+        fileSha: sha,
+      })
+    })
+    mockGithubService.readDirectory.mockResolvedValueOnce(fileDirResp)
+    mockGithubService.getRepoInfo.mockResolvedValueOnce({
+      private: false,
+    })
+    mockGithubService.readMedia.mockResolvedValueOnce({
+      content: mockContent,
+    })
+    it("Reading files in public repos works correctly", async () => {
+      const expectedResp = {
+        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${fileName}`,
+        name: fileName,
+        sha,
+      }
+      await expect(
+        service.read(reqDetails, {
           fileName,
           directoryName,
+          mediaType: "files",
         })
-        expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      ).resolves.toMatchObject(expectedResp)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
+        directoryName,
       })
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+    })
   })
 
   describe("Update", () => {

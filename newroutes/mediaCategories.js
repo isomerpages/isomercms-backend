@@ -41,11 +41,12 @@ class MediaCategoriesRouter {
     const { siteName, mediaType } = req.params
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    const { newDirectoryName } = req.body
+    const { newDirectoryName, items } = req.body
     const createResp = await this.mediaDirectoryService.createMediaDirectory(
       { siteName, accessToken },
       {
         directoryName: newDirectoryName,
+        objArray: items,
       }
     )
 

@@ -117,6 +117,34 @@ describe("Media Categories Router", () => {
         mockMediaDirectoryService.createMediaDirectory
       ).toHaveBeenCalledWith(reqDetails, {
         directoryName,
+        objArray: undefined,
+      })
+    })
+    it("accepts valid category create requests with files and returns the details of the category created", async () => {
+      mockMediaDirectoryService.createMediaDirectory.mockResolvedValueOnce({})
+      const mediaDetails = {
+        newDirectoryName: directoryName,
+        items: [
+          {
+            name: `fileName`,
+            type: `file`,
+          },
+          {
+            name: `fileName2`,
+            type: `file`,
+          },
+        ],
+      }
+      const resp = await request(app)
+        .post(`/${siteName}/media/images`)
+        .send(mediaDetails)
+        .expect(200)
+      expect(resp.body).toStrictEqual({})
+      expect(
+        mockMediaDirectoryService.createMediaDirectory
+      ).toHaveBeenCalledWith(reqDetails, {
+        directoryName,
+        objArray: mediaDetails.items,
       })
     })
   })

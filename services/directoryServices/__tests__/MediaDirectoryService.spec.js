@@ -180,6 +180,7 @@ describe("Media Directory Service", () => {
       await expect(
         service.createMediaDirectory(reqDetails, {
           directoryName: "dir/dir",
+          objArray: undefined,
         })
       ).rejects.toThrowError(BadRequestError)
     })
@@ -188,10 +189,53 @@ describe("Media Directory Service", () => {
       await expect(
         service.createMediaDirectory(reqDetails, {
           directoryName: imageDirectoryName,
+          objArray: undefined,
         })
       ).resolves.toMatchObject({
         newDirectoryName: imageDirectoryName,
       })
+      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: "",
+        fileName: PLACEHOLDER_FILE_NAME,
+        directoryName: imageDirectoryName,
+      })
+    })
+
+    it("Creating a directory with specified files works correctly", async () => {
+      const oldDirectoryName = "files/newFolder"
+      const newDirectoryName = `${oldDirectoryName}/newSubfolder`
+      const objArray = [
+        {
+          name: `fileName`,
+          type: `file`,
+        },
+        {
+          name: `fileName2`,
+          type: `file`,
+        },
+      ]
+      await expect(
+        service.createMediaDirectory(reqDetails, {
+          directoryName: newDirectoryName,
+          objArray,
+        })
+      ).resolves.toMatchObject({
+        newDirectoryName,
+      })
+      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: "",
+        fileName: PLACEHOLDER_FILE_NAME,
+        directoryName: newDirectoryName,
+      })
+      expect(mockBaseDirectoryService.moveFiles).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          oldDirectoryName,
+          newDirectoryName,
+          targetFiles: objArray.map((file) => file.name),
+          message: `Moving media files from ${oldDirectoryName} to ${newDirectoryName}`,
+        }
+      )
     })
   })
 

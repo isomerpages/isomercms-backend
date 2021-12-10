@@ -24,7 +24,6 @@ class MediaDirectoryService {
     const files = await this.baseDirectoryService.list(reqDetails, {
       directoryName,
     })
-
     const resp = []
     for (const curr of files) {
       if (curr.type !== "file") continue
@@ -50,16 +49,33 @@ class MediaDirectoryService {
     return resp
   }
 
-  async createMediaDirectory(reqDetails, { directoryName }) {
+  async createMediaDirectory(reqDetails, { directoryName, objArray }) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError(
         "Special characters not allowed in media folder name"
       )
+    if (directoryName === "images" || directoryName === "files") {
+      throw new BadRequestError("Cannot create root media directory")
+    }
+
     await this.gitHubService.create(reqDetails, {
       content: "",
       fileName: PLACEHOLDER_FILE_NAME,
       directoryName,
     })
+    if (objArray) {
+      // We can't perform these operations concurrently because of conflict issues
+      /* eslint-disable no-await-in-loop, no-restricted-syntax */
+      const pathTokens = directoryName.split("/")
+      const oldDirectoryName = pathTokens.slice(0, -1).join("/")
+      const targetFiles = objArray.map((file) => file.name)
+      await this.baseDirectoryService.moveFiles(reqDetails, {
+        oldDirectoryName,
+        newDirectoryName: directoryName,
+        targetFiles,
+        message: `Moving media files from ${oldDirectoryName} to ${directoryName}`,
+      })
+    }
     return {
       newDirectoryName: directoryName,
     }

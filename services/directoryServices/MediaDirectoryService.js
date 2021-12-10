@@ -33,6 +33,7 @@ class MediaDirectoryService {
         }${curr.path.endsWith(".svg") ? "?sanitize=true" : ""}`,
         name: curr.name,
         sha: curr.sha,
+        mediaPath: `${directoryName}/${curr.name}`,
       }
       if (mediaType === "images" && isPrivate) {
         // Generate blob url

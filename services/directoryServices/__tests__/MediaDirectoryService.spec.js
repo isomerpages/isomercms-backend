@@ -93,11 +93,13 @@ describe("Media Directory Service", () => {
           mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${testImg1.path}`,
           name: testImg1.name,
           sha: testImg1.sha,
+          mediaPath: `${imageDirectoryName}/${testImg1.name}`,
         },
         {
           mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${testImg2.path}?sanitize=true`,
           name: testImg2.name,
           sha: testImg2.sha,
+          mediaPath: `${imageDirectoryName}/${testImg2.name}`,
         },
       ]
       await expect(
@@ -127,11 +129,13 @@ describe("Media Directory Service", () => {
           mediaUrl: `data:image/png;base64,${mockContent1}`,
           name: testImg1.name,
           sha: testImg1.sha,
+          mediaPath: `${imageDirectoryName}/${testImg1.name}`,
         },
         {
           mediaUrl: `data:image/svg+xml;base64,${mockContent2}`,
           name: testImg2.name,
           sha: testImg2.sha,
+          mediaPath: `${imageDirectoryName}/${testImg2.name}`,
         },
       ]
       await expect(
@@ -155,11 +159,13 @@ describe("Media Directory Service", () => {
           mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${testFile1.path}`,
           name: testFile1.name,
           sha: testFile1.sha,
+          mediaPath: `${fileDirectoryName}/${testFile1.name}`,
         },
         {
           mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${testFile2.path}`,
           name: testFile2.name,
           sha: testFile2.sha,
+          mediaPath: `${fileDirectoryName}/${testFile2.name}`,
         },
       ]
       await expect(

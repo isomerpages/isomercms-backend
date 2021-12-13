@@ -38,12 +38,12 @@ class MediaCategoriesRouter {
   async createMediaDirectory(req, res) {
     const { accessToken } = req
 
-    const { siteName, mediaType } = req.params
+    const { siteName, mediaType, currentCommitSha, treeSha } = req.params
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName, items } = req.body
     const createResp = await this.mediaDirectoryService.createMediaDirectory(
-      { siteName, accessToken },
+      { siteName, accessToken, currentCommitSha, treeSha },
       {
         directoryName: newDirectoryName,
         objArray: items,
@@ -88,7 +88,7 @@ class MediaCategoriesRouter {
 
   // Move resource category
   async moveMediaFiles(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
     const { siteName, mediaType, directoryName } = req.params
     const { error } = MoveMediaDirectoryFilesRequestSchema.validate(req.body)
@@ -98,7 +98,7 @@ class MediaCategoriesRouter {
       target: { directoryName: targetDirectoryName },
     } = req.body
     await this.mediaDirectoryService.moveMediaFiles(
-      { siteName, accessToken },
+      { siteName, accessToken, currentCommitSha, treeSha },
       {
         directoryName,
         targetDirectoryName,

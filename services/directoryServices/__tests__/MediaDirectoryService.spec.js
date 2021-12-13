@@ -80,9 +80,13 @@ describe("Media Directory Service", () => {
       size: 10,
       type: "file",
     }
+    const dir = {
+      name: "dir",
+      type: "dir",
+    }
 
-    const readImgDirResp = [testImg1, testImg2]
-    const readFileDirResp = [testFile1, testFile2]
+    const readImgDirResp = [testImg1, testImg2, dir]
+    const readFileDirResp = [testFile1, testFile2, dir]
     mockGitHubService.getRepoInfo.mockResolvedValueOnce({
       private: false,
     })
@@ -100,6 +104,10 @@ describe("Media Directory Service", () => {
           name: testImg2.name,
           sha: testImg2.sha,
           mediaPath: `${imageDirectoryName}/${testImg2.name}`,
+        },
+        {
+          name: dir.name,
+          type: dir.type,
         },
       ]
       await expect(
@@ -137,6 +145,10 @@ describe("Media Directory Service", () => {
           sha: testImg2.sha,
           mediaPath: `${imageDirectoryName}/${testImg2.name}`,
         },
+        {
+          name: dir.name,
+          type: dir.type,
+        },
       ]
       await expect(
         service.listFiles(reqDetails, {
@@ -166,6 +178,10 @@ describe("Media Directory Service", () => {
           name: testFile2.name,
           sha: testFile2.sha,
           mediaPath: `${fileDirectoryName}/${testFile2.name}`,
+        },
+        {
+          name: dir.name,
+          type: dir.type,
         },
       ]
       await expect(

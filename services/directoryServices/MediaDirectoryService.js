@@ -26,6 +26,12 @@ class MediaDirectoryService {
     })
     const resp = []
     for (const curr of files) {
+      if (curr.type === "dir") {
+        resp.push({
+          name: curr.name,
+          type: "dir",
+        })
+      }
       if (curr.type !== "file") continue
       const fileData = {
         mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${

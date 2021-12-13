@@ -36,9 +36,9 @@ class MediaCategoriesRouter {
 
   // Create new media directory
   async createMediaDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, mediaType, currentCommitSha, treeSha } = req.params
+    const { siteName, mediaType } = req.params
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName, items } = req.body

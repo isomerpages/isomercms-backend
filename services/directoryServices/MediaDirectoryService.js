@@ -70,7 +70,7 @@ class MediaDirectoryService {
       fileName: PLACEHOLDER_FILE_NAME,
       directoryName,
     })
-    if (objArray) {
+    if (objArray && objArray.length !== 0) {
       // We can't perform these operations concurrently because of conflict issues
       /* eslint-disable no-await-in-loop, no-restricted-syntax */
       const pathTokens = directoryName.split("/")

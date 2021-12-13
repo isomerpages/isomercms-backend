@@ -124,7 +124,8 @@ const RenameMediaDirectoryRequestSchema = Joi.object().keys({
 const MoveMediaDirectoryFilesRequestSchema = Joi.object().keys({
   target: Joi.object()
     .keys({
-      directoryName: Joi.string().required(),
+      mediaType: Joi.string().required(),
+      mediaDirectoryName: Joi.string(),
     })
     .required(),
   items: Joi.array().items(FileSchema).required(),

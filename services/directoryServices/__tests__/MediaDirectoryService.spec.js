@@ -84,9 +84,13 @@ describe("Media Directory Service", () => {
       name: "dir",
       type: "dir",
     }
+    const placeholder = {
+      name: PLACEHOLDER_FILE_NAME,
+      type: "file",
+    }
 
-    const readImgDirResp = [testImg1, testImg2, dir]
-    const readFileDirResp = [testFile1, testFile2, dir]
+    const readImgDirResp = [testImg1, testImg2, dir, placeholder]
+    const readFileDirResp = [testFile1, testFile2, dir, placeholder]
     mockGitHubService.getRepoInfo.mockResolvedValueOnce({
       private: false,
     })

@@ -32,7 +32,7 @@ class MediaDirectoryService {
           type: "dir",
         })
       }
-      if (curr.type !== "file") continue
+      if (curr.type !== "file" || curr.name === PLACEHOLDER_FILE_NAME) continue
       const fileData = {
         mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${
           curr.path

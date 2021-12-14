@@ -26,7 +26,7 @@ class MediaFilesRouter {
   async createMediaFile(req, res) {
     const { accessToken } = req
 
-    const { siteName, mediaType, directoryName } = req.params
+    const { siteName, directoryName } = req.params
     const { error } = CreateMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { content, newFileName } = req.body
@@ -44,13 +44,12 @@ class MediaFilesRouter {
   async readMediaFile(req, res) {
     const { accessToken } = req
 
-    const { siteName, fileName, mediaType, directoryName } = req.params
+    const { siteName, fileName, directoryName } = req.params
 
     const reqDetails = { siteName, accessToken }
     const readResp = await this.mediaFileService.read(reqDetails, {
       fileName,
       directoryName,
-      mediaType,
     })
     return res.status(200).json(readResp)
   }
@@ -59,7 +58,7 @@ class MediaFilesRouter {
   async updateMediaFile(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, fileName, mediaType, directoryName } = req.params
+    const { siteName, fileName, directoryName } = req.params
     const { error } = UpdateMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error)
     const { content, sha, newFileName } = req.body
@@ -88,7 +87,7 @@ class MediaFilesRouter {
   async deleteMediaFile(req, res) {
     const { accessToken } = req
 
-    const { siteName, fileName, mediaType, directoryName } = req.params
+    const { siteName, fileName, directoryName } = req.params
     const { error } = DeleteMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error)
     const { sha } = req.body
@@ -106,19 +105,19 @@ class MediaFilesRouter {
     const router = express.Router()
 
     router.post(
-      "/:siteName/media/:mediaType/:directoryName/pages",
+      "/:siteName/media/:directoryName/pages",
       attachRollbackRouteHandlerWrapper(this.createMediaFile)
     )
     router.get(
-      "/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+      "/:siteName/media/:directoryName/pages/:fileName",
       attachReadRouteHandlerWrapper(this.readMediaFile)
     )
     router.post(
-      "/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+      "/:siteName/media/:directoryName/pages/:fileName",
       attachRollbackRouteHandlerWrapper(this.updateMediaFile)
     )
     router.delete(
-      "/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+      "/:siteName/media/:directoryName/pages/:fileName",
       attachRollbackRouteHandlerWrapper(this.deleteMediaFile)
     )
 

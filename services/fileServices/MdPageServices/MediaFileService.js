@@ -34,11 +34,12 @@ class MediaFileService {
     return { fileName, content: sanitizedContent, sha }
   }
 
-  async read(reqDetails, { fileName, directoryName, mediaType }) {
+  async read(reqDetails, { fileName, directoryName }) {
     const { siteName } = reqDetails
     const directoryData = await this.gitHubService.readDirectory(reqDetails, {
       directoryName,
     })
+    const mediaType = directoryName.split("/")[0]
 
     const targetFile = directoryData.find(
       (fileOrDir) => fileOrDir.name === fileName

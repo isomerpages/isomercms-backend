@@ -409,27 +409,18 @@ auth.post(
 )
 
 // Media directories
-auth.get("/v2/sites/:siteName/media/:mediaType/:directoryName", verifyJwt)
-auth.post("/v2/sites/:siteName/media/:mediaType", verifyJwt)
-auth.post("/v2/sites/:siteName/media/:mediaType/:directoryName", verifyJwt)
-auth.delete("/v2/sites/:siteName/media/:mediaType/:directoryName", verifyJwt)
-auth.post("/v2/sites/:siteName/media/:mediaType/:directoryName/move", verifyJwt)
+auth.get("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.delete("/v2/sites/:siteName/media:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName/move", verifyJwt)
 
 // Media files
-auth.post(
-  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages",
-  verifyJwt
-)
-auth.get(
-  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages/:fileName",
-  verifyJwt
-)
-auth.post(
-  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages/:fileName",
-  verifyJwt
-)
+auth.post("/v2/sites/:siteName/media/:directoryName/pages", verifyJwt)
+auth.get("/v2/sites/:siteName/media/:directoryName/pages/:fileName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName/pages/:fileName", verifyJwt)
 auth.delete(
-  "/v2/sites/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+  "/v2/sites/:siteName/media/:directoryName/pages/:fileName",
   verifyJwt
 )
 

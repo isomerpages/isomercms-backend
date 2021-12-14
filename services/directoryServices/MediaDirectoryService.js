@@ -13,11 +13,12 @@ class MediaDirectoryService {
     this.gitHubService = gitHubService
   }
 
-  async listFiles(reqDetails, { directoryName, mediaType }) {
+  async listFiles(reqDetails, { directoryName }) {
     // TODO: file preview handling
     const { siteName } = reqDetails
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
+    const mediaType = directoryName.split("/")[0]
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       reqDetails
     )
@@ -64,6 +65,9 @@ class MediaDirectoryService {
     if (directoryName === "images" || directoryName === "files") {
       throw new BadRequestError("Cannot create root media directory")
     }
+    const tokens = directoryName.split("/")
+    const mediaType = tokens[0]
+    const mediaDirectoryName = tokens.slice(1).join("/")
 
     await this.gitHubService.create(reqDetails, {
       content: "",
@@ -84,7 +88,8 @@ class MediaDirectoryService {
       })
     }
     return {
-      newDirectoryName: directoryName,
+      mediaType,
+      mediaDirectoryName,
     }
   }
 

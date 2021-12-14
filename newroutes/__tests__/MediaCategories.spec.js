@@ -25,23 +25,23 @@ describe("Media Categories Router", () => {
 
   // We can use read route handler here because we don't need to lock the repo
   app.get(
-    "/:siteName/media/:mediaType/:directoryName",
+    "/:siteName/media/:directoryName",
     attachReadRouteHandlerWrapper(router.listMediaDirectoryFiles)
   )
   app.post(
-    "/:siteName/media/:mediaType",
+    "/:siteName/media",
     attachReadRouteHandlerWrapper(router.createMediaDirectory)
   )
   app.post(
-    "/:siteName/media/:mediaType/:directoryName",
+    "/:siteName/media/:directoryName",
     attachReadRouteHandlerWrapper(router.renameMediaDirectory)
   )
   app.delete(
-    "/:siteName/media/:mediaType/:directoryName",
+    "/:siteName/media/:directoryName",
     attachReadRouteHandlerWrapper(router.deleteMediaDirectory)
   )
   app.post(
-    "/:siteName/media/:mediaType/:directoryName/move",
+    "/:siteName/media/:directoryName/move",
     attachReadRouteHandlerWrapper(router.moveMediaFiles)
   )
 
@@ -85,13 +85,12 @@ describe("Media Categories Router", () => {
         expectedResponse
       )
       const resp = await request(app)
-        .get(`/${siteName}/media/images/${directoryName}`)
+        .get(`/${siteName}/media/${directoryName}`)
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockMediaDirectoryService.listFiles).toHaveBeenCalledWith(
         reqDetails,
         {
-          mediaType: "images",
           directoryName,
         }
       )
@@ -100,7 +99,7 @@ describe("Media Categories Router", () => {
 
   describe("createMediaDirectory", () => {
     it("rejects requests with invalid body", async () => {
-      await request(app).post(`/${siteName}/media/images`).send({}).expect(400)
+      await request(app).post(`/${siteName}/media`).send({}).expect(400)
     })
 
     it("accepts valid category create requests and returns the details of the category created", async () => {
@@ -109,7 +108,7 @@ describe("Media Categories Router", () => {
         newDirectoryName: directoryName,
       }
       const resp = await request(app)
-        .post(`/${siteName}/media/images`)
+        .post(`/${siteName}/media`)
         .send(mediaDetails)
         .expect(200)
       expect(resp.body).toStrictEqual({})
@@ -136,7 +135,7 @@ describe("Media Categories Router", () => {
         ],
       }
       const resp = await request(app)
-        .post(`/${siteName}/media/images`)
+        .post(`/${siteName}/media`)
         .send(mediaDetails)
         .expect(200)
       expect(resp.body).toStrictEqual({})
@@ -154,14 +153,14 @@ describe("Media Categories Router", () => {
 
     it("rejects requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}`)
+        .post(`/${siteName}/media/${directoryName}`)
         .send({})
         .expect(400)
     })
 
     it("accepts valid media rename requests", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}`)
+        .post(`/${siteName}/media/${directoryName}`)
         .send({ newDirectoryName })
         .expect(200)
       expect(
@@ -176,7 +175,7 @@ describe("Media Categories Router", () => {
   describe("deleteMediaDirectory", () => {
     it("accepts valid media delete requests", async () => {
       await request(app)
-        .delete(`/${siteName}/media/images/${directoryName}`)
+        .delete(`/${siteName}/media/${directoryName}`)
         .expect(200)
       expect(
         mockMediaDirectoryService.deleteMediaDirectory
@@ -200,14 +199,14 @@ describe("Media Categories Router", () => {
     ]
     it("rejects move requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/move`)
+        .post(`/${siteName}/media/${directoryName}/move`)
         .send({})
         .expect(400)
     })
 
     it("rejects move requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/move`)
+        .post(`/${siteName}/media/${directoryName}/move`)
         .send({
           target: { directoryName: targetMediaCategory },
           items: items.concat({ name: "testdir", type: "dir" }),
@@ -217,14 +216,14 @@ describe("Media Categories Router", () => {
 
     it("rejects move requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/move`)
+        .post(`/${siteName}/media/${directoryName}/move`)
         .send({ target: {}, items })
         .expect(400)
     })
 
     it("accepts valid media page move requests to another media", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/move`)
+        .post(`/${siteName}/media/${directoryName}/move`)
         .send({
           items,
           target: { mediaType: "images", mediaDirectoryName: "newDir" },

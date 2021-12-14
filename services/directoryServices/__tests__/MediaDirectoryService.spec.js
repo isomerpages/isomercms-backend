@@ -8,8 +8,10 @@ const PLACEHOLDER_FILE_NAME = ".keep"
 describe("Media Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const imageDirectoryName = "images/imageDir"
-  const fileDirectoryName = "files/fileDir"
+  const imageSubdirectory = "imageDir"
+  const imageDirectoryName = `images/${imageSubdirectory}`
+  const fileSubdirectory = "fileDir"
+  const fileDirectoryName = `files/${fileSubdirectory}`
 
   const objArray = [
     {
@@ -218,7 +220,8 @@ describe("Media Directory Service", () => {
           objArray: undefined,
         })
       ).resolves.toMatchObject({
-        newDirectoryName: imageDirectoryName,
+        mediaDirectoryName: imageSubdirectory,
+        mediaType: "images",
       })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",
@@ -228,8 +231,7 @@ describe("Media Directory Service", () => {
     })
 
     it("Creating a directory with specified files works correctly", async () => {
-      const oldDirectoryName = "files/newFolder"
-      const newDirectoryName = `${oldDirectoryName}/newSubfolder`
+      const newDirectoryName = `${fileDirectoryName}/newSubfolder`
       const objArray = [
         {
           name: `fileName`,
@@ -246,7 +248,8 @@ describe("Media Directory Service", () => {
           objArray,
         })
       ).resolves.toMatchObject({
-        newDirectoryName,
+        mediaDirectoryName: `${fileSubdirectory}/newSubfolder`,
+        mediaType: "files",
       })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",
@@ -256,10 +259,10 @@ describe("Media Directory Service", () => {
       expect(mockBaseDirectoryService.moveFiles).toHaveBeenCalledWith(
         reqDetails,
         {
-          oldDirectoryName,
+          oldDirectoryName: fileDirectoryName,
           newDirectoryName,
           targetFiles: objArray.map((file) => file.name),
-          message: `Moving media files from ${oldDirectoryName} to ${newDirectoryName}`,
+          message: `Moving media files from ${fileDirectoryName} to ${newDirectoryName}`,
         }
       )
     })

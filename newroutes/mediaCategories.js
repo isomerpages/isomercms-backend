@@ -26,10 +26,10 @@ class MediaCategoriesRouter {
   async listMediaDirectoryFiles(req, res) {
     const { accessToken } = req
 
-    const { siteName, mediaType, directoryName } = req.params
+    const { siteName, directoryName } = req.params
     const listResp = await this.mediaDirectoryService.listFiles(
       { siteName, accessToken },
-      { mediaType, directoryName }
+      { directoryName }
     )
     return res.status(200).json(listResp)
   }
@@ -38,7 +38,7 @@ class MediaCategoriesRouter {
   async createMediaDirectory(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, mediaType } = req.params
+    const { siteName } = req.params
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName, items } = req.body
@@ -57,7 +57,7 @@ class MediaCategoriesRouter {
   async renameMediaDirectory(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, mediaType, directoryName } = req.params
+    const { siteName, directoryName } = req.params
     const { error } = RenameMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
@@ -76,7 +76,7 @@ class MediaCategoriesRouter {
   async deleteMediaDirectory(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, mediaType, directoryName } = req.params
+    const { siteName, directoryName } = req.params
     await this.mediaDirectoryService.deleteMediaDirectory(
       { siteName, accessToken, currentCommitSha, treeSha },
       {
@@ -90,7 +90,7 @@ class MediaCategoriesRouter {
   async moveMediaFiles(req, res) {
     const { accessToken, currentCommitSha, treeSha } = req
 
-    const { siteName, mediaType, directoryName } = req.params
+    const { siteName, directoryName } = req.params
     const { error } = MoveMediaDirectoryFilesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -115,23 +115,23 @@ class MediaCategoriesRouter {
     const router = express.Router()
 
     router.get(
-      "/:siteName/media/:mediaType/:directoryName",
+      "/:siteName/media/:directoryName",
       attachReadRouteHandlerWrapper(this.listMediaDirectoryFiles)
     )
     router.post(
-      "/:siteName/media/:mediaType",
+      "/:siteName/media",
       attachRollbackRouteHandlerWrapper(this.createMediaDirectory)
     )
     router.post(
-      "/:siteName/media/:mediaType/:directoryName",
+      "/:siteName/media/:directoryName",
       attachRollbackRouteHandlerWrapper(this.renameMediaDirectory)
     )
     router.delete(
-      "/:siteName/media/:mediaType/:directoryName",
+      "/:siteName/media/:directoryName",
       attachRollbackRouteHandlerWrapper(this.deleteMediaDirectory)
     )
     router.post(
-      "/:siteName/media/:mediaType/:directoryName/move",
+      "/:siteName/media/:directoryName/move",
       attachRollbackRouteHandlerWrapper(this.moveMediaFiles)
     )
 

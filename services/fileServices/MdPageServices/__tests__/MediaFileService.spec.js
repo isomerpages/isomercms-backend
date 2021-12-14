@@ -117,7 +117,6 @@ describe("Media File Service", () => {
         service.read(reqDetails, {
           fileName: imageName,
           directoryName,
-          mediaType: "images",
         })
       ).resolves.toMatchObject(expectedResp)
       expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {

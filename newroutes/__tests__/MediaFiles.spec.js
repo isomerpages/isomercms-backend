@@ -25,19 +25,19 @@ describe("Media Files Router", () => {
 
   // We can use read route handler here because we don't need to lock the repo
   app.post(
-    "/:siteName/media/:mediaType/:directoryName/pages",
+    "/:siteName/media/:directoryName/pages",
     attachReadRouteHandlerWrapper(router.createMediaFile)
   )
   app.get(
-    "/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+    "/:siteName/media/:directoryName/pages/:fileName",
     attachReadRouteHandlerWrapper(router.readMediaFile)
   )
   app.post(
-    "/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+    "/:siteName/media/:directoryName/pages/:fileName",
     attachReadRouteHandlerWrapper(router.updateMediaFile)
   )
   app.delete(
-    "/:siteName/media/:mediaType/:directoryName/pages/:fileName",
+    "/:siteName/media/:directoryName/pages/:fileName",
     attachReadRouteHandlerWrapper(router.deleteMediaFile)
   )
   app.use(errorHandler)
@@ -63,7 +63,7 @@ describe("Media Files Router", () => {
 
     it("rejects requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/pages`)
+        .post(`/${siteName}/media/${directoryName}/pages`)
         .send({})
         .expect(400)
     })
@@ -75,7 +75,7 @@ describe("Media Files Router", () => {
         content: mockContent,
       }
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/pages`)
+        .post(`/${siteName}/media/${directoryName}/pages`)
         .send(pageDetails)
         .expect(200)
       expect(mockMediaFileService.create).toHaveBeenCalledWith(
@@ -97,10 +97,9 @@ describe("Media Files Router", () => {
       const expectedServiceInput = {
         fileName,
         directoryName,
-        mediaType: "images",
       }
       const resp = await request(app)
-        .get(`/${siteName}/media/images/${directoryName}/pages/${fileName}`)
+        .get(`/${siteName}/media/${directoryName}/pages/${fileName}`)
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockMediaFileService.read).toHaveBeenCalledWith(
@@ -123,7 +122,7 @@ describe("Media Files Router", () => {
 
     it("rejects requests with invalid body", async () => {
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/pages/${fileName}`)
+        .post(`/${siteName}/media/${directoryName}/pages/${fileName}`)
         .send({})
         .expect(400)
     })
@@ -136,7 +135,7 @@ describe("Media Files Router", () => {
         sha: mockSha,
       }
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/pages/${fileName}`)
+        .post(`/${siteName}/media/${directoryName}/pages/${fileName}`)
         .send(updatePageDetails)
         .expect(200)
       expect(mockMediaFileService.update).toHaveBeenCalledWith(
@@ -154,7 +153,7 @@ describe("Media Files Router", () => {
         sha: mockSha,
       }
       await request(app)
-        .post(`/${siteName}/media/images/${directoryName}/pages/${fileName}`)
+        .post(`/${siteName}/media/${directoryName}/pages/${fileName}`)
         .send(renamePageDetails)
         .expect(200)
       expect(mockMediaFileService.rename).toHaveBeenCalledWith(
@@ -171,7 +170,7 @@ describe("Media Files Router", () => {
 
     it("rejects requests with invalid body", async () => {
       await request(app)
-        .delete(`/${siteName}/media/images/${directoryName}/pages/${fileName}`)
+        .delete(`/${siteName}/media/${directoryName}/pages/${fileName}`)
         .send({})
         .expect(400)
     })
@@ -183,7 +182,7 @@ describe("Media Files Router", () => {
         sha: pageDetails.sha,
       }
       await request(app)
-        .delete(`/${siteName}/media/images/${directoryName}/pages/${fileName}`)
+        .delete(`/${siteName}/media/${directoryName}/pages/${fileName}`)
         .send(pageDetails)
         .expect(200)
       expect(mockMediaFileService.delete).toHaveBeenCalledWith(

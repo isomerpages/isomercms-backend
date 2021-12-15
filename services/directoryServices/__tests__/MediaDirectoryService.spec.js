@@ -1,5 +1,4 @@
 const { BadRequestError } = require("@errors/BadRequestError")
-const { NotFoundError } = require("@errors/NotFoundError")
 
 const { GITHUB_ORG_NAME } = process.env
 

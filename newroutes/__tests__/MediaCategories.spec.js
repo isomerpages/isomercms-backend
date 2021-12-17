@@ -226,7 +226,7 @@ describe("Media Categories Router", () => {
         .post(`/${siteName}/media/${directoryName}/move`)
         .send({
           items,
-          target: { mediaType: "images", mediaDirectoryName: "newDir" },
+          target: { directoryName: "images/newDir" },
         })
         .expect(200)
       expect(mockMediaDirectoryService.moveMediaFiles).toHaveBeenCalledWith(

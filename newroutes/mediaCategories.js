@@ -95,11 +95,8 @@ class MediaCategoriesRouter {
     if (error) throw new BadRequestError(error.message)
     const {
       items,
-      target: { mediaType: targetMediaType, mediaDirectoryName },
+      target: { directoryName: targetDirectoryName },
     } = req.body
-    const targetDirectoryName = `${targetMediaType}${
-      mediaDirectoryName ? `/${mediaDirectoryName}` : ""
-    }`
     await this.mediaDirectoryService.moveMediaFiles(
       { siteName, accessToken, currentCommitSha, treeSha },
       {

@@ -40,6 +40,7 @@ class MediaDirectoryService {
         name: curr.name,
         sha: curr.sha,
         mediaPath: `${directoryName}/${curr.name}`,
+        type: curr.type,
       }
       if (mediaType === "images" && isPrivate) {
         // Generate blob url
@@ -64,9 +65,6 @@ class MediaDirectoryService {
     if (directoryName === "images" || directoryName === "files") {
       throw new BadRequestError("Cannot create root media directory")
     }
-    const tokens = directoryName.split("/")
-    const mediaType = tokens[0]
-    const mediaDirectoryName = tokens.slice(1).join("/")
 
     await this.gitHubService.create(reqDetails, {
       content: "",
@@ -87,8 +85,7 @@ class MediaDirectoryService {
       })
     }
     return {
-      mediaType,
-      mediaDirectoryName,
+      newDirectoryName: directoryName,
     }
   }
 

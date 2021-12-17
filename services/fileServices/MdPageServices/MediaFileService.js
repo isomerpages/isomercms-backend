@@ -31,7 +31,7 @@ class MediaFileService {
       directoryName,
       isMedia: true,
     })
-    return { fileName, content: sanitizedContent, sha }
+    return { name: fileName, content, sha }
   }
 
   async read(reqDetails, { fileName, directoryName }) {
@@ -87,8 +87,8 @@ class MediaFileService {
       isMedia: true,
     })
     return {
-      fileName,
-      content: sanitizedContent,
+      name: fileName,
+      content,
       oldSha: sha,
       newSha,
     }
@@ -138,9 +138,9 @@ class MediaFileService {
     })
 
     return {
-      fileName: newFileName,
+      name: newFileName,
       oldSha: sha,
-      newSha: sha,
+      sha,
     }
   }
 }

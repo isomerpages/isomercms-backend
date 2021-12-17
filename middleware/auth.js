@@ -412,7 +412,7 @@ auth.post(
 auth.get("/v2/sites/:siteName/media/:directoryName", verifyJwt)
 auth.post("/v2/sites/:siteName/media", verifyJwt)
 auth.post("/v2/sites/:siteName/media/:directoryName", verifyJwt)
-auth.delete("/v2/sites/:siteName/media:directoryName", verifyJwt)
+auth.delete("/v2/sites/:siteName/media/:directoryName", verifyJwt)
 auth.post("/v2/sites/:siteName/media/:directoryName/move", verifyJwt)
 
 // Media files

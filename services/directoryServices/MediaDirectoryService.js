@@ -66,11 +66,6 @@ class MediaDirectoryService {
       throw new BadRequestError("Cannot create root media directory")
     }
 
-    await this.gitHubService.create(reqDetails, {
-      content: "",
-      fileName: PLACEHOLDER_FILE_NAME,
-      directoryName,
-    })
     if (objArray && objArray.length !== 0) {
       // We can't perform these operations concurrently because of conflict issues
       /* eslint-disable no-await-in-loop, no-restricted-syntax */
@@ -84,6 +79,14 @@ class MediaDirectoryService {
         message: `Moving media files from ${oldDirectoryName} to ${directoryName}`,
       })
     }
+
+    // We do this step later because the git tree operation overrides it otherwise
+    await this.gitHubService.create(reqDetails, {
+      content: "",
+      fileName: PLACEHOLDER_FILE_NAME,
+      directoryName,
+    })
+
     return {
       newDirectoryName: directoryName,
     }

@@ -48,15 +48,6 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const {
-  SubcollectionPageService,
-} = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
-const {
-  ConfigYmlService,
-} = require("@root/services/fileServices/YmlFileServices/ConfigYmlService")
-const {
-  FooterYmlService,
-} = require("@root/services/fileServices/YmlFileServices/FooterYmlService")
 const { SettingsService } = require("@services/configServices/SettingsService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
@@ -93,16 +84,27 @@ const {
   ResourcePageService,
 } = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
+  SubcollectionPageService,
+} = require("@services/fileServices/MdPageServices/SubcollectionPageService")
+const {
   UnlinkedPageService,
 } = require("@services/fileServices/MdPageServices/UnlinkedPageService")
 const {
   CollectionYmlService,
 } = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 const {
+  ConfigYmlService,
+} = require("@services/fileServices/YmlFileServices/ConfigYmlService")
+const {
+  FooterYmlService,
+} = require("@services/fileServices/YmlFileServices/FooterYmlService")
+const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
 const { MoverService } = require("@services/moverServices/MoverService")
+const { AuthService } = require("@services/utilServices/AuthService")
 
+const { AuthRouter } = require("./newroutes/auth")
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
 const { MediaCategoriesRouter } = require("./newroutes/mediaCategories")
@@ -113,6 +115,7 @@ const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
+const authService = new AuthService()
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
 const homepagePageService = new HomepagePageService({ gitHubService })
@@ -173,6 +176,7 @@ const settingsService = new SettingsService({
   navYmlService,
 })
 
+const authV2Router = new AuthRouter({ authService })
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
   unlinkedPagesDirectoryService,
@@ -243,6 +247,7 @@ app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
 
+app.use("/v2/auth", authV2Router.getRouter())
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())

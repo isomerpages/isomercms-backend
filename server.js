@@ -104,6 +104,7 @@ const {
 const { MoverService } = require("@services/moverServices/MoverService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
+const { AuthMiddleware } = require("./newmiddleware/auth")
 const { AuthRouter } = require("./newroutes/auth")
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
@@ -114,6 +115,12 @@ const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
+const {
+  AuthMiddlewareService,
+} = require("./services/middlewareServices/authMiddlewareService")
+
+const authMiddlewareService = new AuthMiddlewareService()
+const authMiddleware = new AuthMiddleware({ authMiddlewareService })
 
 const authService = new AuthService()
 const gitHubService = new GitHubService({ axiosInstance })
@@ -222,7 +229,8 @@ app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
 
 // Use auth middleware
-app.use(auth)
+// app.use(auth)
+app.use(authMiddleware.getRouter())
 
 // Log api requests
 app.use(apiLogger)

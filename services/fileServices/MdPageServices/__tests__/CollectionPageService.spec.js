@@ -93,6 +93,39 @@ describe("Collection Page Service", () => {
         directoryName,
       })
     })
+
+    it("Creating pages skips the check for special characters if specified", async () => {
+      const specialName = "test-name.md"
+      await expect(
+        service.create(reqDetails, {
+          fileName: specialName,
+          collectionName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+          shouldIgnoreCheck: true,
+        })
+      ).resolves.toMatchObject({
+        fileName: specialName,
+        content: { frontMatter: mockFrontMatter, pageBody: mockContent },
+        sha,
+      })
+      expect(convertDataToMarkdown).toHaveBeenCalledWith(
+        { ...mockFrontMatter },
+        mockContent
+      )
+      expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          ...collectionYmlObj,
+          item: specialName,
+        }
+      )
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: mockMarkdownContent,
+        fileName: specialName,
+        directoryName,
+      })
+    })
     it("Creating a page which specifies a third nav in the front matter removes the third_nav_title parameter", async () => {
       const mockFrontMatterWithThirdNav = {
         ...mockFrontMatter,

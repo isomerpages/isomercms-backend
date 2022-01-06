@@ -73,6 +73,7 @@ class MoverService {
         subcollectionName: newFileSubcollection,
         content: fileBody,
         frontMatter: fileFrontMatter,
+        shouldIgnoreCheck: true,
       })
     } else if (newFileCollection) {
       createResp = await this.collectionPageService.create(reqDetails, {
@@ -80,12 +81,14 @@ class MoverService {
         collectionName: newFileCollection,
         content: fileBody,
         frontMatter: fileFrontMatter,
+        shouldIgnoreCheck: true,
       })
     } else {
       createResp = await this.unlinkedPageService.create(reqDetails, {
         fileName,
         content: fileBody,
         frontMatter: fileFrontMatter,
+        shouldIgnoreCheck: true,
       })
     }
     return createResp

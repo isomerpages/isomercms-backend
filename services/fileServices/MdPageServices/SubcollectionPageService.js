@@ -17,9 +17,19 @@ class SubcollectionPageService {
 
   async create(
     reqDetails,
-    { fileName, collectionName, subcollectionName, content, frontMatter }
+    {
+      fileName,
+      collectionName,
+      subcollectionName,
+      content,
+      frontMatter,
+      shouldIgnoreCheck,
+    }
   ) {
-    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
+    if (
+      !shouldIgnoreCheck &&
+      titleSpecialCharCheck({ title: fileName, isFile: true })
+    )
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 

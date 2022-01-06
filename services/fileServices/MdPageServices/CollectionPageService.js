@@ -13,8 +13,14 @@ class CollectionPageService {
     this.collectionYmlService = collectionYmlService
   }
 
-  async create(reqDetails, { fileName, collectionName, content, frontMatter }) {
-    if (titleSpecialCharCheck({ title: fileName, isFile: true }))
+  async create(
+    reqDetails,
+    { fileName, collectionName, content, frontMatter, shouldIgnoreCheck }
+  ) {
+    if (
+      !shouldIgnoreCheck &&
+      titleSpecialCharCheck({ title: fileName, isFile: true })
+    )
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 

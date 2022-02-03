@@ -34,9 +34,10 @@ class MediaDirectoryService {
       }
       if (curr.type !== "file" || curr.name === PLACEHOLDER_FILE_NAME) continue
       const fileData = {
-        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${
-          curr.path
-        }${curr.path.endsWith(".svg") ? "?sanitize=true" : ""}`,
+        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${curr.path
+          .split("/")
+          .map((v) => encodeURIComponent(v))
+          .join("/")}${curr.path.endsWith(".svg") ? "?sanitize=true" : ""}`,
         name: curr.name,
         sha: curr.sha,
         mediaPath: `${directoryName}/${curr.name}`,

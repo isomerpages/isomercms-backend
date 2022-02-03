@@ -49,7 +49,10 @@ class MediaFileService {
       reqDetails
     )
     const fileData = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${fileName}${
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName
+        .split("/")
+        .map((v) => encodeURIComponent(v))
+        .join("/")}/${fileName}${
         fileName.endsWith(".svg") ? "?sanitize=true" : ""
       }`,
       name: fileName,

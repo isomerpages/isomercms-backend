@@ -21,7 +21,6 @@ class AuthRouter {
     autoBind(this)
   }
 
-  // Create new page in collection
   async authRedirect(req, res) {
     const {
       redirectUrl,

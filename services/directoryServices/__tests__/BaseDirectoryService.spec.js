@@ -1,3 +1,5 @@
+const { ConflictError } = require("@errors/ConflictError")
+
 describe("Base Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
@@ -134,6 +136,25 @@ describe("Base Directory Service", () => {
         sha: null,
       },
     ]
+    mockGithubService.getTree.mockResolvedValueOnce([
+      ...mockedTree,
+      {
+        type: "tree",
+        path: renamedDir,
+      },
+    ])
+    it("Renaming a directory to one with an existing name throws an error", async () => {
+      await expect(
+        service.rename(reqDetails, {
+          oldDirectoryName: directoryName,
+          newDirectoryName: renamedDir,
+          message,
+        })
+      ).rejects.toThrowError(ConflictError)
+      expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
+        isRecursive: true,
+      })
+    })
     mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
     it("Renaming directories works correctly", async () => {
@@ -230,6 +251,26 @@ describe("Base Directory Service", () => {
         sha: null,
       },
     ]
+    mockGithubService.getTree.mockResolvedValueOnce([
+      ...mockedTree,
+      {
+        type: "file",
+        path: `${targetDir}/file.md`,
+      },
+    ])
+    it("Moving files to a directory which has a file of the same name throws an error", async () => {
+      await expect(
+        service.moveFiles(reqDetails, {
+          oldDirectoryName: `${directoryName}/${subcollectionName}`,
+          newDirectoryName: targetDir,
+          targetFiles: ["file.md", "file2.md"],
+          message,
+        })
+      ).rejects.toThrowError(ConflictError)
+      expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
+        isRecursive: true,
+      })
+    })
     mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
     it("Moving files in directories works correctly", async () => {

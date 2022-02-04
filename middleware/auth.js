@@ -408,6 +408,22 @@ auth.post(
   verifyJwt
 )
 
+// Media directories
+auth.get("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.delete("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName/move", verifyJwt)
+
+// Media files
+auth.post("/v2/sites/:siteName/media/:directoryName/pages", verifyJwt)
+auth.get("/v2/sites/:siteName/media/:directoryName/pages/:fileName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName/pages/:fileName", verifyJwt)
+auth.delete(
+  "/v2/sites/:siteName/media/:directoryName/pages/:fileName",
+  verifyJwt
+)
+
 auth.use((req, res, next) => {
   if (!req.route) {
     return res.status(404).send("Unauthorised for unknown route")

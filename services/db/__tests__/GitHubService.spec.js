@@ -122,6 +122,35 @@ describe("Github Service", () => {
       )
     })
 
+    it("Creating a media file does not encode it", async () => {
+      const resp = {
+        data: {
+          content: {
+            sha,
+          },
+        },
+      }
+      mockAxiosInstance.put.mockResolvedValueOnce(resp)
+      await expect(
+        service.create(reqDetails, {
+          content,
+          fileName,
+          directoryName,
+          isMedia: true,
+        })
+      ).resolves.toMatchObject({
+        sha,
+      })
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        endpoint,
+        {
+          ...params,
+          content,
+        },
+        authHeader
+      )
+    })
+
     it("Create parses and throws the correct error in case of a conflict", async () => {
       mockAxiosInstance.put.mockImplementation(() => {
         const err = new Error()
@@ -185,6 +214,53 @@ describe("Github Service", () => {
         service.read(reqDetails, {
           fileName,
           directoryName,
+        })
+      ).rejects.toThrowError(NotFoundError)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        validateStatus,
+        params,
+        headers: authHeader.headers,
+      })
+    })
+  })
+
+  describe("ReadMedia", () => {
+    const endpoint = `${siteName}/git/blobs/${sha}`
+    const params = {
+      ref: BRANCH_REF,
+    }
+
+    it("Reading a media file works correctly", async () => {
+      const resp = {
+        data: {
+          content,
+          sha,
+        },
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      await expect(
+        service.readMedia(reqDetails, {
+          fileSha: sha,
+        })
+      ).resolves.toMatchObject({
+        content,
+        sha,
+      })
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        validateStatus,
+        params,
+        headers: authHeader.headers,
+      })
+    })
+
+    it("Read throws the correct error if file cannot be found", async () => {
+      const resp = {
+        status: 404,
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      await expect(
+        service.readMedia(reqDetails, {
+          fileSha: sha,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
@@ -399,6 +475,30 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.delete).toHaveBeenCalledWith(endpoint, {
         params,
         headers: authHeader.headers,
+      })
+    })
+  })
+
+  describe("GetRepoInfo", () => {
+    const endpoint = `${siteName}`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+    const params = {
+      ref: BRANCH_REF,
+    }
+
+    it("Getting a repo state works correctly", async () => {
+      const resp = {
+        data: {
+          private: true,
+        },
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      await service.getRepoInfo(reqDetails)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        params,
+        headers,
       })
     })
   })

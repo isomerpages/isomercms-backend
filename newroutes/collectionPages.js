@@ -116,7 +116,7 @@ class CollectionPagesRouter {
         })
       }
     } else {
-    /* eslint-disable no-lonely-if */
+      /* eslint-disable no-lonely-if */
       if (newFileName) {
         updateResp = await this.collectionPageService.rename(reqDetails, {
           oldFileName: pageName,
@@ -188,11 +188,11 @@ class CollectionPagesRouter {
     )
     router.post(
       "/:siteName/collections/:collectionName/pages/:pageName",
-      attachWriteRouteHandlerWrapper(this.updateCollectionPage)
+      attachRollbackRouteHandlerWrapper(this.updateCollectionPage)
     )
     router.post(
       "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-      attachWriteRouteHandlerWrapper(this.updateCollectionPage)
+      attachRollbackRouteHandlerWrapper(this.updateCollectionPage)
     )
     router.delete(
       "/:siteName/collections/:collectionName/pages/:pageName",

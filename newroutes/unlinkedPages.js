@@ -168,7 +168,7 @@ class UnlinkedPagesRouter {
     )
     router.post(
       "/:siteName/pages/pages/:pageName",
-      attachWriteRouteHandlerWrapper(this.updateUnlinkedPage)
+      attachRollbackRouteHandlerWrapper(this.updateUnlinkedPage)
     )
     router.delete(
       "/:siteName/pages/pages/:pageName",

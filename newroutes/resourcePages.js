@@ -146,7 +146,7 @@ class ResourcePagesRouter {
     )
     router.post(
       "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
-      attachWriteRouteHandlerWrapper(this.updateResourcePage)
+      attachRollbackRouteHandlerWrapper(this.updateResourcePage)
     )
     router.delete(
       "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",

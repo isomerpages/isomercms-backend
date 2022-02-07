@@ -56,6 +56,22 @@ const UpdateContactUsSchema = Joi.object({
   sha: Joi.string().required(),
 })
 
+// Homepage
+const UpdateHomepageSchema = Joi.object({
+  content: Joi.object({
+    frontMatter: Joi.object({
+      layout: Joi.string().required(),
+      title: Joi.string().required(),
+      description: Joi.string(),
+      permalink: Joi.string().required(),
+      notification: Joi.string(),
+      image: Joi.string(),
+      sections: Joi.array().required(),
+    }).required(),
+  }).required(),
+  sha: Joi.string().required(),
+})
+
 // Pages
 const FrontMatterSchema = Joi.object({
   title: Joi.string().required(),
@@ -227,6 +243,7 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
 
 module.exports = {
   UpdateContactUsSchema,
+  UpdateHomepageSchema,
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,

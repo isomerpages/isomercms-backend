@@ -68,6 +68,7 @@ const UpdateHomepageSchema = Joi.object({
       image: Joi.string(),
       sections: Joi.array().required(),
     }).required(),
+    pageBody: Joi.string().allow(""),
   }).required(),
   sha: Joi.string().required(),
 })

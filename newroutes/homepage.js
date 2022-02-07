@@ -42,13 +42,13 @@ class HomepageRouter {
     })
     if (error) throw new BadRequestError(error)
     const {
-      content: { frontMatter },
+      content: { frontMatter, pageBody },
       sha,
     } = req.body
 
     const updateResp = await this.homepagePageService.update(
       { siteName, accessToken },
-      { content, frontMatter, sha }
+      { content: pageBody, frontMatter, sha }
     )
 
     return res.status(200).json(updateResp)

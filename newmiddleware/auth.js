@@ -249,6 +249,12 @@ class AuthMiddleware {
 
     // V2 Endpoints
 
+    // Login and logout
+    auth.get("/v2/auth/github-redirect", this.noVerify)
+    auth.get("/v2/auth", this.noVerify)
+    auth.delete("/v2/auth/logout", this.noVerify)
+    auth.get("/v2/auth/whoami", this.whoamiAuth)
+
     // Unlinked pages
     auth.get("/v2/sites/:siteName/pages", this.verifyJwt)
     auth.post("/v2/sites/:siteName/pages/pages", this.verifyJwt)

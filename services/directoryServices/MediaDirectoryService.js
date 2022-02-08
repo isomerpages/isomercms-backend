@@ -21,9 +21,17 @@ class MediaDirectoryService {
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       reqDetails
     )
-    const files = await this.baseDirectoryService.list(reqDetails, {
-      directoryName,
-    })
+    let files = []
+    try {
+      const retrievedFiles = await this.baseDirectoryService.list(reqDetails, {
+        directoryName,
+      })
+      files = retrievedFiles
+    } catch (error) {
+      // return an empty list if directory does not exist
+      if (error.status !== 404) throw error
+    }
+
     const resp = []
     for (const curr of files) {
       if (curr.type === "dir") {

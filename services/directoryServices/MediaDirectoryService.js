@@ -12,15 +12,11 @@ class MediaDirectoryService {
     this.gitHubService = gitHubService
   }
 
-  async listFiles(reqDetails, { directoryName }) {
-    // TODO: file preview handling
-    const { siteName } = reqDetails
-    if (!isMediaPathValid({ path: directoryName }))
-      throw new BadRequestError("Invalid media folder name")
-    const mediaType = directoryName.split("/")[0]
-    const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-      reqDetails
-    )
+  /**
+   * Lists files in directory. Returns empty array if directory does not exist
+   * - useful for base media directories which do not have placeholder files
+   */
+  async listWithDefault(reqDetails, { directoryName }) {
     let files = []
     try {
       const retrievedFiles = await this.baseDirectoryService.list(reqDetails, {
@@ -31,6 +27,20 @@ class MediaDirectoryService {
       // return an empty list if directory does not exist
       if (error.status !== 404) throw error
     }
+    return files
+  }
+
+  async listFiles(reqDetails, { directoryName }) {
+    // TODO: file preview handling
+    const { siteName } = reqDetails
+    if (!isMediaPathValid({ path: directoryName }))
+      throw new BadRequestError("Invalid media folder name")
+    const mediaType = directoryName.split("/")[0]
+    const { private: isPrivate } = await this.gitHubService.getRepoInfo(
+      reqDetails
+    )
+    const files = await this.listWithDefault(reqDetails, { directoryName })
+    console.log(files)
 
     const resp = []
     for (const curr of files) {

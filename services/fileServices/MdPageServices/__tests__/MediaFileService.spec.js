@@ -64,8 +64,8 @@ describe("Media File Service", () => {
           content: mockContent,
         })
       ).resolves.toMatchObject({
-        fileName,
-        content: mockSanitizedContent,
+        name: fileName,
+        content: mockContent,
         sha,
       })
       expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
@@ -217,8 +217,8 @@ describe("Media File Service", () => {
           sha: oldSha,
         })
       ).resolves.toMatchObject({
-        fileName,
-        content: mockSanitizedContent,
+        name: fileName,
+        content: mockContent,
         oldSha,
         newSha: sha,
       })
@@ -300,9 +300,9 @@ describe("Media File Service", () => {
           sha,
         })
       ).resolves.toMatchObject({
-        fileName,
+        name: fileName,
         oldSha: sha,
-        newSha: sha,
+        sha,
       })
       expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
         isRecursive: true,

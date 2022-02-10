@@ -219,8 +219,7 @@ describe("Media Directory Service", () => {
           objArray: undefined,
         })
       ).resolves.toMatchObject({
-        mediaDirectoryName: imageSubdirectory,
-        mediaType: "images",
+        newDirectoryName: `images/${imageSubdirectory}`,
       })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",
@@ -247,8 +246,7 @@ describe("Media Directory Service", () => {
           objArray,
         })
       ).resolves.toMatchObject({
-        mediaDirectoryName: `${fileSubdirectory}/newSubfolder`,
-        mediaType: "files",
+        newDirectoryName,
       })
       expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
         content: "",

@@ -73,6 +73,8 @@ class SettingsService {
         if (updatedConfigContent.description)
           updatedHomepageFrontMatter.description =
             updatedConfigContent.description
+        if (updatedConfigContent.shareicon)
+          updatedHomepageFrontMatter.image = updatedConfigContent.shareicon
         await this.homepagePageService.update(reqDetails, {
           content: homepage.content.pageBody,
           frontMatter: updatedHomepageFrontMatter,
@@ -82,7 +84,7 @@ class SettingsService {
     }
 
     if (!_.isEmpty(updatedFooterContent)) {
-      const mergedFooterContent = this.mergeUpdatedData(
+      const mergedFooterContent = this.mergeUpdatedFooterData(
         footer.content,
         updatedFooterContent
       )
@@ -109,7 +111,9 @@ class SettingsService {
       (updatedConfigContent.title &&
         configContent.title !== updatedConfigContent.title) ||
       (updatedConfigContent.description &&
-        configContent.description !== updatedConfigContent.description)
+        configContent.description !== updatedConfigContent.description) ||
+      (updatedConfigContent.shareicon &&
+        configContent.shareicon !== updatedConfigContent.shareicon)
     )
       return true
     return false
@@ -119,6 +123,29 @@ class SettingsService {
     const clonedCurrentData = _.cloneDeep(currentData)
     Object.keys(updatedData).forEach((field) => {
       clonedCurrentData[field] = updatedData[field]
+    })
+    return clonedCurrentData
+  }
+
+  mergeUpdatedFooterData(currentData, updatedData) {
+    // Special configuration to remove empty footer settings entirely so they don't show up in the actual site
+    const clonedCurrentData = _.cloneDeep(currentData)
+    Object.keys(updatedData).forEach((field) => {
+      if (field === "social_media") {
+        const socials = updatedData[field]
+        Object.keys(socials).forEach((social) => {
+          if (!socials[social]) {
+            delete clonedCurrentData[field][social]
+          } else {
+            clonedCurrentData[field] = updatedData[field]
+          }
+        })
+      } else if (updatedData[field] === "") {
+        // Check for empty string because false value exists
+        delete clonedCurrentData[field]
+      } else {
+        clonedCurrentData[field] = updatedData[field]
+      }
     })
     return clonedCurrentData
   }

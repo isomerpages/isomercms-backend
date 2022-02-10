@@ -139,6 +139,44 @@ describe("Subcollection Page Service", () => {
         directoryName,
       })
     })
+
+    it("Creating pages skips the check for special characters if specified", async () => {
+      mockGithubService.create.mockResolvedValueOnce({ sha })
+      const specialName = "test-name.md"
+      await expect(
+        service.create(reqDetails, {
+          fileName: specialName,
+          collectionName,
+          subcollectionName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+          shouldIgnoreCheck: true,
+        })
+      ).resolves.toMatchObject({
+        fileName: specialName,
+        content: { frontMatter: mockFrontMatter, pageBody: mockContent },
+        sha,
+      })
+      expect(convertDataToMarkdown).toHaveBeenCalledWith(
+        {
+          ...mockFrontMatter,
+          third_nav_title: deslugifyCollectionName(subcollectionName),
+        },
+        mockContent
+      )
+      expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
+        reqDetails,
+        {
+          ...collectionYmlObj,
+          item: `${subcollectionName}/${specialName}`,
+        }
+      )
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: mockMarkdownContent,
+        fileName: specialName,
+        directoryName,
+      })
+    })
   })
 
   describe("Read", () => {
@@ -292,35 +330,35 @@ describe("Subcollection Page Service", () => {
     mockGithubService.delete.mockResolvedValueOnce({
       content: mockMarkdownContent,
       sha: oldSha,
-    }),
-      it("Updating the subcollection of a page works correctly", async () => {
-        await expect(
-          service.updateSubcollection(reqDetails, {
-            fileName,
-            collectionName,
-            oldSubcollectionName: subcollectionName,
-            newSubcollectionName,
-          })
-        ).resolves.toMatchObject({
-          sha,
-        })
-        expect(convertDataToMarkdown).toHaveBeenCalledWith(
-          {
-            ...mockFrontMatter,
-            third_nav_title: deslugifyCollectionName(newSubcollectionName),
-          },
-          mockContent
-        )
-        expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+    })
+    it("Updating the subcollection of a page works correctly", async () => {
+      await expect(
+        service.updateSubcollection(reqDetails, {
           fileName,
-          directoryName,
-          sha: oldSha,
+          collectionName,
+          oldSubcollectionName: subcollectionName,
+          newSubcollectionName,
         })
-        expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
-          content: mockMarkdownContent,
-          fileName,
-          directoryName: newDirectory,
-        })
+      ).resolves.toMatchObject({
+        sha,
       })
+      expect(convertDataToMarkdown).toHaveBeenCalledWith(
+        {
+          ...mockFrontMatter,
+          third_nav_title: deslugifyCollectionName(newSubcollectionName),
+        },
+        mockContent
+      )
+      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+        fileName,
+        directoryName,
+        sha: oldSha,
+      })
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: mockMarkdownContent,
+        fileName,
+        directoryName: newDirectory,
+      })
+    })
   })
 })

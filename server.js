@@ -66,6 +66,9 @@ const {
   CollectionDirectoryService,
 } = require("@services/directoryServices/CollectionDirectoryService")
 const {
+  MediaDirectoryService,
+} = require("@services/directoryServices/MediaDirectoryService")
+const {
   ResourceDirectoryService,
 } = require("@services/directoryServices/ResourceDirectoryService")
 const {
@@ -84,6 +87,9 @@ const {
   HomepagePageService,
 } = require("@services/fileServices/MdPageServices/HomepagePageService")
 const {
+  MediaFileService,
+} = require("@services/fileServices/MdPageServices/MediaFileService")
+const {
   ResourcePageService,
 } = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
@@ -99,6 +105,8 @@ const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
+const { MediaCategoriesRouter } = require("./newroutes/mediaCategories")
+const { MediaFilesRouter } = require("./newroutes/mediaFiles")
 const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
 const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
@@ -121,6 +129,7 @@ const subcollectionPageService = new SubcollectionPageService({
 })
 const unlinkedPageService = new UnlinkedPageService({ gitHubService })
 const resourcePageService = new ResourcePageService({ gitHubService })
+const mediaFileService = new MediaFileService({ gitHubService })
 const moverService = new MoverService({
   unlinkedPageService,
   collectionPageService,
@@ -153,6 +162,10 @@ const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
   configYmlService,
   gitHubService,
 })
+const mediaDirectoryService = new MediaDirectoryService({
+  baseDirectoryService,
+  gitHubService,
+})
 const settingsService = new SettingsService({
   homepagePageService,
   configYmlService,
@@ -177,6 +190,12 @@ const resourcePagesV2Router = new ResourcePagesRouter({
 })
 const resourceDirectoryV2Router = new ResourceCategoriesRouter({
   resourceDirectoryService,
+})
+const mediaFilesV2Router = new MediaFilesRouter({
+  mediaFileService,
+})
+const mediaDirectoryV2Router = new MediaCategoriesRouter({
+  mediaDirectoryService,
 })
 const resourceRoomV2Router = new ResourceRoomRouter({
   resourceRoomDirectoryService,
@@ -229,6 +248,8 @@ app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())
 app.use("/v2/sites", resourcePagesV2Router.getRouter())
 app.use("/v2/sites", resourceDirectoryV2Router.getRouter())
+app.use("/v2/sites", mediaFilesV2Router.getRouter())
+app.use("/v2/sites", mediaDirectoryV2Router.getRouter())
 app.use("/v2/sites", resourceRoomV2Router.getRouter())
 app.use("/v2/sites", settingsV2Router.getRouter())
 

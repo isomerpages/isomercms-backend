@@ -40,7 +40,6 @@ class MediaDirectoryService {
       reqDetails
     )
     const files = await this.listWithDefault(reqDetails, { directoryName })
-    console.log(files)
 
     const resp = []
     for (const curr of files) {

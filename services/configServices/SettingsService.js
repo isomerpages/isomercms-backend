@@ -73,6 +73,8 @@ class SettingsService {
         if (updatedConfigContent.description)
           updatedHomepageFrontMatter.description =
             updatedConfigContent.description
+        if (updatedConfigContent.shareicon)
+          updatedHomepageFrontMatter.image = updatedConfigContent.shareicon
         await this.homepagePageService.update(reqDetails, {
           content: homepage.content.pageBody,
           frontMatter: updatedHomepageFrontMatter,
@@ -109,7 +111,9 @@ class SettingsService {
       (updatedConfigContent.title &&
         configContent.title !== updatedConfigContent.title) ||
       (updatedConfigContent.description &&
-        configContent.description !== updatedConfigContent.description)
+        configContent.description !== updatedConfigContent.description) ||
+      (updatedConfigContent.shareicon &&
+        configContent.shareicon !== updatedConfigContent.shareicon)
     )
       return true
     return false

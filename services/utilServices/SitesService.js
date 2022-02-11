@@ -1,0 +1,133 @@
+const axios = require("axios")
+const Bluebird = require("bluebird")
+const _ = require("lodash")
+
+// Import error
+const GH_MAX_REPO_COUNT = 100
+const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
+const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const ISOMER_ADMIN_REPOS = [
+  "isomercms-backend",
+  "isomercms-frontend",
+  "isomer-redirection",
+  "isomerpages-template",
+  "isomer-conversion-scripts",
+  "isomer-wysiwyg",
+  "isomer-slackbot",
+  "isomer-tooling",
+  "generate-site",
+  "travisci-scripts",
+  "recommender-train",
+  "editor",
+  "ci-test",
+  "infra",
+  "markdown-helper",
+]
+
+class SitesService {
+  constructor({ gitHubService, configYmlService }) {
+    this.githubService = gitHubService
+    this.configYmlService = configYmlService
+  }
+
+  // timeDiff tells us when a repo was last updated in terms of days (for e.g. 2 days ago,
+  // today)
+  timeDiff(lastUpdated) {
+    const gapInUpdate = new Date().getTime() - new Date(lastUpdated).getTime()
+    const numDaysAgo = Math.floor(gapInUpdate / (1000 * 60 * 60 * 24))
+    // return a message for number of days ago repo was last updated
+    switch (numDaysAgo) {
+      case 0:
+        return "Updated today"
+      case 1:
+        return "Updated 1 day ago"
+      default:
+        return `Updated ${numDaysAgo} days ago`
+    }
+  }
+
+  async getSites({ accessToken }) {
+    const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
+
+    // Simultaneously retrieve all isomerpages repos
+    const paramsArr = []
+    for (let i = 0; i < ISOMERPAGES_REPO_PAGE_COUNT; i += 1) {
+      paramsArr.push({
+        per_page: GH_MAX_REPO_COUNT,
+        sort: "full_name",
+        page: i + 1,
+      })
+    }
+
+    const sites = await Bluebird.map(paramsArr, async (params) => {
+      const resp = await axios.get(endpoint, {
+        params,
+        headers: {
+          Authorization: `token ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      return resp.data
+        .map((repoData) => {
+          const {
+            updated_at: updatedAt,
+            permissions,
+            name,
+            private: isPrivate,
+          } = repoData
+
+          return {
+            lastUpdated: this.timeDiff(updatedAt),
+            permissions,
+            repoName: name,
+            isPrivate,
+          }
+        })
+        .filter(
+          (repoData) =>
+            repoData.permissions.push === true &&
+            !ISOMER_ADMIN_REPOS.includes(repoData.repoName)
+        )
+    })
+
+    const flattenedSites = _.flatten(sites)
+    return flattenedSites
+  }
+
+  async checkHasAccess(reqDetails, { userId }) {
+    await this.githubService.checkHasAccess(reqDetails, { userId })
+  }
+
+  async getLastUpdated(reqDetails) {
+    const { updated_at: updatedAt } = await this.githubService.getRepoInfo(
+      reqDetails
+    )
+    return this.timeDiff(updatedAt)
+  }
+
+  async getStagingUrl(reqDetails) {
+    // Check config.yml for staging url if it exists, and github site description otherwise
+    const { content: configData } = await this.configYmlService.read(reqDetails)
+    if ("staging" in configData) return configData.staging
+
+    const { description } = await this.githubService.getRepoInfo(reqDetails)
+
+    let stagingUrl
+
+    if (description) {
+      // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
+      const descTokens = description.replace("/;/g", " ").split(" ")
+      // Staging urls also contain staging in their url
+      stagingUrl = descTokens.find(
+        (token) => token.includes("http") && token.includes("staging")
+      )
+    }
+
+    return stagingUrl
+  }
+}
+
+module.exports = {
+  SitesService,
+}

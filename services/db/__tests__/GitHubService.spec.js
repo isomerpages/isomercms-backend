@@ -649,4 +649,19 @@ describe("Github Service", () => {
       )
     })
   })
+
+  describe("checkHasAccess", () => {
+    const userId = "userId"
+    const refEndpoint = `${siteName}/collaborators/${userId}`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+    it("Checks whether user has write access to site", async () => {
+      await service.checkHasAccess({ accessToken, siteName }, { userId })
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(refEndpoint, {
+        headers,
+      })
+    })
+  })
 })

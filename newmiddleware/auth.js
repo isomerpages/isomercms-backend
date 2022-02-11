@@ -255,6 +255,12 @@ class AuthMiddleware {
     auth.delete("/v2/auth/logout", this.noVerify)
     auth.get("/v2/auth/whoami", this.whoamiAuth)
 
+    // Sites
+    auth.get("/v2/sites", this.verifyJwt)
+    auth.get("/v2/sites/:siteName", this.verifyJwt)
+    auth.get("/v2/sites/:siteName/lastUpdated", this.verifyJwt)
+    auth.get("/v2/sites/:siteName/stagingUrl", this.verifyJwt)
+
     // Unlinked pages
     auth.get("/v2/sites/:siteName/pages", this.verifyJwt)
     auth.post("/v2/sites/:siteName/pages/pages", this.verifyJwt)

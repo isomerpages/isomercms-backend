@@ -114,10 +114,12 @@ const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
 const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
+const { SitesRouter } = require("./newroutes/sites")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 const {
   AuthMiddlewareService,
 } = require("./services/middlewareServices/authMiddlewareService")
+const { SitesService } = require("./services/utilServices/SitesService")
 
 const authMiddlewareService = new AuthMiddlewareService()
 const authMiddleware = new AuthMiddleware({ authMiddlewareService })
@@ -129,6 +131,7 @@ const homepagePageService = new HomepagePageService({ gitHubService })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const navYmlService = new NavYmlService({ gitHubService })
+const sitesService = new SitesService({ gitHubService, configYmlService })
 const collectionPageService = new CollectionPageService({
   gitHubService,
   collectionYmlService,
@@ -184,6 +187,7 @@ const settingsService = new SettingsService({
 })
 
 const authV2Router = new AuthRouter({ authService })
+const sitesV2Router = new SitesRouter({ sitesService })
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
   unlinkedPagesDirectoryService,
@@ -256,6 +260,7 @@ app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
 
 app.use("/v2/auth", authV2Router.getRouter())
+app.use("/v2/sites", sitesV2Router.getRouter())
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())

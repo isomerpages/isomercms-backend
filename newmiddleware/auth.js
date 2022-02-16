@@ -338,7 +338,7 @@ class AuthMiddleware {
 
     auth.use((req, res, next) => {
       if (!req.route) {
-        return res.status(404).send("Unauthorised for unknown route")
+        return res.status(404).send("Unknown route requested")
       }
       return next()
     })

@@ -5,11 +5,9 @@ const request = require("supertest")
 const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { AuthRouter } = require("../auth")
+const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
 const { FRONTEND_URL } = process.env
-const CSRF_COOKIE_NAME = "isomer-csrf"
-const COOKIE_NAME = "isomercms"
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
 const accessToken = undefined
@@ -51,7 +49,9 @@ describe("Unlinked Pages Router", () => {
         redirectUrl,
         cookieToken,
       })
+
       const resp = await request(app).get(`/github-redirect`)
+
       expect(mockAuthService.getAuthRedirectDetails).toHaveBeenCalledTimes(1)
       expect(resp.status).toEqual(302)
       expect(resp.headers.location).toContain(redirectUrl)
@@ -69,9 +69,11 @@ describe("Unlinked Pages Router", () => {
       mockAuthService.getGithubAuthToken.mockResolvedValueOnce({
         token,
       })
+
       const resp = await request(app)
         .get(`/?code=${code}&state=${state}`)
         .set("Cookie", `${CSRF_COOKIE_NAME}=${csrfState};`)
+
       expect(mockAuthService.getGithubAuthToken).toHaveBeenCalledWith({
         csrfState,
         code,
@@ -93,10 +95,11 @@ describe("Unlinked Pages Router", () => {
           `${CSRF_COOKIE_NAME}=${csrfState};${COOKIE_NAME}=${cookieToken}`
         )
         .expect(200)
+
       expect(resp.headers["set-cookie"]).toEqual(
         expect.arrayContaining([
-          expect.stringContaining(CSRF_COOKIE_NAME),
-          expect.stringContaining(COOKIE_NAME),
+          expect.stringContaining(`${CSRF_COOKIE_NAME}=;`),
+          expect.stringContaining(`${COOKIE_NAME}=;`),
         ])
       )
     })
@@ -108,7 +111,9 @@ describe("Unlinked Pages Router", () => {
       mockAuthService.getUserId.mockResolvedValueOnce({
         userId,
       })
+
       await request(app).get(`/whoami`).expect(200)
+
       expect(mockAuthService.getUserId).toHaveBeenCalledWith({ accessToken })
     })
   })

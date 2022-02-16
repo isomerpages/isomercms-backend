@@ -31,6 +31,7 @@ describe("Auth Service", () => {
     it("Able to return redirectUrl and cookieToken when getting details", async () => {
       uuid.mockImplementation(() => state)
       jwtUtils.signToken.mockImplementation(() => token)
+
       await expect(service.getAuthRedirectDetails()).resolves.toMatchObject({
         redirectUrl: `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&state=${state}&scope=repo`,
         cookieToken: token,
@@ -40,6 +41,12 @@ describe("Auth Service", () => {
 
   describe("getGithubAuthToken", () => {
     it("Retrieves the Github auth token", async () => {
+      const params = {
+        code: "code",
+        redirect_uri: REDIRECT_URI,
+        state,
+      }
+
       uuid.mockImplementation(() => state)
       jwtUtils.verifyToken.mockImplementation(() => token)
       jwtUtils.decodeToken.mockImplementation(() => ({ state }))
@@ -53,12 +60,7 @@ describe("Auth Service", () => {
           login: "login",
         },
       }))
-      // replace with
-      const params = {
-        code: "code",
-        redirect_uri: REDIRECT_URI,
-        state,
-      }
+
       await expect(
         service.getGithubAuthToken({ csrfState, code: "code", state })
       ).resolves.toEqual(signedToken)

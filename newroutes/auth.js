@@ -96,4 +96,4 @@ class AuthRouter {
   }
 }
 
-module.exports = { AuthRouter }
+module.exports = { AuthRouter, CSRF_COOKIE_NAME, COOKIE_NAME }

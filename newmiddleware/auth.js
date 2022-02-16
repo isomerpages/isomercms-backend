@@ -37,6 +37,15 @@ class AuthMiddleware {
 
   getRouter() {
     const auth = express.Router()
+    auth.verifiedGet = (path) => {
+      auth.get(path, this.verifyJwt)
+    }
+    auth.verifiedDelete = (path) => {
+      auth.delete(path, this.verifyJwt)
+    }
+    auth.verifiedPost = (path) => {
+      auth.post(path, this.verifyJwt)
+    }
 
     // Health check
     auth.get("/v2/ping", this.noVerify)
@@ -51,201 +60,159 @@ class AuthMiddleware {
     auth.get("/v1", this.noVerify)
 
     // Homepage
-    auth.get("/v1/sites/:siteName/homepage", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/homepage", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/homepage")
+    auth.verifiedPost("/v1/sites/:siteName/homepage")
 
     // Directory
-    auth.get("/v1/sites/:siteName/files/:path", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/files/:path")
 
     // Folder pages
-    auth.get("/v1/sites/:siteName/folders/all", this.verifyJwt)
-    auth.delete(
-      "/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/folders/all")
+    auth.verifiedDelete(
+      "/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName"
     )
-    auth.post(
-      "/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName"
     )
 
     // Collection pages
-    auth.get("/v1/sites/:siteName/collections/:collectionName", this.verifyJwt)
-    auth.get(
-      "/v1/sites/:siteName/collections/:collectionName/pages",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/collections/:collectionName")
+    auth.verifiedGet("/v1/sites/:siteName/collections/:collectionName/pages")
+    auth.verifiedPost("/v1/sites/:siteName/collections/:collectionName/pages") // to remove
+    auth.verifiedPost(
+      "/v1/sites/:siteName/collections/:collectionName/pages/new/:pageName"
     )
-    auth.post(
-      "/v1/sites/:siteName/collections/:collectionName/pages",
-      this.verifyJwt
-    ) // to remove
-    auth.post(
-      "/v1/sites/:siteName/collections/:collectionName/pages/new/:pageName",
-      this.verifyJwt
+    auth.verifiedGet(
+      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName"
     )
-    auth.get(
-      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName"
     )
-    auth.post(
-      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName"
     )
-    auth.delete(
-      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName"
     )
 
     // Collections
-    auth.get("/v1/sites/:siteName/collections", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/collections", this.verifyJwt)
-    auth.delete(
-      "/v1/sites/:siteName/collections/:collectionName",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/collections")
+    auth.verifiedPost("/v1/sites/:siteName/collections")
+    auth.verifiedDelete("/v1/sites/:siteName/collections/:collectionName")
+    auth.verifiedPost(
+      "/v1/sites/:siteName/collections/:collectionName/rename/:newCollectionName"
     )
-    auth.post(
-      "/v1/sites/:siteName/collections/:collectionName/rename/:newCollectionName",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v1/sites/:siteName/collections/:collectionPath/move/:targetPath",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/collections/:collectionPath/move/:targetPath"
     )
 
     // Documents
-    auth.get("/v1/sites/:siteName/documents", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/documents", this.verifyJwt)
-    auth.get("/v1/sites/:siteName/documents/:documentName", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/documents/:documentName", this.verifyJwt)
-    auth.delete("/v1/sites/:siteName/documents/:documentName", this.verifyJwt)
-    auth.post(
-      "/v1/sites/:siteName/documents/:documentName/rename/:newDocumentName",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/documents")
+    auth.verifiedPost("/v1/sites/:siteName/documents")
+    auth.verifiedGet("/v1/sites/:siteName/documents/:documentName")
+    auth.verifiedPost("/v1/sites/:siteName/documents/:documentName")
+    auth.verifiedDelete("/v1/sites/:siteName/documents/:documentName")
+    auth.verifiedPost(
+      "/v1/sites/:siteName/documents/:documentName/rename/:newDocumentName"
     )
-    auth.post(
-      "/v1/sites/:siteName/documents/:documentName/move/:newDocumentName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/documents/:documentName/move/:newDocumentName"
     )
 
     // Images
-    auth.get("/v1/sites/:siteName/images", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/images", this.verifyJwt)
-    auth.get("/v1/sites/:siteName/images/:imageName", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/images/:imageName", this.verifyJwt)
-    auth.delete("/v1/sites/:siteName/images/:imageName", this.verifyJwt)
-    auth.post(
-      "/v1/sites/:siteName/images/:imageName/rename/:newImageName",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/images")
+    auth.verifiedPost("/v1/sites/:siteName/images")
+    auth.verifiedGet("/v1/sites/:siteName/images/:imageName")
+    auth.verifiedPost("/v1/sites/:siteName/images/:imageName")
+    auth.verifiedDelete("/v1/sites/:siteName/images/:imageName")
+    auth.verifiedPost(
+      "/v1/sites/:siteName/images/:imageName/rename/:newImageName"
     )
-    auth.post(
-      "/v1/sites/:siteName/images/:imageName/move/:newImageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/images/:imageName/move/:newImageName"
     )
 
     // Media subfolders
-    auth.post(
-      "/v1/sites/:siteName/media/:mediaType/:folderPath",
-      this.verifyJwt
-    )
-    auth.delete(
-      "/v1/sites/:siteName/media/:mediaType/:folderPath",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v1/sites/:siteName/media/:mediaType/:oldFolderPath/rename/:newFolderPath",
-      this.verifyJwt
+    auth.verifiedPost("/v1/sites/:siteName/media/:mediaType/:folderPath")
+    auth.verifiedDelete("/v1/sites/:siteName/media/:mediaType/:folderPath")
+    auth.verifiedPost(
+      "/v1/sites/:siteName/media/:mediaType/:oldFolderPath/rename/:newFolderPath"
     )
 
     // Menu directory
-    auth.get("/v1/sites/:siteName/tree", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/tree")
 
     // Menu
-    auth.get("/v1/sites/:siteName/menus", this.verifyJwt)
-    auth.get("/v1/sites/:siteName/menus/:menuName", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/menus/:menuName", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/menus")
+    auth.verifiedGet("/v1/sites/:siteName/menus/:menuName")
+    auth.verifiedPost("/v1/sites/:siteName/menus/:menuName")
 
     // Pages
-    auth.get("/v1/sites/:siteName/pages", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/pages", this.verifyJwt) // to remove
-    auth.post("/v1/sites/:siteName/pages/new/:pageName", this.verifyJwt)
-    auth.get("/v1/sites/:siteName/pages/:pageName", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/pages/:pageName", this.verifyJwt)
-    auth.delete("/v1/sites/:siteName/pages/:pageName", this.verifyJwt)
-    auth.post(
-      "/v1/sites/:siteName/pages/:pageName/rename/:newPageName",
-      this.verifyJwt
-    )
-    auth.post("/v1/sites/:siteName/pages/move/:newPagePath", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/pages")
+    auth.verifiedPost("/v1/sites/:siteName/pages") // to remove
+    auth.verifiedPost("/v1/sites/:siteName/pages/new/:pageName")
+    auth.verifiedGet("/v1/sites/:siteName/pages/:pageName")
+    auth.verifiedPost("/v1/sites/:siteName/pages/:pageName")
+    auth.verifiedDelete("/v1/sites/:siteName/pages/:pageName")
+    auth.verifiedPost("/v1/sites/:siteName/pages/:pageName/rename/:newPageName")
+    auth.verifiedPost("/v1/sites/:siteName/pages/move/:newPagePath")
 
     // Resource pages
-    auth.get("/v1/sites/:siteName/resources/:resourceName", this.verifyJwt)
-    auth.post(
-      "/v1/sites/:siteName/resources/:resourceName/pages",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/resources/:resourceName")
+    auth.verifiedPost("/v1/sites/:siteName/resources/:resourceName/pages")
+    auth.verifiedGet(
+      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName"
     )
-    auth.get(
-      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/resources/:resourceName/pages/new/:pageName"
     )
-    auth.post(
-      "/v1/sites/:siteName/resources/:resourceName/pages/new/:pageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName"
     )
-    auth.post(
-      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName"
     )
-    auth.delete(
-      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName"
     )
 
     // Resource room
-    auth.get("/v1/sites/:siteName/resource-room", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/resource-room", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/resource-room/:resourceRoom", this.verifyJwt)
-    auth.delete("/v1/sites/:siteName/resource-room", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/resource-room")
+    auth.verifiedPost("/v1/sites/:siteName/resource-room")
+    auth.verifiedPost("/v1/sites/:siteName/resource-room/:resourceRoom")
+    auth.verifiedDelete("/v1/sites/:siteName/resource-room")
 
     // Resources
-    auth.get("/v1/sites/:siteName/resources", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/resources", this.verifyJwt)
-    auth.delete("/v1/sites/:siteName/resources/:resourceName", this.verifyJwt)
-    auth.post(
-      "/v1/sites/:siteName/resources/:resourceName/rename/:newResourceName",
-      this.verifyJwt
+    auth.verifiedGet("/v1/sites/:siteName/resources")
+    auth.verifiedPost("/v1/sites/:siteName/resources")
+    auth.verifiedDelete("/v1/sites/:siteName/resources/:resourceName")
+    auth.verifiedPost(
+      "/v1/sites/:siteName/resources/:resourceName/rename/:newResourceName"
     )
-    auth.post(
-      "/v1/sites/:siteName/resources/:resourceName/move/:newResourceName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v1/sites/:siteName/resources/:resourceName/move/:newResourceName"
     )
 
     // Settings
-    auth.get("/v1/sites/:siteName/settings", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/settings", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/settings")
+    auth.verifiedPost("/v1/sites/:siteName/settings")
 
     // New settings
-    auth.get("/v2/sites/:siteName/settings", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/settings", this.verifyJwt)
+    auth.verifiedGet("/v2/sites/:siteName/settings")
+    auth.verifiedPost("/v2/sites/:siteName/settings")
 
     // Navigation
-    auth.get("/v1/sites/:siteName/navigation", this.verifyJwt)
-    auth.post("/v1/sites/:siteName/navigation", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/navigation")
+    auth.verifiedPost("/v1/sites/:siteName/navigation")
 
     // Netlify toml
-    auth.get("/v1/sites/:siteName/netlify-toml", this.verifyJwt)
+    auth.verifiedGet("/v1/sites/:siteName/netlify-toml")
 
     // Sites
-    auth.get("/v1/sites", this.verifyJwt)
-    auth.get("/v1/sites/:siteName", this.verifyJwt)
-    auth.get("/v1/sites/:siteName/lastUpdated", this.verifyJwt)
-    auth.get("/v1/sites/:siteName/stagingUrl", this.verifyJwt)
+    auth.verifiedGet("/v1/sites")
+    auth.verifiedGet("/v1/sites/:siteName")
+    auth.verifiedGet("/v1/sites/:siteName/lastUpdated")
+    auth.verifiedGet("/v1/sites/:siteName/stagingUrl")
 
     // V2 Endpoints
 
@@ -256,165 +223,117 @@ class AuthMiddleware {
     auth.get("/v2/auth/whoami", this.whoamiAuth)
 
     // Unlinked pages
-    auth.get("/v2/sites/:siteName/pages", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/pages/pages", this.verifyJwt)
-    auth.get("/v2/sites/:siteName/pages/pages/:pageName", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/pages/pages/:pageName", this.verifyJwt)
-    auth.delete("/v2/sites/:siteName/pages/pages/:pageName", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/pages/move", this.verifyJwt)
+    auth.verifiedGet("/v2/sites/:siteName/pages")
+    auth.verifiedPost("/v2/sites/:siteName/pages/pages")
+    auth.verifiedGet("/v2/sites/:siteName/pages/pages/:pageName")
+    auth.verifiedPost("/v2/sites/:siteName/pages/pages/:pageName")
+    auth.verifiedDelete("/v2/sites/:siteName/pages/pages/:pageName")
+    auth.verifiedPost("/v2/sites/:siteName/pages/move")
 
     // Collection pages
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/pages",
-      this.verifyJwt
+    auth.verifiedPost("/v2/sites/:siteName/collections/:collectionName/pages")
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages"
     )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
-      this.verifyJwt
+    auth.verifiedGet(
+      "/v2/sites/:siteName/collections/:collectionName/pages/:pageName"
     )
-    auth.get(
-      "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedGet(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName"
     )
-    auth.get(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/pages/:pageName"
     )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName"
     )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v2/sites/:siteName/collections/:collectionName/pages/:pageName"
     )
-    auth.delete(
-      "/v2/sites/:siteName/collections/:collectionName/pages/:pageName",
-      this.verifyJwt
-    )
-    auth.delete(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName"
     )
 
     // Resource Pages
-    auth.post(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages"
     )
-    auth.get(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedGet(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName"
     )
-    auth.post(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName"
     )
-    auth.delete(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName"
     )
 
     // Collections
-    auth.get("/v2/sites/:siteName/collections", this.verifyJwt)
-    auth.get("/v2/sites/:siteName/collections/:collectionName", this.verifyJwt)
-    auth.get(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
-      this.verifyJwt
+    auth.verifiedGet("/v2/sites/:siteName/collections")
+    auth.verifiedGet("/v2/sites/:siteName/collections/:collectionName")
+    auth.verifiedGet(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName"
     )
-    auth.post("/v2/sites/:siteName/collections", this.verifyJwt)
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections",
-      this.verifyJwt
+    auth.verifiedPost("/v2/sites/:siteName/collections")
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections"
     )
-    auth.post("/v2/sites/:siteName/collections/:collectionName", this.verifyJwt)
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
-      this.verifyJwt
+    auth.verifiedPost("/v2/sites/:siteName/collections/:collectionName")
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName"
     )
-    auth.delete(
-      "/v2/sites/:siteName/collections/:collectionName",
-      this.verifyJwt
+    auth.verifiedDelete("/v2/sites/:siteName/collections/:collectionName")
+    auth.verifiedDelete(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName"
     )
-    auth.delete(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName",
-      this.verifyJwt
+    auth.verifiedPost("/v2/sites/:siteName/collections/:collectionName/reorder")
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder"
     )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/reorder",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/move",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
-      this.verifyJwt
+    auth.verifiedPost("/v2/sites/:siteName/collections/:collectionName/move")
+    auth.verifiedPost(
+      "/v2/sites/:siteName/collections/:collectionName/subcollections/:subcollectionName/move"
     )
 
     // Resource Room
-    auth.get("/v2/sites/:siteName/resourceRoom", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/resourceRoom", this.verifyJwt)
-    auth.get(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName",
-      this.verifyJwt
-    )
-    auth.post(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName",
-      this.verifyJwt
-    )
-    auth.delete(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName",
-      this.verifyJwt
-    )
+    auth.verifiedGet("/v2/sites/:siteName/resourceRoom")
+    auth.verifiedPost("/v2/sites/:siteName/resourceRoom")
+    auth.verifiedGet("/v2/sites/:siteName/resourceRoom/:resourceRoomName")
+    auth.verifiedPost("/v2/sites/:siteName/resourceRoom/:resourceRoomName")
+    auth.verifiedDelete("/v2/sites/:siteName/resourceRoom/:resourceRoomName")
 
     // Resource Categories
-    auth.get(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
-      this.verifyJwt
+    auth.verifiedGet(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName"
     )
-    auth.post(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources"
     )
-    auth.post(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName"
     )
-    auth.delete(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName"
     )
-    auth.post(
-      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move",
-      this.verifyJwt
+    auth.verifiedPost(
+      "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move"
     )
 
     // Media directories
-    auth.get("/v2/sites/:siteName/media/:directoryName", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/media", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/media/:directoryName", this.verifyJwt)
-    auth.delete("/v2/sites/:siteName/media/:directoryName", this.verifyJwt)
-    auth.post("/v2/sites/:siteName/media/:directoryName/move", this.verifyJwt)
+    auth.verifiedGet("/v2/sites/:siteName/media/:directoryName")
+    auth.verifiedPost("/v2/sites/:siteName/media")
+    auth.verifiedPost("/v2/sites/:siteName/media/:directoryName")
+    auth.verifiedDelete("/v2/sites/:siteName/media/:directoryName")
+    auth.verifiedPost("/v2/sites/:siteName/media/:directoryName/move")
 
     // Media files
-    auth.post("/v2/sites/:siteName/media/:directoryName/pages", this.verifyJwt)
-    auth.get(
-      "/v2/sites/:siteName/media/:directoryName/pages/:fileName",
-      this.verifyJwt
+    auth.verifiedPost("/v2/sites/:siteName/media/:directoryName/pages")
+    auth.verifiedGet("/v2/sites/:siteName/media/:directoryName/pages/:fileName")
+    auth.verifiedPost(
+      "/v2/sites/:siteName/media/:directoryName/pages/:fileName"
     )
-    auth.post(
-      "/v2/sites/:siteName/media/:directoryName/pages/:fileName",
-      this.verifyJwt
-    )
-    auth.delete(
-      "/v2/sites/:siteName/media/:directoryName/pages/:fileName",
-      this.verifyJwt
+    auth.verifiedDelete(
+      "/v2/sites/:siteName/media/:directoryName/pages/:fileName"
     )
 
     auth.use((req, res, next) => {

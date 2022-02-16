@@ -2,7 +2,7 @@ const axios = require("axios")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
-// Import error
+// Import error types
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 

@@ -75,7 +75,6 @@ class AuthService {
     // Make a call to github
     const endpoint = "https://api.github.com/user"
 
-    let userId
     try {
       const resp = await axios.get(endpoint, {
         headers: {
@@ -83,11 +82,10 @@ class AuthService {
           "Content-Type": "application/json",
         },
       })
-      userId = resp.data.login
+      return resp.data.login
     } catch (err) {
-      userId = undefined
+      return undefined
     }
-    return userId
   }
 }
 

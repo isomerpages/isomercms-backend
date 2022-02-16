@@ -21,20 +21,26 @@ class AuthRouter {
     autoBind(this)
   }
 
+  isSecure() {
+    return (
+      process.env.NODE_ENV !== "DEV" &&
+      process.env.NODE_ENV !== "LOCAL_DEV" &&
+      process.env.NODE_ENV !== "test"
+    )
+  }
+
   async authRedirect(req, res) {
     const {
       redirectUrl,
       cookieToken,
     } = await this.authService.getAuthRedirectDetails()
     const csrfTokenExpiry = new Date()
+    // getTime allows this to work across timezones
     csrfTokenExpiry.setTime(csrfTokenExpiry.getTime() + CSRF_TOKEN_EXPIRY_MS)
     const cookieSettings = {
       expires: csrfTokenExpiry,
       httpOnly: true,
-      secure:
-        process.env.NODE_ENV !== "DEV" &&
-        process.env.NODE_ENV !== "LOCAL_DEV" &&
-        process.env.NODE_ENV !== "test",
+      secure: this.isSecure(),
     }
     res.cookie(CSRF_COOKIE_NAME, cookieToken, cookieSettings)
     return res.redirect(redirectUrl)
@@ -50,16 +56,14 @@ class AuthRouter {
       state,
     })
     const authTokenExpiry = new Date()
+    // getTime allows this to work across timezones
     authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
     const cookieSettings = {
       path: "/",
       expires: authTokenExpiry,
       httpOnly: true,
       sameSite: true,
-      secure:
-        process.env.NODE_ENV !== "DEV" &&
-        process.env.NODE_ENV !== "LOCAL_DEV" &&
-        process.env.NODE_ENV !== "test",
+      secure: this.isSecure(),
     }
     res.cookie(COOKIE_NAME, token, cookieSettings)
     return res.redirect(`${FRONTEND_URL}/sites`)

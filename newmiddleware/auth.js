@@ -50,6 +50,8 @@ class AuthMiddleware {
     // Health check
     auth.get("/v2/ping", this.noVerify)
 
+    // V1 endpoints
+    // TODO [#351]: Remove after refactor is done
     // Login and logout
     auth.get("/v1/auth/github-redirect", this.noVerify)
     auth.get("/v1/auth", this.noVerify)
@@ -78,7 +80,7 @@ class AuthMiddleware {
     // Collection pages
     auth.verifiedGet("/v1/sites/:siteName/collections/:collectionName")
     auth.verifiedGet("/v1/sites/:siteName/collections/:collectionName/pages")
-    auth.verifiedPost("/v1/sites/:siteName/collections/:collectionName/pages") // to remove
+    auth.verifiedPost("/v1/sites/:siteName/collections/:collectionName/pages")
     auth.verifiedPost(
       "/v1/sites/:siteName/collections/:collectionName/pages/new/:pageName"
     )
@@ -149,7 +151,7 @@ class AuthMiddleware {
 
     // Pages
     auth.verifiedGet("/v1/sites/:siteName/pages")
-    auth.verifiedPost("/v1/sites/:siteName/pages") // to remove
+    auth.verifiedPost("/v1/sites/:siteName/pages")
     auth.verifiedPost("/v1/sites/:siteName/pages/new/:pageName")
     auth.verifiedGet("/v1/sites/:siteName/pages/:pageName")
     auth.verifiedPost("/v1/sites/:siteName/pages/:pageName")

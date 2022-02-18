@@ -58,8 +58,7 @@ class AuthService {
       },
     })
 
-    let userId
-    if (userResp.data) userId = userResp.data.login
+    const userId = userResp.data && userResp.data.login
 
     const token = jwtUtils.signToken({
       access_token: jwtUtils.encryptToken(accessToken),

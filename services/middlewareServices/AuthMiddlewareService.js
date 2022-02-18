@@ -73,15 +73,14 @@ class AuthMiddlewareService {
       const userId = E2E_TEST_USER
       return { accessToken, userId }
     }
-    let retrievedToken
     try {
       const { isomercms } = cookies
       const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
-      retrievedToken = jwtUtils.decryptToken(verifiedToken)
+      const accessToken = jwtUtils.decryptToken(verifiedToken)
+      return { accessToken, userId: undefined }
     } catch (err) {
-      retrievedToken = undefined
+      return { accessToken: undefined, userId: undefined }
     }
-    return { accessToken: retrievedToken, userId: undefined }
   }
 }
 

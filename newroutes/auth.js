@@ -5,6 +5,7 @@ const express = require("express")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { FRONTEND_URL } = process.env
+const { isSecure } = require("@utils/auth-utils")
 
 const AUTH_TOKEN_EXPIRY_MS = parseInt(
   process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
@@ -21,14 +22,6 @@ class AuthRouter {
     autoBind(this)
   }
 
-  isSecure() {
-    return (
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test"
-    )
-  }
-
   async authRedirect(req, res) {
     const {
       redirectUrl,
@@ -40,7 +33,7 @@ class AuthRouter {
     const cookieSettings = {
       expires: csrfTokenExpiry,
       httpOnly: true,
-      secure: this.isSecure(),
+      secure: isSecure(),
     }
     res.cookie(CSRF_COOKIE_NAME, cookieToken, cookieSettings)
     return res.redirect(redirectUrl)
@@ -63,7 +56,7 @@ class AuthRouter {
       expires: authTokenExpiry,
       httpOnly: true,
       sameSite: true,
-      secure: this.isSecure(),
+      secure: isSecure(),
     }
     res.cookie(COOKIE_NAME, token, cookieSettings)
     return res.redirect(`${FRONTEND_URL}/sites`)

@@ -18,8 +18,11 @@ class SitesRouter {
   }
 
   async checkHasAccess(req, res) {
-    const { accessToken, userId } = req
-    const { siteName } = req.params
+    const {
+      accessToken,
+      userId,
+      params: { siteName },
+    } = req
 
     await this.sitesService.checkHasAccess(
       {
@@ -32,8 +35,10 @@ class SitesRouter {
   }
 
   async getLastUpdated(req, res) {
-    const { accessToken } = req
-    const { siteName } = req.params
+    const {
+      accessToken,
+      params: { siteName },
+    } = req
     const lastUpdated = await this.sitesService.getLastUpdated({
       accessToken,
       siteName,
@@ -42,8 +47,10 @@ class SitesRouter {
   }
 
   async getStagingUrl(req, res) {
-    const { accessToken } = req
-    const { siteName } = req.params
+    const {
+      accessToken,
+      params: { siteName },
+    } = req
 
     const stagingUrl = await this.sitesService.getStagingUrl({
       accessToken,

@@ -44,7 +44,7 @@ class SitesService {
     )
 
     const sites = await Bluebird.map(paramsArr, async (params) => {
-      const resp = await axios.get(endpoint, {
+      const { data: respData } = await axios.get(endpoint, {
         params,
         headers: {
           Authorization: `token ${accessToken}`,
@@ -52,7 +52,7 @@ class SitesService {
         },
       })
 
-      return resp.data
+      return respData
         .map((repoData) => {
           const {
             pushed_at: updatedAt,

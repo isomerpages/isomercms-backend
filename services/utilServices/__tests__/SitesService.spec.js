@@ -1,7 +1,5 @@
 const axios = require("axios")
 
-const { BadRequestError } = require("@errors/BadRequestError")
-
 jest.mock("axios")
 
 const {
@@ -15,22 +13,8 @@ describe("Resource Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const userId = "userId"
-  const resourceRoomName = "resource-room"
-  const resourceCategoryName = "category"
-  const directoryName = `${resourceRoomName}/${resourceCategoryName}/_posts`
-  const mockContent = "test"
-  const mockMarkdownContent = "---test---"
-  const mockFrontMatter = {
-    title: "fileTitle",
-    permalink: "file/permalink",
-  }
-  const sha = "12345"
 
   const reqDetails = { siteName, accessToken }
-
-  const gapInUpdate =
-    new Date().getTime() - new Date(repoInfo.updated_at).getTime()
-  const numDaysAgo = Math.floor(gapInUpdate / (1000 * 60 * 60 * 24))
 
   const mockGithubService = {
     checkHasAccess: jest.fn(),
@@ -55,13 +39,13 @@ describe("Resource Page Service", () => {
     it("Filters accessible sites correctly", async () => {
       const expectedResp = [
         {
-          lastUpdated: `Updated ${numDaysAgo} days ago`,
+          lastUpdated: repoInfo.pushed_at,
           permissions: repoInfo.permissions,
           repoName: repoInfo.name,
           isPrivate: repoInfo.private,
         },
         {
-          lastUpdated: `Updated ${numDaysAgo} days ago`,
+          lastUpdated: repoInfo2.pushed_at,
           permissions: repoInfo2.permissions,
           repoName: repoInfo2.name,
           isPrivate: repoInfo2.private,
@@ -99,7 +83,7 @@ describe("Resource Page Service", () => {
     it("Checks when site was last updated", async () => {
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
       await expect(service.getLastUpdated(reqDetails)).resolves.toEqual(
-        `Updated ${numDaysAgo} days ago`
+        repoInfo.pushed_at
       )
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
     })

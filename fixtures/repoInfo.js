@@ -3,7 +3,7 @@ const repoInfo = {
   private: false,
   description:
     "Staging: https://repo-staging.netlify.app | Production: https://repo-prod.netlify.app",
-  updated_at: "2021-09-09T02:41:37Z",
+  pushed_at: "2021-09-09T02:41:37Z",
   permissions: {
     admin: true,
     maintain: true,
@@ -18,7 +18,7 @@ const repoInfo2 = {
   private: false,
   description:
     "Staging: https://repo2-staging.netlify.app | Production: https://repo2-prod.netlify.app",
-  updated_at: "2021-09-09T02:41:37Z",
+  pushed_at: "2021-09-09T02:41:37Z",
   permissions: {
     admin: true,
     maintain: true,
@@ -33,7 +33,7 @@ const adminRepo = {
   private: false,
   description:
     "Staging: https://isomercms-backend-staging.netlify.app | Production: https://isomercms-backend-prod.netlify.app",
-  updated_at: "2021-09-09T02:41:37Z",
+  pushed_at: "2021-09-09T02:41:37Z",
   permissions: {
     admin: true,
     maintain: true,
@@ -48,7 +48,7 @@ const noAccessRepo = {
   private: false,
   description:
     "Staging: https://noaccess-staging.netlify.app | Production: https://noaccess-prod.netlify.app",
-  updated_at: "2021-09-09T02:41:37Z",
+  pushed_at: "2021-09-09T02:41:37Z",
   permissions: {
     admin: false,
     maintain: false,

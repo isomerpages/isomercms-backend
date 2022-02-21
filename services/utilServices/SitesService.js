@@ -29,22 +29,6 @@ class SitesService {
     this.configYmlService = configYmlService
   }
 
-  // timeDiff tells us when a repo was last updated in terms of days (for e.g. 2 days ago,
-  // today)
-  timeDiff(lastUpdated) {
-    const gapInUpdate = new Date().getTime() - new Date(lastUpdated).getTime()
-    const numDaysAgo = Math.floor(gapInUpdate / (1000 * 60 * 60 * 24))
-    // return a message for number of days ago repo was last updated
-    switch (numDaysAgo) {
-      case 0:
-        return "Updated today"
-      case 1:
-        return "Updated 1 day ago"
-      default:
-        return `Updated ${numDaysAgo} days ago`
-    }
-  }
-
   async getSites({ accessToken }) {
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
@@ -76,7 +60,7 @@ class SitesService {
           } = repoData
 
           return {
-            lastUpdated: this.timeDiff(updatedAt),
+            lastUpdated: updatedAt,
             permissions,
             repoName: name,
             isPrivate,
@@ -100,7 +84,7 @@ class SitesService {
     const { pushed_at: updatedAt } = await this.githubService.getRepoInfo(
       reqDetails
     )
-    return this.timeDiff(updatedAt)
+    return updatedAt
   }
 
   async getStagingUrl(reqDetails) {

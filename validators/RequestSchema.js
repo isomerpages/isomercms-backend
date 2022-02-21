@@ -68,7 +68,7 @@ const UpdateHomepageSchema = Joi.object({
       image: Joi.string(),
       sections: Joi.array().required(),
     }).required(),
-    pageBody: Joi.string().allow(""),
+    pageBody: Joi.string().allow(""), // Joi does not allow empty string (pageBody: '') for Joi.string() even if not required
   }).required(),
   sha: Joi.string().required(),
 })

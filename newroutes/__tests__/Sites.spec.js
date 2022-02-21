@@ -55,7 +55,9 @@ describe("Unlinked Pages Router", () => {
     it("returns the list of sites accessible to the user", async () => {
       const sitesResp = ["site1", "site2"]
       mockSitesService.getSites.mockResolvedValueOnce(sitesResp)
+
       const resp = await request(app).get(`/`).expect(200)
+
       expect(resp.body).toStrictEqual({ siteNames: sitesResp })
       expect(mockSitesService.getSites).toHaveBeenCalledWith({ accessToken })
     })
@@ -66,7 +68,9 @@ describe("Unlinked Pages Router", () => {
       mockSitesService.checkHasAccess.mockRejectedValueOnce(
         new NotFoundError("")
       )
+
       await request(app).get(`/${siteName}`).expect(404)
+
       expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {
         userId,
       })
@@ -74,6 +78,7 @@ describe("Unlinked Pages Router", () => {
 
     it("allows if user has no access to a site", async () => {
       await request(app).get(`/${siteName}`).expect(200)
+
       expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {
         userId,
       })
@@ -84,9 +89,11 @@ describe("Unlinked Pages Router", () => {
     it("returns the last updated time", async () => {
       const lastUpdated = "last-updated"
       mockSitesService.getLastUpdated.mockResolvedValueOnce(lastUpdated)
+
       const resp = await request(app)
         .get(`/${siteName}/lastUpdated`)
         .expect(200)
+
       expect(resp.body).toStrictEqual({ lastUpdated })
       expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(reqDetails)
     })
@@ -96,7 +103,9 @@ describe("Unlinked Pages Router", () => {
     it("returns the last updated time", async () => {
       const stagingUrl = "staging-url"
       mockSitesService.getStagingUrl.mockResolvedValueOnce(stagingUrl)
+
       const resp = await request(app).get(`/${siteName}/stagingUrl`).expect(200)
+
       expect(resp.body).toStrictEqual({ stagingUrl })
       expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(reqDetails)
     })

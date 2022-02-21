@@ -71,7 +71,7 @@ class SitesService {
       return resp.data
         .map((repoData) => {
           const {
-            updated_at: updatedAt,
+            pushed_at: updatedAt,
             permissions,
             name,
             private: isPrivate,
@@ -100,7 +100,7 @@ class SitesService {
   }
 
   async getLastUpdated(reqDetails) {
-    const { updated_at: updatedAt } = await this.githubService.getRepoInfo(
+    const { pushed_at: updatedAt } = await this.githubService.getRepoInfo(
       reqDetails
     )
     return this.timeDiff(updatedAt)

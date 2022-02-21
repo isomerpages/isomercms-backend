@@ -1,7 +1,7 @@
 const autoBind = require("auto-bind")
 const express = require("express")
 
-// Import middleware
+// Import custom error types
 const { BadRequestError } = require("@errors/BadRequestError")
 
 const {

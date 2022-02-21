@@ -76,7 +76,7 @@ async function getSites(req, res) {
     return resp.data
       .map((repoData) => {
         const {
-          updated_at: updatedAt,
+          pushed_at: updatedAt,
           permissions,
           name,
           private: isPrivate,

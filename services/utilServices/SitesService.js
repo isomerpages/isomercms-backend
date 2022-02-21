@@ -2,6 +2,8 @@ const axios = require("axios")
 const Bluebird = require("bluebird")
 const _ = require("lodash")
 
+const { NotFoundError } = require("@root/errors/NotFoundError")
+
 const GH_MAX_REPO_COUNT = 100
 const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
@@ -94,18 +96,17 @@ class SitesService {
 
     const { description } = await this.githubService.getRepoInfo(reqDetails)
 
-    let stagingUrl
-
     if (description) {
       // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
       const descTokens = description.replace("/;/g", " ").split(" ")
       // Staging urls also contain staging in their url
-      stagingUrl = descTokens.find(
+      const stagingUrl = descTokens.find(
         (token) => token.includes("http") && token.includes("staging")
       )
+      if (stagingUrl) return stagingUrl
     }
 
-    return stagingUrl
+    throw new NotFoundError(`${reqDetails.siteName} has no staging url`)
   }
 }
 

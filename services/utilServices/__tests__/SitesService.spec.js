@@ -2,6 +2,8 @@ const axios = require("axios")
 
 jest.mock("axios")
 
+const { NotFoundError } = require("@errors/NotFoundError")
+
 const {
   repoInfo,
   repoInfo2,
@@ -60,9 +62,11 @@ describe("Resource Page Service", () => {
       axios.get.mockImplementationOnce(() => ({
         data: [],
       }))
+
       await expect(service.getSites({ accessToken })).resolves.toMatchObject(
         expectedResp
       )
+
       expect(axios.get).toHaveBeenCalledTimes(3)
     })
   })
@@ -72,6 +76,7 @@ describe("Resource Page Service", () => {
       await expect(
         service.checkHasAccess(reqDetails, { userId })
       ).resolves.not.toThrow()
+
       expect(mockGithubService.checkHasAccess).toHaveBeenCalledWith(
         reqDetails,
         { userId }
@@ -82,9 +87,11 @@ describe("Resource Page Service", () => {
   describe("getLastUpdated", () => {
     it("Checks when site was last updated", async () => {
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
+
       await expect(service.getLastUpdated(reqDetails)).resolves.toEqual(
         repoInfo.pushed_at
       )
+
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
     })
   })
@@ -97,9 +104,11 @@ describe("Resource Page Service", () => {
           staging: stagingUrl,
         },
       })
+
       await expect(service.getStagingUrl(reqDetails)).resolves.toEqual(
         stagingUrl
       )
+
       expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
     })
     it("Retrieves the staging url for a site from repo info otherwise", async () => {
@@ -107,9 +116,26 @@ describe("Resource Page Service", () => {
         content: {},
       })
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
+
       await expect(service.getStagingUrl(reqDetails)).resolves.toEqual(
         stagingUrl
       )
+
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+    })
+    it("Retrieves the staging url for a site from repo info otherwise", async () => {
+      mockConfigYmlService.read.mockResolvedValue({
+        content: {},
+      })
+      mockGithubService.getRepoInfo.mockResolvedValue({
+        description: "edited description",
+      })
+
+      await expect(service.getStagingUrl(reqDetails)).rejects.toThrowError(
+        NotFoundError
+      )
+
       expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
     })

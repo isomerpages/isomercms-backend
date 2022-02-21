@@ -38,7 +38,7 @@ class ContactUsRouter {
 
     const { siteName } = req.params
     const { error } = UpdateContactUsSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,

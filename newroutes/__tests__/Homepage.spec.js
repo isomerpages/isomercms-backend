@@ -48,9 +48,12 @@ describe("Homepage Router", () => {
       sha: mockSha,
       content: mockContent,
     }
+
     mockHomepagePageService.read.mockResolvedValue(expectedResponse)
+
     it("retrieves homepage details", async () => {
       const resp = await request(app).get(`/${siteName}/homepage`).expect(200)
+
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockHomepagePageService.read).toHaveBeenCalledWith(reqDetails)
     })
@@ -117,6 +120,7 @@ describe("Homepage Router", () => {
         },
         sha: mockSha,
       }
+
       await request(app)
         .post(`/${siteName}/homepage`)
         .send(incompleteDetails)
@@ -129,10 +133,12 @@ describe("Homepage Router", () => {
         frontMatter: updatePageDetails.content.frontMatter,
         sha: updatePageDetails.sha,
       }
+
       await request(app)
         .post(`/${siteName}/homepage`)
         .send(updatePageDetails)
         .expect(200)
+
       expect(mockHomepagePageService.update).toHaveBeenCalledWith(
         reqDetails,
         expectedServiceInput
@@ -148,10 +154,12 @@ describe("Homepage Router", () => {
         frontMatter: updatePageDetails.content.frontMatter,
         sha: updatePageDetails.sha,
       }
+
       await request(app)
         .post(`/${siteName}/homepage`)
         .send(extraUpdateDetails)
         .expect(200)
+
       expect(mockHomepagePageService.update).toHaveBeenCalledWith(
         reqDetails,
         expectedServiceInput

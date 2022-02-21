@@ -40,7 +40,7 @@ class HomepageRouter {
     const { error } = UpdateHomepageSchema.validate(req.body, {
       allowUnknown: true,
     })
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,

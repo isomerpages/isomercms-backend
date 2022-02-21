@@ -31,7 +31,7 @@ class SitesRouter {
       },
       { userId }
     )
-    return res.status(200).send("OK")
+    return res.status(200)
   }
 
   async getLastUpdated(req, res) {

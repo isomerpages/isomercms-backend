@@ -2,7 +2,6 @@ const axios = require("axios")
 const Bluebird = require("bluebird")
 const _ = require("lodash")
 
-// Import error
 const GH_MAX_REPO_COUNT = 100
 const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
@@ -50,14 +49,13 @@ class SitesService {
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
     // Simultaneously retrieve all isomerpages repos
-    const paramsArr = []
-    for (let i = 0; i < ISOMERPAGES_REPO_PAGE_COUNT; i += 1) {
-      paramsArr.push({
+    const paramsArr = _.fill(Array(ISOMERPAGES_REPO_PAGE_COUNT), null).map(
+      (_, idx) => ({
         per_page: GH_MAX_REPO_COUNT,
         sort: "full_name",
-        page: i + 1,
+        page: idx + 1,
       })
-    }
+    )
 
     const sites = await Bluebird.map(paramsArr, async (params) => {
       const resp = await axios.get(endpoint, {
@@ -91,8 +89,7 @@ class SitesService {
         )
     })
 
-    const flattenedSites = _.flatten(sites)
-    return flattenedSites
+    return _.flatten(sites)
   }
 
   async checkHasAccess(reqDetails, { userId }) {

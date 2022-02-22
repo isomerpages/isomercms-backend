@@ -18,7 +18,7 @@ const UpdateContactUsSchema = Joi.object({
       layout: Joi.string().required(),
       title: Joi.string().required(),
       permalink: Joi.string().required(),
-      feedback: Joi.string(),
+      feedback: Joi.string().allow(""),
       agency_name: Joi.string().required(),
       locations: Joi.array()
         .items(

@@ -25,7 +25,7 @@ class NetlifyTomlRouter {
     const router = express.Router()
 
     router.get(
-      "/:siteName/netlify-toml",
+      "/netlify-toml",
       attachReadRouteHandlerWrapper(this.readNetlifyToml)
     )
 

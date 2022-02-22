@@ -21,13 +21,9 @@ describe("NetlifyToml Router", () => {
   app.use(express.urlencoded({ extended: false }))
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
-    "/:siteName/netlifyToml",
-    attachReadRouteHandlerWrapper(router.readNetlifyToml)
-  )
+  app.get("/netlifyToml", attachReadRouteHandlerWrapper(router.readNetlifyToml))
   app.use(errorHandler)
 
-  const siteName = "test-site"
   const accessToken = undefined // Can't set request fields - will always be undefined
 
   const reqDetails = { accessToken }
@@ -40,9 +36,7 @@ describe("NetlifyToml Router", () => {
     const netlifyTomlHeaderValues = "netlifyTomlHeaderValues"
     mockNetlifyTomlService.read.mockResolvedValue(netlifyTomlHeaderValues)
     it("retrieves netlifyToml details", async () => {
-      const resp = await request(app)
-        .get(`/${siteName}/netlifyToml`)
-        .expect(200)
+      const resp = await request(app).get(`/netlifyToml`).expect(200)
 
       expect(resp.body).toStrictEqual({ netlifyTomlHeaderValues })
       expect(mockNetlifyTomlService.read).toHaveBeenCalledWith(reqDetails)

@@ -13,6 +13,7 @@ class ContactUsPageService {
   }
 
   async read(reqDetails) {
+    // Due to template intricacies, the feedback url is read from/stored in the footer
     const { content: rawContent, sha } = await this.gitHubService.read(
       reqDetails,
       {
@@ -29,6 +30,7 @@ class ContactUsPageService {
   }
 
   async update(reqDetails, { content, frontMatter, sha }) {
+    // Due to template intricacies, the feedback url is read from/stored in the footer
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { newSha } = await this.gitHubService.update(reqDetails, {
       fileContent: newContent,

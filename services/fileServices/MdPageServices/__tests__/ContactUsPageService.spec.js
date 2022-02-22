@@ -7,6 +7,7 @@ const {
   footerContent: mockFooterContent,
   footerSha: mockFooterSha,
 } = require("@fixtures/footer")
+const { NotFoundError } = require("@root/errors/NotFoundError")
 
 describe("ContactUs Page Service", () => {
   const siteName = "test-site"
@@ -68,11 +69,28 @@ describe("ContactUs Page Service", () => {
       content: mockRawContactUsContent,
       sha: mockContactUsSha,
     })
+
     it("Reading the contact us page works correctly", async () => {
       await expect(service.read(reqDetails)).resolves.toMatchObject({
         content: { frontMatter: mockFrontMatter, pageBody: mockContent },
         sha: mockContactUsSha,
       })
+
+      expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
+        mockRawContactUsContent
+      )
+      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+        fileName: CONTACT_US_FILE_NAME,
+        directoryName: CONTACT_US_DIRECTORY_NAME,
+      })
+      expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
+    })
+
+    it("Propagates the correct error on failed retrieval", async () => {
+      mockFooterYmlService.read.mockRejectedValueOnce(new NotFoundError(""))
+
+      await expect(service.read(reqDetails)).rejects.toThrowError(NotFoundError)
+
       expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
         mockRawContactUsContent
       )
@@ -86,8 +104,49 @@ describe("ContactUs Page Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
+    const updatedFeedback = "updated"
     mockGithubService.update.mockResolvedValue({ newSha: mockContactUsSha })
     it("Updating page content works correctly", async () => {
+      const mockUpdatedFrontMatter = {
+        ...mockContactUsContent.frontMatter,
+        feedback: updatedFeedback,
+      }
+
+      await expect(
+        service.update(reqDetails, {
+          fileName: CONTACT_US_FILE_NAME,
+          content: mockContent,
+          frontMatter: mockUpdatedFrontMatter,
+          sha: oldSha,
+        })
+      ).resolves.toMatchObject({
+        content: { frontMatter: mockUpdatedFrontMatter, pageBody: mockContent },
+        oldSha,
+        newSha: mockContactUsSha,
+      })
+
+      expect(convertDataToMarkdown).toHaveBeenCalledWith(
+        mockUpdatedFrontMatter,
+        mockContent
+      )
+      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+        fileName: CONTACT_US_FILE_NAME,
+        directoryName: CONTACT_US_DIRECTORY_NAME,
+        fileContent: mockRawContactUsContent,
+        sha: oldSha,
+      })
+      expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockFooterYmlService.update).toHaveBeenCalledWith(reqDetails, {
+        fileContent: {
+          ...mockFooterContent,
+          feedback: updatedFeedback,
+        },
+        sha: mockFooterSha,
+      })
+    })
+    it("Propagates the correct error on failed update", async () => {
+      mockGithubService.update.mockRejectedValueOnce(new NotFoundError(""))
+
       await expect(
         service.update(reqDetails, {
           fileName: CONTACT_US_FILE_NAME,
@@ -95,11 +154,8 @@ describe("ContactUs Page Service", () => {
           frontMatter: mockFrontMatter,
           sha: oldSha,
         })
-      ).resolves.toMatchObject({
-        content: { frontMatter: mockFrontMatter, pageBody: mockContent },
-        oldSha,
-        newSha: mockContactUsSha,
-      })
+      ).rejects.toThrowError(NotFoundError)
+
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
         mockFrontMatter,
         mockContent

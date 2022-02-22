@@ -49,8 +49,10 @@ describe("ContactUs Router", () => {
       content: contactUsContent,
     }
     mockContactUsPageService.read.mockResolvedValue(expectedResponse)
+
     it("retrieves contactUs details", async () => {
       const resp = await request(app).get(`/${siteName}/contactUs`).expect(200)
+
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockContactUsPageService.read).toHaveBeenCalledWith(reqDetails)
     })
@@ -69,6 +71,7 @@ describe("ContactUs Router", () => {
         sha: contactUsSha,
       }
       delete incompleteDetails.frontMatter.layout
+
       await request(app)
         .post(`/${siteName}/contactUs`)
         .send(reqBody)
@@ -85,10 +88,12 @@ describe("ContactUs Router", () => {
         frontMatter: contactUsContent.frontMatter,
         sha: contactUsSha,
       }
+
       await request(app)
         .post(`/${siteName}/contactUs`)
         .send(reqBody)
         .expect(200)
+
       expect(mockContactUsPageService.update).toHaveBeenCalledWith(
         reqDetails,
         expectedServiceInput
@@ -108,6 +113,7 @@ describe("ContactUs Router", () => {
         frontMatter: extraUpdateDetails.frontMatter,
         sha: contactUsSha,
       }
+
       await request(app)
         .post(`/${siteName}/contactUs`)
         .send(reqBody)

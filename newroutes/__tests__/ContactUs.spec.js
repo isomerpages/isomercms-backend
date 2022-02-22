@@ -6,6 +6,7 @@ const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { contactUsContent, contactUsSha } = require("@fixtures/contactUs")
+const { generateRouter } = require("@root/fixtures/app")
 
 const { ContactUsRouter } = require("../contactUs")
 
@@ -19,20 +20,17 @@ describe("ContactUs Router", () => {
     contactUsPageService: mockContactUsPageService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
-
+  const subrouter = express()
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
+  subrouter.get(
     "/:siteName/contactUs",
     attachReadRouteHandlerWrapper(router.readContactUs)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/contactUs",
     attachReadRouteHandlerWrapper(router.updateContactUs)
   )
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
   const accessToken = undefined // Can't set request fields - will always be undefined

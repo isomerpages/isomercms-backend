@@ -17,7 +17,7 @@ const siteName = "siteName"
 
 const reqDetails = { siteName, accessToken }
 
-describe("Unlinked Pages Router", () => {
+describe("Sites Router", () => {
   const mockSitesService = {
     getSites: jest.fn(),
     checkHasAccess: jest.fn(),
@@ -76,7 +76,7 @@ describe("Unlinked Pages Router", () => {
       })
     })
 
-    it("allows if user has no access to a site", async () => {
+    it("allows if user has access to a site", async () => {
       await request(app).get(`/${siteName}`).expect(200)
 
       expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {

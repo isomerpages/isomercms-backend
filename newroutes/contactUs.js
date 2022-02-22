@@ -20,9 +20,10 @@ class ContactUsRouter {
 
   // Read contactUs file
   async readContactUs(req, res) {
-    const { accessToken } = req
-
-    const { siteName } = req.params
+    const {
+      accessToken,
+      params: { siteName },
+    } = req
 
     const readResp = await this.contactUsPageService.read({
       siteName,

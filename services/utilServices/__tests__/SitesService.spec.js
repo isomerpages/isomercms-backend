@@ -124,7 +124,7 @@ describe("Resource Page Service", () => {
       expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
     })
-    it("Retrieves the staging url for a site from repo info otherwise", async () => {
+    it("throws an error when the staging url for a repo is not found", async () => {
       mockConfigYmlService.read.mockResolvedValue({
         content: {},
       })

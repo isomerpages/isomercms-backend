@@ -1,5 +1,7 @@
 const _ = require("lodash")
 
+const { ConflictError } = require("@errors/ConflictError")
+
 // Job is to deal with directory level operations to and from GitHub
 class BaseDirectoryService {
   constructor({ gitHubService }) {
@@ -33,7 +35,9 @@ class BaseDirectoryService {
     const newGitTree = []
 
     gitTree.forEach((item) => {
-      if (item.path === oldDirectoryName && item.type === "tree") {
+      if (item.path === newDirectoryName && item.type === "tree") {
+        throw new ConflictError("Target directory already exists")
+      } else if (item.path === oldDirectoryName && item.type === "tree") {
         // Rename old subdirectory to new name
         newGitTree.push({
           ...item,
@@ -93,15 +97,30 @@ class BaseDirectoryService {
     const gitTree = await this.gitHubService.getTree(reqDetails, {
       isRecursive: true,
     })
-
     const newGitTree = []
-
     gitTree.forEach((item) => {
+      if (
+        item.path.startsWith(`${newDirectoryName}/`) &&
+        item.type !== "tree"
+      ) {
+        const fileName = item.path
+          .split(`${newDirectoryName}/`)
+          .slice(1)
+          .join(`${newDirectoryName}/`)
+        console.log(fileName)
+        if (targetFiles.includes(fileName)) {
+          // Conflicting file
+          throw new ConflictError("File already exists in target directory")
+        }
+      }
       if (
         item.path.startsWith(`${oldDirectoryName}/`) &&
         item.type !== "tree"
       ) {
-        const fileName = item.path.split(`${oldDirectoryName}/`)[1]
+        const fileName = item.path
+          .split(`${oldDirectoryName}/`)
+          .slice(1)
+          .join(`${oldDirectoryName}/`)
         if (targetFiles.includes(fileName)) {
           // Add file to target directory
           newGitTree.push({

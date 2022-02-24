@@ -16,7 +16,8 @@ const ALLOWED_FILE_EXTENSIONS = [
   "ico",
 ]
 
-const validateAndSanitizeFileUpload = async (content) => {
+const validateAndSanitizeFileUpload = async (data) => {
+  const [schema, content] = data.split(",")
   const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
 

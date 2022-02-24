@@ -7,10 +7,12 @@
     "dev:services": "docker compose up -d",
     "dev": "source .env && node ./bin/www",
     "test": "source .env && jest",
+    "release": "npm version $npm_config_update && git push --tags",
     "lint": "npx eslint .",
     "format": "npx prettier --write .",
     "check-format": "npx prettier --check .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.24.0",
@@ -56,6 +58,7 @@
     "yaml": "^1.10.2"
   },
   "devDependencies": {
+    "auto-changelog": "^2.4.0",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.21.0",
     "eslint-config-airbnb-base": "^14.2.1",
@@ -86,7 +89,8 @@
     "@loaders": "loaders",
     "@database": "database",
     "@services": "services",
-    "@validators": "validators"
+    "@validators": "validators",
+    "@fixtures": "fixtures"
   },
   "jest": {
     "moduleNameMapper": {
@@ -100,7 +104,8 @@
       "^@loaders/(.*)": "<rootDir>/loaders/$1",
       "^@database/(.*)": "<rootDir>/database/$1",
       "^@services/(.*)": "<rootDir>/services/$1",
-      "^@validators/(.*)": "<rootDir>/validators/$1"
+      "^@validators/(.*)": "<rootDir>/validators/$1",
+      "^@fixtures/(.*)": "<rootDir>/fixtures/$1"
     }
   },
   "lint-staged": {

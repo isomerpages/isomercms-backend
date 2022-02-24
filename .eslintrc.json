@@ -78,7 +78,8 @@
                 ["@loaders", "./loaders"],
                 ["@database", "./database"],
                 ["@services", "./services"],
-                ["@validators", "./validators"]
+                ["@validators", "./validators"],
+                ["@fixtures", "./fixtures"]
             ]
         }
     },

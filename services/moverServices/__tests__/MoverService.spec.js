@@ -91,6 +91,7 @@ describe("Mover Service", () => {
           frontMatter: mockFrontMatter,
           fileName,
           collectionName,
+          shouldIgnoreCheck: true,
         }
       )
     })
@@ -119,6 +120,7 @@ describe("Mover Service", () => {
           fileName,
           collectionName,
           subcollectionName,
+          shouldIgnoreCheck: true,
         }
       )
     })
@@ -148,6 +150,7 @@ describe("Mover Service", () => {
         content: mockContent,
         frontMatter: mockFrontMatter,
         fileName,
+        shouldIgnoreCheck: true,
       })
     })
     it("Moving collection page to another collection works correctly", async () => {
@@ -179,6 +182,7 @@ describe("Mover Service", () => {
           frontMatter: mockFrontMatter,
           fileName,
           collectionName,
+          shouldIgnoreCheck: true,
         }
       )
     })
@@ -212,6 +216,7 @@ describe("Mover Service", () => {
           fileName,
           collectionName,
           subcollectionName,
+          shouldIgnoreCheck: true,
         }
       )
     })
@@ -244,6 +249,7 @@ describe("Mover Service", () => {
         content: mockContent,
         frontMatter: mockFrontMatter,
         fileName,
+        shouldIgnoreCheck: true,
       })
     })
     it("Moving subcollection page to a collection works correctly", async () => {
@@ -279,6 +285,7 @@ describe("Mover Service", () => {
           frontMatter: mockFrontMatter,
           fileName,
           collectionName,
+          shouldIgnoreCheck: true,
         }
       )
     })
@@ -317,6 +324,7 @@ describe("Mover Service", () => {
           fileName,
           collectionName,
           subcollectionName,
+          shouldIgnoreCheck: true,
         }
       )
     })

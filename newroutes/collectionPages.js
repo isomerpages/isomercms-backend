@@ -188,11 +188,11 @@ class CollectionPagesRouter {
     )
     router.post(
       "/:siteName/collections/:collectionName/pages/:pageName",
-      attachWriteRouteHandlerWrapper(this.updateCollectionPage)
+      attachRollbackRouteHandlerWrapper(this.updateCollectionPage)
     )
     router.post(
       "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
-      attachWriteRouteHandlerWrapper(this.updateCollectionPage)
+      attachRollbackRouteHandlerWrapper(this.updateCollectionPage)
     )
     router.delete(
       "/:siteName/collections/:collectionName/pages/:pageName",

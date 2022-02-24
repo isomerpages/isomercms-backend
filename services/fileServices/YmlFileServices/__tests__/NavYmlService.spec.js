@@ -1,6 +1,11 @@
 const { deslugifyCollectionName } = require("@utils/utils")
 
 const {
+  navigationContent: mockNavigationContent,
+  navigationSha: mockNavigationSha,
+  rawNavigationContent: mockRawNavigationContent,
+} = require("@fixtures/navigation")
+const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
 
@@ -16,7 +21,6 @@ describe("Nav Yml Service", () => {
   const fileName = NAV_FILE_NAME
   const collectionName = "collection"
   const directoryName = NAV_FILE_DIR
-  const sha = "12345"
 
   const reqDetails = { siteName, accessToken }
   const mockParsedContent = {
@@ -57,8 +61,6 @@ describe("Nav Yml Service", () => {
       },
     ],
   }
-  const mockRawContent = yaml.stringify(mockParsedContent)
-
   const mockGithubService = {
     read: jest.fn(),
     update: jest.fn(),
@@ -74,37 +76,39 @@ describe("Nav Yml Service", () => {
 
   describe("Read", () => {
     mockGithubService.read.mockResolvedValueOnce({
-      content: mockRawContent,
-      sha,
-    }),
-      it("Reading the navigation.yml file works correctly", async () => {
-        await expect(service.read(reqDetails)).resolves.toMatchObject({
-          content: mockParsedContent,
-          sha,
-        })
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
-          fileName,
-          directoryName,
-        })
+      content: mockRawNavigationContent,
+      sha: mockNavigationSha,
+    })
+    it("Reading the _data/navigation.yml file works correctly", async () => {
+      await expect(service.read(reqDetails)).resolves.toMatchObject({
+        content: mockNavigationContent,
+        sha: mockNavigationSha,
       })
+      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+        fileName: NAV_FILE_NAME,
+        directoryName: NAV_FILE_DIR,
+      })
+    })
   })
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.update.mockResolvedValueOnce({ newSha: sha })
-    it("Updating raw content works correctly", async () => {
+    mockGithubService.update.mockResolvedValueOnce({
+      newSha: mockNavigationSha,
+    })
+    it("Updating _data/navigation.yml file works correctly", async () => {
       await expect(
         service.update(reqDetails, {
-          fileContent: mockParsedContent,
+          fileContent: mockNavigationContent,
           sha: oldSha,
         })
       ).resolves.toMatchObject({
-        newSha: sha,
+        newSha: mockNavigationSha,
       })
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
-        fileName,
-        directoryName,
-        fileContent: mockRawContent,
+        fileName: NAV_FILE_NAME,
+        directoryName: NAV_FILE_DIR,
+        fileContent: mockRawNavigationContent,
         sha: oldSha,
       })
     })
@@ -114,11 +118,12 @@ describe("Nav Yml Service", () => {
     const newSha = "54321"
     const newCollection = `new-collection`
     mockGithubService.read.mockResolvedValueOnce({
-      content: mockRawContent,
-      sha,
+      content: mockRawNavigationContent,
+      sha: mockNavigationSha,
     })
     const updatedMockParsedContent = {
-      links: mockParsedContent.links.concat({
+      ...mockNavigationContent,
+      links: mockNavigationContent.links.concat({
         title: deslugifyCollectionName(newCollection),
         collection: newCollection,
       }),
@@ -138,7 +143,7 @@ describe("Nav Yml Service", () => {
         fileName,
         directoryName,
         fileContent: yaml.stringify(updatedMockParsedContent),
-        sha,
+        sha: mockNavigationSha,
       })
     })
   })
@@ -147,11 +152,12 @@ describe("Nav Yml Service", () => {
     const newSha = "54321"
     const newCollection = `new-collection`
     mockGithubService.read.mockResolvedValueOnce({
-      content: mockRawContent,
-      sha,
+      content: mockRawNavigationContent,
+      sha: mockNavigationSha,
     })
     const updatedMockParsedContent = {
-      links: mockParsedContent.links.map((link) => {
+      ...mockNavigationContent,
+      links: mockNavigationContent.links.map((link) => {
         if (link.collection === collectionName) {
           return {
             title: deslugifyCollectionName(newCollection),
@@ -177,7 +183,7 @@ describe("Nav Yml Service", () => {
         fileName,
         directoryName,
         fileContent: yaml.stringify(updatedMockParsedContent),
-        sha,
+        sha: mockNavigationSha,
       })
     })
   })
@@ -185,11 +191,12 @@ describe("Nav Yml Service", () => {
   describe("deleteCollectionInNav", () => {
     const newSha = "54321"
     mockGithubService.read.mockResolvedValueOnce({
-      content: mockRawContent,
-      sha,
+      content: mockRawNavigationContent,
+      sha: mockNavigationSha,
     })
     const updatedMockParsedContent = {
-      links: mockParsedContent.links.filter(
+      ...mockNavigationContent,
+      links: mockNavigationContent.links.filter(
         (link) => link.collection !== collectionName
       ),
     }
@@ -208,7 +215,7 @@ describe("Nav Yml Service", () => {
         fileName,
         directoryName,
         fileContent: yaml.stringify(updatedMockParsedContent),
-        sha,
+        sha: mockNavigationSha,
       })
     })
   })

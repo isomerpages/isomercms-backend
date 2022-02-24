@@ -314,6 +314,10 @@ auth.post(
 auth.get("/v1/sites/:siteName/settings", verifyJwt)
 auth.post("/v1/sites/:siteName/settings", verifyJwt)
 
+// New settings
+auth.get("/v2/sites/:siteName/settings", verifyJwt)
+auth.post("/v2/sites/:siteName/settings", verifyJwt)
+
 // Navigation
 auth.get("/v1/sites/:siteName/navigation", verifyJwt)
 auth.post("/v1/sites/:siteName/navigation", verifyJwt)
@@ -376,19 +380,19 @@ auth.delete(
 
 // Resource Pages
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
   verifyJwt
 )
 auth.get(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
   verifyJwt
 )
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
   verifyJwt
 )
 auth.delete(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/pages/:pageName",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
   verifyJwt
 )
 
@@ -425,13 +429,16 @@ auth.post(
   verifyJwt
 )
 
+// Resource Room
+auth.get("/v2/sites/:siteName/resourceRoom", verifyJwt)
+auth.post("/v2/sites/:siteName/resourceRoom", verifyJwt)
+auth.get("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
+auth.post("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
+auth.delete("/v2/sites/:siteName/resourceRoom/:resourceRoomName", verifyJwt)
+
 // Resource Categories
 auth.get(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources",
-  verifyJwt
-)
-auth.get(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
   verifyJwt
 )
 auth.post(
@@ -439,15 +446,31 @@ auth.post(
   verifyJwt
 )
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
   verifyJwt
 )
 auth.delete(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
   verifyJwt
 )
 auth.post(
-  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategory/move",
+  "/v2/sites/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move",
+  verifyJwt
+)
+
+// Media directories
+auth.get("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.delete("/v2/sites/:siteName/media/:directoryName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName/move", verifyJwt)
+
+// Media files
+auth.post("/v2/sites/:siteName/media/:directoryName/pages", verifyJwt)
+auth.get("/v2/sites/:siteName/media/:directoryName/pages/:fileName", verifyJwt)
+auth.post("/v2/sites/:siteName/media/:directoryName/pages/:fileName", verifyJwt)
+auth.delete(
+  "/v2/sites/:siteName/media/:directoryName/pages/:fileName",
   verifyJwt
 )
 

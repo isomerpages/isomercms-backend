@@ -1,23 +1,24 @@
 {
-    "compilerOptions": {
-      "target": "es2017",
-      "allowSyntheticDefaultImports": false,
-      "jsx": "react",
-      "baseUrl": "./",
-      "paths": {
-        "@root/*": ["./*"],
-        "@classes/*": ["./classes/*"],
-        "@errors/*": ["./errors/*"],
-        "@logger/*": ["./logger/*"],
-        "@middleware/*": ["./middleware/*"],
-        "@routes/*": ["./routes/*"],
-        "@utils/*": ["./utils/*"],
-        "@loaders/*": ["./loaders/*"],
-        "@database/*": ["./database/*"],
-        "@services/*": ["./services/*"],
-        "@controllers/*": ["./controllers/*"],
-        "@validators/*": ["./validators/*"]
-      }
-    },
-    "exclude": ["node_modules", "dist"]
+  "compilerOptions": {
+    "target": "es2017",
+    "allowSyntheticDefaultImports": false,
+    "jsx": "react",
+    "baseUrl": "./",
+    "paths": {
+      "@root/*": ["./*"],
+      "@classes/*": ["./classes/*"],
+      "@errors/*": ["./errors/*"],
+      "@logger/*": ["./logger/*"],
+      "@middleware/*": ["./middleware/*"],
+      "@routes/*": ["./routes/*"],
+      "@utils/*": ["./utils/*"],
+      "@loaders/*": ["./loaders/*"],
+      "@database/*": ["./database/*"],
+      "@services/*": ["./services/*"],
+      "@validators/*": ["./validators/*"],
+      "@controllers/*": ["./controllers/*"],
+      "@fixtures/*": ["./fixtures/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
 }

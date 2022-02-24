@@ -77,6 +77,31 @@ describe("Unlinked Page Service", () => {
         directoryName,
       })
     })
+
+    it("Creating pages skips the check for special characters if specified", async () => {
+      const specialName = "test-name.md"
+      await expect(
+        service.create(reqDetails, {
+          fileName: specialName,
+          content: mockContent,
+          frontMatter: { ...mockFrontMatter },
+          shouldIgnoreCheck: true,
+        })
+      ).resolves.toMatchObject({
+        fileName: specialName,
+        content: { frontMatter: mockFrontMatter, pageBody: mockContent },
+        sha,
+      })
+      expect(convertDataToMarkdown).toHaveBeenCalledWith(
+        { ...mockFrontMatter },
+        mockContent
+      )
+      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+        content: mockMarkdownContent,
+        fileName: specialName,
+        directoryName,
+      })
+    })
   })
 
   describe("Read", () => {
@@ -134,7 +159,9 @@ describe("Unlinked Page Service", () => {
 
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
-      await expect(service.delete(reqDetails, { fileName, sha }))
+      await expect(
+        service.delete(reqDetails, { fileName, sha })
+      ).resolves.not.toThrow()
       expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,

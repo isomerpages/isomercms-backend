@@ -1,12 +1,12 @@
-const axios = require("axios")
+import axios from "axios"
 
-const logger = require("@logger/logger")
+import logger from "@logger/logger"
 
 const { POSTMAN_API_KEY } = process.env
 const POSTMAN_API_URL = "https://api.postman.gov.sg/v1"
 
 class MailClient {
-  async sendMail(recipient, body) {
+  async sendMail(recipient: string, body: string): Promise<void> {
     if (!POSTMAN_API_KEY)
       throw new Error("Postman.gov.sg API key cannot be empty.")
 

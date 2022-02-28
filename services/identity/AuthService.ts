@@ -1,5 +1,6 @@
-import { AxiosClient } from "@root/types"
 import axios from "axios"
+
+import { AxiosClient } from "@root/types"
 
 interface AuthServiceProps {
   axiosClient: AxiosClient

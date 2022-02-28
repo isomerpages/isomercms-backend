@@ -28,7 +28,8 @@
       "@utils/*": ["./utils/*"],
       "@services/*": ["./services/*"],
       "@validators/*": ["./validators/*"],
-      "@fixtures/*": ["./fixtures/*"]
+      "@fixtures/*": ["./fixtures/*"],
+      "@database/*": ["./database/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

@@ -98,7 +98,8 @@
                 ["@database", "./database"],
                 ["@services", "./services"],
                 ["@validators", "./validators"],
-                ["@fixtures", "./fixtures"]
+                ["@fixtures", "./fixtures"],
+                ["@database", "./database"]
             ]
         }
     },

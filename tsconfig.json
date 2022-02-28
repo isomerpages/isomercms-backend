@@ -1,9 +1,23 @@
 {
+  "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
     "target": "es2017",
+    "lib": ["ES2017"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": false,
-    "jsx": "react",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "noEmit": true,
+    "downlevelIteration": true,
     "baseUrl": "./",
+    "resolveJsonModule": true,
+    "sourceMap": true,
     "paths": {
       "@root/*": ["./*"],
       "@classes/*": ["./classes/*"],
@@ -12,11 +26,8 @@
       "@middleware/*": ["./middleware/*"],
       "@routes/*": ["./routes/*"],
       "@utils/*": ["./utils/*"],
-      "@loaders/*": ["./loaders/*"],
-      "@database/*": ["./database/*"],
       "@services/*": ["./services/*"],
       "@validators/*": ["./validators/*"],
-      "@controllers/*": ["./controllers/*"],
       "@fixtures/*": ["./fixtures/*"]
     }
   },

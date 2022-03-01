@@ -1,13 +1,14 @@
-const logger = require("@logger/logger")
+import logger from "@logger/logger"
+
+import AuthService from "./AuthService"
+import MailClient from "./MailClient"
+import SmsClient from "./SmsClient"
+import TokenStore from "./TokenStore"
+import TotpGenerator from "./TotpGenerator"
 
 const db = require("@database/models")
 
-const AuthService = require("./AuthService")
-const MailClient = require("./MailClient")
 const SitesService = require("./SitesService")
-const SmsClient = require("./SmsClient")
-const TokenStore = require("./TokenStore")
-const TotpGenerator = require("./TotpGenerator")
 const UsersService = require("./UsersService")
 
 const IS_LOCAL_DEV = process.env.NODE_ENV === "LOCAL_DEV"

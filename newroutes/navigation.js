@@ -35,12 +35,14 @@ class NavigationRouter {
 
   // Update navigation index file
   async updateNavigation(req, res) {
-    const { accessToken } = req
-
-    const { siteName } = req.params
     const { error } = UpdateNavigationRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    const { content: fileContent, sha } = req.body
+
+    const {
+      accessToken,
+      params: { siteName },
+      body: { content: fileContent, sha },
+    } = req
 
     const updateResp = await this.navigationYmlService.update(
       { siteName, accessToken },

@@ -4,16 +4,14 @@ import { BadRequestError } from "@root/errors/BadRequestError"
 
 import _AuthService from "../AuthService"
 
+import {
+  mockAccessToken,
+  mockHeaders,
+  mockSiteName,
+  mockUserId,
+} from "./constants"
+
 const AuthService = new _AuthService({ axiosClient: mockAxios })
-const mockSiteName = "hello world"
-const mockUserId = "some user id"
-const mockAccessToken = "some token"
-const mockHeaders = {
-  headers: {
-    Authorization: `token ${mockAccessToken}`,
-    "Content-Type": "application/json",
-  },
-}
 const mockEndpoint = `/${mockSiteName}/collaborators/${mockUserId}`
 
 describe("Auth Service", () => {

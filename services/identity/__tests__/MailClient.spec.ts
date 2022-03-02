@@ -2,21 +2,18 @@ import mockAxios from "jest-mock-axios"
 
 import _MailClient from "../MailClient"
 
-const mockRecipient = "hello@world.com"
-const mockBody = "somebody"
-const mockHeaders = {
-  headers: {
-    Authorization: `Bearer ${process.env.POSTMAN_API_KEY}`,
-  },
-}
+import { mockRecipient, mockBody, mockHeaders } from "./constants"
+
 const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
+
+const MailClient = new _MailClient()
+
 const generateEmail = (recipient: string, body: string) => ({
   subject: "One-Time Password (OTP) for IsomerCMS",
   from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
   body,
   recipient,
 })
-const MailClient = new _MailClient()
 
 describe("Mail Client", () => {
   afterEach(() => mockAxios.reset())
@@ -53,8 +50,9 @@ describe("Mail Client", () => {
     expect(process.env.POSTMAN_API_KEY).toBe(curApiKey)
   })
 
-  it("should bubble the error upwards when a network error occurs", async () => {
+  it("should return an error when a network error occurs", async () => {
     // Arrange
+    const generatedEmail = generateEmail(mockRecipient, mockBody)
     mockAxios.post.mockRejectedValueOnce("some error")
 
     // Act
@@ -64,7 +62,7 @@ describe("Mail Client", () => {
     expect(actual).rejects.toThrowError("Failed to send email")
     expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
-      generateEmail(mockRecipient, mockBody),
+      generatedEmail,
       mockHeaders
     )
   })

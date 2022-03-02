@@ -12,7 +12,6 @@ class AuthMiddleware {
     next("router")
   }
 
-  // Create new page in collection
   verifyJwt(req, res, next) {
     const { cookies, url } = req
     const { accessToken, userId } = this.authMiddlewareService.verifyJwt({

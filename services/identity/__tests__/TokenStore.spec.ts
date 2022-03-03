@@ -1,7 +1,7 @@
 import {
   secretsManagerClient,
   GetSecretValueCommand,
-} from "@root/__mocks__/@aws-sdk/client-secrets-manager"
+} from "@mocks/@aws-sdk/client-secrets-manager"
 
 import _TokenStore from "../TokenStore"
 

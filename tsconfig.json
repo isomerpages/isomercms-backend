@@ -29,7 +29,8 @@
       "@services/*": ["./services/*"],
       "@validators/*": ["./validators/*"],
       "@fixtures/*": ["./fixtures/*"],
-      "@database/*": ["./database/*"]
+      "@database/*": ["./database/*"],
+      "@mocks/*": ["./__mocks__/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

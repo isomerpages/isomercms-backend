@@ -1,15 +1,17 @@
 {
   "name": "isomercms",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
     "dev": "source .env && node ./bin/www",
     "test": "source .env && jest",
+    "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",
     "format": "npx prettier --write .",
     "check-format": "npx prettier --check .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
   },
   "dependencies": {
     "auto-bind": "^4.0.0",
@@ -49,6 +51,7 @@
     "yaml": "^1.10.2"
   },
   "devDependencies": {
+    "auto-changelog": "^2.4.0",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.21.0",
     "eslint-config-airbnb-base": "^14.2.1",

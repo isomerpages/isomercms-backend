@@ -28,5 +28,22 @@ class AuthMiddleware {
     if (userId) req.userId = userId
     return next()
   }
+
+  // Replace access token with site access token if it is available
+  useSiteAccessTokenIfAvailable(req, _res, next) {
+    const {
+      accessToken: userAccessToken,
+      userId,
+      params: { siteName },
+    } = req
+
+    const siteAccessToken = this.authMiddlewareService.retrieveSiteAccessTokenIfAvailable(
+      { siteName, userAccessToken, userId }
+    )
+
+    if (siteAccessToken) req.accessToken = siteAccessToken
+
+    return next()
+  }
 }
 module.exports = { AuthMiddleware }

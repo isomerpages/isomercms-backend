@@ -18,6 +18,8 @@
     "baseUrl": "./",
     "resolveJsonModule": true,
     "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "@root/*": ["./*"],
       "@classes/*": ["./classes/*"],

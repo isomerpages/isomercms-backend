@@ -86,14 +86,16 @@ describe("Auth Service", () => {
     })
   })
 
-  describe("getUserId", () => {
-    it("Able to retrieve user id", async () => {
+  describe("getUserInfo", () => {
+    it("Able to retrieve user infod", async () => {
       axios.get.mockImplementation(() => ({
         data: {
           login: userId,
         },
       }))
-      await expect(service.getUserId({ accessToken })).resolves.toEqual(userId)
+      await expect(service.getUserInfo({ accessToken })).resolves.toEqual(
+        userId
+      )
     })
   })
 })

@@ -9,6 +9,9 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
+// Import services
+const identityServices = require("@services/identity")
+
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
 class AuthService {
@@ -22,10 +25,12 @@ class AuthService {
   }
 
   async getGithubAuthToken({ csrfState, code, state }) {
-    const isCsrfValid =
-      jwtUtils.verifyToken(csrfState) &&
-      jwtUtils.decodeToken(csrfState).state === state
-    if (!isCsrfValid) throw new ForbiddenError()
+    try {
+      const decoded = jwtUtils.verifyToken(csrfState)
+      if (decoded.state !== state) throw new Error("State does not match")
+    } catch (err) {
+      throw new ForbiddenError()
+    }
 
     const params = {
       code,
@@ -58,17 +63,23 @@ class AuthService {
       },
     })
 
-    const userId = userResp.data && userResp.data.login
+    const githubId = userResp.data && userResp.data.login
+    if (!githubId) throw AuthError("Failed to retrieve user data")
+
+    // Create user if does not exists. Set last logged in to current time.
+    const user = await identityServices.usersService.login(githubId)
+    if (!user) throw Error("Failed to create user")
 
     const token = jwtUtils.signToken({
       access_token: jwtUtils.encryptToken(accessToken),
-      user_id: userId,
+      user_id: githubId,
+      isomer_user_id: user.id,
     })
 
     return token
   }
 
-  async getUserId(reqDetails) {
+  async getUserInfo(reqDetails) {
     const { accessToken } = reqDetails
 
     // Make a call to github
@@ -81,7 +92,13 @@ class AuthService {
           "Content-Type": "application/json",
         },
       })
-      return resp.data.login
+      const userId = resp.data.login
+
+      const {
+        email,
+        contactNumber,
+      } = await identityServices.usersService.findByGitHubId(userId)
+      return { userId, email, contactNumber }
     } catch (err) {
       return undefined
     }

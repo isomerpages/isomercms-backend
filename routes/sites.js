@@ -76,7 +76,7 @@ async function getSites(req, res) {
     return resp.data
       .map((repoData) => {
         const {
-          updated_at: updatedAt,
+          pushed_at: updatedAt,
           permissions,
           name,
           private: isPrivate,
@@ -136,7 +136,7 @@ async function getLastUpdated(req, res) {
       "Content-Type": "application/json",
     },
   })
-  const { updated_at: updatedAt } = resp.data
+  const { pushed_at: updatedAt } = resp.data
   return res.status(200).json({ lastUpdated: timeDiff(updatedAt) })
 }
 

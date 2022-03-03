@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "dev": "source .env && node ./bin/www",
     "test": "source .env && jest",
-    "release": "npm version $npm_config_update && git push --tags",
+    "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",
     "format": "npx prettier --write .",
     "check-format": "npx prettier --check .",

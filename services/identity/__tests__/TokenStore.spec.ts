@@ -1,5 +1,5 @@
 import {
-  secretsManagerClient,
+  secretsManagerClient as mockSecretsManager,
   GetSecretValueCommand,
 } from "@mocks/@aws-sdk/client-secrets-manager"
 
@@ -11,7 +11,7 @@ const TokenStore = new _TokenStore()
 describe("Token Store", () => {
   beforeEach(() => {
     // Clear all instances and calls to constructor and all methods:
-    secretsManagerClient.send.mockClear()
+    mockSecretsManager.send.mockClear()
   })
 
   it("should return the api token when the parameters are valid", async () => {
@@ -20,14 +20,14 @@ describe("Token Store", () => {
     const awsCommand = new GetSecretValueCommand({
       SecretId: apiTokenName,
     })
-    secretsManagerClient.send.mockResolvedValueOnce({ SecretString: expected })
+    mockSecretsManager.send.mockResolvedValueOnce({ SecretString: expected })
 
     // Act
     const actual = await TokenStore.getToken(apiTokenName)
 
     // Assert
     expect(actual).toBe(expected)
-    expect(secretsManagerClient.send).toHaveBeenCalledWith(awsCommand)
+    expect(mockSecretsManager.send).toHaveBeenCalledWith(awsCommand)
   })
 
   it("should return the error when the secrets client fails to retrieve credentials", () => {
@@ -36,13 +36,13 @@ describe("Token Store", () => {
     const awsCommand = new GetSecretValueCommand({
       SecretId: apiTokenName,
     })
-    secretsManagerClient.send.mockRejectedValueOnce(expected)
+    mockSecretsManager.send.mockRejectedValueOnce(expected)
 
     // Act
     const actual = TokenStore.getToken(apiTokenName)
 
     // Assert
     expect(actual).rejects.toBe(expected)
-    expect(secretsManagerClient.send).toHaveBeenCalledWith(awsCommand)
+    expect(mockSecretsManager.send).toHaveBeenCalledWith(awsCommand)
   })
 })

@@ -1,15 +1,14 @@
 import logger from "@logger/logger"
 
+import db from "@database/models"
+
 import AuthService from "./AuthService"
 import MailClient from "./MailClient"
+import SitesService from "./SitesService"
 import SmsClient from "./SmsClient"
 import TokenStore from "./TokenStore"
 import TotpGenerator from "./TotpGenerator"
-
-const db = require("@database/models")
-
-const SitesService = require("./SitesService")
-const UsersService = require("./UsersService")
+import UsersService from "./UsersService"
 
 const IS_LOCAL_DEV = process.env.NODE_ENV === "LOCAL_DEV"
 const { OTP_EXPIRY, OTP_SECRET } = process.env
@@ -49,4 +48,4 @@ services.initializeIdentityServices = ({ axiosInstance }) => {
   return { authService, sitesService, usersService }
 }
 
-module.exports = services
+export default services

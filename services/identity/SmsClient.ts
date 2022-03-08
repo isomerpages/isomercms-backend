@@ -39,4 +39,4 @@ class SmsClient {
   }
 }
 
-module.exports = SmsClient
+export default SmsClient

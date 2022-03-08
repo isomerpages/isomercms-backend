@@ -30,5 +30,4 @@ class MailClient {
     }
   }
 }
-
-module.exports = MailClient
+export default MailClient

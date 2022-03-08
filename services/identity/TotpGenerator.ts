@@ -8,7 +8,7 @@ interface TotpGeneratorProps {
 class TotpGenerator {
   generator: typeof totp
 
-  expiry: number
+  expiry?: number
 
   secret: string
 

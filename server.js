@@ -104,7 +104,7 @@ const {
 const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
-const { initializeIdentityServices } = require("@services/identity")
+const { usersService } = require("@services/identity")
 const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
@@ -118,7 +118,6 @@ const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 const { UsersRouter } = require("./newroutes/users")
 
-const { usersService } = initializeIdentityServices({ axiosInstance })
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
 const homepagePageService = new HomepagePageService({ gitHubService })

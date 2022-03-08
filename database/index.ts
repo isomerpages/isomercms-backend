@@ -1,6 +1,6 @@
 import { Sequelize, SequelizeOptions } from "sequelize-typescript"
 
-import sequelizeConfig from "@database/config"
+import sequelizeConfig from "@database/config.js"
 
 import { Site, SiteMember, User } from "./models"
 

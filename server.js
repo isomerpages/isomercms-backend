@@ -6,8 +6,9 @@ const cors = require("cors")
 const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
-const logger = require("morgan")
-const Sequelize = require("sequelize-typescript")
+const { Sequelize } = require("sequelize-typescript")
+
+const logger = require("@logger/logger")
 
 // Sequelize-related imports
 
@@ -122,7 +123,6 @@ const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 const { UsersRouter } = require("./newroutes/users")
 
 // Sequelize init
-logger.info("Creating Sequelize instance and adding models")
 const sequelize = new Sequelize(sequelizeConfig)
 sequelize.addModels([User, Site, SiteMember])
 
@@ -220,7 +220,6 @@ const settingsV2Router = new SettingsRouter({ settingsService })
 const app = express()
 app.use(helmet())
 
-app.use(logger("dev"))
 app.use(
   cors({
     origin: FRONTEND_URL,
@@ -278,7 +277,6 @@ app.use((req, res, next) => {
 
 // error handler
 app.use(errorHandler)
-
 logger.info("Connecting to Sequelize")
 sequelize
   .authenticate()
@@ -287,6 +285,9 @@ sequelize
   })
   .catch((err) => {
     logger.error("Unable to connect to the database:", err)
+    // If we cannot connect to the db, report an error using status code
+    // And gracefully shut down the application since we can't serve client
+    process.exit(1)
   })
 
 module.exports = app

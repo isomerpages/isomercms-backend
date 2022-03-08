@@ -1,3 +1,7 @@
+import logger from "@logger/logger"
+
+import sequelize from "./database/index"
+
 const path = require("path")
 
 const axios = require("axios")
@@ -6,11 +10,6 @@ const cors = require("cors")
 const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
-const { Sequelize } = require("sequelize-typescript")
-
-const logger = require("@logger/logger")
-
-// Sequelize-related imports
 
 // Env vars
 const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
@@ -39,8 +38,6 @@ const resourceRoomRouter = require("@routes/resourceRoom")
 const resourcesRouter = require("@routes/resources")
 const settingsRouter = require("@routes/settings")
 const sitesRouter = require("@routes/sites")
-
-const { Site, User, SiteMember } = require("@database/models/index")
 
 const axiosInstance = axios.create({
   baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
@@ -110,7 +107,6 @@ const {
 const { initializeIdentityServices } = require("@services/identity")
 const { MoverService } = require("@services/moverServices/MoverService")
 
-const sequelizeConfig = require("./database/config")
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
 const { MediaCategoriesRouter } = require("./newroutes/mediaCategories")
@@ -121,10 +117,6 @@ const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 const { UsersRouter } = require("./newroutes/users")
-
-// Sequelize init
-const sequelize = new Sequelize(sequelizeConfig)
-sequelize.addModels([User, Site, SiteMember])
 
 const { usersService } = initializeIdentityServices({ axiosInstance })
 const gitHubService = new GitHubService({ axiosInstance })
@@ -284,7 +276,7 @@ sequelize
     logger.info("Connection has been established successfully.")
   })
   .catch((err) => {
-    logger.error("Unable to connect to the database:", err)
+    logger.error(`Unable to connect to the database: ${err}`)
     // If we cannot connect to the db, report an error using status code
     // And gracefully shut down the application since we can't serve client
     process.exit(1)

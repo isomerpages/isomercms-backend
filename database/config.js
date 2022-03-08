@@ -8,14 +8,15 @@ const { DB_URI, DB_MIN_POOL, DB_MAX_POOL } = process.env
 
 if (!DB_URI) throw new Error("DB_URI is not defined")
 const parsed = parse(DB_URI)
+const port = parsed.port ? parseInt(parsed.port, 10) : 5432
 
-module.exports = {
+const dbConfig = {
   // Connection settings
   database: parsed.database || "isomercms_dev",
   host: parsed.host || "localhost",
   username: parsed.user,
   password: parsed.password,
-  port: parsed.port || 5432,
+  port,
 
   // Database settings
   dialect: "postgres",
@@ -34,10 +35,6 @@ module.exports = {
     min: DB_MIN_POOL ? parseInt(DB_MIN_POOL, 10) : 1,
     max: DB_MAX_POOL ? parseInt(DB_MAX_POOL, 10) : 10,
   },
-
-  // Migrations and seeders options
-  migrationStorage: "sequelize",
-  migrationStorageTableName: "sequelize_migration_data",
-  seederStorage: "sequelize",
-  seederStorageTableName: "sequelize_seed_data",
 }
+
+export default dbConfig

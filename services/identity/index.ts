@@ -50,5 +50,8 @@ export const usersService = new UsersService({
   smsClient,
 })
 
-export const getAuthService = (axiosClient: AxiosClient) =>
+// NOTE: This is because the identity auth service has an
+// explicit dependency on an axios instance so we have to pass
+// the axios instance in...
+export const getIdentityAuthService = (axiosClient: AxiosClient) =>
   new AuthService({ axiosClient })

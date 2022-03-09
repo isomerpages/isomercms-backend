@@ -7,6 +7,8 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const { FRONTEND_URL } = process.env
 const { isSecure } = require("@utils/auth-utils")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const AUTH_TOKEN_EXPIRY_MS = parseInt(
   process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
   10
@@ -83,11 +85,24 @@ class AuthRouter {
 
     router.get(
       "/github-redirect",
+      authMiddleware.noVerify,
       attachReadRouteHandlerWrapper(this.authRedirect)
     )
-    router.get("/", attachReadRouteHandlerWrapper(this.githubAuth))
-    router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
-    router.get("/whoami", attachReadRouteHandlerWrapper(this.whoami))
+    router.get(
+      "/",
+      authMiddleware.noVerify,
+      attachReadRouteHandlerWrapper(this.githubAuth)
+    )
+    router.delete(
+      "/logout",
+      authMiddleware.noVerify,
+      attachReadRouteHandlerWrapper(this.logout)
+    )
+    router.get(
+      "/whoami",
+      authMiddleware.whoamiAuth,
+      attachReadRouteHandlerWrapper(this.whoami)
+    )
 
     return router
   }

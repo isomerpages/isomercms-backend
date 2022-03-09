@@ -21,6 +21,8 @@ const { File, CollectionPageType } = require("@classes/File")
 // Import utils
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const router = express.Router()
 
 // List pages in collection
@@ -242,6 +244,7 @@ async function renameCollectionPage(req, res) {
     .json({ collectionName, pageName: newPageName, pageContent, sha: newSha })
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get(
   "/:siteName/collections/:collectionName",
   attachReadRouteHandlerWrapper(listCollectionPages)

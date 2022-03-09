@@ -13,6 +13,8 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const router = express.Router()
 
 const { CLIENT_ID } = process.env
@@ -146,9 +148,25 @@ async function whoami(req, res) {
   return res.status(200).json({ userId })
 }
 
-router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
-router.get("/", attachReadRouteHandlerWrapper(githubAuth))
-router.delete("/logout", attachReadRouteHandlerWrapper(logout))
-router.get("/whoami", attachReadRouteHandlerWrapper(whoami))
+router.get(
+  "/github-redirect",
+  authMiddleware.noVerify,
+  attachReadRouteHandlerWrapper(authRedirect)
+)
+router.get(
+  "/",
+  authMiddleware.noVerify,
+  attachReadRouteHandlerWrapper(githubAuth)
+)
+router.delete(
+  "/logout",
+  authMiddleware.noVerify,
+  attachReadRouteHandlerWrapper(logout)
+)
+router.get(
+  "/whoami",
+  authMiddleware.whoamiAuth,
+  attachReadRouteHandlerWrapper(whoami)
+)
 
 module.exports = router

@@ -35,6 +35,7 @@ describe("NetlifyToml Router", () => {
   describe("readNetlifyToml", () => {
     const netlifyTomlHeaderValues = "netlifyTomlHeaderValues"
     mockNetlifyTomlService.read.mockResolvedValue(netlifyTomlHeaderValues)
+
     it("retrieves netlifyToml details", async () => {
       const resp = await request(app).get(`/netlifyToml`).expect(200)
 

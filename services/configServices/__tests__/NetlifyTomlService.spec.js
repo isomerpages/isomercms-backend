@@ -12,7 +12,7 @@ const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 
 jest.mock("axios")
 
-describe("Auth Service", () => {
+describe("NetlifyToml Service", () => {
   const accessToken = "test-token"
 
   const reqDetails = { accessToken }
@@ -28,7 +28,7 @@ describe("Auth Service", () => {
   })
 
   describe("read", () => {
-    it("Reading the netlify.toml file works correctly", async () => {
+    it("should read successfully when the netlify.toml is valid", async () => {
       axios.get.mockImplementation(() => ({
         data: {
           content: Base64.encode(netlifyTomlContent),

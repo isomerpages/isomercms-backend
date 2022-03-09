@@ -7,10 +7,6 @@ class AuthMiddleware {
     autoBind(this)
   }
 
-  noVerify(req, res, next) {
-    return next()
-  }
-
   verifyJwt(req, res, next) {
     const { cookies, url } = req
     const { accessToken, userId } = this.authMiddlewareService.verifyJwt({

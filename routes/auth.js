@@ -148,21 +148,9 @@ async function whoami(req, res) {
   return res.status(200).json({ userId })
 }
 
-router.get(
-  "/github-redirect",
-  authMiddleware.noVerify,
-  attachReadRouteHandlerWrapper(authRedirect)
-)
-router.get(
-  "/",
-  authMiddleware.noVerify,
-  attachReadRouteHandlerWrapper(githubAuth)
-)
-router.delete(
-  "/logout",
-  authMiddleware.noVerify,
-  attachReadRouteHandlerWrapper(logout)
-)
+router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
+router.get("/", attachReadRouteHandlerWrapper(githubAuth))
+router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
   authMiddleware.whoamiAuth,

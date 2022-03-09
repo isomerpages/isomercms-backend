@@ -85,19 +85,10 @@ class AuthRouter {
 
     router.get(
       "/github-redirect",
-      authMiddleware.noVerify,
       attachReadRouteHandlerWrapper(this.authRedirect)
     )
-    router.get(
-      "/",
-      authMiddleware.noVerify,
-      attachReadRouteHandlerWrapper(this.githubAuth)
-    )
-    router.delete(
-      "/logout",
-      authMiddleware.noVerify,
-      attachReadRouteHandlerWrapper(this.logout)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.githubAuth))
+    router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
       authMiddleware.whoamiAuth,

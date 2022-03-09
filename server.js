@@ -13,7 +13,6 @@ const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
 
 // Import middleware
 const { apiLogger } = require("@middleware/apiLogger")
-const { auth } = require("@middleware/auth")
 const { errorHandler } = require("@middleware/errorHandler")
 
 // Import routes
@@ -103,7 +102,6 @@ const {
 const { MoverService } = require("@services/moverServices/MoverService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
-const { AuthMiddleware } = require("./newmiddleware/auth")
 const { AuthRouter } = require("./newroutes/auth")
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
@@ -114,12 +112,6 @@ const { ResourcePagesRouter } = require("./newroutes/resourcePages")
 const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
-const {
-  AuthMiddlewareService,
-} = require("./services/middlewareServices/authMiddlewareService")
-
-const authMiddlewareService = new AuthMiddlewareService()
-const authMiddleware = new AuthMiddleware({ authMiddlewareService })
 
 const authService = new AuthService()
 const gitHubService = new GitHubService({ axiosInstance })
@@ -227,10 +219,6 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
 
-// Use auth middleware
-// app.use(auth)
-app.use(authMiddleware.getRouter())
-
 // Log api requests
 app.use(apiLogger)
 
@@ -263,6 +251,14 @@ app.use("/v2/sites", mediaFilesV2Router.getRouter())
 app.use("/v2/sites", mediaDirectoryV2Router.getRouter())
 app.use("/v2/sites", resourceRoomV2Router.getRouter())
 app.use("/v2/sites", settingsV2Router.getRouter())
+
+// catch unknown routes
+app.use((req, res, next) => {
+  if (!req.route) {
+    return res.status(404).send("Unknown route requested")
+  }
+  return next()
+})
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

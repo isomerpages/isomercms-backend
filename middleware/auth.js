@@ -135,10 +135,13 @@ const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
   }
 
   const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
-  req.accessToken = siteAccessToken
-  logger.info(
-    `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
-  )
+
+  if (siteAccessToken) {
+    req.accessToken = siteAccessToken
+    logger.info(
+      `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
+    )
+  }
 
   return next()
 }

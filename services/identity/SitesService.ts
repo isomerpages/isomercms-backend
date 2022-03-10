@@ -21,17 +21,22 @@ class SitesService {
     this.tokenStore = tokenStore
   }
 
-  async getBySiteName(siteName: string): Promise<Site> {
+  async getBySiteName(siteName: string): Promise<Site | null> {
     const site = await this.repository.findOne({
       where: { name: siteName },
     })
 
-    return site!
+    return site
   }
 
   async getSiteAccessToken(siteName: string) {
-    const { apiTokenName } = await this.getBySiteName(siteName)
-    const token = await this.tokenStore.getToken(apiTokenName)
+    const site = await this.getBySiteName(siteName)
+
+    if (!site) {
+      return null
+    }
+
+    const token = await this.tokenStore.getToken(site.apiTokenName)
     return token
   }
 }

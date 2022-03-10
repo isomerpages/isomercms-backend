@@ -1,21 +1,18 @@
-import { Attributes } from "sequelize"
+import { ModelStatic } from "sequelize"
+import { Sequelize } from "sequelize-typescript"
 
-import sequelize from "@database/index"
 import { User } from "@database/models"
 
 import MailClient from "./MailClient"
 import SmsClient from "./SmsClient"
 import TotpGenerator from "./TotpGenerator"
 
-// Allowed domains is a semicolon separate list of domains (e.g. .gov.sg, @agency.com.sg, etc)
-// that are allowed to login.
-const { DOMAIN_WHITELIST } = process.env
-
 interface UsersServiceProps {
   otp: TotpGenerator
   mailer: MailClient
   smsClient: SmsClient
-  repository: Attributes<User>
+  repository: ModelStatic<User>
+  sequelize: Sequelize
 }
 
 class UsersService {
@@ -29,15 +26,28 @@ class UsersService {
 
   private readonly repository: UsersServiceProps["repository"]
 
-  private readonly whitelistDomains: string[]
+  private readonly sequelize: UsersServiceProps["sequelize"]
 
-  constructor({ otp, mailer, smsClient, repository }: UsersServiceProps) {
+  readonly whitelistDomains: string[]
+
+  constructor({
+    otp,
+    mailer,
+    smsClient,
+    repository,
+    sequelize,
+  }: UsersServiceProps) {
     this.otp = otp
     this.mailer = mailer
     this.smsClient = smsClient
     this.repository = repository
+    this.sequelize = sequelize
 
-    this.whitelistDomains = (DOMAIN_WHITELIST || ".gov.sg")
+    // Allowed domains is a semicolon separate list of domains (e.g. .gov.sg; @agency.com.sg; etc)
+    // that are allowed to login.
+    const { DOMAIN_WHITELIST } = process.env
+
+    this.whitelistDomains = (DOMAIN_WHITELIST || "gov.sg")
       .split(";")
       .map((domain) => domain.toLowerCase().trim())
   }
@@ -51,7 +61,7 @@ class UsersService {
   }
 
   async updateUserByGitHubId(githubId: string, user: string) {
-    await this.repository.update(user, { where: { githubId } })
+    await this.repository.update({ user }, { where: { githubId } })
   }
 
   async findOrCreate(githubId: string | undefined) {
@@ -61,16 +71,19 @@ class UsersService {
     return user
   }
 
-  async login(githubId: string) {
-    return sequelize.transaction(async (transaction) => {
+  async login(githubId: string): Promise<User> {
+    return this.sequelize.transaction<User>(async (transaction) => {
       // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
-      const user = await this.repository.findOrCreate(githubId, { transaction })
+      const [user] = await this.repository.findOrCreate({
+        where: { githubId },
+        transaction,
+      })
       user.lastLoggedIn = new Date()
       return user.save({ transaction })
     })
   }
 
-  async canSendEmailOtp(email: string) {
+  canSendEmailOtp(email: string) {
     const hasMatchDomain =
       this.whitelistDomains.filter((domain) => email.endsWith(domain)).length >
       0

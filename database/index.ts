@@ -10,8 +10,14 @@ import sequelizeConfig from "@database/config.js"
  * fake db models into sequelize, rather than depending upon concrete instances
  * in our unit tests.
  */
-export default (models: Parameters<Sequelize["addModels"]>[0]) => {
-  const sequelize = new Sequelize(sequelizeConfig as SequelizeOptions)
+export default (
+  models: Parameters<Sequelize["addModels"]>[0],
+  dbConfig?: SequelizeOptions
+) => {
+  const sequelize = new Sequelize({
+    ...sequelizeConfig,
+    ...dbConfig,
+  } as SequelizeOptions)
   sequelize.addModels(models)
   return sequelize
 }

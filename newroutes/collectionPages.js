@@ -6,7 +6,6 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
@@ -15,6 +14,8 @@ const {
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
 } = require("@validators/RequestSchema")
+
+const { authMiddleware } = require("@root/newmiddleware/index")
 
 class CollectionPagesRouter {
   constructor({ collectionPageService, subcollectionPageService }) {
@@ -169,6 +170,8 @@ class CollectionPagesRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.post(
       "/:siteName/collections/:collectionName/pages",

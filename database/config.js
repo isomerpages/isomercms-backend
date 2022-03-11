@@ -10,7 +10,7 @@ if (!DB_URI) throw new Error("DB_URI is not defined")
 const parsed = parse(DB_URI)
 const port = parsed.port ? parseInt(parsed.port, 10) : 5432
 
-const dbConfig = {
+module.exports = {
   // Connection settings
   database: parsed.database || "isomercms_dev",
   host: parsed.host || "localhost",
@@ -36,5 +36,3 @@ const dbConfig = {
     max: DB_MAX_POOL ? parseInt(DB_MAX_POOL, 10) : 10,
   },
 }
-
-export default dbConfig

@@ -16,6 +16,20 @@ const generateEmail = (recipient: string, body: string) => ({
 })
 
 describe("Mail Client", () => {
+  const OLD_ENV = process.env
+
+  beforeEach(() => {
+    // Clears the cache so imports in tests uses a fresh copy
+    jest.resetModules()
+    // Make a copy of existing environment
+    process.env = { ...OLD_ENV }
+  })
+
+  afterAll(() => {
+    // Restore old environment
+    process.env = OLD_ENV
+  })
+
   afterEach(() => mockAxios.reset())
 
   it("should return the result successfully when all parameters are valid", async () => {
@@ -39,10 +53,15 @@ describe("Mail Client", () => {
     // Store the API key and set it later so that other tests are not affected
     const curApiKey = process.env.POSTMAN_API_KEY
     process.env.POSTMAN_API_KEY = ""
+    // NOTE: This is because of typescript transpiling down to raw js
+    // Export default compiles down to module.exports.default, which is also
+    // done by babel.
+    // Read more here: https://www.typescriptlang.org/tsconfig#allowSyntheticDefaultImports
+    const _MailClientWithoutKey = (await import("../MailClient")).default
 
     // Act
     // NOTE: We require a new instance because the old one would already have the API key bound
-    const actual = () => new _MailClient()
+    const actual = () => new _MailClientWithoutKey()
 
     // Assert
     expect(actual).toThrowError("Postman.gov.sg API key cannot be empty")

@@ -1,20 +1,34 @@
-const autoBind = require("auto-bind")
-const express = require("express")
-const validator = require("validator")
+import autoBind from "auto-bind"
+import express, { Request, Response } from "express"
+import validator from "validator"
 
-const logger = require("@logger/logger")
+import logger from "@logger/logger"
 
-const { BadRequestError } = require("@errors/BadRequestError")
+import { BadRequestError } from "@errors/BadRequestError"
 
-const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-class UsersRouter {
-  constructor({ usersService }) {
+import UsersService from "@services/identity/UsersService"
+
+import { isError, RequestHandler } from "../types"
+
+interface UsersRouterProps {
+  usersService: UsersService
+}
+
+// eslint-disable-next-line import/prefer-default-export
+export class UsersRouter {
+  private readonly usersService
+
+  constructor({ usersService }: UsersRouterProps) {
     this.usersService = usersService
     autoBind(this)
   }
 
-  async sendEmailOtp(req, res) {
+  sendEmailOtp: RequestHandler<never, unknown, { email?: string }> = async (
+    req,
+    res
+  ) => {
     const { email } = req.body
     if (!email || !validator.isEmail(email)) {
       throw new BadRequestError("Please provide a valid email")
@@ -29,22 +43,37 @@ class UsersRouter {
       await this.usersService.sendEmailOtp(email)
       return res.sendStatus(200)
     } catch (err) {
-      logger.error(err.message)
-      throw new BadRequestError(err.message)
+      if (isError(err)) {
+        logger.error(err.message)
+        throw new BadRequestError(err.message)
+      } else {
+        // If we encountered something that isn't an error but still ends up in the error branch,
+        // log this to cloudwatch with the relevant details
+        logger.error(
+          `Encountered unknown error type: ${err} when sendEmailOtp with email: ${email}`
+        )
+      }
     }
   }
 
-  async verifyEmailOtp(req, res) {
+  verifyEmailOtp: RequestHandler<
+    never,
+    unknown,
+    { email: string; otp: string },
+    never,
+    { userId: string }
+  > = async (req, res) => {
     const { email, otp } = req.body
+    const { userId } = res.locals
     if (!this.usersService.verifyOtp(email, otp)) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByGitHubId(req.userId, { email })
+    await this.usersService.updateUserByGitHubId(userId, { email })
     return res.sendStatus(200)
   }
 
-  async sendMobileNumberOtp(req, res) {
+  async sendMobileNumberOtp(req: Request, res: Response) {
     const { mobile } = req.body
     if (!mobile || !validator.isMobilePhone(mobile)) {
       throw new BadRequestError("Please provide a valid mobile number")
@@ -54,13 +83,14 @@ class UsersRouter {
     return res.sendStatus(200)
   }
 
-  async verifyMobileNumberOtp(req, res) {
+  async verifyMobileNumberOtp(req: Request, res: Response) {
     const { mobile, otp } = req.body
+    const { userId } = res.locals
     if (!this.usersService.verifyOtp(mobile, otp)) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByGitHubId(req.userId, {
+    await this.usersService.updateUserByGitHubId(userId, {
       contactNumber: mobile,
     })
     return res.sendStatus(200)
@@ -86,5 +116,3 @@ class UsersRouter {
     return router
   }
 }
-
-module.exports = { UsersRouter }

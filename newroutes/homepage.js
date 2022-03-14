@@ -11,6 +11,8 @@ const {
 
 const { UpdateHomepageSchema } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class HomepageRouter {
   constructor({ homepagePageService }) {
     this.homepagePageService = homepagePageService
@@ -56,6 +58,8 @@ class HomepageRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/:siteName/homepage",

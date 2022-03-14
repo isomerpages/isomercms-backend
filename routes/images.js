@@ -13,6 +13,8 @@ const {
 const { File, ImageType } = require("@classes/File")
 const { MediaFile } = require("@classes/MediaFile")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory
   let imageFileName
@@ -174,6 +176,8 @@ async function moveImage(req, res) {
 
   return res.status(200).send("OK")
 }
+
+router.use(authMiddleware.verifyJwt)
 router.get("/:siteName/images", attachReadRouteHandlerWrapper(listImages))
 router.post("/:siteName/images", attachWriteRouteHandlerWrapper(createNewImage))
 router.get(

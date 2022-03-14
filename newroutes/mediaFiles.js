@@ -15,6 +15,8 @@ const {
   DeleteMediaFileRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class MediaFilesRouter {
   constructor({ mediaFileService }) {
     this.mediaFileService = mediaFileService
@@ -103,6 +105,8 @@ class MediaFilesRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.post(
       "/:siteName/media/:directoryName/pages",

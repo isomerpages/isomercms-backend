@@ -13,7 +13,6 @@ const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
 
 // Import middleware
 const { apiLogger } = require("@middleware/apiLogger")
-const { auth } = require("@middleware/auth")
 const { errorHandler } = require("@middleware/errorHandler")
 
 // Import routes
@@ -25,7 +24,6 @@ const documentsRouter = require("@routes/documents")
 const foldersRouter = require("@routes/folders")
 const homepageRouter = require("@routes/homepage")
 const imagesRouter = require("@routes/images")
-const indexRouter = require("@routes/index")
 const mediaSubfolderRouter = require("@routes/mediaSubfolder")
 const navigationRouter = require("@routes/navigation")
 const netlifyTomlRouter = require("@routes/netlifyToml")
@@ -48,15 +46,6 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const {
-  SubcollectionPageService,
-} = require("@root/services/fileServices/MdPageServices/SubcollectionPageService")
-const {
-  ConfigYmlService,
-} = require("@root/services/fileServices/YmlFileServices/ConfigYmlService")
-const {
-  FooterYmlService,
-} = require("@root/services/fileServices/YmlFileServices/FooterYmlService")
 const { SettingsService } = require("@services/configServices/SettingsService")
 const { GitHubService } = require("@services/db/GitHubService")
 const {
@@ -93,16 +82,27 @@ const {
   ResourcePageService,
 } = require("@services/fileServices/MdPageServices/ResourcePageService")
 const {
+  SubcollectionPageService,
+} = require("@services/fileServices/MdPageServices/SubcollectionPageService")
+const {
   UnlinkedPageService,
 } = require("@services/fileServices/MdPageServices/UnlinkedPageService")
 const {
   CollectionYmlService,
 } = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 const {
+  ConfigYmlService,
+} = require("@services/fileServices/YmlFileServices/ConfigYmlService")
+const {
+  FooterYmlService,
+} = require("@services/fileServices/YmlFileServices/FooterYmlService")
+const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
 const { MoverService } = require("@services/moverServices/MoverService")
+const { AuthService } = require("@services/utilServices/AuthService")
 
+const { AuthRouter } = require("./newroutes/auth")
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
 const { CollectionsRouter } = require("./newroutes/collections")
 const { MediaCategoriesRouter } = require("./newroutes/mediaCategories")
@@ -113,6 +113,7 @@ const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
 
+const authService = new AuthService()
 const gitHubService = new GitHubService({ axiosInstance })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
 const homepagePageService = new HomepagePageService({ gitHubService })
@@ -173,6 +174,7 @@ const settingsService = new SettingsService({
   navYmlService,
 })
 
+const authV2Router = new AuthRouter({ authService })
 const unlinkedPagesRouter = new UnlinkedPagesRouter({
   unlinkedPageService,
   unlinkedPagesDirectoryService,
@@ -217,14 +219,10 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
 
-// Use auth middleware
-app.use(auth)
-
 // Log api requests
 app.use(apiLogger)
 
 // Routes layer setup
-app.use("/v1", indexRouter)
 app.use("/v1/auth", authRouter)
 app.use("/v1/sites", sitesRouter)
 app.use("/v1/sites", pagesRouter)
@@ -243,6 +241,7 @@ app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
 
+app.use("/v2/auth", authV2Router.getRouter())
 app.use("/v2/sites", collectionPagesV2Router.getRouter())
 app.use("/v2/sites", unlinkedPagesRouter.getRouter())
 app.use("/v2/sites", collectionsV2Router.getRouter())
@@ -252,6 +251,14 @@ app.use("/v2/sites", mediaFilesV2Router.getRouter())
 app.use("/v2/sites", mediaDirectoryV2Router.getRouter())
 app.use("/v2/sites", resourceRoomV2Router.getRouter())
 app.use("/v2/sites", settingsV2Router.getRouter())
+
+// catch unknown routes
+app.use((req, res, next) => {
+  if (!req.route) {
+    return res.status(404).send("Unknown route requested")
+  }
+  return next()
+})
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

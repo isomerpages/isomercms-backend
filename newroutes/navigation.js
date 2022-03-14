@@ -11,6 +11,8 @@ const {
 
 const { UpdateNavigationRequestSchema } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class NavigationRouter {
   constructor({ navigationYmlService }) {
     this.navigationYmlService = navigationYmlService
@@ -54,6 +56,8 @@ class NavigationRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/:siteName/navigation",

@@ -3,6 +3,8 @@ const express = require("express")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class NetlifyTomlRouter {
   constructor({ netlifyTomlService }) {
     this.netlifyTomlService = netlifyTomlService
@@ -23,6 +25,8 @@ class NetlifyTomlRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/netlify-toml",

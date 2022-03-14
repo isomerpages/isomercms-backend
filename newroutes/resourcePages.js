@@ -16,6 +16,8 @@ const {
   DeleteResourcePageRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class ResourcePagesRouter {
   constructor({ resourcePageService }) {
     this.resourcePageService = resourcePageService
@@ -135,6 +137,8 @@ class ResourcePagesRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.post(
       "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",

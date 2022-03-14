@@ -16,6 +16,8 @@ const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const router = express.Router()
 
 async function listPages(req, res) {
@@ -208,6 +210,7 @@ async function moveUnlinkedPages(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get("/:siteName/pages", attachReadRouteHandlerWrapper(listPages))
 router.post(
   "/:siteName/pages/new/:pageName",

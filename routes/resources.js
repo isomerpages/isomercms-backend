@@ -15,6 +15,8 @@ const { File, ResourcePageType } = require("@classes/File")
 const { Resource } = require("@classes/Resource")
 const { ResourceRoom } = require("@classes/ResourceRoom")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 // Import errors
 
 // List resources
@@ -116,6 +118,7 @@ async function moveResources(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get("/:siteName/resources", attachReadRouteHandlerWrapper(listResources))
 router.post(
   "/:siteName/resources",

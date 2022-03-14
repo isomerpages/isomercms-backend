@@ -12,6 +12,8 @@ const {
 const { File, DocumentType } = require("@classes/File.js")
 const { MediaFile } = require("@classes/MediaFile.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const extractDirectoryAndFileName = (documentName) => {
   let documentDirectory
   let documentFileName
@@ -173,6 +175,7 @@ async function moveDocument(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get("/:siteName/documents", attachReadRouteHandlerWrapper(listDocuments))
 router.post(
   "/:siteName/documents",

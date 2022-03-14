@@ -11,6 +11,8 @@ const {
 // Import classes
 const { File, HomepageType } = require("@classes/File.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 // Constants
 const HOMEPAGE_INDEX_PATH = "index.md" // Empty string
 
@@ -56,6 +58,7 @@ async function updateHomepage(req, res) {
   return res.status(200).json({ content, sha: newSha })
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get("/:siteName/homepage", attachReadRouteHandlerWrapper(readHomepage))
 router.post(
   "/:siteName/homepage",

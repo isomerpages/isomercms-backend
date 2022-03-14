@@ -7,6 +7,8 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 // Import classes
 const { NetlifyToml } = require("@classes/NetlifyToml")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const router = express.Router()
 
 // List resources
@@ -28,6 +30,7 @@ async function getNetlifyToml(req, res) {
   return res.status(200).json({ netlifyTomlHeaderValues })
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get(
   "/:siteName/netlify-toml",
   attachReadRouteHandlerWrapper(getNetlifyToml)

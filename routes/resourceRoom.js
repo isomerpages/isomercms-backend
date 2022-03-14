@@ -10,6 +10,8 @@ const {
 
 const { ResourceRoom } = require("@classes/ResourceRoom.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 // Get resource room name
 async function getResourceRoomName(req, res) {
   const { accessToken } = req
@@ -61,6 +63,7 @@ async function deleteResourceRoom(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get(
   "/:siteName/resource-room",
   attachReadRouteHandlerWrapper(getResourceRoomName)

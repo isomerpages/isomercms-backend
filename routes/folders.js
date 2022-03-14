@@ -18,6 +18,8 @@ const {
   deslugifyCollectionName,
 } = require("@utils/utils.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const router = express.Router()
 
 // List pages and directories from all folders
@@ -148,6 +150,7 @@ async function renameSubfolder(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get(
   "/:siteName/folders/all",
   attachReadRouteHandlerWrapper(listAllFolderContent)

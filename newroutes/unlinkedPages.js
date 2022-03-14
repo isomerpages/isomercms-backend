@@ -17,6 +17,8 @@ const {
   MoveDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class UnlinkedPagesRouter {
   constructor({ unlinkedPageService, unlinkedPagesDirectoryService }) {
     this.unlinkedPageService = unlinkedPageService
@@ -153,6 +155,8 @@ class UnlinkedPagesRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/:siteName/pages",

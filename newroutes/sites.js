@@ -4,6 +4,8 @@ const express = require("express")
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class SitesRouter {
   constructor({ sitesService }) {
     this.sitesService = sitesService
@@ -61,6 +63,8 @@ class SitesRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.get("/", attachReadRouteHandlerWrapper(this.getSites))
     router.get("/:siteName", attachReadRouteHandlerWrapper(this.checkHasAccess))

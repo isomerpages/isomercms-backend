@@ -98,12 +98,13 @@ describe("Resource Page Service", () => {
 
   describe("getStagingUrl", () => {
     const stagingUrl = "https://repo-staging.netlify.app"
-    it("Retrieves the staging url for a site from config if available", async () => {
+    it("Retrieves the staging url for a site from config if available with higher priority over the description", async () => {
       mockConfigYmlService.read.mockResolvedValue({
         content: {
           staging: stagingUrl,
         },
       })
+      mockGithubService.getRepoInfo.mockResolvedValue(repoInfo2)
 
       await expect(service.getStagingUrl(reqDetails)).resolves.toEqual(
         stagingUrl

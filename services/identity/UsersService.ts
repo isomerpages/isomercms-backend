@@ -47,7 +47,7 @@ class UsersService {
     // that are allowed to login.
     const { DOMAIN_WHITELIST } = process.env
 
-    this.whitelistDomains = (DOMAIN_WHITELIST || "gov.sg")
+    this.whitelistDomains = (DOMAIN_WHITELIST || ".gov.sg")
       .split(";")
       .map((domain) => domain.toLowerCase().trim())
   }

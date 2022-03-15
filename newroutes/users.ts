@@ -1,5 +1,5 @@
 import autoBind from "auto-bind"
-import express, { Request, Response } from "express"
+import express from "express"
 import validator from "validator"
 
 import logger from "@logger/logger"
@@ -73,7 +73,11 @@ export class UsersRouter {
     return res.sendStatus(200)
   }
 
-  async sendMobileNumberOtp(req: Request, res: Response) {
+  sendMobileNumberOtp: RequestHandler<
+    never,
+    unknown,
+    { mobile?: string }
+  > = async (req, res) => {
     const { mobile } = req.body
     if (!mobile || !validator.isMobilePhone(mobile)) {
       throw new BadRequestError("Please provide a valid mobile number")
@@ -83,7 +87,13 @@ export class UsersRouter {
     return res.sendStatus(200)
   }
 
-  async verifyMobileNumberOtp(req: Request, res: Response) {
+  verifyMobileNumberOtp: RequestHandler<
+    never,
+    unknown,
+    { mobile: string; otp: string },
+    never,
+    { userId: string }
+  > = async (req, res) => {
     const { mobile, otp } = req.body
     const { userId } = res.locals
     if (!this.usersService.verifyOtp(mobile, otp)) {

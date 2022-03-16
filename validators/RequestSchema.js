@@ -62,9 +62,9 @@ const UpdateHomepageSchema = Joi.object({
     frontMatter: Joi.object({
       layout: Joi.string().required(),
       title: Joi.string().required(),
-      description: Joi.string(),
+      description: Joi.string().allow(""),
       permalink: Joi.string().required(),
-      notification: Joi.string(),
+      notification: Joi.string().allow(""),
       image: Joi.string(),
       sections: Joi.array().required(),
     }).required(),

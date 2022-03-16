@@ -85,18 +85,15 @@ describe("User Service", () => {
 
   it("should return the result of calling the update method by githubId on the db model", async () => {
     // Arrange
-    const mockUser = "user1"
+    const mockUser = { email: mockEmail }
 
     // Act
     await UsersService.updateUserByGitHubId(mockGithubId, mockUser)
 
     // Assert
-    expect(MockRepository.update).toBeCalledWith(
-      { user: mockUser },
-      {
-        where: { githubId: mockGithubId },
-      }
-    )
+    expect(MockRepository.update).toBeCalledWith(mockUser, {
+      where: { githubId: mockGithubId },
+    })
   })
 
   it("should return the result of calling the findOrCreate method by githubId on the db model", async () => {

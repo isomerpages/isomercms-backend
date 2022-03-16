@@ -63,12 +63,16 @@ describe("ContactUs Router", () => {
 
     it("rejects requests with incomplete body", async () => {
       // Missing layout
-      const incompleteDetails = _.cloneDeep(contactUsContent)
+      const incompleteFrontMatter = _.omit(contactUsContent.frontMatter, [
+        "layout",
+      ])
       const reqBody = {
-        content: incompleteDetails,
+        content: {
+          ...contactUsContent,
+          frontMatter: incompleteFrontMatter,
+        },
         sha: contactUsSha,
       }
-      delete incompleteDetails.frontMatter.layout
 
       await request(app)
         .post(`/${siteName}/contactUs`)

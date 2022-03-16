@@ -8,8 +8,9 @@
     "test": "source .env && jest",
     "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",
-    "format": "npx prettier --write .",
-    "check-format": "npx prettier --check .",
+    "lint-fix": "eslint --ignore-path .gitignore . --fix",
+    "format": "npx prettier --check .",
+    "format-fix": "npx prettier --write .",
     "prepare": "husky install",
     "version": "auto-changelog -p && git add CHANGELOG.md"
   },

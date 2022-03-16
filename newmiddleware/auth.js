@@ -30,14 +30,14 @@ class AuthMiddleware {
   }
 
   // Replace access token with site access token if it is available
-  useSiteAccessTokenIfAvailable(req, _res, next) {
+  async useSiteAccessTokenIfAvailable(req, _res, next) {
     const {
       accessToken: userAccessToken,
       userId,
       params: { siteName },
     } = req
 
-    const siteAccessToken = this.authMiddlewareService.retrieveSiteAccessTokenIfAvailable(
+    const siteAccessToken = await this.authMiddlewareService.retrieveSiteAccessTokenIfAvailable(
       { siteName, userAccessToken, userId }
     )
 

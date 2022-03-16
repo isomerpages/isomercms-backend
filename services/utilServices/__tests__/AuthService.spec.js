@@ -8,6 +8,7 @@ const validateStatus = require("@root/utils/axios-utils")
 jest.mock("axios")
 jest.mock("uuid/v4")
 jest.mock("@utils/jwt-utils")
+
 describe("Auth Service", () => {
   const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
@@ -18,11 +19,24 @@ describe("Auth Service", () => {
   const signedToken = "signedToken"
   const csrfState = "csrfState"
   const userId = "user"
+  const mockEmail = "email"
+  const mockContactNumber = "12345678"
+  const mockIsomerUserId = "isomer-user"
+  const mockUserId = "user"
 
   const { AuthService } = require("@services/utilServices/AuthService")
 
   const service = new AuthService()
 
+  jest.mock("@services/identity", () => ({
+    usersService: {
+      login: jest.fn().mockImplementation(() => mockIsomerUserId),
+      findByGitHubId: jest.fn().mockImplementation(() => ({
+        email: mockEmail,
+        contactNumber: mockContactNumber,
+      })),
+    },
+  }))
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -48,8 +62,7 @@ describe("Auth Service", () => {
       }
 
       uuid.mockImplementation(() => state)
-      jwtUtils.verifyToken.mockImplementation(() => token)
-      jwtUtils.decodeToken.mockImplementation(() => ({ state }))
+      jwtUtils.verifyToken.mockImplementation(() => ({ state }))
       jwtUtils.encryptToken.mockImplementation(() => token)
       jwtUtils.signToken.mockImplementation(() => signedToken)
       axios.post.mockImplementation(() => ({
@@ -57,7 +70,7 @@ describe("Auth Service", () => {
       }))
       axios.get.mockImplementation(() => ({
         data: {
-          login: "login",
+          login: mockUserId,
         },
       }))
 
@@ -87,15 +100,18 @@ describe("Auth Service", () => {
   })
 
   describe("getUserInfo", () => {
-    it("Able to retrieve user infod", async () => {
+    it("Able to retrieve user info", async () => {
       axios.get.mockImplementation(() => ({
         data: {
           login: userId,
         },
       }))
-      await expect(service.getUserInfo({ accessToken })).resolves.toEqual(
-        userId
-      )
+      await expect(service.getUserInfo({ accessToken })).resolves.toEqual({
+        userId,
+        email: mockEmail,
+        contactNumber: mockContactNumber,
+      })
+      expect()
     })
   })
 })

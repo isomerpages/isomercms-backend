@@ -48,12 +48,12 @@ class HomepageRouter {
       sha,
     } = req.body
 
-    const updateResp = await this.homepagePageService.update(
+    const updatedHomepage = await this.homepagePageService.update(
       { siteName, accessToken },
       { content: pageBody, frontMatter, sha }
     )
 
-    return res.status(200).json(updateResp)
+    return res.status(200).json(updatedHomepage)
   }
 
   getRouter() {

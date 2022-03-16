@@ -6,7 +6,7 @@
     "start": "ts-node ./bin/www",
     "dev:services": "docker compose up -d",
     "dev": "source .env && ts-node-dev --respawn ./bin/www",
-    "test": "source .env && jest",
+    "test": "source .env.test && jest",
     "release": "npm version $npm_config_update && git push --tags",
     "lint": "npx eslint .",
     "format": "npx prettier --write .",

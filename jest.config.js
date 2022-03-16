@@ -16,6 +16,7 @@ module.exports = {
     "^@validators/(.*)": "<rootDir>/validators/$1",
     "^@fixtures/(.*)": "<rootDir>/fixtures/$1",
     "^@mocks/(.*)": "<rootDir>/__mocks__/$1",
+    "^@tests/(.*)": "<rootDir>/tests/$1",
   },
   globalSetup: "<rootDir>/tests/setup.ts",
   globalTeardown: "<rootDir>/tests/teardown.ts",

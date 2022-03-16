@@ -6,7 +6,6 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
@@ -156,7 +155,11 @@ class UnlinkedPagesRouter {
   getRouter() {
     const router = express.Router()
 
-    router.use(authMiddleware.verifyJwt)
+    router.use(
+      "/:siteName/pages",
+      authMiddleware.verifyJwt,
+      authMiddleware.useSiteAccessTokenIfAvailable
+    )
 
     router.get(
       "/:siteName/pages",

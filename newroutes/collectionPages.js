@@ -171,7 +171,11 @@ class CollectionPagesRouter {
   getRouter() {
     const router = express.Router()
 
-    router.use(authMiddleware.verifyJwt)
+    router.use(
+      "/:siteName/collections/:collectionName",
+      authMiddleware.verifyJwt,
+      authMiddleware.useSiteAccessTokenIfAvailable
+    )
 
     router.post(
       "/:siteName/collections/:collectionName/pages",

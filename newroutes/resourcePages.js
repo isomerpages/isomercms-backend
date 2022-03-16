@@ -138,7 +138,11 @@ class ResourcePagesRouter {
   getRouter() {
     const router = express.Router()
 
-    router.use(authMiddleware.verifyJwt)
+    router.use(
+      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
+      authMiddleware.verifyJwt,
+      authMiddleware.useSiteAccessTokenIfAvailable
+    )
 
     router.post(
       "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",

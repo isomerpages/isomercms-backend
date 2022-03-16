@@ -107,7 +107,11 @@ class ResourceRoomRouter {
   getRouter() {
     const router = express.Router()
 
-    router.use(authMiddleware.verifyJwt)
+    router.use(
+      "/:siteName/resourceRoom",
+      authMiddleware.verifyJwt,
+      authMiddleware.useSiteAccessTokenIfAvailable
+    )
 
     router.get(
       "/:siteName/resourceRoom",

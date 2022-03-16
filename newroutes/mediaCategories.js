@@ -113,7 +113,11 @@ class MediaCategoriesRouter {
   getRouter() {
     const router = express.Router()
 
-    router.use(authMiddleware.verifyJwt)
+    router.use(
+      "/:siteName/media",
+      authMiddleware.verifyJwt,
+      authMiddleware.useSiteAccessTokenIfAvailable
+    )
 
     router.get(
       "/:siteName/media/:directoryName",

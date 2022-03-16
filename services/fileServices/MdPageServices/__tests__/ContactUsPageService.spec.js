@@ -111,19 +111,21 @@ describe("ContactUs Page Service", () => {
         ...mockContactUsContent.frontMatter,
         feedback: updatedFeedback,
       }
-
-      await expect(
-        service.update(reqDetails, {
-          fileName: CONTACT_US_FILE_NAME,
-          content: mockContent,
-          frontMatter: mockUpdatedFrontMatter,
-          sha: oldSha,
-        })
-      ).resolves.toMatchObject({
+      const updateReq = {
+        fileName: CONTACT_US_FILE_NAME,
+        content: mockContent,
+        frontMatter: mockUpdatedFrontMatter,
+        sha: oldSha,
+      }
+      const expectedResp = {
         content: { frontMatter: mockUpdatedFrontMatter, pageBody: mockContent },
         oldSha,
         newSha: mockContactUsSha,
-      })
+      }
+
+      await expect(
+        service.update(reqDetails, updateReq)
+      ).resolves.toMatchObject(expectedResp)
 
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
         mockUpdatedFrontMatter,
@@ -146,15 +148,16 @@ describe("ContactUs Page Service", () => {
     })
     it("Propagates the correct error on failed update", async () => {
       mockGithubService.update.mockRejectedValueOnce(new NotFoundError(""))
+      const updateReq = {
+        fileName: CONTACT_US_FILE_NAME,
+        content: mockContent,
+        frontMatter: mockFrontMatter,
+        sha: oldSha,
+      }
 
-      await expect(
-        service.update(reqDetails, {
-          fileName: CONTACT_US_FILE_NAME,
-          content: mockContent,
-          frontMatter: mockFrontMatter,
-          sha: oldSha,
-        })
-      ).rejects.toThrowError(NotFoundError)
+      await expect(service.update(reqDetails, updateReq)).rejects.toThrowError(
+        NotFoundError
+      )
 
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
         mockFrontMatter,

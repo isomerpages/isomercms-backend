@@ -4,6 +4,8 @@ import { Umzug, SequelizeStorage } from "umzug"
 import { sequelize } from "./database"
 
 const setupDb = async () => {
+  console.log("setting up database for testing")
+
   const migrator = new Umzug({
     migrations: {
       glob: "database/migrations/*.js",
@@ -26,6 +28,7 @@ const setupDb = async () => {
   })
 
   // Run all migrations in the folder
+  console.log("running existing migrations...")
   await migrator.up()
 
   return migrator

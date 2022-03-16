@@ -47,12 +47,12 @@ class ContactUsRouter {
       sha,
     } = req.body
 
-    const updateResp = await this.contactUsPageService.update(
+    const updatedContactUsPage = await this.contactUsPageService.update(
       { siteName, accessToken },
       { content: pageBody, frontMatter, sha }
     )
 
-    return res.status(200).json(updateResp)
+    return res.status(200).json(updatedContactUsPage)
   }
 
   getRouter() {

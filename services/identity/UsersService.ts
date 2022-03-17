@@ -1,5 +1,6 @@
 import { ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
+import { RequireAtLeastOne } from "type-fest"
 
 import { User } from "@database/models"
 
@@ -60,8 +61,12 @@ class UsersService {
     return this.repository.findOne({ where: { githubId } })
   }
 
-  async updateUserByGitHubId(githubId: string, user: string) {
-    await this.repository.update({ user }, { where: { githubId } })
+  async updateUserByGitHubId(
+    githubId: string,
+    // NOTE: This ensures that the caller passes in at least 1 property of User
+    user: RequireAtLeastOne<User, keyof User>
+  ) {
+    await this.repository.update(user, { where: { githubId } })
   }
 
   async findOrCreate(githubId: string | undefined) {

@@ -59,7 +59,7 @@ const verifyJwt = (req, res, next) => {
 
   if (isValidE2E) {
     req.accessToken = E2E_TEST_GH_TOKEN
-    req.userId = E2E_TEST_USER
+    res.locals.userId = E2E_TEST_USER
   } else {
     try {
       const {
@@ -75,7 +75,7 @@ const verifyJwt = (req, res, next) => {
       }
 
       req.accessToken = jwtUtils.decryptToken(retrievedToken)
-      req.userId = retrievedId
+      res.locals.userId = retrievedId
     } catch (err) {
       logger.error("Authentication error")
       if (err.name === "NotLoggedInError") {
@@ -96,7 +96,7 @@ const whoamiAuth = (req, res, next) => {
 
   if (isValidE2E) {
     req.accessToken = E2E_TEST_GH_TOKEN
-    req.userId = E2E_TEST_USER
+    res.locals.userId = E2E_TEST_USER
   } else {
     let retrievedToken
     try {
@@ -115,9 +115,12 @@ const whoamiAuth = (req, res, next) => {
 }
 
 // Replace access token with site access token if it is available
-const useSiteAccessTokenIfAvailable = async (req, _res, next) => {
+const useSiteAccessTokenIfAvailable = async (req, res, next) => {
   const { authService, sitesService } = identityServices
-  const { accessToken: userAccessToken, userId } = req
+  const { accessToken: userAccessToken } = req
+  const {
+    locals: { userId },
+  } = res
   const { siteName } = req.params
 
   // Check if site is onboarded to Isomer identity, otherwise continue using user access token

@@ -11,6 +11,8 @@ const {
 // Import Classes
 const { Settings } = require("@classes/Settings.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 async function getSettings(req, res) {
   const { accessToken } = req
   const { siteName } = req.params
@@ -29,6 +31,7 @@ async function updateSettings(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get("/:siteName/settings", attachReadRouteHandlerWrapper(getSettings))
 router.post(
   "/:siteName/settings",

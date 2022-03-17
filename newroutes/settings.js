@@ -12,6 +12,8 @@ const {
 
 const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const {
   SettingsService,
 } = require("../services/configServices/SettingsService")
@@ -80,6 +82,8 @@ class SettingsRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/:siteName/settings",

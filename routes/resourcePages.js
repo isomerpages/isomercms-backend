@@ -16,6 +16,8 @@ const { File, ResourcePageType } = require("@classes/File.js")
 const { Resource } = require("@classes/Resource.js")
 const { ResourceRoom } = require("@classes/ResourceRoom.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 // List pages in resource
 async function listResourcePages(req, res) {
   const { accessToken } = req
@@ -165,6 +167,8 @@ async function renameResourcePage(req, res) {
     .status(200)
     .json({ resourceName, pageName: newPageName, pageContent, sha: newSha })
 }
+
+router.use(authMiddleware.verifyJwt)
 router.get(
   "/:siteName/resources/:resourceName",
   attachReadRouteHandlerWrapper(listResourcePages)

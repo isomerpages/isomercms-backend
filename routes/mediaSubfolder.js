@@ -11,6 +11,8 @@ const {
 // Import classes
 const { MediaSubfolder } = require("@classes/MediaSubfolder")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 // Create new collection
 async function createSubfolder(req, res) {
   const { accessToken } = req
@@ -72,6 +74,7 @@ async function renameSubfolder(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.post(
   "/:siteName/media/:mediaType/:folderPath",
   attachWriteRouteHandlerWrapper(createSubfolder)

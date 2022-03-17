@@ -12,6 +12,8 @@ const {
 // Import Classes
 const { File, DataType } = require("@classes/File.js")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 const NAVIGATION_PATH = "navigation.yml"
 
 async function getNavigation(req, res) {
@@ -48,6 +50,7 @@ async function updateNavigation(req, res) {
   return res.status(200).send("OK")
 }
 
+router.use(authMiddleware.verifyJwt)
 router.get(
   "/:siteName/navigation",
   attachReadRouteHandlerWrapper(getNavigation)

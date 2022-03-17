@@ -46,12 +46,12 @@ class NavigationRouter {
       body: { content: fileContent, sha },
     } = req
 
-    const updateResp = await this.navigationYmlService.update(
+    const updatedNavigationPage = await this.navigationYmlService.update(
       { siteName, accessToken },
       { fileContent, sha }
     )
 
-    return res.status(200).json(updateResp)
+    return res.status(200).json(updatedNavigationPage)
   }
 
   getRouter() {

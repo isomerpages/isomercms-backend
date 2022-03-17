@@ -8,7 +8,7 @@ class AuthMiddleware {
   }
 
   verifyJwt(req, res, next) {
-    const { cookies, url } = req
+    const { cookies, originalUrl: url } = req
     const { accessToken, userId } = this.authMiddlewareService.verifyJwt({
       cookies,
       url,
@@ -19,7 +19,7 @@ class AuthMiddleware {
   }
 
   whoamiAuth(req, res, next) {
-    const { cookies, url } = req
+    const { cookies, originalUrl: url } = req
     const { accessToken, userId } = this.authMiddlewareService.whoamiAuth({
       cookies,
       url,

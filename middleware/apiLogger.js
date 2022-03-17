@@ -16,7 +16,7 @@ apiLogger.use((req, res, next) => {
 
   // Get user GitHub id
   let userId
-  if (req.userId) userId = req.userId
+  if (res.locals.userId) userId = res.locals.userId
 
   let logMessage = `User ${userId} from IP address ${
     ipAddress ? `(IP: ${ipAddress})` : undefined

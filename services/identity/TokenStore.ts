@@ -33,4 +33,4 @@ class TokenStore {
   }
 }
 
-module.exports = TokenStore
+export default TokenStore

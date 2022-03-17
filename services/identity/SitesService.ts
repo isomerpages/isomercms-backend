@@ -1,11 +1,11 @@
-import { Attributes } from "sequelize"
+import { ModelStatic } from "sequelize"
 
 import { Site } from "@database/models"
 
 import TokenStore from "./TokenStore"
 
 interface SitesServiceProps {
-  repository: Attributes<Site>
+  repository: ModelStatic<Site>
   tokenStore: TokenStore
 }
 
@@ -21,16 +21,22 @@ class SitesService {
     this.tokenStore = tokenStore
   }
 
-  async getBySiteName(siteName: string) {
+  async getBySiteName(siteName: string): Promise<Site | null> {
     const site = await this.repository.findOne({
       where: { name: siteName },
     })
+
     return site
   }
 
   async getSiteAccessToken(siteName: string) {
-    const { apiTokenName } = await this.getBySiteName(siteName)
-    const token = await this.tokenStore.getToken(apiTokenName)
+    const site = await this.getBySiteName(siteName)
+
+    if (!site) {
+      return null
+    }
+
+    const token = await this.tokenStore.getToken(site.apiTokenName)
     return token
   }
 }

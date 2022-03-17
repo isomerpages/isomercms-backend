@@ -1,3 +1,5 @@
+import { Sequelize } from "sequelize-typescript"
+
 import logger from "@logger/logger"
 
 import { User, Site } from "@database/models"
@@ -43,12 +45,16 @@ const smsClient = IS_LOCAL_DEV
 
 export const sitesService = new SitesService({ repository: Site, tokenStore })
 
-export const usersService = new UsersService({
-  repository: User,
-  otp: totpGenerator,
-  mailer,
-  smsClient,
-})
+// NOTE: This is because the usersService requires an instance of sequelize
+// as it requires a transaction for certain methods
+export const getUsersService = (sequelize: Sequelize) =>
+  new UsersService({
+    repository: User,
+    otp: totpGenerator,
+    mailer,
+    smsClient,
+    sequelize,
+  })
 
 // NOTE: This is because the identity auth service has an
 // explicit dependency on an axios instance so we have to pass

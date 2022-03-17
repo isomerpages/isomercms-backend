@@ -1,8 +1,13 @@
 import logger from "@logger/logger"
 
-import sequelize from "./database/index"
+import initSequelize from "@database/index"
+import { Site, SiteMember, User } from "@database/models"
+import { getUsersService } from "@services/identity"
 
 const path = require("path")
+
+const sequelize = initSequelize([Site, SiteMember, User])
+const usersService = getUsersService(sequelize)
 
 const axios = require("axios")
 const cookieParser = require("cookie-parser")
@@ -104,7 +109,6 @@ const {
 const {
   NavYmlService,
 } = require("@services/fileServices/YmlFileServices/NavYmlService")
-const { usersService } = require("@services/identity")
 const { MoverService } = require("@services/moverServices/MoverService")
 
 const { CollectionPagesRouter } = require("./newroutes/collectionPages")
@@ -268,6 +272,7 @@ app.use((req, res, next) => {
 
 // error handler
 app.use(errorHandler)
+
 logger.info("Connecting to Sequelize")
 sequelize
   .authenticate()

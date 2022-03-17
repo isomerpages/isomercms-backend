@@ -1,7 +1,18 @@
-const { totp } = require("otplib")
+import { totp } from "otplib"
+
+interface TotpGeneratorProps {
+  secret: string
+  expiry: number | undefined
+}
 
 class TotpGenerator {
-  constructor({ secret, expiry }) {
+  private readonly generator: typeof totp
+
+  private readonly expiry: number
+
+  private readonly secret: string
+
+  constructor({ secret, expiry }: TotpGeneratorProps) {
     this.secret = secret
     this.expiry = expiry || 5
     // We divide expiry window by half and accept otps from the previous window
@@ -21,19 +32,18 @@ class TotpGenerator {
     return Math.floor(this.expiry)
   }
 
-  getSecret(email) {
+  getSecret(email: string) {
     return `${email.toLowerCase()}_${this.secret}`
   }
 
-  generate(email) {
+  generate(email: string) {
     const secret = this.getSecret(email)
     return this.generator.generate(secret)
   }
 
-  verify(email, otp) {
+  verify(email: string, otp: string) {
     const secret = this.getSecret(email)
     return this.generator.verify({ token: otp, secret })
   }
 }
-
-module.exports = TotpGenerator
+export default TotpGenerator

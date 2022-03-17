@@ -7,7 +7,8 @@
     },
     "extends": [
         "airbnb-base",
-        "prettier"
+        "prettier",
+        "plugin:import/typescript"
     ],
     "plugins": ["only-warn", "import"],
     "parserOptions": {
@@ -16,6 +17,8 @@
     "rules": {
         "no-underscore-dangle": "off",
         "class-methods-use-this": "off",
+        "import/no-unresolved": "error",
+        "import/extensions": ["warn", "never"],
         "import/order": [
             "error",
             {
@@ -25,8 +28,7 @@
                 },
                 "newlines-between": "always",
                 "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
-                "pathGroups": [
-                    {
+                "pathGroups": [{
                         "pattern": "@logger/**",
                         "group": "internal",
                         "position": "before"
@@ -57,17 +59,34 @@
                         "position": "before"
                     },
                     {
-                      "pattern": "@validators/**",
-                      "group": "internal",
-                      "position": "before"
+                        "pattern": "@validators/**",
+                        "group": "internal",
+                        "position": "before"
                     }
                 ]
             }
         ]
     },
+    "overrides": [
+        {
+          "files": ["*.ts", "*.tsx"],
+          "parser": "@typescript-eslint/parser",
+          "extends": ["plugin:@typescript-eslint/recommended"]
+        }
+      ],    
     "settings": {
+        "import/parsers": {
+            "@typescript-eslint/parser": [".ts", ".tsx"]
+          },      
         "import/resolver": {
-          "alias": [
+            "typescript": {
+                // always try to resolve types under `<root>@types` directory even it doesn't contain any source code, like `@types/unist`
+                "alwaysTryTypes": true 
+            },        
+            "node": {
+                "extensions": [".js", ".jsx", ".ts", ".tsx"]
+            },
+            "alias": [
                 ["@root", "./"],
                 ["@classes", "./classes"],
                 ["@errors", "./errors"],
@@ -79,7 +98,8 @@
                 ["@database", "./database"],
                 ["@services", "./services"],
                 ["@validators", "./validators"],
-                ["@fixtures", "./fixtures"]
+                ["@fixtures", "./fixtures"],
+                ["@database", "./database"]
             ]
         }
     },

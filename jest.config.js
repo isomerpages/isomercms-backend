@@ -15,5 +15,6 @@ module.exports = {
     "^@services/(.*)": "<rootDir>/services/$1",
     "^@validators/(.*)": "<rootDir>/validators/$1",
     "^@fixtures/(.*)": "<rootDir>/fixtures/$1",
+    "^@mocks/(.*)": "<rootDir>/__mocks__/$1",
   },
 }

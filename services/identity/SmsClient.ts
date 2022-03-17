@@ -4,13 +4,16 @@ import logger from "@logger/logger"
 
 import { AxiosClient } from "@root/types"
 
-const { POSTMAN_API_KEY, POSTMAN_SMS_CRED_NAME } = process.env
+const { POSTMAN_SMS_CRED_NAME } = process.env
+
 const POSTMAN_API_URL = "https://api.postman.gov.sg/v1"
 
 class SmsClient {
-  axiosClient: AxiosClient
+  private readonly axiosClient: AxiosClient
 
   constructor() {
+    const { POSTMAN_API_KEY } = process.env
+
     if (!POSTMAN_API_KEY)
       throw new Error("Postman.gov.sg API key cannot be empty.")
 

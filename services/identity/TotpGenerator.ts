@@ -6,11 +6,11 @@ interface TotpGeneratorProps {
 }
 
 class TotpGenerator {
-  generator: typeof totp
+  private readonly generator: typeof totp
 
-  expiry: number
+  private readonly expiry: number
 
-  secret: string
+  private readonly secret: string
 
   constructor({ secret, expiry }: TotpGeneratorProps) {
     this.secret = secret

@@ -46,5 +46,4 @@ class TotpGenerator {
     return this.generator.verify({ token: otp, secret })
   }
 }
-
 export default TotpGenerator

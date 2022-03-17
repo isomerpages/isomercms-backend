@@ -37,5 +37,4 @@ class MailClient {
     }
   }
 }
-
 export default MailClient

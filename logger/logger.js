@@ -110,4 +110,4 @@ class CloudWatchLogger {
 
 const logger = new CloudWatchLogger()
 
-module.exports.default = logger
+module.exports = logger

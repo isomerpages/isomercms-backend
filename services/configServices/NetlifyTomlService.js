@@ -29,7 +29,8 @@ class NetlifyTomlService {
     const netlifyTomlReadableContent = toml.parse(Base64.decode(content))
 
     // Headers is an array of objects, specifying a set of access rules for each specified path
-    // Under our current assumption, we apply the first set of access rules to all paths
+    // Under our current assumption, the file only contains a single set of access rules,
+    // so we apply the first set of access rules to all paths
     const netlifyTomlHeaderValues = netlifyTomlReadableContent.headers[0].values
 
     return netlifyTomlHeaderValues

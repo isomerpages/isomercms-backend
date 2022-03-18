@@ -1,4 +1,13 @@
+import logger from "@logger/logger"
+
+import initSequelize from "@database/index"
+import { Site, SiteMember, User } from "@database/models"
+import { getUsersService } from "@services/identity"
+
 const path = require("path")
+
+const sequelize = initSequelize([Site, SiteMember, User])
+const usersService = getUsersService(sequelize)
 
 const axios = require("axios")
 const cookieParser = require("cookie-parser")
@@ -6,7 +15,6 @@ const cors = require("cors")
 const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
-const logger = require("morgan")
 
 // Env vars
 const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
@@ -113,6 +121,7 @@ const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
 const { SettingsRouter } = require("./newroutes/settings")
 const { SitesRouter } = require("./newroutes/sites")
 const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
+const { UsersRouter } = require("./newroutes/users")
 const { SitesService } = require("./services/utilServices/SitesService")
 
 const authService = new AuthService()
@@ -191,6 +200,7 @@ const collectionsV2Router = new CollectionsRouter({
   collectionDirectoryService,
   subcollectionDirectoryService,
 })
+const usersRouter = new UsersRouter({ usersService })
 const resourcePagesV2Router = new ResourcePagesRouter({
   resourcePageService,
 })
@@ -211,7 +221,6 @@ const settingsV2Router = new SettingsRouter({ settingsService })
 const app = express()
 app.use(helmet())
 
-app.use(logger("dev"))
 app.use(
   cors({
     origin: FRONTEND_URL,
@@ -244,6 +253,7 @@ app.use("/v1/sites", homepageRouter)
 app.use("/v1/sites", settingsRouter)
 app.use("/v1/sites", navigationRouter)
 app.use("/v1/sites", netlifyTomlRouter)
+app.use("/v1/user", usersRouter.getRouter())
 
 app.use("/v2/auth", authV2Router.getRouter())
 app.use("/v2/sites", sitesV2Router.getRouter())
@@ -274,5 +284,18 @@ app.use((req, res, next) => {
 
 // error handler
 app.use(errorHandler)
+
+logger.info("Connecting to Sequelize")
+sequelize
+  .authenticate()
+  .then(() => {
+    logger.info("Connection has been established successfully.")
+  })
+  .catch((err) => {
+    logger.error(`Unable to connect to the database: ${err}`)
+    // If we cannot connect to the db, report an error using status code
+    // And gracefully shut down the application since we can't serve client
+    process.exit(1)
+  })
 
 module.exports = app

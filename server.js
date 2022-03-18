@@ -2,7 +2,7 @@ import logger from "@logger/logger"
 
 import initSequelize from "@database/index"
 import { Site, SiteMember, User } from "@database/models"
-import { getUsersService } from "@services/identity"
+import { getIdentityAuthService, getUsersService } from "@services/identity"
 
 const path = require("path")
 
@@ -126,6 +126,7 @@ const { SitesService } = require("./services/utilServices/SitesService")
 
 const authService = new AuthService()
 const gitHubService = new GitHubService({ axiosInstance })
+const identityAuthService = getIdentityAuthService(gitHubService)
 const collectionYmlService = new CollectionYmlService({ gitHubService })
 const homepagePageService = new HomepagePageService({ gitHubService })
 const configYmlService = new ConfigYmlService({ gitHubService })

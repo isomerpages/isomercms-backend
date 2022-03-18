@@ -8,6 +8,7 @@ import { BadRequestError } from "@errors/BadRequestError"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
+import { authMiddleware } from "@root/newmiddleware"
 import UsersService from "@services/identity/UsersService"
 
 import { isError, RequestHandler } from "../types"
@@ -108,6 +109,8 @@ export class UsersRouter {
 
   getRouter() {
     const router = express.Router()
+
+    router.use(authMiddleware.verifyJwt)
 
     router.post("/email/otp", attachReadRouteHandlerWrapper(this.sendEmailOtp))
     router.post(

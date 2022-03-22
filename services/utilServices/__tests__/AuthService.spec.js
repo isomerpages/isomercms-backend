@@ -1,13 +1,17 @@
+jest.mock("axios", () => ({
+  get: jest.fn(),
+  post: jest.fn(),
+}))
+jest.mock("uuid/v4")
+jest.mock("@utils/jwt-utils")
+
 const axios = require("axios")
 const uuid = require("uuid/v4")
 
 const jwtUtils = require("@utils/jwt-utils")
 
 const validateStatus = require("@root/utils/axios-utils")
-
-jest.mock("axios")
-jest.mock("uuid/v4")
-jest.mock("@utils/jwt-utils")
+const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
   const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
@@ -24,19 +28,15 @@ describe("Auth Service", () => {
   const mockIsomerUserId = "isomer-user"
   const mockUserId = "user"
 
-  const { AuthService } = require("@services/utilServices/AuthService")
+  const mockUsersService = {
+    login: jest.fn().mockImplementation(() => mockIsomerUserId),
+    findByGitHubId: jest.fn().mockImplementation(() => ({
+      email: mockEmail,
+      contactNumber: mockContactNumber,
+    })),
+  }
+  const service = new AuthService({ usersService: mockUsersService })
 
-  const service = new AuthService()
-
-  jest.mock("@services/identity", () => ({
-    usersService: {
-      login: jest.fn().mockImplementation(() => mockIsomerUserId),
-      findByGitHubId: jest.fn().mockImplementation(() => ({
-        email: mockEmail,
-        contactNumber: mockContactNumber,
-      })),
-    },
-  }))
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -96,6 +96,7 @@ describe("Auth Service", () => {
           "Content-Type": "application/json",
         },
       })
+      expect(mockUsersService.login).toHaveBeenCalledWith(mockUserId)
     })
   })
 
@@ -111,7 +112,7 @@ describe("Auth Service", () => {
         email: mockEmail,
         contactNumber: mockContactNumber,
       })
-      expect()
+      expect(mockUsersService.findByGitHubId).toHaveBeenCalledWith(userId)
     })
   })
 })

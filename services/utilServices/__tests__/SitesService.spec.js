@@ -1,6 +1,8 @@
-const axios = require("axios")
+jest.mock("axios", () => ({
+  get: jest.fn(),
+}))
 
-jest.mock("axios")
+const axios = require("axios")
 
 const { NotFoundError } = require("@errors/NotFoundError")
 

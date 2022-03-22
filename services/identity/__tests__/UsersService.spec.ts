@@ -3,6 +3,7 @@ import { ModelStatic } from "sequelize/types"
 
 import { User } from "@root/database/models"
 
+import MailClient from "../MailClient"
 import SmsClient from "../SmsClient"
 import TotpGenerator from "../TotpGenerator"
 import _UsersService from "../UsersService"
@@ -29,7 +30,7 @@ const MockSequelize = {
 
 const UsersService = new _UsersService({
   otp: (MockOtp as unknown) as TotpGenerator,
-  mailer: MockMailer,
+  mailer: (MockMailer as unknown) as MailClient,
   smsClient: (MockSmsClient as unknown) as SmsClient,
   repository: (MockRepository as unknown) as ModelStatic<User>,
   sequelize: (MockSequelize as unknown) as Sequelize,
@@ -85,18 +86,17 @@ describe("User Service", () => {
 
   it("should return the result of calling the update method by githubId on the db model", async () => {
     // Arrange
-    const mockUser = "user1"
+    const mockUser = {
+      githubId: "user1",
+    }
 
     // Act
     await UsersService.updateUserByGitHubId(mockGithubId, mockUser)
 
     // Assert
-    expect(MockRepository.update).toBeCalledWith(
-      { user: mockUser },
-      {
-        where: { githubId: mockGithubId },
-      }
-    )
+    expect(MockRepository.update).toBeCalledWith(mockUser, {
+      where: { githubId: mockGithubId },
+    })
   })
 
   it("should return the result of calling the findOrCreate method by githubId on the db model", async () => {
@@ -152,7 +152,7 @@ describe("User Service", () => {
     // NOTE: Need to reinitialise to force the new whitelist to be used
     const NewUserService = new _UsersService({
       otp: (MockOtp as unknown) as TotpGenerator,
-      mailer: MockMailer,
+      mailer: (MockOtp as unknown) as MailClient,
       smsClient: (MockSmsClient as unknown) as SmsClient,
       repository: (MockRepository as unknown) as ModelStatic<User>,
       sequelize: (MockSequelize as unknown) as Sequelize,

@@ -1,13 +1,11 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { Directory, FolderType } = require("@classes/Directory.js")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 // List pages and directories in folder
 async function listDirectoryContent(req, res) {
@@ -32,10 +30,6 @@ async function listDirectoryContent(req, res) {
   return res.status(200).json({ directoryContents })
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/files/:path",
-  attachReadRouteHandlerWrapper(listDirectoryContent)
-)
+router.get("/:path", attachReadRouteHandlerWrapper(listDirectoryContent))
 
 module.exports = router

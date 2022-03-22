@@ -1,6 +1,6 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import middleware
 const { NotFoundError } = require("@errors/NotFoundError")
@@ -14,8 +14,6 @@ const {
 const { File, ResourcePageType } = require("@classes/File")
 const { Resource } = require("@classes/Resource")
 const { ResourceRoom } = require("@classes/ResourceRoom")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 // Import errors
 
@@ -118,22 +116,18 @@ async function moveResources(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get("/:siteName/resources", attachReadRouteHandlerWrapper(listResources))
-router.post(
-  "/:siteName/resources",
-  attachRollbackRouteHandlerWrapper(createNewResource)
-)
+router.get("/", attachReadRouteHandlerWrapper(listResources))
+router.post("/", attachRollbackRouteHandlerWrapper(createNewResource))
 router.delete(
-  "/:siteName/resources/:resourceName",
+  "/:resourceName",
   attachRollbackRouteHandlerWrapper(deleteResource)
 )
 router.post(
-  "/:siteName/resources/:resourceName/rename/:newResourceName",
+  "/:resourceName/rename/:newResourceName",
   attachRollbackRouteHandlerWrapper(renameResource)
 )
 router.post(
-  "/:siteName/resources/:resourceName/move/:newResourceName",
+  "/:resourceName/move/:newResourceName",
   attachRollbackRouteHandlerWrapper(moveResources)
 )
 

@@ -1,6 +1,6 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import classes
 const {
@@ -11,8 +11,6 @@ const {
 
 const { File, DocumentType } = require("@classes/File.js")
 const { MediaFile } = require("@classes/MediaFile.js")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 const extractDirectoryAndFileName = (documentName) => {
   let documentDirectory
@@ -175,30 +173,17 @@ async function moveDocument(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get("/:siteName/documents", attachReadRouteHandlerWrapper(listDocuments))
+router.get("/", attachReadRouteHandlerWrapper(listDocuments))
+router.post("/", attachWriteRouteHandlerWrapper(createNewDocument))
+router.get("/:documentName", attachReadRouteHandlerWrapper(readDocument))
+router.post("/:documentName", attachWriteRouteHandlerWrapper(updateDocument))
+router.delete("/:documentName", attachWriteRouteHandlerWrapper(deleteDocument))
 router.post(
-  "/:siteName/documents",
-  attachWriteRouteHandlerWrapper(createNewDocument)
-)
-router.get(
-  "/:siteName/documents/:documentName",
-  attachReadRouteHandlerWrapper(readDocument)
-)
-router.post(
-  "/:siteName/documents/:documentName",
-  attachWriteRouteHandlerWrapper(updateDocument)
-)
-router.delete(
-  "/:siteName/documents/:documentName",
-  attachWriteRouteHandlerWrapper(deleteDocument)
-)
-router.post(
-  "/:siteName/documents/:documentName/rename/:newDocumentName",
+  "/:documentName/rename/:newDocumentName",
   attachRollbackRouteHandlerWrapper(renameDocument)
 )
 router.post(
-  "/:siteName/documents/:documentName/move/:newDocumentName",
+  "/:documentName/move/:newDocumentName",
   attachRollbackRouteHandlerWrapper(moveDocument)
 )
 

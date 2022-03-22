@@ -1,6 +1,6 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import middleware
 const { NotFoundError } = require("@errors/NotFoundError")
@@ -15,8 +15,6 @@ const {
 const { File, ResourcePageType } = require("@classes/File.js")
 const { Resource } = require("@classes/Resource.js")
 const { ResourceRoom } = require("@classes/ResourceRoom.js")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 // List pages in resource
 async function listResourcePages(req, res) {
@@ -168,29 +166,22 @@ async function renameResourcePage(req, res) {
     .json({ resourceName, pageName: newPageName, pageContent, sha: newSha })
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/resources/:resourceName",
-  attachReadRouteHandlerWrapper(listResourcePages)
-)
+router.get("/", attachReadRouteHandlerWrapper(listResourcePages))
 router.post(
-  "/:siteName/resources/:resourceName/pages/new/:pageName",
+  "/pages/new/:pageName",
   attachRollbackRouteHandlerWrapper(createNewResourcePage)
 )
-router.get(
-  "/:siteName/resources/:resourceName/pages/:pageName",
-  attachReadRouteHandlerWrapper(readResourcePage)
-)
+router.get("/pages/:pageName", attachReadRouteHandlerWrapper(readResourcePage))
 router.post(
-  "/:siteName/resources/:resourceName/pages/:pageName",
+  "/pages/:pageName",
   attachWriteRouteHandlerWrapper(updateResourcePage)
 )
 router.delete(
-  "/:siteName/resources/:resourceName/pages/:pageName",
+  "/pages/:pageName",
   attachRollbackRouteHandlerWrapper(deleteResourcePage)
 )
 router.post(
-  "/:siteName/resources/:resourceName/pages/:pageName/rename/:newPageName",
+  "/pages/:pageName/rename/:newPageName",
   attachRollbackRouteHandlerWrapper(renameResourcePage)
 )
 

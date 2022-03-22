@@ -1,6 +1,6 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import middleware
 const {
@@ -10,8 +10,6 @@ const {
 
 // Import Classes
 const { Settings } = require("@classes/Settings.js")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 async function getSettings(req, res) {
   const { accessToken } = req
@@ -31,11 +29,7 @@ async function updateSettings(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get("/:siteName/settings", attachReadRouteHandlerWrapper(getSettings))
-router.post(
-  "/:siteName/settings",
-  attachRollbackRouteHandlerWrapper(updateSettings)
-)
+router.get("/", attachReadRouteHandlerWrapper(getSettings))
+router.post("/", attachRollbackRouteHandlerWrapper(updateSettings))
 
 module.exports = router

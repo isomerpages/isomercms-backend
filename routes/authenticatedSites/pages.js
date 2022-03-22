@@ -16,9 +16,7 @@ const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 async function listPages(req, res) {
   const { accessToken } = req
@@ -210,30 +208,17 @@ async function moveUnlinkedPages(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get("/:siteName/pages", attachReadRouteHandlerWrapper(listPages))
+router.get("/", attachReadRouteHandlerWrapper(listPages))
+router.post("/new/:pageName", attachWriteRouteHandlerWrapper(createPage))
+router.get("/:pageName", attachReadRouteHandlerWrapper(readPage))
+router.post("/:pageName", attachWriteRouteHandlerWrapper(updatePage))
+router.delete("/:pageName", attachWriteRouteHandlerWrapper(deletePage))
 router.post(
-  "/:siteName/pages/new/:pageName",
-  attachWriteRouteHandlerWrapper(createPage)
-)
-router.get(
-  "/:siteName/pages/:pageName",
-  attachReadRouteHandlerWrapper(readPage)
-)
-router.post(
-  "/:siteName/pages/:pageName",
-  attachWriteRouteHandlerWrapper(updatePage)
-)
-router.delete(
-  "/:siteName/pages/:pageName",
-  attachWriteRouteHandlerWrapper(deletePage)
-)
-router.post(
-  "/:siteName/pages/:pageName/rename/:newPageName",
+  "/:pageName/rename/:newPageName",
   attachRollbackRouteHandlerWrapper(renamePage)
 )
 router.post(
-  "/:siteName/pages/move/:newPagePath",
+  "/move/:newPagePath",
   attachRollbackRouteHandlerWrapper(moveUnlinkedPages)
 )
 

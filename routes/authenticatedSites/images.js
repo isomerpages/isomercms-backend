@@ -1,6 +1,6 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import middleware
 const {
@@ -12,8 +12,6 @@ const {
 // Import classes
 const { File, ImageType } = require("@classes/File")
 const { MediaFile } = require("@classes/MediaFile")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 const extractDirectoryAndFileName = (imageName) => {
   let imageDirectory
@@ -177,27 +175,17 @@ async function moveImage(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get("/:siteName/images", attachReadRouteHandlerWrapper(listImages))
-router.post("/:siteName/images", attachWriteRouteHandlerWrapper(createNewImage))
-router.get(
-  "/:siteName/images/:imageName",
-  attachReadRouteHandlerWrapper(readImage)
-)
+router.get("/", attachReadRouteHandlerWrapper(listImages))
+router.post("/", attachWriteRouteHandlerWrapper(createNewImage))
+router.get("/:imageName", attachReadRouteHandlerWrapper(readImage))
+router.post("/:imageName", attachWriteRouteHandlerWrapper(updateImage))
+router.delete("/:imageName", attachWriteRouteHandlerWrapper(deleteImage))
 router.post(
-  "/:siteName/images/:imageName",
-  attachWriteRouteHandlerWrapper(updateImage)
-)
-router.delete(
-  "/:siteName/images/:imageName",
-  attachWriteRouteHandlerWrapper(deleteImage)
-)
-router.post(
-  "/:siteName/images/:imageName/rename/:newImageName",
+  "/:imageName/rename/:newImageName",
   attachRollbackRouteHandlerWrapper(renameImage)
 )
 router.post(
-  "/:siteName/images/:imageName/move/:newImageName",
+  "/:imageName/move/:newImageName",
   attachRollbackRouteHandlerWrapper(moveImage)
 )
 

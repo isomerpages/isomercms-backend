@@ -1,7 +1,7 @@
 const express = require("express")
 const yaml = require("yaml")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import middleware
 const {
@@ -11,8 +11,6 @@ const {
 
 // Import Classes
 const { File, DataType } = require("@classes/File.js")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 const NAVIGATION_PATH = "navigation.yml"
 
@@ -50,14 +48,7 @@ async function updateNavigation(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/navigation",
-  attachReadRouteHandlerWrapper(getNavigation)
-)
-router.post(
-  "/:siteName/navigation",
-  attachWriteRouteHandlerWrapper(updateNavigation)
-)
+router.get("/", attachReadRouteHandlerWrapper(getNavigation))
+router.post("/", attachWriteRouteHandlerWrapper(updateNavigation))
 
 module.exports = router

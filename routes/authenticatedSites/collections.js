@@ -15,9 +15,7 @@ const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // List collections
 async function listCollections(req, res) {
@@ -172,25 +170,18 @@ async function moveFiles(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/collections",
-  attachReadRouteHandlerWrapper(listCollections)
-)
-router.post(
-  "/:siteName/collections",
-  attachRollbackRouteHandlerWrapper(createNewCollection)
-)
+router.get("/", attachReadRouteHandlerWrapper(listCollections))
+router.post("/", attachRollbackRouteHandlerWrapper(createNewCollection))
 router.delete(
-  "/:siteName/collections/:collectionName",
+  "/:collectionName",
   attachRollbackRouteHandlerWrapper(deleteCollection)
 )
 router.post(
-  "/:siteName/collections/:collectionName/rename/:newCollectionName",
+  "/:collectionName/rename/:newCollectionName",
   attachRollbackRouteHandlerWrapper(renameCollection)
 )
 router.post(
-  "/:siteName/collections/:collectionPath/move/:targetPath",
+  "/:collectionPath/move/:targetPath",
   attachRollbackRouteHandlerWrapper(moveFiles)
 )
 

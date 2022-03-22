@@ -18,9 +18,7 @@ const {
   deslugifyCollectionName,
 } = require("@utils/utils.js")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {
@@ -150,17 +148,13 @@ async function renameSubfolder(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/folders/all",
-  attachReadRouteHandlerWrapper(listAllFolderContent)
-)
+router.get("/all", attachReadRouteHandlerWrapper(listAllFolderContent))
 router.delete(
-  "/:siteName/folders/:folderName/subfolder/:subfolderName",
+  "/:folderName/subfolder/:subfolderName",
   attachRollbackRouteHandlerWrapper(deleteSubfolder)
 )
 router.post(
-  "/:siteName/folders/:folderName/subfolder/:subfolderName/rename/:newSubfolderName",
+  "/:folderName/subfolder/:subfolderName/rename/:newSubfolderName",
   attachRollbackRouteHandlerWrapper(renameSubfolder)
 )
 

@@ -1,6 +1,6 @@
 const express = require("express")
 
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // Import classes
 const {
@@ -9,8 +9,6 @@ const {
 } = require("@middleware/routeHandler")
 
 const { ResourceRoom } = require("@classes/ResourceRoom.js")
-
-const { authMiddleware } = require("@root/newmiddleware/index")
 
 // Get resource room name
 async function getResourceRoomName(req, res) {
@@ -63,22 +61,12 @@ async function deleteResourceRoom(req, res) {
   return res.status(200).send("OK")
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/resource-room",
-  attachReadRouteHandlerWrapper(getResourceRoomName)
-)
+router.get("/", attachReadRouteHandlerWrapper(getResourceRoomName))
+router.post("/", attachRollbackRouteHandlerWrapper(createResourceRoom))
 router.post(
-  "/:siteName/resource-room",
-  attachRollbackRouteHandlerWrapper(createResourceRoom)
-)
-router.post(
-  "/:siteName/resource-room/:resourceRoom",
+  "/:resourceRoom",
   attachRollbackRouteHandlerWrapper(renameResourceRoom)
 )
-router.delete(
-  "/:siteName/resource-room",
-  attachRollbackRouteHandlerWrapper(deleteResourceRoom)
-)
+router.delete("", attachRollbackRouteHandlerWrapper(deleteResourceRoom))
 
 module.exports = router

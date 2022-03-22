@@ -7,6 +7,8 @@ import { getIdentityAuthService, getUsersService } from "@services/identity"
 import { getAuthMiddleware } from "./newmiddleware"
 import getAuthenticatedSubrouter from "./newroutes/authenticated"
 import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
+import getAuthenticatedSubrouterV1 from "./routes/authenticated"
+import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
 
 const path = require("path")
 
@@ -28,24 +30,6 @@ const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
 // Import routes
 const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
-
-const authRouter = require("@routes/auth")
-const collectionPagesRouter = require("@routes/collectionPages")
-const collectionsRouter = require("@routes/collections")
-const directoryRouter = require("@routes/directory")
-const documentsRouter = require("@routes/documents")
-const foldersRouter = require("@routes/folders")
-const homepageRouter = require("@routes/homepage")
-const imagesRouter = require("@routes/images")
-const mediaSubfolderRouter = require("@routes/mediaSubfolder")
-const navigationRouter = require("@routes/navigation")
-const netlifyTomlRouter = require("@routes/netlifyToml")
-const pagesRouter = require("@routes/pages")
-const resourcePagesRouter = require("@routes/resourcePages")
-const resourceRoomRouter = require("@routes/resourceRoom")
-const resourcesRouter = require("@routes/resources")
-const settingsRouter = require("@routes/settings")
-const sitesRouter = require("@routes/sites")
 
 const axiosInstance = axios.create({
   baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
@@ -74,6 +58,14 @@ const identityAuthService = getIdentityAuthService(gitHubService)
 const configYmlService = new ConfigYmlService({ gitHubService })
 
 const authMiddleware = getAuthMiddleware({ identityAuthService })
+
+const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
+  authMiddleware,
+  usersService,
+})
+const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
+  authMiddleware,
+})
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authMiddleware,
@@ -106,24 +98,10 @@ app.use(express.static(path.join(__dirname, "public")))
 app.use(apiLogger)
 
 // Routes layer setup
-app.use("/v1/auth", authRouter)
-app.use("/v1/sites", sitesRouter)
-app.use("/v1/sites", pagesRouter)
-app.use("/v1/sites", collectionsRouter)
-app.use("/v1/sites", collectionPagesRouter)
-app.use("/v1/sites", directoryRouter)
-app.use("/v1/sites", foldersRouter)
-app.use("/v1/sites", resourceRoomRouter)
-app.use("/v1/sites", resourcesRouter)
-app.use("/v1/sites", resourcePagesRouter)
-app.use("/v1/sites", imagesRouter)
-app.use("/v1/sites", documentsRouter)
-app.use("/v1/sites", mediaSubfolderRouter)
-app.use("/v1/sites", homepageRouter)
-app.use("/v1/sites", settingsRouter)
-app.use("/v1/sites", navigationRouter)
-app.use("/v1/sites", netlifyTomlRouter)
-app.use("/v1/user", usersRouter.getRouter())
+// To avoid refactoring auth router v1 to use dependency injection
+app.use("/v1/auth", authV2Router.getRouter())
+app.use("/v1/sites/:siteName", authenticatedSitesSubrouterV1)
+app.use("/v1", authenticatedSubrouterV1)
 
 app.use("/v2/auth", authV2Router.getRouter())
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)

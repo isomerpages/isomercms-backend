@@ -21,9 +21,7 @@ const { File, CollectionPageType } = require("@classes/File")
 // Import utils
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
-const router = express.Router()
+const router = express.Router({ mergeParams: true })
 
 // List pages in collection
 async function listCollectionPages(req, res) {
@@ -244,33 +242,26 @@ async function renameCollectionPage(req, res) {
     .json({ collectionName, pageName: newPageName, pageContent, sha: newSha })
 }
 
-router.use(authMiddleware.verifyJwt)
-router.get(
-  "/:siteName/collections/:collectionName",
-  attachReadRouteHandlerWrapper(listCollectionPages)
-)
-router.get(
-  "/:siteName/collections/:collectionName/pages",
-  attachReadRouteHandlerWrapper(listCollectionPagesDetails)
-)
+router.get("/", attachReadRouteHandlerWrapper(listCollectionPages))
+router.get("/pages", attachReadRouteHandlerWrapper(listCollectionPagesDetails))
 router.post(
-  "/:siteName/collections/:collectionName/pages/new/:pageName",
+  "/pages/new/:pageName",
   attachRollbackRouteHandlerWrapper(createCollectionPage)
 )
 router.get(
-  "/:siteName/collections/:collectionName/pages/:pageName",
+  "/pages/:pageName",
   attachReadRouteHandlerWrapper(readCollectionPage)
 )
 router.post(
-  "/:siteName/collections/:collectionName/pages/:pageName",
+  "/pages/:pageName",
   attachWriteRouteHandlerWrapper(updateCollectionPage)
 )
 router.delete(
-  "/:siteName/collections/:collectionName/pages/:pageName",
+  "/pages/:pageName",
   attachRollbackRouteHandlerWrapper(deleteCollectionPage)
 )
 router.post(
-  "/:siteName/collections/:collectionName/pages/:pageName/rename/:newPageName",
+  "/pages/:pageName/rename/:newPageName",
   attachRollbackRouteHandlerWrapper(renameCollectionPage)
 )
 

@@ -14,8 +14,6 @@ const {
   RenameResourceDirectoryRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class ResourceRoomRouter {
   constructor({ resourceRoomDirectoryService }) {
     this.resourceRoomDirectoryService = resourceRoomDirectoryService
@@ -105,32 +103,26 @@ class ResourceRoomRouter {
   }
 
   getRouter() {
-    const router = express.Router()
-
-    router.use(
-      "/:siteName/resourceRoom",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
+    const router = express.Router({ mergeParams: true })
 
     router.get(
-      "/:siteName/resourceRoom",
+      "/",
       attachReadRouteHandlerWrapper(this.getResourceRoomDirectoryName)
     )
     router.post(
-      "/:siteName/resourceRoom",
+      "/",
       attachRollbackRouteHandlerWrapper(this.createResourceRoomDirectory)
     )
     router.get(
-      "/:siteName/resourceRoom/:resourceRoomName",
-      attachRollbackRouteHandlerWrapper(this.listAllResourceCategories)
+      "/:resourceRoomName",
+      attachReadRouteHandlerWrapper(this.listAllResourceCategories)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName",
+      "/:resourceRoomName",
       attachRollbackRouteHandlerWrapper(this.renameResourceRoomDirectory)
     )
     router.delete(
-      "/:siteName/resourceRoom/:resourceRoomName",
+      "/:resourceRoomName",
       attachRollbackRouteHandlerWrapper(this.deleteResourceRoomDirectory)
     )
 

@@ -15,8 +15,6 @@ const {
   MoveResourceDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class ResourceCategoriesRouter {
   constructor({ resourceDirectoryService }) {
     this.resourceDirectoryService = resourceDirectoryService
@@ -114,32 +112,26 @@ class ResourceCategoriesRouter {
   }
 
   getRouter() {
-    const router = express.Router()
-
-    router.use(
-      "/:siteName/resourceRoom/:resourceRoomName/resources",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
+    const router = express.Router({ mergeParams: true })
 
     router.get(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
+      "/:resourceCategoryName",
       attachReadRouteHandlerWrapper(this.listResourceDirectoryFiles)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources",
+      "/",
       attachRollbackRouteHandlerWrapper(this.createResourceDirectory)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
+      "/:resourceCategoryName",
       attachRollbackRouteHandlerWrapper(this.renameResourceDirectory)
     )
     router.delete(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName",
+      "/:resourceCategoryName",
       attachRollbackRouteHandlerWrapper(this.deleteResourceDirectory)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/move",
+      "/:resourceCategoryName/move",
       attachRollbackRouteHandlerWrapper(this.moveResourceDirectoryPages)
     )
 

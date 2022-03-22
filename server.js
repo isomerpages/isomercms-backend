@@ -4,6 +4,10 @@ import initSequelize from "@database/index"
 import { Site, SiteMember, User } from "@database/models"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 
+import { getAuthMiddleware } from "./newmiddleware"
+import getAuthenticatedSubrouter from "./newroutes/authenticated"
+import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
+
 const path = require("path")
 
 const sequelize = initSequelize([Site, SiteMember, User])
@@ -20,10 +24,11 @@ const createError = require("http-errors")
 const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
 
 // Import middleware
+
+// Import routes
 const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
 
-// Import routes
 const authRouter = require("@routes/auth")
 const collectionPagesRouter = require("@routes/collectionPages")
 const collectionsRouter = require("@routes/collections")
@@ -54,170 +59,34 @@ axiosInstance.interceptors.request.use((config) => ({
   },
 }))
 
-const { SettingsService } = require("@services/configServices/SettingsService")
 const { GitHubService } = require("@services/db/GitHubService")
-const {
-  BaseDirectoryService,
-} = require("@services/directoryServices/BaseDirectoryService")
-const {
-  CollectionDirectoryService,
-} = require("@services/directoryServices/CollectionDirectoryService")
-const {
-  MediaDirectoryService,
-} = require("@services/directoryServices/MediaDirectoryService")
-const {
-  ResourceDirectoryService,
-} = require("@services/directoryServices/ResourceDirectoryService")
-const {
-  ResourceRoomDirectoryService,
-} = require("@services/directoryServices/ResourceRoomDirectoryService")
-const {
-  SubcollectionDirectoryService,
-} = require("@services/directoryServices/SubcollectionDirectoryService")
-const {
-  UnlinkedPagesDirectoryService,
-} = require("@services/directoryServices/UnlinkedPagesDirectoryService")
-const {
-  CollectionPageService,
-} = require("@services/fileServices/MdPageServices/CollectionPageService")
-const {
-  HomepagePageService,
-} = require("@services/fileServices/MdPageServices/HomepagePageService")
-const {
-  MediaFileService,
-} = require("@services/fileServices/MdPageServices/MediaFileService")
-const {
-  ResourcePageService,
-} = require("@services/fileServices/MdPageServices/ResourcePageService")
-const {
-  SubcollectionPageService,
-} = require("@services/fileServices/MdPageServices/SubcollectionPageService")
-const {
-  UnlinkedPageService,
-} = require("@services/fileServices/MdPageServices/UnlinkedPageService")
-const {
-  CollectionYmlService,
-} = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 const {
   ConfigYmlService,
 } = require("@services/fileServices/YmlFileServices/ConfigYmlService")
-const {
-  FooterYmlService,
-} = require("@services/fileServices/YmlFileServices/FooterYmlService")
-const {
-  NavYmlService,
-} = require("@services/fileServices/YmlFileServices/NavYmlService")
-const { MoverService } = require("@services/moverServices/MoverService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const { AuthRouter } = require("./newroutes/auth")
-const { CollectionPagesRouter } = require("./newroutes/collectionPages")
-const { CollectionsRouter } = require("./newroutes/collections")
-const { MediaCategoriesRouter } = require("./newroutes/mediaCategories")
-const { MediaFilesRouter } = require("./newroutes/mediaFiles")
-const { ResourceCategoriesRouter } = require("./newroutes/resourceCategories")
-const { ResourcePagesRouter } = require("./newroutes/resourcePages")
-const { ResourceRoomRouter } = require("./newroutes/resourceRoom")
-const { SettingsRouter } = require("./newroutes/settings")
-const { SitesRouter } = require("./newroutes/sites")
-const { UnlinkedPagesRouter } = require("./newroutes/unlinkedPages")
-const { UsersRouter } = require("./newroutes/users")
-const { SitesService } = require("./services/utilServices/SitesService")
 
-const authService = new AuthService()
+const authService = new AuthService({ usersService })
+
 const gitHubService = new GitHubService({ axiosInstance })
 const identityAuthService = getIdentityAuthService(gitHubService)
-const collectionYmlService = new CollectionYmlService({ gitHubService })
-const homepagePageService = new HomepagePageService({ gitHubService })
 const configYmlService = new ConfigYmlService({ gitHubService })
-const footerYmlService = new FooterYmlService({ gitHubService })
-const navYmlService = new NavYmlService({ gitHubService })
-const sitesService = new SitesService({ gitHubService, configYmlService })
-const collectionPageService = new CollectionPageService({
-  gitHubService,
-  collectionYmlService,
-})
-const subcollectionPageService = new SubcollectionPageService({
-  gitHubService,
-  collectionYmlService,
-})
-const unlinkedPageService = new UnlinkedPageService({ gitHubService })
-const resourcePageService = new ResourcePageService({ gitHubService })
-const mediaFileService = new MediaFileService({ gitHubService })
-const moverService = new MoverService({
-  unlinkedPageService,
-  collectionPageService,
-  subcollectionPageService,
-})
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
-const unlinkedPagesDirectoryService = new UnlinkedPagesDirectoryService({
-  baseDirectoryService,
-  moverService,
-})
-const collectionDirectoryService = new CollectionDirectoryService({
-  baseDirectoryService,
-  navYmlService,
-  collectionYmlService,
-  moverService,
-})
-const subcollectionDirectoryService = new SubcollectionDirectoryService({
-  baseDirectoryService,
-  collectionYmlService,
-  moverService,
-  subcollectionPageService,
-  gitHubService,
-})
-const resourceDirectoryService = new ResourceDirectoryService({
-  baseDirectoryService,
-  gitHubService,
-})
-const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
-  baseDirectoryService,
-  configYmlService,
-  gitHubService,
-})
-const mediaDirectoryService = new MediaDirectoryService({
-  baseDirectoryService,
-  gitHubService,
-})
-const settingsService = new SettingsService({
-  homepagePageService,
-  configYmlService,
-  footerYmlService,
-  navYmlService,
-})
 
-const authV2Router = new AuthRouter({ authService })
-const sitesV2Router = new SitesRouter({ sitesService })
-const unlinkedPagesRouter = new UnlinkedPagesRouter({
-  unlinkedPageService,
-  unlinkedPagesDirectoryService,
+const authMiddleware = getAuthMiddleware({ identityAuthService })
+
+const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
+  authMiddleware,
+  gitHubService,
+  configYmlService,
+  usersService,
 })
-const collectionPagesV2Router = new CollectionPagesRouter({
-  collectionPageService,
-  subcollectionPageService,
+const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
+  authMiddleware,
+  gitHubService,
+  configYmlService,
 })
-const collectionsV2Router = new CollectionsRouter({
-  collectionDirectoryService,
-  subcollectionDirectoryService,
-})
-const usersRouter = new UsersRouter({ usersService })
-const resourcePagesV2Router = new ResourcePagesRouter({
-  resourcePageService,
-})
-const resourceDirectoryV2Router = new ResourceCategoriesRouter({
-  resourceDirectoryService,
-})
-const mediaFilesV2Router = new MediaFilesRouter({
-  mediaFileService,
-})
-const mediaDirectoryV2Router = new MediaCategoriesRouter({
-  mediaDirectoryService,
-})
-const resourceRoomV2Router = new ResourceRoomRouter({
-  resourceRoomDirectoryService,
-})
-const settingsV2Router = new SettingsRouter({ settingsService })
+const authV2Router = new AuthRouter({ authMiddleware, authService })
 
 const app = express()
 app.use(helmet())
@@ -257,16 +126,8 @@ app.use("/v1/sites", netlifyTomlRouter)
 app.use("/v1/user", usersRouter.getRouter())
 
 app.use("/v2/auth", authV2Router.getRouter())
-app.use("/v2/sites", sitesV2Router.getRouter())
-app.use("/v2/sites", collectionPagesV2Router.getRouter())
-app.use("/v2/sites", unlinkedPagesRouter.getRouter())
-app.use("/v2/sites", collectionsV2Router.getRouter())
-app.use("/v2/sites", resourcePagesV2Router.getRouter())
-app.use("/v2/sites", resourceDirectoryV2Router.getRouter())
-app.use("/v2/sites", mediaFilesV2Router.getRouter())
-app.use("/v2/sites", mediaDirectoryV2Router.getRouter())
-app.use("/v2/sites", resourceRoomV2Router.getRouter())
-app.use("/v2/sites", settingsV2Router.getRouter())
+app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
+app.use("/v2", authenticatedSubrouterV2)
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 

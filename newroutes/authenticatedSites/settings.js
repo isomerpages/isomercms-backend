@@ -12,11 +12,7 @@ const {
 
 const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
-const {
-  SettingsService,
-} = require("../services/configServices/SettingsService")
+const { SettingsService } = require("@services/configServices/SettingsService")
 
 class SettingsRouter {
   constructor({ settingsService }) {
@@ -81,22 +77,10 @@ class SettingsRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(
-      "/:siteName/settings",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
-
-    router.get(
-      "/:siteName/settings",
-      attachReadRouteHandlerWrapper(this.readSettingsPage)
-    )
-    router.post(
-      "/:siteName/settings",
-      attachRollbackRouteHandlerWrapper(this.updateSettingsPage)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.readSettingsPage))
+    router.post("/", attachRollbackRouteHandlerWrapper(this.updateSettingsPage))
 
     return router
   }

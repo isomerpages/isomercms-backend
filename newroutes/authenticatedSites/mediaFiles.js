@@ -15,8 +15,6 @@ const {
   DeleteMediaFileRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class MediaFilesRouter {
   constructor({ mediaFileService }) {
     this.mediaFileService = mediaFileService
@@ -104,28 +102,16 @@ class MediaFilesRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(
-      "/:siteName/media/:directoryName/pages",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
-
+    router.post("/", attachRollbackRouteHandlerWrapper(this.createMediaFile))
+    router.get("/:fileName", attachReadRouteHandlerWrapper(this.readMediaFile))
     router.post(
-      "/:siteName/media/:directoryName/pages",
-      attachRollbackRouteHandlerWrapper(this.createMediaFile)
-    )
-    router.get(
-      "/:siteName/media/:directoryName/pages/:fileName",
-      attachReadRouteHandlerWrapper(this.readMediaFile)
-    )
-    router.post(
-      "/:siteName/media/:directoryName/pages/:fileName",
+      "/:fileName",
       attachRollbackRouteHandlerWrapper(this.updateMediaFile)
     )
     router.delete(
-      "/:siteName/media/:directoryName/pages/:fileName",
+      "/:fileName",
       attachRollbackRouteHandlerWrapper(this.deleteMediaFile)
     )
 

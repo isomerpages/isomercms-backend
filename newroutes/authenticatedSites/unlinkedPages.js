@@ -16,8 +16,6 @@ const {
   MoveDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class UnlinkedPagesRouter {
   constructor({ unlinkedPageService, unlinkedPagesDirectoryService }) {
     this.unlinkedPageService = unlinkedPageService
@@ -153,36 +151,27 @@ class UnlinkedPagesRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(
-      "/:siteName/pages",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
-
-    router.get(
-      "/:siteName/pages",
-      attachReadRouteHandlerWrapper(this.listAllUnlinkedPages)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.listAllUnlinkedPages))
     router.post(
-      "/:siteName/pages/pages",
+      "/pages",
       attachRollbackRouteHandlerWrapper(this.createUnlinkedPage)
     )
     router.get(
-      "/:siteName/pages/pages/:pageName",
+      "/pages/:pageName",
       attachReadRouteHandlerWrapper(this.readUnlinkedPage)
     )
     router.post(
-      "/:siteName/pages/pages/:pageName",
+      "/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.updateUnlinkedPage)
     )
     router.delete(
-      "/:siteName/pages/pages/:pageName",
+      "/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.deleteUnlinkedPage)
     )
     router.post(
-      "/:siteName/pages/move",
+      "/move",
       attachRollbackRouteHandlerWrapper(this.moveUnlinkedPages)
     )
 

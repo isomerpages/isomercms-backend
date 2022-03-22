@@ -16,8 +16,6 @@ const {
   MoveDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class CollectionsRouter {
   constructor({ collectionDirectoryService, subcollectionDirectoryService }) {
     this.collectionDirectoryService = collectionDirectoryService
@@ -216,64 +214,55 @@ class CollectionsRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(
-      "/:siteName/collections",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
-
+    router.get("/", attachReadRouteHandlerWrapper(this.listAllCollections))
     router.get(
-      "/:siteName/collections",
-      attachReadRouteHandlerWrapper(this.listAllCollections)
-    )
-    router.get(
-      "/:siteName/collections/:collectionName",
+      "/:collectionName",
       attachReadRouteHandlerWrapper(this.listCollectionDirectoryFiles)
     )
     router.get(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+      "/:collectionName/subcollections/:subcollectionName",
       attachReadRouteHandlerWrapper(this.listCollectionDirectoryFiles)
     )
     router.post(
-      "/:siteName/collections",
+      "/",
       attachRollbackRouteHandlerWrapper(this.createCollectionDirectory)
     )
     router.post(
-      "/:siteName/collections/:collectionName/subcollections",
+      "/:collectionName/subcollections",
       attachRollbackRouteHandlerWrapper(this.createCollectionDirectory)
     )
     router.post(
-      "/:siteName/collections/:collectionName",
+      "/:collectionName",
       attachRollbackRouteHandlerWrapper(this.renameCollectionDirectory)
     )
     router.post(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+      "/:collectionName/subcollections/:subcollectionName",
       attachRollbackRouteHandlerWrapper(this.renameCollectionDirectory)
     )
     router.delete(
-      "/:siteName/collections/:collectionName",
+      "/:collectionName",
       attachRollbackRouteHandlerWrapper(this.deleteCollectionDirectory)
     )
     router.delete(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
+      "/:collectionName/subcollections/:subcollectionName",
       attachRollbackRouteHandlerWrapper(this.deleteCollectionDirectory)
     )
     router.post(
-      "/:siteName/collections/:collectionName/reorder",
+      "/:collectionName/reorder",
       attachRollbackRouteHandlerWrapper(this.reorderCollectionDirectory)
     )
     router.post(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
+      "/:collectionName/subcollections/:subcollectionName/reorder",
       attachRollbackRouteHandlerWrapper(this.reorderCollectionDirectory)
     )
     router.post(
-      "/:siteName/collections/:collectionName/move",
+      "/:collectionName/move",
       attachRollbackRouteHandlerWrapper(this.moveCollectionDirectoryPages)
     )
     router.post(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
+      "/:collectionName/subcollections/:subcollectionName/move",
       attachRollbackRouteHandlerWrapper(this.moveCollectionDirectoryPages)
     )
 

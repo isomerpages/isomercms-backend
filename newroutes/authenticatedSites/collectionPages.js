@@ -15,8 +15,6 @@ const {
   DeletePageRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class CollectionPagesRouter {
   constructor({ collectionPageService, subcollectionPageService }) {
     this.collectionPageService = collectionPageService
@@ -169,44 +167,38 @@ class CollectionPagesRouter {
   }
 
   getRouter() {
-    const router = express.Router()
-
-    router.use(
-      "/:siteName/collections/:collectionName",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
+    const router = express.Router({ mergeParams: true })
 
     router.post(
-      "/:siteName/collections/:collectionName/pages",
+      "/pages",
       attachRollbackRouteHandlerWrapper(this.createCollectionPage)
     )
     router.post(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
+      "/subcollections/:subcollectionName/pages",
       attachRollbackRouteHandlerWrapper(this.createCollectionPage)
     )
     router.get(
-      "/:siteName/collections/:collectionName/pages/:pageName",
+      "/pages/:pageName",
       attachReadRouteHandlerWrapper(this.readCollectionPage)
     )
     router.get(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+      "/subcollections/:subcollectionName/pages/:pageName",
       attachReadRouteHandlerWrapper(this.readCollectionPage)
     )
     router.post(
-      "/:siteName/collections/:collectionName/pages/:pageName",
+      "/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.updateCollectionPage)
     )
     router.post(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+      "/subcollections/:subcollectionName/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.updateCollectionPage)
     )
     router.delete(
-      "/:siteName/collections/:collectionName/pages/:pageName",
+      "/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.deleteCollectionPage)
     )
     router.delete(
-      "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
+      "/subcollections/:subcollectionName/pages/:pageName",
       attachRollbackRouteHandlerWrapper(this.deleteCollectionPage)
     )
 

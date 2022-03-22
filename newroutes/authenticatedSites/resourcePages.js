@@ -16,8 +16,6 @@ const {
   DeleteResourcePageRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class ResourcePagesRouter {
   constructor({ resourcePageService }) {
     this.resourcePageService = resourcePageService
@@ -136,28 +134,19 @@ class ResourcePagesRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
-      authMiddleware.verifyJwt,
-      authMiddleware.useSiteAccessTokenIfAvailable
-    )
-
-    router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages",
-      attachRollbackRouteHandlerWrapper(this.createResourcePage)
-    )
+    router.post("/", attachRollbackRouteHandlerWrapper(this.createResourcePage))
     router.get(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
+      "/:pageName",
       attachReadRouteHandlerWrapper(this.readResourcePage)
     )
     router.post(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
+      "/:pageName",
       attachRollbackRouteHandlerWrapper(this.updateResourcePage)
     )
     router.delete(
-      "/:siteName/resourceRoom/:resourceRoomName/resources/:resourceCategoryName/pages/:pageName",
+      "/:pageName",
       attachRollbackRouteHandlerWrapper(this.deleteResourcePage)
     )
 

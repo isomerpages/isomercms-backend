@@ -9,12 +9,13 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-// Import services
-const identityServices = require("@services/identity")
-
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
 class AuthService {
+  constructor({ usersService }) {
+    this.usersService = usersService
+  }
+
   async getAuthRedirectDetails() {
     const state = uuid()
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&state=${state}&scope=repo`
@@ -67,7 +68,7 @@ class AuthService {
     if (!githubId) throw AuthError("Failed to retrieve user data")
 
     // Create user if does not exists. Set last logged in to current time.
-    const user = await identityServices.usersService.login(githubId)
+    const user = await this.usersService.login(githubId)
     if (!user) throw Error("Failed to create user")
 
     const token = jwtUtils.signToken({
@@ -94,10 +95,9 @@ class AuthService {
       })
       const userId = resp.data.login
 
-      const {
-        email,
-        contactNumber,
-      } = await identityServices.usersService.findByGitHubId(userId)
+      const { email, contactNumber } = await this.usersService.findByGitHubId(
+        userId
+      )
       return { userId, email, contactNumber }
     } catch (err) {
       return undefined

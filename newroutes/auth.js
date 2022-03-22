@@ -7,8 +7,6 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const { FRONTEND_URL } = process.env
 const { isSecure } = require("@utils/auth-utils")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 const AUTH_TOKEN_EXPIRY_MS = parseInt(
   process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
   10
@@ -18,8 +16,9 @@ const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
 class AuthRouter {
-  constructor({ authService }) {
+  constructor({ authService, authMiddleware }) {
     this.authService = authService
+    this.authMiddleware = authMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -100,7 +99,7 @@ class AuthRouter {
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
-      authMiddleware.whoamiAuth,
+      this.authMiddleware.whoamiAuth,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

@@ -1,3 +1,5 @@
+import { Base64 } from "js-base64"
+
 const axios = require("axios")
 
 const validateStatus = require("@utils/axios-utils")

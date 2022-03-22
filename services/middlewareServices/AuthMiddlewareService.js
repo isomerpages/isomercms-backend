@@ -8,15 +8,17 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const jwtUtils = require("@utils/jwt-utils")
 
 const { BadRequestError } = require("@root/errors/BadRequestError")
-
-// Import services
-const identityServices = require("@services/identity")
+const { sitesService } = require("@services/identity")
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
 const GENERAL_ACCESS_PATHS = ["/v1/sites", "/v1/auth/whoami"]
 
 class AuthMiddlewareService {
+  constructor({ identityAuthService }) {
+    this.identityAuthService = identityAuthService
+  }
+
   verifyE2E({ cookies, url }) {
     const { isomercmsE2E } = cookies
     const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
@@ -99,8 +101,6 @@ class AuthMiddlewareService {
     userAccessToken,
     userId,
   }) {
-    const { authService, sitesService } = identityServices
-
     // Check if site is onboarded to Isomer identity, otherwise continue using user access token
     const site = await sitesService.getBySiteName(siteName)
     if (!site) {
@@ -112,7 +112,7 @@ class AuthMiddlewareService {
 
     logger.info(`Verifying user's access to ${siteName}`)
     if (
-      !(await authService.hasAccessToSite(
+      !(await this.identityAuthService.hasAccessToSite(
         { accessToken: userAccessToken, siteName },
         { userId }
       ))

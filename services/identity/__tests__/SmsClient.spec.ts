@@ -1,8 +1,8 @@
 import mockAxios from "jest-mock-axios"
 
-import _SmsClient from "../SmsClient"
+import { mockBody, mockRecipient } from "@fixtures/identity"
 
-import { mockBody, mockRecipient } from "./constants"
+import _SmsClient from "../SmsClient"
 
 const mockEndpoint = "/transactional/sms/send"
 

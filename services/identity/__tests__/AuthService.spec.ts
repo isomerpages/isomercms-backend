@@ -1,11 +1,10 @@
 import { BadRequestError } from "@errors/BadRequestError"
 import { NotFoundError } from "@errors/NotFoundError"
 
+import { mockAccessToken, mockSiteName, mockUserId } from "@fixtures/identity"
 import { GitHubService } from "@services/db/GitHubService"
 
 import _AuthService from "../AuthService"
-
-import { mockAccessToken, mockSiteName, mockUserId } from "./constants"
 
 const mockGitHubService = {
   checkHasAccess: jest.fn(),

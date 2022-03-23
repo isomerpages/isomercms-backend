@@ -14,6 +14,11 @@ const AuthService = new _AuthService({
 })
 
 describe("Auth Service", () => {
+  const mockReqDetails = {
+    accessToken: mockAccessToken,
+    siteName: mockSiteName,
+  }
+  const mockParams = { userId: mockUserId }
   it("should call axios successfully and return true when the call is successful", async () => {
     // Arrange
     const expected = true
@@ -28,8 +33,8 @@ describe("Auth Service", () => {
     // Assert
     expect(actual).toBe(expected)
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
-      { accessToken: mockAccessToken, siteName: mockSiteName },
-      { userId: mockUserId }
+      mockReqDetails,
+      mockParams
     )
   })
 
@@ -50,8 +55,8 @@ describe("Auth Service", () => {
     // Assert
     expect(actual).toBe(expected)
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
-      { accessToken: mockAccessToken, siteName: mockSiteName },
-      { userId: mockUserId }
+      mockReqDetails,
+      mockParams
     )
   })
 
@@ -74,8 +79,8 @@ describe("Auth Service", () => {
     // Assert
     expect(actual).rejects.toThrowError(new BadRequestError(expected))
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
-      { accessToken: mockAccessToken, siteName: mockSiteName },
-      { userId: mockUserId }
+      mockReqDetails,
+      mockParams
     )
   })
 })

@@ -114,8 +114,8 @@ describe("Unlinked Pages Router", () => {
       mockAuthService.getUserInfo.mockResolvedValueOnce(expectedResponse)
 
       const resp = await request(app).get(`/whoami`).expect(200)
-      expect(resp.body).toStrictEqual(expectedResponse)
 
+      expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
     })
 

@@ -3,6 +3,7 @@ import { ModelStatic } from "sequelize/types"
 
 import { User } from "@root/database/models"
 
+import MailClient from "../MailClient"
 import SmsClient from "../SmsClient"
 import TotpGenerator from "../TotpGenerator"
 import _UsersService from "../UsersService"
@@ -12,9 +13,9 @@ const MockOtp = {
   getExpiryMinutes: jest.fn(),
   verify: jest.fn(),
 }
-const MockMailer = {
+const MockMailer = ({
   sendMail: jest.fn(),
-}
+} as unknown) as MailClient
 const MockSmsClient = {
   sendSms: jest.fn(),
 }

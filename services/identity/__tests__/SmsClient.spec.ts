@@ -56,7 +56,7 @@ describe("Sms Client", () => {
     const actual = SmsClient.sendSms(mockRecipient, mockBody)
 
     // Assert
-    expect(actual).rejects.toThrowError("Failed to send email")
+    expect(actual).rejects.toThrowError("Failed to send SMS.")
     expect(mockAxios.post).toHaveBeenCalledWith(mockEndpoint, generatedSms)
   })
 })

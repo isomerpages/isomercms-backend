@@ -6,7 +6,7 @@ import { User } from "@database/models"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
 
-import { UsersRouter as _UsersRouter } from "../users"
+import { UsersRouter as _UsersRouter } from "../newroutes/users"
 
 // NOTE: There is a module mock set up but as this is an integration test,
 // we try to avoid mocking as much as possible and use the actual module instead.

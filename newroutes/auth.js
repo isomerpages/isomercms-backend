@@ -23,7 +23,7 @@ class AuthRouter {
     autoBind(this)
   }
 
-  async clearAllCookies(res) {
+  async clearIsomerCookies(res) {
     const cookieSettings = {
       path: "/",
     }
@@ -73,19 +73,19 @@ class AuthRouter {
   }
 
   async logout(req, res) {
-    this.clearAllCookies(res)
+    this.clearIsomerCookies(res)
     return res.sendStatus(200)
   }
 
   async whoami(req, res) {
     const { accessToken } = req
 
-    const resp = await this.authService.getUserInfo({ accessToken })
-    if (!resp) {
-      this.clearAllCookies(res)
+    const userInfo = await this.authService.getUserInfo({ accessToken })
+    if (!userInfo) {
+      this.clearIsomerCookies(res)
       return res.sendStatus(401)
     }
-    return res.status(200).json(resp)
+    return res.status(200).json(userInfo)
   }
 
   getRouter() {

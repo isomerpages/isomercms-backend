@@ -1,8 +1,8 @@
 import mockAxios from "jest-mock-axios"
 
-import _SmsClient from "../SmsClient"
+import { mockBody, mockRecipient } from "@tests/constants"
 
-import { mockBody, mockRecipient } from "./constants"
+import _SmsClient from "../SmsClient"
 
 const mockEndpoint = "/transactional/sms/send"
 
@@ -56,7 +56,7 @@ describe("Sms Client", () => {
     const actual = SmsClient.sendSms(mockRecipient, mockBody)
 
     // Assert
-    expect(actual).rejects.toThrowError("Failed to send email")
+    expect(actual).rejects.toThrowError("Failed to send SMS.")
     expect(mockAxios.post).toHaveBeenCalledWith(mockEndpoint, generatedSms)
   })
 })

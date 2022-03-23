@@ -1,15 +1,14 @@
 import mockAxios from "jest-mock-axios"
 
 import { BadRequestError } from "@root/errors/BadRequestError"
-
-import _AuthService from "../AuthService"
-
 import {
   mockAccessToken,
   mockHeaders,
   mockSiteName,
   mockUserId,
-} from "./constants"
+} from "@tests/constants"
+
+import _AuthService from "../AuthService"
 
 const AuthService = new _AuthService({ axiosClient: mockAxios })
 const mockEndpoint = `/${mockSiteName}/collaborators/${mockUserId}`

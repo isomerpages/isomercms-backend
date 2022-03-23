@@ -1,8 +1,12 @@
 import mockAxios from "jest-mock-axios"
 
-import _MailClient from "../MailClient"
+import {
+  mockRecipient,
+  mockBody,
+  mockBearerTokenHeaders,
+} from "@tests/constants"
 
-import { mockRecipient, mockBody, mockHeaders } from "./constants"
+import _MailClient from "../MailClient"
 
 const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
 
@@ -44,7 +48,7 @@ describe("Mail Client", () => {
     expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
       generateEmail(mockRecipient, mockBody),
-      mockHeaders
+      mockBearerTokenHeaders
     )
   })
 
@@ -82,7 +86,7 @@ describe("Mail Client", () => {
     expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
       generatedEmail,
-      mockHeaders
+      mockBearerTokenHeaders
     )
   })
 })

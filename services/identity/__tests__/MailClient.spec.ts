@@ -1,8 +1,8 @@
 import mockAxios from "jest-mock-axios"
 
-import _MailClient from "../MailClient"
+import { mockRecipient, mockBody, mockHeaders } from "@tests/constants"
 
-import { mockRecipient, mockBody, mockHeaders } from "./constants"
+import _MailClient from "../MailClient"
 
 const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
 

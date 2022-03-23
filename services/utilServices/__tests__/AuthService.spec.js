@@ -101,7 +101,7 @@ describe("Auth Service", () => {
   })
 
   describe("getUserInfo", () => {
-    it("Able to retrieve user info", async () => {
+    it("should be able to retrieve user info", async () => {
       axios.get.mockImplementation(() => ({
         data: {
           login: userId,

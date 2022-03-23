@@ -111,12 +111,12 @@ class AuthMiddlewareService {
     }
 
     logger.info(`Verifying user's access to ${siteName}`)
-    if (
-      !(await this.identityAuthService.hasAccessToSite(
-        { accessToken: userAccessToken, siteName },
-        { userId }
-      ))
-    ) {
+
+    const hasAccessToSite = await this.identityAuthService.hasAccessToSite(
+      { accessToken: userAccessToken, siteName },
+      { userId }
+    )
+    if (!hasAccessToSite) {
       throw new NotFoundError("Site does not exist")
     }
 

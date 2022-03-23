@@ -1,4 +1,4 @@
-import express, { Express } from "express"
+import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
@@ -7,6 +7,11 @@ import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
 
 import { UsersRouter as _UsersRouter } from "../users"
+
+// NOTE: There is a module mock set up but as this is an integration test,
+// we try to avoid mocking as much as possible and use the actual module instead.
+// This is acceptable because, unlike axios, it does not hit the network.
+jest.unmock("otplib")
 
 const mockValidEmail = "open@up.gov.sg"
 const mockInvalidEmail = "stay@home.sg"
@@ -126,8 +131,10 @@ describe("Users Router", () => {
       let otp = ""
       mockAxios.post.mockImplementationOnce((_, email) => {
         otp = extractEmailOtp(email.body)
+        console.log(email.body)
         return email
       })
+      console.log("OTP: ============", otp)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,

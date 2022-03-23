@@ -100,11 +100,15 @@ app.use(apiLogger)
 // Routes layer setup
 // To avoid refactoring auth router v1 to use dependency injection
 app.use("/v1/auth", authV2Router.getRouter())
+// Endpoints which have siteName, used to inject site access token
 app.use("/v1/sites/:siteName", authenticatedSitesSubrouterV1)
+// Endpoints which have require login, but not site access token
 app.use("/v1", authenticatedSubrouterV1)
 
 app.use("/v2/auth", authV2Router.getRouter())
+// Endpoints which have siteName, used to inject site access token
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
+// Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
 
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))

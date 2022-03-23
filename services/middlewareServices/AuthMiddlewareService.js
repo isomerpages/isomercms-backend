@@ -88,7 +88,6 @@ class AuthMiddlewareService {
     try {
       const { isomercms } = cookies
       const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
-      if (!verifiedToken) throw new Error("Invalid token")
       const accessToken = jwtUtils.decryptToken(verifiedToken)
       return { accessToken, userId: undefined }
     } catch (err) {

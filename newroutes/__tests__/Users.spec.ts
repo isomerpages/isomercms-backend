@@ -131,10 +131,8 @@ describe("Users Router", () => {
       let otp = ""
       mockAxios.post.mockImplementationOnce((_, email) => {
         otp = extractEmailOtp(email.body)
-        console.log(email.body)
         return email
       })
-      console.log("OTP: ============", otp)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,

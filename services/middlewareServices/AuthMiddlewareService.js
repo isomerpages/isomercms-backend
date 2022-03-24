@@ -67,7 +67,7 @@ class AuthMiddlewareService {
       if (err.name === "NotLoggedInError") {
         logger.error("Authentication error: user not logged in with email")
         throw new AuthError(
-          `Encountered an auth error at ${url}: ${err.message}`
+          `Authentication error: user not logged in with email`
         )
       } else if (err.name === "TokenExpiredError") {
         logger.error("Authentication error: JWT token expired")

@@ -273,16 +273,16 @@ describe("Resource Directory Service", () => {
         },
         mockContent
       )
-      expect(mockGitHubService.update).toHaveBeenCalledWith(reqDetails, {
-        fileContent: mockMarkdownContent,
-        sha,
-        fileName: INDEX_FILE_NAME,
-        directoryName,
-      })
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
         oldDirectoryName: directoryName,
         newDirectoryName: `${resourceRoomName}/${newDirectoryName}`,
         message: `Renaming resource category ${resourceCategoryName} to ${newDirectoryName}`,
+      })
+      expect(mockGitHubService.update).toHaveBeenCalledWith(reqDetails, {
+        fileContent: mockMarkdownContent,
+        sha,
+        fileName: INDEX_FILE_NAME,
+        directoryName: `${resourceRoomName}/${newDirectoryName}`,
       })
     })
     mockGitHubService.read.mockResolvedValueOnce({
@@ -311,16 +311,16 @@ describe("Resource Directory Service", () => {
         },
         mockContent
       )
-      expect(mockGitHubService.update).toHaveBeenCalledWith(reqDetails, {
-        fileContent: mockMarkdownContent,
-        sha,
-        fileName: INDEX_FILE_NAME,
-        directoryName,
-      })
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
         oldDirectoryName: directoryName,
         newDirectoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
         message: `Renaming resource category ${resourceCategoryName} to ${slugifiedResourceCategory}`,
+      })
+      expect(mockGitHubService.update).toHaveBeenCalledWith(reqDetails, {
+        fileContent: mockMarkdownContent,
+        sha,
+        fileName: INDEX_FILE_NAME,
+        directoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
       })
     })
   })

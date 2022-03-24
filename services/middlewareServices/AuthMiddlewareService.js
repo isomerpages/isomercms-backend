@@ -64,14 +64,16 @@ class AuthMiddlewareService {
       const userId = retrievedId
       return { accessToken, userId }
     } catch (err) {
-      logger.error("Authentication error")
       if (err.name === "NotLoggedInError") {
+        logger.error("Authentication error: user not logged in with email")
         throw new AuthError(
           `Encountered an auth error at ${url}: ${err.message}`
         )
-      }
-      if (err.name === "TokenExpiredError") {
+      } else if (err.name === "TokenExpiredError") {
+        logger.error("Authentication error: JWT token expired")
         throw new AuthError(`JWT token has expired`)
+      } else {
+        logger.error("Authentication error")
       }
       throw err
     }

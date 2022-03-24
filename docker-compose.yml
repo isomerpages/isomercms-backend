@@ -11,5 +11,15 @@ services:
     volumes:
       - isomercms_data:/var/lib/postgresql/data
 
+  postgres_test:
+    image: "postgres:13-alpine"
+    environment:
+      POSTGRES_USER: isomer
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: isomercms_test
+    ports:
+      # use a different port to avoid blocking dev environment when running tests
+      - "54321:5432"
+
 volumes:
   isomercms_data:

@@ -34,7 +34,7 @@ export class UsersRouter {
     }
 
     try {
-      if (!(await this.usersService.canSendEmailOtp(email))) {
+      if (!this.usersService.canSendEmailOtp(email)) {
         throw new Error(
           `The email you have entered is not a government-issued email. Please contact your website owner for assistance.`
         )

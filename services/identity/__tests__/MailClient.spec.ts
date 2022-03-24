@@ -1,6 +1,10 @@
 import mockAxios from "jest-mock-axios"
 
-import { mockRecipient, mockBody, mockHeaders } from "@fixtures/identity"
+import {
+  mockRecipient,
+  mockBody,
+  mockBearerTokenHeaders,
+} from "@fixtures/identity"
 
 import _MailClient from "../MailClient"
 
@@ -44,7 +48,7 @@ describe("Mail Client", () => {
     expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
       generateEmail(mockRecipient, mockBody),
-      mockHeaders
+      mockBearerTokenHeaders
     )
   })
 
@@ -82,7 +86,7 @@ describe("Mail Client", () => {
     expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
       generatedEmail,
-      mockHeaders
+      mockBearerTokenHeaders
     )
   })
 })

@@ -33,9 +33,10 @@ const totpGenerator = new TotpGenerator({
   expiry: parseInt(OTP_EXPIRY!, 10) ?? undefined,
 })
 
-const mailer = IS_LOCAL_DEV
-  ? { sendMail: (_email: string, html: string) => logger.info(html) }
-  : new MailClient()
+const mockMailer = {
+  sendMail: (_email: string, html: string) => logger.info(html),
+} as MailClient
+const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient()
 
 const smsClient = IS_LOCAL_DEV
   ? ({

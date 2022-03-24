@@ -13,9 +13,9 @@ const MockOtp = {
   getExpiryMinutes: jest.fn(),
   verify: jest.fn(),
 }
-const MockMailer = {
+const MockMailer = ({
   sendMail: jest.fn(),
-}
+} as unknown) as MailClient
 const MockSmsClient = {
   sendSms: jest.fn(),
 }
@@ -86,9 +86,7 @@ describe("User Service", () => {
 
   it("should return the result of calling the update method by githubId on the db model", async () => {
     // Arrange
-    const mockUser = {
-      githubId: "user1",
-    }
+    const mockUser = { email: mockEmail }
 
     // Act
     await UsersService.updateUserByGitHubId(mockGithubId, mockUser)

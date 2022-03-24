@@ -31,7 +31,8 @@
       "@validators/*": ["./validators/*"],
       "@fixtures/*": ["./fixtures/*"],
       "@database/*": ["./database/*"],
-      "@mocks/*": ["./__mocks__/*"]
+      "@mocks/*": ["./__mocks__/*"],
+      "@tests/*": ["./tests/*"]
     }
   },
   "ts-node": {

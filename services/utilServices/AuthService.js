@@ -9,6 +9,8 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
+const logger = require("@root/logger/logger")
+
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
 class AuthService {
@@ -28,7 +30,10 @@ class AuthService {
   async getGithubAuthToken({ csrfState, code, state }) {
     try {
       const decoded = jwtUtils.verifyToken(csrfState)
-      if (decoded.state !== state) throw new Error("State does not match")
+      if (decoded.state !== state) {
+        logger.error("The given github credentials are not authorized!")
+        throw new Error("State does not match")
+      }
     } catch (err) {
       // Transform jwt errors into generic ForbiddenErrors
       throw new ForbiddenError()

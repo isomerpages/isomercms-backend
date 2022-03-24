@@ -30,6 +30,7 @@ class AuthService {
       const decoded = jwtUtils.verifyToken(csrfState)
       if (decoded.state !== state) throw new Error("State does not match")
     } catch (err) {
+      // Transform jwt errors into generic ForbiddenErrors
       throw new ForbiddenError()
     }
 

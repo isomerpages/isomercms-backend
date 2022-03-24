@@ -20,9 +20,11 @@ class SitesRouter {
   async checkHasAccess(req, res) {
     const {
       accessToken,
-      userId,
       params: { siteName },
     } = req
+    const {
+      locals: { userId },
+    } = res
 
     await this.sitesService.checkHasAccess(
       {

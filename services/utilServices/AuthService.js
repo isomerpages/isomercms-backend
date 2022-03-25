@@ -35,7 +35,7 @@ class AuthService {
         throw new Error("State does not match")
       }
     } catch (err) {
-      // Transform jwt errors into generic ForbiddenErrors
+      // Transform jwt errors into generic ForbiddenErrors - the raw errors shouldn't be provided to the user
       throw new ForbiddenError()
     }
 

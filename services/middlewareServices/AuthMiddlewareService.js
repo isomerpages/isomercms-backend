@@ -65,15 +65,19 @@ class AuthMiddlewareService {
       return { accessToken, userId }
     } catch (err) {
       if (err.name === "NotLoggedInError") {
-        logger.error("Authentication error: user not logged in with email")
+        logger.error(
+          `Authentication error: user not logged in with email. Cookie: ${cookies}, Url: ${url}`
+        )
         throw new AuthError(
           `Authentication error: user not logged in with email`
         )
       } else if (err.name === "TokenExpiredError") {
-        logger.error("Authentication error: JWT token expired")
+        logger.error(
+          `Authentication error: JWT token expired. Cookie: ${cookies}, Url: ${url}`
+        )
         throw new AuthError(`JWT token has expired`)
       } else {
-        logger.error("Authentication error")
+        logger.error(`Authentication error. Cookie: ${cookies}, Url: ${url}`)
       }
       throw err
     }

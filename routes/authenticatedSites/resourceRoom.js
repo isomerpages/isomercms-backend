@@ -67,6 +67,6 @@ router.post(
   "/:resourceRoom",
   attachRollbackRouteHandlerWrapper(renameResourceRoom)
 )
-router.delete("", attachRollbackRouteHandlerWrapper(deleteResourceRoom))
+router.delete("/", attachRollbackRouteHandlerWrapper(deleteResourceRoom))
 
 module.exports = router

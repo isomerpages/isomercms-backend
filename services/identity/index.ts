@@ -58,7 +58,7 @@ export const getUsersService = (sequelize: Sequelize) =>
   })
 
 // NOTE: This is because the identity auth service has an
-// explicit dependency on an axios instance so we have to pass
-// the axios instance in...
+// explicit dependency on GitHubService so we have to pass
+// the GithubService instance in...
 export const getIdentityAuthService = (gitHubService: GitHubService) =>
   new AuthService({ gitHubService })

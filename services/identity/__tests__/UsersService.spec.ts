@@ -30,7 +30,7 @@ const MockSequelize = {
 
 const UsersService = new _UsersService({
   otp: (MockOtp as unknown) as TotpGenerator,
-  mailer: MockMailer,
+  mailer: (MockMailer as unknown) as MailClient,
   smsClient: (MockSmsClient as unknown) as SmsClient,
   repository: (MockRepository as unknown) as ModelStatic<User>,
   sequelize: (MockSequelize as unknown) as Sequelize,
@@ -150,7 +150,7 @@ describe("User Service", () => {
     // NOTE: Need to reinitialise to force the new whitelist to be used
     const NewUserService = new _UsersService({
       otp: (MockOtp as unknown) as TotpGenerator,
-      mailer: MockMailer,
+      mailer: (MockOtp as unknown) as MailClient,
       smsClient: (MockSmsClient as unknown) as SmsClient,
       repository: (MockRepository as unknown) as ModelStatic<User>,
       sequelize: (MockSequelize as unknown) as Sequelize,

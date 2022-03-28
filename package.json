@@ -1,13 +1,13 @@
 {
   "name": "isomercms",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "start": "ts-node ./bin/www",
     "dev:services": "docker compose up -d",
     "dev": "source .env && ts-node-dev --respawn ./bin/www",
     "test": "source .env.test && jest",
-    "release": "npm version $npm_config_update && git push --tags",
+    "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",
     "format": "npx prettier --write .",
     "check-format": "npx prettier --check .",

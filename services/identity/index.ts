@@ -3,7 +3,7 @@ import { Sequelize } from "sequelize-typescript"
 import logger from "@logger/logger"
 
 import { User, Site } from "@database/models"
-import { AxiosClient } from "@root/types"
+import { GitHubService } from "@services/db/GitHubService"
 
 import AuthService from "./AuthService"
 import MailClient from "./MailClient"
@@ -58,7 +58,7 @@ export const getUsersService = (sequelize: Sequelize) =>
   })
 
 // NOTE: This is because the identity auth service has an
-// explicit dependency on an axios instance so we have to pass
-// the axios instance in...
-export const getIdentityAuthService = (axiosClient: AxiosClient) =>
-  new AuthService({ axiosClient })
+// explicit dependency on GitHubService so we have to pass
+// the GithubService instance in...
+export const getIdentityAuthService = (gitHubService: GitHubService) =>
+  new AuthService({ gitHubService })

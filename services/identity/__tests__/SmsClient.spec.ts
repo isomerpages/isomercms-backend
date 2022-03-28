@@ -1,6 +1,6 @@
 import mockAxios from "jest-mock-axios"
 
-import { mockBody, mockRecipient } from "@tests/constants"
+import { mockBody, mockRecipient } from "@fixtures/identity"
 
 import _SmsClient from "../SmsClient"
 

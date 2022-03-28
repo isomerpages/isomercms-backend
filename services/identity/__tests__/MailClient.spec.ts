@@ -4,7 +4,7 @@ import {
   mockRecipient,
   mockBody,
   mockBearerTokenHeaders,
-} from "@tests/constants"
+} from "@fixtures/identity"
 
 import _MailClient from "../MailClient"
 

@@ -1,4 +1,4 @@
-const axios = require("axios")
+const { Base64 } = require("js-base64")
 
 const validateStatus = require("@utils/axios-utils")
 
@@ -329,6 +329,24 @@ class GitHubService {
       { sha: commitSha, force: true },
       { headers }
     )
+  }
+
+  async checkHasAccess({ accessToken, siteName }, { userId }) {
+    const endpoint = `${siteName}/collaborators/${userId}`
+
+    const headers = {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+    try {
+      await this.axiosInstance.get(endpoint, { headers })
+    } catch (err) {
+      const { status } = err.response
+      // If user is unauthorized or site does not exist, show the same NotFoundError
+      if (status === 404 || status === 403)
+        throw new NotFoundError("Site does not exist")
+      throw err
+    }
   }
 }
 

@@ -1,5 +1,3 @@
-const { Base64 } = require("js-base64")
-
 const { ConflictError } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
@@ -647,6 +645,21 @@ describe("Github Service", () => {
         { sha, force: true },
         authHeader
       )
+    })
+  })
+
+  describe("checkHasAccess", () => {
+    const userId = "userId"
+    const refEndpoint = `${siteName}/collaborators/${userId}`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+      "Content-Type": "application/json",
+    }
+    it("Checks whether user has write access to site", async () => {
+      await service.checkHasAccess({ accessToken, siteName }, { userId })
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(refEndpoint, {
+        headers,
+      })
     })
   })
 })

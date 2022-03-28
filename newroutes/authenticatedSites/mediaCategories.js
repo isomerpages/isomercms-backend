@@ -15,8 +15,6 @@ const {
   MoveMediaDirectoryFilesRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class MediaCategoriesRouter {
   constructor({ mediaDirectoryService }) {
     this.mediaDirectoryService = mediaDirectoryService
@@ -112,8 +110,6 @@ class MediaCategoriesRouter {
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
-
-    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/:directoryName",

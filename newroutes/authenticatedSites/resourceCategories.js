@@ -15,8 +15,6 @@ const {
   MoveResourceDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class ResourceCategoriesRouter {
   constructor({ resourceDirectoryService }) {
     this.resourceDirectoryService = resourceDirectoryService
@@ -115,8 +113,6 @@ class ResourceCategoriesRouter {
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
-
-    router.use(authMiddleware.verifyJwt)
 
     router.get(
       "/:resourceCategoryName",

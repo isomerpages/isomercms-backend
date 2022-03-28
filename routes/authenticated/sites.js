@@ -8,8 +8,6 @@ const { NotFoundError } = require("@errors/NotFoundError")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 const router = express.Router()
 
 const GH_MAX_REPO_COUNT = 100
@@ -175,7 +173,6 @@ async function getStagingUrl(req, res) {
   return res.status(200).json({ stagingUrl })
 }
 
-router.use(authMiddleware.verifyJwt)
 router.get("/", attachReadRouteHandlerWrapper(getSites))
 router.get("/:siteName", attachReadRouteHandlerWrapper(checkHasAccess))
 router.get(

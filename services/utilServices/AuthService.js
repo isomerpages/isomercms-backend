@@ -36,9 +36,10 @@ class AuthService {
       }
     } catch (err) {
       // Transform jwt errors into generic ForbiddenErrors - the raw errors shouldn't be provided to the user
-      throw new ForbiddenError(
-        `csrfState: ${csrfState}, code: ${code}, state: ${state}`
+      logger.error(
+        `Jwt error: ${err.message}, csrfState: ${csrfState}, code: ${code}, state: ${state}`
       )
+      throw new ForbiddenError()
     }
 
     const params = {

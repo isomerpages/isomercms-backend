@@ -15,6 +15,8 @@ const {
   DeletePageRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { authMiddleware } = require("@root/newmiddleware/index")
+
 class CollectionPagesRouter {
   constructor({ collectionPageService, subcollectionPageService }) {
     this.collectionPageService = collectionPageService
@@ -168,6 +170,8 @@ class CollectionPagesRouter {
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
+
+    router.use(authMiddleware.verifyJwt)
 
     router.post(
       "/pages",

@@ -97,6 +97,9 @@ app.use(express.static(path.join(__dirname, "public")))
 // Log api requests
 app.use(apiLogger)
 
+// Health endpoint
+app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
+
 // Routes layer setup
 // To avoid refactoring auth router v1 to use dependency injection
 app.use("/v1/auth", authV2Router.getRouter())
@@ -110,8 +113,6 @@ app.use("/v2/auth", authV2Router.getRouter())
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
-
-app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
 // catch unknown routes
 app.use((req, res, next) => {

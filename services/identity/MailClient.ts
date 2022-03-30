@@ -23,7 +23,7 @@ class MailClient {
       from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
       body,
       recipient,
-      reply_to: "support@isomer.gov.sg",
+      reply_to: "noreply@isomer.gov.sg",
     }
 
     try {

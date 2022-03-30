@@ -16,7 +16,7 @@ describe("Unlinked Pages Router", () => {
   const mockAuthService = {
     getAuthRedirectDetails: jest.fn(),
     getGithubAuthToken: jest.fn(),
-    getUserId: jest.fn(),
+    getUserInfo: jest.fn(),
   }
 
   const router = new AuthRouter({
@@ -107,14 +107,24 @@ describe("Unlinked Pages Router", () => {
 
   describe("whoami", () => {
     const userId = "userId"
-    it("redirects to the specified github url", async () => {
-      mockAuthService.getUserId.mockResolvedValueOnce({
+    it("returns user info if found", async () => {
+      const expectedResponse = {
         userId,
-      })
+      }
+      mockAuthService.getUserInfo.mockResolvedValueOnce(expectedResponse)
 
-      await request(app).get(`/whoami`).expect(200)
+      const resp = await request(app).get(`/whoami`).expect(200)
 
-      expect(mockAuthService.getUserId).toHaveBeenCalledWith({ accessToken })
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+    })
+
+    it("sends a 401 if user not found", async () => {
+      mockAuthService.getUserInfo.mockResolvedValueOnce(undefined)
+
+      await request(app).get(`/whoami`).expect(401)
+
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
     })
   })
 })

@@ -14,7 +14,7 @@ class AuthMiddleware {
       url,
     })
     req.accessToken = accessToken
-    req.userId = userId
+    res.locals.userId = userId
     return next()
   }
 
@@ -25,7 +25,26 @@ class AuthMiddleware {
       url,
     })
     req.accessToken = accessToken
-    if (userId) req.userId = userId
+    if (userId) res.locals.userId = userId
+    return next()
+  }
+
+  // Replace access token with site access token if it is available
+  async useSiteAccessTokenIfAvailable(req, res, next) {
+    const {
+      accessToken: userAccessToken,
+      params: { siteName },
+    } = req
+    const {
+      locals: { userId },
+    } = res
+
+    const siteAccessToken = await this.authMiddlewareService.retrieveSiteAccessTokenIfAvailable(
+      { siteName, userAccessToken, userId }
+    )
+
+    if (siteAccessToken) req.accessToken = siteAccessToken
+
     return next()
   }
 }

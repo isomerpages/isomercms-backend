@@ -1,13 +1,18 @@
+jest.mock("axios", () => ({
+  get: jest.fn(),
+  post: jest.fn(),
+}))
+jest.mock("uuid/v4")
+jest.mock("@utils/jwt-utils")
+
 const axios = require("axios")
 const uuid = require("uuid/v4")
 
 const jwtUtils = require("@utils/jwt-utils")
 
 const validateStatus = require("@root/utils/axios-utils")
+const { AuthService } = require("@services/utilServices/AuthService")
 
-jest.mock("axios")
-jest.mock("uuid/v4")
-jest.mock("@utils/jwt-utils")
 describe("Auth Service", () => {
   const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
@@ -18,10 +23,19 @@ describe("Auth Service", () => {
   const signedToken = "signedToken"
   const csrfState = "csrfState"
   const userId = "user"
+  const mockEmail = "email"
+  const mockContactNumber = "12345678"
+  const mockIsomerUserId = "isomer-user"
+  const mockUserId = "user"
 
-  const { AuthService } = require("@services/utilServices/AuthService")
-
-  const service = new AuthService()
+  const mockUsersService = {
+    login: jest.fn().mockImplementation(() => mockIsomerUserId),
+    findByGitHubId: jest.fn().mockImplementation(() => ({
+      email: mockEmail,
+      contactNumber: mockContactNumber,
+    })),
+  }
+  const service = new AuthService({ usersService: mockUsersService })
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -48,8 +62,7 @@ describe("Auth Service", () => {
       }
 
       uuid.mockImplementation(() => state)
-      jwtUtils.verifyToken.mockImplementation(() => token)
-      jwtUtils.decodeToken.mockImplementation(() => ({ state }))
+      jwtUtils.verifyToken.mockImplementation(() => ({ state }))
       jwtUtils.encryptToken.mockImplementation(() => token)
       jwtUtils.signToken.mockImplementation(() => signedToken)
       axios.post.mockImplementation(() => ({
@@ -57,7 +70,7 @@ describe("Auth Service", () => {
       }))
       axios.get.mockImplementation(() => ({
         data: {
-          login: "login",
+          login: mockUserId,
         },
       }))
 
@@ -83,17 +96,23 @@ describe("Auth Service", () => {
           "Content-Type": "application/json",
         },
       })
+      expect(mockUsersService.login).toHaveBeenCalledWith(mockUserId)
     })
   })
 
-  describe("getUserId", () => {
-    it("Able to retrieve user id", async () => {
+  describe("getUserInfo", () => {
+    it("should be able to retrieve user info", async () => {
       axios.get.mockImplementation(() => ({
         data: {
           login: userId,
         },
       }))
-      await expect(service.getUserId({ accessToken })).resolves.toEqual(userId)
+      await expect(service.getUserInfo({ accessToken })).resolves.toEqual({
+        userId,
+        email: mockEmail,
+        contactNumber: mockContactNumber,
+      })
+      expect(mockUsersService.findByGitHubId).toHaveBeenCalledWith(userId)
     })
   })
 })

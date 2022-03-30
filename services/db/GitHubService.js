@@ -1,4 +1,4 @@
-const axios = require("axios")
+const { Base64 } = require("js-base64")
 
 const validateStatus = require("@utils/axios-utils")
 

@@ -6,10 +6,13 @@ const logger = require("@logger/logger")
 
 // Import errors
 const { AuthError } = require("@errors/AuthError")
+const { NotFoundError } = require("@errors/NotFoundError")
 
 const jwtUtils = require("@utils/jwt-utils")
 
+// Import services
 const { BadRequestError } = require("@root/errors/BadRequestError")
+const identityServices = require("@services/identity")
 
 // Instantiate router object
 const auth = express.Router()
@@ -56,27 +59,35 @@ const verifyJwt = (req, res, next) => {
 
   if (isValidE2E) {
     req.accessToken = E2E_TEST_GH_TOKEN
-    req.userId = E2E_TEST_USER
+    res.locals.userId = E2E_TEST_USER
   } else {
     try {
       const {
         access_token: retrievedToken,
         user_id: retrievedId,
+        isomer_user_id: isomerUserId,
       } = jwtUtils.verifyToken(isomercms)
+
+      if (!isomerUserId) {
+        const notLoggedInError = new Error("User not logged in with email")
+        notLoggedInError.name = "NotLoggedInError"
+        throw notLoggedInError
+      }
+
       req.accessToken = jwtUtils.decryptToken(retrievedToken)
-      req.userId = retrievedId
+      res.locals.userId = retrievedId
     } catch (err) {
       logger.error("Authentication error")
+      if (err.name === "NotLoggedInError") {
+        throw new AuthError(err.message)
+      }
       if (err.name === "TokenExpiredError") {
         throw new AuthError("JWT token has expired")
       }
-      if (err.name === "JsonWebTokenError") {
-        throw new AuthError(err.message)
-      }
-      throw new Error(err)
     }
   }
-  return next("router")
+
+  return next()
 }
 
 // Extracts access_token if any, else set access_token to null
@@ -85,12 +96,13 @@ const whoamiAuth = (req, res, next) => {
 
   if (isValidE2E) {
     req.accessToken = E2E_TEST_GH_TOKEN
-    req.userId = E2E_TEST_USER
+    res.locals.userId = E2E_TEST_USER
   } else {
     let retrievedToken
     try {
       const { isomercms } = req.cookies
       const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+      if (!verifiedToken) throw new Error("Invalid token")
       retrievedToken = jwtUtils.decryptToken(verifiedToken)
     } catch (err) {
       retrievedToken = undefined
@@ -102,17 +114,55 @@ const whoamiAuth = (req, res, next) => {
   return next("router")
 }
 
+// Replace access token with site access token if it is available
+const useSiteAccessTokenIfAvailable = async (req, res, next) => {
+  const { authService, sitesService } = identityServices
+  const { accessToken: userAccessToken } = req
+  const {
+    locals: { userId },
+  } = res
+  const { siteName } = req.params
+
+  // Check if site is onboarded to Isomer identity, otherwise continue using user access token
+  const site = await sitesService.getBySiteName(siteName)
+  if (!site) {
+    logger.info(
+      `Site ${siteName} does not exists in site table. Default to using user access token.`
+    )
+    return next()
+  }
+
+  logger.info(`Verifying user's access to ${siteName}`)
+  if (!authService.hasAccessToSite(siteName, userId, userAccessToken)) {
+    throw new NotFoundError("Site does not exist")
+  }
+
+  const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
+
+  if (siteAccessToken) {
+    req.accessToken = siteAccessToken
+    logger.info(
+      `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
+    )
+  }
+
+  return next()
+}
+
 // Health check
 auth.get("/v2/ping", noVerify)
 
 // Login and logout
-auth.get("/v1/auth/github-redirect", noVerify)
 auth.get("/v1/auth", noVerify)
+auth.get("/v1/auth/github-redirect", noVerify)
 auth.delete("/v1/auth/logout", noVerify)
 auth.get("/v1/auth/whoami", whoamiAuth)
 
 // Index
 auth.get("/v1", noVerify)
+
+// Inject site access token if available
+auth.use("/v1/sites/:siteName", verifyJwt, useSiteAccessTokenIfAvailable)
 
 // Homepage
 auth.get("/v1/sites/:siteName/homepage", verifyJwt)
@@ -286,6 +336,12 @@ auth.get("/v1/sites", verifyJwt)
 auth.get("/v1/sites/:siteName", verifyJwt)
 auth.get("/v1/sites/:siteName/lastUpdated", verifyJwt)
 auth.get("/v1/sites/:siteName/stagingUrl", verifyJwt)
+
+// Users
+auth.post("/v1/user/email/otp", verifyJwt)
+auth.post("/v1/user/email/verifyOtp", verifyJwt)
+auth.post("/v1/user/mobile/otp", verifyJwt)
+auth.post("/v1/user/mobile/verifyOtp", verifyJwt)
 
 // V2 Endpoints
 

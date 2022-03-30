@@ -14,6 +14,8 @@ const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const { authMiddleware } = require("@root/newmiddleware/index")
+// Import services
+const identityServices = require("@services/identity")
 
 const router = express.Router()
 
@@ -29,6 +31,15 @@ const { FRONTEND_URL } = process.env
 
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
+
+async function clearAllCookies(res) {
+  const cookieSettings = {
+    path: "/",
+  }
+
+  res.clearCookie(COOKIE_NAME, cookieSettings)
+  res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
+}
 
 async function authRedirect(req, res) {
   const state = uuid()
@@ -56,10 +67,12 @@ async function githubAuth(req, res) {
   const csrfState = req.cookies[CSRF_COOKIE_NAME]
   const { code, state } = req.query
 
-  const isCsrfValid =
-    jwtUtils.verifyToken(csrfState) &&
-    jwtUtils.decodeToken(csrfState).state === state
-  if (!isCsrfValid) throw new ForbiddenError()
+  try {
+    const decoded = jwtUtils.verifyToken(csrfState)
+    if (decoded.state !== state) throw new Error("State does not match")
+  } catch (err) {
+    throw new ForbiddenError()
+  }
 
   const params = {
     code,
@@ -92,8 +105,11 @@ async function githubAuth(req, res) {
     },
   })
 
-  let userId
-  if (userResp.data) userId = userResp.data.login
+  const githubId = userResp.data && userResp.data.login
+
+  // Create user if does not exists. Set last logged in to current time.
+  const user = await identityServices.usersService.login(githubId)
+  if (!user) throw Error("Failed to create user")
 
   const authTokenExpiry = new Date()
   authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
@@ -111,7 +127,8 @@ async function githubAuth(req, res) {
 
   const token = jwtUtils.signToken({
     access_token: jwtUtils.encryptToken(accessToken),
-    user_id: userId,
+    user_id: githubId,
+    isomer_user_id: user.id,
   })
 
   res.cookie(COOKIE_NAME, token, cookieSettings)
@@ -119,11 +136,7 @@ async function githubAuth(req, res) {
 }
 
 async function logout(req, res) {
-  const cookieSettings = {
-    path: "/",
-  }
-  res.clearCookie(COOKIE_NAME, cookieSettings)
-  res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
+  clearAllCookies(res)
   return res.sendStatus(200)
 }
 
@@ -133,7 +146,6 @@ async function whoami(req, res) {
   // Make a call to github
   const endpoint = "https://api.github.com/user"
 
-  let userId
   try {
     const resp = await axios.get(endpoint, {
       headers: {
@@ -141,11 +153,18 @@ async function whoami(req, res) {
         "Content-Type": "application/json",
       },
     })
-    userId = resp.data.login
+    const userId = resp.data.login
+
+    const {
+      email,
+      contactNumber,
+    } = await identityServices.usersService.findByGitHubId(userId)
+    return res.status(200).json({ userId, email, contactNumber })
   } catch (err) {
-    userId = undefined
+    clearAllCookies(res)
+    // Return a 401 os that user will be redirected to logout
+    return res.sendStatus(401)
   }
-  return res.status(200).json({ userId })
 }
 
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))

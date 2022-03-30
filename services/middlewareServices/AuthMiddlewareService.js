@@ -64,20 +64,20 @@ class AuthMiddlewareService {
       const userId = retrievedId
       return { accessToken, userId }
     } catch (err) {
+      // NOTE: Cookies aren't being logged here because they get caught as "Object object", which is not useful
+      // The cookies should be converted to a JSON struct before logging
       if (err.name === "NotLoggedInError") {
         logger.error(
-          `Authentication error: user not logged in with email. Cookie: ${cookies}, Url: ${url}`
+          `Authentication error: user not logged in with email. Url: ${url}`
         )
         throw new AuthError(
           `Authentication error: user not logged in with email`
         )
       } else if (err.name === "TokenExpiredError") {
-        logger.error(
-          `Authentication error: JWT token expired. Cookie: ${cookies}, Url: ${url}`
-        )
+        logger.error(`Authentication error: JWT token expired. Url: ${url}`)
         throw new AuthError(`JWT token has expired`)
       } else {
-        logger.error(`Authentication error. Cookie: ${cookies}, Url: ${url}`)
+        logger.error(`Authentication error. Url: ${url}`)
       }
       throw err
     }

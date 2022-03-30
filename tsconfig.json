@@ -7,12 +7,12 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "strict": true,
+    "outDir": "build/",
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "isolatedModules": true,
-    "noEmit": true,
     "downlevelIteration": true,
     "baseUrl": "./",
     "resolveJsonModule": true,
@@ -37,8 +37,7 @@
   },
   "ts-node": {
     "require": ["tsconfig-paths/register"],
-    "transpileOnly": true,
-    "swc": true
+    "transpileOnly": true
   },
   "exclude": ["node_modules", "dist"]
 }

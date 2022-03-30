@@ -7,8 +7,6 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const { FRONTEND_URL } = process.env
 const { isSecure } = require("@utils/auth-utils")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 const AUTH_TOKEN_EXPIRY_MS = parseInt(
   process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
   10
@@ -18,10 +16,20 @@ const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
 class AuthRouter {
-  constructor({ authService }) {
+  constructor({ authService, authMiddleware }) {
     this.authService = authService
+    this.authMiddleware = authMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
+  }
+
+  async clearIsomerCookies(res) {
+    const cookieSettings = {
+      path: "/",
+    }
+
+    res.clearCookie(COOKIE_NAME, cookieSettings)
+    res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
   }
 
   async authRedirect(req, res) {
@@ -65,19 +73,19 @@ class AuthRouter {
   }
 
   async logout(req, res) {
-    const cookieSettings = {
-      path: "/",
-    }
-    res.clearCookie(COOKIE_NAME, cookieSettings)
-    res.clearCookie(CSRF_COOKIE_NAME, cookieSettings)
+    this.clearIsomerCookies(res)
     return res.sendStatus(200)
   }
 
   async whoami(req, res) {
     const { accessToken } = req
 
-    const userId = await this.authService.getUserId({ accessToken })
-    return res.status(200).json({ userId })
+    const userInfo = await this.authService.getUserInfo({ accessToken })
+    if (!userInfo) {
+      this.clearIsomerCookies(res)
+      return res.sendStatus(401)
+    }
+    return res.status(200).json(userInfo)
   }
 
   getRouter() {
@@ -91,7 +99,7 @@ class AuthRouter {
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
-      authMiddleware.whoamiAuth,
+      this.authMiddleware.whoamiAuth,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

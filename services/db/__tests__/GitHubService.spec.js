@@ -1,5 +1,3 @@
-const { Base64 } = require("js-base64")
-
 const { ConflictError } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
 

@@ -26,7 +26,7 @@
     "auto-bind": "^4.0.0",
     "aws-sdk": "^2.946.0",
     "axios": "^0.21.3",
-    "base-64": "^0.1.0",
+    "base-64": "^1.0.0",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
     "cookie-parser": "~1.4.5",

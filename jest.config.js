@@ -20,4 +20,5 @@ module.exports = {
   },
   globalSetup: "<rootDir>/tests/setup.ts",
   globalTeardown: "<rootDir>/tests/teardown.ts",
+  setupFilesAfterEnv: ["<rootDir>/tests/closeConnection.ts"],
 }

@@ -17,6 +17,7 @@ const generateEmail = (recipient: string, body: string) => ({
   from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
   body,
   recipient,
+  reply_to: "noreply@isomer.gov.sg",
 })
 
 describe("Mail Client", () => {

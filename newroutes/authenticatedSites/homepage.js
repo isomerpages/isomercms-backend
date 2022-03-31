@@ -11,8 +11,6 @@ const {
 
 const { UpdateHomepageSchema } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class HomepageRouter {
   constructor({ homepagePageService }) {
     this.homepagePageService = homepagePageService
@@ -57,18 +55,10 @@ class HomepageRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(authMiddleware.verifyJwt)
-
-    router.get(
-      "/:siteName/homepage",
-      attachReadRouteHandlerWrapper(this.readHomepage)
-    )
-    router.post(
-      "/:siteName/homepage",
-      attachWriteRouteHandlerWrapper(this.updateHomepage)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.readHomepage))
+    router.post("/", attachWriteRouteHandlerWrapper(this.updateHomepage))
 
     return router
   }

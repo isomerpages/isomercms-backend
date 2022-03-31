@@ -22,7 +22,7 @@ const router = express.Router({ mergeParams: true })
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
@@ -41,7 +41,7 @@ async function listAllFolderContent(req, res) {
 
 // Delete subfolder
 async function deleteSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = req
+  const { accessToken, currentCommitSha, treeSha } = res.locals
   const { siteName, folderName, subfolderName } = req.params
 
   // Delete subfolder
@@ -80,7 +80,7 @@ async function deleteSubfolder(req, res) {
 
 // Rename subfolder
 async function renameSubfolder(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, folderName, subfolderName, newSubfolderName } = req.params
 
   // Rename subfolder by:

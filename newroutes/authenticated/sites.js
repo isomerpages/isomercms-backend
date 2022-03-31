@@ -12,7 +12,7 @@ class SitesRouter {
   }
 
   async getSites(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
     const siteNames = await this.sitesService.getSites({ accessToken })
     return res.status(200).json({ siteNames })
   }

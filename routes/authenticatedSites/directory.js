@@ -9,7 +9,7 @@ const { Directory, FolderType } = require("@classes/Directory.js")
 
 // List pages and directories in folder
 async function listDirectoryContent(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, path } = req.params
 
   const decodedPath = decodeURIComponent(path)

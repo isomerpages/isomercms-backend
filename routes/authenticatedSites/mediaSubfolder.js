@@ -13,7 +13,7 @@ const { MediaSubfolder } = require("@classes/MediaSubfolder")
 
 // Create new collection
 async function createSubfolder(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, mediaType, folderPath } = req.params
 
   const processedFolderPath = decodeURIComponent(folderPath)
@@ -30,7 +30,7 @@ async function createSubfolder(req, res) {
 
 // Delete collection
 async function deleteSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = req
+  const { accessToken, currentCommitSha, treeSha } = res.locals
   const { siteName, mediaType, folderPath } = req.params
 
   const processedFolderPath = decodeURIComponent(folderPath)
@@ -51,7 +51,7 @@ async function deleteSubfolder(req, res) {
 
 // Rename collection
 async function renameSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = req
+  const { accessToken, currentCommitSha, treeSha } = res.locals
   const { siteName, mediaType, oldFolderPath, newFolderPath } = req.params
 
   const processedOldFolderPath = decodeURIComponent(oldFolderPath)

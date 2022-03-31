@@ -63,7 +63,7 @@ describe("Auth Service", () => {
   it("should call axios successfully and bubble the error when the status is not 403 or 404", async () => {
     // Arrange
     const expected = {
-      response: { status: 400 },
+      response: { status: "400" },
     }
     mockGitHubService.checkHasAccess.mockRejectedValueOnce(
       new BadRequestError(expected)
@@ -77,7 +77,7 @@ describe("Auth Service", () => {
     )
 
     // Assert
-    expect(actual).rejects.toThrowError(new BadRequestError(expected))
+    await expect(actual).rejects.toThrow(BadRequestError)
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
       mockReqDetails,
       mockParams

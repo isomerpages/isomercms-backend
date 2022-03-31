@@ -46,8 +46,8 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       accessToken
     )
 
-    req.currentCommitSha = currentCommitSha
-    req.treeSha = treeSha
+    res.locals.currentCommitSha = currentCommitSha
+    res.locals.treeSha = treeSha
 
     originalCommitSha = currentCommitSha
   } catch (err) {

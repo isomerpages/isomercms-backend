@@ -13,7 +13,7 @@ class AuthMiddleware {
       cookies,
       url,
     })
-    req.accessToken = accessToken
+    res.locals.accessToken = accessToken
     res.locals.userId = userId
     return next()
   }
@@ -24,7 +24,7 @@ class AuthMiddleware {
       cookies,
       url,
     })
-    req.accessToken = accessToken
+    res.locals.accessToken = accessToken
     if (userId) res.locals.userId = userId
     return next()
   }
@@ -43,7 +43,7 @@ class AuthMiddleware {
       { siteName, userAccessToken, userId }
     )
 
-    if (siteAccessToken) req.accessToken = siteAccessToken
+    if (siteAccessToken) res.locals.accessToken = siteAccessToken
 
     return next()
   }

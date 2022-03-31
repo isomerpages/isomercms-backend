@@ -58,7 +58,7 @@ const verifyJwt = (req, res, next) => {
   const isValidE2E = verifyE2E(req)
 
   if (isValidE2E) {
-    req.accessToken = E2E_TEST_GH_TOKEN
+    res.locals.accessToken = E2E_TEST_GH_TOKEN
     res.locals.userId = E2E_TEST_USER
   } else {
     try {
@@ -74,7 +74,7 @@ const verifyJwt = (req, res, next) => {
         throw notLoggedInError
       }
 
-      req.accessToken = jwtUtils.decryptToken(retrievedToken)
+      res.locals.accessToken = jwtUtils.decryptToken(retrievedToken)
       res.locals.userId = retrievedId
     } catch (err) {
       logger.error("Authentication error")
@@ -95,7 +95,7 @@ const whoamiAuth = (req, res, next) => {
   const isValidE2E = verifyE2E(req)
 
   if (isValidE2E) {
-    req.accessToken = E2E_TEST_GH_TOKEN
+    res.locals.accessToken = E2E_TEST_GH_TOKEN
     res.locals.userId = E2E_TEST_USER
   } else {
     let retrievedToken
@@ -107,7 +107,7 @@ const whoamiAuth = (req, res, next) => {
     } catch (err) {
       retrievedToken = undefined
     } finally {
-      req.accessToken = retrievedToken
+      res.locals.accessToken = retrievedToken
     }
   }
 
@@ -117,9 +117,8 @@ const whoamiAuth = (req, res, next) => {
 // Replace access token with site access token if it is available
 const useSiteAccessTokenIfAvailable = async (req, res, next) => {
   const { authService, sitesService } = identityServices
-  const { accessToken: userAccessToken } = req
   const {
-    locals: { userId },
+    locals: { userId, accessToken: userAccessToken },
   } = res
   const { siteName } = req.params
 
@@ -140,7 +139,7 @@ const useSiteAccessTokenIfAvailable = async (req, res, next) => {
   const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
 
   if (siteAccessToken) {
-    req.accessToken = siteAccessToken
+    res.locals.accessToken = siteAccessToken
     logger.info(
       `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
     )

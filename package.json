@@ -14,7 +14,12 @@
     "format": "npx prettier --check .",
     "format-fix": "npx prettier --write .",
     "prepare": "husky install",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "npm run db:migrate": "source .env && npx sequelize-cli db:migrate",
+    "jump:staging": "source .ssh/.env.staging && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-staging-bastion.pem", 
+    "db:migrate:staging": "npm run jump:staging && npx sequelize-cli db:migrate",
+    "jump:prod": "source .ssh/.env.prod && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-production-bastion.pem",
+    "db:migrate:prod": "npm run jump:prod && npx sequelize-cli db:migrate"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.24.0",

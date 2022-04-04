@@ -34,9 +34,7 @@ class AuthMiddleware {
     const {
       params: { siteName },
     } = req
-    const {
-      locals: { userId, accessToken: userAccessToken },
-    } = res
+    const { userId, accessToken: userAccessToken } = res.locals
 
     const siteAccessToken = await this.authMiddlewareService.retrieveSiteAccessTokenIfAvailable(
       { siteName, userAccessToken, userId }

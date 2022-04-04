@@ -117,9 +117,7 @@ const whoamiAuth = (req, res, next) => {
 // Replace access token with site access token if it is available
 const useSiteAccessTokenIfAvailable = async (req, res, next) => {
   const { authService, sitesService } = identityServices
-  const {
-    locals: { userId, accessToken: userAccessToken },
-  } = res
+  const { userId, accessToken: userAccessToken } = res.locals
   const { siteName } = req.params
 
   // Check if site is onboarded to Isomer identity, otherwise continue using user access token

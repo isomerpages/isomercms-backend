@@ -104,9 +104,7 @@ async function getSites(req, res) {
 /* Checks if a user has access to a repo. */
 async function checkHasAccess(req, res) {
   const { accessToken } = res.locals
-  const {
-    locals: { userId },
-  } = res
+  const { userId } = res.locals
   const { siteName } = req.params
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
 

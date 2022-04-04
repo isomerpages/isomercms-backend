@@ -2,7 +2,6 @@ const express = require("express")
 const _ = require("lodash")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { contactUsContent, contactUsSha } = require("@fixtures/contactUs")

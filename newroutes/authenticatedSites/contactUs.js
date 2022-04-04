@@ -11,8 +11,6 @@ const {
 
 const { UpdateContactUsSchema } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class ContactUsRouter {
   constructor({ contactUsPageService }) {
     this.contactUsPageService = contactUsPageService
@@ -22,10 +20,9 @@ class ContactUsRouter {
 
   // Read contactUs file
   async readContactUs(req, res) {
-    const {
-      accessToken,
-      params: { siteName },
-    } = req
+    const { siteName } = req.params
+    const { accessToken } = res.locals
+    console.log(accessToken)
 
     const readResp = await this.contactUsPageService.read({
       siteName,
@@ -37,7 +34,7 @@ class ContactUsRouter {
 
   // Update contactUs index file
   async updateContactUs(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const { error } = UpdateContactUsSchema.validate(req.body)
@@ -56,18 +53,10 @@ class ContactUsRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(authMiddleware.verifyJwt)
-
-    router.get(
-      "/:siteName/contactUs",
-      attachReadRouteHandlerWrapper(this.readContactUs)
-    )
-    router.post(
-      "/:siteName/contactUs",
-      attachWriteRouteHandlerWrapper(this.updateContactUs)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.readContactUs))
+    router.post("/", attachWriteRouteHandlerWrapper(this.updateContactUs))
 
     return router
   }

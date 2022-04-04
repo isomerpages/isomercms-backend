@@ -12,19 +12,16 @@ class SitesRouter {
   }
 
   async getSites(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
     const siteNames = await this.sitesService.getSites({ accessToken })
     return res.status(200).json({ siteNames })
   }
 
   async checkHasAccess(req, res) {
     const {
-      accessToken,
       params: { siteName },
     } = req
-    const {
-      locals: { userId },
-    } = res
+    const { userId, accessToken } = res.locals
 
     await this.sitesService.checkHasAccess(
       {
@@ -38,9 +35,9 @@ class SitesRouter {
 
   async getLastUpdated(req, res) {
     const {
-      accessToken,
       params: { siteName },
     } = req
+    const { accessToken } = res.locals
     const lastUpdated = await this.sitesService.getLastUpdated({
       accessToken,
       siteName,
@@ -50,9 +47,9 @@ class SitesRouter {
 
   async getStagingUrl(req, res) {
     const {
-      accessToken,
       params: { siteName },
     } = req
+    const { accessToken } = res.locals
 
     const stagingUrl = await this.sitesService.getStagingUrl({
       accessToken,

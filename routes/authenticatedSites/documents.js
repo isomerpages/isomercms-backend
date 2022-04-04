@@ -35,7 +35,7 @@ const extractDirectoryAndFileName = (documentName) => {
 
 // List documents
 async function listDocuments(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const IsomerFile = new File(accessToken, siteName)
@@ -48,7 +48,7 @@ async function listDocuments(req, res) {
 
 // Create new document
 async function createNewDocument(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const { siteName } = req.params
   const { documentName, documentDirectory, content } = req.body
@@ -65,7 +65,7 @@ async function createNewDocument(req, res) {
 
 // Read document
 async function readDocument(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, documentName } = req.params
 
   // get document directory
@@ -85,7 +85,7 @@ async function readDocument(req, res) {
 
 // Update document
 async function updateDocument(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const { siteName, documentName } = req.params
   const { content, sha } = req.body
@@ -103,7 +103,7 @@ async function updateDocument(req, res) {
 
 // Delete document
 async function deleteDocument(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const { siteName, documentName } = req.params
   const { sha } = req.body
@@ -118,7 +118,7 @@ async function deleteDocument(req, res) {
 
 // Rename document
 async function renameDocument(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const { siteName, documentName, newDocumentName } = req.params
 
@@ -148,7 +148,7 @@ async function renameDocument(req, res) {
 
 // Move document
 async function moveDocument(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const { siteName, documentName, newDocumentName } = req.params
 

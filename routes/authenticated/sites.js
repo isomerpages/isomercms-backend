@@ -50,7 +50,7 @@ const timeDiff = (lastUpdated) => {
 /* Returns a list of all sites (repos) that the user has access to on Isomer. */
 // TO-DO: Paginate properly
 async function getSites(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
@@ -103,10 +103,8 @@ async function getSites(req, res) {
 
 /* Checks if a user has access to a repo. */
 async function checkHasAccess(req, res) {
-  const { accessToken } = req
-  const {
-    locals: { userId },
-  } = res
+  const { accessToken } = res.locals
+  const { userId } = res.locals
   const { siteName } = req.params
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
 
@@ -129,7 +127,7 @@ async function checkHasAccess(req, res) {
 
 /* Gets the last updated time of the repo. */
 async function getLastUpdated(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
@@ -146,7 +144,7 @@ async function getLastUpdated(req, res) {
 /* Gets the link to the staging site for a repo. */
 async function getStagingUrl(req, res) {
   // TODO: reconsider how we can retrieve url - we can store this in _config.yml or a dynamodb
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`

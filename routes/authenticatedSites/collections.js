@@ -19,7 +19,7 @@ const router = express.Router({ mergeParams: true })
 
 // List collections
 async function listCollections(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
@@ -30,7 +30,7 @@ async function listCollections(req, res) {
 
 // Create new collection
 async function createNewCollection(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
   const { collectionName } = req.body
 
@@ -45,7 +45,7 @@ async function deleteCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = req
+  const { accessToken, currentCommitSha, treeSha } = res.locals
   const { siteName, collectionName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
@@ -59,7 +59,7 @@ async function renameCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = req
+  const { accessToken, currentCommitSha, treeSha } = res.locals
   const { siteName, collectionName, newCollectionName } = req.params
 
   const IsomerCollection = new Collection(accessToken, siteName)
@@ -75,7 +75,7 @@ async function renameCollection(req, res) {
 
 // Move files in collection
 async function moveFiles(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, collectionPath, targetPath } = req.params
   const { files } = req.body
   const processedCollectionPathTokens = decodeURIComponent(

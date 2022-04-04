@@ -15,7 +15,7 @@ const { File, DataType } = require("@classes/File.js")
 const NAVIGATION_PATH = "navigation.yml"
 
 async function getNavigation(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   const { siteName } = req.params
 
@@ -31,7 +31,7 @@ async function getNavigation(req, res) {
 }
 
 async function updateNavigation(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const { content, sha } = req.body

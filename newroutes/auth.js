@@ -78,7 +78,7 @@ class AuthRouter {
   }
 
   async whoami(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const userInfo = await this.authService.getUserInfo({ accessToken })
     if (!userInfo) {

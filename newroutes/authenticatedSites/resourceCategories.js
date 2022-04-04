@@ -24,7 +24,7 @@ class ResourceCategoriesRouter {
 
   // List files in a resource category
   async listResourceDirectoryFiles(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const listResp = await this.resourceDirectoryService.listFiles(
@@ -36,7 +36,7 @@ class ResourceCategoriesRouter {
 
   // Create new resource category
   async createResourceDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, resourceRoomName } = req.params
     const { error } = CreateResourceDirectoryRequestSchema.validate(req.body)
@@ -55,7 +55,7 @@ class ResourceCategoriesRouter {
 
   // Rename resource category
   async renameResourceDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
@@ -75,7 +75,7 @@ class ResourceCategoriesRouter {
 
   // Delete resource category
   async deleteResourceDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, resourceRoomName, resourceCategoryName } = req.params
     await this.resourceDirectoryService.deleteResourceDirectory(
@@ -90,7 +90,7 @@ class ResourceCategoriesRouter {
 
   // Move resource category
   async moveResourceDirectoryPages(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const { error } = MoveResourceDirectoryPagesRequestSchema.validate(req.body)

@@ -24,7 +24,7 @@ class MediaFilesRouter {
 
   // Create new page in collection
   async createMediaFile(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, directoryName } = req.params
     const { error } = CreateMediaFileRequestSchema.validate(req.body)
@@ -42,7 +42,7 @@ class MediaFilesRouter {
 
   // Read page in collection
   async readMediaFile(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, fileName, directoryName } = req.params
 
@@ -56,7 +56,7 @@ class MediaFilesRouter {
 
   // Update page in collection
   async updateMediaFile(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, fileName, directoryName } = req.params
     const { error } = UpdateMediaFileRequestSchema.validate(req.body)
@@ -85,7 +85,7 @@ class MediaFilesRouter {
 
   // Delete page in collection
   async deleteMediaFile(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, fileName, directoryName } = req.params
     const { error } = DeleteMediaFileRequestSchema.validate(req.body)

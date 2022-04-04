@@ -3,8 +3,6 @@ const express = require("express")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class NetlifyTomlRouter {
   constructor({ netlifyTomlService }) {
     this.netlifyTomlService = netlifyTomlService
@@ -14,7 +12,7 @@ class NetlifyTomlRouter {
 
   // Read netlify.toml file
   async readNetlifyToml(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const netlifyTomlHeaderValues = await this.netlifyTomlService.read({
       accessToken,
@@ -24,14 +22,9 @@ class NetlifyTomlRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(authMiddleware.verifyJwt)
-
-    router.get(
-      "/netlify-toml",
-      attachReadRouteHandlerWrapper(this.readNetlifyToml)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.readNetlifyToml))
 
     return router
   }

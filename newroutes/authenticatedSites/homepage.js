@@ -20,7 +20,7 @@ class HomepageRouter {
 
   // Read homepage index file
   async readHomepage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
 
@@ -34,7 +34,7 @@ class HomepageRouter {
 
   // Update homepage index file
   async updateHomepage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const { error } = UpdateHomepageSchema.validate(req.body, {

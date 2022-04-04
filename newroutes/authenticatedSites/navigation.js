@@ -11,8 +11,6 @@ const {
 
 const { UpdateNavigationRequestSchema } = require("@validators/RequestSchema")
 
-const { authMiddleware } = require("@root/newmiddleware/index")
-
 class NavigationRouter {
   constructor({ navigationYmlService }) {
     this.navigationYmlService = navigationYmlService
@@ -22,10 +20,8 @@ class NavigationRouter {
 
   // Read navigation file
   async readNavigation(req, res) {
-    const {
-      accessToken,
-      params: { siteName },
-    } = req
+    const { siteName } = req.params
+    const { accessToken } = res.locals
 
     const readResp = await this.navigationYmlService.read({
       siteName,
@@ -41,10 +37,10 @@ class NavigationRouter {
     if (error) throw new BadRequestError(error.message)
 
     const {
-      accessToken,
       params: { siteName },
       body: { content: fileContent, sha },
     } = req
+    const { accessToken } = res.locals
 
     const updatedNavigationPage = await this.navigationYmlService.update(
       { siteName, accessToken },
@@ -55,18 +51,10 @@ class NavigationRouter {
   }
 
   getRouter() {
-    const router = express.Router()
+    const router = express.Router({ mergeParams: true })
 
-    router.use(authMiddleware.verifyJwt)
-
-    router.get(
-      "/:siteName/navigation",
-      attachReadRouteHandlerWrapper(this.readNavigation)
-    )
-    router.post(
-      "/:siteName/navigation",
-      attachWriteRouteHandlerWrapper(this.updateNavigation)
-    )
+    router.get("/", attachReadRouteHandlerWrapper(this.readNavigation))
+    router.post("/", attachWriteRouteHandlerWrapper(this.updateNavigation))
 
     return router
   }

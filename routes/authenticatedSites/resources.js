@@ -19,7 +19,7 @@ const { ResourceRoom } = require("@classes/ResourceRoom")
 
 // List resources
 async function listResources(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
@@ -33,7 +33,7 @@ async function listResources(req, res) {
 
 // Create new resource
 async function createNewResource(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
   const { resourceName } = req.body
 
@@ -48,7 +48,7 @@ async function createNewResource(req, res) {
 
 // Delete resource
 async function deleteResource(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, resourceName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
@@ -62,7 +62,7 @@ async function deleteResource(req, res) {
 
 // Rename resource
 async function renameResource(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, resourceName, newResourceName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
@@ -78,7 +78,7 @@ async function renameResource(req, res) {
 /* eslint-disable no-await-in-loop, no-restricted-syntax */
 // Move resource
 async function moveResources(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, resourceName, newResourceName } = req.params
   const { files } = req.body
 

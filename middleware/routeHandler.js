@@ -34,7 +34,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   res,
   next
 ) => {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   await lock(siteName)
@@ -46,8 +46,8 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       accessToken
     )
 
-    req.currentCommitSha = currentCommitSha
-    req.treeSha = treeSha
+    res.locals.currentCommitSha = currentCommitSha
+    res.locals.treeSha = treeSha
 
     originalCommitSha = currentCommitSha
   } catch (err) {

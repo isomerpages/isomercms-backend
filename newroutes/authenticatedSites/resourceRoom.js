@@ -23,7 +23,7 @@ class ResourceRoomRouter {
 
   // Get resource room name
   async getResourceRoomDirectoryName(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const getResp = await this.resourceRoomDirectoryService.getResourceRoomDirectoryName(
@@ -35,7 +35,7 @@ class ResourceRoomRouter {
 
   // List all resource categories
   async listAllResourceCategories(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, resourceRoomName } = req.params
     const listResp = await this.resourceRoomDirectoryService.listAllResourceCategories(
@@ -53,7 +53,7 @@ class ResourceRoomRouter {
 
   // Create new resource room
   async createResourceRoomDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const { error } = CreateResourceDirectoryRequestSchema.validate(req.body)
@@ -71,7 +71,7 @@ class ResourceRoomRouter {
 
   // Rename resource room
   async renameResourceRoomDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, resourceRoomName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
@@ -90,7 +90,7 @@ class ResourceRoomRouter {
 
   // Delete resource room
   async deleteResourceRoomDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, resourceRoomName } = req.params
     await this.resourceRoomDirectoryService.deleteResourceRoomDirectory(

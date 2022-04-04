@@ -24,7 +24,7 @@ class MediaCategoriesRouter {
 
   // List files in a resource category
   async listMediaDirectoryFiles(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, directoryName } = req.params
     const listResp = await this.mediaDirectoryService.listFiles(
@@ -36,7 +36,7 @@ class MediaCategoriesRouter {
 
   // Create new media directory
   async createMediaDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName } = req.params
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
@@ -55,7 +55,7 @@ class MediaCategoriesRouter {
 
   // Rename resource category
   async renameMediaDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, directoryName } = req.params
     const { error } = RenameMediaDirectoryRequestSchema.validate(req.body)
@@ -74,7 +74,7 @@ class MediaCategoriesRouter {
 
   // Delete resource category
   async deleteMediaDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, directoryName } = req.params
     await this.mediaDirectoryService.deleteMediaDirectory(
@@ -88,7 +88,7 @@ class MediaCategoriesRouter {
 
   // Move resource category
   async moveMediaFiles(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, directoryName } = req.params
     const { error } = MoveMediaDirectoryFilesRequestSchema.validate(req.body)

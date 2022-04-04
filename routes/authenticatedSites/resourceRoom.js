@@ -12,7 +12,7 @@ const { ResourceRoom } = require("@classes/ResourceRoom.js")
 
 // Get resource room name
 async function getResourceRoomName(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
@@ -23,7 +23,7 @@ async function getResourceRoomName(req, res) {
 
 // Create resource room
 async function createResourceRoom(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
   const { resourceRoom } = req.body
 
@@ -38,7 +38,7 @@ async function createResourceRoom(req, res) {
 
 // Rename resource room name
 async function renameResourceRoom(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName, resourceRoom } = req.params
 
   // TO-DO:
@@ -52,7 +52,7 @@ async function renameResourceRoom(req, res) {
 
 // Delete resource room
 async function deleteResourceRoom(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)

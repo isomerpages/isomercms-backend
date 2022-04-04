@@ -1,3 +1,7 @@
+jest.mock("axios", () => ({
+  get: jest.fn(),
+}))
+
 const axios = require("axios")
 const { Base64 } = require("js-base64")
 
@@ -9,8 +13,6 @@ const {
 } = require("@root/fixtures/netlifyToml")
 
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
-
-jest.mock("axios")
 
 describe("NetlifyToml Service", () => {
   const accessToken = "test-token"

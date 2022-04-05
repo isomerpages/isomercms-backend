@@ -13,17 +13,24 @@ import TokenStore from "./TokenStore"
 import TotpGenerator from "./TotpGenerator"
 import UsersService from "./UsersService"
 
-const IS_LOCAL_DEV = process.env.NODE_ENV === "LOCAL_DEV"
-const { OTP_EXPIRY, OTP_SECRET } = process.env
+const {
+  OTP_EXPIRY,
+  OTP_SECRET,
+  NODE_ENV,
+  LOCAL_SITE_ACCESS_TOKEN,
+  POSTMAN_API_KEY,
+} = process.env
+
+const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
 
 const tokenStore = IS_LOCAL_DEV
   ? (({
-      getToken: (_apiTokenName: string) => process.env.LOCAL_SITE_ACCESS_TOKEN,
+      getToken: (_apiTokenName: string) => LOCAL_SITE_ACCESS_TOKEN,
     } as unknown) as TokenStore)
   : new TokenStore()
 
 if (!OTP_SECRET) {
-  logger.error(
+  throw new Error(
     "Please ensure that you have set OTP_SECRET in your env vars and that you have sourced them!"
   )
 }
@@ -33,10 +40,16 @@ const totpGenerator = new TotpGenerator({
   expiry: parseInt(OTP_EXPIRY!, 10) ?? undefined,
 })
 
+if (!POSTMAN_API_KEY) {
+  throw new Error(
+    "Please ensure that you have set POSTMAN_API_KEY in your env vars and that you have sourced them!"
+  )
+}
+
 const mockMailer = {
   sendMail: (_email: string, html: string) => logger.info(html),
 } as MailClient
-const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient()
+const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient(POSTMAN_API_KEY)
 
 const smsClient = IS_LOCAL_DEV
   ? ({

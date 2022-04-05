@@ -1,8 +1,11 @@
 const express = require("express")
+const _ = require("lodash")
 const request = require("supertest")
 
 const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { homepageContent } = require("@fixtures/homepage")
 
 const { HomepageRouter } = require("../homepage")
 
@@ -33,9 +36,7 @@ describe("Homepage Router", () => {
 
   const siteName = "test-site"
   const accessToken = undefined // Can't set request fields - will always be undefined
-  const fileName = "test-file"
   const mockSha = "12345"
-  const mockContent = "mock-content"
 
   const reqDetails = { siteName, accessToken }
 
@@ -46,7 +47,7 @@ describe("Homepage Router", () => {
   describe("readHomepage", () => {
     const expectedResponse = {
       sha: mockSha,
-      content: mockContent,
+      content: homepageContent,
     }
 
     mockHomepagePageService.read.mockResolvedValue(expectedResponse)
@@ -61,30 +62,7 @@ describe("Homepage Router", () => {
 
   describe("updateHomepage", () => {
     const updatePageDetails = {
-      content: {
-        frontMatter: {
-          layout: "homepage",
-          title: "title",
-          description: "desc",
-          permalink: "permalink",
-          notification: "notification",
-          image: "image",
-          sections: [
-            {
-              hero: {
-                title: "hero-title",
-              },
-            },
-            {
-              infobar: {
-                title: "Infobar title",
-                subtitle: "Subtitle",
-              },
-            },
-          ],
-        },
-        pageBody: mockContent,
-      },
+      content: homepageContent,
       sha: mockSha,
     }
 
@@ -94,29 +72,13 @@ describe("Homepage Router", () => {
 
     it("rejects requests with incomplete body", async () => {
       // Missing layout
+      const incompleteFrontMatter = _.omit(homepageContent.frontMatter, [
+        "layout",
+      ])
       const incompleteDetails = {
         content: {
-          frontMatter: {
-            title: "title",
-            description: "desc",
-            permalink: "permalink",
-            notification: "notification",
-            image: "image",
-            sections: [
-              {
-                hero: {
-                  title: "hero-title",
-                },
-              },
-              {
-                infobar: {
-                  title: "Infobar title",
-                  subtitle: "Subtitle",
-                },
-              },
-            ],
-          },
-          pageBody: mockContent,
+          frontMatter: incompleteFrontMatter,
+          pageBody: homepageContent,
         },
         sha: mockSha,
       }

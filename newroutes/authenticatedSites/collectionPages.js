@@ -85,7 +85,7 @@ class CollectionPagesRouter {
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -145,7 +145,7 @@ class CollectionPagesRouter {
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     const reqDetails = { siteName, accessToken }
     if (subcollectionName) {

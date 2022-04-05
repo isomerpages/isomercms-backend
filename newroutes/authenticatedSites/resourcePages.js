@@ -78,7 +78,7 @@ class ResourcePagesRouter {
       pageName,
     } = req.params
     const { error } = UpdateResourcePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -120,7 +120,7 @@ class ResourcePagesRouter {
       pageName,
     } = req.params
     const { error } = DeleteResourcePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     const reqDetails = { siteName, accessToken }
     await this.resourcePageService.delete(reqDetails, {

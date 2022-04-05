@@ -10,6 +10,9 @@ const {
   ContactUsRouter,
 } = require("@root/newroutes/authenticatedSites/contactUs")
 const {
+  HomepageRouter,
+} = require("@root/newroutes/authenticatedSites/homepage")
+const {
   MediaCategoriesRouter,
 } = require("@root/newroutes/authenticatedSites/mediaCategories")
 const {
@@ -179,6 +182,7 @@ const getAuthenticatedSitesSubrouter = ({
     resourceRoomDirectoryService,
   })
   const contactUsV2Router = new ContactUsRouter({ contactUsPageService })
+  const homepageV2Router = new HomepageRouter({ homepagePageService })
   const settingsV2Router = new SettingsRouter({ settingsService })
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
@@ -213,6 +217,7 @@ const getAuthenticatedSitesSubrouter = ({
     resourceRoomV2Router.getRouter()
   )
   authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
+  authenticatedSitesSubrouter.use("/homepage", homepageV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
 
   return authenticatedSitesSubrouter

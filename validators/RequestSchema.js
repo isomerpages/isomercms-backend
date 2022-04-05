@@ -56,6 +56,23 @@ const UpdateContactUsSchema = Joi.object({
   sha: Joi.string().required(),
 })
 
+// Homepage
+const UpdateHomepageSchema = Joi.object({
+  content: Joi.object({
+    frontMatter: Joi.object({
+      layout: Joi.string().required(),
+      title: Joi.string().required(),
+      description: Joi.string().allow(""),
+      permalink: Joi.string().required(),
+      notification: Joi.string().allow(""),
+      image: Joi.string(),
+      sections: Joi.array().required(),
+    }).required(),
+    pageBody: Joi.string().allow(""), // Joi does not allow empty string (pageBody: '') for Joi.string() even if not required
+  }).required(),
+  sha: Joi.string().required(),
+})
+
 // Pages
 const FrontMatterSchema = Joi.object({
   title: Joi.string().required(),
@@ -227,6 +244,7 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
 
 module.exports = {
   UpdateContactUsSchema,
+  UpdateHomepageSchema,
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,

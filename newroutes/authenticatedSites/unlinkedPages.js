@@ -74,7 +74,7 @@ class UnlinkedPagesRouter {
 
     const { siteName, pageName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -113,7 +113,7 @@ class UnlinkedPagesRouter {
 
     const { siteName, pageName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     await this.unlinkedPageService.delete(
       { siteName, accessToken },

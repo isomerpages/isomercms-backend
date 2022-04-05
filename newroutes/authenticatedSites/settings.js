@@ -45,7 +45,7 @@ class SettingsRouter {
     const { siteName } = req.params
 
     const { error } = UpdateSettingsRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
 
     const reqDetails = { siteName, accessToken }
 

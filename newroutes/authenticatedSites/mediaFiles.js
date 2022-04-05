@@ -60,7 +60,7 @@ class MediaFilesRouter {
 
     const { siteName, fileName, directoryName } = req.params
     const { error } = UpdateMediaFileRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { content, sha, newFileName } = req.body
     const reqDetails = { siteName, accessToken, currentCommitSha, treeSha }
     let updateResp
@@ -89,7 +89,7 @@ class MediaFilesRouter {
 
     const { siteName, fileName, directoryName } = req.params
     const { error } = DeleteMediaFileRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     const reqDetails = { siteName, accessToken }
     await this.mediaFileService.delete(reqDetails, {

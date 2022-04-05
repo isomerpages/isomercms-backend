@@ -7,6 +7,9 @@ const {
   CollectionsRouter,
 } = require("@root/newroutes/authenticatedSites/collections")
 const {
+  ContactUsRouter,
+} = require("@root/newroutes/authenticatedSites/contactUs")
+const {
   MediaCategoriesRouter,
 } = require("@root/newroutes/authenticatedSites/mediaCategories")
 const {
@@ -52,6 +55,9 @@ const {
 const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  ContactUsPageService,
+} = require("@services/fileServices/MdPageServices/ContactUsPageService")
 const {
   HomepagePageService,
 } = require("@services/fileServices/MdPageServices/HomepagePageService")
@@ -134,6 +140,10 @@ const getAuthenticatedSitesSubrouter = ({
     baseDirectoryService,
     gitHubService,
   })
+  const contactUsPageService = new ContactUsPageService({
+    gitHubService,
+    footerYmlService,
+  })
   const settingsService = new SettingsService({
     homepagePageService,
     configYmlService,
@@ -168,6 +178,7 @@ const getAuthenticatedSitesSubrouter = ({
   const resourceRoomV2Router = new ResourceRoomRouter({
     resourceRoomDirectoryService,
   })
+  const contactUsV2Router = new ContactUsRouter({ contactUsPageService })
   const settingsV2Router = new SettingsRouter({ settingsService })
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
@@ -201,6 +212,7 @@ const getAuthenticatedSitesSubrouter = ({
     "/resourceRoom",
     resourceRoomV2Router.getRouter()
   )
+  authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
 
   return authenticatedSitesSubrouter

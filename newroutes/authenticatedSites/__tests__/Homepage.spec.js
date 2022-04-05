@@ -2,6 +2,8 @@ const express = require("express")
 const _ = require("lodash")
 const request = require("supertest")
 
+const { NotFoundError } = require("@errors/NotFoundError")
+
 const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
@@ -50,12 +52,20 @@ describe("Homepage Router", () => {
       content: homepageContent,
     }
 
-    mockHomepagePageService.read.mockResolvedValue(expectedResponse)
-
     it("retrieves homepage details", async () => {
+      mockHomepagePageService.read.mockResolvedValueOnce(expectedResponse)
       const resp = await request(app).get(`/${siteName}/homepage`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockHomepagePageService.read).toHaveBeenCalledWith(reqDetails)
+    })
+
+    it("returns appropriate failure on read failure", async () => {
+      mockHomepagePageService.read.mockRejectedValueOnce(
+        new NotFoundError("not here")
+      )
+      await request(app).get(`/${siteName}/homepage`).expect(404)
+
       expect(mockHomepagePageService.read).toHaveBeenCalledWith(reqDetails)
     })
   })

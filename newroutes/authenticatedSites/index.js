@@ -19,6 +19,9 @@ const {
   MediaFilesRouter,
 } = require("@root/newroutes/authenticatedSites/mediaFiles")
 const {
+  NavigationRouter,
+} = require("@root/newroutes/authenticatedSites/navigation")
+const {
   ResourceCategoriesRouter,
 } = require("@root/newroutes/authenticatedSites/resourceCategories")
 const {
@@ -184,6 +187,9 @@ const getAuthenticatedSitesSubrouter = ({
   const contactUsV2Router = new ContactUsRouter({ contactUsPageService })
   const homepageV2Router = new HomepageRouter({ homepagePageService })
   const settingsV2Router = new SettingsRouter({ settingsService })
+  const navigationV2Router = new NavigationRouter({
+    navigationYmlService: navYmlService,
+  })
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
@@ -212,6 +218,7 @@ const getAuthenticatedSitesSubrouter = ({
     mediaFilesV2Router.getRouter()
   )
   authenticatedSitesSubrouter.use("/media", mediaDirectoryV2Router.getRouter())
+  authenticatedSitesSubrouter.use("/navigation", navigationV2Router.getRouter())
   authenticatedSitesSubrouter.use(
     "/resourceRoom",
     resourceRoomV2Router.getRouter()

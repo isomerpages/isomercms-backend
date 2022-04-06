@@ -207,6 +207,35 @@ const DeleteMediaFileRequestSchema = Joi.object().keys({
   sha: Joi.string().required(),
 })
 
+const UpdateNavigationRequestSchema = Joi.object().keys({
+  content: Joi.object()
+    .keys({
+      logo: Joi.string().allow(""),
+      links: Joi.array()
+        .items(
+          Joi.object()
+            .keys({
+              title: Joi.string().required(),
+              url: Joi.string(),
+              collection: Joi.string(),
+              resource_room: Joi.boolean().valid(true),
+              sublinks: Joi.array().items(
+                Joi.object().keys({
+                  title: Joi.string().required(),
+                  url: Joi.string().required(),
+                })
+              ),
+            })
+            .oxor("url", "collection", "resource_room")
+            .oxor("sublinks", "collection")
+            .oxor("sublinks", "resource_room")
+        )
+        .required(),
+    })
+    .required(),
+  sha: Joi.string().required(),
+})
+
 const UpdateSettingsRequestSchema = Joi.object().keys({
   colors: Joi.object().keys({
     "primary-color": Joi.string().required(),
@@ -264,5 +293,6 @@ module.exports = {
   CreateMediaFileRequestSchema,
   UpdateMediaFileRequestSchema,
   DeleteMediaFileRequestSchema,
+  UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
 }

@@ -8,6 +8,13 @@ links:
     resource_room: true
   - title: Test Folder Title No Pages
     collection: test-folder-title-no-pages
+  - title: Menu Title
+    url: /menu
+    sublinks:
+      - title: Submenu Title
+        url: /submenu
+      - title: Submenu Title 2
+        url: /submenu-2
 `
 
 const navigationContent = {
@@ -19,6 +26,14 @@ const navigationContent = {
     {
       title: "Test Folder Title No Pages",
       collection: "test-folder-title-no-pages",
+    },
+    {
+      title: "Menu Title",
+      url: "/menu",
+      sublinks: [
+        { title: "Submenu Title", url: "/submenu" },
+        { title: "Submenu Title 2", url: "/submenu-2" },
+      ],
     },
   ],
 }

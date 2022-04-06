@@ -39,6 +39,5 @@
     "require": ["tsconfig-paths/register"],
     "transpileOnly": true
   },
-  "files": ["global.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

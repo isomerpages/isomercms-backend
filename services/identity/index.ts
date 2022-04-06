@@ -40,7 +40,7 @@ const totpGenerator = new TotpGenerator({
   expiry: parseInt(OTP_EXPIRY!, 10) ?? undefined,
 })
 
-if (!POSTMAN_API_KEY) {
+if (!POSTMAN_API_KEY && !IS_LOCAL_DEV) {
   throw new Error(
     "Please ensure that you have set POSTMAN_API_KEY in your env vars and that you have sourced them!"
   )
@@ -49,7 +49,7 @@ if (!POSTMAN_API_KEY) {
 const mockMailer = {
   sendMail: (_email: string, html: string) => logger.info(html),
 } as MailClient
-const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient(POSTMAN_API_KEY)
+const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient(POSTMAN_API_KEY!)
 
 const smsClient = IS_LOCAL_DEV
   ? ({

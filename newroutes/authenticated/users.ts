@@ -34,7 +34,8 @@ export class UsersRouter {
     }
 
     try {
-      if (!this.usersService.canSendEmailOtp(email)) {
+      const isValidEmail = await this.usersService.canSendEmailOtp(email)
+      if (!isValidEmail) {
         throw new Error(
           `The email you have entered is not a government-issued email. Please contact your website owner for assistance.`
         )

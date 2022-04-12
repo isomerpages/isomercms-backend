@@ -73,7 +73,10 @@ class AuthMiddlewareService {
         throw new AuthError(
           `Authentication error: user not logged in with email`
         )
-      } else if (err.name === "TokenExpiredError") {
+      } else if (
+        err.name === "TokenExpiredError" ||
+        err.name === "JsonWebTokenError"
+      ) {
         logger.error(`Authentication error: JWT token expired. Url: ${url}`)
         throw new AuthError(`JWT token has expired`)
       } else {

@@ -11,14 +11,11 @@ module.exports = {
         allowNull: false,
         unique: true,
         type: Sequelize.TEXT,
-        validate: {
-          isEmail: true,
-        },
       },
       expiry: {
         type: Sequelize.DATE,
         allowNull: true,
-        defaultValue: null,
+        defaultValue: Sequelize.literal("NOW() + INTERVAL '6 months'"),
       },
       created_at: {
         type: Sequelize.DATE,

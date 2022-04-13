@@ -32,7 +32,7 @@ export class Whitelist extends Model {
     type: DataType.DATE,
     defaultValue: null,
   })
-  expiry!: Date
+  expiry: Date
 
   @CreatedAt
   createdAt!: Date

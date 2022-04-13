@@ -1,3 +1,4 @@
+import moment from "moment-timezone"
 import {
   DataType,
   Column,
@@ -30,9 +31,9 @@ export class Whitelist extends Model {
   @Column({
     allowNull: true,
     type: DataType.DATE,
-    defaultValue: null,
+    defaultValue: moment().add(6, "months"),
   })
-  expiry: Date
+  expiry!: Date
 
   @CreatedAt
   createdAt!: Date

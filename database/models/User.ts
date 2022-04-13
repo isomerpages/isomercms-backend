@@ -26,7 +26,7 @@ export class User extends Model {
     unique: true,
     type: DataType.TEXT,
   })
-  email!: string
+  email?: string | null
 
   @Column({
     allowNull: false,
@@ -42,7 +42,7 @@ export class User extends Model {
     allowNull: true,
     type: DataType.STRING(255),
   })
-  contactNumber!: string
+  contactNumber?: string | null
 
   @Column({
     type: DataType.DATE,

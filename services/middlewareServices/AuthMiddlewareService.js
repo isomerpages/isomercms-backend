@@ -49,6 +49,10 @@ class AuthMiddlewareService {
       const userId = E2E_TEST_USER
       return { accessToken, userId }
     }
+    if (!isomercms) {
+      logger.error(`Authentication error: JWT token expired. Url: ${url}`)
+      throw new AuthError(`JWT token has expired`)
+    }
     try {
       const {
         access_token: retrievedToken,
@@ -73,14 +77,11 @@ class AuthMiddlewareService {
         throw new AuthError(
           `Authentication error: user not logged in with email`
         )
-      } else if (
-        err.name === "TokenExpiredError" ||
-        err.name === "JsonWebTokenError"
-      ) {
+      } else if (err.name === "TokenExpiredError") {
         logger.error(`Authentication error: JWT token expired. Url: ${url}`)
         throw new AuthError(`JWT token has expired`)
       } else {
-        logger.error(`Authentication error. Url: ${url}`)
+        logger.error(`Authentication error. Message:${err.message} Url: ${url}`)
       }
       throw err
     }

@@ -81,7 +81,9 @@ class AuthMiddlewareService {
         logger.error(`Authentication error: JWT token expired. Url: ${url}`)
         throw new AuthError(`JWT token has expired`)
       } else {
-        logger.error(`Authentication error. Message:${err.message} Url: ${url}`)
+        logger.error(
+          `Authentication error. Message: ${err.message} Url: ${url}`
+        )
       }
       throw err
     }

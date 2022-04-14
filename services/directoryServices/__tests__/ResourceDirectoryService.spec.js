@@ -254,7 +254,7 @@ describe("Resource Directory Service", () => {
       sha,
     })
     it("Renaming a resource category works correctly", async () => {
-      const getResourceSpy = jest.spyOn(service, "getResourceDirectoryPath")
+      const renameResourceSpy = jest.spyOn(service, "renameResourceDirectory")
 
       await expect(
         service.renameResourceDirectory(reqDetails, {
@@ -287,7 +287,7 @@ describe("Resource Directory Service", () => {
         fileName: INDEX_FILE_NAME,
         directoryName: `${resourceRoomName}/${newDirectoryName}`,
       })
-      expect(getResourceSpy).toHaveBeenCalledBefore(mockGitHubService.update)
+      expect(renameResourceSpy).toHaveBeenCalledBefore(mockGitHubService.update)
     })
 
     it("Renaming a resource category slugifies the name correctly", async () => {
@@ -297,7 +297,7 @@ describe("Resource Directory Service", () => {
       })
       const originalResourceCategory = "Test Resource"
       const slugifiedResourceCategory = "test-resource"
-      const getResourceSpy = jest.spyOn(service, "getResourceDirectoryPath")
+      const renameResourceSpy = jest.spyOn(service, "renameResourceDirectory")
 
       await expect(
         service.renameResourceDirectory(reqDetails, {
@@ -330,7 +330,7 @@ describe("Resource Directory Service", () => {
         fileName: INDEX_FILE_NAME,
         directoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
       })
-      expect(getResourceSpy).toHaveBeenCalledBefore(mockGitHubService.update)
+      expect(renameResourceSpy).toHaveBeenCalledBefore(mockGitHubService.update)
     })
   })
 

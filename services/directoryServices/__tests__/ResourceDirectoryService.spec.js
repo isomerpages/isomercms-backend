@@ -261,6 +261,7 @@ describe("Resource Directory Service", () => {
           newDirectoryName,
         })
       ).resolves.not.toThrowError()
+
       expect(mockGitHubService.read).toHaveBeenCalledWith(reqDetails, {
         fileName: INDEX_FILE_NAME,
         directoryName,
@@ -284,14 +285,19 @@ describe("Resource Directory Service", () => {
         fileName: INDEX_FILE_NAME,
         directoryName: `${resourceRoomName}/${newDirectoryName}`,
       })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledBefore(
+        mockGitHubService.update
+      )
     })
-    mockGitHubService.read.mockResolvedValueOnce({
-      content: mockMarkdownContent,
-      sha,
-    })
+
     it("Renaming a resource category slugifies the name correctly", async () => {
+      mockGitHubService.read.mockResolvedValueOnce({
+        content: mockMarkdownContent,
+        sha,
+      })
       const originalResourceCategory = "Test Resource"
       const slugifiedResourceCategory = "test-resource"
+
       await expect(
         service.renameResourceDirectory(reqDetails, {
           resourceRoomName,
@@ -299,6 +305,7 @@ describe("Resource Directory Service", () => {
           newDirectoryName: originalResourceCategory,
         })
       ).resolves.not.toThrowError()
+
       expect(mockGitHubService.read).toHaveBeenCalledWith(reqDetails, {
         fileName: INDEX_FILE_NAME,
         directoryName,
@@ -322,6 +329,9 @@ describe("Resource Directory Service", () => {
         fileName: INDEX_FILE_NAME,
         directoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
       })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledBefore(
+        mockGitHubService.update
+      )
     })
   })
 

@@ -1,8 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { ResourceRoomRouter } = require("../resourceRoom")
 
@@ -19,33 +20,31 @@ describe("Resource Room Router", () => {
     resourceRoomDirectoryService: mockResourceRoomDirectoryService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
+  subrouter.get(
     "/:siteName/resourceRoom/:resourceRoomName",
     attachReadRouteHandlerWrapper(router.listAllResourceCategories)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/resourceRoom",
     attachReadRouteHandlerWrapper(router.getResourceRoomDirectoryName)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/resourceRoom",
     attachReadRouteHandlerWrapper(router.createResourceRoomDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/resourceRoom/:resourceRoomName",
     attachReadRouteHandlerWrapper(router.renameResourceRoomDirectory)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/resourceRoom/:resourceRoomName",
     attachReadRouteHandlerWrapper(router.deleteResourceRoomDirectory)
   )
 
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
   const resourceRoomName = "resource-room"

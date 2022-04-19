@@ -1,9 +1,9 @@
-const cookieParser = require("cookie-parser")
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
@@ -23,20 +23,17 @@ describe("Unlinked Pages Router", () => {
     authService: mockAuthService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
-  app.use(cookieParser())
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
+  subrouter.get(
     "/github-redirect",
     attachReadRouteHandlerWrapper(router.authRedirect)
   )
-  app.get("/", attachReadRouteHandlerWrapper(router.githubAuth))
-  app.delete("/logout", attachReadRouteHandlerWrapper(router.logout))
-  app.get("/whoami", attachReadRouteHandlerWrapper(router.whoami))
-  app.use(errorHandler)
+  subrouter.get("/", attachReadRouteHandlerWrapper(router.githubAuth))
+  subrouter.delete("/logout", attachReadRouteHandlerWrapper(router.logout))
+  subrouter.get("/whoami", attachReadRouteHandlerWrapper(router.whoami))
+  const app = generateRouter(subrouter)
 
   beforeEach(() => {
     jest.clearAllMocks()

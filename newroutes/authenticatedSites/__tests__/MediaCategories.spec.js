@@ -1,8 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { MediaCategoriesRouter } = require("../mediaCategories")
 
@@ -19,33 +20,31 @@ describe("Media Categories Router", () => {
     mediaDirectoryService: mockMediaDirectoryService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
+  subrouter.get(
     "/:siteName/media/:directoryName",
     attachReadRouteHandlerWrapper(router.listMediaDirectoryFiles)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/media",
     attachReadRouteHandlerWrapper(router.createMediaDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/media/:directoryName",
     attachReadRouteHandlerWrapper(router.renameMediaDirectory)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/media/:directoryName",
     attachReadRouteHandlerWrapper(router.deleteMediaDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/media/:directoryName/move",
     attachReadRouteHandlerWrapper(router.moveMediaFiles)
   )
 
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
   const directoryName = "imageDir"

@@ -1,9 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
+const { generateRouter } = require("@fixtures/app.js")
 const { configContent, configSha, configResponse } = require("@fixtures/config")
 const { footerContent, footerSha, footerResponse } = require("@fixtures/footer")
 const { homepageContent, homepageSha } = require("@fixtures/homepage")
@@ -31,18 +31,16 @@ describe("Settings Router", () => {
     settingsService: mockSettingsService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
-  app.get(
+  const subrouter = express()
+  subrouter.get(
     "/:siteName/settings",
     attachReadRouteHandlerWrapper(router.readSettingsPage)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/settings",
     attachReadRouteHandlerWrapper(router.updateSettingsPage)
   )
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
 

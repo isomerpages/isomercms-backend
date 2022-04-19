@@ -33,7 +33,7 @@ export class Whitelist extends Model {
     type: DataType.DATE,
     defaultValue: moment().add(6, "months"),
   })
-  expiry!: Date
+  expiry!: Date | null
 
   @CreatedAt
   createdAt!: Date

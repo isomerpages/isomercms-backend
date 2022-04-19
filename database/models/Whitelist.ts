@@ -8,7 +8,7 @@ import {
   UpdatedAt,
 } from "sequelize-typescript"
 
-@Table({ tableName: "whitelists" })
+@Table({ tableName: "whitelist" })
 export class Whitelist extends Model {
   @Column({
     autoIncrement: true,

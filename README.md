@@ -40,7 +40,8 @@ Next, you will require the correct environment variables and credentials.
 - Search for the corresponding credentials `isomercms-<staging | production>-bastion.pem`
 - Put these credentials into the .ssh folder also.
 
-Finally, simply run the following command: `npm run db:migrate:<staging | production>`.
+Next, run the following command: `npm run jump:<staging | production>`. This sets up the port-forwarding service.
+Finally, run the following command in a separate terminal: `npm run db:migrate:<staging | production>` to run the migration.
 
 What happens under the hood is described below:
 You need to set up a local port-forwarding service that forwards traffic from a specific local port, e.g. 5433, to the database via the bastion host (remember: the bastion host resides in the public subnet of the VPC and thus can be contactable from your computer).

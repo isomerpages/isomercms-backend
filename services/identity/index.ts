@@ -2,7 +2,7 @@ import { Sequelize } from "sequelize-typescript"
 
 import logger from "@logger/logger"
 
-import { User, Site } from "@database/models"
+import { User, Site, Whitelist } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 
 import AuthService from "./AuthService"
@@ -68,6 +68,7 @@ export const getUsersService = (sequelize: Sequelize) =>
     mailer,
     smsClient,
     sequelize,
+    whitelist: Whitelist,
   })
 
 // NOTE: This is because the identity auth service has an

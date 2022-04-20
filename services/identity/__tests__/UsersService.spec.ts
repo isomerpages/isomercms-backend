@@ -1,7 +1,7 @@
 import { Sequelize } from "sequelize-typescript"
 import { ModelStatic } from "sequelize/types"
 
-import { User } from "@root/database/models"
+import { User, Whitelist } from "@root/database/models"
 
 import MailClient from "../MailClient"
 import SmsClient from "../SmsClient"
@@ -27,6 +27,9 @@ const MockRepository = {
 const MockSequelize = {
   transaction: jest.fn((closure) => closure("transaction")),
 }
+const MockWhitelist = {
+  findAll: jest.fn(),
+}
 
 const UsersService = new _UsersService({
   otp: (MockOtp as unknown) as TotpGenerator,
@@ -34,24 +37,13 @@ const UsersService = new _UsersService({
   smsClient: (MockSmsClient as unknown) as SmsClient,
   repository: (MockRepository as unknown) as ModelStatic<User>,
   sequelize: (MockSequelize as unknown) as Sequelize,
+  whitelist: (MockWhitelist as unknown) as ModelStatic<Whitelist>,
 })
 
 const mockEmail = "someone@tech.gov.sg"
 const mockGithubId = "sudowoodo"
-let DOMAIN_WHITELIST: string | undefined
 
 describe("User Service", () => {
-  beforeAll(async () => {
-    // NOTE: We set the DOMAIN_WHITELIST env var here explicitly
-    // to prevent differing test results between devs
-    DOMAIN_WHITELIST = process.env.DOMAIN_WHITELIST
-    process.env.DOMAIN_WHITELIST = ""
-  })
-
-  afterAll(() => {
-    process.env.DOMAIN_WHITELIST = DOMAIN_WHITELIST
-  })
-
   afterEach(() => jest.clearAllMocks())
 
   it("should return the result of calling the findOne method by email on the db model", () => {
@@ -128,39 +120,54 @@ describe("User Service", () => {
     expect(actual.githubId).toBe(mockGithubId)
   })
 
-  it("should not allow gov.sg emails when no whitelist is specified", () => {
+  it("should allow whitelisted emails", async () => {
+    // Arrange
+    const expected = true
+    const mockWhitelistEntry = {
+      email: ".gov.sg",
+    }
+    MockWhitelist.findAll.mockResolvedValueOnce([mockWhitelistEntry])
+
+    // Act
+    const actual = await UsersService.canSendEmailOtp(mockEmail)
+
+    // Assert
+    expect(actual).toBe(expected)
+  })
+  it("should not allow partial match of whitelisted emails", async () => {
     // Arrange
     const expected = false
     // NOTE: This ends with gov.sg not .gov.sg (lacks a dot after the @)
     const emailWithoutDot = "user@gov.sg"
+    const mockWhitelistEntry = {
+      email: ".gov.sg",
+    }
+    MockWhitelist.findAll.mockResolvedValueOnce([mockWhitelistEntry])
 
     // Act
-    const actual = UsersService.canSendEmailOtp(emailWithoutDot)
+    const actual = await UsersService.canSendEmailOtp(emailWithoutDot)
 
     // Assert
     expect(actual).toBe(expected)
   })
 
-  it("should allow not .gov.sg emails when whitelist is specified and does not contain .gov.sg", () => {
+  it("should allow not .gov.sg emails when whitelist does not contain .gov.sg", async () => {
     // Arrange
     const expected = false
-    const newWhitelist = "accenture.com; ntu.edu.sg"
-    const curWhitelist = process.env.DOMAIN_WHITELIST
-    process.env.DOMAIN_WHITELIST = newWhitelist
-    // NOTE: Need to reinitialise to force the new whitelist to be used
-    const NewUserService = new _UsersService({
-      otp: (MockOtp as unknown) as TotpGenerator,
-      mailer: (MockOtp as unknown) as MailClient,
-      smsClient: (MockSmsClient as unknown) as SmsClient,
-      repository: (MockRepository as unknown) as ModelStatic<User>,
-      sequelize: (MockSequelize as unknown) as Sequelize,
-    })
+    const mockWhitelistEntries = [
+      {
+        email: "@accenture.com",
+      },
+      {
+        email: ".edu.sg",
+      },
+    ]
+    MockWhitelist.findAll.mockResolvedValueOnce(mockWhitelistEntries)
 
     // Act
-    const actual = NewUserService.canSendEmailOtp(mockEmail)
+    const actual = await UsersService.canSendEmailOtp(mockEmail)
 
     // Assert
     expect(actual).toBe(expected)
-    process.env.DOMAIN_WHITELIST = curWhitelist
   })
 })

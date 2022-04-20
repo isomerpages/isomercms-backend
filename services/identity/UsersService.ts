@@ -1,8 +1,8 @@
-import { ModelStatic } from "sequelize"
+import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { User } from "@database/models"
+import { User, Whitelist } from "@database/models"
 
 import MailClient from "./MailClient"
 import SmsClient from "./SmsClient"
@@ -14,6 +14,7 @@ interface UsersServiceProps {
   smsClient: SmsClient
   repository: ModelStatic<User>
   sequelize: Sequelize
+  whitelist: ModelStatic<Whitelist>
 }
 
 class UsersService {
@@ -29,7 +30,7 @@ class UsersService {
 
   private readonly sequelize: UsersServiceProps["sequelize"]
 
-  readonly whitelistDomains: string[]
+  private readonly whitelist: UsersServiceProps["whitelist"]
 
   constructor({
     otp,
@@ -37,20 +38,14 @@ class UsersService {
     smsClient,
     repository,
     sequelize,
+    whitelist,
   }: UsersServiceProps) {
     this.otp = otp
     this.mailer = mailer
     this.smsClient = smsClient
     this.repository = repository
     this.sequelize = sequelize
-
-    // Allowed domains is a semicolon separate list of domains (e.g. .gov.sg; @agency.com.sg; etc)
-    // that are allowed to login.
-    const { DOMAIN_WHITELIST } = process.env
-
-    this.whitelistDomains = (DOMAIN_WHITELIST || ".gov.sg")
-      .split(";")
-      .map((domain) => domain.toLowerCase().trim())
+    this.whitelist = whitelist
   }
 
   async findByEmail(email: string) {
@@ -88,10 +83,18 @@ class UsersService {
     })
   }
 
-  canSendEmailOtp(email: string) {
+  async canSendEmailOtp(email: string) {
+    const whitelistEntries = await this.whitelist.findAll({
+      attributes: ["email"],
+      where: {
+        expiry: {
+          [Op.or]: [{ [Op.is]: null }, { [Op.gt]: new Date() }],
+        },
+      },
+    })
+    const whitelistDomains = whitelistEntries.map((entry) => entry.email)
     const hasMatchDomain =
-      this.whitelistDomains.filter((domain) => email.endsWith(domain)).length >
-      0
+      whitelistDomains.filter((domain) => email.endsWith(domain)).length > 0
     return hasMatchDomain
   }
 

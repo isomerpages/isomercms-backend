@@ -1,11 +1,11 @@
-const cookieParser = require("cookie-parser")
 const express = require("express")
 const request = require("supertest")
 
 const { NotFoundError } = require("@errors/NotFoundError")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { SitesRouter } = require("../sites")
 
@@ -29,23 +29,23 @@ describe("Sites Router", () => {
     sitesService: mockSitesService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
-  app.use(cookieParser())
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get("/", attachReadRouteHandlerWrapper(router.getSites))
-  app.get("/:siteName", attachReadRouteHandlerWrapper(router.checkHasAccess))
-  app.get(
+  subrouter.get("/", attachReadRouteHandlerWrapper(router.getSites))
+  subrouter.get(
+    "/:siteName",
+    attachReadRouteHandlerWrapper(router.checkHasAccess)
+  )
+  subrouter.get(
     "/:siteName/lastUpdated",
     attachReadRouteHandlerWrapper(router.getLastUpdated)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/stagingUrl",
     attachReadRouteHandlerWrapper(router.getStagingUrl)
   )
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   beforeEach(() => {
     jest.clearAllMocks()

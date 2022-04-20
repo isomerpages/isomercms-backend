@@ -1,8 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { NetlifyTomlRouter } = require("../netlifyToml")
 
@@ -16,13 +17,14 @@ describe("NetlifyToml Router", () => {
     netlifyTomlService: mockNetlifyTomlService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get("/netlifyToml", attachReadRouteHandlerWrapper(router.readNetlifyToml))
-  app.use(errorHandler)
+  subrouter.get(
+    "/netlifyToml",
+    attachReadRouteHandlerWrapper(router.readNetlifyToml)
+  )
+  const app = generateRouter(subrouter)
 
   const accessToken = undefined // Can't set request fields - will always be undefined
 

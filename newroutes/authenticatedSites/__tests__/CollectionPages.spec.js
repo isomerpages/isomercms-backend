@@ -1,8 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { CollectionPagesRouter } = require("../collectionPages")
 
@@ -28,44 +29,42 @@ describe("Collection Pages Router", () => {
     subcollectionPageService: mockSubcollectionPageService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/pages",
     attachReadRouteHandlerWrapper(router.createCollectionPage)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages",
     attachReadRouteHandlerWrapper(router.createCollectionPage)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/collections/:collectionName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.readCollectionPage)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.readCollectionPage)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.updateCollectionPage)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.updateCollectionPage)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/collections/:collectionName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteCollectionPage)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteCollectionPage)
   )
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
   const collectionName = "collection"

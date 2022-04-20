@@ -3,6 +3,7 @@ import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
 import { User } from "@database/models"
+import { generateRouter } from "@fixtures/app"
 import { UsersRouter as _UsersRouter } from "@root/newroutes/authenticated/users"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
@@ -22,20 +23,19 @@ const mockInvalidNumber = "00000000"
 const UsersService = getUsersService(sequelize)
 
 const UsersRouter = new _UsersRouter({ usersService: UsersService })
-const router = UsersRouter.getRouter()
+const usersSubrouter = UsersRouter.getRouter()
 
 // Set up express with defaults and use the router under test
-const app = express()
-app.use(express.json({ limit: "7mb" }))
+const subrouter = express()
 // As we set certain properties on res.locals when the user signs in using github
 // In order to do integration testing, we must expose a middleware
 // that allows us to set this properties also
-app.use((req, res, next) => {
+subrouter.use((req, res, next) => {
   res.locals.userId = req.body.userId
   next()
 })
-app.use(express.urlencoded({ extended: true }))
-app.use(router)
+subrouter.use(usersSubrouter)
+const app = generateRouter(subrouter)
 
 const extractEmailOtp = (emailBody: string): string => {
   const startIdx = emailBody.search("<b>")

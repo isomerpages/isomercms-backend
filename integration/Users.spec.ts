@@ -2,7 +2,7 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
-import { User } from "@database/models"
+import { User, Whitelist } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import { UsersRouter as _UsersRouter } from "@root/newroutes/authenticated/users"
 import { getUsersService } from "@services/identity"
@@ -16,6 +16,7 @@ jest.unmock("otplib")
 const mockValidEmail = "open@up.gov.sg"
 const mockInvalidEmail = "stay@home.sg"
 const mockUnwhitelistedEmail = "blacklisted@sad.sg"
+const mockWhitelistedDomain = ".gov.sg"
 const mockGithubId = "i m a git"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
@@ -53,10 +54,18 @@ describe("Users Router", () => {
   })
 
   describe("/email/otp", () => {
+    afterEach(async () => {
+      // Clean up so that different tests using
+      // the same mock user don't interfere with each other
+      await Whitelist.destroy({
+        where: { email: mockWhitelistedDomain },
+      })
+    })
     it("should return 200 when email sending is successful", async () => {
       // Arrange
       const expected = 200
       mockAxios.post.mockResolvedValueOnce(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
       const actual = await request(app).post("/email/otp").send({
@@ -92,6 +101,7 @@ describe("Users Router", () => {
     it("should return 400 when the email is not in the whitelist", async () => {
       // Arrange
       const expected = 400
+      await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
       const actual = await request(app).post("/email/otp").send({
@@ -122,6 +132,9 @@ describe("Users Router", () => {
       await User.destroy({
         where: { githubId: mockGithubId },
       })
+      await Whitelist.destroy({
+        where: { email: mockWhitelistedDomain },
+      })
     })
 
     it("should return 200 when the otp is correct", async () => {
@@ -133,6 +146,7 @@ describe("Users Router", () => {
         return email
       })
       await User.create({ githubId: mockGithubId })
+      await Whitelist.create({ email: mockWhitelistedDomain })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })

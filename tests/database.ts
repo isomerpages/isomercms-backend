@@ -1,7 +1,7 @@
 import { Sequelize, SequelizeOptions } from "sequelize-typescript"
 
 import sequelizeConfig from "../database/config"
-import { Site, SiteMember, User } from "../database/models"
+import { Site, SiteMember, User, Whitelist } from "../database/models"
 
 /**
  * NOTE: This is required because globalSetup/Teardown live separately from
@@ -14,7 +14,7 @@ const sequelize = new Sequelize({
   ...sequelizeConfig,
 } as SequelizeOptions)
 
-sequelize.addModels([Site, SiteMember, User])
+sequelize.addModels([Site, SiteMember, User, Whitelist])
 
 // eslint-disable-next-line import/prefer-default-export
 export { sequelize }

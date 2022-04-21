@@ -141,7 +141,7 @@ async function logout(req, res) {
 }
 
 async function whoami(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
 
   // Make a call to github
   const endpoint = "https://api.github.com/user"

@@ -11,6 +11,68 @@ const ItemSchema = FileSchema.keys({
   children: Joi.array().items(Joi.string()),
 })
 
+// Contact Us
+const UpdateContactUsSchema = Joi.object({
+  content: Joi.object({
+    frontMatter: Joi.object({
+      layout: Joi.string().required(),
+      title: Joi.string().required(),
+      permalink: Joi.string().required(),
+      feedback: Joi.string().allow(""),
+      agency_name: Joi.string().required(),
+      locations: Joi.array()
+        .items(
+          Joi.object({
+            address: Joi.array().items(Joi.string().allow("")),
+            operating_hours: Joi.array().items(
+              Joi.object({
+                days: Joi.string().allow(""),
+                time: Joi.string().allow(""),
+                description: Joi.string().allow(""),
+              })
+            ),
+            maps_link: Joi.string().allow(""),
+            title: Joi.string().allow(""),
+          })
+        )
+        .required(),
+      contacts: Joi.array()
+        .items(
+          Joi.object({
+            content: Joi.array().items(
+              Joi.object({
+                phone: Joi.string().allow(""),
+                email: Joi.string().allow(""),
+                other: Joi.string().allow(""),
+              })
+            ),
+            title: Joi.string().allow(""),
+          })
+        )
+        .required(),
+    }).required(),
+    pageBody: Joi.string().allow(""),
+  }).required(),
+  sha: Joi.string().required(),
+})
+
+// Homepage
+const UpdateHomepageSchema = Joi.object({
+  content: Joi.object({
+    frontMatter: Joi.object({
+      layout: Joi.string().required(),
+      title: Joi.string().required(),
+      description: Joi.string().allow(""),
+      permalink: Joi.string().required(),
+      notification: Joi.string().allow(""),
+      image: Joi.string(),
+      sections: Joi.array().required(),
+    }).required(),
+    pageBody: Joi.string().allow(""), // Joi does not allow empty string (pageBody: '') for Joi.string() even if not required
+  }).required(),
+  sha: Joi.string().required(),
+})
+
 // Pages
 const FrontMatterSchema = Joi.object({
   title: Joi.string().required(),
@@ -145,6 +207,35 @@ const DeleteMediaFileRequestSchema = Joi.object().keys({
   sha: Joi.string().required(),
 })
 
+const UpdateNavigationRequestSchema = Joi.object().keys({
+  content: Joi.object()
+    .keys({
+      logo: Joi.string().allow(""),
+      links: Joi.array()
+        .items(
+          Joi.object()
+            .keys({
+              title: Joi.string().required(),
+              url: Joi.string(),
+              collection: Joi.string(),
+              resource_room: Joi.boolean().valid(true),
+              sublinks: Joi.array().items(
+                Joi.object().keys({
+                  title: Joi.string().required(),
+                  url: Joi.string().required(),
+                })
+              ),
+            })
+            .oxor("url", "collection", "resource_room")
+            .oxor("sublinks", "collection")
+            .oxor("sublinks", "resource_room")
+        )
+        .required(),
+    })
+    .required(),
+  sha: Joi.string().required(),
+})
+
 const UpdateSettingsRequestSchema = Joi.object().keys({
   colors: Joi.object().keys({
     "primary-color": Joi.string().required(),
@@ -181,6 +272,8 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
 })
 
 module.exports = {
+  UpdateContactUsSchema,
+  UpdateHomepageSchema,
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
@@ -200,5 +293,6 @@ module.exports = {
   CreateMediaFileRequestSchema,
   UpdateMediaFileRequestSchema,
   DeleteMediaFileRequestSchema,
+  UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
 }

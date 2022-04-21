@@ -7,11 +7,20 @@ const {
   CollectionsRouter,
 } = require("@root/newroutes/authenticatedSites/collections")
 const {
+  ContactUsRouter,
+} = require("@root/newroutes/authenticatedSites/contactUs")
+const {
+  HomepageRouter,
+} = require("@root/newroutes/authenticatedSites/homepage")
+const {
   MediaCategoriesRouter,
 } = require("@root/newroutes/authenticatedSites/mediaCategories")
 const {
   MediaFilesRouter,
 } = require("@root/newroutes/authenticatedSites/mediaFiles")
+const {
+  NavigationRouter,
+} = require("@root/newroutes/authenticatedSites/navigation")
 const {
   ResourceCategoriesRouter,
 } = require("@root/newroutes/authenticatedSites/resourceCategories")
@@ -52,6 +61,9 @@ const {
 const {
   CollectionPageService,
 } = require("@services/fileServices/MdPageServices/CollectionPageService")
+const {
+  ContactUsPageService,
+} = require("@services/fileServices/MdPageServices/ContactUsPageService")
 const {
   HomepagePageService,
 } = require("@services/fileServices/MdPageServices/HomepagePageService")
@@ -134,6 +146,10 @@ const getAuthenticatedSitesSubrouter = ({
     baseDirectoryService,
     gitHubService,
   })
+  const contactUsPageService = new ContactUsPageService({
+    gitHubService,
+    footerYmlService,
+  })
   const settingsService = new SettingsService({
     homepagePageService,
     configYmlService,
@@ -168,7 +184,12 @@ const getAuthenticatedSitesSubrouter = ({
   const resourceRoomV2Router = new ResourceRoomRouter({
     resourceRoomDirectoryService,
   })
+  const contactUsV2Router = new ContactUsRouter({ contactUsPageService })
+  const homepageV2Router = new HomepageRouter({ homepagePageService })
   const settingsV2Router = new SettingsRouter({ settingsService })
+  const navigationV2Router = new NavigationRouter({
+    navigationYmlService: navYmlService,
+  })
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
@@ -197,10 +218,13 @@ const getAuthenticatedSitesSubrouter = ({
     mediaFilesV2Router.getRouter()
   )
   authenticatedSitesSubrouter.use("/media", mediaDirectoryV2Router.getRouter())
+  authenticatedSitesSubrouter.use("/navigation", navigationV2Router.getRouter())
   authenticatedSitesSubrouter.use(
     "/resourceRoom",
     resourceRoomV2Router.getRouter()
   )
+  authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
+  authenticatedSitesSubrouter.use("/homepage", homepageV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
 
   return authenticatedSitesSubrouter

@@ -2,18 +2,13 @@ import axios from "axios"
 
 import logger from "@logger/logger"
 
-const { POSTMAN_API_KEY } = process.env
 const POSTMAN_API_URL = "https://api.postman.gov.sg/v1"
 
 class MailClient {
   POSTMAN_API_KEY: string
 
-  constructor() {
-    if (!POSTMAN_API_KEY) {
-      throw new Error("Postman.gov.sg API key cannot be empty.")
-    }
-
-    this.POSTMAN_API_KEY = POSTMAN_API_KEY
+  constructor(apiKey: string) {
+    this.POSTMAN_API_KEY = apiKey
   }
 
   async sendMail(recipient: string, body: string): Promise<void> {
@@ -29,7 +24,7 @@ class MailClient {
     try {
       await axios.post(endpoint, email, {
         headers: {
-          Authorization: `Bearer ${POSTMAN_API_KEY}`,
+          Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
         },
       })
     } catch (err) {

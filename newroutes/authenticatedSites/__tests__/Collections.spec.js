@@ -1,8 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { CollectionsRouter } = require("../collections")
 
@@ -31,65 +32,62 @@ describe("Collections Router", () => {
     subcollectionDirectoryService: mockSubcollectionDirectoryService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
+  subrouter.get(
     "/:siteName/collections",
     attachReadRouteHandlerWrapper(router.listAllCollections)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/collections/:collectionName",
     attachReadRouteHandlerWrapper(router.listCollectionDirectoryFiles)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
     attachReadRouteHandlerWrapper(router.listCollectionDirectoryFiles)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections",
     attachReadRouteHandlerWrapper(router.createCollectionDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/subcollections",
     attachReadRouteHandlerWrapper(router.createCollectionDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName",
     attachReadRouteHandlerWrapper(router.renameCollectionDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
     attachReadRouteHandlerWrapper(router.renameCollectionDirectory)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/collections/:collectionName",
     attachReadRouteHandlerWrapper(router.deleteCollectionDirectory)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName",
     attachReadRouteHandlerWrapper(router.deleteCollectionDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/reorder",
     attachReadRouteHandlerWrapper(router.reorderCollectionDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName/reorder",
     attachReadRouteHandlerWrapper(router.reorderCollectionDirectory)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/move",
     attachReadRouteHandlerWrapper(router.moveCollectionDirectoryPages)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/collections/:collectionName/subcollections/:subcollectionName/move",
     attachReadRouteHandlerWrapper(router.moveCollectionDirectoryPages)
   )
-
-  app.use(errorHandler)
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
   const collectionName = "collection"

@@ -2,7 +2,8 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
-import { User } from "@database/models"
+import { User, Whitelist } from "@database/models"
+import { generateRouter } from "@fixtures/app"
 import { UsersRouter as _UsersRouter } from "@root/newroutes/authenticated/users"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
@@ -15,6 +16,7 @@ jest.unmock("otplib")
 const mockValidEmail = "open@up.gov.sg"
 const mockInvalidEmail = "stay@home.sg"
 const mockUnwhitelistedEmail = "blacklisted@sad.sg"
+const mockWhitelistedDomain = ".gov.sg"
 const mockGithubId = "i m a git"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
@@ -22,20 +24,19 @@ const mockInvalidNumber = "00000000"
 const UsersService = getUsersService(sequelize)
 
 const UsersRouter = new _UsersRouter({ usersService: UsersService })
-const router = UsersRouter.getRouter()
+const usersSubrouter = UsersRouter.getRouter()
 
 // Set up express with defaults and use the router under test
-const app = express()
-app.use(express.json({ limit: "7mb" }))
+const subrouter = express()
 // As we set certain properties on res.locals when the user signs in using github
 // In order to do integration testing, we must expose a middleware
 // that allows us to set this properties also
-app.use((req, res, next) => {
+subrouter.use((req, res, next) => {
   res.locals.userId = req.body.userId
   next()
 })
-app.use(express.urlencoded({ extended: true }))
-app.use(router)
+subrouter.use(usersSubrouter)
+const app = generateRouter(subrouter)
 
 const extractEmailOtp = (emailBody: string): string => {
   const startIdx = emailBody.search("<b>")
@@ -53,10 +54,18 @@ describe("Users Router", () => {
   })
 
   describe("/email/otp", () => {
+    afterEach(async () => {
+      // Clean up so that different tests using
+      // the same mock user don't interfere with each other
+      await Whitelist.destroy({
+        where: { email: mockWhitelistedDomain },
+      })
+    })
     it("should return 200 when email sending is successful", async () => {
       // Arrange
       const expected = 200
       mockAxios.post.mockResolvedValueOnce(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
       const actual = await request(app).post("/email/otp").send({
@@ -92,6 +101,7 @@ describe("Users Router", () => {
     it("should return 400 when the email is not in the whitelist", async () => {
       // Arrange
       const expected = 400
+      await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
       const actual = await request(app).post("/email/otp").send({
@@ -122,6 +132,9 @@ describe("Users Router", () => {
       await User.destroy({
         where: { githubId: mockGithubId },
       })
+      await Whitelist.destroy({
+        where: { email: mockWhitelistedDomain },
+      })
     })
 
     it("should return 200 when the otp is correct", async () => {
@@ -133,6 +146,7 @@ describe("Users Router", () => {
         return email
       })
       await User.create({ githubId: mockGithubId })
+      await Whitelist.create({ email: mockWhitelistedDomain })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })

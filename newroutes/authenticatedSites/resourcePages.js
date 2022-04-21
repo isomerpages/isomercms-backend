@@ -25,7 +25,7 @@ class ResourcePagesRouter {
 
   // Create new page in resource category
   async createResourcePage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, resourceRoomName, resourceCategoryName } = req.params
     const { error } = CreateResourcePageRequestSchema.validate(req.body)
@@ -48,7 +48,7 @@ class ResourcePagesRouter {
 
   // Read page in resource category
   async readResourcePage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const {
       siteName,
@@ -69,7 +69,7 @@ class ResourcePagesRouter {
 
   // Update page in resource category
   async updateResourcePage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const {
       siteName,
@@ -78,7 +78,7 @@ class ResourcePagesRouter {
       pageName,
     } = req.params
     const { error } = UpdateResourcePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -111,7 +111,7 @@ class ResourcePagesRouter {
 
   // Delete page in resource category
   async deleteResourcePage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const {
       siteName,
@@ -120,7 +120,7 @@ class ResourcePagesRouter {
       pageName,
     } = req.params
     const { error } = DeleteResourcePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     const reqDetails = { siteName, accessToken }
     await this.resourcePageService.delete(reqDetails, {

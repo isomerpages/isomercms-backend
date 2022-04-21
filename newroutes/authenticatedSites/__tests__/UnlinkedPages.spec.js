@@ -1,8 +1,9 @@
 const express = require("express")
 const request = require("supertest")
 
-const { errorHandler } = require("@middleware/errorHandler")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const { generateRouter } = require("@fixtures/app")
 
 const { UnlinkedPagesRouter } = require("../unlinkedPages")
 
@@ -25,36 +26,35 @@ describe("Unlinked Pages Router", () => {
     unlinkedPagesDirectoryService: mockUnlinkedPagesDirectoryService,
   })
 
-  const app = express()
-  app.use(express.json({ limit: "7mb" }))
-  app.use(express.urlencoded({ extended: false }))
+  const subrouter = express()
 
   // We can use read route handler here because we don't need to lock the repo
-  app.get(
+  subrouter.get(
     "/:siteName/pages",
     attachReadRouteHandlerWrapper(router.listAllUnlinkedPages)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/pages/pages",
     attachReadRouteHandlerWrapper(router.createUnlinkedPage)
   )
-  app.get(
+  subrouter.get(
     "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.readUnlinkedPage)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.updateUnlinkedPage)
   )
-  app.delete(
+  subrouter.delete(
     "/:siteName/pages/pages/:pageName",
     attachReadRouteHandlerWrapper(router.deleteUnlinkedPage)
   )
-  app.post(
+  subrouter.post(
     "/:siteName/pages/move",
     attachReadRouteHandlerWrapper(router.moveUnlinkedPages)
   )
-  app.use(errorHandler)
+
+  const app = generateRouter(subrouter)
 
   const siteName = "test-site"
   const accessToken = undefined // Can't set request fields - will always be undefined

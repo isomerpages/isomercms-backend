@@ -26,7 +26,7 @@ class CollectionsRouter {
 
   // List all collections
   async listAllCollections(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const listResp = await this.collectionDirectoryService.listAllCollections({
@@ -39,7 +39,7 @@ class CollectionsRouter {
 
   // List files in a collection/subcollection
   async listCollectionDirectoryFiles(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, collectionName, subcollectionName } = req.params
     let listResp
@@ -59,7 +59,7 @@ class CollectionsRouter {
 
   // Create new collection/subcollection
   async createCollectionDirectory(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, collectionName } = req.params
     const { error } = CreateDirectoryRequestSchema.validate(req.body)
@@ -92,7 +92,7 @@ class CollectionsRouter {
 
   // Rename collection/subcollection
   async renameCollectionDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = RenameDirectoryRequestSchema.validate(req.body)
@@ -122,7 +122,7 @@ class CollectionsRouter {
 
   // Delete collection/subcollection
   async deleteCollectionDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, collectionName, subcollectionName } = req.params
     if (subcollectionName) {
@@ -146,7 +146,7 @@ class CollectionsRouter {
 
   // Reorder collection/subcollection
   async reorderCollectionDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = req
+    const { accessToken, currentCommitSha, treeSha } = res.locals
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = ReorderDirectoryRequestSchema.validate(req.body)
@@ -176,7 +176,7 @@ class CollectionsRouter {
 
   // Move collection/subcollection pages
   async moveCollectionDirectoryPages(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)

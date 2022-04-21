@@ -89,9 +89,7 @@ class AuthService {
     return token
   }
 
-  async getUserInfo(reqDetails) {
-    const { accessToken } = reqDetails
-
+  async getUserInfo({ accessToken }) {
     // Make a call to github
     const endpoint = "https://api.github.com/user"
 

@@ -1,7 +1,10 @@
+import "module-alias/register"
+
 import logger from "@logger/logger"
 
 import initSequelize from "@database/index"
-import { Site, SiteMember, User } from "@database/models"
+import { Site, SiteMember, User, Whitelist } from "@database/models"
+import bootstrap from "@root/bootstrap"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 
 import { getAuthMiddleware } from "./newmiddleware"
@@ -12,7 +15,7 @@ import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
 
 const path = require("path")
 
-const sequelize = initSequelize([Site, SiteMember, User])
+const sequelize = initSequelize([Site, SiteMember, User, Whitelist])
 const usersService = getUsersService(sequelize)
 
 const axios = require("axios")
@@ -135,12 +138,12 @@ sequelize
   .authenticate()
   .then(() => {
     logger.info("Connection has been established successfully.")
+    bootstrap(app)
   })
   .catch((err) => {
     logger.error(`Unable to connect to the database: ${err}`)
+
     // If we cannot connect to the db, report an error using status code
     // And gracefully shut down the application since we can't serve client
-    process.exit(1)
+    process.exitCode = 1
   })
-
-module.exports = app

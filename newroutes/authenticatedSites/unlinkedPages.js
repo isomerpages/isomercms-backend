@@ -25,7 +25,7 @@ class UnlinkedPagesRouter {
   }
 
   async listAllUnlinkedPages(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const listResp = await this.unlinkedPagesDirectoryService.listAllUnlinkedPages(
@@ -36,7 +36,7 @@ class UnlinkedPagesRouter {
   }
 
   async createUnlinkedPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
@@ -58,7 +58,7 @@ class UnlinkedPagesRouter {
   }
 
   async readUnlinkedPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, pageName } = req.params
     const { sha, content } = await this.unlinkedPageService.read(
@@ -70,11 +70,11 @@ class UnlinkedPagesRouter {
   }
 
   async updateUnlinkedPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, pageName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -109,11 +109,11 @@ class UnlinkedPagesRouter {
   }
 
   async deleteUnlinkedPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, pageName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     await this.unlinkedPageService.delete(
       { siteName, accessToken },
@@ -127,7 +127,7 @@ class UnlinkedPagesRouter {
   }
 
   async moveUnlinkedPages(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName } = req.params
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)

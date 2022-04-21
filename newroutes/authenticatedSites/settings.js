@@ -22,7 +22,7 @@ class SettingsRouter {
   }
 
   async readSettingsPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
     const { siteName } = req.params
     const reqDetails = { siteName, accessToken }
 
@@ -40,11 +40,12 @@ class SettingsRouter {
   }
 
   async updateSettingsPage(req, res) {
-    const { accessToken, body } = req
+    const { body } = req
+    const { accessToken } = res.locals
     const { siteName } = req.params
 
     const { error } = UpdateSettingsRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
 
     const reqDetails = { siteName, accessToken }
 

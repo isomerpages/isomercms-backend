@@ -25,7 +25,7 @@ class CollectionPagesRouter {
 
   // Create new page in collection
   async createCollectionPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, collectionName, subcollectionName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
@@ -58,7 +58,7 @@ class CollectionPagesRouter {
 
   // Read page in collection
   async readCollectionPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
 
@@ -81,11 +81,11 @@ class CollectionPagesRouter {
 
   // Update page in collection
   async updateCollectionPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -141,11 +141,11 @@ class CollectionPagesRouter {
 
   // Delete page in collection
   async deleteCollectionPage(req, res) {
-    const { accessToken } = req
+    const { accessToken } = res.locals
 
     const { siteName, pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
-    if (error) throw new BadRequestError(error)
+    if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     const reqDetails = { siteName, accessToken }
     if (subcollectionName) {

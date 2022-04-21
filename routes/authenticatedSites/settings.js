@@ -12,7 +12,7 @@ const {
 const { Settings } = require("@classes/Settings.js")
 
 async function getSettings(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const settingsFile = new Settings(accessToken, siteName)
@@ -21,7 +21,7 @@ async function getSettings(req, res) {
 }
 
 async function updateSettings(req, res) {
-  const { accessToken } = req
+  const { accessToken } = res.locals
   const { siteName } = req.params
 
   const settings = new Settings(accessToken, siteName)

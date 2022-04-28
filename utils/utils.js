@@ -1,15 +1,15 @@
-const axios = require("axios")
 const slugify = require("slugify")
+
+const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
 
 const { GITHUB_ORG_NAME } = process.env
 
 async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
   const headers = {
     Authorization: `token ${accessToken}`,
-    Accept: "application/json",
   }
   // Get the commits of the repo
-  const { data: commits } = await axios.get(
+  const { data: commits } = await miscGitHubAxiosInstance.get(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/commits`,
     {
       params: {
@@ -50,7 +50,7 @@ async function getTree(
 
   const {
     data: { tree: gitTree },
-  } = await axios.get(
+  } = await miscGitHubAxiosInstance.get(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`,
     {
       params,
@@ -73,9 +73,8 @@ async function sendTree(
 ) {
   const headers = {
     Authorization: `token ${accessToken}`,
-    Accept: "application/json",
   }
-  const resp = await axios.post(
+  const resp = await miscGitHubAxiosInstance.post(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees`,
     {
       tree: gitTree,
@@ -94,7 +93,7 @@ async function sendTree(
   const baseCommitEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/commits`
   const refEndpoint = `${baseRefEndpoint}/heads/${branchRef}`
 
-  const newCommitResp = await axios.post(
+  const newCommitResp = await miscGitHubAxiosInstance.post(
     baseCommitEndpoint,
     {
       message,
@@ -112,7 +111,7 @@ async function sendTree(
    * The `staging` branch reference will now point
    * to `newCommitSha` instead of `currentCommitSha`
    */
-  await axios.patch(
+  await miscGitHubAxiosInstance.patch(
     refEndpoint,
     {
       sha: newCommitSha,
@@ -133,7 +132,6 @@ async function revertCommit(
 ) {
   const headers = {
     Authorization: `token ${accessToken}`,
-    Accept: "application/json",
   }
 
   const baseRefEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/refs`
@@ -142,7 +140,7 @@ async function revertCommit(
   /**
    * The `staging` branch reference will now point to `currentCommitSha`
    */
-  await axios.patch(
+  await miscGitHubAxiosInstance.patch(
     refEndpoint,
     {
       sha: originalCommitSha,

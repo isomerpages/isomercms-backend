@@ -12,13 +12,13 @@ import getAuthenticatedSubrouter from "./newroutes/authenticated"
 import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
 import getAuthenticatedSubrouterV1 from "./routes/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
+import { gitHubRepoAxiosInstance } from "./services/db/AxiosInstance"
 
 const path = require("path")
 
 const sequelize = initSequelize([Site, SiteMember, User, Whitelist])
 const usersService = getUsersService(sequelize)
 
-const axios = require("axios")
 const cookieParser = require("cookie-parser")
 const cors = require("cors")
 const express = require("express")
@@ -26,25 +26,13 @@ const helmet = require("helmet")
 const createError = require("http-errors")
 
 // Env vars
-const { FRONTEND_URL, GITHUB_ORG_NAME } = process.env
+const { FRONTEND_URL } = process.env
 
 // Import middleware
 
 // Import routes
 const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
-
-const axiosInstance = axios.create({
-  baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
-})
-
-axiosInstance.interceptors.request.use((config) => ({
-  ...config,
-  headers: {
-    ...config.headers,
-    "Content-Type": "application/json",
-  },
-}))
 
 const { GitHubService } = require("@services/db/GitHubService")
 const {
@@ -56,7 +44,9 @@ const { AuthRouter } = require("./newroutes/auth")
 
 const authService = new AuthService({ usersService })
 
-const gitHubService = new GitHubService({ axiosInstance })
+const gitHubService = new GitHubService({
+  axiosInstance: gitHubRepoAxiosInstance,
+})
 const identityAuthService = getIdentityAuthService(gitHubService)
 const configYmlService = new ConfigYmlService({ gitHubService })
 

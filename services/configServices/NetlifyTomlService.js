@@ -1,4 +1,3 @@
-const axios = require("axios")
 const toml = require("toml")
 
 // Import error types
@@ -6,17 +5,18 @@ const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
 
+const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
+
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 
 class NetlifyTomlService {
   async read({ accessToken }) {
     const endpoint = `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/overrides/netlify.toml`
 
-    const resp = await axios.get(endpoint, {
+    const resp = await miscGitHubAxiosInstance.get(endpoint, {
       validateStatus,
       headers: {
         Authorization: `token ${accessToken}`,
-        "Content-Type": "application/json",
       },
     })
 

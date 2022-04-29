@@ -183,15 +183,6 @@ describe("Resource Directory Service", () => {
   })
 
   describe("CreateResourceDirectory", () => {
-    it("rejects resource categories with special characters", async () => {
-      await expect(
-        service.createResourceDirectory(reqDetails, {
-          resourceRoomName,
-          resourceCategoryName: "dir/dir",
-        })
-      ).rejects.toThrowError(BadRequestError)
-    })
-
     it("Creating a resource category works correctly", async () => {
       await expect(
         service.createResourceDirectory(reqDetails, {
@@ -240,15 +231,6 @@ describe("Resource Directory Service", () => {
 
   describe("RenameResourceDirectory", () => {
     const newDirectoryName = "new-dir"
-    it("rejects resource categories with special characters", async () => {
-      await expect(
-        service.renameResourceDirectory(reqDetails, {
-          resourceRoomName,
-          resourceCategoryName,
-          newDirectoryName: "dir/dir",
-        })
-      ).rejects.toThrowError(BadRequestError)
-    })
     mockGitHubService.read.mockResolvedValueOnce({
       content: mockMarkdownContent,
       sha,

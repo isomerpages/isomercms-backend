@@ -79,12 +79,6 @@ class ResourceDirectoryService {
     reqDetails,
     { resourceRoomName, resourceCategoryName }
   ) {
-    if (/[^a-zA-Z0-9- ]/g.test(resourceCategoryName)) {
-      // Contains non-allowed characters
-      throw new BadRequestError(
-        "Special characters not allowed in resource category name"
-      )
-    }
     const slugifiedResourceCategoryName = slugifyCollectionName(
       resourceCategoryName
     )
@@ -110,12 +104,6 @@ class ResourceDirectoryService {
     reqDetails,
     { resourceRoomName, resourceCategoryName, newDirectoryName }
   ) {
-    if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
-      // Contains non-allowed characters
-      throw new BadRequestError(
-        "Special characters not allowed in resource category name"
-      )
-    }
     const oldDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,

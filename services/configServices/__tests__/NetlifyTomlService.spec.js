@@ -1,8 +1,3 @@
-jest.mock("axios", () => ({
-  get: jest.fn(),
-}))
-
-const axios = require("axios")
 const { Base64 } = require("js-base64")
 
 const validateStatus = require("@utils/axios-utils")
@@ -11,6 +6,7 @@ const {
   netlifyTomlContent,
   netlifyTomlHeaderValues,
 } = require("@root/fixtures/netlifyToml")
+const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
 
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 
@@ -31,7 +27,7 @@ describe("NetlifyToml Service", () => {
 
   describe("read", () => {
     it("should read successfully when the netlify.toml is valid", async () => {
-      axios.get.mockImplementation(() => ({
+      miscGitHubAxiosInstance.get.mockImplementation(() => ({
         data: {
           content: Base64.encode(netlifyTomlContent),
         },
@@ -41,13 +37,12 @@ describe("NetlifyToml Service", () => {
         netlifyTomlHeaderValues
       )
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(miscGitHubAxiosInstance.get).toHaveBeenCalledWith(
         `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/overrides/netlify.toml`,
         {
           validateStatus,
           headers: {
             Authorization: `token ${accessToken}`,
-            "Content-Type": "application/json",
           },
         }
       )

@@ -1,6 +1,5 @@
-import mockAxios from "jest-mock-axios"
-
 import { mockBody, mockRecipient } from "@fixtures/identity"
+import { innerPostFn } from "@root/tests/setupMockAxios"
 
 import _SmsClient from "../SmsClient"
 
@@ -17,18 +16,16 @@ const generateSms = (recipient: string, body: string) => ({
 })
 
 describe("Sms Client", () => {
-  afterEach(() => mockAxios.reset())
-
   it("should return the result successfully when all parameters are valid", async () => {
     // Arrange
     const generatedSms = generateSms(mockRecipient, mockBody)
-    mockAxios.post.mockResolvedValueOnce("good stuff")
+    innerPostFn.mockResolvedValueOnce("good stuff")
 
     // Act
     await SmsClient.sendSms(mockRecipient, mockBody)
 
     // Assert
-    expect(mockAxios.post).toHaveBeenCalledWith(mockEndpoint, generatedSms)
+    expect(innerPostFn).toHaveBeenCalledWith(mockEndpoint, generatedSms)
   })
 
   it("should throw an error on initialization when there is no api key", () => {
@@ -50,13 +47,13 @@ describe("Sms Client", () => {
   it("should return an error when a network error occurs", async () => {
     // Arrange
     const generatedSms = generateSms(mockRecipient, mockBody)
-    mockAxios.post.mockRejectedValueOnce("some error")
+    innerPostFn.mockRejectedValueOnce("some error")
 
     // Act
     const actual = SmsClient.sendSms(mockRecipient, mockBody)
 
     // Assert
     expect(actual).rejects.toThrowError("Failed to send SMS.")
-    expect(mockAxios.post).toHaveBeenCalledWith(mockEndpoint, generatedSms)
+    expect(innerPostFn).toHaveBeenCalledWith(mockEndpoint, generatedSms)
   })
 })

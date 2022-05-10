@@ -21,6 +21,7 @@ module.exports = {
   globalSetup: "<rootDir>/tests/setup.ts",
   globalTeardown: "<rootDir>/tests/teardown.ts",
   setupFilesAfterEnv: [
+    "<rootDir>/tests/setupMockAxios.ts",
     "<rootDir>/tests/closeConnection.ts",
     "jest-extended/all",
   ],

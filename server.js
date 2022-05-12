@@ -12,7 +12,7 @@ import getAuthenticatedSubrouter from "./newroutes/authenticated"
 import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
 import getAuthenticatedSubrouterV1 from "./routes/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
-import { gitHubRepoAxiosInstance } from "./services/db/AxiosInstance"
+import { gitHubRepoAxiosInstance } from "./services/api/AxiosInstance"
 
 const path = require("path")
 

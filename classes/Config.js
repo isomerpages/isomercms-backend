@@ -9,7 +9,9 @@ const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
 
-const { miscGitHubAxiosInstance: axios } = require("@services/db/AxiosInstance")
+const {
+  miscGitHubAxiosInstance: axios,
+} = require("@root/services/api/AxiosInstance")
 
 // Import error
 

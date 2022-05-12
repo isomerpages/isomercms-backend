@@ -6,7 +6,7 @@ const {
   netlifyTomlContent,
   netlifyTomlHeaderValues,
 } = require("@root/fixtures/netlifyToml")
-const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
+const { miscGitHubAxiosInstance } = require("@root/services/api/AxiosInstance")
 
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 

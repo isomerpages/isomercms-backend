@@ -2,7 +2,7 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 
 const { NotFoundError } = require("@root/errors/NotFoundError")
-const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
+const { miscGitHubAxiosInstance } = require("@root/services/api/AxiosInstance")
 
 const GH_MAX_REPO_COUNT = 100
 const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3

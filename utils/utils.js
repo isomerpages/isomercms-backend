@@ -1,6 +1,6 @@
 const slugify = require("slugify")
 
-const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
+const { miscGitHubAxiosInstance } = require("@services/api/AxiosInstance")
 
 const { GITHUB_ORG_NAME } = process.env
 

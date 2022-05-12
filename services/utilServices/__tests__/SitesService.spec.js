@@ -6,7 +6,7 @@ const {
   adminRepo,
   noAccessRepo,
 } = require("@fixtures/repoInfo")
-const { miscGitHubAxiosInstance } = require("@services/db/AxiosInstance")
+const { miscGitHubAxiosInstance } = require("@root/services/api/AxiosInstance")
 
 describe("Resource Page Service", () => {
   const siteName = "test-site"

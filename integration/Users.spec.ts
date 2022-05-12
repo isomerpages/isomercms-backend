@@ -141,7 +141,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 200
       let otp = ""
-      mockAxios.post.mockImplementationOnce((_, email) => {
+      mockAxios.post.mockImplementationOnce((_: any, email: any) => {
         otp = extractEmailOtp(email.body)
         return email
       })

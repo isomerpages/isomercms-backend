@@ -1,4 +1,3 @@
-const axios = require("axios")
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
@@ -7,6 +6,10 @@ const _ = require("lodash")
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+
+const {
+  genericGitHubAxiosInstance: axios,
+} = require("@root/services/api/AxiosInstance")
 
 const router = express.Router()
 

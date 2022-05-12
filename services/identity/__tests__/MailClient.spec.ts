@@ -1,3 +1,5 @@
+import mockAxios from "jest-mock-axios"
+
 import {
   mockRecipient,
   mockBody,
@@ -5,8 +7,6 @@ import {
 } from "@fixtures/identity"
 
 import _MailClient from "../MailClient"
-
-const axios = require("axios")
 
 const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
 
@@ -21,16 +21,17 @@ const generateEmail = (recipient: string, body: string) => ({
 })
 
 describe("Mail Client", () => {
+  afterEach(() => mockAxios.reset())
   it("should return the result successfully when all parameters are valid", async () => {
     // Arrange
-    axios.post.mockResolvedValueOnce(200)
+    mockAxios.post.mockResolvedValueOnce(200)
 
     // Act
     const actual = await MailClient.sendMail(mockRecipient, mockBody)
 
     // Assert
     expect(actual).toBeUndefined()
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
       generateEmail(mockRecipient, mockBody),
       mockBearerTokenHeaders
@@ -40,14 +41,14 @@ describe("Mail Client", () => {
   it("should return an error when a network error occurs", async () => {
     // Arrange
     const generatedEmail = generateEmail(mockRecipient, mockBody)
-    axios.post.mockRejectedValueOnce("some error")
+    mockAxios.post.mockRejectedValueOnce("some error")
 
     // Act
     const actual = MailClient.sendMail(mockRecipient, mockBody)
 
     // Assert
     expect(actual).rejects.toThrowError("Failed to send email")
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(mockAxios.post).toHaveBeenCalledWith(
       mockEndpoint,
       generatedEmail,
       mockBearerTokenHeaders

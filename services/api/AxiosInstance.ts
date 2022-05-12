@@ -1,8 +1,6 @@
-import { AxiosRequestConfig, AxiosResponse } from "axios"
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 
 import logger from "@logger/logger"
-
-const axios = require("axios")
 
 // Env vars
 const { GITHUB_ORG_NAME } = process.env

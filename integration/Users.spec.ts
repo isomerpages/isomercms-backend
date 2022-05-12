@@ -1,14 +1,12 @@
 import express from "express"
+import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
 import { User, Whitelist } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import { UsersRouter as _UsersRouter } from "@root/newroutes/authenticated/users"
-import { innerPostFn } from "@root/tests/setupMockAxios"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
-
-const axios = require("axios")
 
 // NOTE: There is a module mock set up but as this is an integration test,
 // we try to avoid mocking as much as possible and use the actual module instead.
@@ -52,6 +50,7 @@ const extractMobileOtp = (mobileBody: string): string =>
 describe("Users Router", () => {
   afterEach(() => {
     jest.resetAllMocks()
+    mockAxios.reset()
   })
 
   describe("/email/otp", () => {
@@ -65,7 +64,7 @@ describe("Users Router", () => {
     it("should return 200 when email sending is successful", async () => {
       // Arrange
       const expected = 200
-      axios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
@@ -142,7 +141,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 200
       let otp = ""
-      axios.post.mockImplementationOnce((_: any, email: any) => {
+      mockAxios.post.mockImplementationOnce((_: any, email: any) => {
         otp = extractEmailOtp(email.body)
         return email
       })
@@ -173,7 +172,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       const wrongOtp = 123456
-      axios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -193,7 +192,7 @@ describe("Users Router", () => {
     it("should return 400 when there is no otp", async () => {
       // Arrange
       const expected = 400
-      axios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -213,7 +212,7 @@ describe("Users Router", () => {
     it("should return 400 when otp is undefined", async () => {
       // Arrange
       const expected = 400
-      axios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -235,7 +234,7 @@ describe("Users Router", () => {
     it("should return 200 when sms sending is successful", async () => {
       // Arrange
       const expected = 200
-      innerPostFn.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
 
       // Act
       const actual = await request(app).post("/mobile/otp").send({
@@ -295,7 +294,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 200
       let otp = ""
-      innerPostFn.mockImplementationOnce((_, sms) => {
+      mockAxios.post.mockImplementationOnce((_, sms) => {
         otp = extractMobileOtp(sms.body)
         return sms
       })
@@ -325,7 +324,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       const wrongOtp = 123456
-      innerPostFn.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,
@@ -345,7 +344,7 @@ describe("Users Router", () => {
     it("should return 400 when there is no otp", async () => {
       // Arrange
       const expected = 400
-      innerPostFn.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,
@@ -365,7 +364,7 @@ describe("Users Router", () => {
     it("should return 400 when otp is undefined", async () => {
       // Arrange
       const expected = 400
-      innerPostFn.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ githubId: mockGithubId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,

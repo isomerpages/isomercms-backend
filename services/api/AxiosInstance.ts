@@ -12,8 +12,8 @@ const requestFormatter = (config: AxiosRequestConfig) => {
   return {
     ...config,
     headers: {
-      ...config.headers,
       "Content-Type": "application/json",
+      ...config.headers,
     },
   }
 }

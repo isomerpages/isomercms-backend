@@ -3,7 +3,13 @@ import "module-alias/register"
 import logger from "@logger/logger"
 
 import initSequelize from "@database/index"
-import { Site, SiteMember, User, Whitelist } from "@database/models"
+import {
+  Site,
+  SiteMember,
+  User,
+  Whitelist,
+  AccessToken,
+} from "@database/models"
 import bootstrap from "@root/bootstrap"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 
@@ -16,7 +22,13 @@ import { isomerRepoAxiosInstance } from "./services/api/AxiosInstance"
 
 const path = require("path")
 
-const sequelize = initSequelize([Site, SiteMember, User, Whitelist])
+const sequelize = initSequelize([
+  Site,
+  SiteMember,
+  User,
+  Whitelist,
+  AccessToken,
+])
 const usersService = getUsersService(sequelize)
 
 const cookieParser = require("cookie-parser")

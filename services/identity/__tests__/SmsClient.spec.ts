@@ -18,7 +18,6 @@ const generateSms = (recipient: string, body: string) => ({
 
 describe("Sms Client", () => {
   afterEach(() => mockAxios.reset())
-
   it("should return the result successfully when all parameters are valid", async () => {
     // Arrange
     const generatedSms = generateSms(mockRecipient, mockBody)

@@ -1,9 +1,3 @@
-jest.mock("axios", () => ({
-  get: jest.fn(),
-}))
-
-const axios = require("axios")
-
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const {
@@ -12,6 +6,9 @@ const {
   adminRepo,
   noAccessRepo,
 } = require("@fixtures/repoInfo")
+const {
+  genericGitHubAxiosInstance,
+} = require("@root/services/api/AxiosInstance")
 
 describe("Resource Page Service", () => {
   const siteName = "test-site"
@@ -55,13 +52,13 @@ describe("Resource Page Service", () => {
           isPrivate: repoInfo2.private,
         },
       ]
-      axios.get.mockImplementationOnce(() => ({
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       }))
-      axios.get.mockImplementationOnce(() => ({
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [],
       }))
-      axios.get.mockImplementationOnce(() => ({
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [],
       }))
 
@@ -69,7 +66,7 @@ describe("Resource Page Service", () => {
         expectedResp
       )
 
-      expect(axios.get).toHaveBeenCalledTimes(3)
+      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
     })
   })
 

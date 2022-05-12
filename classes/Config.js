@@ -1,4 +1,3 @@
-const axios = require("axios")
 const _ = require("lodash")
 const yaml = require("yaml")
 
@@ -9,6 +8,10 @@ const {
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
+
+const {
+  genericGitHubAxiosInstance: axios,
+} = require("@root/services/api/AxiosInstance")
 
 // Import error
 

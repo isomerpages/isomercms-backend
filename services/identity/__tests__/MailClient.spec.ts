@@ -22,7 +22,6 @@ const generateEmail = (recipient: string, body: string) => ({
 
 describe("Mail Client", () => {
   afterEach(() => mockAxios.reset())
-
   it("should return the result successfully when all parameters are valid", async () => {
     // Arrange
     mockAxios.post.mockResolvedValueOnce(200)

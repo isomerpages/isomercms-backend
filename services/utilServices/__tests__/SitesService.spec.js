@@ -6,7 +6,9 @@ const {
   adminRepo,
   noAccessRepo,
 } = require("@fixtures/repoInfo")
-const { miscGitHubAxiosInstance } = require("@root/services/api/AxiosInstance")
+const {
+  genericGitHubAxiosInstance,
+} = require("@root/services/api/AxiosInstance")
 
 describe("Resource Page Service", () => {
   const siteName = "test-site"
@@ -50,13 +52,13 @@ describe("Resource Page Service", () => {
           isPrivate: repoInfo2.private,
         },
       ]
-      miscGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       }))
-      miscGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [],
       }))
-      miscGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [],
       }))
 
@@ -64,7 +66,7 @@ describe("Resource Page Service", () => {
         expectedResp
       )
 
-      expect(miscGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
     })
   })
 

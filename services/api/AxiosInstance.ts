@@ -30,14 +30,14 @@ const respHandler = (response: AxiosResponse) => {
   return response
 }
 
-const gitHubRepoAxiosInstance = axios.create({
+const isomerRepoAxiosInstance = axios.create({
   baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
 })
-gitHubRepoAxiosInstance.interceptors.request.use(requestFormatter)
-gitHubRepoAxiosInstance.interceptors.response.use(respHandler)
+isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
+isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 
-const miscGitHubAxiosInstance = axios.create()
-miscGitHubAxiosInstance.interceptors.request.use(requestFormatter)
-miscGitHubAxiosInstance.interceptors.response.use(respHandler)
+const genericGitHubAxiosInstance = axios.create()
+genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
+genericGitHubAxiosInstance.interceptors.response.use(respHandler)
 
-export { gitHubRepoAxiosInstance, miscGitHubAxiosInstance }
+export { isomerRepoAxiosInstance, genericGitHubAxiosInstance }

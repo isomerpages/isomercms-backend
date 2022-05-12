@@ -10,7 +10,7 @@ const validateStatus = require("@utils/axios-utils")
 const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
 const {
-  miscGitHubAxiosInstance: axios,
+  genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
 
 // Import error

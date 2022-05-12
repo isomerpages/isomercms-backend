@@ -8,7 +8,7 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const {
-  miscGitHubAxiosInstance: axios,
+  genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
 
 const router = express.Router()

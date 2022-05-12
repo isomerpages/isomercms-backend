@@ -6,7 +6,9 @@ const {
   netlifyTomlContent,
   netlifyTomlHeaderValues,
 } = require("@root/fixtures/netlifyToml")
-const { miscGitHubAxiosInstance } = require("@root/services/api/AxiosInstance")
+const {
+  genericGitHubAxiosInstance,
+} = require("@root/services/api/AxiosInstance")
 
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 
@@ -27,7 +29,7 @@ describe("NetlifyToml Service", () => {
 
   describe("read", () => {
     it("should read successfully when the netlify.toml is valid", async () => {
-      miscGitHubAxiosInstance.get.mockImplementation(() => ({
+      genericGitHubAxiosInstance.get.mockImplementation(() => ({
         data: {
           content: Base64.encode(netlifyTomlContent),
         },
@@ -37,7 +39,7 @@ describe("NetlifyToml Service", () => {
         netlifyTomlHeaderValues
       )
 
-      expect(miscGitHubAxiosInstance.get).toHaveBeenCalledWith(
+      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledWith(
         `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/overrides/netlify.toml`,
         {
           validateStatus,

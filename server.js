@@ -12,7 +12,7 @@ import getAuthenticatedSubrouter from "./newroutes/authenticated"
 import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
 import getAuthenticatedSubrouterV1 from "./routes/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
-import { gitHubRepoAxiosInstance } from "./services/api/AxiosInstance"
+import { isomerRepoAxiosInstance } from "./services/api/AxiosInstance"
 
 const path = require("path")
 
@@ -45,7 +45,7 @@ const { AuthRouter } = require("./newroutes/auth")
 const authService = new AuthService({ usersService })
 
 const gitHubService = new GitHubService({
-  axiosInstance: gitHubRepoAxiosInstance,
+  axiosInstance: isomerRepoAxiosInstance,
 })
 const identityAuthService = getIdentityAuthService(gitHubService)
 const configYmlService = new ConfigYmlService({ gitHubService })

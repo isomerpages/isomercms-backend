@@ -1,6 +1,6 @@
 const slugify = require("slugify")
 
-const { miscGitHubAxiosInstance } = require("@services/api/AxiosInstance")
+const { genericGitHubAxiosInstance } = require("@services/api/AxiosInstance")
 
 const { GITHUB_ORG_NAME } = process.env
 
@@ -9,7 +9,7 @@ async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
     Authorization: `token ${accessToken}`,
   }
   // Get the commits of the repo
-  const { data: commits } = await miscGitHubAxiosInstance.get(
+  const { data: commits } = await genericGitHubAxiosInstance.get(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/commits`,
     {
       params: {
@@ -50,7 +50,7 @@ async function getTree(
 
   const {
     data: { tree: gitTree },
-  } = await miscGitHubAxiosInstance.get(
+  } = await genericGitHubAxiosInstance.get(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`,
     {
       params,
@@ -74,7 +74,7 @@ async function sendTree(
   const headers = {
     Authorization: `token ${accessToken}`,
   }
-  const resp = await miscGitHubAxiosInstance.post(
+  const resp = await genericGitHubAxiosInstance.post(
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees`,
     {
       tree: gitTree,
@@ -93,7 +93,7 @@ async function sendTree(
   const baseCommitEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/commits`
   const refEndpoint = `${baseRefEndpoint}/heads/${branchRef}`
 
-  const newCommitResp = await miscGitHubAxiosInstance.post(
+  const newCommitResp = await genericGitHubAxiosInstance.post(
     baseCommitEndpoint,
     {
       message,
@@ -111,7 +111,7 @@ async function sendTree(
    * The `staging` branch reference will now point
    * to `newCommitSha` instead of `currentCommitSha`
    */
-  await miscGitHubAxiosInstance.patch(
+  await genericGitHubAxiosInstance.patch(
     refEndpoint,
     {
       sha: newCommitSha,
@@ -140,7 +140,7 @@ async function revertCommit(
   /**
    * The `staging` branch reference will now point to `currentCommitSha`
    */
-  await miscGitHubAxiosInstance.patch(
+  await genericGitHubAxiosInstance.patch(
     refEndpoint,
     {
       sha: originalCommitSha,

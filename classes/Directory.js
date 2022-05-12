@@ -6,7 +6,7 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const validateStatus = require("@utils/axios-utils")
 
 const {
-  miscGitHubAxiosInstance: axios,
+  genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
 
 const { GITHUB_ORG_NAME } = process.env

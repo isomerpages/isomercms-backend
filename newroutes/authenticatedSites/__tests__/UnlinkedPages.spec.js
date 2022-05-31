@@ -262,7 +262,7 @@ describe("Unlinked Pages Router", () => {
       await request(app).post(`/${siteName}/pages/move`).send({}).expect(400)
     })
 
-    it("rejects move requests with invalid body", async () => {
+    it("rejects move requests with invalid body (1)", async () => {
       await request(app)
         .post(`/${siteName}/pages/move`)
         .send({
@@ -272,7 +272,7 @@ describe("Unlinked Pages Router", () => {
         .expect(400)
     })
 
-    it("rejects move requests with invalid body", async () => {
+    it("rejects move requests with invalid body (2)", async () => {
       await request(app)
         .post(`/${siteName}/pages/move`)
         .send({ items })

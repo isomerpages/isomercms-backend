@@ -10,9 +10,16 @@ const jwtUtils = require("@utils/jwt-utils")
 const { BadRequestError } = require("@root/errors/BadRequestError")
 const { sitesService } = require("@services/identity")
 
-const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
+const {
+  E2E_TEST_REPO,
+  E2E_TEST_SECRET,
+  E2E_TEST_GH_TOKEN,
+  SYSTEM_SECRET,
+} = process.env
 const E2E_TEST_USER = "e2e-test"
 const GENERAL_ACCESS_PATHS = ["/v1/sites", "/v1/auth/whoami"]
+
+const SYS_AUTH_HEADER = "Isomer-System-Secret"
 
 class AuthMiddlewareService {
   constructor({ identityAuthService }) {
@@ -136,6 +143,21 @@ class AuthMiddlewareService {
       `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
     )
     return siteAccessToken
+  }
+
+  verifySystem(req) {
+    const sysSecret = req.get(SYS_AUTH_HEADER)
+    const urlTokens = req.originalUrl.split("/") // urls take the form "/v2/sys/..."
+
+    logger.info(`SYSTEM_SECRET: ${SYSTEM_SECRET}`)
+    logger.info(`sysSecret: ${sysSecret}`)
+    if (!sysSecret || sysSecret !== SYSTEM_SECRET)
+      throw new AuthError("Bad credentials")
+
+    logger.info(`urlTokens.length: ${urlTokens.length}`)
+    if (urlTokens.length < 3) throw new BadRequestError("Invalid path")
+
+    return true
   }
 }
 

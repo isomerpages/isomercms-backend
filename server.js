@@ -16,6 +16,7 @@ import { getIdentityAuthService, getUsersService } from "@services/identity"
 import { getAuthMiddleware } from "./newmiddleware"
 import getAuthenticatedSubrouter from "./newroutes/authenticated"
 import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
+import getAuthenticatedSystemSubrouter from "./newroutes/authenticatedSystem"
 import getAuthenticatedSubrouterV1 from "./routes/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
 import { isomerRepoAxiosInstance } from "./services/api/AxiosInstance"
@@ -83,6 +84,9 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   gitHubService,
   configYmlService,
 })
+const authenticatedSystemSubrouterV2 = getAuthenticatedSystemSubrouter({
+  authMiddleware,
+})
 const authV2Router = new AuthRouter({ authMiddleware, authService })
 
 const app = express()
@@ -116,6 +120,8 @@ app.use("/v1", authenticatedSubrouterV1)
 app.use("/v2/auth", authV2Router.getRouter())
 // Endpoints which have siteName, used to inject site access token
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
+// Endpoints which have siteName, used to inject site access token
+app.use("/v2/sys", authenticatedSystemSubrouterV2)
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
 

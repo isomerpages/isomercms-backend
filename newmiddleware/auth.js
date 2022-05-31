@@ -44,5 +44,10 @@ class AuthMiddleware {
 
     return next()
   }
+
+  verifySystem(req, res, next) {
+    this.authMiddlewareService.verifySystem(req)
+    return next()
+  }
 }
 module.exports = { AuthMiddleware }

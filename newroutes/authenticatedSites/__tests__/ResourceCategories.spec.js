@@ -192,7 +192,7 @@ describe("Resource Categories Router", () => {
         .expect(400)
     })
 
-    it("rejects move requests with invalid body", async () => {
+    it("rejects move requests for items with invalid type", async () => {
       await request(app)
         .post(
           `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/move`
@@ -204,7 +204,7 @@ describe("Resource Categories Router", () => {
         .expect(400)
     })
 
-    it("rejects move requests with invalid body", async () => {
+    it("rejects move requests with with no specified target", async () => {
       await request(app)
         .post(
           `/${siteName}/resourceRoom/${resourceRoomName}/resources/${resourceCategoryName}/move`

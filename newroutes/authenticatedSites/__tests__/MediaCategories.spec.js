@@ -203,7 +203,7 @@ describe("Media Categories Router", () => {
         .expect(400)
     })
 
-    it("rejects move requests with invalid body", async () => {
+    it("rejects move requests for items with invalid type", async () => {
       await request(app)
         .post(`/${siteName}/media/${directoryName}/move`)
         .send({
@@ -213,7 +213,7 @@ describe("Media Categories Router", () => {
         .expect(400)
     })
 
-    it("rejects move requests with invalid body", async () => {
+    it("rejects move requests with no specified target", async () => {
       await request(app)
         .post(`/${siteName}/media/${directoryName}/move`)
         .send({ target: {}, items })

@@ -211,7 +211,7 @@ describe("Collections Router", () => {
       })
     })
 
-    it("accepts valid collection create requests with specified files and returns the details of the collection created (1)", async () => {
+    it("accepts valid collection create requests with specified files and returns the details of the collection created", async () => {
       const collectionDetails = {
         newDirectoryName: collectionName,
         items: [
@@ -262,7 +262,7 @@ describe("Collections Router", () => {
       })
     })
 
-    it("accepts valid collection create requests with specified files and returns the details of the collection created (2)", async () => {
+    it("accepts valid subcollection create requests with specified files and returns the details of the collection created", async () => {
       const collectionDetails = {
         newDirectoryName: subcollectionName,
         items: [
@@ -432,14 +432,14 @@ describe("Collections Router", () => {
         type: "file",
       },
     ]
-    it("rejects move requests with invalid body (1)", async () => {
+    it("rejects move requests with empty body", async () => {
       await request(app)
         .post(`/${siteName}/collections/${collectionName}/move`)
         .send({})
         .expect(400)
     })
 
-    it("rejects move requests with invalid body (2)", async () => {
+    it("rejects move requests for items with invalid type", async () => {
       await request(app)
         .post(`/${siteName}/collections/${collectionName}/move`)
         .send({
@@ -449,7 +449,7 @@ describe("Collections Router", () => {
         .expect(400)
     })
 
-    it("rejects move requests with invalid body (3)", async () => {
+    it("rejects move requests with with no specified target", async () => {
       await request(app)
         .post(`/${siteName}/collections/${collectionName}/move`)
         .send({ items })

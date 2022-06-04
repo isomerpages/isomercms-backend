@@ -23,13 +23,13 @@ function errorHandler(err, req, res, next) {
       },
     })
   }
-  if (err.name === "PayloadTooLargeError") {
-    // Error thrown by large payload is done by express
-    logger.info(errMsg)
-    return res.status(413).json({
+  // Error handling for non-Isomer response errors
+  if (err.name && err.message && err.status) {
+    logger.info(`Internal server error: ${errMsg}`)
+    return res.status(err.status).json({
       error: {
         name: err.name,
-        code: 413,
+        code: err.status,
         message: err.message,
       },
     })
@@ -38,7 +38,7 @@ function errorHandler(err, req, res, next) {
   return res.status(500).json({
     error: {
       code: 500,
-      message: "Something went wrong",
+      message: `Something went wrong: ${err}`,
     },
   })
 }

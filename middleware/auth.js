@@ -114,38 +114,6 @@ const whoamiAuth = (req, res, next) => {
   return next("router")
 }
 
-// Replace access token with site access token if it is available
-const useSiteAccessTokenIfAvailable = async (req, res, next) => {
-  const { authService, sitesService } = identityServices
-  const { userId, accessToken: userAccessToken } = res.locals
-  const { siteName } = req.params
-
-  // Check if site is onboarded to Isomer identity, otherwise continue using user access token
-  const site = await sitesService.getBySiteName(siteName)
-  if (!site) {
-    logger.info(
-      `Site ${siteName} does not exists in site table. Default to using user access token.`
-    )
-    return next()
-  }
-
-  logger.info(`Verifying user's access to ${siteName}`)
-  if (!authService.hasAccessToSite(siteName, userId, userAccessToken)) {
-    throw new NotFoundError("Site does not exist")
-  }
-
-  const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
-
-  if (siteAccessToken) {
-    res.locals.accessToken = siteAccessToken
-    logger.info(
-      `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
-    )
-  }
-
-  return next()
-}
-
 // Health check
 auth.get("/v2/ping", noVerify)
 
@@ -159,7 +127,7 @@ auth.get("/v1/auth/whoami", whoamiAuth)
 auth.get("/v1", noVerify)
 
 // Inject site access token if available
-auth.use("/v1/sites/:siteName", verifyJwt, useSiteAccessTokenIfAvailable)
+auth.use("/v1/sites/:siteName", verifyJwt)
 
 // Homepage
 auth.get("/v1/sites/:siteName/homepage", verifyJwt)

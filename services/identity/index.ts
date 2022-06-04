@@ -57,7 +57,7 @@ const smsClient = IS_LOCAL_DEV
     } as SmsClient)
   : new SmsClient()
 
-export const sitesService = new SitesService({ repository: Site, tokenStore })
+export const sitesService = new SitesService({ repository: Site })
 
 // NOTE: This is because the usersService requires an instance of sequelize
 // as it requires a transaction for certain methods

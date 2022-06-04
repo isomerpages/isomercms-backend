@@ -271,6 +271,48 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
   logo: Joi.string().allow(""),
 })
 
+// Do not add validation rules for human-entered fields that cannot be checked in FormSG.
+// We don't want backend requests to fail if form submission succeeds,
+// as there is no easy way for form submitters to recover from failed requests.
+const SysCreateSiteSchema = Joi.object().keys({
+  repositoryName: Joi.string().required(),
+  createdBy: Joi.string().email(),
+  agency: Joi.string(),
+  siteName: Joi.string(),
+  contact: Joi.string(),
+  repositoryUrl: Joi.string().uri(),
+  hostingId: Joi.string(),
+  stagingUrl: Joi.string().uri(),
+  productionUrl: Joi.string().uri(),
+  liveDomain: Joi.string(),
+  redirectFrom: Joi.array().items(Joi.string().required()),
+  uptimeId: Joi.string(),
+  uptimeUrl: Joi.string().uri(),
+  launchedAt: Joi.date().iso(),
+  launchedBy: Joi.string().email(),
+})
+
+const SysUpdateSiteSchema = Joi.object()
+  .keys({
+    repositoryName: Joi.string().allow(null),
+    createdBy: Joi.string().email().allow(null),
+    agency: Joi.string().allow(null),
+    siteName: Joi.string().allow(null),
+    contact: Joi.string().allow(null),
+    repositoryUrl: Joi.string().uri().allow(null),
+    hostingId: Joi.string().allow(null),
+    stagingUrl: Joi.string().uri().allow(null),
+    productionUrl: Joi.string().uri().allow(null),
+    liveDomain: Joi.string().allow(null),
+    redirectFrom: Joi.array().items(Joi.string().required()).allow(null),
+    uptimeId: Joi.string().allow(null),
+    uptimeUrl: Joi.string().uri().allow(null),
+    launchedAt: Joi.date().iso().allow(null),
+    launchedBy: Joi.string().email().allow(null),
+  })
+  .required()
+  .min(1)
+
 module.exports = {
   UpdateContactUsSchema,
   UpdateHomepageSchema,
@@ -295,4 +337,6 @@ module.exports = {
   DeleteMediaFileRequestSchema,
   UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
+  SysCreateSiteSchema,
+  SysUpdateSiteSchema,
 }

@@ -120,7 +120,7 @@ class AuthMiddlewareService {
     userId,
   }) {
     // Check if site is onboarded to Isomer identity, otherwise continue using user access token
-    const site = await sitesService.getBySiteName(siteName)
+    const site = await sitesService.getByRepositoryName(siteName)
     if (!site) {
       logger.info(
         `Site ${siteName} does not exist in site table. Default to using user access token.`
@@ -138,10 +138,7 @@ class AuthMiddlewareService {
       throw new NotFoundError("Site does not exist")
     }
 
-    const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
-    logger.info(
-      `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
-    )
+    logger.info(`User ${userId} has access to ${siteName}.`)
     return siteAccessToken
   }
 
@@ -149,12 +146,9 @@ class AuthMiddlewareService {
     const sysSecret = req.get(SYS_AUTH_HEADER)
     const urlTokens = req.originalUrl.split("/") // urls take the form "/v2/sys/..."
 
-    logger.info(`SYSTEM_SECRET: ${SYSTEM_SECRET}`)
-    logger.info(`sysSecret: ${sysSecret}`)
     if (!sysSecret || sysSecret !== SYSTEM_SECRET)
       throw new AuthError("Bad credentials")
 
-    logger.info(`urlTokens.length: ${urlTokens.length}`)
     if (urlTokens.length < 3) throw new BadRequestError("Invalid path")
 
     return true
@@ -163,4 +157,5 @@ class AuthMiddlewareService {
 
 module.exports = {
   AuthMiddlewareService,
+  SYS_AUTH_HEADER,
 }

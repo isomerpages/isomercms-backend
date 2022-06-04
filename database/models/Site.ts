@@ -22,22 +22,87 @@ export class Site extends Model {
   id!: number
 
   @Column({
+    unique: true,
     allowNull: false,
     type: DataType.TEXT,
   })
-  name!: string
+  repositoryName!: string
 
   @Column({
-    allowNull: false,
     type: DataType.TEXT,
   })
-  apiTokenName!: string
+  createdBy!: string | null
 
   @CreatedAt
   createdAt!: Date
 
   @UpdatedAt
   updatedAt!: Date
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  agency!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  siteName!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  contact!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  repositoryUrl!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  hostingId!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  stagingUrl!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  productionUrl!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  liveDomain!: string | null
+
+  @Column({
+    type: DataType.JSONB,
+  })
+  redirectFrom: unknown | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  uptimeId!: string | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  uptimeUrl!: string | null
+
+  @Column({
+    type: DataType.DATE,
+  })
+  launchedAt!: Date | null
+
+  @Column({
+    type: DataType.TEXT,
+  })
+  launchedBy!: string | null
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",

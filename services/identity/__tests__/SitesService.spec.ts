@@ -35,7 +35,7 @@ describe("SitesService", () => {
     expect(actual).toBe(expected)
     expect(MockRepository.findOne).toBeCalledWith({
       where: {
-        name: mockSiteName,
+        repositoryName: mockSiteName,
       },
     })
   })

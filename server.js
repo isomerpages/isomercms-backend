@@ -120,7 +120,7 @@ app.use("/v1", authenticatedSubrouterV1)
 app.use("/v2/auth", authV2Router.getRouter())
 // Endpoints which have siteName, used to inject site access token
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
-// Endpoints which have siteName, used to inject site access token
+// Endpoints which use system access control
 app.use("/v2/sys", authenticatedSystemSubrouterV2)
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)

@@ -83,10 +83,10 @@ export class SiteRouter {
     }
 
     const site = await this.sitesService.updateSite(siteName, req.body)
-    if (site == null) {
-      // null response means that the record was not found.
-      return res.status(404).send()
-    }
+    // if (site == null) {
+    //   // null response means that the record was not found.
+    //   return res.status(404).send()
+    // }
     return res.status(200).send(site)
   }
 

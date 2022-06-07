@@ -23,13 +23,13 @@ function errorHandler(err, req, res, next) {
       },
     })
   }
-  // Error handling for non-Isomer response errors
-  if (err.name && err.message && err.status) {
-    logger.info(`Internal server error: ${errMsg}`)
-    return res.status(err.status).json({
+  if (err.name === "PayloadTooLargeError") {
+    // Error thrown by large payload is done by express
+    logger.info(errMsg)
+    return res.status(413).json({
       error: {
         name: err.name,
-        code: err.status,
+        code: 413,
         message: err.message,
       },
     })

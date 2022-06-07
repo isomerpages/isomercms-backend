@@ -3,6 +3,7 @@ import { ModelStatic, ValidationError } from "sequelize"
 import logger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
+import { NotFoundError } from "@errors/NotFoundError"
 
 import { Site } from "@database/models"
 
@@ -77,7 +78,7 @@ class SitesService {
   async updateSite(
     repositoryName: string,
     props: UpdateSiteProps
-  ): Promise<Site | null> {
+  ): Promise<Site> {
     try {
       const [affectedRows, data] = await this.repository.update(props, {
         where: { repositoryName },
@@ -85,7 +86,7 @@ class SitesService {
       })
 
       if (affectedRows === 0) {
-        return null
+        throw new NotFoundError(`Repository ${repositoryName} not found`)
       }
       if (affectedRows === 1) {
         return data[0]

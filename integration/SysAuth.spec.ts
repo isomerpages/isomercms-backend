@@ -12,7 +12,8 @@ import { SYS_AUTH_HEADER } from "@services/middlewareServices/AuthMiddlewareServ
 const hanlder: RequestHandler<never, unknown, void> = async (req, res) =>
   res.sendStatus(200)
 const rootRouter = express.Router({ mergeParams: true })
-rootRouter.get("/one/two", attachReadRouteHandlerWrapper(hanlder))
+const sysPath = "/v2/sys"
+rootRouter.get(sysPath, attachReadRouteHandlerWrapper(hanlder))
 rootRouter.get("/", attachReadRouteHandlerWrapper(hanlder))
 
 // Set up authentication router
@@ -37,7 +38,7 @@ describe("System Request Authorization", () => {
     const expected = 401
 
     // Act
-    const actual = await request(app).get("/").send()
+    const actual = await request(app).get(sysPath).send()
 
     // Assert
     expect(actual.statusCode).toBe(expected)
@@ -51,7 +52,7 @@ describe("System Request Authorization", () => {
     const header = {
       [SYS_AUTH_HEADER]: `not_${SYSTEM_SECRET}`,
     }
-    const actual = await request(app).get("/").set(header).send()
+    const actual = await request(app).get(sysPath).set(header).send()
 
     // Assert
     expect(actual.statusCode).toBe(expected)
@@ -79,7 +80,7 @@ describe("System Request Authorization", () => {
     const header = {
       [SYS_AUTH_HEADER]: SYSTEM_SECRET,
     }
-    const actual = await request(app).get("/one/two").set(header).send()
+    const actual = await request(app).get(sysPath).set(header).send()
 
     // Assert
     expect(actual.statusCode).toBe(expected)

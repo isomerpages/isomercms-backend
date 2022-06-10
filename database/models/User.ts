@@ -6,6 +6,7 @@ import {
   CreatedAt,
   UpdatedAt,
   BelongsToMany,
+  HasOne,
 } from "sequelize-typescript"
 
 import { Site } from "./Site"
@@ -62,4 +63,7 @@ export class User extends Model {
     through: () => SiteMember,
   })
   sites!: Site[]
+
+  @HasOne(() => Site)
+  siteCreated?: Site
 }

@@ -6,8 +6,15 @@ import {
   CreatedAt,
   UpdatedAt,
   BelongsToMany,
+  HasOne,
+  BelongsTo,
+  ForeignKey,
 } from "sequelize-typescript"
 
+import { SiteStatus, JobStatus } from "../../constants"
+
+import { Deployment } from "./Deployment"
+import { Repo } from "./Repo"
 import { SiteMember } from "./SiteMember"
 import { User } from "./User"
 
@@ -33,6 +40,20 @@ export class Site extends Model {
   })
   apiTokenName!: string
 
+  @Column({
+    allowNull: false,
+    type: DataType.ENUM(...Object.values(SiteStatus)),
+    defaultValue: SiteStatus.Init,
+  })
+  siteStatus!: SiteStatus
+
+  @Column({
+    allowNull: false,
+    type: DataType.ENUM(...Object.values(JobStatus)),
+    defaultValue: JobStatus.Ready,
+  })
+  jobStatus!: JobStatus
+
   @CreatedAt
   createdAt!: Date
 
@@ -45,4 +66,16 @@ export class Site extends Model {
     through: () => SiteMember,
   })
   users!: User[]
+
+  @HasOne(() => Repo)
+  repo?: Repo
+
+  @HasOne(() => Deployment)
+  deployment?: Deployment
+
+  @ForeignKey(() => User)
+  creatorId!: number
+
+  @BelongsTo(() => User)
+  creator!: User
 }

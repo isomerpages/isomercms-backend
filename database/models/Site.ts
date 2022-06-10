@@ -5,6 +5,7 @@ import {
   Table,
   CreatedAt,
   UpdatedAt,
+  DeletedAt,
   BelongsToMany,
   HasOne,
   BelongsTo,
@@ -18,7 +19,7 @@ import { Repo } from "./Repo"
 import { SiteMember } from "./SiteMember"
 import { User } from "./User"
 
-@Table({ tableName: "sites" })
+@Table({ tableName: "sites", paranoid: true })
 export class Site extends Model {
   @Column({
     autoIncrement: true,
@@ -59,6 +60,9 @@ export class Site extends Model {
 
   @UpdatedAt
   updatedAt!: Date
+
+  @DeletedAt
+  deletedAt!: Date
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",

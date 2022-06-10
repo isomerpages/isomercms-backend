@@ -5,13 +5,14 @@ import {
   Table,
   CreatedAt,
   UpdatedAt,
+  DeletedAt,
   ForeignKey,
   BelongsTo,
 } from "sequelize-typescript"
 
 import { Site } from "./Site"
 
-@Table({ tableName: "deployments" })
+@Table({ tableName: "deployments", paranoid: true })
 export class Deployment extends Model {
   @Column({
     autoIncrement: true,
@@ -38,6 +39,9 @@ export class Deployment extends Model {
 
   @UpdatedAt
   updatedAt!: Date
+
+  @DeletedAt
+  deletedAt!: Date
 
   @ForeignKey(() => Site)
   siteId!: number

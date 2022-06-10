@@ -5,6 +5,7 @@ import {
   Table,
   CreatedAt,
   UpdatedAt,
+  DeletedAt,
   BelongsToMany,
   HasOne,
 } from "sequelize-typescript"
@@ -12,7 +13,7 @@ import {
 import { Site } from "./Site"
 import { SiteMember } from "./SiteMember"
 
-@Table({ tableName: "users" })
+@Table({ tableName: "users", paranoid: true })
 export class User extends Model {
   @Column({
     autoIncrement: true,
@@ -56,6 +57,9 @@ export class User extends Model {
 
   @UpdatedAt
   updatedAt!: Date
+
+  @DeletedAt
+  deletedAt!: Date
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",

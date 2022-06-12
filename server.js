@@ -9,6 +9,8 @@ import {
   User,
   Whitelist,
   AccessToken,
+  Repo,
+  Deployment,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
@@ -28,6 +30,8 @@ const sequelize = initSequelize([
   User,
   Whitelist,
   AccessToken,
+  Repo,
+  Deployment,
 ])
 const usersService = getUsersService(sequelize)
 

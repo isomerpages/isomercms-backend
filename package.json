@@ -121,7 +121,8 @@
     "@database": "database",
     "@services": "services",
     "@validators": "validators",
-    "@fixtures": "fixtures"
+    "@fixtures": "fixtures",
+    "@constants": "constants"
   },
   "lint-staged": {
     "**/*.(js|jsx|ts|tsx)": [

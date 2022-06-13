@@ -41,7 +41,7 @@ export class Deployment extends Model {
   updatedAt!: Date
 
   @DeletedAt
-  deletedAt!: Date
+  deletedAt?: Date
 
   @ForeignKey(() => Site)
   siteId!: number

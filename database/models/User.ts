@@ -59,7 +59,7 @@ export class User extends Model {
   updatedAt!: Date
 
   @DeletedAt
-  deletedAt!: Date
+  deletedAt?: Date
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",

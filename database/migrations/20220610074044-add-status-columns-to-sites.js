@@ -4,7 +4,7 @@ module.exports = {
       Promise.all([
         queryInterface.addColumn(
           "sites", // name of Source model
-          "siteStatus", // name of column we're adding
+          "site_status", // name of column we're adding
           {
             type: Sequelize.ENUM,
             values: ["INIT", "LAUNCH", "LIVE"],
@@ -14,7 +14,7 @@ module.exports = {
         ),
         queryInterface.addColumn(
           "sites", // name of Source model
-          "jobStatus", // name of column we're adding
+          "job_status", // name of column we're adding
           {
             type: Sequelize.ENUM,
             values: ["READY", "RUNNING", "FAILED"],
@@ -39,10 +39,12 @@ module.exports = {
           { transaction: t }
         ),
         queryInterface.sequelize.query(
-          'DROP TYPE "public"."enum_sites_site_status";'
+          'DROP TYPE "public"."enum_sites_site_status" CASCADE;',
+          { transaction: t }
         ),
         queryInterface.sequelize.query(
-          'DROP TYPE "public"."enum_sites_job_status";'
+          'DROP TYPE "public"."enum_sites_job_status" CASCADE;',
+          { transaction: t }
         ),
       ])
     ),

@@ -10,8 +10,8 @@ import {
   HasOne,
 } from "sequelize-typescript"
 
-import { Site } from "./Site"
-import { SiteMember } from "./SiteMember"
+import { Site } from "@database/models/Site"
+import { SiteMember } from "@database/models/SiteMember"
 
 @Table({ tableName: "users", paranoid: true })
 export class User extends Model {

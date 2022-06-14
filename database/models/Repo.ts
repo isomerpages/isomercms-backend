@@ -10,7 +10,7 @@ import {
   BelongsTo,
 } from "sequelize-typescript"
 
-import { Site } from "./Site"
+import { Site } from "@database/models/Site"
 
 @Table({ tableName: "repos", paranoid: true })
 export class Repo extends Model {

@@ -12,12 +12,12 @@ import {
   ForeignKey,
 } from "sequelize-typescript"
 
-import { SiteStatus, JobStatus } from "../../constants"
+import { SiteStatus, JobStatus } from "@constants/index"
 
-import { Deployment } from "./Deployment"
-import { Repo } from "./Repo"
-import { SiteMember } from "./SiteMember"
-import { User } from "./User"
+import { Deployment } from "@database/models/Deployment"
+import { Repo } from "@database/models/Repo"
+import { SiteMember } from "@database/models/SiteMember"
+import { User } from "@database/models/User"
 
 @Table({ tableName: "sites", paranoid: true })
 export class Site extends Model {

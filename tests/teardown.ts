@@ -1,4 +1,4 @@
-import { sequelize } from "./database"
+import { sequelize } from "@tests/database"
 
 const teardownDb = async () => {
   console.log("tearing down database tables")

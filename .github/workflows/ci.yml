@@ -157,7 +157,7 @@ jobs:
         - name: Inject DataDog API key
           env: 
             DD_API_KEY: ${{ secrets.DD_API_KEY }}
-          run: sed -i -e "s#@DD_API_KEY#$DD_API_KEY#g" .ebextensions/99datadog.config
+          run: sed -i "" -e "s#@DD_API_KEY#$DD_API_KEY#g" .ebextensions/99datadog.config
         - name: Deploy to EB
           uses: opengovsg/beanstalk-deploy@v11
           with:

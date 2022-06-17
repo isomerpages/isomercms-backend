@@ -154,6 +154,10 @@ jobs:
               print('::set-output name=eb_app::' + eb_app)
               print('::set-output name=eb_env::' + eb_env_staging)
           id: select_eb_vars
+        - name: Inject DataDog API key
+          env: 
+            DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          run: sed -i -e "s#@DD_API_KEY#$DD_API_KEY#g" .ebextensions/99datadog.config
         - name: Deploy to EB
           uses: opengovsg/beanstalk-deploy@v11
           with:

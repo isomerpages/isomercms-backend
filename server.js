@@ -1,5 +1,5 @@
-import "module-alias/register"
 import "dd-trace/init"
+import "module-alias/register"
 
 import logger from "@logger/logger"
 

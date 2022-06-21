@@ -1,9 +1,14 @@
+import InfraService from "@services/infra/InfraService"
+
 const express = require("express")
 
 const {
   NetlifyTomlService,
 } = require("@services/configServices/NetlifyTomlService")
+const { sitesService: identitySitesService } = require("@services/identity")
 const { SitesService } = require("@services/utilServices/SitesService")
+
+// TODO: Clean up the names
 
 const { NetlifyTomlRouter } = require("./netlifyToml")
 const { SitesRouter } = require("./sites")
@@ -14,11 +19,21 @@ const getAuthenticatedSubrouter = ({
   gitHubService,
   configYmlService,
   usersService,
+  reposService,
+  deploymentsService,
 }) => {
   const sitesService = new SitesService({ gitHubService, configYmlService })
   const netlifyTomlService = new NetlifyTomlService()
 
-  const sitesV2Router = new SitesRouter({ sitesService })
+  // TODO: Evaluate if this should be moved to server.js
+  const infraService = new InfraService({
+    usersService,
+    sitesService: identitySitesService,
+    reposService,
+    deploymentsService,
+  })
+
+  const sitesV2Router = new SitesRouter({ sitesService, infraService })
   const usersRouter = new UsersRouter({ usersService })
   const netlifyTomlV2Router = new NetlifyTomlRouter({ netlifyTomlService })
 

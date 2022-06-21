@@ -14,6 +14,8 @@ import {
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
+import DeploymentsService from "@services/identity/DeploymentsService"
+import ReposService from "@services/identity/ReposService"
 
 import { getAuthMiddleware } from "./newmiddleware"
 import getAuthenticatedSubrouter from "./newroutes/authenticated"
@@ -59,6 +61,8 @@ const { AuthService } = require("@services/utilServices/AuthService")
 const { AuthRouter } = require("./newroutes/auth")
 
 const authService = new AuthService({ usersService })
+const reposService = new ReposService({ repository: Repo })
+const deploymentsService = new DeploymentsService({ repository: Deployment })
 
 const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
@@ -81,6 +85,8 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   gitHubService,
   configYmlService,
   usersService,
+  reposService,
+  deploymentsService,
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authMiddleware,

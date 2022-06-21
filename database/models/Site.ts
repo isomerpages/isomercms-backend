@@ -51,7 +51,7 @@ export class Site extends Model {
   @Column({
     allowNull: false,
     type: DataType.ENUM(...Object.values(JobStatus)),
-    defaultValue: JobStatus.Ready,
+    defaultValue: JobStatus.Running,
   })
   jobStatus!: JobStatus
 

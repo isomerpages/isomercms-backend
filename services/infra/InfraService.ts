@@ -65,11 +65,23 @@ export default class InfraService {
       logger.info(`Created repo in GitHub, repo name: ${repoName}`)
 
       // 4. Set up the Amplify project using the DeploymentsService
-      await this.deploymentsService.setupAmplifyProject({
+      const deployment = await this.deploymentsService.setupAmplifyProject({
         repoName,
         site: newSite,
       })
       logger.info(`Created deployment in AWS Amplify, repo name: ${repoName}`)
+
+      if (!deployment) {
+        // TODO: handle error
+        return
+      }
+
+      await this.reposService.modifyDeploymentUrlsOnRepo(
+        repoName,
+        deployment.productionUrl,
+        deployment.stagingUrl
+      )
+      await this.reposService.setRepoAndTeamPermissions(repoName)
 
       const updateSuccessSiteInitParams = {
         id: newSite.id,

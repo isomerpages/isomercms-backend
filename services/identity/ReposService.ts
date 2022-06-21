@@ -57,12 +57,54 @@ export default class ReposService {
     await this.createRepoOnGithub(repoName)
     await this.createTeamOnGitHub(repoName)
     await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
-    await this.setRepoAndTeamPermissions(repoName)
     return this.create({
       name: repoName,
       url: repoUrl,
       site,
       siteId: site.id,
+    })
+  }
+
+  modifyDeploymentUrlsOnRepo = async (
+    repoName: string,
+    productionUrl: string,
+    stagingUrl: string
+  ) => {
+    await octokit.repos.update({
+      owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+      repo: repoName,
+      description: `Staging: ${stagingUrl} | Production: ${productionUrl}`,
+    })
+
+    const dir = `/tmp/${repoName}`
+    const remote = "origin"
+    await git.add({ fs, dir, filepath: "." })
+    await git.commit({
+      fs,
+      dir,
+      message: "Set URLs",
+      author: {
+        name: ISOMER_GITHUB_ORGANIZATION_NAME,
+        email: "isomeradmin@users.noreply.github.com",
+      },
+    })
+    await git.push({
+      fs,
+      http,
+      dir,
+      remote,
+      remoteRef: "staging",
+      corsProxy: "https://cors.isomorphic-git.org",
+      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
+    })
+    await git.push({
+      fs,
+      http,
+      dir,
+      remote,
+      remoteRef: "master",
+      corsProxy: "https://cors.isomorphic-git.org",
+      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     })
   }
 

@@ -1,66 +1,11 @@
-import {
-  AmplifyClient,
-  CreateAppCommand,
-  CreateAppCommandInput,
-  CreateAppCommandOutput,
-  CreateBranchCommand,
-  CreateBranchCommandInput,
-  CreateBranchCommandOutput,
-  Stage,
-} from "@aws-sdk/client-amplify"
-import { errAsync, ResultAsync } from "neverthrow"
+import { errAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
 import { Deployment, Site } from "@database/models"
-
-const { SYSTEM_GITHUB_TOKEN, AWS_REGION } = process.env
-
-const AMPLIFY_BUILD_SPEC = `
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - bundle install
-    build:
-      commands:
-        - curl https://raw.githubusercontent.com/opengovsg/isomer-build/amplify/build.sh | bash
-  artifacts:
-    baseDirectory: _site
-    files:
-      - '**/*'
-  cache:
-    paths: []
-`
-export interface AmplifyInfo {
-  name: string
-  arn: string
-  id: string
-  defaultDomain: string
-  repository: string
-}
-
-export class AmplifyError extends Error {
-  appName?: string
-
-  appArn?: string
-
-  appId?: string
-
-  public constructor(
-    msg: string,
-    appName?: string,
-    appArn?: string,
-    appId?: string
-  ) {
-    super(msg)
-    this.appName = appName
-    this.appArn = appArn
-    this.appId = appId
-  }
-}
+import { AmplifyError, AmplifyInfo } from "@root/types/index"
+import DeploymentClient from "@services/identity/DeploymentClient"
 
 type deploymentsCreateParamsType = Partial<Deployment> & {
   productionUrl: Deployment["productionUrl"]
@@ -75,13 +20,11 @@ interface DeploymentsServiceProps {
 class DeploymentsService {
   private readonly repository: DeploymentsServiceProps["repository"]
 
-  private readonly deploymentClient: AmplifyClient
+  private readonly deploymentClient: DeploymentClient
 
   constructor({ repository }: DeploymentsServiceProps) {
     this.repository = repository
-    this.deploymentClient = new AmplifyClient({
-      region: AWS_REGION,
-    })
+    this.deploymentClient = new DeploymentClient()
   }
 
   create = async (
@@ -111,103 +54,59 @@ class DeploymentsService {
 
   createAmplifyAppOnAws = async (repoName: string) => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
-    const options: CreateAppCommandInput = {
-      name: repoName,
-      accessToken: SYSTEM_GITHUB_TOKEN,
-      repository: repoUrl,
-      buildSpec: AMPLIFY_BUILD_SPEC,
-      environmentVariables: {
-        JEKYLL_ENV: "development",
-      },
-      customRules: [{ source: "/<*>", target: "/404.html", status: "404-200" }],
-    }
-
     logger.info(`PublishToAmplify ${repoUrl}`)
 
-    // 1. Create App
-    return (
-      ResultAsync.fromPromise(
-        this.deploymentClient.send(new CreateAppCommand(options)),
-        (e) => {
-          logger.error(`AMPLIFY ERROR: ${e}`)
-          new AmplifyError(`Publish to Amplify failed: ${e}`)
-        }
-      )
-        .andThen((out: CreateAppCommandOutput) => {
-          const { app } = out
-
-          if (!app) {
-            return errAsync(
-              new Error("Successful CreateApp returned null app result.")
-            )
-          }
-          const { appArn, appId, name, defaultDomain } = app
-          logger.info(
-            `Successfully published '${name}' (appId: ${appId}, ${appArn})`
-          )
-          const amplifyInfo: AmplifyInfo = {
-            name: name || repoName,
-            arn: appArn || "",
-            id: appId || "",
-            defaultDomain: defaultDomain || `${appId}.amplifyapp.com`,
-            repository: repoUrl,
-          }
-
-          // 2. Create Master branch
-          const options: CreateBranchCommandInput = {
-            appId,
-            framework: "Jekyll",
-            branchName: "master",
-            stage: Stage.PRODUCTION,
-            enableAutoBuild: true,
-            environmentVariables: {
-              JEKYLL_ENV: "production",
-            },
-          }
-          return ResultAsync.fromPromise(
-            this.deploymentClient.send(new CreateBranchCommand(options)),
-            (e) =>
-              new AmplifyError(
-                `Create Amplify master branch failed: ${e}`,
-                name,
-                appArn,
-                appId
-              )
-          ).map(
-            (_out: CreateBranchCommandOutput) =>
-              // Can inspect _out here if necessary.
-              amplifyInfo
-          )
-        })
-
-        // 3. Create Staging branch
-        .andThen((amplifyInfo: AmplifyInfo) => {
-          const options: CreateBranchCommandInput = {
-            appId: amplifyInfo.id,
-            framework: "Jekyll",
-            branchName: "staging",
-            stage: Stage.DEVELOPMENT,
-            enableAutoBuild: true,
-            environmentVariables: {
-              JEKYLL_ENV: "staging",
-            },
-          }
-          return ResultAsync.fromPromise(
-            this.deploymentClient.send(new CreateBranchCommand(options)),
-            (e) =>
-              new AmplifyError(
-                `Create Amplify staging branch failed: ${e}`,
-                amplifyInfo.name,
-                amplifyInfo.arn,
-                amplifyInfo.id
-              )
-          ).map(
-            (_out: CreateBranchCommandOutput) =>
-              // Can inspect _out here if necessary.
-              amplifyInfo
-          )
-        })
+    const createAppOptions = this.deploymentClient.generateCreateAppInput(
+      repoName,
+      repoUrl
     )
+    // 1. Create Amplify app
+    return this.deploymentClient
+      .sendCreateApp(createAppOptions)
+      .andThen((out) => {
+        const { app } = out
+        if (
+          !app ||
+          !app.appArn ||
+          !app.appId ||
+          !app.name ||
+          !app.defaultDomain
+        ) {
+          return errAsync(
+            new AmplifyError(
+              "Call to CreateApp on Amplify returned malformed output."
+            )
+          )
+        }
+        const { appArn: arn, appId: id, name, defaultDomain } = app
+        logger.info(`Successfully published '${name}' (appId: ${id}, ${arn})`)
+        const amplifyInfo: AmplifyInfo = {
+          name,
+          arn,
+          id,
+          defaultDomain,
+          repository: repoUrl,
+        }
+
+        // 2. Create Master branch
+        const createMasterBranchInput = this.deploymentClient.generateCreateBranchInput(
+          amplifyInfo.id,
+          "master"
+        )
+        return this.deploymentClient
+          .sendCreateBranch(createMasterBranchInput)
+          .map(() => amplifyInfo)
+      })
+      .andThen((amplifyInfo) => {
+        // 3. Create Staging branch
+        const createStagingBranchInput = this.deploymentClient.generateCreateBranchInput(
+          amplifyInfo.id,
+          "staging"
+        )
+        return this.deploymentClient
+          .sendCreateBranch(createStagingBranchInput)
+          .map(() => amplifyInfo)
+      })
   }
 }
 

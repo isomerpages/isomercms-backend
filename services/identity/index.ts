@@ -47,7 +47,8 @@ if (!POSTMAN_API_KEY && !IS_LOCAL_DEV) {
 }
 
 const mockMailer = {
-  sendMail: (_email: string, html: string) => logger.info(html),
+  sendMail: (_email: string, _subject: string, html: string) =>
+    logger.info(html),
 } as MailClient
 const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient(POSTMAN_API_KEY!)
 

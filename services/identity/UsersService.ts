@@ -102,10 +102,11 @@ class UsersService {
     const otp = this.otp.generate(email)
     const expiry = this.otp.getExpiryMinutes()
 
+    const subject = "One-Time Password (OTP) for IsomerCMS"
     const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${expiry} minutes. Please use this to verify your email address.</p>
     <p>If your OTP does not work, please request for a new OTP.</p>
     <p>IsomerCMS Support Team</p>`
-    await this.mailer.sendMail(email, html)
+    await this.mailer.sendMail(email, subject, html)
   }
 
   async sendSmsOtp(mobileNumber: string) {

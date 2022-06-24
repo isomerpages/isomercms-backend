@@ -1,13 +1,31 @@
-import FormSG from "@opengovsg/formsg-sdk"
+import {
+  DecryptParams,
+  DecryptedContent,
+} from "@opengovsg/formsg-sdk/dist/types"
 import { Request, Response, NextFunction } from "express"
 
 import logger from "@logger/logger"
 
 import { AuthError } from "@root/errors/AuthError"
 
-const formsg = FormSG()
-
+interface CanDecryptFormSGPayload {
+  webhooks: {
+    authenticate: (header: string, uri: string) => void
+  }
+  crypto: {
+    decrypt: (
+      formCreateKey: string,
+      decryptParams: DecryptParams
+    ) => DecryptedContent | null
+  }
+}
 export default class FormSGService {
+  formsg: CanDecryptFormSGPayload
+
+  constructor({ formsg }: { formsg: CanDecryptFormSGPayload }) {
+    this.formsg = formsg
+  }
+
   authenticate = () => (
     req: Request,
     res: Response,
@@ -19,7 +37,7 @@ export default class FormSGService {
     }
     const postUri = `https://${req.get("host")}${req.baseUrl}${req.path}`
     try {
-      formsg.webhooks.authenticate(signature, postUri)
+      this.formsg.webhooks.authenticate(signature, postUri)
       // Continue processing the POST body
       next()
     } catch (e) {
@@ -34,7 +52,7 @@ export default class FormSGService {
     next: NextFunction
   ): void => {
     try {
-      const submission = formsg.crypto.decrypt(
+      const submission = this.formsg.crypto.decrypt(
         formKey,
         // If `verifiedContent` is provided in `req.body.data`, the return object
         // will include a verified key.

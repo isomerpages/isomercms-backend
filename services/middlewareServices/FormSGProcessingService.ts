@@ -28,7 +28,7 @@ export default class FormSGProcessingService {
 
   authenticate = () => (
     req: Request,
-    res: Response,
+    _res: Response,
     next: NextFunction
   ): void => {
     const signature = req.get("X-FormSG-Signature")
@@ -41,7 +41,7 @@ export default class FormSGProcessingService {
       // Continue processing the POST body
       next()
     } catch (e) {
-      logger?.error(e)
+      logger.error(e)
       throw new AuthError("Unauthorized")
     }
   }
@@ -60,15 +60,14 @@ export default class FormSGProcessingService {
       )
 
       // If the decryption failed, submission will be `null`.
-      if (submission) {
-        // Continue processing the submission
-        res.locals.submission = submission
-        next()
-      } else {
+      if (!submission) {
         res.status(422).send({ message: "Bad submission" })
       }
+      // Continue processing the submission
+      res.locals.submission = submission
+      next()
     } catch (e) {
-      logger?.error(e)
+      logger.error(e)
       throw new AuthError("Unauthorized")
     }
   }

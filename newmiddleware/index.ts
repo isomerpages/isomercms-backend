@@ -1,4 +1,7 @@
+import FormSG from "@opengovsg/formsg-sdk"
 import FormSGService from "@root/services/middlewareServices/FormSGService"
+
+import AuthService from "@services/identity/AuthService"
 
 import FormSGMiddleware from "./formsg"
 
@@ -8,7 +11,11 @@ const {
 
 const { AuthMiddleware } = require("./auth")
 
-const getAuthMiddleware = ({ identityAuthService }) => {
+const getAuthMiddleware = ({
+  identityAuthService,
+}: {
+  identityAuthService: AuthService
+}) => {
   const authMiddlewareService = new AuthMiddlewareService({
     identityAuthService,
   })
@@ -16,7 +23,8 @@ const getAuthMiddleware = ({ identityAuthService }) => {
   return authMiddleware
 }
 
-const formSGService = new FormSGService()
+const formsg = FormSG()
+const formSGService = new FormSGService({ formsg })
 const formSGMiddleware = new FormSGMiddleware({ formSGService })
 
 /**
@@ -31,7 +39,7 @@ const formSGMiddleware = new FormSGMiddleware({ formSGService })
  *
  * Retrieve form data from res.locals.submission.
  */
-const attachFormSGHandler = (formKey) =>
+const attachFormSGHandler = (formKey: string) =>
   formSGMiddleware.authenticateAndDecrypt({ formKey })
 
 module.exports = {

@@ -8,7 +8,7 @@ import logger from "@logger/logger"
 
 import { AuthError } from "@root/errors/AuthError"
 
-interface CanDecryptFormSGPayload {
+export interface CanDecryptFormSGPayload {
   webhooks: {
     authenticate: (header: string, uri: string) => void
   }

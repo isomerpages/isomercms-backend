@@ -11,10 +11,14 @@ class MailClient {
     this.POSTMAN_API_KEY = apiKey
   }
 
-  async sendMail(recipient: string, body: string): Promise<void> {
+  async sendMail(
+    recipient: string,
+    subject: string,
+    body: string
+  ): Promise<void> {
     const endpoint = `${POSTMAN_API_URL}/transactional/email/send`
     const email = {
-      subject: "One-Time Password (OTP) for IsomerCMS",
+      subject,
       from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
       body,
       recipient,

@@ -61,7 +61,8 @@ export default class FormsProcessingService {
 
     // If the decryption failed, submission will be `null`.
     if (submission === null) {
-      throw new UnprocessableError("Bad formsg submission")
+      const postUri = `https://${req.get("host")}${req.baseUrl}${req.path}`
+      throw new UnprocessableError(`Bad formsg submission at ${postUri}`)
     }
     // Continue processing the submission
     res.locals.submission = submission

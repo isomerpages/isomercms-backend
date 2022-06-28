@@ -2,9 +2,9 @@ import { Request, Response } from "express"
 
 import { AuthError } from "@errors/AuthError"
 
-import _FormSGProcessingService, {
+import _FormsProcessingService, {
   CanDecryptFormSGPayload,
-} from "../FormSGProcessingService"
+} from "../FormsProcessingService"
 
 const mockSignature = "signature"
 const mockHost = "host"
@@ -37,7 +37,7 @@ const mockFormsg = {
 const mockPostUri = `https://${mockReq.get("host")}${mockReq.baseUrl}${
   mockReq.path
 }`
-const FormSGProcessingService = new _FormSGProcessingService({
+const FormsProcessingService = new _FormsProcessingService({
   formsg: (mockFormsg as unknown) as CanDecryptFormSGPayload,
 })
 
@@ -49,7 +49,7 @@ describe("FormSG Processing Service", () => {
     it("should call authenticate successfully and call next() when the call is successful", async () => {
       // Arrange
       mockFormsg.webhooks.authenticate.mockReturnValue(true)
-      const authenticateMiddleware = FormSGProcessingService.authenticate()
+      const authenticateMiddleware = FormsProcessingService.authenticate()
 
       // Act
       authenticateMiddleware(mockReq, mockRes, mockNext)
@@ -67,7 +67,7 @@ describe("FormSG Processing Service", () => {
       mockFormsg.webhooks.authenticate.mockImplementationOnce(() => {
         throw new Error()
       })
-      const authenticateMiddleware = FormSGProcessingService.authenticate()
+      const authenticateMiddleware = FormsProcessingService.authenticate()
 
       // Act
       const result = () => authenticateMiddleware(mockReq, mockRes, mockNext)
@@ -89,7 +89,7 @@ describe("FormSG Processing Service", () => {
           return null
         },
       } as unknown) as Request
-      const authenticateMiddleware = FormSGProcessingService.authenticate()
+      const authenticateMiddleware = FormsProcessingService.authenticate()
 
       // Act
       const result = () =>
@@ -108,7 +108,7 @@ describe("FormSG Processing Service", () => {
     it("should call decrypt successfully, store submission data and call next() when the call is successful", async () => {
       // Arrange
       mockFormsg.crypto.decrypt.mockReturnValue(mockSubmission)
-      const decryptMiddleware = FormSGProcessingService.decrypt({
+      const decryptMiddleware = FormsProcessingService.decrypt({
         formKey: mockFormKey,
       })
 
@@ -129,7 +129,7 @@ describe("FormSG Processing Service", () => {
       mockFormsg.crypto.decrypt.mockImplementationOnce(() => {
         throw new Error()
       })
-      const decryptMiddleware = FormSGProcessingService.decrypt({
+      const decryptMiddleware = FormsProcessingService.decrypt({
         formKey: mockFormKey,
       })
 

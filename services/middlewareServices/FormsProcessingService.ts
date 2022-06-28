@@ -19,7 +19,7 @@ export interface CanDecryptFormSGPayload {
     ) => DecryptedContent | null
   }
 }
-export default class FormSGProcessingService {
+export default class FormsProcessingService {
   formsg: CanDecryptFormSGPayload
 
   constructor({ formsg }: { formsg: CanDecryptFormSGPayload }) {

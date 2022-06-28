@@ -1,7 +1,7 @@
 import FormSG from "@opengovsg/formsg-sdk"
 import express, { RequestHandler } from "express"
 
-import FormSGProcessingService from "@root/services/middlewareServices/FormSGProcessingService"
+import FormsProcessingService from "@root/services/middlewareServices/FormsProcessingService"
 import AuthService from "@services/identity/AuthService"
 
 const {
@@ -23,7 +23,7 @@ const getAuthMiddleware = ({
 }
 
 const formsg = FormSG()
-const formSGService = new FormSGProcessingService({ formsg })
+const formSGService = new FormsProcessingService({ formsg })
 
 /**
  * Handles FormSG response authentication and decryption. 

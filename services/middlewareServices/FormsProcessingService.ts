@@ -34,7 +34,7 @@ export default class FormsProcessingService {
   ): void => {
     const signature = req.get("X-FormSG-Signature")
     if (!signature) {
-      throw new AuthError("Signature missing")
+      throw new AuthError("Signature missing for form")
     }
     const postUri = `https://${req.get("host")}${req.baseUrl}${req.path}`
     try {
@@ -43,7 +43,7 @@ export default class FormsProcessingService {
       next()
     } catch (e) {
       logger.error(e)
-      throw new AuthError("Unauthorized")
+      throw new AuthError("Unauthorized form submission")
     }
   }
 

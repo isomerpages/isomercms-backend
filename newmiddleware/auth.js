@@ -45,4 +45,5 @@ class AuthMiddleware {
     return next()
   }
 }
-module.exports = { AuthMiddleware }
+
+export { AuthMiddleware }

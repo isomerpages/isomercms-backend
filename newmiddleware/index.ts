@@ -3,12 +3,9 @@ import express, { RequestHandler } from "express"
 
 import FormsProcessingService from "@root/services/middlewareServices/FormsProcessingService"
 import AuthService from "@services/identity/AuthService"
+import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
 
-const {
-  AuthMiddlewareService,
-} = require("@services/middlewareServices/AuthMiddlewareService")
-
-const { AuthMiddleware } = require("./auth")
+import { AuthMiddleware } from "./auth"
 
 const getAuthMiddleware = ({
   identityAuthService,
@@ -43,7 +40,4 @@ const attachFormSGHandler = (formKey: string): Array<RequestHandler> => [
   formSGService.decrypt({ formKey }),
 ]
 
-module.exports = {
-  getAuthMiddleware,
-  attachFormSGHandler,
-}
+export { getAuthMiddleware, attachFormSGHandler }

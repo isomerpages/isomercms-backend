@@ -2,25 +2,23 @@ import { Request, Response } from "express"
 
 import { AuthError } from "@errors/AuthError"
 
-import _FormsProcessingService, {
-  CanDecryptFormSGPayload,
-} from "../FormsProcessingService"
+import _FormsProcessingService, { FormsSdk } from "../FormsProcessingService"
 
-const mockSignature = "signature"
-const mockHost = "host"
-const mockData = "data"
-const mockBody = {
-  data: mockData,
+const MOCK_SIGNATURE = "signature"
+const MOCK_HOST = "host"
+const MOCK_DATA = "data"
+const MOCK_BODY = {
+  data: MOCK_DATA,
 }
 const mockReq = {
   get(name) {
-    if (name === "X-FormSG-Signature") return mockSignature
-    if (name === "host") return mockHost
+    if (name === "X-FormSG-Signature") return MOCK_SIGNATURE
+    if (name === "host") return MOCK_HOST
     return null
   },
   baseUrl: "baseUrl",
   path: "path",
-  body: mockBody,
+  body: MOCK_BODY,
 } as Request
 const mockRes = {
   locals: {},
@@ -34,11 +32,11 @@ const mockFormsg = {
     decrypt: jest.fn(),
   },
 }
-const mockPostUri = `https://${mockReq.get("host")}${mockReq.baseUrl}${
+const MOCK_POST_URI = `https://${mockReq.get("host")}${mockReq.baseUrl}${
   mockReq.path
 }`
 const FormsProcessingService = new _FormsProcessingService({
-  formsg: (mockFormsg as unknown) as CanDecryptFormSGPayload,
+  formsg: (mockFormsg as unknown) as FormsSdk,
 })
 
 describe("FormSG Processing Service", () => {
@@ -57,8 +55,8 @@ describe("FormSG Processing Service", () => {
       // Assert
       expect(mockNext).toHaveBeenCalled()
       expect(mockFormsg.webhooks.authenticate).toHaveBeenCalledWith(
-        mockSignature,
-        mockPostUri
+        MOCK_SIGNATURE,
+        MOCK_POST_URI
       )
     })
 
@@ -75,8 +73,8 @@ describe("FormSG Processing Service", () => {
       // Assert
       expect(result).toThrow(AuthError)
       expect(mockFormsg.webhooks.authenticate).toHaveBeenCalledWith(
-        mockSignature,
-        mockPostUri
+        MOCK_SIGNATURE,
+        MOCK_POST_URI
       )
       expect(mockNext).not.toHaveBeenCalled()
     })
@@ -103,13 +101,13 @@ describe("FormSG Processing Service", () => {
   })
 
   describe("Decrypt", () => {
-    const mockFormKey = "mockKey"
-    const mockSubmission = "submission"
+    const MOCK_FORM_KEY = "mockKey"
+    const MOCK_SUBMISSION = "submission"
     it("should call decrypt successfully, store submission data and call next() when the call is successful", async () => {
       // Arrange
-      mockFormsg.crypto.decrypt.mockReturnValue(mockSubmission)
+      mockFormsg.crypto.decrypt.mockReturnValue(MOCK_SUBMISSION)
       const decryptMiddleware = FormsProcessingService.decrypt({
-        formKey: mockFormKey,
+        formKey: MOCK_FORM_KEY,
       })
 
       // Act
@@ -118,10 +116,10 @@ describe("FormSG Processing Service", () => {
       // Assert
       expect(mockNext).toHaveBeenCalled()
       expect(mockFormsg.crypto.decrypt).toHaveBeenCalledWith(
-        mockFormKey,
-        mockData
+        MOCK_FORM_KEY,
+        MOCK_DATA
       )
-      expect(mockRes.locals.submission).toStrictEqual(mockSubmission)
+      expect(mockRes.locals.submission).toStrictEqual(MOCK_SUBMISSION)
     })
 
     it("should not call next handler if decrypt is unauthorised", async () => {
@@ -130,7 +128,7 @@ describe("FormSG Processing Service", () => {
         throw new Error()
       })
       const decryptMiddleware = FormsProcessingService.decrypt({
-        formKey: mockFormKey,
+        formKey: MOCK_FORM_KEY,
       })
 
       // Act
@@ -139,8 +137,8 @@ describe("FormSG Processing Service", () => {
       // Assert
       expect(result).toThrow(AuthError)
       expect(mockFormsg.crypto.decrypt).toHaveBeenCalledWith(
-        mockFormKey,
-        mockData
+        MOCK_FORM_KEY,
+        MOCK_DATA
       )
       expect(mockNext).not.toHaveBeenCalled()
     })

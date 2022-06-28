@@ -8,7 +8,7 @@ import logger from "@logger/logger"
 
 import { AuthError } from "@root/errors/AuthError"
 
-export interface CanDecryptFormSGPayload {
+export interface FormsSdk {
   webhooks: {
     authenticate: (header: string, uri: string) => void
   }
@@ -20,9 +20,9 @@ export interface CanDecryptFormSGPayload {
   }
 }
 export default class FormsProcessingService {
-  formsg: CanDecryptFormSGPayload
+  formsg: FormsSdk
 
-  constructor({ formsg }: { formsg: CanDecryptFormSGPayload }) {
+  constructor({ formsg }: { formsg: FormsSdk }) {
     this.formsg = formsg
   }
 

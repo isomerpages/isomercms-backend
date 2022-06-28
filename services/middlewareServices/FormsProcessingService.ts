@@ -51,24 +51,19 @@ export default class FormsProcessingService {
     res: Response,
     next: NextFunction
   ): void => {
-    try {
-      const submission = this.formsg.crypto.decrypt(
-        formKey,
-        // If `verifiedContent` is provided in `req.body.data`, the return object
-        // will include a verified key.
-        req.body.data
-      )
+    const submission = this.formsg.crypto.decrypt(
+      formKey,
+      // If `verifiedContent` is provided in `req.body.data`, the return object
+      // will include a verified key.
+      req.body.data
+    )
 
-      // If the decryption failed, submission will be `null`.
-      if (submission === null) {
-        res.status(422).send({ message: "Bad submission" })
-      }
-      // Continue processing the submission
-      res.locals.submission = submission
-      next()
-    } catch (e) {
-      logger.error(e)
-      throw new AuthError("Unauthorized")
+    // If the decryption failed, submission will be `null`.
+    if (submission === null) {
+      res.status(422).send({ message: "Bad submission" })
     }
+    // Continue processing the submission
+    res.locals.submission = submission
+    next()
   }
 }

@@ -7,6 +7,7 @@ import { Request, Response, NextFunction } from "express"
 import logger from "@logger/logger"
 
 import { AuthError } from "@root/errors/AuthError"
+import { UnprocessableError } from "@root/errors/UnprocessableError"
 
 export interface FormsSdk {
   webhooks: {
@@ -60,7 +61,7 @@ export default class FormsProcessingService {
 
     // If the decryption failed, submission will be `null`.
     if (submission === null) {
-      res.status(422).send({ message: "Bad submission" })
+      throw new UnprocessableError("Bad formsg submission")
     }
     // Continue processing the submission
     res.locals.submission = submission

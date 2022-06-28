@@ -33,17 +33,17 @@ export default class FormsProcessingService {
     next: NextFunction
   ): void => {
     const signature = req.get("X-FormSG-Signature")
-    if (!signature) {
-      throw new AuthError("Signature missing for form")
-    }
     const postUri = `https://${req.get("host")}${req.baseUrl}${req.path}`
+    if (!signature) {
+      throw new AuthError(`Signature missing for form at ${postUri}`)
+    }
     try {
       this.formsg.webhooks.authenticate(signature, postUri)
       // Continue processing the POST body
       next()
     } catch (e) {
       logger.error(e)
-      throw new AuthError("Unauthorized form submission")
+      throw new AuthError(`Unauthorized form submission at ${postUri}`)
     }
   }
 

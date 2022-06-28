@@ -60,7 +60,7 @@ export default class FormSGProcessingService {
       )
 
       // If the decryption failed, submission will be `null`.
-      if (!submission) {
+      if (submission === null) {
         res.status(422).send({ message: "Bad submission" })
       }
       // Continue processing the submission

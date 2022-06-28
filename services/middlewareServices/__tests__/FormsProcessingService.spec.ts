@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 
 import { AuthError } from "@errors/AuthError"
+import { UnprocessableError } from "@errors/UnprocessableError"
 
 import _FormsProcessingService, { FormsSdk } from "../FormsProcessingService"
 
@@ -44,7 +45,7 @@ describe("FormSG Processing Service", () => {
     jest.clearAllMocks()
   })
   describe("Authenticate", () => {
-    it("should call authenticate successfully and call next() when the call is successful", async () => {
+    it("should call authenticate successfully and call next() when the call to authenticate is successful", async () => {
       // Arrange
       mockFormsg.webhooks.authenticate.mockReturnValue(true)
       const authenticateMiddleware = FormsProcessingService.authenticate()
@@ -103,7 +104,10 @@ describe("FormSG Processing Service", () => {
   describe("Decrypt", () => {
     const MOCK_FORM_KEY = "mockKey"
     const MOCK_SUBMISSION = "submission"
-    it("should call decrypt successfully, store submission data and call next() when the call is successful", async () => {
+    beforeEach(() => {
+      mockRes.locals = {}
+    })
+    it("should call decrypt successfully, store submission data and call next() when the call to decrypt is successful", async () => {
       // Arrange
       mockFormsg.crypto.decrypt.mockReturnValue(MOCK_SUBMISSION)
       const decryptMiddleware = FormsProcessingService.decrypt({
@@ -122,11 +126,9 @@ describe("FormSG Processing Service", () => {
       expect(mockRes.locals.submission).toStrictEqual(MOCK_SUBMISSION)
     })
 
-    it("should not call next handler if decrypt is unauthorised", async () => {
+    it("should not call next handler if decrypt fails", async () => {
       // Arrange
-      mockFormsg.crypto.decrypt.mockImplementationOnce(() => {
-        throw new Error()
-      })
+      mockFormsg.crypto.decrypt.mockReturnValue(null)
       const decryptMiddleware = FormsProcessingService.decrypt({
         formKey: MOCK_FORM_KEY,
       })
@@ -135,12 +137,13 @@ describe("FormSG Processing Service", () => {
       const result = () => decryptMiddleware(mockReq, mockRes, mockNext)
 
       // Assert
-      expect(result).toThrow(AuthError)
+      expect(result).toThrow(UnprocessableError)
       expect(mockFormsg.crypto.decrypt).toHaveBeenCalledWith(
         MOCK_FORM_KEY,
         MOCK_DATA
       )
       expect(mockNext).not.toHaveBeenCalled()
+      expect(mockRes.locals.submission).toStrictEqual(undefined)
     })
   })
 })

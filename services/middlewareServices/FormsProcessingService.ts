@@ -6,8 +6,8 @@ import { Request, Response, NextFunction } from "express"
 
 import logger from "@logger/logger"
 
-import { AuthError } from "@root/errors/AuthError"
-import { UnprocessableError } from "@root/errors/UnprocessableError"
+import { AuthError } from "@errors/AuthError"
+import { UnprocessableError } from "@errors/UnprocessableError"
 
 export interface FormsSdk {
   webhooks: {

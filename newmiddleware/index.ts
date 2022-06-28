@@ -34,7 +34,7 @@ const formSGService = new FormsProcessingService({ formsg })
  *
  * Retrieve form data from res.locals.submission.
  */
-const attachFormSGHandler = (formKey: string): Array<RequestHandler> => [
+const attachFormSGHandler = (formKey: string): RequestHandler[] => [
   formSGService.authenticate(),
   express.json(),
   formSGService.decrypt({ formKey }),

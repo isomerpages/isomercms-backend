@@ -11,10 +11,7 @@ import InfraService from "@services/infra/InfraService"
 
 const { SITE_CREATE_FORM_KEY } = process.env
 
-const getProp = function (
-  responses: FormField[],
-  name: string
-): string | undefined {
+function getProp(responses: FormField[], name: string): string | undefined {
   const response = responses.find(({ question }) => question === name)
 
   return response?.answer
@@ -34,6 +31,7 @@ export class FormsgRouter {
   }
 
   async createSite(req: Request, res: Response) {
+    const { submissionId } = req.body.data
     const { responses } = res.locals.submission as DecryptedContent
     const requesterEmail = getProp(responses, "Government E-mail")
     const repoName = getProp(responses, "Repository Name")
@@ -45,7 +43,7 @@ export class FormsgRouter {
       )
     }
 
-    this.infraService.createSite({ requesterEmail, repoName })
+    this.infraService.createSite({ requesterEmail, repoName, submissionId })
     return res.status(200).send("OK")
   }
 

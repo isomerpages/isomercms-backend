@@ -61,6 +61,7 @@ const { GitHubService } = require("@services/db/GitHubService")
 const {
   ConfigYmlService,
 } = require("@services/fileServices/YmlFileServices/ConfigYmlService")
+const { mailer } = require("@services/identity/MailClient")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const { AuthRouter } = require("./newroutes/auth")
@@ -74,6 +75,7 @@ const infraService = new InfraService({
   sitesService,
   reposService,
   deploymentsService,
+  mailer,
 })
 
 const gitHubService = new GitHubService({

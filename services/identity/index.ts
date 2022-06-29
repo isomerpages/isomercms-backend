@@ -6,7 +6,7 @@ import { User, Site, Whitelist } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 
 import AuthService from "./AuthService"
-import MailClient from "./MailClient"
+import { mailer } from "./MailClient"
 import SitesService from "./SitesService"
 import SmsClient from "./SmsClient"
 import TokenStore from "./TokenStore"
@@ -18,7 +18,6 @@ const {
   OTP_SECRET,
   NODE_ENV,
   LOCAL_SITE_ACCESS_TOKEN,
-  POSTMAN_API_KEY,
 } = process.env
 
 const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
@@ -39,18 +38,6 @@ const totpGenerator = new TotpGenerator({
   secret: OTP_SECRET!,
   expiry: parseInt(OTP_EXPIRY!, 10) ?? undefined,
 })
-
-if (!POSTMAN_API_KEY && !IS_LOCAL_DEV) {
-  throw new Error(
-    "Please ensure that you have set POSTMAN_API_KEY in your env vars and that you have sourced them!"
-  )
-}
-
-const mockMailer = {
-  sendMail: (_email: string, _subject: string, html: string) =>
-    logger.info(html),
-} as MailClient
-const mailer = IS_LOCAL_DEV ? mockMailer : new MailClient(POSTMAN_API_KEY!)
 
 const smsClient = IS_LOCAL_DEV
   ? ({

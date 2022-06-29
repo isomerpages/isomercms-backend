@@ -2,6 +2,7 @@ import { SiteStatus, JobStatus } from "@constants/index"
 
 import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
+import MailClient from "@services/identity/MailClient"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
@@ -11,48 +12,87 @@ interface InfraServiceProps {
   sitesService: SitesService
   reposService: ReposService
   deploymentsService: DeploymentsService
+  mailer: MailClient
 }
 
 export default class InfraService {
-  private readonly usersService: InfraServiceProps["usersService"]
+  private readonly usersService
 
-  private readonly sitesService: InfraServiceProps["sitesService"]
+  private readonly sitesService
 
-  private readonly reposService: InfraServiceProps["reposService"]
+  private readonly reposService
 
-  private readonly deploymentsService: InfraServiceProps["deploymentsService"]
+  private readonly deploymentsService
+
+  private readonly mailer
 
   constructor({
     usersService,
     sitesService,
     reposService,
     deploymentsService,
+    mailer,
   }: InfraServiceProps) {
     this.usersService = usersService
     this.sitesService = sitesService
     this.reposService = reposService
     this.deploymentsService = deploymentsService
+    this.mailer = mailer
+  }
+
+  sendCreateError = async (
+    email: string,
+    repoName: string | undefined,
+    submissionId: string | undefined,
+    error: string
+  ) => {
+    const subject = `[Isomer] Create site ${repoName} FAILURE`
+    const html = `<p>Isomer site ${repoName} was <b>not</b> created successfully. (Form submission id [${submissionId}])</p>
+<p>${error}</p>
+<p>This email was sent from the Isomer CMS backend.</p>`
+    await this.mailer.sendMail(email, subject, html)
+  }
+
+  sendCreateSuccess = async (
+    email: string,
+    repoName: string,
+    submissionId: string | undefined,
+    stagingUrl: string,
+    productionUrl: string
+  ) => {
+    const subject = `[Isomer] Create site ${repoName} SUCCESS`
+    const html = `<p>Isomer site ${repoName} was created successfully. (Form submission id [${submissionId}])</p>
+<p>You may now view this repository on GitHub. <a href="${stagingUrl}">Staging</a> and <a href="${productionUrl}">production</a> deployments should be accessible within a few minutes.</p>
+<p>This email was sent from the Isomer CMS backend.</p>`
+    await this.mailer.sendMail(email, subject, html)
   }
 
   createSite = async ({
     requesterEmail,
     repoName,
+    submissionId,
   }: {
     requesterEmail: string
     repoName: string | undefined
+    submissionId: string | undefined
   }) => {
     try {
-      logger.info(`Create site '${repoName}' requested by ${requesterEmail}`)
+      logger.info(
+        `Create site form submission [${submissionId}] (${repoName}) requested by ${requesterEmail}`
+      )
+
       // 0. Verify that repoName is defined
       if (!repoName) {
-        // TODO: Handle error by sending email to user who requested to create site
+        const err = `Required 'Repository Name' field was empty`
+        await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return
       }
 
       // 1. Find user in the Users table with the specified email
       const foundUser = await this.usersService.findByEmail(requesterEmail)
       if (!foundUser) {
-        // TODO: Handle error by sending email to user who requested to create site
+        const err = `Form submitter ${requesterEmail} is not an Isomer user. Register an account for this user and try again.`
+        await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return
       }
 
@@ -76,12 +116,8 @@ export default class InfraService {
         repoName,
         site: newSite,
       })
-      logger.info(`Created deployment in AWS Amplify, repo name: ${repoName}`)
 
-      if (!deployment) {
-        // TODO: handle error
-        return
-      }
+      logger.info(`Created deployment in AWS Amplify, repo name: ${repoName}`)
 
       await this.reposService.modifyDeploymentUrlsOnRepo(
         repoName,
@@ -98,9 +134,20 @@ export default class InfraService {
       await this.sitesService.update(updateSuccessSiteInitParams)
       logger.info(`Successfully created site on Isomer, site ID: ${newSite.id}`)
 
-      // TODO: Handle success by sending email to user who requested to create site
+      await this.sendCreateSuccess(
+        requesterEmail,
+        repoName,
+        submissionId,
+        deployment.stagingUrl,
+        deployment.productionUrl
+      )
     } catch (err) {
-      // TODO: Handle error by sending email to user who requested to create site
+      await this.sendCreateError(
+        requesterEmail,
+        repoName,
+        submissionId,
+        `Error: ${err}`
+      )
       logger.error(err)
     }
   }

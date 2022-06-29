@@ -1,6 +1,7 @@
 import fs from "fs"
 
 import { Octokit } from "@octokit/rest"
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
 import git from "isomorphic-git"
 import http from "isomorphic-git/http/node"
@@ -34,13 +35,14 @@ type repoCreateParamsType = Partial<Repo> & {
   siteId: Repo["siteId"]
 }
 export default class ReposService {
-  // NOTE: Explicitly specifying using keyed properties to ensure
-  // that the types are synced.
-  private readonly repository: ReposServiceProps["repository"]
+  // NOTE: No need to explicitly specify types if they are assigned from props in constructor.
+  private readonly repository
 
   constructor({ repository }: ReposServiceProps) {
     this.repository = repository
   }
+
+  localRepoPath = (repoName: string) => `/tmp/${repoName}`
 
   create = async (createParams: repoCreateParamsType): Promise<Repo | null> =>
     this.repository.create(createParams)
@@ -76,8 +78,18 @@ export default class ReposService {
       description: `Staging: ${stagingUrl} | Production: ${productionUrl}`,
     })
 
-    const dir = `/tmp/${repoName}`
-    const remote = "origin"
+    const dir = this.localRepoPath(repoName)
+
+    // 1. Set URLs in local _config.yml
+    const configPath = `${dir}/_config.yml`
+    const configFile = fs.readFileSync(configPath, "utf-8")
+    // Assume the last two lines of config contain outdated staging and prod urls
+    const lines = configFile.split("\n").slice(0, -2)
+    lines.push(`staging: ${stagingUrl}`)
+    lines.push(`prod: ${productionUrl}`)
+    fs.writeFileSync(configPath, lines.join("\n"))
+
+    // 2. Commit changes in local repo
     await git.add({ fs, dir, filepath: "." })
     await git.commit({
       fs,
@@ -88,6 +100,9 @@ export default class ReposService {
         email: "isomeradmin@users.noreply.github.com",
       },
     })
+
+    // 3. Push changes to staging branch
+    const remote = "origin"
     await git.push({
       fs,
       http,
@@ -97,6 +112,8 @@ export default class ReposService {
       corsProxy: "https://cors.isomorphic-git.org",
       onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     })
+
+    // 4. Push changes to master branch
     await git.push({
       fs,
       http,
@@ -162,8 +179,8 @@ export default class ReposService {
     repoName: string,
     repoUrl: string
   ): Promise<void> => {
-    // Clone base repo to `/tmp/${repoName}`
-    const dir = `/tmp/${repoName}`
+    // Clone base repo locally
+    const dir = this.localRepoPath(repoName)
 
     await git.clone({
       fs,

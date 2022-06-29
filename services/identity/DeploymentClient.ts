@@ -79,10 +79,10 @@ class DeploymentClient {
     appId,
     framework: "Jekyll",
     branchName,
-    stage: "master" ? Stage.PRODUCTION : Stage.DEVELOPMENT,
+    stage: branchName === "master" ? Stage.PRODUCTION : Stage.DEVELOPMENT,
     enableAutoBuild: true,
     environmentVariables: {
-      JEKYLL_ENV: "master" ? "production" : "staging",
+      JEKYLL_ENV: branchName === "master" ? "production" : "staging",
     },
   })
 }

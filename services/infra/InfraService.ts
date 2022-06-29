@@ -35,15 +35,22 @@ export default class InfraService {
   }
 
   createSite = async ({
-    email,
+    requesterEmail,
     repoName,
   }: {
-    email: string
-    repoName: string
+    requesterEmail: string
+    repoName: string | undefined
   }) => {
     try {
+      logger.info(`Create site '${repoName}' requested by ${requesterEmail}`)
+      // 0. Verify that repoName is defined
+      if (!repoName) {
+        // TODO: Handle error by sending email to user who requested to create site
+        return
+      }
+
       // 1. Find user in the Users table with the specified email
-      const foundUser = await this.usersService.findByEmail(email)
+      const foundUser = await this.usersService.findByEmail(requesterEmail)
       if (!foundUser) {
         // TODO: Handle error by sending email to user who requested to create site
         return

@@ -13,9 +13,14 @@ import {
   Deployment,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
-import { getIdentityAuthService, getUsersService } from "@services/identity"
+import {
+  getIdentityAuthService,
+  getUsersService,
+  sitesService,
+} from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
+import InfraService from "@services/infra/InfraService"
 
 import { getAuthMiddleware } from "./newmiddleware"
 import getAuthenticatedSubrouter from "./newroutes/authenticated"
@@ -59,10 +64,17 @@ const {
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const { AuthRouter } = require("./newroutes/auth")
+const { FormsgRouter } = require("./newroutes/formsg")
 
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
+const infraService = new InfraService({
+  usersService,
+  sitesService,
+  reposService,
+  deploymentsService,
+})
 
 const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
@@ -94,6 +106,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   configYmlService,
 })
 const authV2Router = new AuthRouter({ authMiddleware, authService })
+const formsgRouter = new FormsgRouter({ infraService })
 
 const app = express()
 app.use(helmet())
@@ -128,6 +141,9 @@ app.use("/v2/auth", authV2Router.getRouter())
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
+
+// FormSG Backend handler routes
+app.use("/formsg", formsgRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

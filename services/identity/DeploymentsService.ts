@@ -39,17 +39,18 @@ class DeploymentsService {
     site: Site
   }): Promise<Deployment> => {
     const amplifyResult = await this.createAmplifyAppOnAws(repoName)
-    const amplifyDomain = amplifyResult.map((result) => result.defaultDomain)
-
-    if (amplifyDomain.isErr()) {
-      logger.error(`Amplify set up error: ${amplifyResult}`)
-      throw amplifyDomain.error
+    if (amplifyResult.isErr()) {
+      logger.error(`Amplify set up error: ${amplifyResult.error}`)
+      throw amplifyResult.error
     }
+    const amplifyInfo = amplifyResult.value
+
     return this.create({
-      stagingUrl: `https://staging.${amplifyDomain.value}`,
-      productionUrl: `https://master.${amplifyDomain.value}`,
+      stagingUrl: `https://staging.${amplifyInfo.defaultDomain}`,
+      productionUrl: `https://master.${amplifyInfo.defaultDomain}`,
       site,
       siteId: site.id,
+      hostingId: amplifyInfo.id,
     })
   }
 

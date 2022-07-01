@@ -7,6 +7,8 @@ import git from "isomorphic-git"
 import http from "isomorphic-git/http/node"
 import { ModelStatic } from "sequelize"
 
+import { UnprocessableError } from "@errors/UnprocessableError"
+
 import { Repo, Site } from "@database/models"
 
 const { SYSTEM_GITHUB_TOKEN } = process.env
@@ -35,14 +37,17 @@ type repoCreateParamsType = Partial<Repo> & {
   siteId: Repo["siteId"]
 }
 export default class ReposService {
-  // NOTE: No need to explicitly specify types if they are assigned from props in constructor.
-  private readonly repository
+  // NOTE: Explicitly specifying using keyed properties to ensure
+  // that the types are synced. Types can be omitted altogether
+  // if they are assigned from the constructor's props parameter,
+  // but having this seems to help navigation in some editors.
+  private readonly repository: ReposServiceProps["repository"]
 
   constructor({ repository }: ReposServiceProps) {
     this.repository = repository
   }
 
-  localRepoPath = (repoName: string) => `/tmp/${repoName}`
+  getLocalRepoPath = (repoName: string) => `/tmp/${repoName}`
 
   create = async (createParams: repoCreateParamsType): Promise<Repo | null> =>
     this.repository.create(createParams)
@@ -78,16 +83,10 @@ export default class ReposService {
       description: `Staging: ${stagingUrl} | Production: ${productionUrl}`,
     })
 
-    const dir = this.localRepoPath(repoName)
+    const dir = this.getLocalRepoPath(repoName)
 
     // 1. Set URLs in local _config.yml
-    const configPath = `${dir}/_config.yml`
-    const configFile = fs.readFileSync(configPath, "utf-8")
-    // Assume the last two lines of config contain outdated staging and prod urls
-    const lines = configFile.split("\n").slice(0, -2)
-    lines.push(`staging: ${stagingUrl}`)
-    lines.push(`prod: ${productionUrl}`)
-    fs.writeFileSync(configPath, lines.join("\n"))
+    this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
 
     // 2. Commit changes in local repo
     await git.add({ fs, dir, filepath: "." })
@@ -123,6 +122,27 @@ export default class ReposService {
       corsProxy: "https://cors.isomorphic-git.org",
       onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     })
+  }
+
+  private setUrlsInLocalConfig(
+    dir: string,
+    repoName: string,
+    stagingUrl: string,
+    productionUrl: string
+  ) {
+    const configPath = `${dir}/_config.yml`
+    const configFile = fs.readFileSync(configPath, "utf-8")
+    const lines = configFile.split("\n")
+    const stagingIdx = lines.findIndex((line) => line.startsWith("staging:"))
+    const prodIdx = lines.findIndex((line) => line.startsWith("prod:"))
+    if (stagingIdx === -1 || prodIdx === -1) {
+      throw new UnprocessableError(
+        `'${repoName}' _config.yml must have lines that begin with 'staging:' and 'prod:'`
+      )
+    }
+    lines[stagingIdx] = `staging: ${stagingUrl}`
+    lines[prodIdx] = `prod: ${productionUrl}`
+    fs.writeFileSync(configPath, lines.join("\n"))
   }
 
   createRepoOnGithub = async (
@@ -180,7 +200,7 @@ export default class ReposService {
     repoUrl: string
   ): Promise<void> => {
     // Clone base repo locally
-    const dir = this.localRepoPath(repoName)
+    const dir = this.getLocalRepoPath(repoName)
 
     await git.clone({
       fs,

@@ -16,15 +16,15 @@ interface InfraServiceProps {
 }
 
 export default class InfraService {
-  private readonly usersService
+  private readonly usersService: InfraServiceProps["usersService"]
 
-  private readonly sitesService
+  private readonly sitesService: InfraServiceProps["sitesService"]
 
-  private readonly reposService
+  private readonly reposService: InfraServiceProps["reposService"]
 
-  private readonly deploymentsService
+  private readonly deploymentsService: InfraServiceProps["deploymentsService"]
 
-  private readonly mailer
+  private readonly mailer: InfraServiceProps["mailer"]
 
   constructor({
     usersService,
@@ -69,21 +69,29 @@ export default class InfraService {
 
   createSite = async ({
     requesterEmail,
+    siteName,
     repoName,
     submissionId,
   }: {
     requesterEmail: string
+    siteName: string | undefined
     repoName: string | undefined
     submissionId: string | undefined
   }) => {
+    let siteId: number | undefined
     try {
       logger.info(
-        `Create site form submission [${submissionId}] (${repoName}) requested by ${requesterEmail}`
+        `Create site form submission [${submissionId}] (${repoName}, '${siteName}') requested by ${requesterEmail}`
       )
 
-      // 0. Verify that repoName is defined
+      // Verify that required fields are defined
+      if (!siteName) {
+        const err = `A site name is required`
+        await this.sendCreateError(requesterEmail, repoName, submissionId, err)
+        return
+      }
       if (!repoName) {
-        const err = `Required 'Repository Name' field was empty`
+        const err = `A repository name is required`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return
       }
@@ -99,13 +107,14 @@ export default class InfraService {
       // 2. If the user exists, create a new site record in the Sites table
       //    with the associated user (creator) record
       const newSiteParams = {
-        name: repoName,
+        name: siteName,
         apiTokenName: "", // TODO: figure this out
         creator: foundUser,
         creatorId: foundUser.id,
       }
       const newSite = await this.sitesService.create(newSiteParams)
       logger.info(`Created site record in database, site ID: ${newSite.id}`)
+      siteId = newSite.id // For error handling
 
       // 3. Set up GitHub repo and branches using the ReposService
       await this.reposService.setupGithubRepo({ repoName, site: newSite })
@@ -116,19 +125,22 @@ export default class InfraService {
         repoName,
         site: newSite,
       })
-
       logger.info(`Created deployment in AWS Amplify, repo name: ${repoName}`)
 
+      // 5. Set Amplify deployment URLs in repo
       await this.reposService.modifyDeploymentUrlsOnRepo(
         repoName,
         deployment.productionUrl,
         deployment.stagingUrl
       )
+
+      // 6. Set up permissions
       await this.reposService.setRepoAndTeamPermissions(repoName)
 
+      // 7. Update status
       const updateSuccessSiteInitParams = {
         id: newSite.id,
-        siteStatus: SiteStatus.Launch,
+        siteStatus: SiteStatus.Initialized,
         jobStatus: JobStatus.Ready,
       }
       await this.sitesService.update(updateSuccessSiteInitParams)
@@ -142,6 +154,14 @@ export default class InfraService {
         deployment.productionUrl
       )
     } catch (err) {
+      if (siteId !== undefined) {
+        const updateFailSiteInitParams = {
+          id: siteId,
+          jobStatus: JobStatus.Failed,
+        }
+        await this.sitesService.update(updateFailSiteInitParams)
+      }
+      logger.info(`Failed to created '${repoName}' site on Isomer`)
       await this.sendCreateError(
         requesterEmail,
         repoName,

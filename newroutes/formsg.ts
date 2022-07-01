@@ -1,4 +1,4 @@
-import { DecryptedContent, FormField } from "@opengovsg/formsg-sdk/dist/types"
+import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
 import express, { Request, Response } from "express"
 
@@ -6,18 +6,17 @@ import logger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
 
+import { getField } from "@utils/formsg-utils"
+
 import { attachFormSGHandler } from "@root/newmiddleware"
 import InfraService from "@services/infra/InfraService"
 
 const { SITE_CREATE_FORM_KEY } = process.env
+const REQUESTER_EMAIL_FIELD = "Government E-mail"
+const SITE_NAME_FIELD = "Site Name"
+const REPO_NAME_FIELD = "Repository Name"
 
-function getProp(responses: FormField[], name: string): string | undefined {
-  const response = responses.find(({ question }) => question === name)
-
-  return response?.answer
-}
-
-interface FormsgRouterProps {
+export interface FormsgRouterProps {
   infraService: InfraService
 }
 
@@ -30,11 +29,15 @@ export class FormsgRouter {
     autoBind(this)
   }
 
-  async createSite(req: Request, res: Response) {
+  async createSite(
+    req: Request<unknown, unknown, { data: { submissionId: string } }, unknown>,
+    res: Response<unknown, { submission: DecryptedContent }>
+  ) {
     const { submissionId } = req.body.data
-    const { responses } = res.locals.submission as DecryptedContent
-    const requesterEmail = getProp(responses, "Government E-mail")
-    const repoName = getProp(responses, "Repository Name")
+    const { responses } = res.locals.submission
+    const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
+    const siteName = getField(responses, SITE_NAME_FIELD)
+    const repoName = getField(responses, REPO_NAME_FIELD)
 
     if (!requesterEmail) {
       // Most errors are handled by sending an email to the requester, so we can't recover from this.
@@ -43,7 +46,12 @@ export class FormsgRouter {
       )
     }
 
-    this.infraService.createSite({ requesterEmail, repoName, submissionId })
+    this.infraService.createSite({
+      requesterEmail,
+      siteName,
+      repoName,
+      submissionId,
+    })
     return res.status(200).send("OK")
   }
 

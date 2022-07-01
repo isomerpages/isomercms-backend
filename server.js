@@ -13,6 +13,7 @@ import {
   Deployment,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import {
   getIdentityAuthService,
   getUsersService,
@@ -27,7 +28,6 @@ import getAuthenticatedSubrouter from "./newroutes/authenticated"
 import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
 import getAuthenticatedSubrouterV1 from "./routes/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
-import { isomerRepoAxiosInstance } from "./services/api/AxiosInstance"
 
 const path = require("path")
 
@@ -61,21 +61,18 @@ const { GitHubService } = require("@services/db/GitHubService")
 const {
   ConfigYmlService,
 } = require("@services/fileServices/YmlFileServices/ConfigYmlService")
-const { mailer } = require("@services/identity/MailClient")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const { AuthRouter } = require("./newroutes/auth")
-const { FormsgRouter } = require("./newroutes/formsg")
+const { FormsgRouter } = require("./newroutes/formsgSiteCreation")
 
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
 const infraService = new InfraService({
-  usersService,
   sitesService,
   reposService,
   deploymentsService,
-  mailer,
 })
 
 const gitHubService = new GitHubService({
@@ -108,7 +105,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   configYmlService,
 })
 const authV2Router = new AuthRouter({ authMiddleware, authService })
-const formsgRouter = new FormsgRouter({ infraService })
+const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()
 app.use(helmet())
@@ -135,7 +132,7 @@ app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 app.use("/v1/auth", authV2Router.getRouter())
 // Endpoints which have siteName, used to inject site access token
 app.use("/v1/sites/:siteName", authenticatedSitesSubrouterV1)
-// Endpoints which have require login, but not site access token
+// Endpoints which require login, but not site access token
 app.use("/v1", authenticatedSubrouterV1)
 
 app.use("/v2/auth", authV2Router.getRouter())

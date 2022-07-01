@@ -49,7 +49,7 @@ export default class ReposService {
 
   getLocalRepoPath = (repoName: string) => `/tmp/${repoName}`
 
-  create = async (createParams: repoCreateParamsType): Promise<Repo | null> =>
+  create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)
 
   setupGithubRepo = async ({
@@ -58,7 +58,7 @@ export default class ReposService {
   }: {
     repoName: string
     site: Site
-  }): Promise<Repo | null> => {
+  }): Promise<Repo> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
     await this.createRepoOnGithub(repoName)
@@ -145,7 +145,7 @@ export default class ReposService {
     fs.writeFileSync(configPath, lines.join("\n"))
   }
 
-  createRepoOnGithub = async (
+  createRepoOnGithub = (
     repoName: string
   ): Promise<octokitCreateRepoInOrgResponseType> =>
     octokit.repos.createInOrg({
@@ -154,7 +154,7 @@ export default class ReposService {
       private: false,
     })
 
-  createTeamOnGitHub = async (
+  createTeamOnGitHub = (
     repoName: string
   ): Promise<octokitCreateTeamResponseType> =>
     octokit.teams.create({
@@ -199,9 +199,12 @@ export default class ReposService {
     repoName: string,
     repoUrl: string
   ): Promise<void> => {
-    // Clone base repo locally
     const dir = this.getLocalRepoPath(repoName)
 
+    // Make sure the local path is empty, just in case dir was used on a previous attempt.
+    fs.rmSync(`${dir}`, { recursive: true, force: true })
+
+    // Clone base repo locally
     await git.clone({
       fs,
       http,

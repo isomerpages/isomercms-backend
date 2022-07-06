@@ -7,7 +7,8 @@ const {
 } = require("@root/services/api/AxiosInstance")
 
 const GH_MAX_REPO_COUNT = 100
-const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
+const ISOMERPAGES_REPO_PAGE_COUNT =
+  parseInt(process.env.ISOMERPAGES_REPO_PAGE_COUNT) || 3
 const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 const ISOMER_ADMIN_REPOS = [
   "isomercms-backend",

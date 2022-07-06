@@ -48,4 +48,10 @@ export class Deployment extends Model {
 
   @BelongsTo(() => Site)
   site!: Site
+
+  @Column({
+    allowNull: false,
+    type: DataType.TEXT,
+  })
+  hostingId!: string
 }

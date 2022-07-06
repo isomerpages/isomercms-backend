@@ -29,6 +29,22 @@ class SitesService {
     return site
   }
 
+  async create(
+    createParams: Partial<Site> & {
+      name: Site["name"]
+      apiTokenName: Site["apiTokenName"]
+      creator: Site["creator"]
+    }
+  ) {
+    return this.repository.create(createParams)
+  }
+
+  async update(updateParams: Partial<Site> & { id: Site["id"] }) {
+    return this.repository.update(updateParams, {
+      where: { id: updateParams.id },
+    })
+  }
+
   async getSiteAccessToken(siteName: string) {
     const site = await this.getBySiteName(siteName)
 

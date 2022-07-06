@@ -1,11 +1,11 @@
 export enum JobStatus {
-  Ready = "READY",
-  Running = "RUNNING",
-  Failed = "FAILED",
+  Ready = "READY", // Ready to run jobs
+  Running = "RUNNING", // A job is running
+  Failed = "FAILED", // A job has failed and recovery is needed
 }
 
 export enum SiteStatus {
-  Init = "INIT",
-  Launch = "LAUNCH",
-  Live = "LIVE",
+  Empty = "EMPTY", // A site record site is being initialized
+  Initialized = "INITIALIZED",
+  Launched = "LAUNCHED",
 }

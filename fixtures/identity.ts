@@ -1,4 +1,5 @@
 export const mockRecipient = "hello@world.com"
+export const mockSubject = "mock subject"
 export const mockBody = "somebody"
 
 export const mockAccessToken = "some token"

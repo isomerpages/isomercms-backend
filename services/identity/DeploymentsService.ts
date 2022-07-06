@@ -29,7 +29,7 @@ class DeploymentsService {
 
   create = async (
     createParams: deploymentsCreateParamsType
-  ): Promise<Deployment | null> => this.repository.create(createParams)
+  ): Promise<Deployment> => this.repository.create(createParams)
 
   setupAmplifyProject = async ({
     repoName,
@@ -37,18 +37,20 @@ class DeploymentsService {
   }: {
     repoName: string
     site: Site
-  }) => {
+  }): Promise<Deployment> => {
     const amplifyResult = await this.createAmplifyAppOnAws(repoName)
-    const amplifyDomain = amplifyResult.map((result) => result.defaultDomain)
-
-    if (amplifyDomain.isErr()) {
-      return logger.error(`Amplify set up error: ${amplifyResult}`)
+    if (amplifyResult.isErr()) {
+      logger.error(`Amplify set up error: ${amplifyResult.error}`)
+      throw amplifyResult.error
     }
+    const amplifyInfo = amplifyResult.value
+
     return this.create({
-      stagingUrl: `https://staging.${amplifyDomain.value}`,
-      productionUrl: `https://master.${amplifyDomain.value}`,
+      stagingUrl: `https://staging.${amplifyInfo.defaultDomain}`,
+      productionUrl: `https://master.${amplifyInfo.defaultDomain}`,
       site,
       siteId: site.id,
+      hostingId: amplifyInfo.id,
     })
   }
 

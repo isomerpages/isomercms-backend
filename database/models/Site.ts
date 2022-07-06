@@ -44,7 +44,7 @@ export class Site extends Model {
   @Column({
     allowNull: false,
     type: DataType.ENUM(...Object.values(SiteStatus)),
-    defaultValue: SiteStatus.Init,
+    defaultValue: SiteStatus.Empty,
   })
   siteStatus!: SiteStatus
 

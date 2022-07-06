@@ -2,15 +2,11 @@ const autoBind = require("auto-bind")
 const express = require("express")
 
 // Import middleware
-const {
-  attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
-} = require("@middleware/routeHandler")
+const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 class SitesRouter {
-  constructor({ sitesService, infraService }) {
+  constructor({ sitesService }) {
     this.sitesService = sitesService
-    this.infraService = infraService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -19,13 +15,6 @@ class SitesRouter {
     const { accessToken } = res.locals
     const siteNames = await this.sitesService.getSites({ accessToken })
     return res.status(200).json({ siteNames })
-  }
-
-  async createSite(req, res) {
-    // TODO: authenticate request from formsg
-    const testParams = {}
-    this.infraService.createSite(testParams)
-    return res.status(200).send("OK")
   }
 
   async checkHasAccess(req, res) {
@@ -83,7 +72,6 @@ class SitesRouter {
       attachReadRouteHandlerWrapper(this.getStagingUrl)
     )
 
-    router.post("/", attachWriteRouteHandlerWrapper(this.createSite))
     return router
   }
 }

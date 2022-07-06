@@ -1,10 +1,13 @@
 import fs from "fs"
 
 import { Octokit } from "@octokit/rest"
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
 import git from "isomorphic-git"
 import http from "isomorphic-git/http/node"
 import { ModelStatic } from "sequelize"
+
+import { UnprocessableError } from "@errors/UnprocessableError"
 
 import { Repo, Site } from "@database/models"
 
@@ -35,14 +38,18 @@ type repoCreateParamsType = Partial<Repo> & {
 }
 export default class ReposService {
   // NOTE: Explicitly specifying using keyed properties to ensure
-  // that the types are synced.
+  // that the types are synced. Types can be omitted altogether
+  // if they are assigned from the constructor's props parameter,
+  // but having this seems to help navigation in some editors.
   private readonly repository: ReposServiceProps["repository"]
 
   constructor({ repository }: ReposServiceProps) {
     this.repository = repository
   }
 
-  create = async (createParams: repoCreateParamsType): Promise<Repo | null> =>
+  getLocalRepoPath = (repoName: string) => `/tmp/${repoName}`
+
+  create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)
 
   setupGithubRepo = async ({
@@ -51,7 +58,7 @@ export default class ReposService {
   }: {
     repoName: string
     site: Site
-  }): Promise<Repo | null> => {
+  }): Promise<Repo> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
     await this.createRepoOnGithub(repoName)
@@ -76,8 +83,12 @@ export default class ReposService {
       description: `Staging: ${stagingUrl} | Production: ${productionUrl}`,
     })
 
-    const dir = `/tmp/${repoName}`
-    const remote = "origin"
+    const dir = this.getLocalRepoPath(repoName)
+
+    // 1. Set URLs in local _config.yml
+    this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
+
+    // 2. Commit changes in local repo
     await git.add({ fs, dir, filepath: "." })
     await git.commit({
       fs,
@@ -88,6 +99,9 @@ export default class ReposService {
         email: "isomeradmin@users.noreply.github.com",
       },
     })
+
+    // 3. Push changes to staging branch
+    const remote = "origin"
     await git.push({
       fs,
       http,
@@ -97,6 +111,8 @@ export default class ReposService {
       corsProxy: "https://cors.isomorphic-git.org",
       onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     })
+
+    // 4. Push changes to master branch
     await git.push({
       fs,
       http,
@@ -108,7 +124,28 @@ export default class ReposService {
     })
   }
 
-  createRepoOnGithub = async (
+  private setUrlsInLocalConfig(
+    dir: string,
+    repoName: string,
+    stagingUrl: string,
+    productionUrl: string
+  ) {
+    const configPath = `${dir}/_config.yml`
+    const configFile = fs.readFileSync(configPath, "utf-8")
+    const lines = configFile.split("\n")
+    const stagingIdx = lines.findIndex((line) => line.startsWith("staging:"))
+    const prodIdx = lines.findIndex((line) => line.startsWith("prod:"))
+    if (stagingIdx === -1 || prodIdx === -1) {
+      throw new UnprocessableError(
+        `'${repoName}' _config.yml must have lines that begin with 'staging:' and 'prod:'`
+      )
+    }
+    lines[stagingIdx] = `staging: ${stagingUrl}`
+    lines[prodIdx] = `prod: ${productionUrl}`
+    fs.writeFileSync(configPath, lines.join("\n"))
+  }
+
+  createRepoOnGithub = (
     repoName: string
   ): Promise<octokitCreateRepoInOrgResponseType> =>
     octokit.repos.createInOrg({
@@ -117,7 +154,7 @@ export default class ReposService {
       private: false,
     })
 
-  createTeamOnGitHub = async (
+  createTeamOnGitHub = (
     repoName: string
   ): Promise<octokitCreateTeamResponseType> =>
     octokit.teams.create({
@@ -162,9 +199,12 @@ export default class ReposService {
     repoName: string,
     repoUrl: string
   ): Promise<void> => {
-    // Clone base repo to `/tmp/${repoName}`
-    const dir = `/tmp/${repoName}`
+    const dir = this.getLocalRepoPath(repoName)
 
+    // Make sure the local path is empty, just in case dir was used on a previous attempt.
+    fs.rmSync(`${dir}`, { recursive: true, force: true })
+
+    // Clone base repo locally
     await git.clone({
       fs,
       http,

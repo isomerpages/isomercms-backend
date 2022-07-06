@@ -1,5 +1,6 @@
-import { SiteStatus, JobStatus } from "@constants/index"
-
+import { Site } from "@database/models"
+import { User } from "@database/models/User"
+import { SiteStatus, JobStatus } from "@root/constants"
 import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
@@ -7,15 +8,12 @@ import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
 
 interface InfraServiceProps {
-  usersService: UsersService
   sitesService: SitesService
   reposService: ReposService
   deploymentsService: DeploymentsService
 }
 
 export default class InfraService {
-  private readonly usersService: InfraServiceProps["usersService"]
-
   private readonly sitesService: InfraServiceProps["sitesService"]
 
   private readonly reposService: InfraServiceProps["reposService"]
@@ -23,78 +21,74 @@ export default class InfraService {
   private readonly deploymentsService: InfraServiceProps["deploymentsService"]
 
   constructor({
-    usersService,
     sitesService,
     reposService,
     deploymentsService,
   }: InfraServiceProps) {
-    this.usersService = usersService
     this.sitesService = sitesService
     this.reposService = reposService
     this.deploymentsService = deploymentsService
   }
 
-  createSite = async ({
-    email,
-    repoName,
-  }: {
-    email: string
+  createSite = async (
+    submissionId: string,
+    creator: User,
+    siteName: string,
     repoName: string
-  }) => {
+  ) => {
+    let site: Site | undefined // For error handling
     try {
-      // 1. Find user in the Users table with the specified email
-      const foundUser = await this.usersService.findByEmail(email)
-      if (!foundUser) {
-        // TODO: Handle error by sending email to user who requested to create site
-        return
-      }
-
-      // 2. If the user exists, create a new site record in the Sites table
-      //    with the associated user (creator) record
+      // 1. Create a new site record in the Sites table
       const newSiteParams = {
-        name: repoName,
+        name: siteName,
         apiTokenName: "", // TODO: figure this out
-        creator: foundUser,
-        creatorId: foundUser.id,
+        creator,
+        creatorId: creator.id,
       }
-      const newSite = await this.sitesService.create(newSiteParams)
-      logger.info(`Created site record in database, site ID: ${newSite.id}`)
+      site = await this.sitesService.create(newSiteParams)
+      logger.info(`Created site record in database, site ID: ${site.id}`)
 
-      // 3. Set up GitHub repo and branches using the ReposService
-      await this.reposService.setupGithubRepo({ repoName, site: newSite })
+      // 2. Set up GitHub repo and branches using the ReposService
+      const repo = await this.reposService.setupGithubRepo({ repoName, site })
       logger.info(`Created repo in GitHub, repo name: ${repoName}`)
 
-      // 4. Set up the Amplify project using the DeploymentsService
+      // 3. Set up the Amplify project using the DeploymentsService
       const deployment = await this.deploymentsService.setupAmplifyProject({
         repoName,
-        site: newSite,
+        site,
       })
       logger.info(`Created deployment in AWS Amplify, repo name: ${repoName}`)
 
-      if (!deployment) {
-        // TODO: handle error
-        return
-      }
-
+      // 4. Set Amplify deployment URLs in repo
       await this.reposService.modifyDeploymentUrlsOnRepo(
         repoName,
         deployment.productionUrl,
         deployment.stagingUrl
       )
+
+      // 5. Set up permissions
       await this.reposService.setRepoAndTeamPermissions(repoName)
 
+      // 6. Update status
       const updateSuccessSiteInitParams = {
-        id: newSite.id,
-        siteStatus: SiteStatus.Launch,
+        id: site.id,
+        siteStatus: SiteStatus.Initialized,
         jobStatus: JobStatus.Ready,
       }
       await this.sitesService.update(updateSuccessSiteInitParams)
-      logger.info(`Successfully created site on Isomer, site ID: ${newSite.id}`)
+      logger.info(`Successfully created site on Isomer, site ID: ${site.id}`)
 
-      // TODO: Handle success by sending email to user who requested to create site
+      return { site, repo, deployment }
     } catch (err) {
-      // TODO: Handle error by sending email to user who requested to create site
-      logger.error(err)
+      if (site !== undefined) {
+        const updateFailSiteInitParams = {
+          id: site.id,
+          jobStatus: JobStatus.Failed,
+        }
+        await this.sitesService.update(updateFailSiteInitParams)
+      }
+      logger.error(`Failed to created '${repoName}' site on Isomer: ${err}`)
+      throw err
     }
   }
 }

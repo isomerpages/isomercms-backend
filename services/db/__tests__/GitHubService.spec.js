@@ -49,13 +49,13 @@ describe("Github Service", () => {
       )
     })
 
-    it("Retrieves the right unlinked page file path", async () => {
+    it("Retrieves the right collection page file path", async () => {
       expect(
         service.getFilePath({ siteName, fileName, directoryName })
       ).toEqual(`${siteName}/contents/${directoryName}/${fileName}`)
     })
 
-    it("Retrieves the right collection page file path", async () => {
+    it("Retrieves the right subcollection page file path", async () => {
       const subcollectionPath = `_${collectionName}/${subcollectionName}`
       expect(
         service.getFilePath({

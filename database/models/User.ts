@@ -5,13 +5,15 @@ import {
   Table,
   CreatedAt,
   UpdatedAt,
+  DeletedAt,
   BelongsToMany,
+  HasMany,
 } from "sequelize-typescript"
 
-import { Site } from "./Site"
-import { SiteMember } from "./SiteMember"
+import { Site } from "@database/models/Site"
+import { SiteMember } from "@database/models/SiteMember"
 
-@Table({ tableName: "users" })
+@Table({ tableName: "users", paranoid: true })
 export class User extends Model {
   @Column({
     autoIncrement: true,
@@ -56,10 +58,16 @@ export class User extends Model {
   @UpdatedAt
   updatedAt!: Date
 
+  @DeletedAt
+  deletedAt?: Date
+
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
     through: () => SiteMember,
   })
   sites!: Site[]
+
+  @HasMany(() => Site)
+  sitesCreated?: Site[]
 }

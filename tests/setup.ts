@@ -1,7 +1,16 @@
+import "tsconfig-paths/register"
+/**
+ * tsconfig-paths/register allows jest globalSetup to use aliases.
+ * This is required because globalSetup/Teardown live separately from
+ * the rest of the jest ecosystem.
+ *
+ * https://stackoverflow.com/a/67729228
+ */
+
 import { Sequelize } from "sequelize"
 import { Umzug, SequelizeStorage } from "umzug"
 
-import { sequelize } from "./database"
+import { sequelize } from "@tests/database"
 
 const setupDb = async () => {
   console.log("setting up database for testing")

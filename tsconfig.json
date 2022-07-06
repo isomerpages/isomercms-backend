@@ -32,7 +32,8 @@
       "@fixtures/*": ["./fixtures/*"],
       "@database/*": ["./database/*"],
       "@mocks/*": ["./__mocks__/*"],
-      "@tests/*": ["./tests/*"]
+      "@tests/*": ["./tests/*"],
+      "@constants/*": ["./constants/*"]
     }
   },
   "ts-node": {

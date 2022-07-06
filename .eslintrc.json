@@ -63,7 +63,12 @@
                         "pattern": "@validators/**",
                         "group": "internal",
                         "position": "before"
-                    }
+                    },
+                    {
+                      "pattern": "@constants/**",
+                      "group": "internal",
+                      "position": "before"
+                  }
                 ]
             }
         ],
@@ -101,7 +106,8 @@
                 ["@services", "./services"],
                 ["@validators", "./validators"],
                 ["@fixtures", "./fixtures"],
-                ["@database", "./database"]
+                ["@database", "./database"],
+                ["@constants", "./constants"]
             ]
         }
     },

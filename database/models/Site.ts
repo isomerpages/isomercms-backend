@@ -5,13 +5,21 @@ import {
   Table,
   CreatedAt,
   UpdatedAt,
+  DeletedAt,
   BelongsToMany,
+  HasOne,
+  BelongsTo,
+  ForeignKey,
 } from "sequelize-typescript"
 
-import { SiteMember } from "./SiteMember"
-import { User } from "./User"
+import { SiteStatus, JobStatus } from "@constants/index"
 
-@Table({ tableName: "sites" })
+import { Deployment } from "@database/models/Deployment"
+import { Repo } from "@database/models/Repo"
+import { SiteMember } from "@database/models/SiteMember"
+import { User } from "@database/models/User"
+
+@Table({ tableName: "sites", paranoid: true })
 export class Site extends Model {
   @Column({
     autoIncrement: true,
@@ -33,11 +41,28 @@ export class Site extends Model {
   })
   apiTokenName!: string
 
+  @Column({
+    allowNull: false,
+    type: DataType.ENUM(...Object.values(SiteStatus)),
+    defaultValue: SiteStatus.Empty,
+  })
+  siteStatus!: SiteStatus
+
+  @Column({
+    allowNull: false,
+    type: DataType.ENUM(...Object.values(JobStatus)),
+    defaultValue: JobStatus.Running,
+  })
+  jobStatus!: JobStatus
+
   @CreatedAt
   createdAt!: Date
 
   @UpdatedAt
   updatedAt!: Date
+
+  @DeletedAt
+  deletedAt?: Date
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",
@@ -45,4 +70,16 @@ export class Site extends Model {
     through: () => SiteMember,
   })
   users!: User[]
+
+  @HasOne(() => Repo)
+  repo?: Repo
+
+  @HasOne(() => Deployment)
+  deployment?: Deployment
+
+  @ForeignKey(() => User)
+  creatorId!: number
+
+  @BelongsTo(() => User)
+  creator!: User
 }

@@ -8,8 +8,8 @@ import {
   UpdatedAt,
 } from "sequelize-typescript"
 
-import { Site } from "./Site"
-import { User } from "./User"
+import { Site } from "@database/models/Site"
+import { User } from "@database/models/User"
 
 @Table({ tableName: "site_members" })
 export class SiteMember extends Model {

@@ -38,6 +38,10 @@ describe("Resource Page Service", () => {
 
   describe("getSites", () => {
     it("Filters accessible sites correctly", async () => {
+      // Store the API key and set it later so that other tests are not affected
+      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = 3
+
       const expectedResp = [
         {
           lastUpdated: repoInfo.pushed_at,
@@ -67,6 +71,8 @@ describe("Resource Page Service", () => {
       )
 
       expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
+      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
     })
   })
 

@@ -131,6 +131,7 @@ describe("Users Router", () => {
       // the same mock user don't interfere with each other
       await User.destroy({
         where: { githubId: mockGithubId },
+        force: true, // hard delete user record to prevent the unique constraint from being violated
       })
       await Whitelist.destroy({
         where: { email: mockWhitelistedDomain },
@@ -287,6 +288,7 @@ describe("Users Router", () => {
       // the same mock user don't interfere with each other
       await User.destroy({
         where: { githubId: mockGithubId },
+        force: true, // hard delete user record to prevent the unique constraint from being violated
       })
     })
 

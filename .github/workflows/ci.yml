@@ -113,12 +113,16 @@ jobs:
             restore-keys: |
               ${{ runner.OS }}-node-
               ${{ runner.OS }}-
+        - name: Inject DataDog API key
+          env: 
+            DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          run: sed -i -e "s#@DD_API_KEY#$DD_API_KEY#g" .ebextensions/99datadog.config
         - name: Install NPM
           run: npm ci
         - name: Build application
           run: npm run build
         - name: Zip application
-          run: zip -r "deploy.zip" * .platform -x .env-example .gitignore package-lock.json
+          run: zip -r "deploy.zip" * .platform .ebextensions -x .env-example .gitignore package-lock.json 
         - name: Get timestamp
           shell: bash
           run: echo "##[set-output name=timestamp;]$(env TZ=Asia/Singapore date '+%Y%m%d%H%M%S')"

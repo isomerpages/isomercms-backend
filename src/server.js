@@ -14,6 +14,7 @@ import {
   Deployment,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
+import { getAuthMiddleware } from "@root/middleware"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import {
   getIdentityAuthService,
@@ -24,7 +25,6 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
-import { getAuthMiddleware } from "./newmiddleware"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"

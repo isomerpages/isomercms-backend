@@ -1,9 +1,9 @@
 import FormSG from "@opengovsg/formsg-sdk"
 import express, { RequestHandler } from "express"
 
-import FormsProcessingService from "@root/services/middlewareServices/FormsProcessingService"
 import AuthService from "@services/identity/AuthService"
 import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
+import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
 
 import { AuthMiddleware } from "./auth"
 

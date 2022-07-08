@@ -9,7 +9,7 @@ import InitializationError from "@errors/InitializationError"
 
 import { getField } from "@utils/formsg-utils"
 
-import { attachFormSGHandler } from "@root/newmiddleware"
+import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@services/identity/MailClient"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"

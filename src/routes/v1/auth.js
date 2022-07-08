@@ -13,7 +13,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const { authMiddleware } = require("@root/newmiddleware")
+const { authMiddleware } = require("@root/middleware")
 // Import services
 const identityServices = require("@services/identity")
 

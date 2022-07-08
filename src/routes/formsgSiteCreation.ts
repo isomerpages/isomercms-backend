@@ -10,9 +10,9 @@ import InitializationError from "@errors/InitializationError"
 import { getField } from "@utils/formsg-utils"
 
 import { attachFormSGHandler } from "@root/middleware"
-import { mailer } from "@services/identity/MailClient"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
+import { mailer } from "@services/utilServices/MailClient"
 
 const { SITE_CREATE_FORM_KEY } = process.env
 const REQUESTER_EMAIL_FIELD = "Government E-mail"

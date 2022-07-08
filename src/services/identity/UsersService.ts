@@ -3,10 +3,9 @@ import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
 import { User, Whitelist } from "@database/models"
-
-import MailClient from "./MailClient"
-import SmsClient from "./SmsClient"
-import TotpGenerator from "./TotpGenerator"
+import MailClient from "@services/utilServices/MailClient"
+import SmsClient from "@services/utilServices/SmsClient"
+import TotpGenerator from "@services/utilServices/TotpGenerator"
 
 interface UsersServiceProps {
   otp: TotpGenerator

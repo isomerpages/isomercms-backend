@@ -4,13 +4,13 @@ import logger from "@logger/logger"
 
 import { User, Site, Whitelist } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
+import { mailer } from "@services/utilServices/MailClient"
+import SmsClient from "@services/utilServices/SmsClient"
+import TotpGenerator from "@services/utilServices/TotpGenerator"
 
 import AuthService from "./AuthService"
-import { mailer } from "./MailClient"
 import SitesService from "./SitesService"
-import SmsClient from "./SmsClient"
 import TokenStore from "./TokenStore"
-import TotpGenerator from "./TotpGenerator"
 import UsersService from "./UsersService"
 
 const {

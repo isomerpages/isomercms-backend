@@ -2,10 +2,10 @@ import { Sequelize } from "sequelize-typescript"
 import { ModelStatic } from "sequelize/types"
 
 import { User, Whitelist } from "@root/database/models"
+import MailClient from "@services/utilServices/MailClient"
+import SmsClient from "@services/utilServices/SmsClient"
+import TotpGenerator from "@services/utilServices/TotpGenerator"
 
-import MailClient from "../MailClient"
-import SmsClient from "../SmsClient"
-import TotpGenerator from "../TotpGenerator"
 import _UsersService from "../UsersService"
 
 const MockOtp = {

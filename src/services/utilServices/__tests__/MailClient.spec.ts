@@ -6,8 +6,7 @@ import {
   mockBody,
   mockBearerTokenHeaders,
 } from "@fixtures/identity"
-
-import _MailClient from "../MailClient"
+import _MailClient from "@services/utilServices/MailClient"
 
 const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
 

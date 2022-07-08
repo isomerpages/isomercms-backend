@@ -9,8 +9,8 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
-const { File, DocumentType } = require("@classes/File.js")
-const { MediaFile } = require("@classes/MediaFile.js")
+const { File, DocumentType } = require("@classes/File")
+const { MediaFile } = require("@classes/MediaFile")
 
 const extractDirectoryAndFileName = (documentName) => {
   let documentDirectory

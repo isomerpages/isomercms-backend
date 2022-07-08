@@ -1,13 +1,12 @@
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const { deslugifyCollectionName } = require("@utils/utils")
-
-const { titleSpecialCharCheck } = require("@validators/validators")
-
 const {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
-} = require("../../../utils/markdown-utils")
+} = require("@utils/markdown-utils")
+const { deslugifyCollectionName } = require("@utils/utils")
+
+const { titleSpecialCharCheck } = require("@validators/validators")
 
 class SubcollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {

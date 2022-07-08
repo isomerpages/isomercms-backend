@@ -2,40 +2,31 @@ const express = require("express")
 
 const {
   CollectionPagesRouter,
-} = require("@root/newroutes/authenticatedSites/collectionPages")
+} = require("@routes/v2/authenticatedSites/collectionPages")
 const {
   CollectionsRouter,
-} = require("@root/newroutes/authenticatedSites/collections")
-const {
-  ContactUsRouter,
-} = require("@root/newroutes/authenticatedSites/contactUs")
-const {
-  HomepageRouter,
-} = require("@root/newroutes/authenticatedSites/homepage")
+} = require("@routes/v2/authenticatedSites/collections")
+const { ContactUsRouter } = require("@routes/v2/authenticatedSites/contactUs")
+const { HomepageRouter } = require("@routes/v2/authenticatedSites/homepage")
 const {
   MediaCategoriesRouter,
-} = require("@root/newroutes/authenticatedSites/mediaCategories")
-const {
-  MediaFilesRouter,
-} = require("@root/newroutes/authenticatedSites/mediaFiles")
-const {
-  NavigationRouter,
-} = require("@root/newroutes/authenticatedSites/navigation")
+} = require("@routes/v2/authenticatedSites/mediaCategories")
+const { MediaFilesRouter } = require("@routes/v2/authenticatedSites/mediaFiles")
+const { NavigationRouter } = require("@routes/v2/authenticatedSites/navigation")
 const {
   ResourceCategoriesRouter,
-} = require("@root/newroutes/authenticatedSites/resourceCategories")
+} = require("@routes/v2/authenticatedSites/resourceCategories")
 const {
   ResourcePagesRouter,
-} = require("@root/newroutes/authenticatedSites/resourcePages")
+} = require("@routes/v2/authenticatedSites/resourcePages")
 const {
   ResourceRoomRouter,
-} = require("@root/newroutes/authenticatedSites/resourceRoom")
-const {
-  SettingsRouter,
-} = require("@root/newroutes/authenticatedSites/settings")
+} = require("@routes/v2/authenticatedSites/resourceRoom")
+const { SettingsRouter } = require("@routes/v2/authenticatedSites/settings")
 const {
   UnlinkedPagesRouter,
-} = require("@root/newroutes/authenticatedSites/unlinkedPages")
+} = require("@routes/v2/authenticatedSites/unlinkedPages")
+
 const { SettingsService } = require("@services/configServices/SettingsService")
 const {
   BaseDirectoryService,

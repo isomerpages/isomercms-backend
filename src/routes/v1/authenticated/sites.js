@@ -9,7 +9,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const {
   genericGitHubAxiosInstance: axios,
-} = require("@root/services/api/AxiosInstance")
+} = require("@services/api/AxiosInstance")
 
 const router = express.Router()
 

@@ -25,10 +25,10 @@ import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
 import { getAuthMiddleware } from "./newmiddleware"
-import getAuthenticatedSubrouter from "./newroutes/authenticated"
-import getAuthenticatedSitesSubrouter from "./newroutes/authenticatedSites"
-import getAuthenticatedSubrouterV1 from "./routes/authenticated"
-import getAuthenticatedSitesSubrouterV1 from "./routes/authenticatedSites"
+import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
+import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
+import getAuthenticatedSubrouter from "./routes/v2/authenticated"
+import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 
 const path = require("path")
 
@@ -58,14 +58,14 @@ const { FRONTEND_URL } = process.env
 const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
 
+const { FormsgRouter } = require("@routes/formsgSiteCreation")
+const { AuthRouter } = require("@routes/v2/auth")
+
 const { GitHubService } = require("@services/db/GitHubService")
 const {
   ConfigYmlService,
 } = require("@services/fileServices/YmlFileServices/ConfigYmlService")
 const { AuthService } = require("@services/utilServices/AuthService")
-
-const { AuthRouter } = require("./newroutes/auth")
-const { FormsgRouter } = require("./newroutes/formsgSiteCreation")
 
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })

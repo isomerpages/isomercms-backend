@@ -8,7 +8,7 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
-const { ResourceRoom } = require("@classes/ResourceRoom.js")
+const { ResourceRoom } = require("@classes/ResourceRoom")
 
 // Get resource room name
 async function getResourceRoomName(req, res) {

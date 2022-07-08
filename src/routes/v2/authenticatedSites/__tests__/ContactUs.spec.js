@@ -4,8 +4,8 @@ const request = require("supertest")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
+const { generateRouter } = require("@fixtures/app")
 const { contactUsContent, contactUsSha } = require("@fixtures/contactUs")
-const { generateRouter } = require("@root/fixtures/app")
 
 const { ContactUsRouter } = require("../contactUs")
 

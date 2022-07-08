@@ -8,8 +8,8 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { Collection } = require("@classes/Collection.js")
-const { CollectionConfig } = require("@classes/Config.js")
+const { Collection } = require("@classes/Collection")
+const { CollectionConfig } = require("@classes/Config")
 const { File, CollectionPageType, PageType } = require("@classes/File")
 const { Subfolder } = require("@classes/Subfolder")
 

@@ -3,7 +3,7 @@ const request = require("supertest")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { generateRouter } = require("@fixtures/app.js")
+const { generateRouter } = require("@fixtures/app")
 const { configContent, configSha, configResponse } = require("@fixtures/config")
 const { footerContent, footerSha, footerResponse } = require("@fixtures/footer")
 const { homepageContent, homepageSha } = require("@fixtures/homepage")
@@ -14,7 +14,7 @@ const {
 } = require("@fixtures/navigation")
 const { SettingsService } = require("@services/configServices/SettingsService")
 
-const { SettingsRouter } = require("../settings.js")
+const { SettingsRouter } = require("../settings")
 
 describe("Settings Router", () => {
   const mockSettingsService = {

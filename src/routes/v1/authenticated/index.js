@@ -1,8 +1,7 @@
 const express = require("express")
 
-const sitesRouter = require("@root/routes/authenticated/sites")
-
-const { UsersRouter } = require("../../newroutes/authenticated/users")
+const sitesRouter = require("@routes/v1/authenticated/sites")
+const { UsersRouter } = require("@routes/v2/authenticated/users")
 
 const getAuthenticatedSubrouter = ({ authMiddleware, usersService }) => {
   // Workaround - no v1 users router exists

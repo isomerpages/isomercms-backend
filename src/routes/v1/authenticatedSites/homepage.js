@@ -9,7 +9,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { File, HomepageType } = require("@classes/File.js")
+const { File, HomepageType } = require("@classes/File")
 
 // Constants
 const HOMEPAGE_INDEX_PATH = "index.md" // Empty string

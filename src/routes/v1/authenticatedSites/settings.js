@@ -9,7 +9,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import Classes
-const { Settings } = require("@classes/Settings.js")
+const { Settings } = require("@classes/Settings")
 
 async function getSettings(req, res) {
   const { accessToken } = res.locals

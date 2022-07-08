@@ -4,7 +4,7 @@ import request from "supertest"
 
 import { User, Whitelist } from "@database/models"
 import { generateRouter } from "@fixtures/app"
-import { UsersRouter as _UsersRouter } from "@root/newroutes/authenticated/users"
+import { UsersRouter as _UsersRouter } from "@root/routes/v2/authenticated/users"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
 

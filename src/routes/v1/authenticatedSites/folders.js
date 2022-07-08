@@ -12,11 +12,7 @@ const { Collection } = require("@classes/Collection")
 const { CollectionConfig } = require("@classes/Config")
 const { File, CollectionPageType } = require("@classes/File")
 
-const {
-  getTree,
-  sendTree,
-  deslugifyCollectionName,
-} = require("@utils/utils.js")
+const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils")
 
 const router = express.Router({ mergeParams: true })
 

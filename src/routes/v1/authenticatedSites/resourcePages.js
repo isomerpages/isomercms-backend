@@ -12,9 +12,9 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import classes
-const { File, ResourcePageType } = require("@classes/File.js")
-const { Resource } = require("@classes/Resource.js")
-const { ResourceRoom } = require("@classes/ResourceRoom.js")
+const { File, ResourcePageType } = require("@classes/File")
+const { Resource } = require("@classes/Resource")
+const { ResourceRoom } = require("@classes/ResourceRoom")
 
 // List pages in resource
 async function listResourcePages(req, res) {

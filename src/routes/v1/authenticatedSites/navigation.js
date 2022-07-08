@@ -10,7 +10,7 @@ const {
 } = require("@middleware/routeHandler")
 
 // Import Classes
-const { File, DataType } = require("@classes/File.js")
+const { File, DataType } = require("@classes/File")
 
 const NAVIGATION_PATH = "navigation.yml"
 

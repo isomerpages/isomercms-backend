@@ -17,7 +17,7 @@ const setupDb = async () => {
 
   const migrator = new Umzug({
     migrations: {
-      glob: "database/migrations/*.js",
+      glob: "src/database/migrations/*.js",
       // NOTE: The below portion is taken directly from the docs
       // Read more here: https://github.com/sequelize/umzug#modifying-the-parameters-passed-to-your-migration-methods
       resolve: ({ name, path, context }) => {

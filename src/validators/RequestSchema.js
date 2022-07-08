@@ -1,4 +1,3 @@
-const { required } = require("@root/node_modules/joi/lib/index")
 const Joi = require("joi")
 
 const FileSchema = Joi.object().keys({

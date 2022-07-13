@@ -108,7 +108,6 @@ export default class ReposService {
       dir,
       remote,
       remoteRef: "staging",
-      corsProxy: "https://cors.isomorphic-git.org",
       onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     })
 
@@ -119,7 +118,6 @@ export default class ReposService {
       dir,
       remote,
       remoteRef: "master",
-      corsProxy: "https://cors.isomorphic-git.org",
       onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     })
   }
@@ -247,7 +245,6 @@ export default class ReposService {
       http,
       dir,
       remote,
-      corsProxy: "https://cors.isomorphic-git.org",
       onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
     }
     await git.push({

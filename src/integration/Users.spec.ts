@@ -76,7 +76,7 @@ describe("Users Router", () => {
       expect(actual.statusCode).toBe(expected)
     })
 
-    it("should return 200 when email sending is successful", async () => {
+    it("should return 400 when there is no email in the request body", async () => {
       // Arrange
       const expected = 400
 

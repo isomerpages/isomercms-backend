@@ -1,5 +1,5 @@
 import { totp as mockTotp } from "@mocks/otplib"
-import _TotpGenerator from "@services/utilServices/TotpGenerator"
+import _TotpGenerator from "@services/identity/TotpGenerator"
 
 const mockSecret = "some secret"
 const TotpGenerator = new _TotpGenerator({

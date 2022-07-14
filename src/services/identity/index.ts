@@ -4,9 +4,9 @@ import logger from "@logger/logger"
 
 import { User, Site, Whitelist } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
+import SmsClient from "@services/identity/SmsClient"
+import TotpGenerator from "@services/identity/TotpGenerator"
 import { mailer } from "@services/utilServices/MailClient"
-import SmsClient from "@services/utilServices/SmsClient"
-import TotpGenerator from "@services/utilServices/TotpGenerator"
 
 import AuthService from "./AuthService"
 import SitesService from "./SitesService"

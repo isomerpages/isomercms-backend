@@ -2,9 +2,9 @@ import { Sequelize } from "sequelize-typescript"
 import { ModelStatic } from "sequelize/types"
 
 import { User, Whitelist } from "@root/database/models"
+import SmsClient from "@services/identity/SmsClient"
+import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
-import SmsClient from "@services/utilServices/SmsClient"
-import TotpGenerator from "@services/utilServices/TotpGenerator"
 
 import _UsersService from "../UsersService"
 

@@ -14,7 +14,7 @@
     "moduleResolution": "node",
     "isolatedModules": true,
     "downlevelIteration": true,
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "resolveJsonModule": true,
     "sourceMap": true,
     "experimentalDecorators": true,

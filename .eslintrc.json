@@ -91,10 +91,11 @@
                 "alwaysTryTypes": true 
             },        
             "node": {
+                "paths": ["src"],
                 "extensions": [".js", ".jsx", ".ts", ".tsx"]
             },
             "alias": [
-                ["@root", "./"],
+                ["@root", "."],
                 ["@classes", "./classes"],
                 ["@errors", "./errors"],
                 ["@logger", "./logger"],

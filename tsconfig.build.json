@@ -1,11 +1,13 @@
-// Main tsconfig for building, prevents tests from being compiled.
+// Main tsconfig for building. Prevents config scripts, previous builds, and tests from being compiled.
 {
   "extends": "./tsconfig.json",
   "exclude": [
-    "tests/",
+    "jest.config.js",
+    "build/",
+    "src/tests/",
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/__tests__/",
-    "**/__mocks__/"
+    "**/__mocks__/",
   ]
 }

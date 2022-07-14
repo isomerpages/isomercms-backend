@@ -6,7 +6,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register build/server.js",
     "dev:services": "docker compose up -d",
-    "dev": "source .env && ts-node-dev --respawn server.js",
+    "dev": "source .env && ts-node-dev --respawn src/server.js",
     "test": "source .env.test && jest",
     "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",
@@ -117,19 +117,19 @@
     }
   },
   "_moduleAliases": {
-    "@root": ".",
-    "@classes": "classes",
-    "@errors": "errors",
-    "@logger": "logger",
-    "@middleware": "middleware",
-    "@routes": "routes",
-    "@utils": "utils",
-    "@loaders": "loaders",
-    "@database": "database",
-    "@services": "services",
-    "@validators": "validators",
-    "@fixtures": "fixtures",
-    "@constants": "constants"
+    "@root": "src",
+    "@classes": "src/classes",
+    "@errors": "src/errors",
+    "@logger": "src/logger",
+    "@middleware": "src/middleware",
+    "@routes": "src/routes",
+    "@utils": "src/utils",
+    "@loaders": "src/loaders",
+    "@database": "src/database",
+    "@services": "src/services",
+    "@validators": "src/validators",
+    "@fixtures": "src/fixtures",
+    "@constants": "src/constants"
   },
   "lint-staged": {
     "**/*.(js|jsx|ts|tsx)": [

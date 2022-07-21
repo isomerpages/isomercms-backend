@@ -34,8 +34,10 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   res,
   next
 ) => {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName } = req.params
+
+  const accessToken = sessionData.getAccessToken()
 
   await lock(siteName)
 
@@ -46,8 +48,10 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       accessToken
     )
 
-    res.locals.currentCommitSha = currentCommitSha
-    res.locals.treeSha = treeSha
+    sessionData.addGithubState({
+      currentCommitSha,
+      treeSha,
+    })
 
     originalCommitSha = currentCommitSha
   } catch (err) {

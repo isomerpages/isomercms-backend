@@ -19,8 +19,9 @@ const { ResourceRoom } = require("@classes/ResourceRoom")
 
 // List resources
 async function listResources(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName } = req.params
+  const accessToken = sessionData.getAccessToken()
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await IsomerResourceRoom.get()
@@ -33,9 +34,10 @@ async function listResources(req, res) {
 
 // Create new resource
 async function createNewResource(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName } = req.params
   const { resourceName } = req.body
+  const accessToken = sessionData.getAccessToken()
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await IsomerResourceRoom.get()
@@ -48,8 +50,9 @@ async function createNewResource(req, res) {
 
 // Delete resource
 async function deleteResource(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName, resourceName } = req.params
+  const accessToken = sessionData.getAccessToken()
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await IsomerResourceRoom.get()
@@ -62,8 +65,9 @@ async function deleteResource(req, res) {
 
 // Rename resource
 async function renameResource(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName, resourceName, newResourceName } = req.params
+  const accessToken = sessionData.getAccessToken()
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await IsomerResourceRoom.get()
@@ -78,9 +82,10 @@ async function renameResource(req, res) {
 /* eslint-disable no-await-in-loop, no-restricted-syntax */
 // Move resource
 async function moveResources(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName, resourceName, newResourceName } = req.params
   const { files } = req.body
+  const accessToken = sessionData.getAccessToken()
 
   const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
   const resourceRoomName = await ResourceRoomInstance.get()

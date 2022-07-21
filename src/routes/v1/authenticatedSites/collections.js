@@ -19,8 +19,9 @@ const router = express.Router({ mergeParams: true })
 
 // List collections
 async function listCollections(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName } = req.params
+  const accessToken = sessionData.getAccessToken()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   const collections = await IsomerCollection.list()
@@ -30,9 +31,10 @@ async function listCollections(req, res) {
 
 // Create new collection
 async function createNewCollection(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName } = req.params
   const { collectionName } = req.body
+  const accessToken = sessionData.getAccessToken()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.create(collectionName)
@@ -45,8 +47,10 @@ async function deleteCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { sessionData } = res.locals
   const { siteName, collectionName } = req.params
+  const accessToken = sessionData.getAccessToken()
+  const { currentCommitSha, treeSha } = sessionData.getGithubState()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
@@ -59,8 +63,10 @@ async function renameCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { sessionData } = res.locals
   const { siteName, collectionName, newCollectionName } = req.params
+  const accessToken = sessionData.getAccessToken()
+  const { currentCommitSha, treeSha } = sessionData.getGithubState()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.rename(
@@ -75,7 +81,8 @@ async function renameCollection(req, res) {
 
 // Move files in collection
 async function moveFiles(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
+  const accessToken = sessionData.getAccessToken()
   const { siteName, collectionPath, targetPath } = req.params
   const { files } = req.body
   const processedCollectionPathTokens = decodeURIComponent(

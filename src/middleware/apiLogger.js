@@ -15,10 +15,11 @@ apiLogger.use((req, res, next) => {
   const ipAddress = req.headers["x-forwarded-for"]
 
   // Get user GitHub id
-  let userId
-  if (res.locals.userId) userId = res.locals.userId
+  const userEmail = res.locals.sessionData
+    ? res.locals.sessionData.getEmail()
+    : "(not logged in)"
 
-  let logMessage = `User ${userId} from IP address ${
+  let logMessage = `User ${userEmail} from IP address ${
     ipAddress ? `(IP: ${ipAddress})` : undefined
   } called ${req.method} on ${req.path}`
   if (!isObjEmpty(req.query)) {

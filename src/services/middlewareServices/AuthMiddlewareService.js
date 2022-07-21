@@ -12,6 +12,8 @@ const { sitesService } = require("@services/identity")
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
+const E2E_ISOMER_ID = "e2e-id"
+const E2E_TEST_EMAIL = "test@e2e"
 const GENERAL_ACCESS_PATHS = ["/v1/sites", "/v1/auth/whoami"]
 
 class AuthMiddlewareService {
@@ -46,8 +48,10 @@ class AuthMiddlewareService {
 
     if (isValidE2E) {
       const accessToken = E2E_TEST_GH_TOKEN
-      const userId = E2E_TEST_USER
-      return { accessToken, userId }
+      const githubId = E2E_TEST_USER
+      const isomerUserId = E2E_ISOMER_ID
+      const email = E2E_TEST_EMAIL
+      return { accessToken, githubId, isomerUserId, email }
     }
     if (!isomercms) {
       logger.error(`Authentication error: JWT token expired. Url: ${url}`)
@@ -56,8 +60,9 @@ class AuthMiddlewareService {
     try {
       const {
         access_token: retrievedToken,
-        user_id: retrievedId,
+        user_id: githubId,
         isomer_user_id: isomerUserId,
+        email,
       } = jwtUtils.verifyToken(isomercms)
       if (!isomerUserId) {
         const notLoggedInError = new Error("User not logged in with email")
@@ -65,8 +70,7 @@ class AuthMiddlewareService {
         throw notLoggedInError
       }
       const accessToken = jwtUtils.decryptToken(retrievedToken)
-      const userId = retrievedId
-      return { accessToken, userId }
+      return { accessToken, githubId, isomerUserId, email }
     } catch (err) {
       // NOTE: Cookies aren't being logged here because they get caught as "Object object", which is not useful
       // The cookies should be converted to a JSON struct before logging
@@ -94,16 +98,28 @@ class AuthMiddlewareService {
 
     if (isValidE2E) {
       const accessToken = E2E_TEST_GH_TOKEN
-      const userId = E2E_TEST_USER
-      return { accessToken, userId }
+      const githubId = E2E_TEST_USER
+      const isomerUserId = E2E_ISOMER_ID
+      const email = E2E_TEST_EMAIL
+      return { accessToken, githubId, isomerUserId, email }
     }
     try {
       const { isomercms } = cookies
-      const { access_token: verifiedToken } = jwtUtils.verifyToken(isomercms)
+      const {
+        access_token: verifiedToken,
+        user_id: githubId,
+        isomer_user_id: isomerUserId,
+        email,
+      } = jwtUtils.verifyToken(isomercms)
       const accessToken = jwtUtils.decryptToken(verifiedToken)
-      return { accessToken, userId: undefined }
+      return { accessToken, githubId, isomerUserId, email }
     } catch (err) {
-      return { accessToken: undefined, userId: undefined }
+      return {
+        accessToken: undefined,
+        githubId: undefined,
+        isomerUserId: undefined,
+        email: undefined,
+      }
     }
   }
 

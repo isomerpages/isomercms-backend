@@ -84,6 +84,7 @@ class AuthService {
       access_token: jwtUtils.encryptToken(accessToken),
       user_id: githubId,
       isomer_user_id: user.id,
+      email: user.email,
     })
 
     return token

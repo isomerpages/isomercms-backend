@@ -16,10 +16,10 @@ class MediaDirectoryService {
    * Lists files in directory. Returns empty array if directory does not exist
    * - useful for base media directories which do not have placeholder files
    */
-  async listWithDefault(reqDetails, { directoryName }) {
+  async listWithDefault(sessionData, { directoryName }) {
     let files = []
     try {
-      const retrievedFiles = await this.baseDirectoryService.list(reqDetails, {
+      const retrievedFiles = await this.baseDirectoryService.list(sessionData, {
         directoryName,
       })
       files = retrievedFiles
@@ -30,16 +30,16 @@ class MediaDirectoryService {
     return files
   }
 
-  async listFiles(reqDetails, { directoryName }) {
+  async listFiles(sessionData, { directoryName }) {
     // TODO: file preview handling
-    const { siteName } = reqDetails
+    const { siteName } = sessionData
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
     const mediaType = directoryName.split("/")[0]
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-      reqDetails
+      sessionData
     )
-    const files = await this.listWithDefault(reqDetails, { directoryName })
+    const files = await this.listWithDefault(sessionData, { directoryName })
 
     const resp = []
     for (const curr of files) {
@@ -64,7 +64,7 @@ class MediaDirectoryService {
         // Generate blob url
         const imageExt = curr.name.slice(curr.name.lastIndexOf(".") + 1)
         const contentType = `image/${imageExt === "svg" ? "svg+xml" : imageExt}`
-        const { content } = await this.gitHubService.readMedia(reqDetails, {
+        const { content } = await this.gitHubService.readMedia(sessionData, {
           fileSha: curr.sha,
         })
         const blobURL = `data:${contentType};base64,${content}`
@@ -75,7 +75,7 @@ class MediaDirectoryService {
     return resp
   }
 
-  async createMediaDirectory(reqDetails, { directoryName, objArray }) {
+  async createMediaDirectory(sessionData, { directoryName, objArray }) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError(
         "Special characters not allowed in media folder name"
@@ -90,7 +90,7 @@ class MediaDirectoryService {
       const pathTokens = directoryName.split("/")
       const oldDirectoryName = pathTokens.slice(0, -1).join("/")
       const targetFiles = objArray.map((file) => file.name)
-      await this.baseDirectoryService.moveFiles(reqDetails, {
+      await this.baseDirectoryService.moveFiles(sessionData, {
         oldDirectoryName,
         newDirectoryName: directoryName,
         targetFiles,
@@ -99,7 +99,7 @@ class MediaDirectoryService {
     }
 
     // We do this step later because the git tree operation overrides it otherwise
-    await this.gitHubService.create(reqDetails, {
+    await this.gitHubService.create(sessionData, {
       content: "",
       fileName: PLACEHOLDER_FILE_NAME,
       directoryName,
@@ -110,29 +110,29 @@ class MediaDirectoryService {
     }
   }
 
-  async renameMediaDirectory(reqDetails, { directoryName, newDirectoryName }) {
+  async renameMediaDirectory(sessionData, { directoryName, newDirectoryName }) {
     if (!isMediaPathValid({ path: newDirectoryName }))
       throw new BadRequestError(
         "Special characters not allowed in media folder name"
       )
-    await this.baseDirectoryService.rename(reqDetails, {
+    await this.baseDirectoryService.rename(sessionData, {
       oldDirectoryName: directoryName,
       newDirectoryName,
       message: `Renaming media folder ${directoryName} to ${newDirectoryName}`,
     })
   }
 
-  async deleteMediaDirectory(reqDetails, { directoryName }) {
+  async deleteMediaDirectory(sessionData, { directoryName }) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
-    await this.baseDirectoryService.delete(reqDetails, {
+    await this.baseDirectoryService.delete(sessionData, {
       directoryName,
       message: `Deleting media folder ${directoryName}`,
     })
   }
 
   async moveMediaFiles(
-    reqDetails,
+    sessionData,
     { directoryName, targetDirectoryName, objArray }
   ) {
     if (
@@ -144,7 +144,7 @@ class MediaDirectoryService {
       )
     const targetFiles = objArray.map((item) => item.name)
 
-    await this.baseDirectoryService.moveFiles(reqDetails, {
+    await this.baseDirectoryService.moveFiles(sessionData, {
       oldDirectoryName: directoryName,
       newDirectoryName: targetDirectoryName,
       targetFiles,

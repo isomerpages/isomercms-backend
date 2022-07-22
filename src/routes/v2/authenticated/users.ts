@@ -8,6 +8,8 @@ import { BadRequestError } from "@errors/BadRequestError"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
+import SessionData from "@classes/SessionData"
+
 import { isError, RequestHandler } from "@root/types"
 import UsersService from "@services/identity/UsersService"
 
@@ -61,10 +63,11 @@ export class UsersRouter {
     unknown,
     { email: string; otp: string },
     never,
-    { userId: string }
+    { sessionData: SessionData }
   > = async (req, res) => {
     const { email, otp } = req.body
-    const { userId } = res.locals
+    const { sessionData } = res.locals
+    const userId = sessionData.getIsomerUserId()
     if (!this.usersService.verifyOtp(email, otp)) {
       throw new BadRequestError("Invalid OTP")
     }
@@ -92,10 +95,11 @@ export class UsersRouter {
     unknown,
     { mobile: string; otp: string },
     never,
-    { userId: string }
+    { sessionData: SessionData }
   > = async (req, res) => {
     const { mobile, otp } = req.body
-    const { userId } = res.locals
+    const { sessionData } = res.locals
+    const userId = sessionData.getIsomerUserId()
     if (!this.usersService.verifyOtp(mobile, otp)) {
       throw new BadRequestError("Invalid OTP")
     }

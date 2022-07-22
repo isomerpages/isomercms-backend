@@ -8,8 +8,8 @@ class BaseDirectoryService {
     this.gitHubService = gitHubService
   }
 
-  async list(reqDetails, { directoryName }) {
-    const directoryData = await this.gitHubService.readDirectory(reqDetails, {
+  async list(sessionData, { directoryName }) {
+    const directoryData = await this.gitHubService.readDirectory(sessionData, {
       directoryName,
     })
 
@@ -27,8 +27,8 @@ class BaseDirectoryService {
     return _.compact(filesOrDirs)
   }
 
-  async rename(reqDetails, { oldDirectoryName, newDirectoryName, message }) {
-    const gitTree = await this.gitHubService.getTree(reqDetails, {
+  async rename(sessionData, { oldDirectoryName, newDirectoryName, message }) {
+    const gitTree = await this.gitHubService.getTree(sessionData, {
       isRecursive: true,
     })
 
@@ -55,17 +55,17 @@ class BaseDirectoryService {
       }
     })
 
-    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
+    const newCommitSha = await this.gitHubService.updateTree(sessionData, {
       gitTree: newGitTree,
       message,
     })
-    await this.gitHubService.updateRepoState(reqDetails, {
+    await this.gitHubService.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }
 
-  async delete(reqDetails, { directoryName, message }) {
-    const gitTree = await this.gitHubService.getTree(reqDetails, {
+  async delete(sessionData, { directoryName, message }) {
+    const gitTree = await this.gitHubService.getTree(sessionData, {
       isRecursive: true,
     })
 
@@ -80,21 +80,21 @@ class BaseDirectoryService {
         sha: null,
       }))
 
-    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
+    const newCommitSha = await this.gitHubService.updateTree(sessionData, {
       gitTree: newGitTree,
       message,
     })
-    await this.gitHubService.updateRepoState(reqDetails, {
+    await this.gitHubService.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }
 
   // Move files which do not require modification of content
   async moveFiles(
-    reqDetails,
+    sessionData,
     { oldDirectoryName, newDirectoryName, targetFiles, message }
   ) {
-    const gitTree = await this.gitHubService.getTree(reqDetails, {
+    const gitTree = await this.gitHubService.getTree(sessionData, {
       isRecursive: true,
     })
     const newGitTree = []
@@ -136,11 +136,11 @@ class BaseDirectoryService {
       }
     })
 
-    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
+    const newCommitSha = await this.gitHubService.updateTree(sessionData, {
       gitTree: newGitTree,
       message,
     })
-    await this.gitHubService.updateRepoState(reqDetails, {
+    await this.gitHubService.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }

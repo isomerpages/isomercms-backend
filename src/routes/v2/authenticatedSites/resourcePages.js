@@ -25,17 +25,16 @@ class ResourcePagesRouter {
 
   // Create new page in resource category
   async createResourcePage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, resourceRoomName, resourceCategoryName } = req.params
+    const { resourceRoomName, resourceCategoryName } = req.params
     const { error } = CreateResourcePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const reqDetails = { siteName, accessToken }
-    const createResp = await this.resourcePageService.create(reqDetails, {
+    const createResp = await this.resourcePageService.create(sessionData, {
       fileName: newFileName,
       resourceRoomName,
       resourceCategoryName,
@@ -48,17 +47,11 @@ class ResourcePagesRouter {
 
   // Read page in resource category
   async readResourcePage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const {
-      siteName,
-      resourceRoomName,
-      resourceCategoryName,
-      pageName,
-    } = req.params
+    const { resourceRoomName, resourceCategoryName, pageName } = req.params
 
-    const reqDetails = { siteName, accessToken }
-    const readResp = await this.resourcePageService.read(reqDetails, {
+    const readResp = await this.resourcePageService.read(sessionData, {
       fileName: pageName,
       resourceRoomName,
       resourceCategoryName,
@@ -69,14 +62,9 @@ class ResourcePagesRouter {
 
   // Update page in resource category
   async updateResourcePage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const {
-      siteName,
-      resourceRoomName,
-      resourceCategoryName,
-      pageName,
-    } = req.params
+    const { resourceRoomName, resourceCategoryName, pageName } = req.params
     const { error } = UpdateResourcePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -84,10 +72,9 @@ class ResourcePagesRouter {
       sha,
       newFileName,
     } = req.body
-    const reqDetails = { siteName, accessToken }
     let updateResp
     if (newFileName) {
-      updateResp = await this.resourcePageService.rename(reqDetails, {
+      updateResp = await this.resourcePageService.rename(sessionData, {
         oldFileName: pageName,
         newFileName,
         resourceRoomName,
@@ -97,7 +84,7 @@ class ResourcePagesRouter {
         sha,
       })
     } else {
-      updateResp = await this.resourcePageService.update(reqDetails, {
+      updateResp = await this.resourcePageService.update(sessionData, {
         fileName: pageName,
         resourceRoomName,
         resourceCategoryName,
@@ -111,19 +98,13 @@ class ResourcePagesRouter {
 
   // Delete page in resource category
   async deleteResourcePage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const {
-      siteName,
-      resourceRoomName,
-      resourceCategoryName,
-      pageName,
-    } = req.params
+    const { resourceRoomName, resourceCategoryName, pageName } = req.params
     const { error } = DeleteResourcePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
-    const reqDetails = { siteName, accessToken }
-    await this.resourcePageService.delete(reqDetails, {
+    await this.resourcePageService.delete(sessionData, {
       fileName: pageName,
       resourceRoomName,
       resourceCategoryName,

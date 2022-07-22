@@ -19,9 +19,9 @@ class ResourceDirectoryService {
     return `${resourceRoomName}/${resourceCategoryName}`
   }
 
-  async listFiles(reqDetails, { resourceRoomName, resourceCategoryName }) {
+  async listFiles(sessionData, { resourceRoomName, resourceCategoryName }) {
     const resourceCategories = await this.baseDirectoryService.list(
-      reqDetails,
+      sessionData,
       {
         directoryName: `${resourceRoomName}`,
       }
@@ -34,7 +34,7 @@ class ResourceDirectoryService {
       throw new NotFoundError("Resource category does not exist")
     let files = []
     try {
-      files = await this.baseDirectoryService.list(reqDetails, {
+      files = await this.baseDirectoryService.list(sessionData, {
         directoryName: `${this.getResourceDirectoryPath({
           resourceRoomName,
           resourceCategoryName,
@@ -76,7 +76,7 @@ class ResourceDirectoryService {
   }
 
   async createResourceDirectory(
-    reqDetails,
+    sessionData,
     { resourceRoomName, resourceCategoryName }
   ) {
     if (/[^a-zA-Z0-9- ]/g.test(resourceCategoryName)) {
@@ -93,7 +93,7 @@ class ResourceDirectoryService {
       title: resourceCategoryName,
     }
     const newContent = convertDataToMarkdown(frontMatter, "")
-    await this.gitHubService.create(reqDetails, {
+    await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName: INDEX_FILE_NAME,
       directoryName: this.getResourceDirectoryPath({
@@ -107,7 +107,7 @@ class ResourceDirectoryService {
   }
 
   async renameResourceDirectory(
-    reqDetails,
+    sessionData,
     { resourceRoomName, resourceCategoryName, newDirectoryName }
   ) {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
@@ -124,7 +124,7 @@ class ResourceDirectoryService {
       newDirectoryName
     )
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: INDEX_FILE_NAME,
         directoryName: oldDirectoryName,
@@ -138,12 +138,12 @@ class ResourceDirectoryService {
       resourceCategoryName: slugifiedNewResourceCategoryName,
     })
 
-    await this.baseDirectoryService.rename(reqDetails, {
+    await this.baseDirectoryService.rename(sessionData, {
       oldDirectoryName,
       newDirectoryName: newDirectoryPath,
       message: `Renaming resource category ${resourceCategoryName} to ${slugifiedNewResourceCategoryName}`,
     })
-    await this.gitHubService.update(reqDetails, {
+    await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName: INDEX_FILE_NAME,
@@ -152,10 +152,10 @@ class ResourceDirectoryService {
   }
 
   async deleteResourceDirectory(
-    reqDetails,
+    sessionData,
     { resourceRoomName, resourceCategoryName }
   ) {
-    await this.baseDirectoryService.delete(reqDetails, {
+    await this.baseDirectoryService.delete(sessionData, {
       directoryName: this.getResourceDirectoryPath({
         resourceRoomName,
         resourceCategoryName,
@@ -165,7 +165,7 @@ class ResourceDirectoryService {
   }
 
   async moveResourcePages(
-    reqDetails,
+    sessionData,
     { resourceRoomName, resourceCategoryName, targetResourceCategory, objArray }
   ) {
     const targetFiles = objArray.map((item) => item.name)
@@ -177,7 +177,7 @@ class ResourceDirectoryService {
       resourceRoomName,
       resourceCategoryName: targetResourceCategory,
     })}/_posts`
-    await this.baseDirectoryService.moveFiles(reqDetails, {
+    await this.baseDirectoryService.moveFiles(sessionData, {
       oldDirectoryName,
       newDirectoryName,
       targetFiles,

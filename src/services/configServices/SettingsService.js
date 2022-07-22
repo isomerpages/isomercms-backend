@@ -17,12 +17,12 @@ class SettingsService {
     autoBind(this)
   }
 
-  async retrieveSettingsFiles(reqDetails, shouldRetrieveHomepage) {
+  async retrieveSettingsFiles(sessionData, shouldRetrieveHomepage) {
     const fileRetrievalObj = {
-      config: this.configYmlService.read(reqDetails),
-      footer: this.footerYmlService.read(reqDetails),
-      navigation: this.navYmlService.read(reqDetails),
-      homepage: this.homepagePageService.read(reqDetails),
+      config: this.configYmlService.read(sessionData),
+      footer: this.footerYmlService.read(sessionData),
+      navigation: this.navYmlService.read(sessionData),
+      homepage: this.homepagePageService.read(sessionData),
     }
 
     const [config, footer, navigation, homepage] = await Bluebird.map(
@@ -44,7 +44,7 @@ class SettingsService {
   }
 
   async updateSettingsFiles({
-    reqDetails,
+    sessionData,
     config,
     homepage,
     footer,
@@ -58,7 +58,7 @@ class SettingsService {
         config.content,
         updatedConfigContent
       )
-      await this.configYmlService.update(reqDetails, {
+      await this.configYmlService.update(sessionData, {
         fileContent: mergedConfigContent,
         sha: config.sha,
       })
@@ -75,7 +75,7 @@ class SettingsService {
             updatedConfigContent.description
         if (updatedConfigContent.shareicon)
           updatedHomepageFrontMatter.image = updatedConfigContent.shareicon
-        await this.homepagePageService.update(reqDetails, {
+        await this.homepagePageService.update(sessionData, {
           content: homepage.content.pageBody,
           frontMatter: updatedHomepageFrontMatter,
           sha: homepage.sha,
@@ -88,7 +88,7 @@ class SettingsService {
         footer.content,
         updatedFooterContent
       )
-      await this.footerYmlService.update(reqDetails, {
+      await this.footerYmlService.update(sessionData, {
         fileContent: mergedFooterContent,
         sha: footer.sha,
       })
@@ -99,7 +99,7 @@ class SettingsService {
         navigation.content,
         updatedNavigationContent
       )
-      await this.navYmlService.update(reqDetails, {
+      await this.navYmlService.update(sessionData, {
         fileContent: mergedNavigationContent,
         sha: navigation.sha,
       })

@@ -24,26 +24,24 @@ class MediaCategoriesRouter {
 
   // List files in a resource category
   async listMediaDirectoryFiles(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, directoryName } = req.params
-    const listResp = await this.mediaDirectoryService.listFiles(
-      { siteName, accessToken },
-      { directoryName }
-    )
+    const { directoryName } = req.params
+    const listResp = await this.mediaDirectoryService.listFiles(sessionData, {
+      directoryName,
+    })
     return res.status(200).json(listResp)
   }
 
   // Create new media directory
   async createMediaDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName } = req.params
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName, items } = req.body
     const createResp = await this.mediaDirectoryService.createMediaDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
+      sessionData,
       {
         directoryName: newDirectoryName,
         objArray: items,
@@ -55,56 +53,47 @@ class MediaCategoriesRouter {
 
   // Rename resource category
   async renameMediaDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, directoryName } = req.params
+    const { directoryName } = req.params
     const { error } = RenameMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
-    await this.mediaDirectoryService.renameMediaDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
-      {
-        directoryName,
-        newDirectoryName,
-      }
-    )
+    await this.mediaDirectoryService.renameMediaDirectory(sessionData, {
+      directoryName,
+      newDirectoryName,
+    })
 
     return res.status(200).send("OK")
   }
 
   // Delete resource category
   async deleteMediaDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, directoryName } = req.params
-    await this.mediaDirectoryService.deleteMediaDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
-      {
-        directoryName,
-      }
-    )
+    const { directoryName } = req.params
+    await this.mediaDirectoryService.deleteMediaDirectory(sessionData, {
+      directoryName,
+    })
     return res.status(200).send("OK")
   }
 
   // Move resource category
   async moveMediaFiles(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, directoryName } = req.params
+    const { directoryName } = req.params
     const { error } = MoveMediaDirectoryFilesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       items,
       target: { directoryName: targetDirectoryName },
     } = req.body
-    await this.mediaDirectoryService.moveMediaFiles(
-      { siteName, accessToken, currentCommitSha, treeSha },
-      {
-        directoryName,
-        targetDirectoryName,
-        objArray: items,
-      }
-    )
+    await this.mediaDirectoryService.moveMediaFiles(sessionData, {
+      directoryName,
+      targetDirectoryName,
+      objArray: items,
+    })
     return res.status(200).send("OK")
   }
 

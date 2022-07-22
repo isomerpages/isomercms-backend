@@ -40,9 +40,11 @@ class GitHubService {
   }
 
   async create(
-    { accessToken, siteName },
+    sessionData,
     { content, fileName, directoryName, isMedia = false }
   ) {
+    const siteName = sessionData.getSiteName()
+    const accessToken = sessionData.getAccessToken()
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       // Validation and sanitisation of media already done
@@ -69,7 +71,9 @@ class GitHubService {
     }
   }
 
-  async read({ accessToken, siteName }, { fileName, directoryName }) {
+  async read(sessionData, { fileName, directoryName }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
@@ -91,12 +95,14 @@ class GitHubService {
     return { content, sha }
   }
 
-  async readMedia({ accessToken, siteName }, { fileSha }) {
+  async readMedia(sessionData, { fileSha }) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
      * via Github Blob API. The content can only be retrieved through
      * the `sha` of the file.
      */
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     const params = {
       ref: BRANCH_REF,
     }
@@ -119,7 +125,9 @@ class GitHubService {
     return { content, sha }
   }
 
-  async readDirectory({ accessToken, siteName }, { directoryName }) {
+  async readDirectory(sessionData, { directoryName }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
@@ -138,10 +146,9 @@ class GitHubService {
     return resp.data
   }
 
-  async update(
-    { accessToken, siteName },
-    { fileContent, sha, fileName, directoryName }
-  ) {
+  async update(sessionData, { fileContent, sha, fileName, directoryName }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       const encodedNewContent = Base64.encode(fileContent)
@@ -181,7 +188,9 @@ class GitHubService {
     }
   }
 
-  async delete({ accessToken, siteName }, { sha, fileName, directoryName }) {
+  async delete(sessionData, { sha, fileName, directoryName }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
@@ -218,7 +227,9 @@ class GitHubService {
     }
   }
 
-  async getRepoInfo({ accessToken, siteName }) {
+  async getRepoInfo(sessionData) {
+    const siteName = sessionData.getSiteName()
+    const accessToken = sessionData.getAccessToken()
     const endpoint = `${siteName}`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -235,7 +246,9 @@ class GitHubService {
     return data
   }
 
-  async getRepoState({ accessToken, siteName }) {
+  async getRepoState(sessionData) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     const endpoint = `${siteName}/commits`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -259,7 +272,10 @@ class GitHubService {
     return { treeSha, currentCommitSha }
   }
 
-  async getTree({ accessToken, siteName, treeSha }, { isRecursive }) {
+  async getTree(sessionData, { isRecursive }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
+    const { treeSha } = sessionData.getGithubState()
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
@@ -278,10 +294,10 @@ class GitHubService {
     return gitTree
   }
 
-  async updateTree(
-    { accessToken, currentCommitSha, treeSha, siteName },
-    { gitTree, message }
-  ) {
+  async updateTree(sessionData, { gitTree, message }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
+    const { treeSha, currentCommitSha } = sessionData.getGithubState()
     const url = `${siteName}/git/trees`
 
     const headers = {
@@ -318,7 +334,9 @@ class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState({ accessToken, siteName }, { commitSha }) {
+  async updateRepoState(sessionData, { commitSha }) {
+    const accessToken = sessionData.getAccessToken()
+    const siteName = sessionData.getSiteName()
     const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -331,7 +349,10 @@ class GitHubService {
     )
   }
 
-  async checkHasAccess({ accessToken, siteName }, { userId }) {
+  async checkHasAccess(sessionData) {
+    const accessToken = sessionData.getAccessToken()
+    const userId = sessionData.getGithubId()
+    const siteName = sessionData.getSiteName()
     const endpoint = `${siteName}/collaborators/${userId}`
 
     const headers = {

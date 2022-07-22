@@ -34,7 +34,8 @@ class SitesService {
     this.configYmlService = configYmlService
   }
 
-  async getSites({ accessToken }) {
+  async getSites(sessionData) {
+    const accessToken = sessionData.getAccessToken()
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
     // Simultaneously retrieve all isomerpages repos
@@ -83,23 +84,25 @@ class SitesService {
     return _.flatten(sites)
   }
 
-  async checkHasAccess(reqDetails, { userId }) {
-    await this.githubService.checkHasAccess(reqDetails, { userId })
+  async checkHasAccess(sessionData) {
+    await this.githubService.checkHasAccess(sessionData)
   }
 
-  async getLastUpdated(reqDetails) {
+  async getLastUpdated(sessionData) {
     const { pushed_at: updatedAt } = await this.githubService.getRepoInfo(
-      reqDetails
+      sessionData
     )
     return updatedAt
   }
 
-  async getStagingUrl(reqDetails) {
+  async getStagingUrl(sessionData) {
     // Check config.yml for staging url if it exists, and github site description otherwise
-    const { content: configData } = await this.configYmlService.read(reqDetails)
+    const { content: configData } = await this.configYmlService.read(
+      sessionData
+    )
     if ("staging" in configData) return configData.staging
 
-    const { description } = await this.githubService.getRepoInfo(reqDetails)
+    const { description } = await this.githubService.getRepoInfo(sessionData)
 
     if (description) {
       // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
@@ -111,7 +114,7 @@ class SitesService {
       if (stagingUrl) return stagingUrl
     }
 
-    throw new NotFoundError(`${reqDetails.siteName} has no staging url`)
+    throw new NotFoundError(`${sessionData.getSiteName()} has no staging url`)
   }
 }
 

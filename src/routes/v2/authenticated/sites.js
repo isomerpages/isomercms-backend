@@ -4,6 +4,8 @@ const express = require("express")
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
+const { attachSiteHandler } = require("@root/middleware")
+
 class SitesRouter {
   constructor({ sitesService }) {
     this.sitesService = sitesService
@@ -12,49 +14,30 @@ class SitesRouter {
   }
 
   async getSites(req, res) {
-    const { accessToken } = res.locals
-    const siteNames = await this.sitesService.getSites({ accessToken })
+    const { sessionData } = res.locals
+    const siteNames = await this.sitesService.getSites(sessionData)
     return res.status(200).json({ siteNames })
   }
 
   async checkHasAccess(req, res) {
-    const {
-      params: { siteName },
-    } = req
-    const { userId, accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    await this.sitesService.checkHasAccess(
-      {
-        accessToken,
-        siteName,
-      },
-      { userId }
-    )
+    await this.sitesService.checkHasAccess({
+      sessionData,
+    })
     return res.status(200).send("OK")
   }
 
   async getLastUpdated(req, res) {
-    const {
-      params: { siteName },
-    } = req
-    const { accessToken } = res.locals
-    const lastUpdated = await this.sitesService.getLastUpdated({
-      accessToken,
-      siteName,
-    })
+    const { sessionData } = res.locals
+    const lastUpdated = await this.sitesService.getLastUpdated(sessionData)
     return res.status(200).json({ lastUpdated })
   }
 
   async getStagingUrl(req, res) {
-    const {
-      params: { siteName },
-    } = req
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const stagingUrl = await this.sitesService.getStagingUrl({
-      accessToken,
-      siteName,
-    })
+    const stagingUrl = await this.sitesService.getStagingUrl(sessionData)
     return res.status(200).json({ stagingUrl })
   }
 
@@ -62,13 +45,19 @@ class SitesRouter {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.getSites))
-    router.get("/:siteName", attachReadRouteHandlerWrapper(this.checkHasAccess))
+    router.get(
+      "/:siteName",
+      attachSiteHandler,
+      attachReadRouteHandlerWrapper(this.checkHasAccess)
+    )
     router.get(
       "/:siteName/lastUpdated",
+      attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getLastUpdated)
     )
     router.get(
       "/:siteName/stagingUrl",
+      attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getStagingUrl)
     )
 

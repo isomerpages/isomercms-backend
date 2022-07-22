@@ -25,54 +25,48 @@ class UnlinkedPagesRouter {
   }
 
   async listAllUnlinkedPages(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName } = req.params
     const listResp = await this.unlinkedPagesDirectoryService.listAllUnlinkedPages(
-      { siteName, accessToken }
+      sessionData
     )
 
     return res.status(200).json(listResp)
   }
 
   async createUnlinkedPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const createResp = await this.unlinkedPageService.create(
-      { siteName, accessToken },
-      {
-        fileName: newFileName,
-        content: pageBody,
-        frontMatter,
-      }
-    )
+    const createResp = await this.unlinkedPageService.create(sessionData, {
+      fileName: newFileName,
+      content: pageBody,
+      frontMatter,
+    })
 
     return res.status(200).json(createResp)
   }
 
   async readUnlinkedPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, pageName } = req.params
-    const { sha, content } = await this.unlinkedPageService.read(
-      { siteName, accessToken },
-      { fileName: pageName }
-    )
+    const { pageName } = req.params
+    const { sha, content } = await this.unlinkedPageService.read(sessionData, {
+      fileName: pageName,
+    })
 
     return res.status(200).json({ pageName, sha, content })
   }
 
   async updateUnlinkedPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, pageName } = req.params
+    const { pageName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -83,53 +77,43 @@ class UnlinkedPagesRouter {
 
     let updateResp
     if (newFileName) {
-      updateResp = await this.unlinkedPageService.rename(
-        { siteName, accessToken },
-        {
-          oldFileName: pageName,
-          newFileName,
-          content: pageBody,
-          frontMatter,
-          sha,
-        }
-      )
+      updateResp = await this.unlinkedPageService.rename(sessionData, {
+        oldFileName: pageName,
+        newFileName,
+        content: pageBody,
+        frontMatter,
+        sha,
+      })
     } else {
-      updateResp = await this.unlinkedPageService.update(
-        { siteName, accessToken },
-        {
-          fileName: pageName,
-          content: pageBody,
-          frontMatter,
-          sha,
-        }
-      )
+      updateResp = await this.unlinkedPageService.update(sessionData, {
+        fileName: pageName,
+        content: pageBody,
+        frontMatter,
+        sha,
+      })
     }
 
     return res.status(200).json(updateResp)
   }
 
   async deleteUnlinkedPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, pageName } = req.params
+    const { pageName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
-    await this.unlinkedPageService.delete(
-      { siteName, accessToken },
-      {
-        fileName: pageName,
-        sha,
-      }
-    )
+    await this.unlinkedPageService.delete(sessionData, {
+      fileName: pageName,
+      sha,
+    })
 
     return res.status(200).send("OK")
   }
 
   async moveUnlinkedPages(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName } = req.params
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -139,14 +123,11 @@ class UnlinkedPagesRouter {
         subCollectionName: targetSubcollectionName,
       },
     } = req.body
-    await this.unlinkedPagesDirectoryService.movePages(
-      { siteName, accessToken },
-      {
-        targetCollectionName,
-        targetSubcollectionName,
-        objArray: items,
-      }
-    )
+    await this.unlinkedPagesDirectoryService.movePages(sessionData, {
+      targetCollectionName,
+      targetSubcollectionName,
+      objArray: items,
+    })
     return res.status(200).send("OK")
   }
 

@@ -22,15 +22,13 @@ class SettingsRouter {
   }
 
   async readSettingsPage(req, res) {
-    const { accessToken } = res.locals
-    const { siteName } = req.params
-    const reqDetails = { siteName, accessToken }
+    const { sessionData } = res.locals
 
     const {
       config,
       footer,
       navigation,
-    } = await this.settingsService.retrieveSettingsFiles(reqDetails)
+    } = await this.settingsService.retrieveSettingsFiles(sessionData)
 
     return res.status(200).json({
       ...SettingsService.extractConfigFields(config),
@@ -41,20 +39,17 @@ class SettingsRouter {
 
   async updateSettingsPage(req, res) {
     const { body } = req
-    const { accessToken } = res.locals
-    const { siteName } = req.params
+    const { sessionData } = res.locals
 
     const { error } = UpdateSettingsRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-
-    const reqDetails = { siteName, accessToken }
 
     const {
       config,
       footer,
       navigation,
       homepage,
-    } = await this.settingsService.retrieveSettingsFiles(reqDetails, true)
+    } = await this.settingsService.retrieveSettingsFiles(sessionData, true)
 
     // extract data
     const settings = body
@@ -65,7 +60,7 @@ class SettingsRouter {
     } = SettingsService.retrieveSettingsFields(settings)
 
     await this.settingsService.updateSettingsFiles({
-      reqDetails,
+      sessionData,
       config,
       homepage,
       footer,

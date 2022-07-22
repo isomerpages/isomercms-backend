@@ -25,19 +25,18 @@ class CollectionPagesRouter {
 
   // Create new page in collection
   async createCollectionPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, collectionName, subcollectionName } = req.params
+    const { collectionName, subcollectionName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const reqDetails = { siteName, accessToken }
     let createResp
     if (subcollectionName) {
-      createResp = await this.subcollectionPageService.create(reqDetails, {
+      createResp = await this.subcollectionPageService.create(sessionData, {
         fileName: newFileName,
         collectionName,
         content: pageBody,
@@ -45,7 +44,7 @@ class CollectionPagesRouter {
         subcollectionName,
       })
     } else {
-      createResp = await this.collectionPageService.create(reqDetails, {
+      createResp = await this.collectionPageService.create(sessionData, {
         fileName: newFileName,
         collectionName,
         content: pageBody,
@@ -58,20 +57,19 @@ class CollectionPagesRouter {
 
   // Read page in collection
   async readCollectionPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, pageName, collectionName, subcollectionName } = req.params
+    const { pageName, collectionName, subcollectionName } = req.params
 
-    const reqDetails = { siteName, accessToken }
     let readResp
     if (subcollectionName) {
-      readResp = await this.subcollectionPageService.read(reqDetails, {
+      readResp = await this.subcollectionPageService.read(sessionData, {
         fileName: pageName,
         collectionName,
         subcollectionName,
       })
     } else {
-      readResp = await this.collectionPageService.read(reqDetails, {
+      readResp = await this.collectionPageService.read(sessionData, {
         fileName: pageName,
         collectionName,
       })
@@ -81,9 +79,9 @@ class CollectionPagesRouter {
 
   // Update page in collection
   async updateCollectionPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, pageName, collectionName, subcollectionName } = req.params
+    const { pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -91,11 +89,10 @@ class CollectionPagesRouter {
       sha,
       newFileName,
     } = req.body
-    const reqDetails = { siteName, accessToken }
     let updateResp
     if (subcollectionName) {
       if (newFileName) {
-        updateResp = await this.subcollectionPageService.rename(reqDetails, {
+        updateResp = await this.subcollectionPageService.rename(sessionData, {
           oldFileName: pageName,
           newFileName,
           collectionName,
@@ -105,7 +102,7 @@ class CollectionPagesRouter {
           sha,
         })
       } else {
-        updateResp = await this.subcollectionPageService.update(reqDetails, {
+        updateResp = await this.subcollectionPageService.update(sessionData, {
           fileName: pageName,
           collectionName,
           subcollectionName,
@@ -117,7 +114,7 @@ class CollectionPagesRouter {
     } else {
       /* eslint-disable no-lonely-if */
       if (newFileName) {
-        updateResp = await this.collectionPageService.rename(reqDetails, {
+        updateResp = await this.collectionPageService.rename(sessionData, {
           oldFileName: pageName,
           newFileName,
           collectionName,
@@ -126,7 +123,7 @@ class CollectionPagesRouter {
           sha,
         })
       } else {
-        updateResp = await this.collectionPageService.update(reqDetails, {
+        updateResp = await this.collectionPageService.update(sessionData, {
           fileName: pageName,
           collectionName,
           content: pageBody,
@@ -141,22 +138,21 @@ class CollectionPagesRouter {
 
   // Delete page in collection
   async deleteCollectionPage(req, res) {
-    const { accessToken } = res.locals
+    const { sessionData } = res.locals
 
-    const { siteName, pageName, collectionName, subcollectionName } = req.params
+    const { pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
-    const reqDetails = { siteName, accessToken }
     if (subcollectionName) {
-      await this.subcollectionPageService.delete(reqDetails, {
+      await this.subcollectionPageService.delete(sessionData, {
         fileName: pageName,
         collectionName,
         subcollectionName,
         sha,
       })
     } else {
-      await this.collectionPageService.delete(reqDetails, {
+      await this.collectionPageService.delete(sessionData, {
         fileName: pageName,
         collectionName,
         sha,

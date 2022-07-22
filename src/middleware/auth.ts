@@ -1,15 +1,23 @@
-const autoBind = require("auto-bind")
+import autoBind from "auto-bind"
+import { NextFunction, Request, Response } from "express"
 
-const SessionData = require("@root/classes/SessionData")
+import SessionData from "@root/classes/SessionData"
+import { AuthMiddlewareService } from "@root/services/middlewareServices/AuthMiddlewareService"
 
-class AuthMiddleware {
-  constructor({ authMiddlewareService }) {
+export class AuthMiddleware {
+  private readonly authMiddlewareService: AuthMiddlewareService
+
+  constructor({
+    authMiddlewareService,
+  }: {
+    authMiddlewareService: AuthMiddlewareService
+  }) {
     this.authMiddlewareService = authMiddlewareService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
 
-  verifyJwt(req, res, next) {
+  verifyJwt(req: Request, res: Response, next: NextFunction) {
     const { cookies, originalUrl: url } = req
     const {
       accessToken,
@@ -31,7 +39,7 @@ class AuthMiddleware {
   }
 
   // Replace access token with site access token if it is available
-  async checkHasAccess(req, res, next) {
+  async checkHasAccess(req: Request, res: Response, next: NextFunction) {
     const { sessionData } = res.locals
 
     await this.authMiddlewareService.checkHasAccess(sessionData)
@@ -39,5 +47,3 @@ class AuthMiddleware {
     return next()
   }
 }
-
-module.exports = { AuthMiddleware }

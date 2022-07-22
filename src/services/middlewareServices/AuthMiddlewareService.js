@@ -103,7 +103,9 @@ class AuthMiddlewareService {
     const hasAccessToSite = await this.identityAuthService.hasAccessToSite(
       sessionData
     )
-    if (!hasAccessToSite) {
+
+    const isE2EUser = userId === E2E_ISOMER_ID
+    if (!hasAccessToSite && !isE2EUser) {
       throw new NotFoundError("Site does not exist")
     }
 

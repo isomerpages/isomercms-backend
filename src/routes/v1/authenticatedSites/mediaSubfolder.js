@@ -13,8 +13,9 @@ const { MediaSubfolder } = require("@classes/MediaSubfolder")
 
 // Create new collection
 async function createSubfolder(req, res) {
-  const { accessToken } = res.locals
+  const { sessionData } = res.locals
   const { siteName, mediaType, folderPath } = req.params
+  const accessToken = sessionData.getAccessToken()
 
   const processedFolderPath = decodeURIComponent(folderPath)
 
@@ -30,8 +31,10 @@ async function createSubfolder(req, res) {
 
 // Delete collection
 async function deleteSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { sessionData } = res.locals
   const { siteName, mediaType, folderPath } = req.params
+  const accessToken = sessionData.getAccessToken()
+  const { currentCommitSha, treeSha } = sessionData.getGithubState
 
   const processedFolderPath = decodeURIComponent(folderPath)
 
@@ -51,8 +54,10 @@ async function deleteSubfolder(req, res) {
 
 // Rename collection
 async function renameSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { sessionData } = res.locals
   const { siteName, mediaType, oldFolderPath, newFolderPath } = req.params
+  const accessToken = sessionData.getAccessToken()
+  const { currentCommitSha, treeSha } = sessionData.getGithubState
 
   const processedOldFolderPath = decodeURIComponent(oldFolderPath)
   const processedNewFolderPath = decodeURIComponent(newFolderPath)

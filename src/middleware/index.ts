@@ -1,5 +1,10 @@
 import FormSG from "@opengovsg/formsg-sdk"
-import express, { RequestHandler } from "express"
+import express, {
+  NextFunction,
+  Request,
+  Response,
+  RequestHandler,
+} from "express"
 
 import AuthService from "@services/identity/AuthService"
 import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
@@ -40,4 +45,13 @@ const attachFormSGHandler = (formKey: string): RequestHandler[] => [
   formSGService.decrypt({ formKey }),
 ]
 
-export { getAuthMiddleware, attachFormSGHandler }
+const attachSiteHandler = (req: Request, res: Response, next: NextFunction) => {
+  const {
+    params: { siteName },
+  } = req
+  const { sessionData } = res.locals
+  sessionData.addSiteName(siteName)
+  return next()
+}
+
+export { getAuthMiddleware, attachFormSGHandler, attachSiteHandler }

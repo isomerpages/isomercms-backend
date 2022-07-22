@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const {
@@ -186,6 +188,7 @@ const getAuthenticatedSitesSubrouter = ({
 
   authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  authenticatedSitesSubrouter.use(attachSiteHandler)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

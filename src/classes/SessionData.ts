@@ -20,6 +20,8 @@ class SessionData {
 
   private treeSha?: string
 
+  private siteName?: string
+
   constructor({
     githubId,
     accessToken,
@@ -74,6 +76,14 @@ class SessionData {
       currentCommitSha: this.currentCommitSha,
       treeSha: this.treeSha,
     }
+  }
+
+  addSiteName(siteName: string) {
+    this.siteName = siteName
+  }
+
+  getSiteName() {
+    return this.siteName
   }
 }
 

@@ -2,6 +2,7 @@ const { Base64 } = require("js-base64")
 
 const validateStatus = require("@utils/axios-utils")
 
+const { mockSessionData, mockAccessToken } = require("@fixtures/sessionData")
 const {
   netlifyTomlContent,
   netlifyTomlHeaderValues,
@@ -13,10 +14,6 @@ const {
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 
 describe("NetlifyToml Service", () => {
-  const accessToken = "test-token"
-
-  const reqDetails = { accessToken }
-
   const {
     NetlifyTomlService,
   } = require("@services/configServices/NetlifyTomlService")
@@ -35,7 +32,7 @@ describe("NetlifyToml Service", () => {
         },
       }))
 
-      await expect(service.read(reqDetails)).resolves.toEqual(
+      await expect(service.read(mockSessionData)).resolves.toEqual(
         netlifyTomlHeaderValues
       )
 
@@ -44,7 +41,7 @@ describe("NetlifyToml Service", () => {
         {
           validateStatus,
           headers: {
-            Authorization: `token ${accessToken}`,
+            Authorization: `token ${mockAccessToken}`,
           },
         }
       )

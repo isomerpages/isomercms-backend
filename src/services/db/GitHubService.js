@@ -155,10 +155,10 @@ class GitHubService {
 
       let fileSha = sha
       if (!sha) {
-        const { sha: retrievedSha } = await this.read(
-          { accessToken, siteName },
-          { fileName, directoryName }
-        )
+        const { sha: retrievedSha } = await this.read(sessionData, {
+          fileName,
+          directoryName,
+        })
         fileSha = retrievedSha
       }
 

@@ -4,13 +4,13 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockSessionData } = require("@fixtures/sessionData")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
 const { FRONTEND_URL } = process.env
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
-const accessToken = undefined
 
 describe("Unlinked Pages Router", () => {
   const mockAuthService = {
@@ -113,7 +113,7 @@ describe("Unlinked Pages Router", () => {
       const resp = await request(app).get(`/whoami`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(mockSessionData)
     })
 
     it("sends a 401 if user not found", async () => {
@@ -121,7 +121,7 @@ describe("Unlinked Pages Router", () => {
 
       await request(app).get(`/whoami`).expect(401)
 
-      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(mockSessionData)
     })
   })
 })

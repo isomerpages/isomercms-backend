@@ -8,6 +8,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { homepageContent } = require("@fixtures/homepage")
+const { mockSessionData } = require("@fixtures/sessionData")
 
 const { HomepageRouter } = require("../homepage")
 
@@ -36,10 +37,7 @@ describe("Homepage Router", () => {
   const app = generateRouter(subrouter)
 
   const siteName = "test-site"
-  const accessToken = undefined // Can't set request fields - will always be undefined
   const mockSha = "12345"
-
-  const reqDetails = { siteName, accessToken }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -56,7 +54,7 @@ describe("Homepage Router", () => {
       const resp = await request(app).get(`/${siteName}/homepage`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockHomepagePageService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockHomepagePageService.read).toHaveBeenCalledWith(mockSessionData)
     })
 
     it("returns appropriate failure on read failure", async () => {
@@ -65,7 +63,7 @@ describe("Homepage Router", () => {
       )
       await request(app).get(`/${siteName}/homepage`).expect(404)
 
-      expect(mockHomepagePageService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockHomepagePageService.read).toHaveBeenCalledWith(mockSessionData)
     })
   })
 
@@ -111,7 +109,7 @@ describe("Homepage Router", () => {
         .expect(200)
 
       expect(mockHomepagePageService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockSessionData,
         expectedServiceInput
       )
     })
@@ -132,7 +130,7 @@ describe("Homepage Router", () => {
         .expect(200)
 
       expect(mockHomepagePageService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockSessionData,
         expectedServiceInput
       )
     })

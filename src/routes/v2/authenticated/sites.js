@@ -22,9 +22,7 @@ class SitesRouter {
   async checkHasAccess(req, res) {
     const { sessionData } = res.locals
 
-    await this.sitesService.checkHasAccess({
-      sessionData,
-    })
+    await this.sitesService.checkHasAccess(sessionData)
     return res.status(200).send("OK")
   }
 

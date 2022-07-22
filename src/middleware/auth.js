@@ -1,6 +1,6 @@
-import SessionData from "@root/classes/SessionData"
-
 const autoBind = require("auto-bind")
+
+const SessionData = require("@root/classes/SessionData")
 
 class AuthMiddleware {
   constructor({ authMiddlewareService }) {
@@ -40,4 +40,4 @@ class AuthMiddleware {
   }
 }
 
-export { AuthMiddleware }
+module.exports = { AuthMiddleware }

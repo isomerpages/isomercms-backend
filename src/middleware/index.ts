@@ -6,11 +6,11 @@ import express, {
   RequestHandler,
 } from "express"
 
+import { AuthMiddleware } from "@middleware/auth"
+
 import AuthService from "@services/identity/AuthService"
 import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
-
-import { AuthMiddleware } from "./auth"
 
 const getAuthMiddleware = ({
   identityAuthService,

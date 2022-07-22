@@ -4,6 +4,7 @@ import request from "supertest"
 
 import { User, Whitelist } from "@database/models"
 import { generateRouter } from "@fixtures/app"
+import SessionData from "@root/classes/SessionData"
 import { UsersRouter as _UsersRouter } from "@root/routes/v2/authenticated/users"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
@@ -32,7 +33,8 @@ const subrouter = express()
 // In order to do integration testing, we must expose a middleware
 // that allows us to set this properties also
 subrouter.use((req, res, next) => {
-  res.locals.userId = req.body.userId
+  const userSessionData = new SessionData({ isomerUserId: req.body.userId })
+  res.locals.sessionData = userSessionData
   next()
 })
 subrouter.use(usersSubrouter)

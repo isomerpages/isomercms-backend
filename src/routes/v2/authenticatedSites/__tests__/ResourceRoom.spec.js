@@ -4,6 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockSessionData } = require("@fixtures/sessionData")
 
 const { ResourceRoomRouter } = require("../resourceRoom")
 
@@ -49,14 +50,6 @@ describe("Resource Room Router", () => {
   const siteName = "test-site"
   const resourceRoomName = "resource-room"
 
-  // Can't set request fields - will always be undefined
-  const accessToken = undefined
-  const currentCommitSha = undefined
-  const treeSha = undefined
-
-  const reqDetails = { siteName, accessToken }
-  const additionalReqDetails = { ...reqDetails, currentCommitSha, treeSha }
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -82,7 +75,7 @@ describe("Resource Room Router", () => {
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(
         mockResourceRoomDirectoryService.listAllResourceCategories
-      ).toHaveBeenCalledWith(reqDetails, { resourceRoomName })
+      ).toHaveBeenCalledWith(mockSessionData, { resourceRoomName })
     })
   })
 
@@ -97,7 +90,7 @@ describe("Resource Room Router", () => {
       expect(resp.body).toStrictEqual({ resourceRoomName })
       expect(
         mockResourceRoomDirectoryService.getResourceRoomDirectoryName
-      ).toHaveBeenCalledWith(reqDetails)
+      ).toHaveBeenCalledWith(mockSessionData)
     })
   })
 
@@ -120,7 +113,7 @@ describe("Resource Room Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockResourceRoomDirectoryService.createResourceRoomDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         resourceRoomName,
       })
     })
@@ -143,7 +136,7 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(
         mockResourceRoomDirectoryService.renameResourceRoomDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         resourceRoomName,
         newDirectoryName,
       })
@@ -157,7 +150,7 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(
         mockResourceRoomDirectoryService.deleteResourceRoomDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         resourceRoomName,
       })
     })

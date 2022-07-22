@@ -4,6 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockSessionData } = require("@fixtures/sessionData")
 
 const { MediaCategoriesRouter } = require("../mediaCategories")
 
@@ -54,9 +55,6 @@ describe("Media Categories Router", () => {
   const currentCommitSha = undefined
   const treeSha = undefined
 
-  const reqDetails = { siteName, accessToken }
-  const additionalReqDetails = { ...reqDetails, currentCommitSha, treeSha }
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -88,7 +86,7 @@ describe("Media Categories Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockMediaDirectoryService.listFiles).toHaveBeenCalledWith(
-        reqDetails,
+        mockSessionData,
         {
           directoryName,
         }
@@ -113,7 +111,7 @@ describe("Media Categories Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockMediaDirectoryService.createMediaDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         directoryName,
         objArray: undefined,
       })
@@ -140,7 +138,7 @@ describe("Media Categories Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockMediaDirectoryService.createMediaDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         directoryName,
         objArray: mediaDetails.items,
       })
@@ -164,7 +162,7 @@ describe("Media Categories Router", () => {
         .expect(200)
       expect(
         mockMediaDirectoryService.renameMediaDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         directoryName,
         newDirectoryName,
       })
@@ -178,7 +176,7 @@ describe("Media Categories Router", () => {
         .expect(200)
       expect(
         mockMediaDirectoryService.deleteMediaDirectory
-      ).toHaveBeenCalledWith(additionalReqDetails, {
+      ).toHaveBeenCalledWith(mockSessionData, {
         directoryName,
       })
     })
@@ -229,7 +227,7 @@ describe("Media Categories Router", () => {
         })
         .expect(200)
       expect(mockMediaDirectoryService.moveMediaFiles).toHaveBeenCalledWith(
-        reqDetails,
+        mockSessionData,
         {
           directoryName,
           targetDirectoryName: targetMediaCategory,

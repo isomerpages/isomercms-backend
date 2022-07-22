@@ -8,9 +8,10 @@ jest.mock("@utils/jwt-utils")
 const axios = require("axios")
 const uuid = require("uuid/v4")
 
+const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const validateStatus = require("@root/utils/axios-utils")
+const { mockSessionData } = require("@fixtures/sessionData")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
@@ -107,7 +108,7 @@ describe("Auth Service", () => {
           login: userId,
         },
       }))
-      await expect(service.getUserInfo({ accessToken })).resolves.toEqual({
+      await expect(service.getUserInfo(mockSessionData)).resolves.toEqual({
         userId,
         email: mockEmail,
         contactNumber: mockContactNumber,

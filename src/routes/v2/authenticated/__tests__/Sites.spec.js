@@ -6,16 +6,12 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockSessionData } = require("@fixtures/sessionData")
 
 const { SitesRouter } = require("../sites")
 
 // Can't set request fields - will always be undefined
-const userId = undefined
-const accessToken = undefined
-
 const siteName = "siteName"
-
-const reqDetails = { siteName, accessToken }
 
 describe("Sites Router", () => {
   const mockSitesService = {
@@ -59,7 +55,7 @@ describe("Sites Router", () => {
       const resp = await request(app).get(`/`).expect(200)
 
       expect(resp.body).toStrictEqual({ siteNames: sitesResp })
-      expect(mockSitesService.getSites).toHaveBeenCalledWith({ accessToken })
+      expect(mockSitesService.getSites).toHaveBeenCalledWith(mockSessionData)
     })
   })
 
@@ -71,17 +67,17 @@ describe("Sites Router", () => {
 
       await request(app).get(`/${siteName}`).expect(404)
 
-      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {
-        userId,
-      })
+      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(
+        mockSessionData
+      )
     })
 
     it("allows if user has access to a site", async () => {
       await request(app).get(`/${siteName}`).expect(200)
 
-      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {
-        userId,
-      })
+      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(
+        mockSessionData
+      )
     })
   })
 
@@ -95,7 +91,9 @@ describe("Sites Router", () => {
         .expect(200)
 
       expect(resp.body).toStrictEqual({ lastUpdated })
-      expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(reqDetails)
+      expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(
+        mockSessionData
+      )
     })
   })
 
@@ -107,7 +105,9 @@ describe("Sites Router", () => {
       const resp = await request(app).get(`/${siteName}/stagingUrl`).expect(200)
 
       expect(resp.body).toStrictEqual({ stagingUrl })
-      expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(reqDetails)
+      expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(
+        mockSessionData
+      )
     })
   })
 })

@@ -30,39 +30,11 @@ class AuthMiddleware {
     return next()
   }
 
-  whoamiAuth(req, res, next) {
-    const { cookies, originalUrl: url } = req
-    const {
-      accessToken,
-      githubId,
-      isomerUserId,
-      email,
-    } = this.authMiddlewareService.whoamiAuth({
-      cookies,
-      url,
-    })
-    const userSessionData = new SessionData({
-      accessToken,
-      githubId,
-      isomerUserId,
-      email,
-    })
-    res.locals.sessionData = userSessionData
-    return next()
-  }
-
   // Replace access token with site access token if it is available
-  async useSiteAccessTokenIfAvailable(req, res, next) {
-    const {
-      params: { siteName },
-    } = req
-    const { userId, accessToken: userAccessToken } = res.locals
+  async checkHasAccess(req, res, next) {
+    const { sessionData } = res.locals
 
-    const siteAccessToken = await this.authMiddlewareService.retrieveSiteAccessTokenIfAvailable(
-      { siteName, userAccessToken, userId }
-    )
-
-    if (siteAccessToken) res.locals.accessToken = siteAccessToken
+    await this.authMiddlewareService.checkHasAccess(sessionData)
 
     return next()
   }

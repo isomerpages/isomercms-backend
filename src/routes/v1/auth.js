@@ -173,7 +173,7 @@ router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
-  authMiddleware.whoamiAuth,
+  authMiddleware.verifyJwt,
   attachReadRouteHandlerWrapper(whoami)
 )
 

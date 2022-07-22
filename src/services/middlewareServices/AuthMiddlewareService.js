@@ -93,65 +93,21 @@ class AuthMiddlewareService {
     }
   }
 
-  whoamiAuth({ cookies, url }) {
-    const isValidE2E = this.verifyE2E({ cookies, url })
-
-    if (isValidE2E) {
-      const accessToken = E2E_TEST_GH_TOKEN
-      const githubId = E2E_TEST_USER
-      const isomerUserId = E2E_ISOMER_ID
-      const email = E2E_TEST_EMAIL
-      return { accessToken, githubId, isomerUserId, email }
-    }
-    try {
-      const { isomercms } = cookies
-      const {
-        access_token: verifiedToken,
-        user_id: githubId,
-        isomer_user_id: isomerUserId,
-        email,
-      } = jwtUtils.verifyToken(isomercms)
-      const accessToken = jwtUtils.decryptToken(verifiedToken)
-      return { accessToken, githubId, isomerUserId, email }
-    } catch (err) {
-      return {
-        accessToken: undefined,
-        githubId: undefined,
-        isomerUserId: undefined,
-        email: undefined,
-      }
-    }
-  }
-
-  async retrieveSiteAccessTokenIfAvailable({
-    siteName,
-    userAccessToken,
-    userId,
-  }) {
+  async checkHasAccess(sessionData) {
     // Check if site is onboarded to Isomer identity, otherwise continue using user access token
-    const site = await sitesService.getBySiteName(siteName)
-    if (!site) {
-      logger.info(
-        `Site ${siteName} does not exist in site table. Default to using user access token.`
-      )
-      return undefined
-    }
+    const siteName = sessionData.getSiteName()
+    const userId = sessionData.getIsomerUserId()
 
     logger.info(`Verifying user's access to ${siteName}`)
 
     const hasAccessToSite = await this.identityAuthService.hasAccessToSite(
-      { accessToken: userAccessToken, siteName },
-      { userId }
+      sessionData
     )
     if (!hasAccessToSite) {
       throw new NotFoundError("Site does not exist")
     }
 
-    const siteAccessToken = await sitesService.getSiteAccessToken(siteName)
-    logger.info(
-      `User ${userId} has access to ${siteName}. Using site access token ${site.apiTokenName}.`
-    )
-    return siteAccessToken
+    logger.info(`User ${userId} has access to ${siteName}`)
   }
 }
 

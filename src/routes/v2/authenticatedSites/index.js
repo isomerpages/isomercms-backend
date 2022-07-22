@@ -187,8 +187,8 @@ const getAuthenticatedSitesSubrouter = ({
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
   authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
-  authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
   authenticatedSitesSubrouter.use(attachSiteHandler)
+  authenticatedSitesSubrouter.use(authMiddleware.checkHasAccess)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

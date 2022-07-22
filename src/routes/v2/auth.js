@@ -99,7 +99,7 @@ class AuthRouter {
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
-      this.authMiddleware.whoamiAuth,
+      this.authMiddleware.verifyJwt,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const collectionPagesRouter = require("@routes/v1/authenticatedSites/collectionPages")
@@ -20,7 +22,8 @@ const getAuthenticatedSitesSubrouter = ({ authMiddleware }) => {
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
   authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
-  authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  authenticatedSitesSubrouter.use(attachSiteHandler)
+  authenticatedSitesSubrouter.use(authMiddleware.checkHasAccess)
 
   authenticatedSitesSubrouter.use("/pages", pagesRouter)
   authenticatedSitesSubrouter.use("/collections", collectionsRouter)

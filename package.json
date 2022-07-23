@@ -41,7 +41,7 @@
     "dotenv": "^16.0.1",
     "exponential-backoff": "^3.1.0",
     "express": "~4.16.1",
-    "file-type": "^16.5.3",
+    "file-type": "^16.5.4",
     "helmet": "^4.6.0",
     "http-errors": "~1.8.0",
     "is-svg": "^4.3.1",

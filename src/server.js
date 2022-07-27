@@ -12,6 +12,7 @@ import {
   AccessToken,
   Repo,
   Deployment,
+  IsomerAdmin,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import { getAuthMiddleware } from "@root/middleware"
@@ -40,6 +41,7 @@ const sequelize = initSequelize([
   AccessToken,
   Repo,
   Deployment,
+  IsomerAdmin,
 ])
 const usersService = getUsersService(sequelize)
 

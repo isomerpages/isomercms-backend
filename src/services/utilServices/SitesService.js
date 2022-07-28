@@ -97,6 +97,12 @@ class SitesService {
         })
         .filter(
           (repoData) =>
+            isAdminUser ||
+            !isEmailUser ||
+            emailAccessibleSites.includes(repoData.repoName)
+        )
+        .filter(
+          (repoData) =>
             repoData.permissions.push === true &&
             !ISOMER_ADMIN_REPOS.includes(repoData.repoName)
         )

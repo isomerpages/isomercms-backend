@@ -29,12 +29,32 @@ const ISOMER_ADMIN_REPOS = [
 ]
 
 class SitesService {
-  constructor({ gitHubService, configYmlService }) {
+  constructor({
+    gitHubService,
+    configYmlService,
+    usersService,
+    isomerAdminsService,
+  }) {
     this.githubService = gitHubService
     this.configYmlService = configYmlService
+    this.usersService = usersService
+    this.isomerAdminsService = isomerAdminsService
   }
 
   async getSites(sessionData) {
+    const isEmailUser = sessionData.isEmailUser()
+    let emailAccessibleSites = []
+    const { isomerUserId: userId } = sessionData
+    const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
+    if (!isAdminUser && isEmailUser) {
+      const {
+        site_members: siteMemberEntries,
+      } = await this.usersService.findSitesByUserId(userId)
+      emailAccessibleSites = siteMemberEntries.map((entry) => {
+        const repoData = entry.repo
+        return repoData.name
+      })
+    }
     const { accessToken } = sessionData
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
@@ -74,6 +94,12 @@ class SitesService {
             isPrivate,
           }
         })
+        .filter(
+          (repoData) =>
+            isAdminUser ||
+            !isEmailUser ||
+            emailAccessibleSites.includes(repoData.repoName)
+        )
         .filter(
           (repoData) =>
             repoData.permissions.push === true &&

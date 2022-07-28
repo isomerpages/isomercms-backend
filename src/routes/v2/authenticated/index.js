@@ -16,8 +16,14 @@ const getAuthenticatedSubrouter = ({
   gitHubService,
   configYmlService,
   usersService,
+  isomerAdminsService,
 }) => {
-  const sitesService = new SitesService({ gitHubService, configYmlService })
+  const sitesService = new SitesService({
+    gitHubService,
+    configYmlService,
+    usersService,
+    isomerAdminsService,
+  })
   const netlifyTomlService = new NetlifyTomlService()
 
   const sitesV2Router = new SitesRouter({ sitesService })

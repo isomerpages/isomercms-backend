@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { User, Whitelist } from "@database/models"
+import { Site, User, Whitelist } from "@database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
@@ -55,6 +55,15 @@ class UsersService {
     return this.repository.findOne({ where: { githubId } })
   }
 
+  async hasAccessToSite(userId: string, siteName: string): Promise<boolean> {
+    const siteMember = await this.repository.findOne({
+      where: { id: userId },
+      include: [Site],
+    })
+
+    return !!siteMember
+  }
+
   async updateUserByGitHubId(
     githubId: string,
     // NOTE: This ensures that the caller passes in at least 1 property of User
@@ -75,6 +84,18 @@ class UsersService {
       // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
       const [user] = await this.repository.findOrCreate({
         where: { githubId },
+        transaction,
+      })
+      user.lastLoggedIn = new Date()
+      return user.save({ transaction })
+    })
+  }
+
+  async loginWithEmail(email: string): Promise<User> {
+    return this.sequelize.transaction<User>(async (transaction) => {
+      // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
+      const [user] = await this.repository.findOrCreate({
+        where: { email },
         transaction,
       })
       user.lastLoggedIn = new Date()

@@ -12,9 +12,14 @@ const { sitesService } = require("@services/identity")
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
-const E2E_ISOMER_ID = "e2e-id"
+export const E2E_ISOMER_ID = "e2e-id"
 const E2E_TEST_EMAIL = "test@e2e"
-const GENERAL_ACCESS_PATHS = ["/v1/sites", "/v1/auth/whoami"]
+const GENERAL_ACCESS_PATHS = [
+  "/v1/sites",
+  "/v1/auth/whoami",
+  "/v2/sites",
+  "/v2/auth/whoami",
+]
 
 class AuthMiddlewareService {
   constructor({ identityAuthService }) {
@@ -69,7 +74,9 @@ class AuthMiddlewareService {
         notLoggedInError.name = "NotLoggedInError"
         throw notLoggedInError
       }
-      const accessToken = jwtUtils.decryptToken(retrievedToken)
+      const accessToken = retrievedToken
+        ? jwtUtils.decryptToken(retrievedToken)
+        : ""
       return { accessToken, githubId, isomerUserId, email }
     } catch (err) {
       // NOTE: Cookies aren't being logged here because they get caught as "Object object", which is not useful

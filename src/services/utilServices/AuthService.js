@@ -9,7 +9,9 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
+const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
+const { isError } = require("@root/types")
 
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
@@ -90,19 +92,49 @@ class AuthService {
     return token
   }
 
-  async getUserInfo(sessionData) {
-    const { accessToken } = sessionData
-    // Make a call to github
-    const endpoint = "https://api.github.com/user"
-
+  async sendOtp(email) {
+    const isValidEmail = this.usersService.canSendEmailOtp(email)
+    if (!isValidEmail)
+      throw new AuthError(
+        "Please sign in with a gov.sg or other whitelisted email."
+      )
     try {
-      const resp = await axios.get(endpoint, {
-        headers: {
-          Authorization: `token ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      })
-      const userId = resp.data.login
+      await this.usersService.sendEmailOtp(email)
+    } catch (err) {
+      if (isError(err)) {
+        logger.error(err.message)
+        throw new BadRequestError(err.message)
+      } else {
+        // If we encountered something that isn't an error but still ends up in the error branch,
+        // log this to cloudwatch with the relevant details
+        logger.error(
+          `Encountered unknown error type: ${err} when sendEmailOtp with email: ${email}`
+        )
+      }
+    }
+  }
+
+  async verifyOtp({ email, otp }) {
+    if (!this.usersService.verifyOtp(email, otp)) {
+      throw new BadRequestError("Invalid OTP")
+    }
+    // Create user if does not exists. Set last logged in to current time.
+    const user = await this.usersService.loginWithEmail(email)
+    const token = jwtUtils.signToken({
+      isomer_user_id: user.id,
+      email: user.email,
+    })
+    return token
+  }
+
+  async getUserInfo(sessionData) {
+    try {
+      if (sessionData.getIsEmailUser()) {
+        const email = sessionData.getEmail()
+        const { contactNumber } = await this.usersService.findByEmail(email)
+        return { userId: "", email, contactNumber }
+      }
+      const userId = sessionData.getGithubId()
 
       const { email, contactNumber } = await this.usersService.findByGitHubId(
         userId

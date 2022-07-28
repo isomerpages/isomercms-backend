@@ -43,15 +43,19 @@ class GitHubService {
     sessionData,
     { content, fileName, directoryName, isMedia = false }
   ) {
-    const { siteName } = sessionData
-    const { accessToken } = sessionData
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       // Validation and sanitisation of media already done
       const encodedContent = isMedia ? content : Base64.encode(content)
 
-      const params = {
+      const message = JSON.stringify({
         message: `Create file: ${fileName}`,
+        fileName,
+        userId,
+      })
+      const params = {
+        message,
         content: encodedContent,
         branch: BRANCH_REF,
       }
@@ -147,8 +151,7 @@ class GitHubService {
   }
 
   async update(sessionData, { fileContent, sha, fileName, directoryName }) {
-    const { accessToken } = sessionData
-    const { siteName } = sessionData
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       const encodedNewContent = Base64.encode(fileContent)
@@ -162,8 +165,13 @@ class GitHubService {
         fileSha = retrievedSha
       }
 
-      const params = {
+      const message = JSON.stringify({
         message: `Update file: ${fileName}`,
+        fileName,
+        userId,
+      })
+      const params = {
+        message,
         content: encodedNewContent,
         branch: BRANCH_REF,
         sha: fileSha,
@@ -189,8 +197,7 @@ class GitHubService {
   }
 
   async delete(sessionData, { sha, fileName, directoryName }) {
-    const { accessToken } = sessionData
-    const { siteName } = sessionData
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
@@ -204,8 +211,13 @@ class GitHubService {
         fileSha = retrievedSha
       }
 
-      const params = {
+      const message = JSON.stringify({
         message: `Delete file: ${fileName}`,
+        fileName,
+        userId,
+      })
+      const params = {
+        message,
         branch: BRANCH_REF,
         sha: fileSha,
       }
@@ -295,8 +307,7 @@ class GitHubService {
   }
 
   async updateTree(sessionData, githubSessionData, { gitTree, message }) {
-    const { accessToken } = sessionData
-    const { siteName } = sessionData
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees`
 
@@ -319,10 +330,14 @@ class GitHubService {
 
     const commitEndpoint = `${siteName}/git/commits`
 
+    const stringifiedMessage = JSON.stringify({
+      message: message || `isomerCMS updated ${siteName} state`,
+      userId,
+    })
     const newCommitResp = await this.axiosInstance.post(
       commitEndpoint,
       {
-        message: message || `isomerCMS updated ${siteName} state`,
+        message: stringifiedMessage,
         tree: newTreeSha,
         parents: [currentCommitSha],
       },

@@ -16,7 +16,7 @@ import { RequestHandler } from "@root/types"
 import AuthService from "@services/identity/AuthService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
-import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
+import AuthMiddlewareService from "@services/middlewareServices/AuthMiddlewareService"
 import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
 

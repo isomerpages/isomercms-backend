@@ -1,14 +1,14 @@
 // Import logger
-const logger = require("@logger/logger")
+import logger from "@logger/logger"
 
 // Import errors
-const { AuthError } = require("@errors/AuthError")
-const { NotFoundError } = require("@errors/NotFoundError")
+import { AuthError } from "@errors/AuthError"
 
-const jwtUtils = require("@utils/jwt-utils")
+import jwtUtils from "@utils/jwt-utils"
 
-const { BadRequestError } = require("@root/errors/BadRequestError")
-const { sitesService } = require("@services/identity")
+import { BadRequestError } from "@root/errors/BadRequestError"
+
+import AuthService from "../identity/AuthService"
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
@@ -21,12 +21,18 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/auth/whoami",
 ]
 
-class AuthMiddlewareService {
-  constructor({ identityAuthService }) {
+interface AuthMiddlewareServiceProps {
+  identityAuthService: AuthService
+}
+
+export default class AuthMiddlewareService {
+  readonly identityAuthService: AuthMiddlewareServiceProps["identityAuthService"]
+
+  constructor({ identityAuthService }: AuthMiddlewareServiceProps) {
     this.identityAuthService = identityAuthService
   }
 
-  verifyE2E({ cookies, url }) {
+  verifyE2E({ cookies, url }: { cookies: any; url: string }) {
     const { isomercmsE2E } = cookies
     const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
 
@@ -47,7 +53,7 @@ class AuthMiddlewareService {
     return true
   }
 
-  verifyJwt({ cookies, url }) {
+  verifyJwt({ cookies, url }: { cookies: any; url: string }) {
     const { isomercms } = cookies
     const isValidE2E = this.verifyE2E({ cookies, url })
 
@@ -79,6 +85,10 @@ class AuthMiddlewareService {
         : ""
       return { accessToken, githubId, isomerUserId, email }
     } catch (err) {
+      if (!(err instanceof Error)) {
+        // NOTE: If the error is of an unknown kind, we bubble it up the stack and block access.
+        throw err
+      }
       // NOTE: Cookies aren't being logged here because they get caught as "Object object", which is not useful
       // The cookies should be converted to a JSON struct before logging
       if (err.name === "NotLoggedInError") {
@@ -118,8 +128,4 @@ class AuthMiddlewareService {
 
     logger.info(`User ${userId} has access to ${siteName}`)
   }
-}
-
-module.exports = {
-  AuthMiddlewareService,
 }

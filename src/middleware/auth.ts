@@ -2,7 +2,7 @@ import autoBind from "auto-bind"
 import { NextFunction, Request, Response } from "express"
 
 import UserSessionData from "@root/classes/UserSessionData"
-import { AuthMiddlewareService } from "@root/services/middlewareServices/AuthMiddlewareService"
+import AuthMiddlewareService from "@root/services/middlewareServices/AuthMiddlewareService"
 
 export class AuthMiddleware {
   private readonly authMiddlewareService: AuthMiddlewareService

@@ -85,6 +85,7 @@ const { MoverService } = require("@services/moverServices/MoverService")
 
 const getAuthenticatedSitesSubrouter = ({
   authMiddleware,
+  authorizationMiddleware,
   gitHubService,
   configYmlService,
 }) => {
@@ -188,7 +189,7 @@ const getAuthenticatedSitesSubrouter = ({
 
   authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(attachSiteHandler)
-  authenticatedSitesSubrouter.use(authMiddleware.checkHasAccess)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.checkIsSiteMember)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

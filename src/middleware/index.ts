@@ -7,13 +7,17 @@ import express, {
 } from "express"
 
 import { AuthMiddleware } from "@middleware/auth"
+import { AuthorizationMiddleware } from "@middleware/authorization"
 
 import UserSessionData from "@classes/UserSessionData"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { RequestHandler } from "@root/types"
 import AuthService from "@services/identity/AuthService"
+import IsomerAdminsService from "@services/identity/IsomerAdminsService"
+import UsersService from "@services/identity/UsersService"
 import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
+import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
 
 const getAuthMiddleware = ({
@@ -26,6 +30,26 @@ const getAuthMiddleware = ({
   })
   const authMiddleware = new AuthMiddleware({ authMiddlewareService })
   return authMiddleware
+}
+
+const getAuthorizationMiddleware = ({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+}: {
+  identityAuthService: AuthService
+  usersService: UsersService
+  isomerAdminsService: IsomerAdminsService
+}) => {
+  const authorizationMiddlewareService = new AuthorizationMiddlewareService({
+    identityAuthService,
+    usersService,
+    isomerAdminsService,
+  })
+  const authorizationMiddleware = new AuthorizationMiddleware({
+    authorizationMiddlewareService,
+  })
+  return authorizationMiddleware
 }
 
 const formsg = FormSG()
@@ -71,4 +95,9 @@ const attachSiteHandler: RequestHandler<
   return next()
 }
 
-export { getAuthMiddleware, attachFormSGHandler, attachSiteHandler }
+export {
+  getAuthMiddleware,
+  getAuthorizationMiddleware,
+  attachFormSGHandler,
+  attachSiteHandler,
+}

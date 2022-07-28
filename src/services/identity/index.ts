@@ -2,13 +2,14 @@ import { Sequelize } from "sequelize-typescript"
 
 import logger from "@logger/logger"
 
-import { User, Site, Whitelist } from "@database/models"
+import { User, Site, Whitelist, IsomerAdmin } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import { mailer } from "@services/utilServices/MailClient"
 
 import AuthService from "./AuthService"
+import IsomerAdminsService from "./IsomerAdminsService"
 import SitesService from "./SitesService"
 import TokenStore from "./TokenStore"
 import UsersService from "./UsersService"
@@ -64,3 +65,7 @@ export const getUsersService = (sequelize: Sequelize) =>
 // the GithubService instance in...
 export const getIdentityAuthService = (gitHubService: GitHubService) =>
   new AuthService({ gitHubService })
+
+export const isomerAdminsService = new IsomerAdminsService({
+  repository: IsomerAdmin,
+})

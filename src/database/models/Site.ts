@@ -68,6 +68,7 @@ export class Site extends Model {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
     through: () => SiteMember,
+    as: "site_members",
   })
   users!: User[]
 
@@ -80,6 +81,8 @@ export class Site extends Model {
   @ForeignKey(() => User)
   creatorId!: number
 
-  @BelongsTo(() => User)
+  @BelongsTo(() => User, {
+    as: "site_creator",
+  })
   creator!: User
 }

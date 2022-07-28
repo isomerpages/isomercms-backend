@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { Site, User, Whitelist } from "@database/models"
+import { Repo, Site, SiteMember, User, Whitelist } from "@database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
@@ -62,6 +62,20 @@ class UsersService {
     })
 
     return !!siteMember
+  }
+
+  async findSitesByUserId(isomerId: string) {
+    return this.repository.findOne({
+      where: { id: isomerId },
+      include: [
+        {
+          model: Site,
+          as: "site_members",
+          required: true,
+          include: [{ model: Repo, required: true }],
+        },
+      ],
+    })
   }
 
   async updateUserByGitHubId(

@@ -58,7 +58,22 @@ class UsersService {
   async hasAccessToSite(userId: string, siteName: string): Promise<boolean> {
     const siteMember = await this.repository.findOne({
       where: { id: userId },
-      include: [Site],
+      include: [
+        {
+          model: Site,
+          as: "site_members",
+          required: true,
+          include: [
+            {
+              model: Repo,
+              required: true,
+              where: {
+                name: siteName,
+              },
+            },
+          ],
+        },
+      ],
     })
 
     return !!siteMember
@@ -84,6 +99,14 @@ class UsersService {
     user: RequireAtLeastOne<User, keyof User>
   ) {
     await this.repository.update(user, { where: { githubId } })
+  }
+
+  async updateUserByIsomerId(
+    isomerId: string,
+    // NOTE: This ensures that the caller passes in at least 1 property of User
+    user: RequireAtLeastOne<User, keyof User>
+  ) {
+    await this.repository.update(user, { where: { id: isomerId } })
   }
 
   async findOrCreate(githubId: string | undefined) {

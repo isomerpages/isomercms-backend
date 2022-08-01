@@ -93,7 +93,7 @@ class AuthService {
   }
 
   async sendOtp(email) {
-    const isValidEmail = this.usersService.canSendEmailOtp(email)
+    const isValidEmail = await this.usersService.canSendEmailOtp(email)
     if (!isValidEmail)
       throw new AuthError(
         "Please sign in with a gov.sg or other whitelisted email."

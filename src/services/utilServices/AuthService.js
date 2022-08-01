@@ -116,7 +116,7 @@ class AuthService {
 
   async verifyOtp({ email, otp }) {
     if (!this.usersService.verifyOtp(email, otp)) {
-      throw new BadRequestError("Invalid OTP")
+      throw new BadRequestError("You have entered an invalid OTP.")
     }
     // Create user if does not exists. Set last logged in to current time.
     const user = await this.usersService.loginWithEmail(email)

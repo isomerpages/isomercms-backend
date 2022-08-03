@@ -34,3 +34,11 @@ export const mockGithubSessionData = new GithubSessionData({
   treeSha: mockTreeSha,
   currentCommitSha: mockCurrentCommitSha,
 })
+export const mockSessionDataEmailUser = new UserSessionData({
+  isomerUserId: mockIsomerUserId,
+  email: mockEmail,
+})
+export const mockSessionDataEmailUserWithSite = new UserWithSiteSessionData({
+  isomerUserId: mockIsomerUserId,
+  email: mockEmail,
+})

@@ -19,13 +19,6 @@ class SitesRouter {
     return res.status(200).json({ siteNames })
   }
 
-  async checkHasAccess(req, res) {
-    const { userSessionData } = res.locals
-
-    await this.sitesService.checkHasAccess(userSessionData)
-    return res.status(200).send("OK")
-  }
-
   async getLastUpdated(req, res) {
     const { userSessionData } = res.locals
     const lastUpdated = await this.sitesService.getLastUpdated(userSessionData)
@@ -43,11 +36,6 @@ class SitesRouter {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.getSites))
-    router.get(
-      "/:siteName",
-      attachSiteHandler,
-      attachReadRouteHandlerWrapper(this.checkHasAccess)
-    )
     router.get(
       "/:siteName/lastUpdated",
       attachSiteHandler,

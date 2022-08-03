@@ -61,28 +61,6 @@ describe("Sites Router", () => {
     })
   })
 
-  describe("checkHasAccess", () => {
-    it("rejects if user has no access to a site", async () => {
-      mockSitesService.checkHasAccess.mockRejectedValueOnce(
-        new NotFoundError("")
-      )
-
-      await request(app).get(`/${siteName}`).expect(404)
-
-      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(
-        mockUserSessionData
-      )
-    })
-
-    it("allows if user has access to a site", async () => {
-      await request(app).get(`/${siteName}`).expect(200)
-
-      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(
-        mockUserSessionData
-      )
-    })
-  })
-
   describe("getLastUpdated", () => {
     it("returns the last updated time", async () => {
       const lastUpdated = "last-updated"

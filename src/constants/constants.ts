@@ -9,3 +9,5 @@ export enum SiteStatus {
   Initialized = "INITIALIZED",
   Launched = "LAUNCHED",
 }
+
+export const E2E_ISOMER_ID = "e2e-id"

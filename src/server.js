@@ -15,7 +15,10 @@ import {
   IsomerAdmin,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
-import { getAuthMiddleware, getAuthorizationMiddleware } from "@root/middleware"
+import {
+  getAuthenticationMiddleware,
+  getAuthorizationMiddleware,
+} from "@root/middleware"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import {
   getIdentityAuthService,
@@ -86,7 +89,9 @@ const identityAuthService = getIdentityAuthService(gitHubService)
 
 const configYmlService = new ConfigYmlService({ gitHubService })
 
-const authMiddleware = getAuthMiddleware({ identityAuthService })
+const authenticationMiddleware = getAuthenticationMiddleware({
+  identityAuthService,
+})
 const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,
   usersService,
@@ -94,16 +99,16 @@ const authorizationMiddleware = getAuthorizationMiddleware({
 })
 
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
-  authMiddleware,
+  authenticationMiddleware,
   usersService,
 })
 const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
-  authMiddleware,
+  authenticationMiddleware,
   authorizationMiddleware,
 })
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
-  authMiddleware,
+  authenticationMiddleware,
   gitHubService,
   configYmlService,
   usersService,
@@ -112,11 +117,11 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authorizationMiddleware,
-  authMiddleware,
+  authenticationMiddleware,
   gitHubService,
   configYmlService,
 })
-const authV2Router = new AuthRouter({ authMiddleware, authService })
+const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()

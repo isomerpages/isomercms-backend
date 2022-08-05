@@ -19,12 +19,12 @@ const resourcesRouter = require("@routes/v1/authenticatedSites/resources")
 const settingsRouter = require("@routes/v1/authenticatedSites/settings")
 
 const getAuthenticatedSitesSubrouter = ({
-  authMiddleware,
+  authenticationMiddleware,
   authorizationMiddleware,
 }) => {
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
+  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(attachSiteHandler)
   authenticatedSitesSubrouter.use(authorizationMiddleware.checkIsSiteMember)
 

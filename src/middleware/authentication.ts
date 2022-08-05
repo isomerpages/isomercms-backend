@@ -2,17 +2,17 @@ import autoBind from "auto-bind"
 import { NextFunction, Request, Response } from "express"
 
 import UserSessionData from "@root/classes/UserSessionData"
-import AuthMiddlewareService from "@root/services/middlewareServices/AuthMiddlewareService"
+import AuthenticationMiddlewareService from "@root/services/middlewareServices/AuthenticationMiddlewareService"
 
-export class AuthMiddleware {
-  private readonly authMiddlewareService: AuthMiddlewareService
+export class AuthenticationMiddleware {
+  private readonly authenticationMiddlewareService: AuthenticationMiddlewareService
 
   constructor({
-    authMiddlewareService,
+    authenticationMiddlewareService,
   }: {
-    authMiddlewareService: AuthMiddlewareService
+    authenticationMiddlewareService: AuthenticationMiddlewareService
   }) {
-    this.authMiddlewareService = authMiddlewareService
+    this.authenticationMiddlewareService = authenticationMiddlewareService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -24,7 +24,7 @@ export class AuthMiddleware {
       githubId,
       isomerUserId,
       email,
-    } = this.authMiddlewareService.verifyJwt({
+    } = this.authenticationMiddlewareService.verifyJwt({
       cookies,
       url,
     })

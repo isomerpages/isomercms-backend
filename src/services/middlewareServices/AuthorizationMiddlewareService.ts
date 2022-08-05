@@ -6,7 +6,7 @@ import AuthService from "@services/identity/AuthService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 
-import { E2E_ISOMER_ID } from "./AuthMiddlewareService"
+import { E2E_ISOMER_ID } from "./AuthenticationMiddlewareService"
 
 // Import logger
 const logger = require("@logger/logger")

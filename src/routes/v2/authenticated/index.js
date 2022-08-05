@@ -12,7 +12,7 @@ const { SitesRouter } = require("./sites")
 const { UsersRouter } = require("./users")
 
 const getAuthenticatedSubrouter = ({
-  authMiddleware,
+  authenticationMiddleware,
   gitHubService,
   configYmlService,
   usersService,
@@ -26,7 +26,7 @@ const getAuthenticatedSubrouter = ({
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSubrouter.use(authMiddleware.verifyJwt)
+  authenticatedSubrouter.use(authenticationMiddleware.verifyJwt)
 
   authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
   authenticatedSubrouter.use("/user", usersRouter.getRouter())

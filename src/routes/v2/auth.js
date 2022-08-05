@@ -16,9 +16,9 @@ const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
 class AuthRouter {
-  constructor({ authService, authMiddleware }) {
+  constructor({ authService, authenticationMiddleware }) {
     this.authService = authService
-    this.authMiddleware = authMiddleware
+    this.authenticationMiddleware = authenticationMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -99,7 +99,7 @@ class AuthRouter {
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
-      this.authMiddleware.verifyJwt,
+      this.authenticationMiddleware.verifyJwt,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

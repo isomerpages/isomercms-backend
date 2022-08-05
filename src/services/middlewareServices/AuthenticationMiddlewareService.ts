@@ -21,14 +21,14 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/auth/whoami",
 ]
 
-interface AuthMiddlewareServiceProps {
+interface AuthenticationMiddlewareServiceProps {
   identityAuthService: AuthService
 }
 
-export default class AuthMiddlewareService {
-  readonly identityAuthService: AuthMiddlewareServiceProps["identityAuthService"]
+export default class AuthenticationMiddlewareService {
+  readonly identityAuthService: AuthenticationMiddlewareServiceProps["identityAuthService"]
 
-  constructor({ identityAuthService }: AuthMiddlewareServiceProps) {
+  constructor({ identityAuthService }: AuthenticationMiddlewareServiceProps) {
     this.identityAuthService = identityAuthService
   }
 

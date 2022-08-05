@@ -2,29 +2,21 @@ export interface IsomerUserProps {
   isomerUserId: string
   email: string
 }
-export interface GithubUserProps {
+export type GithubUserProps = IsomerUserProps & {
   githubId: string
   accessToken: string
-  isomerUserId: string
-  email: string
 }
 
-type SessionDataProps = IsomerUserProps | GithubUserProps
+export type SessionDataProps = IsomerUserProps | GithubUserProps
 
 class UserSessionData {
   readonly githubId?: GithubUserProps["githubId"]
 
-  private readonly accessToken?: GithubUserProps["accessToken"]
+  readonly accessToken?: GithubUserProps["accessToken"]
 
-  private readonly isomerUserId: SessionDataProps["isomerUserId"]
+  readonly isomerUserId: SessionDataProps["isomerUserId"]
 
-  private readonly email?: SessionDataProps["email"]
-
-  private currentCommitSha?: string
-
-  private treeSha?: string
-
-  private siteName?: string
+  readonly email: SessionDataProps["email"]
 
   private isGithubProps(
     sessionDataProps: SessionDataProps
@@ -45,55 +37,13 @@ class UserSessionData {
     return !this.githubId
   }
 
-  getId() {
-    if (this.isEmailUser()) return this.isomerUserId
-    return this.githubId
-  }
-
-  getGithubId() {
-    return this.githubId
-  }
-
-  getAccessToken() {
-    return this.accessToken
-  }
-
-  getIsomerUserId() {
-    return this.isomerUserId
-  }
-
-  getEmail() {
-    return this.email
-  }
-
-  getIsEmailUser() {
-    return this.isEmailUser
-  }
-
-  addGithubState({
-    currentCommitSha,
-    treeSha,
-  }: {
-    currentCommitSha: string
-    treeSha: string
-  }) {
-    this.currentCommitSha = currentCommitSha
-    this.treeSha = treeSha
-  }
-
-  getGithubState() {
+  getGithubParams() {
     return {
-      currentCommitSha: this.currentCommitSha,
-      treeSha: this.treeSha,
+      githubId: this.githubId,
+      accessToken: this.accessToken,
+      isomerUserId: this.isomerUserId,
+      email: this.email,
     }
-  }
-
-  addSiteName(siteName: string) {
-    this.siteName = siteName
-  }
-
-  getSiteName() {
-    return this.siteName
   }
 }
 

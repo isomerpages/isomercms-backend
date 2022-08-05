@@ -1,7 +1,7 @@
 import autoBind from "auto-bind"
 import { NextFunction, Request, Response } from "express"
 
-import SessionData from "@root/classes/SessionData"
+import UserSessionData from "@root/classes/UserSessionData"
 import { AuthMiddlewareService } from "@root/services/middlewareServices/AuthMiddlewareService"
 
 export class AuthMiddleware {
@@ -28,7 +28,7 @@ export class AuthMiddleware {
       cookies,
       url,
     })
-    const userSessionData = new SessionData({
+    const userSessionData = new UserSessionData({
       accessToken,
       githubId,
       isomerUserId,

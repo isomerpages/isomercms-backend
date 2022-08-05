@@ -1,1 +1,1 @@
-export * from "./SessionData"
+export * from "./UserSessionData"

@@ -1,20 +1,24 @@
-export interface SessionDataProps {
-  githubId?: string
-  accessToken?: string
+export interface IsomerUserProps {
   isomerUserId: string
-  email?: string
+  email: string
+}
+export interface GithubUserProps {
+  githubId: string
+  accessToken: string
+  isomerUserId: string
+  email: string
 }
 
-class SessionData {
-  private readonly githubId?: SessionDataProps["githubId"]
+type SessionDataProps = IsomerUserProps | GithubUserProps
 
-  private readonly accessToken?: SessionDataProps["accessToken"]
+class UserSessionData {
+  readonly githubId?: GithubUserProps["githubId"]
+
+  private readonly accessToken?: GithubUserProps["accessToken"]
 
   private readonly isomerUserId: SessionDataProps["isomerUserId"]
 
   private readonly email?: SessionDataProps["email"]
-
-  private readonly isEmailUser: boolean
 
   private currentCommitSha?: string
 
@@ -22,21 +26,27 @@ class SessionData {
 
   private siteName?: string
 
-  constructor({
-    githubId,
-    accessToken,
-    isomerUserId,
-    email,
-  }: SessionDataProps) {
-    this.githubId = githubId
-    this.accessToken = accessToken
-    this.isomerUserId = isomerUserId
-    this.email = email
-    this.isEmailUser = !githubId
+  private isGithubProps(
+    sessionDataProps: SessionDataProps
+  ): sessionDataProps is GithubUserProps {
+    return (sessionDataProps as GithubUserProps).githubId !== undefined
+  }
+
+  constructor(props: SessionDataProps) {
+    if (this.isGithubProps(props)) {
+      this.githubId = props.githubId
+      this.accessToken = props.accessToken
+    }
+    this.isomerUserId = props.isomerUserId
+    this.email = props.email
+  }
+
+  isEmailUser() {
+    return !this.githubId
   }
 
   getId() {
-    if (this.isEmailUser) return this.isomerUserId
+    if (this.isEmailUser()) return this.isomerUserId
     return this.githubId
   }
 
@@ -87,4 +97,4 @@ class SessionData {
   }
 }
 
-export default SessionData
+export default UserSessionData

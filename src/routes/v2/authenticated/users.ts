@@ -8,8 +8,7 @@ import { BadRequestError } from "@errors/BadRequestError"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-import SessionData from "@classes/SessionData"
-
+import UserSessionData from "@root/classes/UserSessionData"
 import { isError, RequestHandler } from "@root/types"
 import UsersService from "@services/identity/UsersService"
 
@@ -63,7 +62,7 @@ export class UsersRouter {
     unknown,
     { email: string; otp: string },
     never,
-    { sessionData: SessionData }
+    { sessionData: UserSessionData }
   > = async (req, res) => {
     const { email, otp } = req.body
     const { sessionData } = res.locals
@@ -95,7 +94,7 @@ export class UsersRouter {
     unknown,
     { mobile: string; otp: string },
     never,
-    { sessionData: SessionData }
+    { sessionData: UserSessionData }
   > = async (req, res) => {
     const { mobile, otp } = req.body
     const { sessionData } = res.locals

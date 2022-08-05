@@ -43,12 +43,9 @@ export default class AuthorizationMiddlewareService {
 
     logger.info(`Verifying user's access to ${siteName}`)
 
-    let isSiteMember = false
-    if (sessionData.getIsEmailUser()) {
-      isSiteMember = await this.usersService.hasAccessToSite(userId, siteName)
-    } else {
-      isSiteMember = await this.identityAuthService.hasAccessToSite(sessionData)
-    }
+    const isSiteMember = await (sessionData.getIsEmailUser()
+      ? this.usersService.hasAccessToSite(userId, siteName)
+      : this.identityAuthService.hasAccessToSite(sessionData))
 
     const isAdminUser = await this.isomerAdminsService.getByUserId(userId)
 

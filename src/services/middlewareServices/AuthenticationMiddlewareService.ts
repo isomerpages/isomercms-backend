@@ -32,7 +32,15 @@ export default class AuthenticationMiddlewareService {
     this.identityAuthService = identityAuthService
   }
 
-  verifyE2E({ cookies, url }: { cookies: any; url: string }) {
+  verifyE2E({
+    cookies,
+    url,
+  }: {
+    cookies: {
+      isomercmsE2E?: string
+    }
+    url: string
+  }) {
     const { isomercmsE2E } = cookies
     const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
 
@@ -53,7 +61,16 @@ export default class AuthenticationMiddlewareService {
     return true
   }
 
-  verifyJwt({ cookies, url }: { cookies: any; url: string }) {
+  verifyJwt({
+    cookies,
+    url,
+  }: {
+    cookies: {
+      isomercms: string
+      isomercmsE2E?: string
+    }
+    url: string
+  }) {
     const { isomercms } = cookies
     const isValidE2E = this.verifyE2E({ cookies, url })
 

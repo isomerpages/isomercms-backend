@@ -6,7 +6,6 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
@@ -25,7 +24,7 @@ class ResourcePagesRouter {
 
   // Create new page in resource category
   async createResourcePage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
     const { error } = CreateResourcePageRequestSchema.validate(req.body)
@@ -34,35 +33,41 @@ class ResourcePagesRouter {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const createResp = await this.resourcePageService.create(sessionData, {
-      fileName: newFileName,
-      resourceRoomName,
-      resourceCategoryName,
-      content: pageBody,
-      frontMatter,
-    })
+    const createResp = await this.resourcePageService.create(
+      userWithSiteSessionData,
+      {
+        fileName: newFileName,
+        resourceRoomName,
+        resourceCategoryName,
+        content: pageBody,
+        frontMatter,
+      }
+    )
 
     return res.status(200).json(createResp)
   }
 
   // Read page in resource category
   async readResourcePage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName, pageName } = req.params
 
-    const readResp = await this.resourcePageService.read(sessionData, {
-      fileName: pageName,
-      resourceRoomName,
-      resourceCategoryName,
-    })
+    const readResp = await this.resourcePageService.read(
+      userWithSiteSessionData,
+      {
+        fileName: pageName,
+        resourceRoomName,
+        resourceCategoryName,
+      }
+    )
 
     return res.status(200).json(readResp)
   }
 
   // Update page in resource category
   async updateResourcePage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName, pageName } = req.params
     const { error } = UpdateResourcePageRequestSchema.validate(req.body)
@@ -74,37 +79,43 @@ class ResourcePagesRouter {
     } = req.body
     let updateResp
     if (newFileName) {
-      updateResp = await this.resourcePageService.rename(sessionData, {
-        oldFileName: pageName,
-        newFileName,
-        resourceRoomName,
-        resourceCategoryName,
-        content: pageBody,
-        frontMatter,
-        sha,
-      })
+      updateResp = await this.resourcePageService.rename(
+        userWithSiteSessionData,
+        {
+          oldFileName: pageName,
+          newFileName,
+          resourceRoomName,
+          resourceCategoryName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        }
+      )
     } else {
-      updateResp = await this.resourcePageService.update(sessionData, {
-        fileName: pageName,
-        resourceRoomName,
-        resourceCategoryName,
-        content: pageBody,
-        frontMatter,
-        sha,
-      })
+      updateResp = await this.resourcePageService.update(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          resourceRoomName,
+          resourceCategoryName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        }
+      )
     }
     return res.status(200).json(updateResp)
   }
 
   // Delete page in resource category
   async deleteResourcePage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName, pageName } = req.params
     const { error } = DeleteResourcePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
-    await this.resourcePageService.delete(sessionData, {
+    await this.resourcePageService.delete(userWithSiteSessionData, {
       fileName: pageName,
       resourceRoomName,
       resourceCategoryName,

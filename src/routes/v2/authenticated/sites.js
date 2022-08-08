@@ -14,28 +14,28 @@ class SitesRouter {
   }
 
   async getSites(req, res) {
-    const { sessionData } = res.locals
-    const siteNames = await this.sitesService.getSites(sessionData)
+    const { userSessionData } = res.locals
+    const siteNames = await this.sitesService.getSites(userSessionData)
     return res.status(200).json({ siteNames })
   }
 
   async checkHasAccess(req, res) {
-    const { sessionData } = res.locals
+    const { userSessionData } = res.locals
 
-    await this.sitesService.checkHasAccess(sessionData)
+    await this.sitesService.checkHasAccess(userSessionData)
     return res.status(200).send("OK")
   }
 
   async getLastUpdated(req, res) {
-    const { sessionData } = res.locals
-    const lastUpdated = await this.sitesService.getLastUpdated(sessionData)
+    const { userSessionData } = res.locals
+    const lastUpdated = await this.sitesService.getLastUpdated(userSessionData)
     return res.status(200).json({ lastUpdated })
   }
 
   async getStagingUrl(req, res) {
-    const { sessionData } = res.locals
+    const { userSessionData } = res.locals
 
-    const stagingUrl = await this.sitesService.getStagingUrl(sessionData)
+    const stagingUrl = await this.sitesService.getStagingUrl(userSessionData)
     return res.status(200).json({ stagingUrl })
   }
 

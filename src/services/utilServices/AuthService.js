@@ -91,7 +91,7 @@ class AuthService {
   }
 
   async getUserInfo(sessionData) {
-    const accessToken = sessionData.getAccessToken()
+    const { accessToken } = sessionData
     // Make a call to github
     const endpoint = "https://api.github.com/user"
 

@@ -8,6 +8,7 @@ import express, {
 
 import { AuthMiddleware } from "@middleware/auth"
 
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import AuthService from "@services/identity/AuthService"
 import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
@@ -49,8 +50,12 @@ const attachSiteHandler = (req: Request, res: Response, next: NextFunction) => {
   const {
     params: { siteName },
   } = req
-  const { sessionData } = res.locals
-  sessionData.addSiteName(siteName)
+  const { userSessionData } = res.locals
+  const userWithSiteSessionData = new UserWithSiteSessionData({
+    ...userSessionData.getGithubParams,
+    siteName,
+  })
+  res.locals.userWithSiteSessionData = userWithSiteSessionData
   return next()
 }
 

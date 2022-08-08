@@ -25,7 +25,7 @@ class CollectionPagesRouter {
 
   // Create new page in collection
   async createCollectionPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
@@ -36,20 +36,26 @@ class CollectionPagesRouter {
     } = req.body
     let createResp
     if (subcollectionName) {
-      createResp = await this.subcollectionPageService.create(sessionData, {
-        fileName: newFileName,
-        collectionName,
-        content: pageBody,
-        frontMatter,
-        subcollectionName,
-      })
+      createResp = await this.subcollectionPageService.create(
+        userWithSiteSessionData,
+        {
+          fileName: newFileName,
+          collectionName,
+          content: pageBody,
+          frontMatter,
+          subcollectionName,
+        }
+      )
     } else {
-      createResp = await this.collectionPageService.create(sessionData, {
-        fileName: newFileName,
-        collectionName,
-        content: pageBody,
-        frontMatter,
-      })
+      createResp = await this.collectionPageService.create(
+        userWithSiteSessionData,
+        {
+          fileName: newFileName,
+          collectionName,
+          content: pageBody,
+          frontMatter,
+        }
+      )
     }
 
     return res.status(200).json(createResp)
@@ -57,29 +63,35 @@ class CollectionPagesRouter {
 
   // Read page in collection
   async readCollectionPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { pageName, collectionName, subcollectionName } = req.params
 
     let readResp
     if (subcollectionName) {
-      readResp = await this.subcollectionPageService.read(sessionData, {
-        fileName: pageName,
-        collectionName,
-        subcollectionName,
-      })
+      readResp = await this.subcollectionPageService.read(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          collectionName,
+          subcollectionName,
+        }
+      )
     } else {
-      readResp = await this.collectionPageService.read(sessionData, {
-        fileName: pageName,
-        collectionName,
-      })
+      readResp = await this.collectionPageService.read(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          collectionName,
+        }
+      )
     }
     return res.status(200).json(readResp)
   }
 
   // Update page in collection
   async updateCollectionPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
@@ -92,44 +104,56 @@ class CollectionPagesRouter {
     let updateResp
     if (subcollectionName) {
       if (newFileName) {
-        updateResp = await this.subcollectionPageService.rename(sessionData, {
-          oldFileName: pageName,
-          newFileName,
-          collectionName,
-          subcollectionName,
-          content: pageBody,
-          frontMatter,
-          sha,
-        })
+        updateResp = await this.subcollectionPageService.rename(
+          userWithSiteSessionData,
+          {
+            oldFileName: pageName,
+            newFileName,
+            collectionName,
+            subcollectionName,
+            content: pageBody,
+            frontMatter,
+            sha,
+          }
+        )
       } else {
-        updateResp = await this.subcollectionPageService.update(sessionData, {
-          fileName: pageName,
-          collectionName,
-          subcollectionName,
-          content: pageBody,
-          frontMatter,
-          sha,
-        })
+        updateResp = await this.subcollectionPageService.update(
+          userWithSiteSessionData,
+          {
+            fileName: pageName,
+            collectionName,
+            subcollectionName,
+            content: pageBody,
+            frontMatter,
+            sha,
+          }
+        )
       }
     } else {
       /* eslint-disable no-lonely-if */
       if (newFileName) {
-        updateResp = await this.collectionPageService.rename(sessionData, {
-          oldFileName: pageName,
-          newFileName,
-          collectionName,
-          content: pageBody,
-          frontMatter,
-          sha,
-        })
+        updateResp = await this.collectionPageService.rename(
+          userWithSiteSessionData,
+          {
+            oldFileName: pageName,
+            newFileName,
+            collectionName,
+            content: pageBody,
+            frontMatter,
+            sha,
+          }
+        )
       } else {
-        updateResp = await this.collectionPageService.update(sessionData, {
-          fileName: pageName,
-          collectionName,
-          content: pageBody,
-          frontMatter,
-          sha,
-        })
+        updateResp = await this.collectionPageService.update(
+          userWithSiteSessionData,
+          {
+            fileName: pageName,
+            collectionName,
+            content: pageBody,
+            frontMatter,
+            sha,
+          }
+        )
       }
     }
     /* eslint-enable no-lonely-if */
@@ -138,21 +162,21 @@ class CollectionPagesRouter {
 
   // Delete page in collection
   async deleteCollectionPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
     if (subcollectionName) {
-      await this.subcollectionPageService.delete(sessionData, {
+      await this.subcollectionPageService.delete(userWithSiteSessionData, {
         fileName: pageName,
         collectionName,
         subcollectionName,
         sha,
       })
     } else {
-      await this.collectionPageService.delete(sessionData, {
+      await this.collectionPageService.delete(userWithSiteSessionData, {
         fileName: pageName,
         collectionName,
         sha,

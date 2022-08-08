@@ -1,4 +1,5 @@
 import UserSessionData from "@root/classes/UserSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 
 export const mockAccessToken = "mockAccessToken"
 export const mockGithubId = "mockGithubId"
@@ -13,11 +14,18 @@ export const mockGithubState = {
   currentCommitSha: mockCurrentCommitSha,
 }
 
-export const mockSessionData = new UserSessionData({
+export const mockUserSessionData = new UserSessionData({
   githubId: mockGithubId,
   accessToken: mockAccessToken,
   isomerUserId: mockIsomerUserId,
   email: mockEmail,
 })
+
+export const mockUserWithSiteSessionData = new UserWithSiteSessionData({
+  githubId: mockGithubId,
+  accessToken: mockAccessToken,
+  isomerUserId: mockIsomerUserId,
+  email: mockEmail,
+  siteName: mockSiteName,
+})
 mockSessionData.addGithubState(mockGithubState)
-mockSessionData.addSiteName(mockSiteName)

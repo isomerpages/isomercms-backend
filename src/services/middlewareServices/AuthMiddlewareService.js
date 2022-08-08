@@ -95,8 +95,8 @@ class AuthMiddlewareService {
 
   async checkHasAccess(sessionData) {
     // Check if site is onboarded to Isomer identity, otherwise continue using user access token
-    const siteName = sessionData.getSiteName()
-    const userId = sessionData.getIsomerUserId()
+    const { siteName } = sessionData
+    const userId = sessionData.isomerUserId
 
     logger.info(`Verifying user's access to ${siteName}`)
 

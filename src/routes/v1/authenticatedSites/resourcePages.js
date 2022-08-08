@@ -18,8 +18,8 @@ const { ResourceRoom } = require("@classes/ResourceRoom")
 
 // List pages in resource
 async function listResourcePages(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
   const { siteName, resourceName } = req.params
 
   const ResourceRoomInstance = new ResourceRoom(accessToken, siteName)
@@ -46,8 +46,8 @@ async function listResourcePages(req, res) {
 
 // Create new page in resource
 async function createNewResourcePage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, resourceName, pageName } = req.params
   const { content: pageContent } = req.body
@@ -76,8 +76,8 @@ async function createNewResourcePage(req, res) {
 
 // Read page in resource
 async function readResourcePage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName, resourceName } = req.params
 
@@ -99,8 +99,8 @@ async function readResourcePage(req, res) {
 
 // Update page in resource
 async function updateResourcePage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName, resourceName } = req.params
   const { content: pageContent, sha } = req.body
@@ -126,8 +126,8 @@ async function updateResourcePage(req, res) {
 
 // Delete page in resource
 async function deleteResourcePage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName, resourceName } = req.params
   const { sha } = req.body
@@ -144,8 +144,8 @@ async function deleteResourcePage(req, res) {
 
 // Rename page in resource
 async function renameResourcePage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName, resourceName, newPageName } = req.params
   const { sha, content: pageContent } = req.body

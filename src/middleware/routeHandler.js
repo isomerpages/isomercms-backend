@@ -37,7 +37,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { sessionData } = res.locals
   const { siteName } = req.params
 
-  const accessToken = sessionData.getAccessToken()
+  const { accessToken } = sessionData
 
   await lock(siteName)
 

@@ -20,16 +20,18 @@ class ContactUsRouter {
 
   // Read contactUs file
   async readContactUs(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const readResp = await this.contactUsPageService.read(sessionData)
+    const readResp = await this.contactUsPageService.read(
+      userWithSiteSessionData
+    )
 
     return res.status(200).json(readResp)
   }
 
   // Update contactUs index file
   async updateContactUs(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { error } = UpdateContactUsSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
@@ -39,7 +41,7 @@ class ContactUsRouter {
     } = req.body
 
     const updatedContactUsPage = await this.contactUsPageService.update(
-      sessionData,
+      userWithSiteSessionData,
       { content: pageBody, frontMatter, sha }
     )
 

@@ -20,16 +20,18 @@ class HomepageRouter {
 
   // Read homepage index file
   async readHomepage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const readResp = await this.homepagePageService.read(sessionData)
+    const readResp = await this.homepagePageService.read(
+      userWithSiteSessionData
+    )
 
     return res.status(200).json(readResp)
   }
 
   // Update homepage index file
   async updateHomepage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { error } = UpdateHomepageSchema.validate(req.body, {
       allowUnknown: true,
@@ -40,11 +42,14 @@ class HomepageRouter {
       sha,
     } = req.body
 
-    const updatedHomepage = await this.homepagePageService.update(sessionData, {
-      content: pageBody,
-      frontMatter,
-      sha,
-    })
+    const updatedHomepage = await this.homepagePageService.update(
+      userWithSiteSessionData,
+      {
+        content: pageBody,
+        frontMatter,
+        sha,
+      }
+    )
 
     return res.status(200).json(updatedHomepage)
   }

@@ -35,7 +35,7 @@ class SitesService {
   }
 
   async getSites(sessionData) {
-    const accessToken = sessionData.getAccessToken()
+    const { accessToken } = sessionData
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
     // Simultaneously retrieve all isomerpages repos
@@ -114,7 +114,7 @@ class SitesService {
       if (stagingUrl) return stagingUrl
     }
 
-    throw new NotFoundError(`${sessionData.getSiteName()} has no staging url`)
+    throw new NotFoundError(`${sessionData.siteName} has no staging url`)
   }
 }
 

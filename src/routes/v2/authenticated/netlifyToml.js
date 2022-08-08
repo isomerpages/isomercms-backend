@@ -12,10 +12,10 @@ class NetlifyTomlRouter {
 
   // Read netlify.toml file
   async readNetlifyToml(req, res) {
-    const { sessionData } = res.locals
+    const { userSessionData } = res.locals
 
     const netlifyTomlHeaderValues = await this.netlifyTomlService.read(
-      sessionData
+      userSessionData
     )
 
     return res.status(200).json({ netlifyTomlHeaderValues })

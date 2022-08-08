@@ -36,9 +36,9 @@ const extractDirectoryAndFileName = (imageName) => {
 
 // List images
 async function listImages(req, res) {
-  const { sessionData } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
-  const accessToken = sessionData.getAccessToken()
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerFile = new File(accessToken, siteName)
   const imageType = new ImageType()
@@ -50,8 +50,8 @@ async function listImages(req, res) {
 
 // Create new image
 async function createNewImage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName } = req.params
   const { imageName, imageDirectory, content } = req.body
@@ -68,8 +68,8 @@ async function createNewImage(req, res) {
 
 // Read image
 async function readImage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, imageName } = req.params
 
@@ -91,8 +91,8 @@ async function readImage(req, res) {
 
 // Update image
 async function updateImage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, imageName } = req.params
   const { content, sha } = req.body
@@ -110,8 +110,8 @@ async function updateImage(req, res) {
 
 // Delete image
 async function deleteImage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, imageName } = req.params
   const { sha } = req.body
@@ -126,8 +126,8 @@ async function deleteImage(req, res) {
 
 // Rename image
 async function renameImage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, imageName, newImageName } = req.params
 
@@ -156,8 +156,8 @@ async function renameImage(req, res) {
 
 // Move image
 async function moveImage(req, res) {
-  const { sessionData } = res.locals
-  const accessToken = sessionData.getAccessToken()
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, imageName, newImageName } = req.params
 

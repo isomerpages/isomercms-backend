@@ -3,10 +3,10 @@ const express = require("express")
 
 const { errorHandler } = require("@middleware/errorHandler")
 
-const { mockSessionData } = require("./sessionData")
+const { mockUserSessionData } = require("./sessionData")
 
 const attachSessionData = (req, res, next) => {
-  res.locals.sessionData = mockSessionData
+  res.locals.userSessionData = mockUserSessionData
   next()
 }
 

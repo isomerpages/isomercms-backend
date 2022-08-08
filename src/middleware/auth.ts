@@ -34,15 +34,15 @@ export class AuthMiddleware {
       isomerUserId,
       email,
     })
-    res.locals.sessionData = userSessionData
+    res.locals.userSessionData = userSessionData
     return next()
   }
 
   // Replace access token with site access token if it is available
   async checkHasAccess(req: Request, res: Response, next: NextFunction) {
-    const { sessionData } = res.locals
+    const { userSessionData } = res.locals
 
-    await this.authMiddlewareService.checkHasAccess(sessionData)
+    await this.authMiddlewareService.checkHasAccess(userSessionData)
 
     return next()
   }

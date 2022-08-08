@@ -16,7 +16,7 @@ apiLogger.use((req, res, next) => {
 
   // Get user GitHub id
   const userEmail = res.locals.sessionData
-    ? res.locals.sessionData.getEmail()
+    ? res.locals.sessionData.email
     : "(not logged in)"
 
   let logMessage = `User ${userEmail} from IP address ${

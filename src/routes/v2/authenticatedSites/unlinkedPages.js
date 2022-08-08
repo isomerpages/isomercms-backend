@@ -25,17 +25,17 @@ class UnlinkedPagesRouter {
   }
 
   async listAllUnlinkedPages(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const listResp = await this.unlinkedPagesDirectoryService.listAllUnlinkedPages(
-      sessionData
+      userWithSiteSessionData
     )
 
     return res.status(200).json(listResp)
   }
 
   async createUnlinkedPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { error } = CreatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
@@ -43,28 +43,34 @@ class UnlinkedPagesRouter {
       content: { frontMatter, pageBody },
       newFileName,
     } = req.body
-    const createResp = await this.unlinkedPageService.create(sessionData, {
-      fileName: newFileName,
-      content: pageBody,
-      frontMatter,
-    })
+    const createResp = await this.unlinkedPageService.create(
+      userWithSiteSessionData,
+      {
+        fileName: newFileName,
+        content: pageBody,
+        frontMatter,
+      }
+    )
 
     return res.status(200).json(createResp)
   }
 
   async readUnlinkedPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { pageName } = req.params
-    const { sha, content } = await this.unlinkedPageService.read(sessionData, {
-      fileName: pageName,
-    })
+    const { sha, content } = await this.unlinkedPageService.read(
+      userWithSiteSessionData,
+      {
+        fileName: pageName,
+      }
+    )
 
     return res.status(200).json({ pageName, sha, content })
   }
 
   async updateUnlinkedPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { pageName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
@@ -77,33 +83,39 @@ class UnlinkedPagesRouter {
 
     let updateResp
     if (newFileName) {
-      updateResp = await this.unlinkedPageService.rename(sessionData, {
-        oldFileName: pageName,
-        newFileName,
-        content: pageBody,
-        frontMatter,
-        sha,
-      })
+      updateResp = await this.unlinkedPageService.rename(
+        userWithSiteSessionData,
+        {
+          oldFileName: pageName,
+          newFileName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        }
+      )
     } else {
-      updateResp = await this.unlinkedPageService.update(sessionData, {
-        fileName: pageName,
-        content: pageBody,
-        frontMatter,
-        sha,
-      })
+      updateResp = await this.unlinkedPageService.update(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        }
+      )
     }
 
     return res.status(200).json(updateResp)
   }
 
   async deleteUnlinkedPage(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { pageName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
-    await this.unlinkedPageService.delete(sessionData, {
+    await this.unlinkedPageService.delete(userWithSiteSessionData, {
       fileName: pageName,
       sha,
     })
@@ -112,7 +124,7 @@ class UnlinkedPagesRouter {
   }
 
   async moveUnlinkedPages(req, res) {
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
@@ -123,11 +135,14 @@ class UnlinkedPagesRouter {
         subCollectionName: targetSubcollectionName,
       },
     } = req.body
-    await this.unlinkedPagesDirectoryService.movePages(sessionData, {
-      targetCollectionName,
-      targetSubcollectionName,
-      objArray: items,
-    })
+    await this.unlinkedPagesDirectoryService.movePages(
+      userWithSiteSessionData,
+      {
+        targetCollectionName,
+        targetSubcollectionName,
+        objArray: items,
+      }
+    )
     return res.status(200).send("OK")
   }
 

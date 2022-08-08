@@ -33,8 +33,12 @@ const subrouter = express()
 // In order to do integration testing, we must expose a middleware
 // that allows us to set this properties also
 subrouter.use((req, res, next) => {
-  const userSessionData = new UserSessionData({ isomerUserId: req.body.userId })
-  res.locals.sessionData = userSessionData
+  const userSessionData = new UserSessionData({
+    isomerUserId: req.body.userId,
+    githubId: req.body.githubId,
+    email: req.body.email,
+  })
+  res.locals.userSessionData = userSessionData
   next()
 })
 subrouter.use(usersSubrouter)

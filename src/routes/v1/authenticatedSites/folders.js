@@ -38,10 +38,10 @@ async function listAllFolderContent(req, res) {
 
 // Delete subfolder
 async function deleteSubfolder(req, res) {
-  const { userWithSiteSessionData } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, folderName, subfolderName } = req.params
   const { accessToken } = userWithSiteSessionData
-  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState()
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   // Delete subfolder
   const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`

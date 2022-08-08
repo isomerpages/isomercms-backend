@@ -272,10 +272,10 @@ class GitHubService {
     return { treeSha, currentCommitSha }
   }
 
-  async getTree(sessionData, { isRecursive }) {
+  async getTree(sessionData, githubSessionData, { isRecursive }) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const { treeSha } = sessionData.getGithubState()
+    const { treeSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
@@ -294,10 +294,10 @@ class GitHubService {
     return gitTree
   }
 
-  async updateTree(sessionData, { gitTree, message }) {
+  async updateTree(sessionData, githubSessionData, { gitTree, message }) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const { treeSha, currentCommitSha } = sessionData.getGithubState()
+    const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees`
 
     const headers = {

@@ -47,10 +47,10 @@ async function deleteCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { userWithSiteSessionData } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, collectionName } = req.params
   const { accessToken } = userWithSiteSessionData
-  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState()
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
@@ -63,10 +63,10 @@ async function renameCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { userWithSiteSessionData } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, collectionName, newCollectionName } = req.params
   const { accessToken } = userWithSiteSessionData
-  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState()
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.rename(

@@ -23,7 +23,7 @@ export class SiteMember extends Model {
 
   @Column({
     allowNull: false,
-    type: DataType.ENUM("ADMIN", "USER"),
+    type: DataType.ENUM("ADMIN", "CONTRIBUTOR"),
   })
   role!: string
 

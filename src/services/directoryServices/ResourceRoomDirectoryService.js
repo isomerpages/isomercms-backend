@@ -75,6 +75,7 @@ class ResourceRoomDirectoryService {
 
   async renameResourceRoomDirectory(
     sessionData,
+    githubSessionData,
     { resourceRoomName, newDirectoryName }
   ) {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
@@ -102,7 +103,7 @@ class ResourceRoomDirectoryService {
       directoryName: resourceRoomName,
     })
 
-    await this.baseDirectoryService.rename(sessionData, {
+    await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName: resourceRoomName,
       newDirectoryName: slugifiedNewResourceRoomName,
       message: `Renaming resource room from ${resourceRoomName} to ${slugifiedNewResourceRoomName}`,
@@ -122,8 +123,12 @@ class ResourceRoomDirectoryService {
     }
   }
 
-  async deleteResourceRoomDirectory(sessionData, { resourceRoomName }) {
-    await this.baseDirectoryService.delete(sessionData, {
+  async deleteResourceRoomDirectory(
+    sessionData,
+    githubSessionData,
+    { resourceRoomName }
+  ) {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: resourceRoomName,
       message: `Deleting resource room ${resourceRoomName}`,
     })

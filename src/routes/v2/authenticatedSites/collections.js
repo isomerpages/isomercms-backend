@@ -92,7 +92,7 @@ class CollectionsRouter {
 
   // Rename collection/subcollection
   async renameCollectionDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
     const { error } = RenameDirectoryRequestSchema.validate(req.body)
@@ -101,6 +101,7 @@ class CollectionsRouter {
     if (subcollectionName) {
       await this.subcollectionDirectoryService.renameDirectory(
         userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
           subcollectionName,
@@ -110,6 +111,7 @@ class CollectionsRouter {
     } else {
       await this.collectionDirectoryService.renameDirectory(
         userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
           newDirectoryName,
@@ -122,12 +124,13 @@ class CollectionsRouter {
 
   // Delete collection/subcollection
   async deleteCollectionDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
     if (subcollectionName) {
       await this.subcollectionDirectoryService.deleteDirectory(
         userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
           subcollectionName,
@@ -136,6 +139,7 @@ class CollectionsRouter {
     } else {
       await this.collectionDirectoryService.deleteDirectory(
         userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
         }

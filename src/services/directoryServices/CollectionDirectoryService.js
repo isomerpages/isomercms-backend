@@ -141,7 +141,11 @@ class CollectionDirectoryService {
     }
   }
 
-  async renameDirectory(sessionData, { collectionName, newDirectoryName }) {
+  async renameDirectory(
+    sessionData,
+    githubSessionData,
+    { collectionName, newDirectoryName }
+  ) {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
       // Contains non-allowed characters
       throw new BadRequestError(
@@ -151,7 +155,7 @@ class CollectionDirectoryService {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newDirectoryName))
       throw new ConflictError(protectedFolderConflictErrorMsg(newDirectoryName))
     const slugifiedNewCollectionName = slugifyCollectionName(newDirectoryName)
-    await this.baseDirectoryService.rename(sessionData, {
+    await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName: `_${collectionName}`,
       newDirectoryName: `_${slugifiedNewCollectionName}`,
       message: `Renaming collection ${collectionName} to ${slugifiedNewCollectionName}`,
@@ -166,10 +170,10 @@ class CollectionDirectoryService {
     })
   }
 
-  async deleteDirectory(sessionData, { collectionName }) {
+  async deleteDirectory(sessionData, githubSessionData, { collectionName }) {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
       throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
-    await this.baseDirectoryService.delete(sessionData, {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: `_${collectionName}`,
       message: `Deleting collection ${collectionName}`,
     })

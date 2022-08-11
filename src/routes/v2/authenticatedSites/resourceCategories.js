@@ -55,7 +55,7 @@ class ResourceCategoriesRouter {
 
   // Rename resource category
   async renameResourceDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
@@ -63,6 +63,7 @@ class ResourceCategoriesRouter {
     const { newDirectoryName } = req.body
     await this.resourceDirectoryService.renameResourceDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         resourceCategoryName,
@@ -75,11 +76,12 @@ class ResourceCategoriesRouter {
 
   // Delete resource category
   async deleteResourceDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
     await this.resourceDirectoryService.deleteResourceDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         resourceCategoryName,
@@ -90,7 +92,7 @@ class ResourceCategoriesRouter {
 
   // Move resource category
   async moveResourceDirectoryPages(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
     const { error } = MoveResourceDirectoryPagesRequestSchema.validate(req.body)
@@ -101,6 +103,7 @@ class ResourceCategoriesRouter {
     } = req.body
     await this.resourceDirectoryService.moveResourcePages(
       userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         resourceCategoryName,

@@ -78,9 +78,9 @@ class AuthRouter {
   }
 
   async whoami(req, res) {
-    const { sessionData } = res.locals
+    const { userSessionData } = res.locals
 
-    const userInfo = await this.authService.getUserInfo(sessionData)
+    const userInfo = await this.authService.getUserInfo(userSessionData)
     if (!userInfo) {
       this.clearIsomerCookies(res)
       return res.sendStatus(401)

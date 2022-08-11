@@ -75,7 +75,11 @@ class MediaDirectoryService {
     return resp
   }
 
-  async createMediaDirectory(sessionData, { directoryName, objArray }) {
+  async createMediaDirectory(
+    sessionData,
+    githubSessionData,
+    { directoryName, objArray }
+  ) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError(
         "Special characters not allowed in media folder name"
@@ -90,12 +94,16 @@ class MediaDirectoryService {
       const pathTokens = directoryName.split("/")
       const oldDirectoryName = pathTokens.slice(0, -1).join("/")
       const targetFiles = objArray.map((file) => file.name)
-      await this.baseDirectoryService.moveFiles(sessionData, {
-        oldDirectoryName,
-        newDirectoryName: directoryName,
-        targetFiles,
-        message: `Moving media files from ${oldDirectoryName} to ${directoryName}`,
-      })
+      await this.baseDirectoryService.moveFiles(
+        sessionData,
+        githubSessionData,
+        {
+          oldDirectoryName,
+          newDirectoryName: directoryName,
+          targetFiles,
+          message: `Moving media files from ${oldDirectoryName} to ${directoryName}`,
+        }
+      )
     }
 
     // We do this step later because the git tree operation overrides it otherwise
@@ -110,22 +118,30 @@ class MediaDirectoryService {
     }
   }
 
-  async renameMediaDirectory(sessionData, { directoryName, newDirectoryName }) {
+  async renameMediaDirectory(
+    sessionData,
+    githubSessionData,
+    { directoryName, newDirectoryName }
+  ) {
     if (!isMediaPathValid({ path: newDirectoryName }))
       throw new BadRequestError(
         "Special characters not allowed in media folder name"
       )
-    await this.baseDirectoryService.rename(sessionData, {
+    await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName: directoryName,
       newDirectoryName,
       message: `Renaming media folder ${directoryName} to ${newDirectoryName}`,
     })
   }
 
-  async deleteMediaDirectory(sessionData, { directoryName }) {
+  async deleteMediaDirectory(
+    sessionData,
+    githubSessionData,
+    { directoryName }
+  ) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
-    await this.baseDirectoryService.delete(sessionData, {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName,
       message: `Deleting media folder ${directoryName}`,
     })
@@ -133,6 +149,7 @@ class MediaDirectoryService {
 
   async moveMediaFiles(
     sessionData,
+    githubSessionData,
     { directoryName, targetDirectoryName, objArray }
   ) {
     if (
@@ -144,7 +161,7 @@ class MediaDirectoryService {
       )
     const targetFiles = objArray.map((item) => item.name)
 
-    await this.baseDirectoryService.moveFiles(sessionData, {
+    await this.baseDirectoryService.moveFiles(sessionData, githubSessionData, {
       oldDirectoryName: directoryName,
       newDirectoryName: targetDirectoryName,
       targetFiles,

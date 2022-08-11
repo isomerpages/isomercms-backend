@@ -108,6 +108,7 @@ class ResourceDirectoryService {
 
   async renameResourceDirectory(
     sessionData,
+    githubSessionData,
     { resourceRoomName, resourceCategoryName, newDirectoryName }
   ) {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
@@ -138,7 +139,7 @@ class ResourceDirectoryService {
       resourceCategoryName: slugifiedNewResourceCategoryName,
     })
 
-    await this.baseDirectoryService.rename(sessionData, {
+    await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName,
       newDirectoryName: newDirectoryPath,
       message: `Renaming resource category ${resourceCategoryName} to ${slugifiedNewResourceCategoryName}`,
@@ -153,9 +154,10 @@ class ResourceDirectoryService {
 
   async deleteResourceDirectory(
     sessionData,
+    githubSessionData,
     { resourceRoomName, resourceCategoryName }
   ) {
-    await this.baseDirectoryService.delete(sessionData, {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: this.getResourceDirectoryPath({
         resourceRoomName,
         resourceCategoryName,
@@ -166,6 +168,7 @@ class ResourceDirectoryService {
 
   async moveResourcePages(
     sessionData,
+    githubSessionData,
     { resourceRoomName, resourceCategoryName, targetResourceCategory, objArray }
   ) {
     const targetFiles = objArray.map((item) => item.name)
@@ -177,7 +180,7 @@ class ResourceDirectoryService {
       resourceRoomName,
       resourceCategoryName: targetResourceCategory,
     })}/_posts`
-    await this.baseDirectoryService.moveFiles(sessionData, {
+    await this.baseDirectoryService.moveFiles(sessionData, githubSessionData, {
       oldDirectoryName,
       newDirectoryName,
       targetFiles,

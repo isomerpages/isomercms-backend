@@ -38,13 +38,14 @@ class MediaCategoriesRouter {
 
   // Create new media directory
   async createMediaDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName, items } = req.body
     const createResp = await this.mediaDirectoryService.createMediaDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         directoryName: newDirectoryName,
         objArray: items,
@@ -56,7 +57,7 @@ class MediaCategoriesRouter {
 
   // Rename resource category
   async renameMediaDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { directoryName } = req.params
     const { error } = RenameMediaDirectoryRequestSchema.validate(req.body)
@@ -64,6 +65,7 @@ class MediaCategoriesRouter {
     const { newDirectoryName } = req.body
     await this.mediaDirectoryService.renameMediaDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         directoryName,
         newDirectoryName,
@@ -75,11 +77,12 @@ class MediaCategoriesRouter {
 
   // Delete resource category
   async deleteMediaDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { directoryName } = req.params
     await this.mediaDirectoryService.deleteMediaDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         directoryName,
       }
@@ -89,7 +92,7 @@ class MediaCategoriesRouter {
 
   // Move resource category
   async moveMediaFiles(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { directoryName } = req.params
     const { error } = MoveMediaDirectoryFilesRequestSchema.validate(req.body)
@@ -98,11 +101,15 @@ class MediaCategoriesRouter {
       items,
       target: { directoryName: targetDirectoryName },
     } = req.body
-    await this.mediaDirectoryService.moveMediaFiles(userWithSiteSessionData, {
-      directoryName,
-      targetDirectoryName,
-      objArray: items,
-    })
+    await this.mediaDirectoryService.moveMediaFiles(
+      userWithSiteSessionData,
+      githubSessionData,
+      {
+        directoryName,
+        targetDirectoryName,
+        objArray: items,
+      }
+    )
     return res.status(200).send("OK")
   }
 

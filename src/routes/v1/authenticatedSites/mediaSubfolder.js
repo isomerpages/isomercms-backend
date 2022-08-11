@@ -34,7 +34,7 @@ async function deleteSubfolder(req, res) {
   const { userWithSiteSessionData } = res.locals
   const { siteName, mediaType, folderPath } = req.params
   const { accessToken } = userWithSiteSessionData
-  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState
+  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState()
 
   const processedFolderPath = decodeURIComponent(folderPath)
 
@@ -57,7 +57,7 @@ async function renameSubfolder(req, res) {
   const { userWithSiteSessionData } = res.locals
   const { siteName, mediaType, oldFolderPath, newFolderPath } = req.params
   const { accessToken } = userWithSiteSessionData
-  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState
+  const { currentCommitSha, treeSha } = userWithSiteSessionData.getGithubState()
 
   const processedOldFolderPath = decodeURIComponent(oldFolderPath)
   const processedNewFolderPath = decodeURIComponent(newFolderPath)

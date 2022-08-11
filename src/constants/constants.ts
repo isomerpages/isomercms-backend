@@ -11,3 +11,8 @@ export enum SiteStatus {
 }
 
 export const E2E_ISOMER_ID = "e2e-id"
+
+export enum CollaboratorRoles {
+  Admin = "ADMIN",
+  Contributor = "USER",
+}

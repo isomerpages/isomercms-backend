@@ -31,7 +31,6 @@ class MediaDirectoryService {
   }
 
   async listFiles(sessionData, { directoryName }) {
-    // TODO: file preview handling
     const { siteName } = sessionData
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")

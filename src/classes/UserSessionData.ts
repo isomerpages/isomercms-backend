@@ -9,6 +9,10 @@ export type GithubUserProps = IsomerUserProps & {
 
 export type SessionDataProps = IsomerUserProps | GithubUserProps
 
+/**
+ * Object containing user information retrieved from the isomercms cookie.
+ * Not to be used as a general context object.
+ */
 class UserSessionData {
   readonly githubId?: GithubUserProps["githubId"]
 

@@ -4,6 +4,10 @@ export type UserWithSiteSessionDataProps = SessionDataProps & {
   siteName: string
 }
 
+/**
+ * Object containing user information retrieved from the isomercms cookie, and the site being accessed.
+ * Not to be used as a general context object.
+ */
 class UserWithSiteSessionData extends UserSessionData {
   readonly siteName: string
 

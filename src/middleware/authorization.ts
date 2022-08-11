@@ -1,7 +1,10 @@
 import autoBind from "auto-bind"
 import { NextFunction, Request, Response } from "express"
 
-import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
+import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
+
+import { RequestHandler } from "@root/types"
+import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 
 export class AuthorizationMiddleware {
   private readonly authorizationMiddlewareService: AuthorizationMiddlewareService
@@ -17,10 +20,18 @@ export class AuthorizationMiddleware {
   }
 
   // Check whether a user is a site member
-  async checkIsSiteMember(req: Request, res: Response, next: NextFunction) {
-    const { sessionData } = res.locals
+  checkIsSiteMember: RequestHandler<
+    never,
+    unknown,
+    unknown,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res, next) => {
+    const { userWithSiteSessionData } = res.locals
 
-    await this.authorizationMiddlewareService.checkIsSiteMember(sessionData)
+    await this.authorizationMiddlewareService.checkIsSiteMember(
+      userWithSiteSessionData
+    )
 
     return next()
   }

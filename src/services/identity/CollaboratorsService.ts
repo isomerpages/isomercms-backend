@@ -91,7 +91,7 @@ class CollaboratorsService {
         },
       ],
     })
-    const collaborators = site?.site_members ?? []
+    const collaborators = site?.users ?? []
 
     // We perform the following sort via application code because:
     // - sorting it via the ORM code alone is quite complicated
@@ -199,7 +199,7 @@ class CollaboratorsService {
       ],
     })
 
-    const siteMembers = site?.site_members ?? []
+    const siteMembers = site?.users ?? []
     if (
       !siteMembers.filter((member) => member.id.toString() === userId).length
     ) {
@@ -232,7 +232,7 @@ class CollaboratorsService {
       ],
     })
 
-    return (site?.site_members?.[0]?.SiteMember?.role as string | null) ?? null
+    return (site?.users?.[0]?.SiteMember?.role as string | null) ?? null
   }
 }
 

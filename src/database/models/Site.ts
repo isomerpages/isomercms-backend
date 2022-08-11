@@ -71,7 +71,7 @@ export class Site extends Model {
     through: () => SiteMember,
     as: "site_members",
   })
-  site_members!: Array<User & { SiteMember: SiteMember }>
+  users!: Array<User & { SiteMember: SiteMember }>
 
   @HasOne(() => Repo)
   repo?: Repo
@@ -85,5 +85,5 @@ export class Site extends Model {
   @BelongsTo(() => User, {
     as: "site_creator",
   })
-  site_creator!: User
+  creator!: User
 }

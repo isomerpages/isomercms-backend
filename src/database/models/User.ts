@@ -31,7 +31,7 @@ export class User extends Model {
   email?: string | null
 
   @Column({
-    allowNull: false,
+    allowNull: true,
     unique: true,
     type: DataType.TEXT,
     validate: {

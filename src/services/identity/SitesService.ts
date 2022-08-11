@@ -33,7 +33,7 @@ class SitesService {
     createParams: Partial<Site> & {
       name: Site["name"]
       apiTokenName: Site["apiTokenName"]
-      creator: Site["creator"]
+      creator: Site["site_creator"]
     }
   ) {
     return this.repository.create(createParams)

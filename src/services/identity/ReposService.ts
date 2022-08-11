@@ -80,7 +80,6 @@ export default class ReposService {
     await octokit.repos.update({
       owner: ISOMER_GITHUB_ORGANIZATION_NAME,
       repo: repoName,
-      description: `Staging: ${stagingUrl} | Production: ${productionUrl}`,
     })
 
     const dir = this.getLocalRepoPath(repoName)

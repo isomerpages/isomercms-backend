@@ -4,7 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { ResourceRoomRouter } = require("../resourceRoom")
 
@@ -75,7 +75,7 @@ describe("Resource Room Router", () => {
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(
         mockResourceRoomDirectoryService.listAllResourceCategories
-      ).toHaveBeenCalledWith(mockSessionData, { resourceRoomName })
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, { resourceRoomName })
     })
   })
 
@@ -90,7 +90,7 @@ describe("Resource Room Router", () => {
       expect(resp.body).toStrictEqual({ resourceRoomName })
       expect(
         mockResourceRoomDirectoryService.getResourceRoomDirectoryName
-      ).toHaveBeenCalledWith(mockSessionData)
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData)
     })
   })
 
@@ -113,7 +113,7 @@ describe("Resource Room Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockResourceRoomDirectoryService.createResourceRoomDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         resourceRoomName,
       })
     })
@@ -136,7 +136,7 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(
         mockResourceRoomDirectoryService.renameResourceRoomDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         resourceRoomName,
         newDirectoryName,
       })
@@ -150,7 +150,7 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(
         mockResourceRoomDirectoryService.deleteResourceRoomDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         resourceRoomName,
       })
     })

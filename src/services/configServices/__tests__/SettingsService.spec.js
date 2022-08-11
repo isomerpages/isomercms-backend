@@ -2,7 +2,7 @@ const { configContent, configSha } = require("@fixtures/config")
 const { footerContent, footerSha } = require("@fixtures/footer")
 const { homepageContent, homepageSha } = require("@fixtures/homepage")
 const { navigationContent, navigationSha } = require("@fixtures/navigation")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { SettingsService } = require("../SettingsService")
 
@@ -63,7 +63,7 @@ describe("Settings Service", () => {
 
     it("retrieves settings data without homepage", async () => {
       await expect(
-        service.retrieveSettingsFiles(mockSessionData)
+        service.retrieveSettingsFiles(mockUserWithSiteSessionData)
       ).resolves.toMatchObject({
         config,
         footer,
@@ -77,7 +77,7 @@ describe("Settings Service", () => {
 
     it("retrieves settings data with homepage", async () => {
       await expect(
-        service.retrieveSettingsFiles(mockSessionData, true)
+        service.retrieveSettingsFiles(mockUserWithSiteSessionData, true)
       ).resolves.toMatchObject({
         config,
         footer,
@@ -119,7 +119,7 @@ describe("Settings Service", () => {
 
       await expect(
         service.updateSettingsFiles({
-          sessionData: mockSessionData,
+          sessionData: mockUserWithSiteSessionData,
           config,
           homepage,
           footer,
@@ -131,7 +131,7 @@ describe("Settings Service", () => {
       ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedConfigServiceInput
       )
       expect(mockFooterYmlService.update).not.toHaveBeenCalled()
@@ -163,7 +163,7 @@ describe("Settings Service", () => {
 
       await expect(
         service.updateSettingsFiles({
-          sessionData: mockSessionData,
+          sessionData: mockUserWithSiteSessionData,
           config,
           homepage,
           footer,
@@ -175,13 +175,13 @@ describe("Settings Service", () => {
       ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedConfigServiceInput
       )
       expect(mockFooterYmlService.update).not.toHaveBeenCalled()
       expect(mockNavYmlService.update).not.toHaveBeenCalled()
       expect(mockHomepagePageService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedHomepageServiceInput
       )
     })
@@ -210,7 +210,7 @@ describe("Settings Service", () => {
 
       await expect(
         service.updateSettingsFiles({
-          sessionData: mockSessionData,
+          sessionData: mockUserWithSiteSessionData,
           config,
           homepage,
           footer,
@@ -222,13 +222,13 @@ describe("Settings Service", () => {
       ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedConfigServiceInput
       )
       expect(mockFooterYmlService.update).not.toHaveBeenCalled()
       expect(mockNavYmlService.update).not.toHaveBeenCalled()
       expect(mockHomepagePageService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedHomepageServiceInput
       )
     })
@@ -249,7 +249,7 @@ describe("Settings Service", () => {
 
       await expect(
         service.updateSettingsFiles({
-          sessionData: mockSessionData,
+          sessionData: mockUserWithSiteSessionData,
           config,
           homepage,
           footer,
@@ -262,7 +262,7 @@ describe("Settings Service", () => {
 
       expect(mockConfigYmlService.update).toHaveBeenCalledTimes(0)
       expect(mockFooterYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedFooterServiceInput
       )
       expect(mockNavYmlService.update).toHaveBeenCalledTimes(0)
@@ -285,7 +285,7 @@ describe("Settings Service", () => {
 
       await expect(
         service.updateSettingsFiles({
-          sessionData: mockSessionData,
+          sessionData: mockUserWithSiteSessionData,
           config,
           homepage,
           footer,
@@ -299,7 +299,7 @@ describe("Settings Service", () => {
       expect(mockConfigYmlService.update).not.toHaveBeenCalled()
       expect(mockFooterYmlService.update).not.toHaveBeenCalled()
       expect(mockNavYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedNavigationServiceInput
       )
       expect(mockHomepagePageService.update).not.toHaveBeenCalled()
@@ -350,7 +350,7 @@ describe("Settings Service", () => {
 
       await expect(
         service.updateSettingsFiles({
-          sessionData: mockSessionData,
+          sessionData: mockUserWithSiteSessionData,
           config,
           homepage,
           footer,
@@ -362,19 +362,19 @@ describe("Settings Service", () => {
       ).resolves.not.toThrow()
 
       expect(mockConfigYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedConfigServiceInput
       )
       expect(mockFooterYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedFooterServiceInput
       )
       expect(mockNavYmlService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedNavigationServiceInput
       )
       expect(mockHomepagePageService.update).toHaveBeenLastCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedHomepageServiceInput
       )
     })

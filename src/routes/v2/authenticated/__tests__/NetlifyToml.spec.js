@@ -4,7 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserSessionData } = require("@fixtures/sessionData")
 
 const { NetlifyTomlRouter } = require("../netlifyToml")
 
@@ -39,7 +39,9 @@ describe("NetlifyToml Router", () => {
       const resp = await request(app).get(`/netlifyToml`).expect(200)
 
       expect(resp.body).toStrictEqual({ netlifyTomlHeaderValues })
-      expect(mockNetlifyTomlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(mockNetlifyTomlService.read).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
   })
 })

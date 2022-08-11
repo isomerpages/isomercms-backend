@@ -4,7 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { UnlinkedPagesRouter } = require("../unlinkedPages")
 
@@ -95,7 +95,7 @@ describe("Unlinked Pages Router", () => {
       expect(resp.body).toStrictEqual(listPageResp)
       expect(
         mockUnlinkedPagesDirectoryService.listAllUnlinkedPages
-      ).toHaveBeenCalledWith(mockSessionData)
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData)
     })
   })
 
@@ -126,7 +126,7 @@ describe("Unlinked Pages Router", () => {
         .send(createPageDetails)
         .expect(200)
       expect(mockService.create).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -144,7 +144,7 @@ describe("Unlinked Pages Router", () => {
       }
       await request(app).get(`/${siteName}/pages/pages/${fileName}`).expect(200)
       expect(mockService.read).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -185,7 +185,7 @@ describe("Unlinked Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -203,7 +203,7 @@ describe("Unlinked Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockService.rename).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -231,7 +231,7 @@ describe("Unlinked Pages Router", () => {
         .send(deletePageDetails)
         .expect(200)
       expect(mockService.delete).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -283,7 +283,7 @@ describe("Unlinked Pages Router", () => {
         .send(expectedRequestInput)
         .expect(200)
       expect(mockUnlinkedPagesDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           targetCollectionName: collectionName,
           objArray: items,
@@ -300,7 +300,7 @@ describe("Unlinked Pages Router", () => {
         })
         .expect(200)
       expect(mockUnlinkedPagesDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           targetCollectionName: collectionName,
           targetSubcollectionName: subCollectionName,

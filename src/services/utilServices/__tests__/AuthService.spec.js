@@ -11,7 +11,7 @@ const uuid = require("uuid/v4")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
@@ -108,7 +108,9 @@ describe("Auth Service", () => {
           login: userId,
         },
       }))
-      await expect(service.getUserInfo(mockSessionData)).resolves.toEqual({
+      await expect(
+        service.getUserInfo(mockUserWithSiteSessionData)
+      ).resolves.toEqual({
         userId,
         email: mockEmail,
         contactNumber: mockContactNumber,

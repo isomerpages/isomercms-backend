@@ -6,7 +6,7 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserSessionData } = require("@fixtures/sessionData")
 
 const { SitesRouter } = require("../sites")
 
@@ -55,7 +55,9 @@ describe("Sites Router", () => {
       const resp = await request(app).get(`/`).expect(200)
 
       expect(resp.body).toStrictEqual({ siteNames: sitesResp })
-      expect(mockSitesService.getSites).toHaveBeenCalledWith(mockSessionData)
+      expect(mockSitesService.getSites).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
   })
 
@@ -68,7 +70,7 @@ describe("Sites Router", () => {
       await request(app).get(`/${siteName}`).expect(404)
 
       expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserSessionData
       )
     })
 
@@ -76,7 +78,7 @@ describe("Sites Router", () => {
       await request(app).get(`/${siteName}`).expect(200)
 
       expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserSessionData
       )
     })
   })
@@ -92,7 +94,7 @@ describe("Sites Router", () => {
 
       expect(resp.body).toStrictEqual({ lastUpdated })
       expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserSessionData
       )
     })
   })
@@ -106,7 +108,7 @@ describe("Sites Router", () => {
 
       expect(resp.body).toStrictEqual({ stagingUrl })
       expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserSessionData
       )
     })
   })

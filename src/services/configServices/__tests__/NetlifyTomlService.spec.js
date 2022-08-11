@@ -2,7 +2,10 @@ const { Base64 } = require("js-base64")
 
 const validateStatus = require("@utils/axios-utils")
 
-const { mockSessionData, mockAccessToken } = require("@fixtures/sessionData")
+const {
+  mockUserWithSiteSessionData,
+  mockAccessToken,
+} = require("@fixtures/sessionData")
 const {
   netlifyTomlContent,
   netlifyTomlHeaderValues,
@@ -32,7 +35,7 @@ describe("NetlifyToml Service", () => {
         },
       }))
 
-      await expect(service.read(mockSessionData)).resolves.toEqual(
+      await expect(service.read(mockUserWithSiteSessionData)).resolves.toEqual(
         netlifyTomlHeaderValues
       )
 

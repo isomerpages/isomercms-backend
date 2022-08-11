@@ -4,7 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { CollectionPagesRouter } = require("../collectionPages")
 
@@ -109,7 +109,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockCollectionPageService.create).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -129,7 +129,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.create).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -154,7 +154,7 @@ describe("Collection Pages Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockCollectionPageService.read).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedControllerInput
       )
     })
@@ -172,7 +172,7 @@ describe("Collection Pages Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedControllerInput
       )
     })
@@ -215,7 +215,7 @@ describe("Collection Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockCollectionPageService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -234,7 +234,7 @@ describe("Collection Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockCollectionPageService.rename).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -255,7 +255,7 @@ describe("Collection Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -277,7 +277,7 @@ describe("Collection Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.rename).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -306,7 +306,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockCollectionPageService.delete).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -325,7 +325,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.delete).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

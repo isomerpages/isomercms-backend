@@ -4,12 +4,13 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const validateStatus = require("@utils/axios-utils")
 
 const {
-  mockSessionData,
+  mockUserWithSiteSessionData,
   mockSiteName,
   mockAccessToken,
   mockTreeSha,
   mockGithubId,
   mockCurrentCommitSha,
+  mockGithubSessionData,
 } = require("@fixtures/sessionData")
 const { GitHubService } = require("@services/db/GitHubService")
 
@@ -27,7 +28,7 @@ describe("Github Service", () => {
   const content = "test-content"
   const userId = mockGithubId
 
-  const sessionData = mockSessionData
+  const sessionData = mockUserWithSiteSessionData
 
   const authHeader = {
     headers: {
@@ -495,7 +496,7 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Getting a repo state works correctly", async () => {
+    it("Getting repo info works correctly", async () => {
       const resp = {
         data: {
           private: true,
@@ -553,14 +554,16 @@ describe("Github Service", () => {
 
     const tree = "test-tree"
 
-    it("Getting a repo state works correctly", async () => {
+    it("Getting a repo tree works correctly", async () => {
       const resp = {
         data: {
           tree,
         },
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
-      await expect(service.getTree(sessionData, {})).resolves.toEqual(tree)
+      await expect(
+        service.getTree(sessionData, mockGithubSessionData, {})
+      ).resolves.toEqual(tree)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(url, {
         params,
         headers,
@@ -575,7 +578,9 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.getTree(sessionData, { isRecursive: true })
+        service.getTree(sessionData, mockGithubSessionData, {
+          isRecursive: true,
+        })
       ).resolves.toEqual(tree)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(url, {
         params: {
@@ -611,7 +616,10 @@ describe("Github Service", () => {
         .mockResolvedValueOnce(firstResp)
         .mockResolvedValueOnce(secondResp)
       await expect(
-        service.updateTree(sessionData, { gitTree, message })
+        service.updateTree(sessionData, mockGithubSessionData, {
+          gitTree,
+          message,
+        })
       ).resolves.toEqual(secondSha)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         url,

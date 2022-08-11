@@ -4,7 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { MediaFilesRouter } = require("../mediaFiles")
 
@@ -76,7 +79,7 @@ describe("Media Files Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockMediaFileService.create).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -100,7 +103,7 @@ describe("Media Files Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockMediaFileService.read).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -136,7 +139,7 @@ describe("Media Files Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockMediaFileService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -154,7 +157,8 @@ describe("Media Files Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockMediaFileService.rename).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
         expectedServiceInput
       )
     })
@@ -183,7 +187,7 @@ describe("Media Files Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockMediaFileService.delete).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

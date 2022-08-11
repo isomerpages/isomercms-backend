@@ -4,7 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { CollectionsRouter } = require("../collections")
 
@@ -119,7 +122,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(
         mockCollectionDirectoryService.listAllCollections
-      ).toHaveBeenCalledWith(mockSessionData)
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData)
     })
   })
 
@@ -153,7 +156,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(
         mockCollectionDirectoryService.listFiles
-      ).toHaveBeenCalledWith(mockSessionData, { collectionName })
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, { collectionName })
     })
     it("returns all files in a subcollection", async () => {
       const expectedResponse = [
@@ -175,12 +178,13 @@ describe("Collections Router", () => {
         )
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(
-        mockSubcollectionDirectoryService.listFiles
-      ).toHaveBeenCalledWith(mockSessionData, {
-        collectionName,
-        subcollectionName,
-      })
+      expect(mockSubcollectionDirectoryService.listFiles).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        {
+          collectionName,
+          subcollectionName,
+        }
+      )
     })
   })
 
@@ -201,7 +205,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual([])
       expect(
         mockCollectionDirectoryService.createDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         collectionName,
         objArray: undefined,
       })
@@ -231,7 +235,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual(collectionDetails.items)
       expect(
         mockCollectionDirectoryService.createDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         collectionName,
         objArray: collectionDetails.items,
       })
@@ -251,7 +255,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual([])
       expect(
         mockSubcollectionDirectoryService.createDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         collectionName,
         subcollectionName,
         objArray: undefined,
@@ -282,7 +286,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual(collectionDetails.items)
       expect(
         mockSubcollectionDirectoryService.createDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         collectionName,
         subcollectionName,
         objArray: collectionDetails.items,
@@ -307,10 +311,14 @@ describe("Collections Router", () => {
         .expect(200)
       expect(
         mockCollectionDirectoryService.renameDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
-        collectionName,
-        newDirectoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          collectionName,
+          newDirectoryName,
+        }
+      )
     })
 
     it("accepts valid subcollection rename requests", async () => {
@@ -322,11 +330,15 @@ describe("Collections Router", () => {
         .expect(200)
       expect(
         mockSubcollectionDirectoryService.renameDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
-        collectionName,
-        subcollectionName,
-        newDirectoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          collectionName,
+          subcollectionName,
+          newDirectoryName,
+        }
+      )
     })
   })
 
@@ -337,9 +349,13 @@ describe("Collections Router", () => {
         .expect(200)
       expect(
         mockCollectionDirectoryService.deleteDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
-        collectionName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          collectionName,
+        }
+      )
     })
 
     it("accepts valid subcollection delete requests", async () => {
@@ -350,10 +366,14 @@ describe("Collections Router", () => {
         .expect(200)
       expect(
         mockSubcollectionDirectoryService.deleteDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
-        collectionName,
-        subcollectionName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          collectionName,
+          subcollectionName,
+        }
+      )
     })
   })
 
@@ -388,7 +408,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual(reorderDetails.items)
       expect(
         mockCollectionDirectoryService.reorderDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         collectionName,
         objArray: reorderDetails.items,
       })
@@ -407,7 +427,7 @@ describe("Collections Router", () => {
       expect(resp.body).toStrictEqual(reorderDetails.items)
       expect(
         mockSubcollectionDirectoryService.reorderDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         collectionName,
         subcollectionName,
         objArray: reorderDetails.items,
@@ -458,7 +478,7 @@ describe("Collections Router", () => {
         .send({ items, target: {} })
         .expect(200)
       expect(mockCollectionDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           collectionName,
           objArray: items,
@@ -472,7 +492,7 @@ describe("Collections Router", () => {
         .send({ items, target: { collectionName: targetCollectionName } })
         .expect(200)
       expect(mockCollectionDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           collectionName,
           targetCollectionName,
@@ -493,7 +513,7 @@ describe("Collections Router", () => {
         })
         .expect(200)
       expect(mockCollectionDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           collectionName,
           targetCollectionName,
@@ -511,7 +531,7 @@ describe("Collections Router", () => {
         .send({ items, target: {} })
         .expect(200)
       expect(mockSubcollectionDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           collectionName,
           subcollectionName,
@@ -528,7 +548,7 @@ describe("Collections Router", () => {
         .send({ items, target: { collectionName: targetCollectionName } })
         .expect(200)
       expect(mockSubcollectionDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           collectionName,
           subcollectionName,
@@ -552,7 +572,7 @@ describe("Collections Router", () => {
         })
         .expect(200)
       expect(mockSubcollectionDirectoryService.movePages).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           collectionName,
           subcollectionName,

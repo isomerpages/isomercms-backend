@@ -4,7 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { ResourceCategoriesRouter } = require("../resourceCategories")
 
@@ -81,7 +84,7 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockResourceDirectoryService.listFiles).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         {
           resourceRoomName,
           resourceCategoryName,
@@ -112,7 +115,7 @@ describe("Resource Categories Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockResourceDirectoryService.createResourceDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         resourceRoomName,
         resourceCategoryName,
       })
@@ -140,11 +143,15 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(
         mockResourceDirectoryService.renameResourceDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
-        resourceRoomName,
-        resourceCategoryName,
-        newDirectoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+          newDirectoryName,
+        }
+      )
     })
   })
 
@@ -157,10 +164,14 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(
         mockResourceDirectoryService.deleteResourceDirectory
-      ).toHaveBeenCalledWith(mockSessionData, {
-        resourceRoomName,
-        resourceCategoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+        }
+      )
     })
   })
 
@@ -218,12 +229,16 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(
         mockResourceDirectoryService.moveResourcePages
-      ).toHaveBeenCalledWith(mockSessionData, {
-        resourceRoomName,
-        resourceCategoryName,
-        targetResourceCategory,
-        objArray: items,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+          targetResourceCategory,
+          objArray: items,
+        }
+      )
     })
   })
 })

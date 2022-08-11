@@ -6,7 +6,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { contactUsContent, contactUsSha } = require("@fixtures/contactUs")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { ContactUsRouter } = require("../contactUs")
 
@@ -50,7 +50,7 @@ describe("ContactUs Router", () => {
 
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockContactUsPageService.read).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })
@@ -96,7 +96,7 @@ describe("ContactUs Router", () => {
         .expect(200)
 
       expect(mockContactUsPageService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

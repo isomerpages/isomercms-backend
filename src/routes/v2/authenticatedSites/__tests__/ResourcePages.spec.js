@@ -4,7 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { ResourcePagesRouter } = require("../resourcePages")
 
@@ -90,7 +90,7 @@ describe("Resource Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockResourcePageService.create).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -115,7 +115,7 @@ describe("Resource Pages Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockResourcePageService.read).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -164,7 +164,7 @@ describe("Resource Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockResourcePageService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -186,7 +186,7 @@ describe("Resource Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockResourcePageService.rename).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -220,7 +220,7 @@ describe("Resource Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockResourcePageService.delete).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

@@ -6,7 +6,7 @@ const {
   adminRepo,
   noAccessRepo,
 } = require("@fixtures/repoInfo")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 const {
   genericGitHubAxiosInstance,
 } = require("@root/services/api/AxiosInstance")
@@ -64,9 +64,9 @@ describe("Resource Page Service", () => {
         data: [],
       }))
 
-      await expect(service.getSites(mockSessionData)).resolves.toMatchObject(
-        expectedResp
-      )
+      await expect(
+        service.getSites(mockUserWithSiteSessionData)
+      ).resolves.toMatchObject(expectedResp)
 
       expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
@@ -77,11 +77,11 @@ describe("Resource Page Service", () => {
   describe("checkHasAccess", () => {
     it("Checks if a user has access to a site", async () => {
       await expect(
-        service.checkHasAccess(mockSessionData, { userId })
+        service.checkHasAccess(mockUserWithSiteSessionData, { userId })
       ).resolves.not.toThrow()
 
       expect(mockGithubService.checkHasAccess).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })
@@ -90,12 +90,12 @@ describe("Resource Page Service", () => {
     it("Checks when site was last updated", async () => {
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
 
-      await expect(service.getLastUpdated(mockSessionData)).resolves.toEqual(
-        repoInfo.pushed_at
-      )
+      await expect(
+        service.getLastUpdated(mockUserWithSiteSessionData)
+      ).resolves.toEqual(repoInfo.pushed_at)
 
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })
@@ -110,11 +110,13 @@ describe("Resource Page Service", () => {
       })
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo2)
 
-      await expect(service.getStagingUrl(mockSessionData)).resolves.toEqual(
-        stagingUrl
-      )
+      await expect(
+        service.getStagingUrl(mockUserWithSiteSessionData)
+      ).resolves.toEqual(stagingUrl)
 
-      expect(mockConfigYmlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
     it("Retrieves the staging url for a site from repo info otherwise", async () => {
       mockConfigYmlService.read.mockResolvedValue({
@@ -122,13 +124,15 @@ describe("Resource Page Service", () => {
       })
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
 
-      await expect(service.getStagingUrl(mockSessionData)).resolves.toEqual(
-        stagingUrl
-      )
+      await expect(
+        service.getStagingUrl(mockUserWithSiteSessionData)
+      ).resolves.toEqual(stagingUrl)
 
-      expect(mockConfigYmlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
     it("throws an error when the staging url for a repo is not found", async () => {
@@ -139,13 +143,15 @@ describe("Resource Page Service", () => {
         description: "edited description",
       })
 
-      await expect(service.getStagingUrl(mockSessionData)).rejects.toThrowError(
-        NotFoundError
-      )
+      await expect(
+        service.getStagingUrl(mockUserWithSiteSessionData)
+      ).rejects.toThrowError(NotFoundError)
 
-      expect(mockConfigYmlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })

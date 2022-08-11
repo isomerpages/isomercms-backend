@@ -6,7 +6,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { navigationContent, navigationSha } = require("@fixtures/navigation")
-const { mockSessionData } = require("@fixtures/sessionData")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { NavigationRouter } = require("../navigation")
 
@@ -51,7 +51,7 @@ describe("Navigation Router", () => {
 
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockNavigationYmlService.read).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })
@@ -103,7 +103,7 @@ describe("Navigation Router", () => {
         .expect(200)
 
       expect(mockNavigationYmlService.update).toHaveBeenCalledWith(
-        mockSessionData,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

@@ -16,6 +16,7 @@ describe("Resource Directory Service", () => {
     title: resourceCategoryName,
   }
   const sha = "12345"
+  const mockGithubSessionData = "mockData"
 
   const objArray = [
     {
@@ -242,7 +243,7 @@ describe("Resource Directory Service", () => {
     const newDirectoryName = "new-dir"
     it("rejects resource categories with special characters", async () => {
       await expect(
-        service.renameResourceDirectory(reqDetails, {
+        service.renameResourceDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           resourceCategoryName,
           newDirectoryName: "dir/dir",
@@ -255,7 +256,7 @@ describe("Resource Directory Service", () => {
     })
     it("Renaming a resource category works correctly", async () => {
       await expect(
-        service.renameResourceDirectory(reqDetails, {
+        service.renameResourceDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           resourceCategoryName,
           newDirectoryName,
@@ -274,11 +275,15 @@ describe("Resource Directory Service", () => {
         },
         mockContent
       )
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: directoryName,
-        newDirectoryName: `${resourceRoomName}/${newDirectoryName}`,
-        message: `Renaming resource category ${resourceCategoryName} to ${newDirectoryName}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: directoryName,
+          newDirectoryName: `${resourceRoomName}/${newDirectoryName}`,
+          message: `Renaming resource category ${resourceCategoryName} to ${newDirectoryName}`,
+        }
+      )
       expect(mockGitHubService.update).toHaveBeenCalledWith(reqDetails, {
         fileContent: mockMarkdownContent,
         sha,
@@ -299,7 +304,7 @@ describe("Resource Directory Service", () => {
       const slugifiedResourceCategory = "test-resource"
 
       await expect(
-        service.renameResourceDirectory(reqDetails, {
+        service.renameResourceDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           resourceCategoryName,
           newDirectoryName: originalResourceCategory,
@@ -318,11 +323,15 @@ describe("Resource Directory Service", () => {
         },
         mockContent
       )
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: directoryName,
-        newDirectoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
-        message: `Renaming resource category ${resourceCategoryName} to ${slugifiedResourceCategory}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: directoryName,
+          newDirectoryName: `${resourceRoomName}/${slugifiedResourceCategory}`,
+          message: `Renaming resource category ${resourceCategoryName} to ${slugifiedResourceCategory}`,
+        }
+      )
       expect(mockGitHubService.update).toHaveBeenCalledWith(reqDetails, {
         fileContent: mockMarkdownContent,
         sha,
@@ -338,15 +347,19 @@ describe("Resource Directory Service", () => {
   describe("DeleteResourceDirectory", () => {
     it("Deleting a resource category works correctly", async () => {
       await expect(
-        service.deleteResourceDirectory(reqDetails, {
+        service.deleteResourceDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           resourceCategoryName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-        message: `Deleting resource category ${resourceCategoryName}`,
-      })
+      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          directoryName,
+          message: `Deleting resource category ${resourceCategoryName}`,
+        }
+      )
     })
   })
 
@@ -355,7 +368,7 @@ describe("Resource Directory Service", () => {
     const targetFiles = ["file.md", "file2.md"]
     it("Moving resource pages works correctly", async () => {
       await expect(
-        service.moveResourcePages(reqDetails, {
+        service.moveResourcePages(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           resourceCategoryName,
           targetResourceCategory,
@@ -364,6 +377,7 @@ describe("Resource Directory Service", () => {
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.moveFiles).toHaveBeenCalledWith(
         reqDetails,
+        mockGithubSessionData,
         {
           oldDirectoryName: `${directoryName}/_posts`,
           newDirectoryName: `${resourceRoomName}/${targetResourceCategory}/_posts`,

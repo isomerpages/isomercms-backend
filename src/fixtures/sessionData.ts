@@ -1,3 +1,4 @@
+import GithubSessionData from "@root/classes/GithubSessionData"
 import UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 
@@ -28,4 +29,8 @@ export const mockUserWithSiteSessionData = new UserWithSiteSessionData({
   email: mockEmail,
   siteName: mockSiteName,
 })
-mockSessionData.addGithubState(mockGithubState)
+
+export const mockGithubSessionData = new GithubSessionData({
+  treeSha: mockTreeSha,
+  currentCommitSha: mockCurrentCommitSha,
+})

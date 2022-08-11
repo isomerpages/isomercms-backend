@@ -30,10 +30,12 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
+import { AuthorizationMiddleware } from "./middleware/authorization"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import CollaboratorsService from "./services/identity/CollaboratorsService"
 
 const path = require("path")
 
@@ -81,6 +83,13 @@ const infraService = new InfraService({
   reposService,
   deploymentsService,
 })
+const collaboratorsService = new CollaboratorsService({
+  siteRepository: Site,
+  siteMemberRepository: SiteMember,
+  sitesService,
+  usersService,
+  whitelist: Whitelist,
+})
 
 const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
@@ -94,6 +103,7 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,
   usersService,
   isomerAdminsService,
+  collaboratorsService,
 })
 
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
@@ -113,6 +123,8 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   reposService,
   deploymentsService,
   isomerAdminsService,
+  collaboratorsService,
+  authorizationMiddleware,
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authorizationMiddleware,

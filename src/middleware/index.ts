@@ -9,6 +9,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { RequestHandler } from "@root/types"
 import IdentityAuthService from "@services/identity/AuthService"
+import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import AuthenticationMiddlewareService from "@services/middlewareServices/AuthenticationMiddlewareService"
@@ -27,15 +28,18 @@ const getAuthorizationMiddleware = ({
   identityAuthService,
   usersService,
   isomerAdminsService,
+  collaboratorsService,
 }: {
   identityAuthService: IdentityAuthService
   usersService: UsersService
   isomerAdminsService: IsomerAdminsService
+  collaboratorsService: CollaboratorsService
 }) => {
   const authorizationMiddlewareService = new AuthorizationMiddlewareService({
     identityAuthService,
     usersService,
     isomerAdminsService,
+    collaboratorsService,
   })
   const authorizationMiddleware = new AuthorizationMiddleware({
     authorizationMiddlewareService,

@@ -95,17 +95,17 @@ class ResourceRoomDirectoryService {
     const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
     frontMatter.title = newDirectoryName
     const newContent = convertDataToMarkdown(frontMatter, pageContent)
-    await this.gitHubService.update(reqDetails, {
-      fileContent: newContent,
-      sha,
-      fileName: INDEX_FILE_NAME,
-      directoryName: resourceRoomName,
-    })
 
     await this.baseDirectoryService.rename(reqDetails, {
       oldDirectoryName: resourceRoomName,
       newDirectoryName: slugifiedNewResourceRoomName,
       message: `Renaming resource room from ${resourceRoomName} to ${slugifiedNewResourceRoomName}`,
+    })
+    await this.gitHubService.update(reqDetails, {
+      fileContent: newContent,
+      sha,
+      fileName: INDEX_FILE_NAME,
+      directoryName: resourceRoomName,
     })
 
     const {

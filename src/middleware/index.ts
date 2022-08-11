@@ -3,12 +3,15 @@ import express, {
   NextFunction,
   Request,
   Response,
-  RequestHandler,
+  RequestHandler as ExpressRequestHandler,
 } from "express"
 
 import { AuthMiddleware } from "@middleware/auth"
 
+import UserSessionData from "@classes/UserSessionData"
+
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { RequestHandler } from "@root/types"
 import AuthService from "@services/identity/AuthService"
 import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
@@ -40,19 +43,28 @@ const formSGService = new FormsProcessingService({ formsg })
  *
  * Retrieve form data from res.locals.submission.
  */
-const attachFormSGHandler = (formKey: string): RequestHandler[] => [
+const attachFormSGHandler = (formKey: string): ExpressRequestHandler[] => [
   formSGService.authenticate(),
   express.json(),
   formSGService.decrypt({ formKey }),
 ]
 
-const attachSiteHandler = (req: Request, res: Response, next: NextFunction) => {
+const attachSiteHandler: RequestHandler<
+  Record<string, string>,
+  unknown,
+  unknown,
+  never,
+  {
+    userSessionData: UserSessionData
+    userWithSiteSessionData: UserWithSiteSessionData
+  }
+> = (req, res, next) => {
   const {
     params: { siteName },
   } = req
   const { userSessionData } = res.locals
   const userWithSiteSessionData = new UserWithSiteSessionData({
-    ...userSessionData.getGithubParams,
+    ...userSessionData.getGithubParams(),
     siteName,
   })
   res.locals.userWithSiteSessionData = userWithSiteSessionData

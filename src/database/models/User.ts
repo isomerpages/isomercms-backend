@@ -31,7 +31,7 @@ export class User extends Model {
   email?: string | null
 
   @Column({
-    allowNull: true,
+    allowNull: false,
     unique: true,
     type: DataType.TEXT,
     validate: {
@@ -67,7 +67,7 @@ export class User extends Model {
     through: () => SiteMember,
     as: "site_members",
   })
-  sites!: Site[]
+  sites!: Array<Site & { SiteMember: SiteMember }>
 
   @HasMany(() => Site, {
     as: "sites_created",

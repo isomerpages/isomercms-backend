@@ -25,7 +25,7 @@ export class SiteMember extends Model {
     allowNull: false,
     type: DataType.ENUM("ADMIN", "USER"),
   })
-  role!: boolean
+  role!: string
 
   @CreatedAt
   createdAt!: Date

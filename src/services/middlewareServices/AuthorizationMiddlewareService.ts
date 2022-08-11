@@ -1,6 +1,6 @@
 import { NotFoundError } from "@errors/NotFoundError"
 
-import SessionData from "@classes/SessionData"
+import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { E2E_ISOMER_ID } from "@root/constants"
 import AuthService from "@services/identity/AuthService"
@@ -33,17 +33,16 @@ export default class AuthorizationMiddlewareService {
     this.isomerAdminsService = isomerAdminsService
   }
 
-  async checkIsSiteMember(sessionData: SessionData) {
+  async checkIsSiteMember(sessionData: UserWithSiteSessionData) {
     // Check if user has access to site
-    const siteName = sessionData.getSiteName()
-    const userId = sessionData.getIsomerUserId()
+    const { siteName, isomerUserId: userId } = sessionData
 
     // Should always be defined - authorization middleware only exists if siteName is defined
     if (!siteName) throw Error("No site name in authorization middleware")
 
     logger.info(`Verifying user's access to ${siteName}`)
 
-    const isSiteMember = await (sessionData.getIsEmailUser()
+    const isSiteMember = await (sessionData.isEmailUser()
       ? this.usersService.hasAccessToSite(userId, siteName)
       : this.identityAuthService.hasAccessToSite(sessionData))
 

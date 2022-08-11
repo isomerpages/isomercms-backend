@@ -126,23 +126,4 @@ export default class AuthenticationMiddlewareService {
       throw err
     }
   }
-
-  async checkHasAccess(sessionData) {
-    // Check if site is onboarded to Isomer identity, otherwise continue using user access token
-    const { siteName } = sessionData
-    const userId = sessionData.isomerUserId
-
-    logger.info(`Verifying user's access to ${siteName}`)
-
-    const hasAccessToSite = await this.identityAuthService.hasAccessToSite(
-      sessionData
-    )
-
-    const isE2EUser = userId === E2E_ISOMER_ID
-    if (!hasAccessToSite && !isE2EUser) {
-      throw new NotFoundError("Site does not exist")
-    }
-
-    logger.info(`User ${userId} has access to ${siteName}`)
-  }
 }

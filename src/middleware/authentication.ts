@@ -37,13 +37,4 @@ export class AuthenticationMiddleware {
     res.locals.userSessionData = userSessionData
     return next()
   }
-
-  // Replace access token with site access token if it is available
-  async checkHasAccess(req: Request, res: Response, next: NextFunction) {
-    const { userSessionData } = res.locals
-
-    await this.authMiddlewareService.checkHasAccess(userSessionData)
-
-    return next()
-  }
 }

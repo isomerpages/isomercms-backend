@@ -132,7 +132,7 @@ class AuthService {
       if (sessionData.isEmailUser()) {
         const { email } = sessionData
         const { contactNumber } = await this.usersService.findByEmail(email)
-        return { userId: "", email, contactNumber }
+        return { email, contactNumber }
       }
       const { githubId: userId } = sessionData
 

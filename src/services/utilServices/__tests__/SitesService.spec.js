@@ -16,7 +16,6 @@ const {
 } = require("@root/services/api/AxiosInstance")
 
 describe("Resource Page Service", () => {
-  const accessToken = "test-token"
   const userId = "userId"
 
   const mockGithubService = {
@@ -128,7 +127,7 @@ describe("Resource Page Service", () => {
       expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
     })
 
-    it("Filters accessible sites for email user with no sitescorrectly", async () => {
+    it("Filters accessible sites for email user with no sites correctly", async () => {
       // Store the API key and set it later so that other tests are not affected
       const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = 3
@@ -191,9 +190,9 @@ describe("Resource Page Service", () => {
         data: [],
       }))
 
-      await expect(service.getSites(mockUserWithSiteSessionData)).resolves.toMatchObject(
-        expectedResp
-      )
+      await expect(
+        service.getSites(mockUserWithSiteSessionData)
+      ).resolves.toMatchObject(expectedResp)
 
       expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId

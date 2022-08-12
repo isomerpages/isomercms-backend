@@ -43,14 +43,14 @@ class SitesService {
 
   async getSites(sessionData) {
     const isEmailUser = sessionData.isEmailUser()
-    let emailAccessibleSites = []
+    let retrievedSitesByEmail = []
     const { isomerUserId: userId } = sessionData
     const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
     if (!isAdminUser && isEmailUser) {
       const user = await this.usersService.findSitesByUserId(userId)
       if (user) {
         const { site_members: siteMemberEntries } = user
-        emailAccessibleSites = siteMemberEntries.map((entry) => {
+        retrievedSitesByEmail = siteMemberEntries.map((entry) => {
           const repoData = entry.repo
           return repoData.name
         })
@@ -99,7 +99,7 @@ class SitesService {
           (repoData) =>
             isAdminUser ||
             !isEmailUser ||
-            emailAccessibleSites.includes(repoData.repoName)
+            retrievedSitesByEmail.includes(repoData.repoName)
         )
         .filter(
           (repoData) =>

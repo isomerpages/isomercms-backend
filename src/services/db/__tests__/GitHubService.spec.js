@@ -617,7 +617,7 @@ describe("Github Service", () => {
       const gitTree = "git-tree"
       const message = "message"
       const finalExpectedMessage = JSON.stringify({
-        message: message || `isomerCMS updated ${siteName} state`,
+        message,
         userId,
       })
       const firstResp = {

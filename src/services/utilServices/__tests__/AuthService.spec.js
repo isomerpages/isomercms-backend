@@ -169,7 +169,9 @@ describe("Auth Service", () => {
           login: mockGithubId,
         },
       }))
-      await expect(service.getUserInfo(mockUserWithSiteSessionData)).resolves.toEqual({
+      await expect(
+        service.getUserInfo(mockUserWithSiteSessionData)
+      ).resolves.toEqual({
         userId: mockGithubId,
         email: mockEmail,
         contactNumber: mockContactNumber,
@@ -181,7 +183,6 @@ describe("Auth Service", () => {
       await expect(
         service.getUserInfo(mockSessionDataEmailUser)
       ).resolves.toEqual({
-        userId: "",
         email: mockEmail,
         contactNumber: mockContactNumber,
       })

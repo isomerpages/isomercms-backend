@@ -41,4 +41,5 @@ export const mockSessionDataEmailUser = new UserSessionData({
 export const mockSessionDataEmailUserWithSite = new UserWithSiteSessionData({
   isomerUserId: mockIsomerUserId,
   email: mockEmail,
+  siteName: mockSiteName,
 })

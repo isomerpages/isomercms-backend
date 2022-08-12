@@ -11,6 +11,7 @@ const {
   mockGithubId,
   mockCurrentCommitSha,
   mockGithubSessionData,
+  mockIsomerUserId,
 } = require("@fixtures/sessionData")
 const { GitHubService } = require("@services/db/GitHubService")
 
@@ -26,7 +27,7 @@ describe("Github Service", () => {
   const sha = "12345"
   const treeSha = mockTreeSha
   const content = "test-content"
-  const userId = mockGithubId
+  const userId = mockIsomerUserId
 
   const sessionData = mockUserWithSiteSessionData
 
@@ -674,7 +675,7 @@ describe("Github Service", () => {
   })
 
   describe("checkHasAccess", () => {
-    const refEndpoint = `${siteName}/collaborators/${userId}`
+    const refEndpoint = `${siteName}/collaborators/${mockGithubId}`
     const headers = {
       Authorization: `token ${accessToken}`,
       "Content-Type": "application/json",

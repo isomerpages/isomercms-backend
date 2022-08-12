@@ -41,21 +41,26 @@ class SitesService {
     this.isomerAdminsService = isomerAdminsService
   }
 
+  async getEmailUserSites(userId) {
+    const user = await this.usersService.findSitesByUserId(userId)
+    if (user) {
+      const { site_members: siteMemberEntries } = user
+      return siteMemberEntries.map((entry) => {
+        const repoData = entry.repo
+        return repoData.name
+      })
+    }
+    return []
+  }
+
   async getSites(sessionData) {
     const isEmailUser = sessionData.isEmailUser()
     let retrievedSitesByEmail = []
     const { isomerUserId: userId } = sessionData
     const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
-    if (!isAdminUser && isEmailUser) {
-      const user = await this.usersService.findSitesByUserId(userId)
-      if (user) {
-        const { site_members: siteMemberEntries } = user
-        retrievedSitesByEmail = siteMemberEntries.map((entry) => {
-          const repoData = entry.repo
-          return repoData.name
-        })
-      }
-    }
+    if (!isAdminUser && isEmailUser)
+      retrievedSitesByEmail = await this.getEmailUserSites(userId)
+
     const { accessToken } = sessionData
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 

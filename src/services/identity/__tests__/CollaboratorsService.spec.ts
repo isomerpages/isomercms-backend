@@ -134,7 +134,7 @@ describe("CollaboratorsService", () => {
       // Act
       const collaborators = await collaboratorsService.list(
         mockSiteName,
-        mockEmailAddress
+        mockUserId
       )
 
       // Assert

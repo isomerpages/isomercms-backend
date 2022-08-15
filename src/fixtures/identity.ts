@@ -97,8 +97,8 @@ export const unsortedMockCollaboratorsList = [
 ]
 
 export const expectedSortedMockCollaboratorsList = [
-  mockCollaboratorAdmin2,
   mockCollaboratorAdmin1,
+  mockCollaboratorAdmin2,
   mockCollaboratorContributor1,
   mockCollaboratorContributor2,
 ]
@@ -106,19 +106,19 @@ export const expectedSortedMockCollaboratorsList = [
 export const mockSiteOrmResponseWithAllCollaborators = {
   id: 1,
   name: "",
-  users: unsortedMockCollaboratorsList,
+  site_members: unsortedMockCollaboratorsList,
 }
 export const mockSiteOrmResponseWithOneAdminCollaborator = {
   id: 1,
   name: "",
-  users: [mockCollaboratorAdmin1],
+  site_members: [mockCollaboratorAdmin1],
 }
 export const mockSiteOrmResponseWithOneContributorCollaborator = {
   id: 1,
   name: "",
-  users: [mockCollaboratorContributor2],
+  site_members: [mockCollaboratorContributor2],
 }
 export const mockSiteOrmResponseWithNoCollaborators = {
   id: 1,
-  name: "",
+  site_members: "",
 }

@@ -18,10 +18,7 @@ class UserWithSiteSessionData extends UserSessionData {
 
   getGithubParamsWithSite() {
     return {
-      githubId: this.githubId,
-      accessToken: this.accessToken,
-      isomerUserId: this.isomerUserId,
-      email: this.email,
+      ...super.getGithubParams(),
       siteName: this.siteName,
     }
   }

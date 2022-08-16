@@ -58,6 +58,11 @@ class SettingsService {
         config.content,
         updatedConfigContent
       )
+      // Prepend "https://" to url parameter if parameter is defined
+      if (mergedConfigContent.url !== "") {
+        mergedConfigContent.url = "https://" + mergedConfigContent.url
+      }
+
       await this.configYmlService.update(reqDetails, {
         fileContent: mergedConfigContent,
         sha: config.sha,
@@ -152,7 +157,7 @@ class SettingsService {
 
   static extractConfigFields(config) {
     return {
-      url: config.content.url,
+      url: config.content.url.replace("https://", ""),
       description: config.content.description,
       title: config.content.title,
       favicon: config.content.favicon,

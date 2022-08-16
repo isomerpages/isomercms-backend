@@ -127,7 +127,6 @@ const configResponse = {
   facebook_pixel: configContent["facebook-pixel"],
   google_analytics: configContent.google_analytics,
   linkedin_insights: configContent["linkedin-insights"],
-  resources_name: configContent.resources_name,
   colors: configContent.colors,
 }
 

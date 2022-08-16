@@ -161,7 +161,6 @@ class SettingsService {
       facebook_pixel: config.content["facebook-pixel"],
       google_analytics: config.content.google_analytics,
       linkedin_insights: config.content["linkedin-insights"],
-      resources_name: config.content.resources_name,
       colors: config.content.colors,
     }
   }
@@ -187,7 +186,6 @@ class SettingsService {
       "facebook-pixel",
       "google_analytics",
       "linkedin-insights",
-      "resources_name",
       "colors",
     ]
     const footerParams = [

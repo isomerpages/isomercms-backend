@@ -9,8 +9,6 @@ import jwtUtils from "@utils/jwt-utils"
 import { E2E_ISOMER_ID } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
 
-import AuthService from "../identity/AuthService"
-
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
 const E2E_TEST_EMAIL = "test@e2e"
@@ -21,17 +19,7 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/auth/whoami",
 ]
 
-interface AuthenticationMiddlewareServiceProps {
-  identityAuthService: AuthService
-}
-
 export default class AuthenticationMiddlewareService {
-  readonly identityAuthService: AuthenticationMiddlewareServiceProps["identityAuthService"]
-
-  constructor({ identityAuthService }: AuthenticationMiddlewareServiceProps) {
-    this.identityAuthService = identityAuthService
-  }
-
   verifyE2E({
     cookies,
     url,

@@ -89,9 +89,7 @@ const identityAuthService = getIdentityAuthService(gitHubService)
 
 const configYmlService = new ConfigYmlService({ gitHubService })
 
-const authenticationMiddleware = getAuthenticationMiddleware({
-  identityAuthService,
-})
+const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,
   usersService,

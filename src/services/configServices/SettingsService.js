@@ -59,7 +59,10 @@ class SettingsService {
         updatedConfigContent
       )
       // Prepend "https://" to url parameter if parameter is defined
-      if (mergedConfigContent.url !== "") {
+      if (
+        mergedConfigContent.url !== "" &&
+        !mergedConfigContent.url.startsWith("https://")
+      ) {
         mergedConfigContent.url = "https://" + mergedConfigContent.url
       }
 

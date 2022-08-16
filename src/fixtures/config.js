@@ -118,7 +118,7 @@ const configContent = {
 const configSha = "configsha"
 
 const configResponse = {
-  url: configContent.url,
+  url: configContent.url.replace("https://", ""),
   title: configContent.title,
   description: configContent.description,
   favicon: configContent.favicon,

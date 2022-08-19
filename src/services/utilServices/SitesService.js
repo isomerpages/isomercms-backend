@@ -53,11 +53,8 @@ class SitesService {
 
   async getSites(sessionData) {
     const isEmailUser = sessionData.isEmailUser()
-    let retrievedSitesByEmail = []
     const { isomerUserId: userId } = sessionData
     const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
-    if (!isAdminUser && isEmailUser)
-      retrievedSitesByEmail = await this.getEmailUserSites(userId)
 
     const { accessToken } = sessionData
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
@@ -71,7 +68,7 @@ class SitesService {
       })
     )
 
-    const sites = await Bluebird.map(paramsArr, async (params) => {
+    const allSites = await Bluebird.map(paramsArr, async (params) => {
       const { data: respData } = await genericGitHubAxiosInstance.get(
         endpoint,
         {
@@ -100,18 +97,20 @@ class SitesService {
         })
         .filter(
           (repoData) =>
-            isAdminUser ||
-            !isEmailUser ||
-            retrievedSitesByEmail.includes(repoData.repoName)
-        )
-        .filter(
-          (repoData) =>
             repoData.permissions.push === true &&
             !ISOMER_ADMIN_REPOS.includes(repoData.repoName)
         )
     })
 
-    return _.flatten(sites)
+    const flattenedAllSites = _.flatten(allSites)
+    if (isAdminUser || !isEmailUser) return flattenedAllSites
+
+    // Email users need to have the list of sites filtered to those they have access to in our db, since our centralised token returns all sites
+    const retrievedSitesByEmail = await this.getEmailUserSites(userId)
+
+    return flattenedAllSites.filter((repoData) =>
+      retrievedSitesByEmail.includes(repoData.repoName)
+    )
   }
 
   async checkHasAccess(sessionData) {

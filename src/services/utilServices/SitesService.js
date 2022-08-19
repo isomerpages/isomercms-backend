@@ -43,14 +43,12 @@ class SitesService {
 
   async getEmailUserSites(userId) {
     const user = await this.usersService.findSitesByUserId(userId)
-    if (user) {
-      const { site_members: siteMemberEntries } = user
-      return siteMemberEntries.map((entry) => {
-        const repoData = entry.repo
-        return repoData.name
-      })
-    }
-    return []
+    if (!user) return []
+    const { site_members: siteMemberEntries } = user
+    return siteMemberEntries.map((entry) => {
+      const repoData = entry.repo
+      return repoData.name
+    })
   }
 
   async getSites(sessionData) {

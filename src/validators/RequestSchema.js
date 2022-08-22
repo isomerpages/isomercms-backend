@@ -236,6 +236,7 @@ const UpdateNavigationRequestSchema = Joi.object().keys({
 })
 
 const UpdateSettingsRequestSchema = Joi.object().keys({
+  url: Joi.string().domain().allow(""),
   colors: Joi.object().keys({
     "primary-color": Joi.string().required(),
     "secondary-color": Joi.string().required(),

@@ -17,7 +17,7 @@ import { sequelize } from "@tests/database"
 
 const mockSite = "mockSite"
 const mockSiteId = "1"
-const mockBlockedSite = "adminOnly"
+const mockAdminSite = "adminOnly"
 const mockUpdatedAt = "now"
 const mockPermissions = { push: true }
 const mockPrivate = true
@@ -74,7 +74,7 @@ describe("Sites Router", () => {
       })
       await Site.create({
         id: "200",
-        name: mockBlockedSite,
+        name: mockAdminSite,
         apiTokenName: "token",
         jobStatus: "READY",
         siteStatus: "LAUNCHED",
@@ -98,7 +98,7 @@ describe("Sites Router", () => {
         where: { userId: mockIsomerUserId },
       })
     })
-    it("should return list of only sites available to user", async () => {
+    it("should return list of only sites available to email user", async () => {
       // Arrange
       const expected = {
         siteNames: [
@@ -122,7 +122,7 @@ describe("Sites Router", () => {
             {
               pushed_at: mockUpdatedAt,
               permissions: mockPermissions,
-              name: mockBlockedSite,
+              name: mockAdminSite,
               private: mockPrivate,
             },
           ],
@@ -160,7 +160,7 @@ describe("Sites Router", () => {
           },
           {
             lastUpdated: mockUpdatedAt,
-            repoName: mockBlockedSite,
+            repoName: mockAdminSite,
             isPrivate: mockPrivate,
             permissions: mockPermissions,
           },
@@ -178,7 +178,7 @@ describe("Sites Router", () => {
             {
               pushed_at: mockUpdatedAt,
               permissions: mockPermissions,
-              name: mockBlockedSite,
+              name: mockAdminSite,
               private: mockPrivate,
             },
           ],

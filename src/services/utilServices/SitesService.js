@@ -103,6 +103,7 @@ class SitesService {
     })
 
     const flattenedAllSites = _.flatten(allSites)
+    // Github users are using their own access token, which already filters sites to only those they have write access to
     if (isAdminUser || !isEmailUser) return flattenedAllSites
 
     // Email users need to have the list of sites filtered to those they have access to in our db, since our centralised token returns all sites

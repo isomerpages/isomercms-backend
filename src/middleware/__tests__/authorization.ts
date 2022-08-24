@@ -1,13 +1,10 @@
-import autoBind from "auto-bind"
 import { NextFunction, Request, Response } from "express"
-import { ParamsDictionary } from "express-serve-static-core"
-import { ParsedQs } from "qs"
 
 import { ForbiddenError } from "@errors/ForbiddenError"
 
 import { AuthorizationMiddleware } from "@middleware/authorization"
 
-import { CollaboratorRoles } from "@root/constants"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
 
 describe("Authorization middleware", () => {
@@ -20,17 +17,20 @@ describe("Authorization middleware", () => {
   const mockReq = ({
     params: { siteName: TEST_SITE_NAME },
   } as unknown) as Request<
-    ParamsDictionary,
-    any,
-    any,
-    ParsedQs,
-    Record<string, any>
+    never,
+    unknown,
+    unknown,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
   >
   const mockRes = ({
     locals: {
       sessionData: { getIsomerUserId: jest.fn(() => TEST_ISOMER_USER_ID) },
     },
-  } as unknown) as Response
+  } as unknown) as Response<
+    unknown,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  >
   const mockNext = jest.fn() as NextFunction
 
   const authorizationMiddleware = new AuthorizationMiddleware({

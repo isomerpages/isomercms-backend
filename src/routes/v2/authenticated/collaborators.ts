@@ -4,7 +4,7 @@ import express from "express"
 import { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-import SessionData from "@classes/SessionData"
+import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
@@ -36,7 +36,7 @@ export class CollaboratorsRouter {
     unknown,
     { email: string; acknowledge?: boolean },
     { siteName: string },
-    { sessionData: SessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { email, acknowledge = false } = req.body
     const { siteName } = req.params
@@ -58,7 +58,7 @@ export class CollaboratorsRouter {
     unknown,
     never,
     { siteName: string; userId: string },
-    { sessionData: SessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { siteName, userId } = req.params
     const resp = await this.collaboratorsService.delete(siteName, userId)
@@ -75,13 +75,13 @@ export class CollaboratorsRouter {
     unknown,
     never,
     { siteName: string },
-    { sessionData: SessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { siteName } = req.params
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
     const collaborators = await this.collaboratorsService.list(
       siteName,
-      sessionData.getIsomerUserId()
+      userWithSiteSessionData.isomerUserId
     )
 
     return res.status(200).json({ collaborators })
@@ -92,13 +92,13 @@ export class CollaboratorsRouter {
     unknown,
     never,
     { siteName: string },
-    { sessionData: SessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { siteName } = req.params
-    const { sessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
     const role = await this.collaboratorsService.getRole(
       siteName,
-      sessionData.getIsomerUserId()
+      userWithSiteSessionData.isomerUserId
     )
     return res.status(200).json({ role })
   }

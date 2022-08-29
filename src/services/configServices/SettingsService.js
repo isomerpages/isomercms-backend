@@ -63,7 +63,7 @@ class SettingsService {
         mergedConfigContent.url !== "" &&
         !mergedConfigContent.url.startsWith("https://")
       ) {
-        mergedConfigContent.url = "https://" + mergedConfigContent.url
+        mergedConfigContent.url = `https://${mergedConfigContent.url}`
       }
 
       await this.configYmlService.update(reqDetails, {
@@ -140,12 +140,15 @@ class SettingsService {
     const clonedCurrentData = _.cloneDeep(currentData)
     Object.keys(updatedData).forEach((field) => {
       if (field === "social_media") {
+        // Set social_media field if it doesn't exist
+        if (!clonedCurrentData[field]) clonedCurrentData[field] = {}
         const socials = updatedData[field]
         Object.keys(socials).forEach((social) => {
           if (!socials[social]) {
-            delete clonedCurrentData[field][social]
+            if (clonedCurrentData[field][social])
+              delete clonedCurrentData[field][social]
           } else {
-            clonedCurrentData[field] = updatedData[field]
+            clonedCurrentData[field][social] = updatedData[field][social]
           }
         })
       } else if (updatedData[field] === "") {

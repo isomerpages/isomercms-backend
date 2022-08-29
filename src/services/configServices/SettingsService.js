@@ -177,7 +177,13 @@ class SettingsService {
   }
 
   static extractFooterFields(footer) {
-    return footer.content
+    return {
+      show_reach: footer.content.show_reach,
+      social_media: footer.content.social_media,
+      faq: footer.content.faq,
+      contact_us: footer.content.contact_us,
+      feedback: footer.content.feedback,
+    }
   }
 
   static extractNavFields(navigation) {

@@ -7,7 +7,6 @@ import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockEmail, mockIsomerUserId } from "@root/fixtures/sessionData"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
-import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubService } from "@root/services/db/GitHubService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
@@ -22,7 +21,7 @@ const mockUpdatedAt = "now"
 const mockPermissions = { push: true }
 const mockPrivate = true
 
-const gitHubService = new GitHubService({ axiosInstance: mockAxios })
+const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
@@ -52,10 +51,21 @@ subrouter.use((req, res, next) => {
 subrouter.use(sitesSubrouter)
 const app = generateRouter(subrouter)
 
+const mockGenericAxios = mockAxios.create()
+mockGenericAxios.get.mockResolvedValue({
+  data: [],
+})
+
 describe("Sites Router", () => {
-  afterEach(() => {
-    jest.resetAllMocks()
-    mockAxios.reset()
+  beforeAll(() => {
+    // NOTE: Because SitesService uses an axios instance,
+    // we need to mock the axios instance using es5 named exports
+    // to ensure that the calls for .get() on the instance
+    // will actually return a value and not fail.
+    jest.mock("../services/api/AxiosInstance.ts", () => ({
+      __esModule: true, // this property makes it work
+      genericGitHubAxiosInstance: mockGenericAxios,
+    }))
   })
 
   describe("/", () => {
@@ -110,34 +120,23 @@ describe("Sites Router", () => {
           },
         ],
       }
-      ;((genericGitHubAxiosInstance.get as unknown) as jest.Mock).mockImplementationOnce(
-        () => ({
-          data: [
-            {
-              pushed_at: mockUpdatedAt,
-              permissions: mockPermissions,
-              name: mockSite,
-              private: mockPrivate,
-            },
-            {
-              pushed_at: mockUpdatedAt,
-              permissions: mockPermissions,
-              name: mockAdminSite,
-              private: mockPrivate,
-            },
-          ],
-        })
-      )
-      ;((genericGitHubAxiosInstance.get as unknown) as jest.Mock).mockImplementationOnce(
-        () => ({
-          data: [],
-        })
-      )
-      ;((genericGitHubAxiosInstance.get as unknown) as jest.Mock).mockImplementationOnce(
-        () => ({
-          data: [],
-        })
-      )
+
+      mockGenericAxios.get.mockResolvedValueOnce({
+        data: [
+          {
+            pushed_at: mockUpdatedAt,
+            permissions: mockPermissions,
+            name: mockSite,
+            private: mockPrivate,
+          },
+          {
+            pushed_at: mockUpdatedAt,
+            permissions: mockPermissions,
+            name: mockAdminSite,
+            private: mockPrivate,
+          },
+        ],
+      })
 
       // Act
       const actual = await request(app).get("/")
@@ -166,34 +165,22 @@ describe("Sites Router", () => {
           },
         ],
       }
-      ;((genericGitHubAxiosInstance.get as unknown) as jest.Mock).mockImplementation(
-        () => ({
-          data: [
-            {
-              pushed_at: mockUpdatedAt,
-              permissions: mockPermissions,
-              name: mockSite,
-              private: mockPrivate,
-            },
-            {
-              pushed_at: mockUpdatedAt,
-              permissions: mockPermissions,
-              name: mockAdminSite,
-              private: mockPrivate,
-            },
-          ],
-        })
-      )
-      ;((genericGitHubAxiosInstance.get as unknown) as jest.Mock).mockImplementationOnce(
-        () => ({
-          data: [],
-        })
-      )
-      ;((genericGitHubAxiosInstance.get as unknown) as jest.Mock).mockImplementationOnce(
-        () => ({
-          data: [],
-        })
-      )
+      mockGenericAxios.get.mockResolvedValueOnce({
+        data: [
+          {
+            pushed_at: mockUpdatedAt,
+            permissions: mockPermissions,
+            name: mockSite,
+            private: mockPrivate,
+          },
+          {
+            pushed_at: mockUpdatedAt,
+            permissions: mockPermissions,
+            name: mockAdminSite,
+            private: mockPrivate,
+          },
+        ],
+      })
 
       // Act
       const actual = await request(app).get("/")

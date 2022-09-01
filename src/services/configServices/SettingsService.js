@@ -43,16 +43,19 @@ class SettingsService {
     }
   }
 
-  async updateSettingsFiles({
+  async updateSettingsFiles(
     sessionData,
-    config,
-    homepage,
-    footer,
-    navigation,
-    updatedConfigContent,
-    updatedFooterContent,
-    updatedNavigationContent,
-  }) {
+    {
+      config,
+      homepage,
+      footer,
+      navigation,
+      updatedConfigContent,
+      updatedFooterContent,
+      updatedNavigationContent,
+    }
+  ) {
+    console.log(sessionData)
     if (!_.isEmpty(updatedConfigContent)) {
       const mergedConfigContent = this.mergeUpdatedData(
         config.content,

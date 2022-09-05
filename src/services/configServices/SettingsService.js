@@ -143,7 +143,9 @@ class SettingsService {
       if (field === "social_media") {
         // social_media is an object with each social link in a separate property
         // Set social_media field if it doesn't exist
-        if (!clonedCurrentData[field]) clonedCurrentData[field] = {}
+        if (!clonedCurrentData[field]) {
+          clonedCurrentData[field] = {}
+        }
         const socials = updatedData[field]
         Object.keys(socials).forEach((social) => {
           if (!socials[social]) {

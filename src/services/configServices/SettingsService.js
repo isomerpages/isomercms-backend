@@ -137,16 +137,17 @@ class SettingsService {
 
   mergeUpdatedFooterData(currentData, updatedData) {
     // Special configuration to remove empty footer settings entirely so they don't show up in the actual site
+    // Any updated data with empty strings are to be deleted from the footer object
     const clonedCurrentData = _.cloneDeep(currentData)
     Object.keys(updatedData).forEach((field) => {
       if (field === "social_media") {
+        // social_media is an object with each social link in a separate property
         // Set social_media field if it doesn't exist
         if (!clonedCurrentData[field]) clonedCurrentData[field] = {}
         const socials = updatedData[field]
         Object.keys(socials).forEach((social) => {
           if (!socials[social]) {
-            if (clonedCurrentData[field][social])
-              delete clonedCurrentData[field][social]
+            delete clonedCurrentData[field][social]
           } else {
             clonedCurrentData[field][social] = updatedData[field][social]
           }

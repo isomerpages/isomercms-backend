@@ -19,16 +19,16 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/auth/whoami",
 ]
 
+interface VerifyJwtProps {
+  cookies: {
+    isomercms: string
+    isomercmsE2E?: string
+  }
+  url: string
+}
+
 export default class AuthenticationMiddlewareService {
-  verifyE2E({
-    cookies,
-    url,
-  }: {
-    cookies: {
-      isomercmsE2E?: string
-    }
-    url: string
-  }) {
+  verifyE2E({ cookies, url }: VerifyJwtProps) {
     const { isomercmsE2E } = cookies
     const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
 
@@ -49,16 +49,7 @@ export default class AuthenticationMiddlewareService {
     return true
   }
 
-  verifyJwt({
-    cookies,
-    url,
-  }: {
-    cookies: {
-      isomercms: string
-      isomercmsE2E?: string
-    }
-    url: string
-  }) {
+  verifyJwt({ cookies, url }: VerifyJwtProps) {
     const { isomercms } = cookies
     const isValidE2E = this.verifyE2E({ cookies, url })
 

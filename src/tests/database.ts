@@ -9,6 +9,7 @@ import {
   AccessToken,
   Repo,
   Deployment,
+  IsomerAdmin,
 } from "@database/models"
 
 const sequelize = new Sequelize({
@@ -23,6 +24,7 @@ sequelize.addModels([
   AccessToken,
   Repo,
   Deployment,
+  IsomerAdmin,
 ])
 
 // eslint-disable-next-line import/prefer-default-export

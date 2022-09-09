@@ -12,12 +12,18 @@ const { SitesRouter } = require("./sites")
 const { UsersRouter } = require("./users")
 
 const getAuthenticatedSubrouter = ({
-  authMiddleware,
+  authenticationMiddleware,
   gitHubService,
   configYmlService,
   usersService,
+  isomerAdminsService,
 }) => {
-  const sitesService = new SitesService({ gitHubService, configYmlService })
+  const sitesService = new SitesService({
+    gitHubService,
+    configYmlService,
+    usersService,
+    isomerAdminsService,
+  })
   const netlifyTomlService = new NetlifyTomlService()
 
   const sitesV2Router = new SitesRouter({ sitesService })
@@ -26,7 +32,7 @@ const getAuthenticatedSubrouter = ({
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSubrouter.use(authMiddleware.verifyJwt)
+  authenticatedSubrouter.use(authenticationMiddleware.verifyJwt)
 
   authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
   authenticatedSubrouter.use("/user", usersRouter.getRouter())

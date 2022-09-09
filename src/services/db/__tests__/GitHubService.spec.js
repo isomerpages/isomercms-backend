@@ -11,6 +11,7 @@ const {
   mockGithubId,
   mockCurrentCommitSha,
   mockGithubSessionData,
+  mockIsomerUserId,
 } = require("@fixtures/sessionData")
 const { GitHubService } = require("@services/db/GitHubService")
 
@@ -26,7 +27,7 @@ describe("Github Service", () => {
   const sha = "12345"
   const treeSha = mockTreeSha
   const content = "test-content"
-  const userId = mockGithubId
+  const userId = mockIsomerUserId
 
   const sessionData = mockUserWithSiteSessionData
 
@@ -99,8 +100,13 @@ describe("Github Service", () => {
     const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
     const encodedContent = Base64.encode(content)
 
-    const params = {
+    const message = JSON.stringify({
       message: `Create file: ${fileName}`,
+      fileName,
+      userId,
+    })
+    const params = {
+      message,
       content: encodedContent,
       branch: BRANCH_REF,
     }
@@ -326,8 +332,13 @@ describe("Github Service", () => {
   describe("Update", () => {
     const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
     const encodedContent = Base64.encode(content)
-    const params = {
+    const message = JSON.stringify({
       message: `Update file: ${fileName}`,
+      fileName,
+      userId,
+    })
+    const params = {
+      message,
       content: encodedContent,
       branch: BRANCH_REF,
       sha,
@@ -447,8 +458,13 @@ describe("Github Service", () => {
 
   describe("Delete", () => {
     const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
-    const params = {
+    const message = JSON.stringify({
       message: `Delete file: ${fileName}`,
+      fileName,
+      userId,
+    })
+    const params = {
+      message,
       branch: BRANCH_REF,
       sha,
     }
@@ -601,6 +617,10 @@ describe("Github Service", () => {
       const secondSha = "second-sha"
       const gitTree = "git-tree"
       const message = "message"
+      const finalExpectedMessage = JSON.stringify({
+        message,
+        userId,
+      })
       const firstResp = {
         data: {
           sha: firstSha,
@@ -632,7 +652,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         commitEndpoint,
         {
-          message: message || `isomerCMS updated ${siteName} state`,
+          message: finalExpectedMessage,
           tree: firstSha,
           parents: [mockCurrentCommitSha],
         },
@@ -655,7 +675,7 @@ describe("Github Service", () => {
   })
 
   describe("checkHasAccess", () => {
-    const refEndpoint = `${siteName}/collaborators/${userId}`
+    const refEndpoint = `${siteName}/collaborators/${mockGithubId}`
     const headers = {
       Authorization: `token ${accessToken}`,
       "Content-Type": "application/json",

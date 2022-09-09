@@ -72,7 +72,7 @@ export class UsersRouter {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByGitHubId(userId, { email })
+    await this.usersService.updateUserByIsomerId(userId, { email })
     return res.sendStatus(200)
   }
 
@@ -104,7 +104,7 @@ export class UsersRouter {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByGitHubId(userId, {
+    await this.usersService.updateUserByIsomerId(userId, {
       contactNumber: mobile,
     })
     return res.sendStatus(200)

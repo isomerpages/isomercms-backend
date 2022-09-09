@@ -1,31 +1,46 @@
 import FormSG from "@opengovsg/formsg-sdk"
-import express, {
-  NextFunction,
-  Request,
-  Response,
-  RequestHandler as ExpressRequestHandler,
-} from "express"
+import express, { RequestHandler as ExpressRequestHandler } from "express"
 
-import { AuthMiddleware } from "@middleware/auth"
+import { AuthenticationMiddleware } from "@middleware/authentication"
+import { AuthorizationMiddleware } from "@middleware/authorization"
 
 import UserSessionData from "@classes/UserSessionData"
+import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { RequestHandler } from "@root/types"
-import AuthService from "@services/identity/AuthService"
-import { AuthMiddlewareService } from "@services/middlewareServices/AuthMiddlewareService"
+import IdentityAuthService from "@services/identity/AuthService"
+import IsomerAdminsService from "@services/identity/IsomerAdminsService"
+import UsersService from "@services/identity/UsersService"
+import AuthenticationMiddlewareService from "@services/middlewareServices/AuthenticationMiddlewareService"
+import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
 
-const getAuthMiddleware = ({
-  identityAuthService,
-}: {
-  identityAuthService: AuthService
-}) => {
-  const authMiddlewareService = new AuthMiddlewareService({
-    identityAuthService,
+const getAuthenticationMiddleware = () => {
+  const authenticationMiddlewareService = new AuthenticationMiddlewareService()
+  const authenticationMiddleware = new AuthenticationMiddleware({
+    authenticationMiddlewareService,
   })
-  const authMiddleware = new AuthMiddleware({ authMiddlewareService })
-  return authMiddleware
+  return authenticationMiddleware
+}
+
+const getAuthorizationMiddleware = ({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+}: {
+  identityAuthService: IdentityAuthService
+  usersService: UsersService
+  isomerAdminsService: IsomerAdminsService
+}) => {
+  const authorizationMiddlewareService = new AuthorizationMiddlewareService({
+    identityAuthService,
+    usersService,
+    isomerAdminsService,
+  })
+  const authorizationMiddleware = new AuthorizationMiddleware({
+    authorizationMiddlewareService,
+  })
+  return authorizationMiddleware
 }
 
 const formsg = FormSG()
@@ -71,4 +86,9 @@ const attachSiteHandler: RequestHandler<
   return next()
 }
 
-export { getAuthMiddleware, attachFormSGHandler, attachSiteHandler }
+export {
+  getAuthenticationMiddleware,
+  getAuthorizationMiddleware,
+  attachFormSGHandler,
+  attachSiteHandler,
+}

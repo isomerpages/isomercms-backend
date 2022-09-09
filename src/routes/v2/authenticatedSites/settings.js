@@ -64,8 +64,7 @@ class SettingsRouter {
       navigationContent: updatedNavigationContent,
     } = SettingsService.retrieveSettingsFields(settings)
 
-    await this.settingsService.updateSettingsFiles({
-      userWithSiteSessionData,
+    await this.settingsService.updateSettingsFiles(userWithSiteSessionData, {
       config,
       homepage,
       footer,

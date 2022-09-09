@@ -7,6 +7,8 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const { FRONTEND_URL } = process.env
 const { isSecure } = require("@utils/auth-utils")
 
+const { AuthError } = require("@errors/AuthError")
+
 const AUTH_TOKEN_EXPIRY_MS = parseInt(
   process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
   10
@@ -16,9 +18,9 @@ const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
 class AuthRouter {
-  constructor({ authService, authMiddleware }) {
+  constructor({ authService, authenticationMiddleware }) {
     this.authService = authService
-    this.authMiddleware = authMiddleware
+    this.authenticationMiddleware = authenticationMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -72,6 +74,31 @@ class AuthRouter {
     return res.redirect(`${FRONTEND_URL}/sites`)
   }
 
+  async login(req, res) {
+    const { email: rawEmail } = req.body
+    const email = rawEmail.toLowerCase()
+    await this.authService.sendOtp(email)
+    return res.sendStatus(200)
+  }
+
+  async verify(req, res) {
+    const { email: rawEmail, otp } = req.body
+    const email = rawEmail.toLowerCase()
+    const token = await this.authService.verifyOtp({ email, otp })
+    const authTokenExpiry = new Date()
+    // getTime allows this to work across timezones
+    authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
+    const cookieSettings = {
+      path: "/",
+      expires: authTokenExpiry,
+      httpOnly: true,
+      sameSite: true,
+      secure: isSecure(),
+    }
+    res.cookie(COOKIE_NAME, token, cookieSettings)
+    return res.sendStatus(200)
+  }
+
   async logout(req, res) {
     this.clearIsomerCookies(res)
     return res.sendStatus(200)
@@ -96,10 +123,12 @@ class AuthRouter {
       attachReadRouteHandlerWrapper(this.authRedirect)
     )
     router.get("/", attachReadRouteHandlerWrapper(this.githubAuth))
+    router.post("/login", attachReadRouteHandlerWrapper(this.login))
+    router.post("/verify", attachReadRouteHandlerWrapper(this.verify))
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
-      this.authMiddleware.verifyJwt,
+      this.authenticationMiddleware.verifyJwt,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

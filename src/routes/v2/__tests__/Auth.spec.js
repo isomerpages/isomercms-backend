@@ -4,7 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockUserSessionData } = require("@fixtures/sessionData")
+const { mockUserSessionData, mockEmail } = require("@fixtures/sessionData")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
@@ -17,6 +17,8 @@ describe("Unlinked Pages Router", () => {
     getAuthRedirectDetails: jest.fn(),
     getGithubAuthToken: jest.fn(),
     getUserInfo: jest.fn(),
+    sendOtp: jest.fn(),
+    verifyOtp: jest.fn(),
   }
 
   const router = new AuthRouter({
@@ -31,6 +33,8 @@ describe("Unlinked Pages Router", () => {
     attachReadRouteHandlerWrapper(router.authRedirect)
   )
   subrouter.get("/", attachReadRouteHandlerWrapper(router.githubAuth))
+  subrouter.post("/login", attachReadRouteHandlerWrapper(router.login))
+  subrouter.post("/verify", attachReadRouteHandlerWrapper(router.verify))
   subrouter.delete("/logout", attachReadRouteHandlerWrapper(router.logout))
   subrouter.get("/whoami", attachReadRouteHandlerWrapper(router.whoami))
   const app = generateRouter(subrouter)
@@ -81,6 +85,25 @@ describe("Unlinked Pages Router", () => {
       expect(resp.headers["set-cookie"]).toEqual(
         expect.arrayContaining([expect.stringContaining(COOKIE_NAME)])
       )
+    })
+  })
+  describe("login", () => {
+    it("calls the service to send otp", async () => {
+      await request(app).post(`/login`).send({ email: mockEmail }).expect(200)
+      expect(mockAuthService.sendOtp).toHaveBeenCalledWith(
+        mockEmail.toLowerCase()
+      )
+    })
+  })
+  describe("verify", () => {
+    const mockOtp = "123456"
+    it("adds the cookie on login", async () => {
+      mockAuthService.getAuthRedirectDetails.mockResolvedValueOnce(cookieToken)
+      await request(app)
+        .post(`/verify`)
+        .send({ email: mockEmail, otp: mockOtp })
+        .set("Cookie", `${COOKIE_NAME}=${cookieToken}`)
+        .expect(200)
     })
   })
   describe("logout", () => {

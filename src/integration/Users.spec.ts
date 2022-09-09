@@ -5,6 +5,7 @@ import request from "supertest"
 import { User, Whitelist } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
+import { mockIsomerUserId } from "@root/fixtures/sessionData"
 import { UsersRouter as _UsersRouter } from "@root/routes/v2/authenticated/users"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
@@ -136,7 +137,7 @@ describe("Users Router", () => {
       // Clean up so that different tests using
       // the same mock user don't interfere with each other
       await User.destroy({
-        where: { githubId: mockGithubId },
+        where: { id: mockIsomerUserId },
         force: true, // hard delete user record to prevent the unique constraint from being violated
       })
       await Whitelist.destroy({
@@ -152,7 +153,7 @@ describe("Users Router", () => {
         otp = extractEmailOtp(email.body)
         return email
       })
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await Whitelist.create({ email: mockWhitelistedDomain })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -162,11 +163,11 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp,
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
       const updatedUser = await User.findOne({
         where: {
-          githubId: mockGithubId,
+          id: mockIsomerUserId,
         },
       })
 
@@ -180,7 +181,7 @@ describe("Users Router", () => {
       const expected = 400
       const wrongOtp = 123456
       mockAxios.post.mockResolvedValueOnce(200)
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })
@@ -189,7 +190,7 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: wrongOtp,
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -200,7 +201,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       mockAxios.post.mockResolvedValueOnce(200)
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })
@@ -209,7 +210,7 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: "",
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -220,7 +221,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       mockAxios.post.mockResolvedValueOnce(200)
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })
@@ -229,7 +230,7 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: undefined,
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -293,7 +294,7 @@ describe("Users Router", () => {
       // Clean up so that different tests using
       // the same mock user don't interfere with each other
       await User.destroy({
-        where: { githubId: mockGithubId },
+        where: { id: mockIsomerUserId },
         force: true, // hard delete user record to prevent the unique constraint from being violated
       })
     })
@@ -306,7 +307,7 @@ describe("Users Router", () => {
         otp = extractMobileOtp(sms.body)
         return sms
       })
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,
       })
@@ -315,11 +316,11 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp,
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
       const updatedUser = await User.findOne({
         where: {
-          githubId: mockGithubId,
+          id: mockIsomerUserId,
         },
       })
 
@@ -333,7 +334,7 @@ describe("Users Router", () => {
       const expected = 400
       const wrongOtp = 123456
       mockAxios.post.mockResolvedValueOnce(200)
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,
       })
@@ -342,7 +343,7 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: wrongOtp,
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -353,7 +354,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       mockAxios.post.mockResolvedValueOnce(200)
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,
       })
@@ -362,7 +363,7 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: "",
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -373,7 +374,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       mockAxios.post.mockResolvedValueOnce(200)
-      await User.create({ githubId: mockGithubId })
+      await User.create({ id: mockIsomerUserId })
       await request(app).post("/mobile/otp").send({
         mobile: mockValidNumber,
       })
@@ -382,7 +383,7 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: undefined,
-        userId: mockGithubId,
+        userId: mockIsomerUserId,
       })
 
       // Assert

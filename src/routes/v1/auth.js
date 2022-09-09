@@ -13,7 +13,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const { authMiddleware } = require("@root/middleware")
+const { authenticationMiddleware } = require("@root/middleware")
 // Import services
 const identityServices = require("@services/identity")
 
@@ -173,7 +173,7 @@ router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
-  authMiddleware.verifyJwt,
+  authenticationMiddleware.verifyJwt,
   attachReadRouteHandlerWrapper(whoami)
 )
 

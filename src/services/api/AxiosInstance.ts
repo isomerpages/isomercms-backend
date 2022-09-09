@@ -13,7 +13,11 @@ const requestFormatter = async (config: AxiosRequestConfig) => {
   const authMessage = config.headers.Authorization
 
   // If accessToken is missing, authMessage is `token `
-  if (!authMessage || authMessage === "token ") {
+  if (
+    !authMessage ||
+    authMessage === "token " ||
+    authMessage === "token undefined"
+  ) {
     const accessToken = await getAccessToken()
     config.headers.Authorization = `token ${accessToken}`
   }

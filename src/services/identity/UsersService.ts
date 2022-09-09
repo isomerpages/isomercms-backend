@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { Site, User, Whitelist } from "@database/models"
+import { Repo, Site, SiteMember, User, Whitelist } from "@database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
@@ -58,10 +58,39 @@ class UsersService {
   async hasAccessToSite(userId: string, siteName: string): Promise<boolean> {
     const siteMember = await this.repository.findOne({
       where: { id: userId },
-      include: [Site],
+      include: [
+        {
+          model: Site,
+          as: "site_members",
+          required: true,
+          include: [
+            {
+              model: Repo,
+              required: true,
+              where: {
+                name: siteName,
+              },
+            },
+          ],
+        },
+      ],
     })
 
     return !!siteMember
+  }
+
+  async findSitesByUserId(isomerId: string) {
+    return this.repository.findOne({
+      where: { id: isomerId },
+      include: [
+        {
+          model: Site,
+          as: "site_members",
+          required: true,
+          include: [{ model: Repo, required: true }],
+        },
+      ],
+    })
   }
 
   async updateUserByGitHubId(
@@ -70,6 +99,14 @@ class UsersService {
     user: RequireAtLeastOne<User, keyof User>
   ) {
     await this.repository.update(user, { where: { githubId } })
+  }
+
+  async updateUserByIsomerId(
+    isomerId: string,
+    // NOTE: This ensures that the caller passes in at least 1 property of User
+    user: RequireAtLeastOne<User, keyof User>
+  ) {
+    await this.repository.update(user, { where: { id: isomerId } })
   }
 
   async findOrCreate(githubId: string | undefined) {

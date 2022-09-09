@@ -118,8 +118,7 @@ describe("Settings Service", () => {
       }
 
       await expect(
-        service.updateSettingsFiles({
-          sessionData: mockUserWithSiteSessionData,
+        service.updateSettingsFiles(mockUserWithSiteSessionData, {
           config,
           homepage,
           footer,
@@ -162,8 +161,7 @@ describe("Settings Service", () => {
       }
 
       await expect(
-        service.updateSettingsFiles({
-          sessionData: mockUserWithSiteSessionData,
+        service.updateSettingsFiles(mockUserWithSiteSessionData, {
           config,
           homepage,
           footer,
@@ -209,8 +207,7 @@ describe("Settings Service", () => {
       }
 
       await expect(
-        service.updateSettingsFiles({
-          sessionData: mockUserWithSiteSessionData,
+        service.updateSettingsFiles(mockUserWithSiteSessionData, {
           config,
           homepage,
           footer,
@@ -248,8 +245,7 @@ describe("Settings Service", () => {
       }
 
       await expect(
-        service.updateSettingsFiles({
-          sessionData: mockUserWithSiteSessionData,
+        service.updateSettingsFiles(mockUserWithSiteSessionData, {
           config,
           homepage,
           footer,
@@ -284,8 +280,7 @@ describe("Settings Service", () => {
       }
 
       await expect(
-        service.updateSettingsFiles({
-          sessionData: mockUserWithSiteSessionData,
+        service.updateSettingsFiles(mockUserWithSiteSessionData, {
           config,
           homepage,
           footer,
@@ -349,8 +344,7 @@ describe("Settings Service", () => {
       }
 
       await expect(
-        service.updateSettingsFiles({
-          sessionData: mockUserWithSiteSessionData,
+        service.updateSettingsFiles(mockUserWithSiteSessionData, {
           config,
           homepage,
           footer,

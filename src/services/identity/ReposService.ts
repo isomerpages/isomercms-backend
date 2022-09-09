@@ -77,12 +77,6 @@ export default class ReposService {
     productionUrl: string,
     stagingUrl: string
   ) => {
-    await octokit.repos.update({
-      owner: ISOMER_GITHUB_ORGANIZATION_NAME,
-      repo: repoName,
-      description: `Staging: ${stagingUrl} | Production: ${productionUrl}`,
-    })
-
     const dir = this.getLocalRepoPath(repoName)
 
     // 1. Set URLs in local _config.yml

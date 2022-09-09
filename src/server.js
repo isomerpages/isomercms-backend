@@ -112,6 +112,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   usersService,
   reposService,
   deploymentsService,
+  isomerAdminsService,
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authorizationMiddleware,

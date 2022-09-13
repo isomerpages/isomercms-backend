@@ -9,6 +9,11 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
+const {
+  E2E_ISOMER_ID,
+  E2E_TEST_CONTACT,
+  E2E_TEST_EMAIL,
+} = require("@root/constants")
 const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
 const { isError } = require("@root/types")
@@ -129,6 +134,9 @@ class AuthService {
 
   async getUserInfo(sessionData) {
     try {
+      if (sessionData.isomerUserId === E2E_ISOMER_ID) {
+        return { email: E2E_TEST_EMAIL, contactNumber: E2E_TEST_CONTACT }
+      }
       if (sessionData.isEmailUser()) {
         const { email } = sessionData
         const { contactNumber } = await this.usersService.findByEmail(email)

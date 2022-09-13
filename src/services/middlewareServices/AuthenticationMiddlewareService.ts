@@ -6,12 +6,11 @@ import { AuthError } from "@errors/AuthError"
 
 import jwtUtils from "@utils/jwt-utils"
 
-import { E2E_ISOMER_ID } from "@root/constants"
+import { E2E_TEST_EMAIL, E2E_ISOMER_ID } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
-const E2E_TEST_EMAIL = "test@e2e"
 const GENERAL_ACCESS_PATHS = [
   "/v1/sites",
   "/v1/auth/whoami",

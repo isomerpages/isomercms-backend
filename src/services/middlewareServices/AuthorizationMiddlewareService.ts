@@ -42,13 +42,15 @@ export default class AuthorizationMiddlewareService {
 
     logger.info(`Verifying user's access to ${siteName}`)
 
+    const isE2EUser = userId === E2E_ISOMER_ID
+    if (isE2EUser) return
+
     const isSiteMember = await (sessionData.isEmailUser()
       ? this.usersService.hasAccessToSite(userId, siteName)
       : this.identityAuthService.hasAccessToSite(sessionData))
 
     const isAdminUser = await this.isomerAdminsService.getByUserId(userId)
 
-    const isE2EUser = userId === E2E_ISOMER_ID
     if (!isSiteMember && !isAdminUser && !isE2EUser) {
       throw new NotFoundError("Site does not exist")
     }

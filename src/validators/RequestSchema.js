@@ -104,7 +104,7 @@ const ResourceFrontMatterSchema = Joi.object({
   title: Joi.string().required(),
   date: Joi.string(),
   permalink: Joi.string(),
-  layout: Joi.string().valid("post", "file"),
+  layout: Joi.string().valid("post", "file", "link"),
   file_url: Joi.string(),
 }).unknown(true)
 

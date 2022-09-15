@@ -51,7 +51,7 @@ class ResourceDirectoryService {
         const tokenArray = fileNameArray.split("-")
         const date = tokenArray.slice(0, 3).join("-")
 
-        const resourceType = ["file", "post"].includes(tokenArray[3])
+        const resourceType = ["file", "post", "link"].includes(tokenArray[3])
           ? tokenArray[3]
           : undefined
 

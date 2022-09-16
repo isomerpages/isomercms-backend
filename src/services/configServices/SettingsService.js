@@ -135,33 +135,28 @@ class SettingsService {
     return clonedCurrentData
   }
 
+  cloneDeepNonEmpty(originalObj, updatedObj) {
+    const clonedOriginalObj = originalObj ? { ...originalObj } : {}
+    Object.keys(updatedObj).forEach((field) => {
+      if (typeof updatedObj[field] === "object" && updatedObj[field] !== null) {
+        clonedOriginalObj[field] = this.cloneDeepNonEmpty(
+          originalObj[field],
+          updatedObj[field]
+        )
+      } else if (updatedObj[field] === "") {
+        // Check for empty string because false value exists
+        delete clonedOriginalObj[field]
+      } else {
+        clonedOriginalObj[field] = updatedObj[field]
+      }
+    })
+    return clonedOriginalObj
+  }
+
   mergeUpdatedFooterData(currentData, updatedData) {
     // Special configuration to remove empty footer settings entirely so they don't show up in the actual site
     // Any updated data with empty strings are to be deleted from the footer object
-    const clonedCurrentData = _.cloneDeep(currentData)
-    Object.keys(updatedData).forEach((field) => {
-      if (field === "social_media") {
-        // social_media is an object with each social link in a separate property
-        // Set social_media field if it doesn't exist
-        if (!clonedCurrentData[field]) {
-          clonedCurrentData[field] = {}
-        }
-        const socials = updatedData[field]
-        Object.keys(socials).forEach((social) => {
-          if (!socials[social]) {
-            delete clonedCurrentData[field][social]
-          } else {
-            clonedCurrentData[field][social] = updatedData[field][social]
-          }
-        })
-      } else if (updatedData[field] === "") {
-        // Check for empty string because false value exists
-        delete clonedCurrentData[field]
-      } else {
-        clonedCurrentData[field] = updatedData[field]
-      }
-    })
-    return clonedCurrentData
+    return this.cloneDeepNonEmpty(currentData, updatedData)
   }
 
   static extractConfigFields(config) {

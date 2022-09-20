@@ -11,10 +11,6 @@ module.exports = {
         allowNull: false,
         type: Sequelize.INTEGER,
       },
-      primay_domain: {
-        allowNull: false,
-        type: Sequelize.STRING,
-      },
       site_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -35,11 +31,11 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING,
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
       },

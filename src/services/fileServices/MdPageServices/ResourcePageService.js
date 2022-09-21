@@ -19,7 +19,7 @@ class ResourcePageService {
     if (!isDateValid(date))
       throw new BadRequestError("Special characters not allowed in file name")
 
-    const type = ["file", "post"].includes(tokenArray[3])
+    const type = ["file", "post", "link"].includes(tokenArray[3])
       ? tokenArray[3]
       : undefined
 

@@ -63,7 +63,7 @@ class SettingsService {
         mergedConfigContent.url !== "" &&
         !mergedConfigContent.url.startsWith("https://")
       ) {
-        mergedConfigContent.url = "https://" + mergedConfigContent.url
+        mergedConfigContent.url = `https://${mergedConfigContent.url}`
       }
 
       await this.configYmlService.update(reqDetails, {
@@ -135,27 +135,28 @@ class SettingsService {
     return clonedCurrentData
   }
 
-  mergeUpdatedFooterData(currentData, updatedData) {
-    // Special configuration to remove empty footer settings entirely so they don't show up in the actual site
-    const clonedCurrentData = _.cloneDeep(currentData)
-    Object.keys(updatedData).forEach((field) => {
-      if (field === "social_media") {
-        const socials = updatedData[field]
-        Object.keys(socials).forEach((social) => {
-          if (!socials[social]) {
-            delete clonedCurrentData[field][social]
-          } else {
-            clonedCurrentData[field] = updatedData[field]
-          }
-        })
-      } else if (updatedData[field] === "") {
+  cloneDeepNonEmpty(originalObj, updatedObj) {
+    const clonedOriginalObj = originalObj ? { ...originalObj } : {}
+    Object.keys(updatedObj).forEach((field) => {
+      if (typeof updatedObj[field] === "object" && updatedObj[field] !== null) {
+        clonedOriginalObj[field] = this.cloneDeepNonEmpty(
+          originalObj[field],
+          updatedObj[field]
+        )
+      } else if (updatedObj[field] === "") {
         // Check for empty string because false value exists
-        delete clonedCurrentData[field]
+        delete clonedOriginalObj[field]
       } else {
-        clonedCurrentData[field] = updatedData[field]
+        clonedOriginalObj[field] = updatedObj[field]
       }
     })
-    return clonedCurrentData
+    return clonedOriginalObj
+  }
+
+  mergeUpdatedFooterData(currentData, updatedData) {
+    // Special configuration to remove empty footer settings entirely so they don't show up in the actual site
+    // Any updated data with empty strings are to be deleted from the footer object
+    return this.cloneDeepNonEmpty(currentData, updatedData)
   }
 
   static extractConfigFields(config) {
@@ -174,7 +175,13 @@ class SettingsService {
   }
 
   static extractFooterFields(footer) {
-    return footer.content
+    return {
+      show_reach: footer.content.show_reach,
+      social_media: footer.content.social_media,
+      faq: footer.content.faq,
+      contact_us: footer.content.contact_us,
+      feedback: footer.content.feedback,
+    }
   }
 
   static extractNavFields(navigation) {

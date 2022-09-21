@@ -91,4 +91,15 @@ export default class InfraService {
       throw err
     }
   }
+
+  launchSite = async (
+    submissionId: string,
+    requestor: User,
+    agency: User,
+    repoName: string,
+    primayDomain: string,
+    redirectionDomain?: string
+  ) =>
+    // todo lauch site logic
+    null
 }

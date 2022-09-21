@@ -63,6 +63,7 @@ const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
 
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
+const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { GitHubService } = require("@services/db/GitHubService")
@@ -111,6 +112,10 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
 })
 const authV2Router = new AuthRouter({ authMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
+const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
+  usersService,
+  infraService,
+})
 
 const app = express()
 app.use(helmet())
@@ -148,6 +153,7 @@ app.use("/v2", authenticatedSubrouterV2)
 
 // FormSG Backend handler routes
 app.use("/formsg", formsgRouter.getRouter())
+app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

@@ -15,11 +15,11 @@ import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 
 const { SITE_LAUNCH_FORM_KEY } = process.env
-const REQUESTER_EMAIL_FIELD = "Government E-mail"
+const REQUESTER_EMAIL_FIELD = "Government Email"
 const REPO_NAME_FIELD = "Repository Name"
 const PRIMARY_DOMAIN = "Primary Domain"
 const REDIRECTION_DOMAIN = "Redirection Domain"
-const AGENCY_EMAIL_FIELD = "Agency Recipient"
+const AGENCY_EMAIL_FIELD = "Agency recipient"
 
 export interface FormsgRouterProps {
   usersService: UsersService

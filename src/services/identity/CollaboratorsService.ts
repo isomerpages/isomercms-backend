@@ -200,10 +200,10 @@ class CollaboratorsService {
     })
 
     const siteMembers = site?.site_members ?? []
-    const userIsSiteMember =
+    const isUserSiteMember =
       _.filter(siteMembers, (member) => member.id.toString() === userId)
         .length > 0
-    if (!userIsSiteMember) {
+    if (!isUserSiteMember) {
       return new NotFoundError(`User is not a site member`)
     }
 

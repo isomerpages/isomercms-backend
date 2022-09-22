@@ -1,6 +1,3 @@
-import logger from "@root/logger/logger"
-import InfraService from "@services/infra/InfraService"
-
 const express = require("express")
 
 const {

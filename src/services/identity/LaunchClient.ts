@@ -1,5 +1,6 @@
 import {
   AmplifyClient,
+  CreateDomainAssociationCommand,
   CreateDomainAssociationCommandInput,
 } from "@aws-sdk/client-amplify"
 import { ResultAsync } from "neverthrow"
@@ -23,7 +24,7 @@ class LaunchClient {
     })
   }
 
-  configureDomain = (
+  createDomainAssociationCommandInput = (
     repoName: string,
     primaryDomain: string,
     subDomainSettings: undefined
@@ -32,6 +33,13 @@ class LaunchClient {
     domainName: primaryDomain,
     subDomainSettings,
   })
+
+  sendCreateDomainAssociation = (
+    options: CreateDomainAssociationCommandInput
+  ) =>
+    wrap(
+      this.amplifyClient.send(new CreateDomainAssociationCommand(options))
+    ) as ResultAsync<CreateDomainAssociationCommandInput, AmplifyError>
 }
 
 export default LaunchClient

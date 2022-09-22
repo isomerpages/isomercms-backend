@@ -125,9 +125,6 @@ class CollaboratorsService {
   }
 
   create = async (siteName: string, email: string, acknowledged: boolean) => {
-    let site
-    let user
-
     if (!email || !validator.isEmail(email)) {
       return new BadRequestError(
         "That doesn't look like a valid email. Try a gov.sg or other whitelisted email."
@@ -147,7 +144,7 @@ class CollaboratorsService {
     }
 
     // 2. Check if site exists
-    site = await this.sitesService.getBySiteName(siteName)
+    const site = await this.sitesService.getBySiteName(siteName)
     if (!site) {
       // Error - site does not exist
       logger.error(`create collaborators error: site ${siteName} is not valid`)
@@ -155,7 +152,7 @@ class CollaboratorsService {
     }
 
     // 3. Check if valid user exists
-    user = await this.usersService.findByEmail(email)
+    const user = await this.usersService.findByEmail(email)
     if (!user) {
       // Error - user with a valid gov email does not exist
       logger.error(`create collaborators error: user ${email} is not valid`)

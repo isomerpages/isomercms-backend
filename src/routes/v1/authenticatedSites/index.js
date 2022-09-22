@@ -26,7 +26,7 @@ const getAuthenticatedSitesSubrouter = ({
 
   authenticatedSitesSubrouter.use(authenticationMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(attachSiteHandler)
-  authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteAdmin)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteMember)
 
   authenticatedSitesSubrouter.use("/pages", pagesRouter)
   authenticatedSitesSubrouter.use("/collections", collectionsRouter)

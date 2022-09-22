@@ -1,9 +1,9 @@
 import { NotFoundError } from "@errors/NotFoundError"
-import { CollaboratorRoles } from "@root/constants"
-import { ForbiddenError } from "@root/errors/ForbiddenError"
+
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-import { E2E_ISOMER_ID } from "@root/constants"
+import { CollaboratorRoles, E2E_ISOMER_ID } from "@root/constants"
+import { ForbiddenError } from "@root/errors/ForbiddenError"
 import AuthService from "@services/identity/AuthService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
@@ -40,7 +40,25 @@ export default class AuthorizationMiddlewareService {
     this.collaboratorsService = collaboratorsService
   }
 
-  async checkIsSiteMember(sessionData: UserWithSiteSessionData) {
+  async doesUserHaveCollaboratorLevelAccess(
+    siteName: string,
+    userId: string,
+    collaboratorType: CollaboratorRoles
+  ) {
+    const collaboratorRole = await this.collaboratorsService.getRole(
+      siteName,
+      userId
+    )
+    return collaboratorType === CollaboratorRoles.Admin
+      ? collaboratorRole === CollaboratorRoles.Admin
+      : collaboratorRole === CollaboratorRoles.Admin ||
+          collaboratorRole === CollaboratorRoles.Contributor
+  }
+
+  async checkIsSiteCollaborator(
+    sessionData: UserWithSiteSessionData,
+    collaboratorType: CollaboratorRoles
+  ) {
     // Check if user has access to site
     const { siteName, isomerUserId: userId } = sessionData
 
@@ -51,46 +69,34 @@ export default class AuthorizationMiddlewareService {
     }
 
     logger.info(`Verifying user's access to ${siteName}`)
-
-    const isSiteMember = await (sessionData.isEmailUser()
-      ? (await this.collaboratorsService.getRole(siteName, userId)) !== null
-      : this.identityAuthService.hasAccessToSite(sessionData))
-
+    const isSiteCollaboratorOfType = sessionData.isEmailUser()
+      ? await this.doesUserHaveCollaboratorLevelAccess(
+          siteName,
+          userId,
+          collaboratorType
+        )
+      : await this.identityAuthService.hasAccessToSite(sessionData)
     const isIsomerCoreAdmin = await this.isomerAdminsService.getByUserId(userId)
 
     const isE2EUser = userId === E2E_ISOMER_ID
-    if (!isSiteMember && !isIsomerCoreAdmin && !isE2EUser) {
+    if (!isSiteCollaboratorOfType && !isIsomerCoreAdmin && !isE2EUser) {
       logger.error("Site does not exist")
       return new ForbiddenError()
     }
 
-    logger.info(`User ${userId} has access to ${siteName}`)
+    logger.info(
+      `User ${sessionData.isomerUserId} has ${collaboratorType} access to ${sessionData.siteName}`
+    )
+  }
+
+  async checkIsSiteMember(sessionData: UserWithSiteSessionData) {
+    return this.checkIsSiteCollaborator(
+      sessionData,
+      CollaboratorRoles.Contributor
+    )
   }
 
   async checkIsSiteAdmin(sessionData: UserWithSiteSessionData) {
-    // Check if user has access to site
-    const { siteName, isomerUserId: userId } = sessionData
-
-    // Should always be defined - authorization middleware only exists if siteName is defined
-    if (!siteName) {
-      logger.error("No site name in authorization middleware")
-      return new ForbiddenError()
-    }
-
-    logger.info(`Verifying user's access to ${siteName}`)
-
-    const isSiteAdmin = await (sessionData.isEmailUser()
-      ? (await this.collaboratorsService.getRole(siteName, userId)) ===
-        CollaboratorRoles.Admin
-      : this.identityAuthService.hasAccessToSite(sessionData))
-    const isIsomerCoreAdmin = await this.isomerAdminsService.getByUserId(userId)
-
-    const isE2EUser = userId === E2E_ISOMER_ID
-    if (!isSiteAdmin && !isIsomerCoreAdmin && !isE2EUser) {
-      logger.error("Site does not exist")
-      return new ForbiddenError()
-    }
-
-    logger.info(`User ${userId} has admin access to ${siteName}`)
+    return this.checkIsSiteCollaborator(sessionData, CollaboratorRoles.Admin)
   }
 }

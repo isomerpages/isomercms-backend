@@ -113,7 +113,7 @@ class CollaboratorsService {
             SiteMember: SiteMember
           }
         ) => collaborator.id.toString() === requesterId,
-        // Prioritize the last logged in user
+        // Prioritize the user that has not logged in for the longest time
         (
           collaborator: User & {
             SiteMember: SiteMember

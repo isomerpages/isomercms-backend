@@ -8,9 +8,8 @@ import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launch, Repo, User } from "@database/models"
+import { Deployment, Launch, Repo, User, Redirection} from "@database/models"
 import { RedirectionTypes } from "@root/constants/constants"
-import { Redirection } from "@root/database/models/Redirection"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 

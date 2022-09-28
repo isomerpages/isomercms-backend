@@ -125,6 +125,10 @@ export default class InfraService {
       console.log(launch)
 
       // Get DNS records from Amplify
+      const dnsInfo = await this.launchesService.getDomainAssociationRecord(
+        primaryDomain
+      )
+      logger.info(JSON.stringify(dnsInfo))
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       throw error

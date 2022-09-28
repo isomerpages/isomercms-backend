@@ -27,10 +27,12 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
+import { Launches } from "./database/models/Launches"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import LaunchesService from "./services/identity/LaunchesService"
 
 const path = require("path")
 
@@ -75,10 +77,16 @@ const { AuthService } = require("@services/utilServices/AuthService")
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
+const launchesService = new LaunchesService({
+  launches: Launches,
+  repo: Repo,
+  deployment: Deployment,
+})
 const infraService = new InfraService({
   sitesService,
   reposService,
   deploymentsService,
+  launchesService,
 })
 
 const gitHubService = new GitHubService({

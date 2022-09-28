@@ -234,6 +234,17 @@ export class LaunchesService {
       where: { id: updateParams.id },
     })
   }
+
+  getDomainAssociationRecord = async (domainName: string) => {
+    const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
+      this.appID,
+      domainName
+    )
+    await new Promise((resolve) => setTimeout(resolve, 120000))
+    return this.launchClient.sendGetDomainAssociationCommandInput(
+      getDomainAssociationOptions
+    )
+  }
 }
 
 export default LaunchesService

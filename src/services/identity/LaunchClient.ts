@@ -40,6 +40,21 @@ class LaunchClient {
     return this.amplifyClient.send(new CreateDomainAssociationCommand(input))
   }
 
+  createGetDomainAssociationCommandInput = (
+    appId: string,
+    domainName: string
+  ): GetDomainAssociationCommandInput => ({
+    appId,
+    domainName,
+  })
+
+  sendGetDomainAssociationCommandInput = (
+    input: GetDomainAssociationCommandInput
+  ) => {
+    logger.info(`getting domain association command`)
+    return this.amplifyClient.send(new GetDomainAssociationCommand(input))
+  }
+
   createListAppsCommandInput = (): ListAppsCommandInput => ({})
 
   getAllAppsCommand = () => {

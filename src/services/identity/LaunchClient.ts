@@ -8,6 +8,9 @@ import {
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
+import { options } from "joi"
+
+import logger from "@root/logger/logger"
 
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>

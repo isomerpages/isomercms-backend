@@ -4,7 +4,6 @@ import { Err, err, Ok, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import { mailer } from "@root/../build/src/services/utilServices/MailClient"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"

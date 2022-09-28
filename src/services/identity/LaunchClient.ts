@@ -9,6 +9,7 @@ import {
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
 
+
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>
 

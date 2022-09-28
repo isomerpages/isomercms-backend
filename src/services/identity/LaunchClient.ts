@@ -2,7 +2,15 @@ import {
   AmplifyClient,
   CreateDomainAssociationCommand,
   CreateDomainAssociationCommandInput,
+  GetDomainAssociationCommand,
+  GetDomainAssociationCommandInput,
+  ListAppsCommand,
+  ListAppsCommandInput,
+  SubDomainSetting,
 } from "@aws-sdk/client-amplify"
+import { options } from "joi"
+
+import logger from "@root/logger/logger"
 
 const { AWS_REGION } = process.env
 
@@ -16,18 +24,28 @@ class LaunchClient {
   }
 
   createDomainAssociationCommandInput = (
-    repoName: string,
+    appId: string,
     primaryDomain: string,
-    subDomainSettings: undefined
+    subDomainSettings: SubDomainSetting[]
   ): CreateDomainAssociationCommandInput => ({
-    appId: repoName,
+    appId,
     domainName: primaryDomain,
     subDomainSettings,
   })
 
   sendCreateDomainAssociation = (
-    options: CreateDomainAssociationCommandInput
-  ) => this.amplifyClient.send(new CreateDomainAssociationCommand(options))
+    input: CreateDomainAssociationCommandInput
+  ) => {
+    logger.info(`before amplify sends command`)
+    return this.amplifyClient.send(new CreateDomainAssociationCommand(input))
+  }
+
+  createListAppsCommandInput = (): ListAppsCommandInput => ({})
+
+  getAllAppsCommand = () => {
+    const input: ListAppsCommandInput = {}
+    this.amplifyClient.send(new ListAppsCommand(input))
+  }
 }
 
 export default LaunchClient

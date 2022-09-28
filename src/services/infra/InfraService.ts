@@ -1,8 +1,11 @@
+import { SubDomainSettings } from "aws-sdk/clients/amplify"
+
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import { SiteStatus, JobStatus } from "@root/constants"
 import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
+import LaunchesService from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
@@ -11,6 +14,7 @@ interface InfraServiceProps {
   sitesService: SitesService
   reposService: ReposService
   deploymentsService: DeploymentsService
+  launchesService: LaunchesService
 }
 
 export default class InfraService {
@@ -20,14 +24,18 @@ export default class InfraService {
 
   private readonly deploymentsService: InfraServiceProps["deploymentsService"]
 
+  private readonly launchesService: InfraServiceProps["launchesService"]
+
   constructor({
     sitesService,
     reposService,
     deploymentsService,
+    launchesService,
   }: InfraServiceProps) {
     this.sitesService = sitesService
     this.reposService = reposService
     this.deploymentsService = deploymentsService
+    this.launchesService = launchesService
   }
 
   createSite = async (
@@ -97,9 +105,31 @@ export default class InfraService {
     requestor: User,
     agency: User,
     repoName: string,
-    primayDomain: string,
+    primaryDomain: string,
+    subDomainSettings: SubDomainSettings,
     redirectionDomain?: string
-  ) =>
-    // todo lauch site logic
-    null
+  ) => {
+    // call amplify to trigger site launch process
+    try {
+      const newDomainAssociationParams = {}
+
+      // Set up domain association using LaunchesService
+      const launch = await this.launchesService.configureDomainInAmplify(
+        repoName,
+        primaryDomain,
+        subDomainSettings
+      )
+      logger.info(
+        `Created Domain association for ${repoName} to ${primaryDomain}`
+      )
+      console.log(launch)
+
+      // Get DNS records from Amplify
+    } catch (error) {
+      logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
+      throw error
+    }
+
+    return null
+  }
 }

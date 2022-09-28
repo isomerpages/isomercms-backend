@@ -207,7 +207,10 @@ class CollaboratorsService {
     const siteAdmins = siteMembers.filter(
       (member) => member.SiteMember.role === CollaboratorRoles.Admin
     )
-    if (siteAdmins.length === 1 && siteAdmins[0].id.toString() === userId) {
+    if (
+      siteAdmins.length === 1 &&
+      siteAdmins[0].id.toString() === userId // Required to check if the collaborator being deleted is an admin
+    ) {
       return new UnprocessableError(`Cannot delete final site admin`)
     }
 

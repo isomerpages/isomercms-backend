@@ -6,6 +6,7 @@ import {
   CreatedAt,
   UpdatedAt,
   ForeignKey,
+  DeletedAt,
 } from "sequelize-typescript"
 
 import { Site } from "@database/models/Site"
@@ -58,4 +59,7 @@ export class Launches extends Model {
 
   @UpdatedAt
   updatedAt!: Date
+
+  @DeletedAt
+  deletedAt!: Date
 }

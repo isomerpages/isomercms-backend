@@ -23,11 +23,11 @@ export class Launches extends Model {
 
   @ForeignKey(() => User)
   @Column
-  userId!: string
+  userId!: number
 
   @ForeignKey(() => Site)
   @Column
-  siteId!: string
+  siteId!: number
 
   @Column({
     allowNull: false,

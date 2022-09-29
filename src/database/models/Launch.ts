@@ -26,7 +26,7 @@ export class Launch extends Model {
 
   @ForeignKey(() => User)
   @Column
-  userId!: string
+  userId!: number
 
   @BelongsTo(() => User, {
     onUpdate: "CASCADE",

@@ -4,6 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { ResourceCategoriesRouter } = require("../resourceCategories")
 
@@ -50,14 +54,6 @@ describe("Resource Categories Router", () => {
   const resourceRoomName = "resource-room"
   const resourceCategoryName = "resource-category"
 
-  // Can't set request fields - will always be undefined
-  const accessToken = undefined
-  const currentCommitSha = undefined
-  const treeSha = undefined
-
-  const reqDetails = { siteName, accessToken }
-  const additionalReqDetails = { ...reqDetails, currentCommitSha, treeSha }
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -88,7 +84,7 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockResourceDirectoryService.listFiles).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         {
           resourceRoomName,
           resourceCategoryName,
@@ -119,7 +115,7 @@ describe("Resource Categories Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockResourceDirectoryService.createResourceDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
         resourceRoomName,
         resourceCategoryName,
       })
@@ -147,11 +143,15 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(
         mockResourceDirectoryService.renameResourceDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
-        resourceRoomName,
-        resourceCategoryName,
-        newDirectoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+          newDirectoryName,
+        }
+      )
     })
   })
 
@@ -164,10 +164,14 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(
         mockResourceDirectoryService.deleteResourceDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
-        resourceRoomName,
-        resourceCategoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+        }
+      )
     })
   })
 
@@ -225,12 +229,16 @@ describe("Resource Categories Router", () => {
         .expect(200)
       expect(
         mockResourceDirectoryService.moveResourcePages
-      ).toHaveBeenCalledWith(reqDetails, {
-        resourceRoomName,
-        resourceCategoryName,
-        targetResourceCategory,
-        objArray: items,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          resourceCategoryName,
+          targetResourceCategory,
+          objArray: items,
+        }
+      )
     })
   })
 })

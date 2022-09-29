@@ -7,15 +7,16 @@ const {
   noAccessRepo,
 } = require("@fixtures/repoInfo")
 const {
+  mockUserWithSiteSessionData,
+  mockSessionDataEmailUser,
+  mockIsomerUserId,
+} = require("@fixtures/sessionData")
+const {
   genericGitHubAxiosInstance,
 } = require("@root/services/api/AxiosInstance")
 
 describe("Resource Page Service", () => {
-  const siteName = "test-site"
-  const accessToken = "test-token"
   const userId = "userId"
-
-  const reqDetails = { siteName, accessToken }
 
   const mockGithubService = {
     checkHasAccess: jest.fn(),
@@ -26,10 +27,21 @@ describe("Resource Page Service", () => {
     read: jest.fn(),
   }
 
+  const mockUsersService = {
+    findSitesByUserId: jest.fn(),
+    getRepoInfo: jest.fn(),
+  }
+
+  const mockIsomerAdminsService = {
+    getByUserId: jest.fn(),
+  }
+
   const { SitesService } = require("@services/utilServices/SitesService")
   const service = new SitesService({
     gitHubService: mockGithubService,
     configYmlService: mockConfigYmlService,
+    usersService: mockUsersService,
+    isomerAdminsService: mockIsomerAdminsService,
   })
 
   beforeEach(() => {
@@ -37,7 +49,7 @@ describe("Resource Page Service", () => {
   })
 
   describe("getSites", () => {
-    it("Filters accessible sites correctly", async () => {
+    it("Filters accessible sites for github user correctly", async () => {
       // Store the API key and set it later so that other tests are not affected
       const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = 3
@@ -56,6 +68,7 @@ describe("Resource Page Service", () => {
           isPrivate: repoInfo2.private,
         },
       ]
+      mockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
       genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       }))
@@ -66,10 +79,124 @@ describe("Resource Page Service", () => {
         data: [],
       }))
 
-      await expect(service.getSites({ accessToken })).resolves.toMatchObject(
-        expectedResp
-      )
+      await expect(
+        service.getSites(mockUserWithSiteSessionData)
+      ).resolves.toMatchObject(expectedResp)
 
+      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
+      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+    })
+
+    it("Filters accessible sites for email user correctly", async () => {
+      // Store the API key and set it later so that other tests are not affected
+      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = 3
+
+      const expectedResp = [
+        {
+          lastUpdated: repoInfo.pushed_at,
+          permissions: repoInfo.permissions,
+          repoName: repoInfo.name,
+          isPrivate: repoInfo.private,
+        },
+      ]
+      mockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
+      mockUsersService.findSitesByUserId.mockImplementationOnce(() => ({
+        site_members: [{ repo: { name: repoInfo.name } }],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [],
+      }))
+
+      await expect(
+        service.getSites(mockSessionDataEmailUser)
+      ).resolves.toMatchObject(expectedResp)
+
+      expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
+        mockIsomerUserId
+      )
+      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
+      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+    })
+
+    it("Filters accessible sites for email user with no sites correctly", async () => {
+      // Store the API key and set it later so that other tests are not affected
+      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = 3
+
+      const expectedResp = []
+      mockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
+      mockUsersService.findSitesByUserId.mockImplementationOnce(() => null)
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [],
+      }))
+
+      await expect(
+        service.getSites(mockSessionDataEmailUser)
+      ).resolves.toMatchObject(expectedResp)
+
+      expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
+        mockIsomerUserId
+      )
+      expect(mockUsersService.findSitesByUserId).toHaveBeenCalledWith(
+        mockIsomerUserId
+      )
+      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
+      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+    })
+
+    it("Returns all accessible sites for admin user correctly", async () => {
+      // Store the API key and set it later so that other tests are not affected
+      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
+      process.env.ISOMERPAGES_REPO_PAGE_COUNT = 3
+
+      const expectedResp = [
+        {
+          lastUpdated: repoInfo.pushed_at,
+          permissions: repoInfo.permissions,
+          repoName: repoInfo.name,
+          isPrivate: repoInfo.private,
+        },
+        {
+          lastUpdated: repoInfo2.pushed_at,
+          permissions: repoInfo2.permissions,
+          repoName: repoInfo2.name,
+          isPrivate: repoInfo2.private,
+        },
+      ]
+      mockIsomerAdminsService.getByUserId.mockImplementationOnce(() => "user")
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [],
+      }))
+      genericGitHubAxiosInstance.get.mockImplementationOnce(() => ({
+        data: [],
+      }))
+
+      await expect(
+        service.getSites(mockUserWithSiteSessionData)
+      ).resolves.toMatchObject(expectedResp)
+
+      expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
+        mockIsomerUserId
+      )
       expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
       expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
@@ -79,12 +206,11 @@ describe("Resource Page Service", () => {
   describe("checkHasAccess", () => {
     it("Checks if a user has access to a site", async () => {
       await expect(
-        service.checkHasAccess(reqDetails, { userId })
+        service.checkHasAccess(mockUserWithSiteSessionData, { userId })
       ).resolves.not.toThrow()
 
       expect(mockGithubService.checkHasAccess).toHaveBeenCalledWith(
-        reqDetails,
-        { userId }
+        mockUserWithSiteSessionData
       )
     })
   })
@@ -93,11 +219,13 @@ describe("Resource Page Service", () => {
     it("Checks when site was last updated", async () => {
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
 
-      await expect(service.getLastUpdated(reqDetails)).resolves.toEqual(
-        repoInfo.pushed_at
-      )
+      await expect(
+        service.getLastUpdated(mockUserWithSiteSessionData)
+      ).resolves.toEqual(repoInfo.pushed_at)
 
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
   })
 
@@ -111,11 +239,13 @@ describe("Resource Page Service", () => {
       })
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo2)
 
-      await expect(service.getStagingUrl(reqDetails)).resolves.toEqual(
-        stagingUrl
-      )
+      await expect(
+        service.getStagingUrl(mockUserWithSiteSessionData)
+      ).resolves.toEqual(stagingUrl)
 
-      expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
     it("Retrieves the staging url for a site from repo info otherwise", async () => {
       mockConfigYmlService.read.mockResolvedValue({
@@ -123,12 +253,16 @@ describe("Resource Page Service", () => {
       })
       mockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
 
-      await expect(service.getStagingUrl(reqDetails)).resolves.toEqual(
-        stagingUrl
-      )
+      await expect(
+        service.getStagingUrl(mockUserWithSiteSessionData)
+      ).resolves.toEqual(stagingUrl)
 
-      expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
     it("throws an error when the staging url for a repo is not found", async () => {
       mockConfigYmlService.read.mockResolvedValue({
@@ -138,12 +272,16 @@ describe("Resource Page Service", () => {
         description: "edited description",
       })
 
-      await expect(service.getStagingUrl(reqDetails)).rejects.toThrowError(
-        NotFoundError
-      )
+      await expect(
+        service.getStagingUrl(mockUserWithSiteSessionData)
+      ).rejects.toThrowError(NotFoundError)
 
-      expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
   })
 })

@@ -11,6 +11,7 @@ describe("Media Directory Service", () => {
   const imageDirectoryName = `images/${imageSubdirectory}`
   const fileSubdirectory = "fileDir"
   const fileDirectoryName = `files/${fileSubdirectory}`
+  const mockGithubSessionData = "mockData"
 
   const objArray = [
     {
@@ -205,7 +206,7 @@ describe("Media Directory Service", () => {
   describe("CreateMediaDirectory", () => {
     it("rejects directories with special characters", async () => {
       await expect(
-        service.createMediaDirectory(reqDetails, {
+        service.createMediaDirectory(reqDetails, mockGithubSessionData, {
           directoryName: "dir/dir",
           objArray: undefined,
         })
@@ -214,7 +215,7 @@ describe("Media Directory Service", () => {
 
     it("Creating a directory with no specified files works correctly", async () => {
       await expect(
-        service.createMediaDirectory(reqDetails, {
+        service.createMediaDirectory(reqDetails, mockGithubSessionData, {
           directoryName: imageDirectoryName,
           objArray: undefined,
         })
@@ -241,7 +242,7 @@ describe("Media Directory Service", () => {
         },
       ]
       await expect(
-        service.createMediaDirectory(reqDetails, {
+        service.createMediaDirectory(reqDetails, mockGithubSessionData, {
           directoryName: newDirectoryName,
           objArray,
         })
@@ -255,6 +256,7 @@ describe("Media Directory Service", () => {
       })
       expect(mockBaseDirectoryService.moveFiles).toHaveBeenCalledWith(
         reqDetails,
+        mockGithubSessionData,
         {
           oldDirectoryName: fileDirectoryName,
           newDirectoryName,
@@ -269,7 +271,7 @@ describe("Media Directory Service", () => {
     const newDirectoryName = "images/new dir"
     it("rejects names with special characters", async () => {
       await expect(
-        service.renameMediaDirectory(reqDetails, {
+        service.renameMediaDirectory(reqDetails, mockGithubSessionData, {
           directoryName: imageDirectoryName,
           newDirectoryName: "dir/dir",
         })
@@ -278,30 +280,38 @@ describe("Media Directory Service", () => {
 
     it("Renaming a media directory works correctly", async () => {
       await expect(
-        service.renameMediaDirectory(reqDetails, {
+        service.renameMediaDirectory(reqDetails, mockGithubSessionData, {
           directoryName: imageDirectoryName,
           newDirectoryName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: imageDirectoryName,
-        newDirectoryName,
-        message: `Renaming media folder ${imageDirectoryName} to ${newDirectoryName}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: imageDirectoryName,
+          newDirectoryName,
+          message: `Renaming media folder ${imageDirectoryName} to ${newDirectoryName}`,
+        }
+      )
     })
   })
 
   describe("DeleteMediaDirectory", () => {
     it("Deleting a directory works correctly", async () => {
       await expect(
-        service.deleteMediaDirectory(reqDetails, {
+        service.deleteMediaDirectory(reqDetails, mockGithubSessionData, {
           directoryName: imageDirectoryName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(reqDetails, {
-        directoryName: imageDirectoryName,
-        message: `Deleting media folder ${imageDirectoryName}`,
-      })
+      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          directoryName: imageDirectoryName,
+          message: `Deleting media folder ${imageDirectoryName}`,
+        }
+      )
     })
   })
 
@@ -310,7 +320,7 @@ describe("Media Directory Service", () => {
     const targetFiles = objArray.map((item) => item.name)
     it("Moving media in a media directory to another media directory works correctly", async () => {
       await expect(
-        service.moveMediaFiles(reqDetails, {
+        service.moveMediaFiles(reqDetails, mockGithubSessionData, {
           directoryName: fileDirectoryName,
           targetDirectoryName,
           objArray,
@@ -318,6 +328,7 @@ describe("Media Directory Service", () => {
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.moveFiles).toHaveBeenCalledWith(
         reqDetails,
+        mockGithubSessionData,
         {
           oldDirectoryName: fileDirectoryName,
           newDirectoryName: targetDirectoryName,

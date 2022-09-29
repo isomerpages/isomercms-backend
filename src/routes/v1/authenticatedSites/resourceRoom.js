@@ -12,8 +12,9 @@ const { ResourceRoom } = require("@classes/ResourceRoom")
 
 // Get resource room name
 async function getResourceRoomName(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   const resourceRoom = await IsomerResourceRoom.get()
@@ -23,9 +24,10 @@ async function getResourceRoomName(req, res) {
 
 // Create resource room
 async function createResourceRoom(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
   const { resourceRoom } = req.body
+  const { accessToken } = userWithSiteSessionData
 
   // TO-DO:
   // Validate resourceRoom
@@ -38,8 +40,9 @@ async function createResourceRoom(req, res) {
 
 // Rename resource room name
 async function renameResourceRoom(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName, resourceRoom } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   // TO-DO:
   // Validate resourceRoom
@@ -52,8 +55,9 @@ async function renameResourceRoom(req, res) {
 
 // Delete resource room
 async function deleteResourceRoom(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerResourceRoom = new ResourceRoom(accessToken, siteName)
   await IsomerResourceRoom.delete()

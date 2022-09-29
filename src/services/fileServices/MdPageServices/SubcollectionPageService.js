@@ -15,7 +15,7 @@ class SubcollectionPageService {
   }
 
   async create(
-    reqDetails,
+    sessionData,
     {
       fileName,
       collectionName,
@@ -32,7 +32,7 @@ class SubcollectionPageService {
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
-    await this.collectionYmlService.addItemToOrder(reqDetails, {
+    await this.collectionYmlService.addItemToOrder(sessionData, {
       collectionName,
       item: `${subcollectionName}/${fileName}`,
     })
@@ -40,7 +40,7 @@ class SubcollectionPageService {
     frontMatter.third_nav_title = deslugifyCollectionName(subcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha } = await this.gitHubService.create(reqDetails, {
+    const { sha } = await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName,
       directoryName: parsedDirectoryName,
@@ -48,10 +48,10 @@ class SubcollectionPageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async read(reqDetails, { fileName, collectionName, subcollectionName }) {
+  async read(sessionData, { fileName, collectionName, subcollectionName }) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName,
         directoryName: parsedDirectoryName,
@@ -62,12 +62,12 @@ class SubcollectionPageService {
   }
 
   async update(
-    reqDetails,
+    sessionData,
     { fileName, collectionName, subcollectionName, content, frontMatter, sha }
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const newContent = convertDataToMarkdown(frontMatter, content)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName,
@@ -82,17 +82,17 @@ class SubcollectionPageService {
   }
 
   async delete(
-    reqDetails,
+    sessionData,
     { fileName, collectionName, subcollectionName, sha }
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     // Remove from collection.yml
-    await this.collectionYmlService.deleteItemFromOrder(reqDetails, {
+    await this.collectionYmlService.deleteItemFromOrder(sessionData, {
       collectionName,
       item: `${subcollectionName}/${fileName}`,
     })
-    return this.gitHubService.delete(reqDetails, {
+    return this.gitHubService.delete(sessionData, {
       sha,
       fileName,
       directoryName: parsedDirectoryName,
@@ -100,7 +100,7 @@ class SubcollectionPageService {
   }
 
   async rename(
-    reqDetails,
+    sessionData,
     {
       oldFileName,
       newFileName,
@@ -115,13 +115,13 @@ class SubcollectionPageService {
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
-    await this.collectionYmlService.updateItemInOrder(reqDetails, {
+    await this.collectionYmlService.updateItemInOrder(sessionData, {
       collectionName,
       oldItem: `${subcollectionName}/${oldFileName}`,
       newItem: `${subcollectionName}/${newFileName}`,
     })
 
-    await this.gitHubService.delete(reqDetails, {
+    await this.gitHubService.delete(sessionData, {
       sha,
       fileName: oldFileName,
       directoryName: parsedDirectoryName,
@@ -129,7 +129,7 @@ class SubcollectionPageService {
 
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha: newSha } = await this.gitHubService.create(reqDetails, {
+    const { sha: newSha } = await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName: newFileName,
       directoryName: parsedDirectoryName,
@@ -145,13 +145,13 @@ class SubcollectionPageService {
 
   // Used for updating the third_nav_title only without touching the collection.yml
   async updateSubcollection(
-    reqDetails,
+    sessionData,
     { fileName, collectionName, oldSubcollectionName, newSubcollectionName }
   ) {
     const {
       sha,
       content: { frontMatter, pageBody },
-    } = await this.read(reqDetails, {
+    } = await this.read(sessionData, {
       fileName,
       collectionName,
       subcollectionName: oldSubcollectionName,
@@ -161,12 +161,12 @@ class SubcollectionPageService {
     const parsedNewDirectoryName = `_${collectionName}/${newSubcollectionName}`
     frontMatter.third_nav_title = deslugifyCollectionName(newSubcollectionName)
     const newContent = convertDataToMarkdown(frontMatter, pageBody)
-    await this.gitHubService.delete(reqDetails, {
+    await this.gitHubService.delete(sessionData, {
       sha,
       fileName,
       directoryName: parsedOldDirectoryName,
     })
-    return this.gitHubService.create(reqDetails, {
+    return this.gitHubService.create(sessionData, {
       content: newContent,
       fileName,
       directoryName: parsedNewDirectoryName,

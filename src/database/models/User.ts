@@ -31,7 +31,7 @@ export class User extends Model {
   email?: string | null
 
   @Column({
-    allowNull: false,
+    allowNull: true,
     unique: true,
     type: DataType.TEXT,
     validate: {
@@ -61,13 +61,16 @@ export class User extends Model {
   @DeletedAt
   deletedAt?: Date
 
-  @BelongsToMany(() => User, {
+  @BelongsToMany(() => Site, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
     through: () => SiteMember,
+    as: "site_members",
   })
   sites!: Site[]
 
-  @HasMany(() => Site)
+  @HasMany(() => Site, {
+    as: "sites_created",
+  })
   sitesCreated?: Site[]
 }

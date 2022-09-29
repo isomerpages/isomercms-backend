@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { User, Whitelist } from "@database/models"
+import { Repo, Site, SiteMember, User, Whitelist } from "@database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
@@ -55,12 +55,58 @@ class UsersService {
     return this.repository.findOne({ where: { githubId } })
   }
 
+  async hasAccessToSite(userId: string, siteName: string): Promise<boolean> {
+    const siteMember = await this.repository.findOne({
+      where: { id: userId },
+      include: [
+        {
+          model: Site,
+          as: "site_members",
+          required: true,
+          include: [
+            {
+              model: Repo,
+              required: true,
+              where: {
+                name: siteName,
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    return !!siteMember
+  }
+
+  async findSitesByUserId(isomerId: string) {
+    return this.repository.findOne({
+      where: { id: isomerId },
+      include: [
+        {
+          model: Site,
+          as: "site_members",
+          required: true,
+          include: [{ model: Repo, required: true }],
+        },
+      ],
+    })
+  }
+
   async updateUserByGitHubId(
     githubId: string,
     // NOTE: This ensures that the caller passes in at least 1 property of User
     user: RequireAtLeastOne<User, keyof User>
   ) {
     await this.repository.update(user, { where: { githubId } })
+  }
+
+  async updateUserByIsomerId(
+    isomerId: string,
+    // NOTE: This ensures that the caller passes in at least 1 property of User
+    user: RequireAtLeastOne<User, keyof User>
+  ) {
+    await this.repository.update(user, { where: { id: isomerId } })
   }
 
   async findOrCreate(githubId: string | undefined) {
@@ -75,6 +121,18 @@ class UsersService {
       // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
       const [user] = await this.repository.findOrCreate({
         where: { githubId },
+        transaction,
+      })
+      user.lastLoggedIn = new Date()
+      return user.save({ transaction })
+    })
+  }
+
+  async loginWithEmail(email: string): Promise<User> {
+    return this.sequelize.transaction<User>(async (transaction) => {
+      // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
+      const [user] = await this.repository.findOrCreate({
+        where: { email },
         transaction,
       })
       user.lastLoggedIn = new Date()

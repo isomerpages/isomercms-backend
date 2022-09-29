@@ -2,11 +2,25 @@ import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 
 import logger from "@logger/logger"
 
+import { getAccessToken } from "@utils/token-retrieval-utils"
+
 // Env vars
 const { GITHUB_ORG_NAME } = process.env
 
-const requestFormatter = (config: AxiosRequestConfig) => {
+const requestFormatter = async (config: AxiosRequestConfig) => {
   logger.info("Making GitHub API call")
+
+  const authMessage = config.headers.Authorization
+
+  // If accessToken is missing, authMessage is `token `
+  if (
+    !authMessage ||
+    authMessage === "token " ||
+    authMessage === "token undefined"
+  ) {
+    const accessToken = await getAccessToken()
+    config.headers.Authorization = `token ${accessToken}`
+  }
   return {
     ...config,
     headers: {

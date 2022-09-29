@@ -4,6 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { ResourcePagesRouter } = require("../resourcePages")
 
@@ -44,12 +45,9 @@ describe("Resource Pages Router", () => {
   const siteName = "test-site"
   const resourceRoomName = "resource-room"
   const resourceCategoryName = "resource-category"
-  const accessToken = undefined // Can't set request fields - will always be undefined
   const fileName = "test-file"
   const mockSha = "12345"
   const mockContent = "mock-content"
-
-  const reqDetails = { siteName, accessToken }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -92,7 +90,7 @@ describe("Resource Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockResourcePageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -117,7 +115,7 @@ describe("Resource Pages Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockResourcePageService.read).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -166,7 +164,7 @@ describe("Resource Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockResourcePageService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -188,7 +186,7 @@ describe("Resource Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockResourcePageService.rename).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -222,7 +220,7 @@ describe("Resource Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockResourcePageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

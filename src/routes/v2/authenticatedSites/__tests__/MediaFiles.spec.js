@@ -4,6 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { MediaFilesRouter } = require("../mediaFiles")
 
@@ -43,12 +47,9 @@ describe("Media Files Router", () => {
 
   const siteName = "test-site"
   const directoryName = "imageDir"
-  const accessToken = undefined // Can't set request fields - will always be undefined
   const fileName = "test-file"
   const mockSha = "12345"
   const mockContent = "mock-content"
-
-  const reqDetails = { siteName, accessToken }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -78,7 +79,7 @@ describe("Media Files Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockMediaFileService.create).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -102,7 +103,7 @@ describe("Media Files Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockMediaFileService.read).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -138,7 +139,7 @@ describe("Media Files Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockMediaFileService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -156,7 +157,8 @@ describe("Media Files Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockMediaFileService.rename).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
         expectedServiceInput
       )
     })
@@ -185,7 +187,7 @@ describe("Media Files Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockMediaFileService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

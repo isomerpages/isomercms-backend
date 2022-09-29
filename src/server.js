@@ -12,14 +12,19 @@ import {
   AccessToken,
   Repo,
   Deployment,
+  IsomerAdmin,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
-import { getAuthMiddleware } from "@root/middleware"
+import {
+  getAuthenticationMiddleware,
+  getAuthorizationMiddleware,
+} from "@root/middleware"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import {
   getIdentityAuthService,
   getUsersService,
   sitesService,
+  isomerAdminsService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
@@ -40,6 +45,7 @@ const sequelize = initSequelize([
   AccessToken,
   Repo,
   Deployment,
+  IsomerAdmin,
 ])
 const usersService = getUsersService(sequelize)
 
@@ -80,32 +86,41 @@ const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
 })
 const identityAuthService = getIdentityAuthService(gitHubService)
+
 const configYmlService = new ConfigYmlService({ gitHubService })
 
-const authMiddleware = getAuthMiddleware({ identityAuthService })
+const authenticationMiddleware = getAuthenticationMiddleware()
+const authorizationMiddleware = getAuthorizationMiddleware({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+})
 
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
-  authMiddleware,
+  authenticationMiddleware,
   usersService,
 })
 const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
-  authMiddleware,
+  authenticationMiddleware,
+  authorizationMiddleware,
 })
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
-  authMiddleware,
+  authenticationMiddleware,
   gitHubService,
   configYmlService,
   usersService,
   reposService,
   deploymentsService,
+  isomerAdminsService,
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
-  authMiddleware,
+  authorizationMiddleware,
+  authenticationMiddleware,
   gitHubService,
   configYmlService,
 })
-const authV2Router = new AuthRouter({ authMiddleware, authService })
+const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()

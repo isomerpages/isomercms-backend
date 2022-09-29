@@ -5,7 +5,7 @@ const Bluebird = require("bluebird")
 const moment = require("moment-timezone")
 // Logging tools
 const winston = require("winston")
-const WinstonCloudWatch = require("winston-cloudwatch")
+const WinstonCloudwatch = require("winston-cloudwatch")
 
 // Env vars
 const { NODE_ENV } = process.env
@@ -66,7 +66,7 @@ class CloudWatchLogger {
           handleExceptions: true,
         }
 
-        this._logger.add(new WinstonCloudWatch(cloudwatchConfig))
+        this._logger.add(new WinstonCloudwatch(cloudwatchConfig))
       } catch (err) {
         console.error(`${timestampGenerator()} ${err.message}`)
         console.error(

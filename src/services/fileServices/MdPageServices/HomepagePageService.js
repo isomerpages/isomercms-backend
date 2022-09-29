@@ -10,9 +10,9 @@ class HomepagePageService {
     this.gitHubService = gitHubService
   }
 
-  async read(reqDetails) {
+  async read(sessionData) {
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: HOMEPAGE_FILE_NAME,
       }
@@ -21,9 +21,9 @@ class HomepagePageService {
     return { content: { frontMatter, pageBody: pageContent }, sha }
   }
 
-  async update(reqDetails, { content, frontMatter, sha }) {
+  async update(sessionData, { content, frontMatter, sha }) {
     const newContent = convertDataToMarkdown(frontMatter, content)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName: HOMEPAGE_FILE_NAME,

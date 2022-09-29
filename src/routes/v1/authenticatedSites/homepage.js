@@ -16,7 +16,8 @@ const HOMEPAGE_INDEX_PATH = "index.md" // Empty string
 
 // Read homepage index file
 async function readHomepage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName } = req.params
 
@@ -36,7 +37,8 @@ async function readHomepage(req, res) {
 
 // Update homepage index file
 async function updateHomepage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName } = req.params
   const { content, sha } = req.body

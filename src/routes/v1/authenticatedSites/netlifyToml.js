@@ -11,8 +11,9 @@ const router = express.Router({ mergeParams: true })
 
 // List resources
 async function getNetlifyToml(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const netlifyTomlFile = new NetlifyToml(accessToken, siteName)
 

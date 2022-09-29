@@ -11,6 +11,7 @@ describe("Media File Service", () => {
   const mockContent = "test"
   const mockSanitizedContent = "sanitized-test"
   const sha = "12345"
+  const mockGithubSessionData = "githubData"
 
   const reqDetails = { siteName, accessToken }
 
@@ -282,7 +283,7 @@ describe("Media File Service", () => {
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(reqDetails, mockGithubSessionData, {
           oldFileName,
           newFileName: "file/file.pdf",
           directoryName,
@@ -292,7 +293,7 @@ describe("Media File Service", () => {
     })
     it("Renaming pages works correctly", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(reqDetails, mockGithubSessionData, {
           oldFileName,
           newFileName: fileName,
           directoryName,
@@ -304,13 +305,21 @@ describe("Media File Service", () => {
         oldSha: sha,
         sha,
       })
-      expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
-        isRecursive: true,
-      })
-      expect(mockGithubService.updateTree).toHaveBeenCalledWith(reqDetails, {
-        gitTree: mockedMovedTree,
-        message: `Renamed ${oldFileName} to ${fileName}`,
-      })
+      expect(mockGithubService.getTree).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          isRecursive: true,
+        }
+      )
+      expect(mockGithubService.updateTree).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          gitTree: mockedMovedTree,
+          message: `Renamed ${oldFileName} to ${fileName}`,
+        }
+      )
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
         reqDetails,
         {

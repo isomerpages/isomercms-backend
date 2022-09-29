@@ -4,6 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockUserSessionData } = require("@fixtures/sessionData")
 
 const { NetlifyTomlRouter } = require("../netlifyToml")
 
@@ -26,10 +27,6 @@ describe("NetlifyToml Router", () => {
   )
   const app = generateRouter(subrouter)
 
-  const accessToken = undefined // Can't set request fields - will always be undefined
-
-  const reqDetails = { accessToken }
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -42,7 +39,9 @@ describe("NetlifyToml Router", () => {
       const resp = await request(app).get(`/netlifyToml`).expect(200)
 
       expect(resp.body).toStrictEqual({ netlifyTomlHeaderValues })
-      expect(mockNetlifyTomlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockNetlifyTomlService.read).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
   })
 })

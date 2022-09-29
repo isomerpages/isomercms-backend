@@ -123,9 +123,13 @@ class SubcollectionDirectoryService {
     })
   }
 
-  async deleteDirectory(reqDetails, { collectionName, subcollectionName }) {
+  async deleteDirectory(
+    reqDetails,
+    githubSessionData,
+    { collectionName, subcollectionName }
+  ) {
     const dir = `_${collectionName}/${subcollectionName}`
-    await this.baseDirectoryService.delete(reqDetails, {
+    await this.baseDirectoryService.delete(reqDetails, githubSessionData, {
       directoryName: dir,
       message: `Deleting subcollection ${collectionName}/${subcollectionName}`,
     })

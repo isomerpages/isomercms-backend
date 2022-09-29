@@ -1,21 +1,16 @@
 const express = require("express")
 const request = require("supertest")
 
-const { NotFoundError } = require("@errors/NotFoundError")
-
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const {
+  mockSiteName,
+  mockUserSessionData,
+  mockUserWithSiteSessionData,
+} = require("@fixtures/sessionData")
 
 const { SitesRouter } = require("../sites")
-
-// Can't set request fields - will always be undefined
-const userId = undefined
-const accessToken = undefined
-
-const siteName = "siteName"
-
-const reqDetails = { siteName, accessToken }
 
 describe("Sites Router", () => {
   const mockSitesService = {
@@ -59,29 +54,9 @@ describe("Sites Router", () => {
       const resp = await request(app).get(`/`).expect(200)
 
       expect(resp.body).toStrictEqual({ siteNames: sitesResp })
-      expect(mockSitesService.getSites).toHaveBeenCalledWith({ accessToken })
-    })
-  })
-
-  describe("checkHasAccess", () => {
-    it("rejects if user has no access to a site", async () => {
-      mockSitesService.checkHasAccess.mockRejectedValueOnce(
-        new NotFoundError("")
+      expect(mockSitesService.getSites).toHaveBeenCalledWith(
+        mockUserSessionData
       )
-
-      await request(app).get(`/${siteName}`).expect(404)
-
-      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {
-        userId,
-      })
-    })
-
-    it("allows if user has access to a site", async () => {
-      await request(app).get(`/${siteName}`).expect(200)
-
-      expect(mockSitesService.checkHasAccess).toHaveBeenCalledWith(reqDetails, {
-        userId,
-      })
     })
   })
 
@@ -91,11 +66,13 @@ describe("Sites Router", () => {
       mockSitesService.getLastUpdated.mockResolvedValueOnce(lastUpdated)
 
       const resp = await request(app)
-        .get(`/${siteName}/lastUpdated`)
+        .get(`/${mockSiteName}/lastUpdated`)
         .expect(200)
 
       expect(resp.body).toStrictEqual({ lastUpdated })
-      expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(reqDetails)
+      expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
   })
 
@@ -104,10 +81,14 @@ describe("Sites Router", () => {
       const stagingUrl = "staging-url"
       mockSitesService.getStagingUrl.mockResolvedValueOnce(stagingUrl)
 
-      const resp = await request(app).get(`/${siteName}/stagingUrl`).expect(200)
+      const resp = await request(app)
+        .get(`/${mockSiteName}/stagingUrl`)
+        .expect(200)
 
       expect(resp.body).toStrictEqual({ stagingUrl })
-      expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(reqDetails)
+      expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
   })
 })

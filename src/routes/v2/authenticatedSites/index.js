@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const {
@@ -82,7 +84,8 @@ const {
 const { MoverService } = require("@services/moverServices/MoverService")
 
 const getAuthenticatedSitesSubrouter = ({
-  authMiddleware,
+  authenticationMiddleware,
+  authorizationMiddleware,
   gitHubService,
   configYmlService,
 }) => {
@@ -184,8 +187,9 @@ const getAuthenticatedSitesSubrouter = ({
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
-  authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyJwt)
+  authenticatedSitesSubrouter.use(attachSiteHandler)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.checkIsSiteMember)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

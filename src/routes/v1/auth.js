@@ -13,7 +13,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const { authMiddleware } = require("@root/middleware")
+const { authenticationMiddleware } = require("@root/middleware")
 // Import services
 const identityServices = require("@services/identity")
 
@@ -141,7 +141,8 @@ async function logout(req, res) {
 }
 
 async function whoami(req, res) {
-  const { accessToken } = res.locals
+  const { userSessionData } = res.locals
+  const { accessToken } = userSessionData
 
   // Make a call to github
   const endpoint = "https://api.github.com/user"
@@ -172,7 +173,7 @@ router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
-  authMiddleware.whoamiAuth,
+  authenticationMiddleware.verifyJwt,
   attachReadRouteHandlerWrapper(whoami)
 )
 

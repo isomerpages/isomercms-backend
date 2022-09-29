@@ -4,19 +4,21 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockUserSessionData, mockEmail } = require("@fixtures/sessionData")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
 const { FRONTEND_URL } = process.env
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
-const accessToken = undefined
 
 describe("Unlinked Pages Router", () => {
   const mockAuthService = {
     getAuthRedirectDetails: jest.fn(),
     getGithubAuthToken: jest.fn(),
     getUserInfo: jest.fn(),
+    sendOtp: jest.fn(),
+    verifyOtp: jest.fn(),
   }
 
   const router = new AuthRouter({
@@ -31,6 +33,8 @@ describe("Unlinked Pages Router", () => {
     attachReadRouteHandlerWrapper(router.authRedirect)
   )
   subrouter.get("/", attachReadRouteHandlerWrapper(router.githubAuth))
+  subrouter.post("/login", attachReadRouteHandlerWrapper(router.login))
+  subrouter.post("/verify", attachReadRouteHandlerWrapper(router.verify))
   subrouter.delete("/logout", attachReadRouteHandlerWrapper(router.logout))
   subrouter.get("/whoami", attachReadRouteHandlerWrapper(router.whoami))
   const app = generateRouter(subrouter)
@@ -83,6 +87,25 @@ describe("Unlinked Pages Router", () => {
       )
     })
   })
+  describe("login", () => {
+    it("calls the service to send otp", async () => {
+      await request(app).post(`/login`).send({ email: mockEmail }).expect(200)
+      expect(mockAuthService.sendOtp).toHaveBeenCalledWith(
+        mockEmail.toLowerCase()
+      )
+    })
+  })
+  describe("verify", () => {
+    const mockOtp = "123456"
+    it("adds the cookie on login", async () => {
+      mockAuthService.getAuthRedirectDetails.mockResolvedValueOnce(cookieToken)
+      await request(app)
+        .post(`/verify`)
+        .send({ email: mockEmail, otp: mockOtp })
+        .set("Cookie", `${COOKIE_NAME}=${cookieToken}`)
+        .expect(200)
+    })
+  })
   describe("logout", () => {
     it("removes cookies on logout", async () => {
       const resp = await request(app)
@@ -113,7 +136,9 @@ describe("Unlinked Pages Router", () => {
       const resp = await request(app).get(`/whoami`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
 
     it("sends a 401 if user not found", async () => {
@@ -121,7 +146,9 @@ describe("Unlinked Pages Router", () => {
 
       await request(app).get(`/whoami`).expect(401)
 
-      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
   })
 })

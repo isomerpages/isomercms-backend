@@ -4,6 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { MediaCategoriesRouter } = require("../mediaCategories")
 
@@ -54,9 +58,6 @@ describe("Media Categories Router", () => {
   const currentCommitSha = undefined
   const treeSha = undefined
 
-  const reqDetails = { siteName, accessToken }
-  const additionalReqDetails = { ...reqDetails, currentCommitSha, treeSha }
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -88,7 +89,7 @@ describe("Media Categories Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockMediaDirectoryService.listFiles).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         {
           directoryName,
         }
@@ -113,10 +114,14 @@ describe("Media Categories Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockMediaDirectoryService.createMediaDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-        objArray: undefined,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          directoryName,
+          objArray: undefined,
+        }
+      )
     })
     it("accepts valid category create requests with files and returns the details of the category created", async () => {
       mockMediaDirectoryService.createMediaDirectory.mockResolvedValueOnce({})
@@ -140,10 +145,14 @@ describe("Media Categories Router", () => {
       expect(resp.body).toStrictEqual({})
       expect(
         mockMediaDirectoryService.createMediaDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-        objArray: mediaDetails.items,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          directoryName,
+          objArray: mediaDetails.items,
+        }
+      )
     })
   })
 
@@ -164,10 +173,14 @@ describe("Media Categories Router", () => {
         .expect(200)
       expect(
         mockMediaDirectoryService.renameMediaDirectory
-      ).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-        newDirectoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          directoryName,
+          newDirectoryName,
+        }
+      )
     })
   })
 
@@ -178,9 +191,13 @@ describe("Media Categories Router", () => {
         .expect(200)
       expect(
         mockMediaDirectoryService.deleteMediaDirectory
-      ).toHaveBeenCalledWith(additionalReqDetails, {
-        directoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          directoryName,
+        }
+      )
     })
   })
 
@@ -229,7 +246,8 @@ describe("Media Categories Router", () => {
         })
         .expect(200)
       expect(mockMediaDirectoryService.moveMediaFiles).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
         {
           directoryName,
           targetDirectoryName: targetMediaCategory,

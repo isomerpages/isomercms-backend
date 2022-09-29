@@ -8,9 +8,9 @@ class FooterYmlService {
     this.gitHubService = gitHubService
   }
 
-  async read(reqDetails) {
+  async read(sessionData) {
     const { content: unparsedContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: FOOTER_FILE_NAME,
         directoryName: FOOTER_FILE_DIR,
@@ -20,9 +20,9 @@ class FooterYmlService {
     return { content, sha }
   }
 
-  async update(reqDetails, { fileContent, sha }) {
+  async update(sessionData, { fileContent, sha }) {
     const stringifiedContent = yaml.stringify(fileContent)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: stringifiedContent,
       sha,
       fileName: FOOTER_FILE_NAME,

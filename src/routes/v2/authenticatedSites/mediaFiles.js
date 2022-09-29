@@ -24,30 +24,31 @@ class MediaFilesRouter {
 
   // Create new page in collection
   async createMediaFile(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, directoryName } = req.params
+    const { directoryName } = req.params
     const { error } = CreateMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { content, newFileName } = req.body
-    const reqDetails = { siteName, accessToken }
-    const createResp = await this.mediaFileService.create(reqDetails, {
-      fileName: newFileName,
-      directoryName,
-      content,
-    })
+    const createResp = await this.mediaFileService.create(
+      userWithSiteSessionData,
+      {
+        fileName: newFileName,
+        directoryName,
+        content,
+      }
+    )
 
     return res.status(200).json(createResp)
   }
 
   // Read page in collection
   async readMediaFile(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, fileName, directoryName } = req.params
+    const { fileName, directoryName } = req.params
 
-    const reqDetails = { siteName, accessToken }
-    const readResp = await this.mediaFileService.read(reqDetails, {
+    const readResp = await this.mediaFileService.read(userWithSiteSessionData, {
       fileName,
       directoryName,
     })
@@ -56,24 +57,27 @@ class MediaFilesRouter {
 
   // Update page in collection
   async updateMediaFile(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
-    const { siteName, fileName, directoryName } = req.params
+    const { fileName, directoryName } = req.params
     const { error } = UpdateMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { content, sha, newFileName } = req.body
-    const reqDetails = { siteName, accessToken, currentCommitSha, treeSha }
     let updateResp
     if (newFileName) {
-      updateResp = await this.mediaFileService.rename(reqDetails, {
-        oldFileName: fileName,
-        newFileName,
-        directoryName,
-        content,
-        sha,
-      })
+      updateResp = await this.mediaFileService.rename(
+        userWithSiteSessionData,
+        githubSessionData,
+        {
+          oldFileName: fileName,
+          newFileName,
+          directoryName,
+          content,
+          sha,
+        }
+      )
     } else {
-      updateResp = await this.mediaFileService.update(reqDetails, {
+      updateResp = await this.mediaFileService.update(userWithSiteSessionData, {
         fileName,
         directoryName,
         content,
@@ -85,14 +89,13 @@ class MediaFilesRouter {
 
   // Delete page in collection
   async deleteMediaFile(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, fileName, directoryName } = req.params
+    const { fileName, directoryName } = req.params
     const { error } = DeleteMediaFileRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { sha } = req.body
-    const reqDetails = { siteName, accessToken }
-    await this.mediaFileService.delete(reqDetails, {
+    await this.mediaFileService.delete(userWithSiteSessionData, {
       fileName,
       directoryName,
       sha,

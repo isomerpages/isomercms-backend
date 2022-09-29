@@ -16,8 +16,8 @@ class ResourceRoomDirectoryService {
     this.gitHubService = gitHubService
   }
 
-  async listAllResourceCategories(reqDetails, { resourceRoomName }) {
-    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
+  async listAllResourceCategories(sessionData, { resourceRoomName }) {
+    const filesOrDirs = await this.baseDirectoryService.list(sessionData, {
       directoryName: `${resourceRoomName}`,
     })
     return filesOrDirs.reduce((acc, curr) => {
@@ -30,8 +30,8 @@ class ResourceRoomDirectoryService {
     }, [])
   }
 
-  async getResourceRoomDirectoryName(reqDetails) {
-    const config = await this.configYmlService.read(reqDetails)
+  async getResourceRoomDirectoryName(sessionData) {
+    const config = await this.configYmlService.read(sessionData)
     return {
       resourceRoomName: config.content.resources_name
         ? config.content.resources_name
@@ -39,7 +39,7 @@ class ResourceRoomDirectoryService {
     }
   }
 
-  async createResourceRoomDirectory(reqDetails, { resourceRoomName }) {
+  async createResourceRoomDirectory(sessionData, { resourceRoomName }) {
     if (/[^a-zA-Z0-9- ]/g.test(resourceRoomName)) {
       // Contains non-allowed characters
       throw new BadRequestError(
@@ -48,13 +48,13 @@ class ResourceRoomDirectoryService {
     }
     const slugifiedResourceRoomName = slugifyCollectionName(resourceRoomName)
     const { content: configContent, sha } = await this.configYmlService.read(
-      reqDetails
+      sessionData
     )
     // If resource room already exists, throw error
     if ("resources_name" in configContent)
       throw new ConflictError("Resource room already exists")
     configContent.resources_name = slugifiedResourceRoomName
-    await this.configYmlService.update(reqDetails, {
+    await this.configYmlService.update(sessionData, {
       fileContent: configContent,
       sha,
     })
@@ -63,7 +63,7 @@ class ResourceRoomDirectoryService {
       title: resourceRoomName,
     }
     const newContent = convertDataToMarkdown(frontMatter, "")
-    await this.gitHubService.create(reqDetails, {
+    await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName: INDEX_FILE_NAME,
       directoryName: slugifiedResourceRoomName,
@@ -74,7 +74,8 @@ class ResourceRoomDirectoryService {
   }
 
   async renameResourceRoomDirectory(
-    reqDetails,
+    sessionData,
+    githubSessionData,
     { resourceRoomName, newDirectoryName }
   ) {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
@@ -86,7 +87,7 @@ class ResourceRoomDirectoryService {
     const slugifiedNewResourceRoomName = slugifyCollectionName(newDirectoryName)
 
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: INDEX_FILE_NAME,
         directoryName: resourceRoomName,
@@ -96,12 +97,12 @@ class ResourceRoomDirectoryService {
     frontMatter.title = newDirectoryName
     const newContent = convertDataToMarkdown(frontMatter, pageContent)
 
-    await this.baseDirectoryService.rename(reqDetails, {
+    await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName: resourceRoomName,
       newDirectoryName: slugifiedNewResourceRoomName,
       message: `Renaming resource room from ${resourceRoomName} to ${slugifiedNewResourceRoomName}`,
     })
-    await this.gitHubService.update(reqDetails, {
+    await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName: INDEX_FILE_NAME,
@@ -111,9 +112,9 @@ class ResourceRoomDirectoryService {
     const {
       content: configContent,
       sha: configSha,
-    } = await this.configYmlService.read(reqDetails)
+    } = await this.configYmlService.read(sessionData)
     configContent.resources_name = slugifiedNewResourceRoomName
-    await this.configYmlService.update(reqDetails, {
+    await this.configYmlService.update(sessionData, {
       fileContent: configContent,
       sha: configSha,
     })
@@ -122,17 +123,21 @@ class ResourceRoomDirectoryService {
     }
   }
 
-  async deleteResourceRoomDirectory(reqDetails, { resourceRoomName }) {
-    await this.baseDirectoryService.delete(reqDetails, {
+  async deleteResourceRoomDirectory(
+    sessionData,
+    githubSessionData,
+    { resourceRoomName }
+  ) {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: resourceRoomName,
       message: `Deleting resource room ${resourceRoomName}`,
     })
 
     const { content: configContent, sha } = await this.configYmlService.read(
-      reqDetails
+      sessionData
     )
     delete configContent.resources_name
-    await this.configYmlService.update(reqDetails, {
+    await this.configYmlService.update(sessionData, {
       fileContent: configContent,
       sha,
     })

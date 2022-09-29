@@ -18,8 +18,9 @@ const router = express.Router({ mergeParams: true })
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerCollection = new Collection(accessToken, siteName)
   const allFolders = IsomerCollection.list()
@@ -37,8 +38,10 @@ async function listAllFolderContent(req, res) {
 
 // Delete subfolder
 async function deleteSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, folderName, subfolderName } = req.params
+  const { accessToken } = userWithSiteSessionData
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   // Delete subfolder
   const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`
@@ -76,8 +79,9 @@ async function deleteSubfolder(req, res) {
 
 // Rename subfolder
 async function renameSubfolder(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName, folderName, subfolderName, newSubfolderName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   // Rename subfolder by:
   // 1. Creating new files in the newSubfolderName folder

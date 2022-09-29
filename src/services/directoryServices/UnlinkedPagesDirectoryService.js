@@ -6,8 +6,8 @@ class UnlinkedPagesDirectoryService {
     this.moverService = moverService
   }
 
-  async listAllUnlinkedPages(reqDetails) {
-    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
+  async listAllUnlinkedPages(sessionData) {
+    const filesOrDirs = await this.baseDirectoryService.list(sessionData, {
       directoryName: UNLINKED_PAGE_DIRECTORY_NAME,
     })
     return filesOrDirs.reduce((acc, curr) => {
@@ -21,14 +21,14 @@ class UnlinkedPagesDirectoryService {
   }
 
   async movePages(
-    reqDetails,
+    sessionData,
     { targetCollectionName, targetSubcollectionName, objArray }
   ) {
     // We can't perform these operations concurrently because of conflict issues
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of objArray) {
       const fileName = file.name
-      await this.moverService.movePage(reqDetails, {
+      await this.moverService.movePage(sessionData, {
         fileName,
         newFileCollection: targetCollectionName,
         newFileSubcollection: targetSubcollectionName,

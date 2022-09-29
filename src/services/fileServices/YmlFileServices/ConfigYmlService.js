@@ -7,9 +7,9 @@ class ConfigYmlService {
     this.gitHubService = gitHubService
   }
 
-  async read(reqDetails) {
+  async read(sessionData) {
     const { content: unparsedContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: CONFIG_FILE_NAME,
       }

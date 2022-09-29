@@ -8,9 +8,9 @@ class CollectionYmlService {
     this.gitHubService = gitHubService
   }
 
-  async read(reqDetails, { collectionName }) {
+  async read(sessionData, { collectionName }) {
     const { content: unparsedContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: COLLECTION_FILE_NAME,
         directoryName: `_${collectionName}`,
@@ -20,9 +20,9 @@ class CollectionYmlService {
     return { content, sha }
   }
 
-  async update(reqDetails, { collectionName, fileContent, sha }) {
+  async update(sessionData, { collectionName, fileContent, sha }) {
     const stringifiedContent = yaml.stringify(fileContent)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: stringifiedContent,
       sha,
       fileName: COLLECTION_FILE_NAME,
@@ -31,7 +31,7 @@ class CollectionYmlService {
     return { newSha }
   }
 
-  async create(reqDetails, { collectionName, orderArray }) {
+  async create(sessionData, { collectionName, orderArray }) {
     const contentObject = {
       collections: {
         [collectionName]: {
@@ -41,20 +41,20 @@ class CollectionYmlService {
       },
     }
     const stringifiedContent = yaml.stringify(contentObject)
-    return this.gitHubService.create(reqDetails, {
+    return this.gitHubService.create(sessionData, {
       content: stringifiedContent,
       fileName: COLLECTION_FILE_NAME,
       directoryName: `_${collectionName}`,
     })
   }
 
-  async listContents(reqDetails, { collectionName }) {
-    const { content } = await this.read(reqDetails, { collectionName })
+  async listContents(sessionData, { collectionName }) {
+    const { content } = await this.read(sessionData, { collectionName })
     return content.collections[collectionName].order
   }
 
-  async addItemToOrder(reqDetails, { collectionName, item, index }) {
-    const { content, sha } = await this.read(reqDetails, { collectionName })
+  async addItemToOrder(sessionData, { collectionName, item, index }) {
+    const { content, sha } = await this.read(sessionData, { collectionName })
 
     let newIndex = index
     if (index === undefined) {
@@ -72,20 +72,20 @@ class CollectionYmlService {
     }
     content.collections[collectionName].order.splice(newIndex, 0, item)
 
-    return this.update(reqDetails, {
+    return this.update(sessionData, {
       collectionName,
       fileContent: content,
       sha,
     })
   }
 
-  async deleteItemFromOrder(reqDetails, { collectionName, item }) {
-    const { content, sha } = await this.read(reqDetails, { collectionName })
+  async deleteItemFromOrder(sessionData, { collectionName, item }) {
+    const { content, sha } = await this.read(sessionData, { collectionName })
 
     const index = content.collections[collectionName].order.indexOf(item)
     if (index !== -1) {
       content.collections[collectionName].order.splice(index, 1)
-      return this.update(reqDetails, {
+      return this.update(sessionData, {
         collectionName,
         fileContent: content,
         sha,
@@ -93,14 +93,14 @@ class CollectionYmlService {
     }
   }
 
-  async updateItemInOrder(reqDetails, { collectionName, oldItem, newItem }) {
-    const { content, sha } = await this.read(reqDetails, { collectionName })
+  async updateItemInOrder(sessionData, { collectionName, oldItem, newItem }) {
+    const { content, sha } = await this.read(sessionData, { collectionName })
 
     const index = content.collections[collectionName].order.indexOf(oldItem)
     content.collections[collectionName].order.splice(index, 1)
     content.collections[collectionName].order.splice(index, 0, newItem)
 
-    return this.update(reqDetails, {
+    return this.update(sessionData, {
       collectionName,
       fileContent: content,
       sha,
@@ -108,10 +108,10 @@ class CollectionYmlService {
   }
 
   async renameCollectionInOrder(
-    reqDetails,
+    sessionData,
     { oldCollectionName, newCollectionName }
   ) {
-    const { content, sha } = await this.read(reqDetails, {
+    const { content, sha } = await this.read(sessionData, {
       collectionName: newCollectionName,
     })
 
@@ -121,15 +121,15 @@ class CollectionYmlService {
       },
     }
 
-    return this.update(reqDetails, {
+    return this.update(sessionData, {
       collectionName: newCollectionName,
       fileContent: contentObject,
       sha,
     })
   }
 
-  async deleteSubfolderFromOrder(reqDetails, { collectionName, subfolder }) {
-    const { content, sha } = await this.read(reqDetails, { collectionName })
+  async deleteSubfolderFromOrder(sessionData, { collectionName, subfolder }) {
+    const { content, sha } = await this.read(sessionData, { collectionName })
 
     const filteredOrder = content.collections[collectionName].order.filter(
       (item) => !item.includes(`${subfolder}/`)
@@ -137,7 +137,7 @@ class CollectionYmlService {
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = filteredOrder
 
-    return this.update(reqDetails, {
+    return this.update(sessionData, {
       collectionName,
       fileContent: newContentObject,
       sha,
@@ -145,10 +145,10 @@ class CollectionYmlService {
   }
 
   async renameSubfolderInOrder(
-    reqDetails,
+    sessionData,
     { collectionName, oldSubfolder, newSubfolder }
   ) {
-    const { content, sha } = await this.read(reqDetails, { collectionName })
+    const { content, sha } = await this.read(sessionData, { collectionName })
     const renamedOrder = content.collections[collectionName].order.map(
       (item) => {
         if (item.includes(`${oldSubfolder}/`))
@@ -159,15 +159,15 @@ class CollectionYmlService {
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = renamedOrder
 
-    return this.update(reqDetails, {
+    return this.update(sessionData, {
       collectionName,
       fileContent: newContentObject,
       sha,
     })
   }
 
-  async updateOrder(reqDetails, { collectionName, newOrder }) {
-    const { sha } = await this.read(reqDetails, { collectionName })
+  async updateOrder(sessionData, { collectionName, newOrder }) {
+    const { sha } = await this.read(sessionData, { collectionName })
     const contentObject = {
       collections: {
         [collectionName]: {
@@ -177,7 +177,7 @@ class CollectionYmlService {
       },
     }
     const stringifiedContent = yaml.stringify(contentObject)
-    return this.gitHubService.update(reqDetails, {
+    return this.gitHubService.update(sessionData, {
       directoryName: `_${collectionName}`,
       fileContent: stringifiedContent,
       fileName: COLLECTION_FILE_NAME,

@@ -29,12 +29,34 @@ const ISOMER_ADMIN_REPOS = [
 ]
 
 class SitesService {
-  constructor({ gitHubService, configYmlService }) {
+  constructor({
+    gitHubService,
+    configYmlService,
+    usersService,
+    isomerAdminsService,
+  }) {
     this.githubService = gitHubService
     this.configYmlService = configYmlService
+    this.usersService = usersService
+    this.isomerAdminsService = isomerAdminsService
   }
 
-  async getSites({ accessToken }) {
+  async getEmailUserSites(userId) {
+    const user = await this.usersService.findSitesByUserId(userId)
+    if (!user) return []
+    const { site_members: siteMemberEntries } = user
+    return siteMemberEntries.map((entry) => {
+      const repoData = entry.repo
+      return repoData.name
+    })
+  }
+
+  async getSites(sessionData) {
+    const isEmailUser = sessionData.isEmailUser()
+    const { isomerUserId: userId } = sessionData
+    const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
+
+    const { accessToken } = sessionData
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
     // Simultaneously retrieve all isomerpages repos
@@ -46,7 +68,7 @@ class SitesService {
       })
     )
 
-    const sites = await Bluebird.map(paramsArr, async (params) => {
+    const allSites = await Bluebird.map(paramsArr, async (params) => {
       const { data: respData } = await genericGitHubAxiosInstance.get(
         endpoint,
         {
@@ -80,26 +102,38 @@ class SitesService {
         )
     })
 
-    return _.flatten(sites)
+    const flattenedAllSites = _.flatten(allSites)
+    // Github users are using their own access token, which already filters sites to only those they have write access to
+    // Admin users should have access to all sites regardless
+    if (isAdminUser || !isEmailUser) return flattenedAllSites
+
+    // Email users need to have the list of sites filtered to those they have access to in our db, since our centralised token returns all sites
+    const retrievedSitesByEmail = await this.getEmailUserSites(userId)
+
+    return flattenedAllSites.filter((repoData) =>
+      retrievedSitesByEmail.includes(repoData.repoName)
+    )
   }
 
-  async checkHasAccess(reqDetails, { userId }) {
-    await this.githubService.checkHasAccess(reqDetails, { userId })
+  async checkHasAccess(sessionData) {
+    await this.githubService.checkHasAccess(sessionData)
   }
 
-  async getLastUpdated(reqDetails) {
+  async getLastUpdated(sessionData) {
     const { pushed_at: updatedAt } = await this.githubService.getRepoInfo(
-      reqDetails
+      sessionData
     )
     return updatedAt
   }
 
-  async getStagingUrl(reqDetails) {
+  async getStagingUrl(sessionData) {
     // Check config.yml for staging url if it exists, and github site description otherwise
-    const { content: configData } = await this.configYmlService.read(reqDetails)
+    const { content: configData } = await this.configYmlService.read(
+      sessionData
+    )
     if ("staging" in configData) return configData.staging
 
-    const { description } = await this.githubService.getRepoInfo(reqDetails)
+    const { description } = await this.githubService.getRepoInfo(sessionData)
 
     if (description) {
       // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
@@ -111,7 +145,7 @@ class SitesService {
       if (stagingUrl) return stagingUrl
     }
 
-    throw new NotFoundError(`${reqDetails.siteName} has no staging url`)
+    throw new NotFoundError(`${sessionData.siteName} has no staging url`)
   }
 }
 

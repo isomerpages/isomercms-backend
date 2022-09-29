@@ -5,6 +5,7 @@ describe("Collection Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const collectionName = "collection"
+  const mockGithubSessionData = "mockData"
 
   const objArray = [
     {
@@ -252,7 +253,7 @@ describe("Collection Directory Service", () => {
     const newDirectoryName = "new-dir"
     it("rejects renaming to a collection with the same name as protected folders", async () => {
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(reqDetails, mockGithubSessionData, {
           collectionName,
           newDirectoryName: "files",
         })
@@ -261,7 +262,7 @@ describe("Collection Directory Service", () => {
 
     it("rejects collections with special characters", async () => {
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(reqDetails, mockGithubSessionData, {
           collectionName,
           newDirectoryName: "dir/dir",
         })
@@ -270,16 +271,20 @@ describe("Collection Directory Service", () => {
 
     it("Renaming a collection works correctly", async () => {
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(reqDetails, mockGithubSessionData, {
           collectionName,
           newDirectoryName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: `_${collectionName}`,
-        newDirectoryName: `_${newDirectoryName}`,
-        message: `Renaming collection ${collectionName} to ${newDirectoryName}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: `_${collectionName}`,
+          newDirectoryName: `_${newDirectoryName}`,
+          message: `Renaming collection ${collectionName} to ${newDirectoryName}`,
+        }
+      )
       expect(
         mockCollectionYmlService.renameCollectionInOrder
       ).toHaveBeenCalledWith(reqDetails, {
@@ -298,16 +303,20 @@ describe("Collection Directory Service", () => {
       const originalCollectionName = "Test Collection"
       const slugifiedCollectionName = "test-collection"
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(reqDetails, mockGithubSessionData, {
           collectionName,
           newDirectoryName: originalCollectionName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: `_${collectionName}`,
-        newDirectoryName: `_${slugifiedCollectionName}`,
-        message: `Renaming collection ${collectionName} to ${slugifiedCollectionName}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: `_${collectionName}`,
+          newDirectoryName: `_${slugifiedCollectionName}`,
+          message: `Renaming collection ${collectionName} to ${slugifiedCollectionName}`,
+        }
+      )
       expect(
         mockCollectionYmlService.renameCollectionInOrder
       ).toHaveBeenCalledWith(reqDetails, {
@@ -327,7 +336,7 @@ describe("Collection Directory Service", () => {
   describe("DeleteDirectory", () => {
     it("rejects deleting a collection with the same name as protected folders", async () => {
       await expect(
-        service.deleteDirectory(reqDetails, {
+        service.deleteDirectory(reqDetails, mockGithubSessionData, {
           collectionName: "data",
         })
       ).rejects.toThrowError(ConflictError)
@@ -335,14 +344,18 @@ describe("Collection Directory Service", () => {
 
     it("Deleting a directory works correctly", async () => {
       await expect(
-        service.deleteDirectory(reqDetails, {
+        service.deleteDirectory(reqDetails, mockGithubSessionData, {
           collectionName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(reqDetails, {
-        directoryName: `_${collectionName}`,
-        message: `Deleting collection ${collectionName}`,
-      })
+      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          directoryName: `_${collectionName}`,
+          message: `Deleting collection ${collectionName}`,
+        }
+      )
       expect(mockNavYmlService.deleteCollectionInNav).toHaveBeenCalledWith(
         reqDetails,
         {

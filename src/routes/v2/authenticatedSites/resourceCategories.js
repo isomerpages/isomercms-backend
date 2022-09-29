@@ -24,11 +24,11 @@ class ResourceCategoriesRouter {
 
   // List files in a resource category
   async listResourceDirectoryFiles(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, resourceRoomName, resourceCategoryName } = req.params
+    const { resourceRoomName, resourceCategoryName } = req.params
     const listResp = await this.resourceDirectoryService.listFiles(
-      { siteName, accessToken },
+      userWithSiteSessionData,
       { resourceRoomName, resourceCategoryName }
     )
     return res.status(200).json(listResp)
@@ -36,14 +36,14 @@ class ResourceCategoriesRouter {
 
   // Create new resource category
   async createResourceDirectory(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, resourceRoomName } = req.params
+    const { resourceRoomName } = req.params
     const { error } = CreateResourceDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
     const createResp = await this.resourceDirectoryService.createResourceDirectory(
-      { siteName, accessToken },
+      userWithSiteSessionData,
       {
         resourceRoomName,
         resourceCategoryName: newDirectoryName,
@@ -55,14 +55,15 @@ class ResourceCategoriesRouter {
 
   // Rename resource category
   async renameResourceDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
-    const { siteName, resourceRoomName, resourceCategoryName } = req.params
+    const { resourceRoomName, resourceCategoryName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
     await this.resourceDirectoryService.renameResourceDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
+      userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         resourceCategoryName,
@@ -75,11 +76,12 @@ class ResourceCategoriesRouter {
 
   // Delete resource category
   async deleteResourceDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
-    const { siteName, resourceRoomName, resourceCategoryName } = req.params
+    const { resourceRoomName, resourceCategoryName } = req.params
     await this.resourceDirectoryService.deleteResourceDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
+      userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         resourceCategoryName,
@@ -90,9 +92,9 @@ class ResourceCategoriesRouter {
 
   // Move resource category
   async moveResourceDirectoryPages(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
-    const { siteName, resourceRoomName, resourceCategoryName } = req.params
+    const { resourceRoomName, resourceCategoryName } = req.params
     const { error } = MoveResourceDirectoryPagesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -100,7 +102,8 @@ class ResourceCategoriesRouter {
       target: { resourceCategoryName: targetResourceCategory },
     } = req.body
     await this.resourceDirectoryService.moveResourcePages(
-      { siteName, accessToken, currentCommitSha, treeSha },
+      userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         resourceCategoryName,

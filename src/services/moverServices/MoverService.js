@@ -10,7 +10,7 @@ class MoverService {
   }
 
   async movePage(
-    reqDetails,
+    sessionData,
     {
       fileName,
       oldFileCollection,
@@ -25,14 +25,14 @@ class MoverService {
       const {
         content: { frontMatter, pageBody },
         sha,
-      } = await this.subcollectionPageService.read(reqDetails, {
+      } = await this.subcollectionPageService.read(sessionData, {
         fileName,
         collectionName: oldFileCollection,
         subcollectionName: oldFileSubcollection,
       })
       fileFrontMatter = frontMatter
       fileBody = pageBody
-      await this.subcollectionPageService.delete(reqDetails, {
+      await this.subcollectionPageService.delete(sessionData, {
         fileName,
         collectionName: oldFileCollection,
         subcollectionName: oldFileSubcollection,
@@ -42,13 +42,13 @@ class MoverService {
       const {
         content: { frontMatter, pageBody },
         sha,
-      } = await this.collectionPageService.read(reqDetails, {
+      } = await this.collectionPageService.read(sessionData, {
         fileName,
         collectionName: oldFileCollection,
       })
       fileFrontMatter = frontMatter
       fileBody = pageBody
-      await this.collectionPageService.delete(reqDetails, {
+      await this.collectionPageService.delete(sessionData, {
         fileName,
         collectionName: oldFileCollection,
         sha,
@@ -57,17 +57,17 @@ class MoverService {
       const {
         content: { frontMatter, pageBody },
         sha,
-      } = await this.unlinkedPageService.read(reqDetails, {
+      } = await this.unlinkedPageService.read(sessionData, {
         fileName,
       })
       fileFrontMatter = frontMatter
       fileBody = pageBody
-      await this.unlinkedPageService.delete(reqDetails, { fileName, sha })
+      await this.unlinkedPageService.delete(sessionData, { fileName, sha })
     }
 
     let createResp
     if (newFileSubcollection) {
-      createResp = await this.subcollectionPageService.create(reqDetails, {
+      createResp = await this.subcollectionPageService.create(sessionData, {
         fileName,
         collectionName: newFileCollection,
         subcollectionName: newFileSubcollection,
@@ -76,7 +76,7 @@ class MoverService {
         shouldIgnoreCheck: true,
       })
     } else if (newFileCollection) {
-      createResp = await this.collectionPageService.create(reqDetails, {
+      createResp = await this.collectionPageService.create(sessionData, {
         fileName,
         collectionName: newFileCollection,
         content: fileBody,
@@ -84,7 +84,7 @@ class MoverService {
         shouldIgnoreCheck: true,
       })
     } else {
-      createResp = await this.unlinkedPageService.create(reqDetails, {
+      createResp = await this.unlinkedPageService.create(sessionData, {
         fileName,
         content: fileBody,
         frontMatter: fileFrontMatter,

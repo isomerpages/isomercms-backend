@@ -11,6 +11,7 @@ import {
   Deployment,
   Launch,
   Redirection,
+  IsomerAdmin,
 } from "@database/models"
 
 const sequelize = new Sequelize({
@@ -27,6 +28,7 @@ sequelize.addModels([
   Deployment,
   Launch,
   Redirection,
+  IsomerAdmin,
 ])
 
 // eslint-disable-next-line import/prefer-default-export

@@ -12,11 +12,11 @@ class ContactUsPageService {
     this.footerYmlService = footerYmlService
   }
 
-  async read(reqDetails) {
+  async read(sessionData) {
     // Due to template intricacies, the feedback url is read from/stored in the footer -
     // the contact-us link to the feedback page is taken from the feedback url stored in the footer.yml file
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: CONTACT_US_FILE_NAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
@@ -24,17 +24,17 @@ class ContactUsPageService {
     )
     const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
     const { content: footerContent } = await this.footerYmlService.read(
-      reqDetails
+      sessionData
     )
     frontMatter.feedback = footerContent.feedback
     return { content: { frontMatter, pageBody: pageContent }, sha }
   }
 
-  async update(reqDetails, { content, frontMatter, sha }) {
+  async update(sessionData, { content, frontMatter, sha }) {
     // Due to template intricacies, the feedback url is read from/stored in the footer -
     // the contact-us link to the feedback page is taken from the feedback url stored in the footer.yml file
     const newContent = convertDataToMarkdown(frontMatter, content)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName: CONTACT_US_FILE_NAME,
@@ -43,9 +43,9 @@ class ContactUsPageService {
     const {
       content: footerContent,
       sha: footerSha,
-    } = await this.footerYmlService.read(reqDetails)
+    } = await this.footerYmlService.read(sessionData)
     footerContent.feedback = frontMatter.feedback
-    await this.footerYmlService.update(reqDetails, {
+    await this.footerYmlService.update(sessionData, {
       fileContent: footerContent,
       sha: footerSha,
     })

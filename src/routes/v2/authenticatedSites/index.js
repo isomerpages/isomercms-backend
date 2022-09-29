@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const {
@@ -82,7 +84,8 @@ const {
 const { MoverService } = require("@services/moverServices/MoverService")
 
 const getAuthenticatedSitesSubrouter = ({
-  authMiddleware,
+  authenticationMiddleware,
+  authorizationMiddleware,
   gitHubService,
   configYmlService,
   apiLogger,
@@ -185,11 +188,12 @@ const getAuthenticatedSitesSubrouter = ({
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
-  authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyJwt)
+  authenticatedSitesSubrouter.use(attachSiteHandler)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
   // which is only available after verifying that the jwt is valid
   authenticatedSitesSubrouter.use(apiLogger)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.checkIsSiteMember)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

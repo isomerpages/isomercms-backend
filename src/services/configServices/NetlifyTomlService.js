@@ -12,7 +12,8 @@ const {
 const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
 
 class NetlifyTomlService {
-  async read({ accessToken }) {
+  async read(sessionData) {
+    const { accessToken } = sessionData
     const endpoint = `https://api.github.com/repos/${GITHUB_BUILD_ORG_NAME}/${GITHUB_BUILD_REPO_NAME}/contents/overrides/netlify.toml`
 
     const resp = await genericGitHubAxiosInstance.get(endpoint, {

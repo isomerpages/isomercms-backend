@@ -8,8 +8,8 @@ class BaseDirectoryService {
     this.gitHubService = gitHubService
   }
 
-  async list(reqDetails, { directoryName }) {
-    const directoryData = await this.gitHubService.readDirectory(reqDetails, {
+  async list(sessionData, { directoryName }) {
+    const directoryData = await this.gitHubService.readDirectory(sessionData, {
       directoryName,
     })
 
@@ -27,10 +27,18 @@ class BaseDirectoryService {
     return _.compact(filesOrDirs)
   }
 
-  async rename(reqDetails, { oldDirectoryName, newDirectoryName, message }) {
-    const gitTree = await this.gitHubService.getTree(reqDetails, {
-      isRecursive: true,
-    })
+  async rename(
+    sessionData,
+    githubSessionData,
+    { oldDirectoryName, newDirectoryName, message }
+  ) {
+    const gitTree = await this.gitHubService.getTree(
+      sessionData,
+      githubSessionData,
+      {
+        isRecursive: true,
+      }
+    )
 
     const newGitTree = []
 
@@ -55,19 +63,27 @@ class BaseDirectoryService {
       }
     })
 
-    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
-      gitTree: newGitTree,
-      message,
-    })
-    await this.gitHubService.updateRepoState(reqDetails, {
+    const newCommitSha = await this.gitHubService.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree: newGitTree,
+        message,
+      }
+    )
+    await this.gitHubService.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }
 
-  async delete(reqDetails, { directoryName, message }) {
-    const gitTree = await this.gitHubService.getTree(reqDetails, {
-      isRecursive: true,
-    })
+  async delete(sessionData, githubSessionData, { directoryName, message }) {
+    const gitTree = await this.gitHubService.getTree(
+      sessionData,
+      githubSessionData,
+      {
+        isRecursive: true,
+      }
+    )
 
     // Retrieve removed items and set their sha to null
     const newGitTree = gitTree
@@ -80,23 +96,32 @@ class BaseDirectoryService {
         sha: null,
       }))
 
-    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
-      gitTree: newGitTree,
-      message,
-    })
-    await this.gitHubService.updateRepoState(reqDetails, {
+    const newCommitSha = await this.gitHubService.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree: newGitTree,
+        message,
+      }
+    )
+    await this.gitHubService.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }
 
   // Move files which do not require modification of content
   async moveFiles(
-    reqDetails,
+    sessionData,
+    githubSessionData,
     { oldDirectoryName, newDirectoryName, targetFiles, message }
   ) {
-    const gitTree = await this.gitHubService.getTree(reqDetails, {
-      isRecursive: true,
-    })
+    const gitTree = await this.gitHubService.getTree(
+      sessionData,
+      githubSessionData,
+      {
+        isRecursive: true,
+      }
+    )
     const newGitTree = []
     gitTree.forEach((item) => {
       if (
@@ -107,7 +132,6 @@ class BaseDirectoryService {
           .split(`${newDirectoryName}/`)
           .slice(1)
           .join(`${newDirectoryName}/`)
-        console.log(fileName)
         if (targetFiles.includes(fileName)) {
           // Conflicting file
           throw new ConflictError("File already exists in target directory")
@@ -136,11 +160,15 @@ class BaseDirectoryService {
       }
     })
 
-    const newCommitSha = await this.gitHubService.updateTree(reqDetails, {
-      gitTree: newGitTree,
-      message,
-    })
-    await this.gitHubService.updateRepoState(reqDetails, {
+    const newCommitSha = await this.gitHubService.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree: newGitTree,
+        message,
+      }
+    )
+    await this.gitHubService.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }

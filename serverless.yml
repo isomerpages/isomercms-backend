@@ -1,0 +1,39 @@
+service: isomercms
+
+frameworkVersion: "3"
+
+plugins:
+  # serverless-plugin-typescript needs to precede serverless-offline
+  - serverless-plugin-typescript
+  - serverless-step-functions
+  - serverless-step-functions-local
+  - serverless-offline-lambda
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+custom:
+  stepFunctionsLocal:
+    accountId: 101010101010
+    region: us-east-1
+    lambdaEndpoint: http://localhost:3002
+    TaskResourceMapping:
+      Hello: arn:aws:lambda:us-east-1:101010101010:function:hello
+      Hithere: arn:aws:lambda:us-east-1:101010101010:function:hithere
+    eventBridgeEvents:
+      enabled: true
+      endpoint: http://localhost:4010
+  sqsUrl: http://localhost:4566/000000000000/outgoing-queue-dev
+
+functions:
+  hello:
+    handler: handler.hello
+  hithere:
+    handler: handler.hithere
+
+stepFunctions:
+  stateMachines:
+    foo:
+      definition: ${file(./src/serverlessfns/step-functions/first-step-function.asl.yaml)}

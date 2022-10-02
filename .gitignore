@@ -2,7 +2,9 @@
 node_modules/
 .vscode/
 build/
+.build/
 *.pem
 .env*
 .idea/
 .DS_Store
+.step-functions-local/

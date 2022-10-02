@@ -2,6 +2,7 @@
 node_modules/
 .vscode/
 build/
+.build/
 *.pem
 .env*
 .idea/

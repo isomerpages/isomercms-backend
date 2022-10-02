@@ -56,3 +56,11 @@ Finally, we want to run the migration script.
 - Open another terminal window.
 - Run `source .env`
 - Run `npx sequelize-cli db:migrate`
+
+## Lambda Functions and Step Function Workflows
+
+### Running locally
+
+1. Run `npm run dev:services` to spin up the local [AWS Step Functions emulator](https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local-docker.html) provided by AWS.
+2. Run `npm run dev:serverless` to run serverless-offline and its plugins. Serverless-offline helps us run lambda functions locally. We also depend on serverless-offline's step-functions-local plugin to create step functions in the local Step Functions emulator. This is all configured in `serverless.yml`
+3. We can trigger both the individual lambda functions and step function workflows in a separate terminal window by using the AWS CLI, and modifying the `--endpoint-url` parameter to use the port exposed for the Step Functions emulator, i.e. `http://localhost:8083`. An example of such a call is: `aws stepfunctions --endpoint-url http://localhost:8083 start-execution --state-machine-arn arn:aws:states:us-east-1:101010101010:stateMachine:bar`

@@ -21,5 +21,16 @@ services:
       # use a different port to avoid blocking dev environment when running tests
       - "54321:5432"
 
+  # Runs the AWS-provided emulator for step functions
+  stepFunctionsLocal:
+    image: amazon/aws-stepfunctions-local
+    environment:
+      AWS_SECRET_KEY: blah
+      AWS_ACCESS_KEY_ID: bleh
+      AWS_ACCOUNT_ID: 101010101010
+      AWS_DEFAULT_REGION: us-east-1
+      LAMBDA_ENDPOINT: http://host.docker.internal:3002
+    ports:
+      - 8083:8083
 volumes:
   isomercms_data:

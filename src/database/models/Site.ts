@@ -10,6 +10,7 @@ import {
   HasOne,
   BelongsTo,
   ForeignKey,
+  HasMany,
 } from "sequelize-typescript"
 
 import { SiteStatus, JobStatus } from "@constants/index"
@@ -18,6 +19,8 @@ import { Deployment } from "@database/models/Deployment"
 import { Repo } from "@database/models/Repo"
 import { SiteMember } from "@database/models/SiteMember"
 import { User } from "@database/models/User"
+
+import { Notification } from "./Notification"
 
 @Table({ tableName: "sites", paranoid: true })
 export class Site extends Model {

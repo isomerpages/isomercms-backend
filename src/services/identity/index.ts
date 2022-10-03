@@ -2,7 +2,14 @@ import { Sequelize } from "sequelize-typescript"
 
 import logger from "@logger/logger"
 
-import { User, Whitelist, IsomerAdmin } from "@database/models"
+import {
+  User,
+  Site,
+  Whitelist,
+  IsomerAdmin,
+  Notification,
+  SiteMember,
+} from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
@@ -10,6 +17,9 @@ import { mailer } from "@services/utilServices/MailClient"
 
 import AuthService from "./AuthService"
 import IsomerAdminsService from "./IsomerAdminsService"
+import NotificationsService from "./NotificationsService"
+import SitesService from "./SitesService"
+import TokenStore from "./TokenStore"
 import UsersService from "./UsersService"
 
 const { OTP_EXPIRY, OTP_SECRET, NODE_ENV } = process.env
@@ -53,4 +63,10 @@ export const getIdentityAuthService = (gitHubService: GitHubService) =>
 
 export const isomerAdminsService = new IsomerAdminsService({
   repository: IsomerAdmin,
+})
+
+export const notificationsService = new NotificationsService({
+  repository: Notification,
+  site: Site,
+  siteMember: SiteMember,
 })

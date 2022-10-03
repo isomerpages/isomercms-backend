@@ -8,7 +8,6 @@ import {
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
-import { options } from "joi"
 
 import logger from "@root/logger/logger"
 

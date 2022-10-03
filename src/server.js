@@ -78,6 +78,7 @@ const launchesService = new LaunchesService({
   launches: Launches,
   repo: Repo,
   deployment: Deployment,
+  user: User,
 })
 const infraService = new InfraService({
   sitesService,

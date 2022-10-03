@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { Repo, Site, SiteMember, User, Whitelist } from "@database/models"
+import { Repo, Site, User, Whitelist } from "@database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"

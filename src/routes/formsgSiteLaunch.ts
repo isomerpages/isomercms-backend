@@ -48,11 +48,32 @@ export class FormsgSiteLaunchRouter {
     // 1. Extract arguments
     const { submissionId } = req.body.data
     const { responses } = res.locals.submission
-    const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
-    const repoName = getField(responses, REPO_NAME_FIELD)
-    const primaryDomain = getField(responses, PRIMARY_DOMAIN)
-    const redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
-    const agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
+
+    // todo change back these variables to const
+    let requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
+    let repoName = getField(responses, REPO_NAME_FIELD)
+    let primaryDomain = getField(responses, PRIMARY_DOMAIN)
+    let redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
+    let agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
+
+    // todo figure out what sub domain settings refers to
+    const subDomainSettings = [
+      {
+        branchName: "master",
+        prefix: "www",
+      },
+    ]
+
+    // todo remove this after local dev is done
+    const isDev = true
+
+    if (isDev) {
+      requesterEmail = "kishore@open.gov.sg"
+      repoName = "kishore-test"
+      primaryDomain = "kishoretest.isomer.gov.sg"
+      redirectionDomain = "www.kishore-test.isomer.gov.sg"
+      agencyEmail = "kishore@open.gov.sg"
+    }
 
     logger.info(
       `Lauch site form submission [${submissionId}] (repoName '${repoName}', domain '${primaryDomain}') requested by <${requesterEmail}>`
@@ -125,7 +146,7 @@ export class FormsgSiteLaunchRouter {
         agencyUser,
         repoName,
         primaryDomain,
-        redirectionDomain
+        subDomainSettings
       )
       await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
     } catch (err) {

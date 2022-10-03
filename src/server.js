@@ -13,6 +13,7 @@ import {
   Repo,
   Deployment,
   IsomerAdmin,
+  Notification,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import {
@@ -25,6 +26,7 @@ import {
   getUsersService,
   sitesService,
   isomerAdminsService,
+  notificationsService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
@@ -48,6 +50,7 @@ const sequelize = initSequelize([
   Repo,
   Deployment,
   IsomerAdmin,
+  Notification,
 ])
 const usersService = getUsersService(sequelize)
 
@@ -131,6 +134,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authenticationMiddleware,
   gitHubService,
   configYmlService,
+  notificationsService,
 })
 const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })

@@ -138,6 +138,24 @@ export class LaunchesService {
     return ok(siteId)
   }
 
+  getSiteId = async (repoName: string) => {
+    if (this.siteId) {
+      return this.siteId
+    }
+
+    const site = await this.repo.findOne({
+      where: { name: repoName },
+    })
+    this.siteId = site?.siteId
+
+    if (!this.siteId) {
+      const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
+      logger.error(error)
+      throw error
+    }
+    return this.siteId
+  }
+
   configureDomainInAmplify = async (
     repoName: string,
     domainName: string,
@@ -240,7 +258,20 @@ export class LaunchesService {
       this.appID,
       domainName
     )
-    await new Promise((resolve) => setTimeout(resolve, 120000))
+
+    /**
+     * note: we wait for ard 90 sec as there is a time taken
+     * for amplify to generate the certification manager in the first place
+     * This is a dirty workaround for now, and will cause issues when we integrate
+     * this directly within the Isomer CMS.
+     * todo: push this check into a queue-like system when integrating this with cms
+     */
+    await new Promise((resolve) => setTimeout(resolve, 90000))
+
+    /**
+     * todo: add some level of retry logic if get domain association command
+     * does not contain the DNS redirections info.
+     */
     return this.launchClient.sendGetDomainAssociationCommandInput(
       getDomainAssociationOptions
     )

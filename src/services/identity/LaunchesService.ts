@@ -123,7 +123,7 @@ export class LaunchesService {
     }
     return ok(siteId)
   }
-
+  
   configureDomainInAmplify = async (
     repoName: string,
     domainName: string,

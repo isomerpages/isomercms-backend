@@ -8,7 +8,6 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import LaunchesService from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
-import UsersService from "@services/identity/UsersService"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -129,6 +128,42 @@ export default class InfraService {
         primaryDomain
       )
       logger.info(JSON.stringify(dnsInfo))
+
+      const certificationRecord = dnsInfo.domainAssociation?.certificateVerificationDNSRecord?.split(
+        " "
+      )
+
+      if (!certificationRecord) {
+        throw Error("certification record not created yet")
+      }
+
+      const subDomainList = dnsInfo.domainAssociation?.subDomains
+      if (!subDomainList || !subDomainList[0].dnsRecord) {
+        throw Error("subdomain list not created yet")
+      }
+
+      const primaryDomainInfo = subDomainList[0].dnsRecord?.split(" ")
+      logger.info(primaryDomainInfo)
+      const primaryDomainSource = primaryDomainInfo[0]
+      const primaryDomainTarget = primaryDomainInfo[2]
+      logger.info(certificationRecord)
+      const domainValidationSource = certificationRecord[0]
+      const domainValidationTarget = certificationRecord[2]
+
+      const userId = agency.id
+      const siteId = (await this.launchesService.getSiteId(repoName)) as number
+      const newLaunchParams = {
+        userId,
+        siteId,
+        primaryDomainSource,
+        primaryDomainTarget,
+        domainValidationSource,
+        domainValidationTarget,
+      }
+
+      // Create launches records table
+      const launchesRecord = await this.launchesService.create(newLaunchParams)
+      logger.info(`Created launch record in database:  ${launchesRecord}`)
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       throw error

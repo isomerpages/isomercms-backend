@@ -113,8 +113,8 @@ export const unsortedMockCollaboratorsList = [
 ]
 
 export const expectedSortedMockCollaboratorsList = [
-  mockCollaboratorAdmin1,
   mockCollaboratorAdmin2,
+  mockCollaboratorAdmin1,
   mockCollaboratorContributor1,
   mockCollaboratorContributor2,
 ]

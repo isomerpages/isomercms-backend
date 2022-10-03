@@ -12,7 +12,7 @@ export enum SiteStatus {
 
 export enum CollaboratorRoles {
   Admin = "ADMIN",
-  Contributor = "USER",
+  Contributor = "CONTRIBUTOR",
 }
 
 export const E2E_ISOMER_ID = "-1"

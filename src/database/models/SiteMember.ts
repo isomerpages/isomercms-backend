@@ -8,6 +8,8 @@ import {
   UpdatedAt,
 } from "sequelize-typescript"
 
+import { CollaboratorRoles } from "@constants/index"
+
 import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
 
@@ -23,9 +25,9 @@ export class SiteMember extends Model {
 
   @Column({
     allowNull: false,
-    type: DataType.ENUM("ADMIN", "USER"),
+    type: DataType.ENUM("ADMIN", "CONTRIBUTOR"),
   })
-  role!: boolean
+  role!: CollaboratorRoles
 
   @CreatedAt
   createdAt!: Date

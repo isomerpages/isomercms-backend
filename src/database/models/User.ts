@@ -68,7 +68,7 @@ export class User extends Model {
     through: () => SiteMember,
     as: "site_members",
   })
-  sites!: Site[]
+  sites!: Array<Site & { SiteMember: SiteMember }>
 
   @HasMany(() => Site, {
     as: "sites_created",

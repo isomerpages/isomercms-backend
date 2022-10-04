@@ -33,6 +33,7 @@ export class Site extends Model {
   @Column({
     allowNull: false,
     type: DataType.TEXT,
+    unique: true,
   })
   name!: string
 
@@ -71,7 +72,7 @@ export class Site extends Model {
     through: () => SiteMember,
     as: "site_members",
   })
-  users!: User[]
+  site_members!: Array<User & { SiteMember: SiteMember }>
 
   @HasOne(() => Repo)
   repo?: Repo

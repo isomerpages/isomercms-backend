@@ -30,7 +30,7 @@ const getAuthenticatedSitesSubrouter = ({
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
   // which is only available after verifying that the jwt is valid
   authenticatedSitesSubrouter.use(apiLogger)
-  authenticatedSitesSubrouter.use(authorizationMiddleware.checkIsSiteMember)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteMember)
 
   authenticatedSitesSubrouter.use("/pages", pagesRouter)
   authenticatedSitesSubrouter.use("/collections", collectionsRouter)

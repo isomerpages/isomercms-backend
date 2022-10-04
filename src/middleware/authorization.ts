@@ -1,5 +1,6 @@
 import autoBind from "auto-bind"
-import { NextFunction, Request, Response } from "express"
+
+import { ForbiddenError } from "@errors/ForbiddenError"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
@@ -19,8 +20,8 @@ export class AuthorizationMiddleware {
     autoBind(this)
   }
 
-  // Check whether a user is a site member
-  checkIsSiteMember: RequestHandler<
+  // Check whether a user is a site admin
+  verifySiteAdmin: RequestHandler<
     never,
     unknown,
     unknown,
@@ -29,10 +30,37 @@ export class AuthorizationMiddleware {
   > = async (req, res, next) => {
     const { userWithSiteSessionData } = res.locals
 
-    await this.authorizationMiddlewareService.checkIsSiteMember(
-      userWithSiteSessionData
-    )
+    try {
+      const result = await this.authorizationMiddlewareService.checkIsSiteAdmin(
+        userWithSiteSessionData
+      )
+      if (result instanceof ForbiddenError) return next(new ForbiddenError())
 
-    return next()
+      return next()
+    } catch (err) {
+      return next(err)
+    }
+  }
+
+  // Check whether a user is a site member
+  verifySiteMember: RequestHandler<
+    never,
+    unknown,
+    unknown,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res, next) => {
+    const { userWithSiteSessionData } = res.locals
+
+    try {
+      const result = await this.authorizationMiddlewareService.checkIsSiteMember(
+        userWithSiteSessionData
+      )
+      if (result instanceof ForbiddenError) return next(new ForbiddenError())
+
+      return next()
+    } catch (err) {
+      return next(err)
+    }
   }
 }

@@ -34,10 +34,12 @@ import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
 import { apiLogger } from "./middleware/apiLogger"
+import { AuthorizationMiddleware } from "./middleware/authorization"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 
@@ -100,6 +102,13 @@ const infraService = new InfraService({
   launchesService,
   queueService,
 })
+const collaboratorsService = new CollaboratorsService({
+  siteRepository: Site,
+  siteMemberRepository: SiteMember,
+  sitesService,
+  usersService,
+  whitelist: Whitelist,
+})
 
 // poller for incoming queue
 infraService.pollQueue()
@@ -116,6 +125,7 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,
   usersService,
   isomerAdminsService,
+  collaboratorsService,
 })
 
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
@@ -138,6 +148,8 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   deploymentsService,
   apiLogger,
   isomerAdminsService,
+  collaboratorsService,
+  authorizationMiddleware,
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authorizationMiddleware,

@@ -1,14 +1,13 @@
-import { rejects } from "assert"
-
-import { NotFoundError } from "@errors/NotFoundError"
-
 import {
   mockUserWithSiteSessionData,
   mockIsomerUserId,
   mockSessionDataEmailUserWithSite,
   mockSiteName,
 } from "@fixtures/sessionData"
+import { CollaboratorRoles } from "@root/constants"
+import { ForbiddenError } from "@root/errors/ForbiddenError"
 import AuthService from "@root/services/identity/AuthService"
+import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import UsersService from "@root/services/identity/UsersService"
 
@@ -27,10 +26,15 @@ describe("Authorization Middleware Service", () => {
     getByUserId: jest.fn(),
   }
 
+  const mockCollaboratorsService = {
+    getRole: jest.fn(),
+  }
+
   const service = new AuthorizationMiddlewareService({
     identityAuthService: (mockIdentityAuthService as unknown) as AuthService,
     usersService: (mockUsersService as unknown) as UsersService,
     isomerAdminsService: (mockIsomerAdminsService as unknown) as IsomerAdminsService,
+    collaboratorsService: (mockCollaboratorsService as unknown) as CollaboratorsService,
   })
 
   beforeEach(() => {
@@ -41,17 +45,21 @@ describe("Authorization Middleware Service", () => {
     it("Allows access for email users with site access", async () => {
       // Arrange
       mockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
-      mockUsersService.hasAccessToSite.mockImplementationOnce(() => true)
+      mockCollaboratorsService.getRole.mockImplementationOnce(
+        () => CollaboratorRoles.Contributor
+      )
 
       // Act
-      const actual = service.checkIsSiteMember(mockSessionDataEmailUserWithSite)
+      const actual = await service.checkIsSiteMember(
+        mockSessionDataEmailUserWithSite
+      )
 
       // Assert
-      await expect(actual).resolves.not.toThrow()
+      expect(actual instanceof ForbiddenError).toBe(false)
       expect(mockIdentityAuthService.hasAccessToSite).toHaveBeenCalledTimes(0)
-      expect(mockUsersService.hasAccessToSite).toHaveBeenCalledWith(
-        mockIsomerUserId,
-        mockSiteName
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledWith(
+        mockSiteName,
+        mockIsomerUserId
       )
       expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
@@ -64,11 +72,13 @@ describe("Authorization Middleware Service", () => {
       mockIdentityAuthService.hasAccessToSite.mockImplementationOnce(() => true)
 
       // Act
-      const actual = service.checkIsSiteMember(mockUserWithSiteSessionData)
+      const actual = await service.checkIsSiteMember(
+        mockUserWithSiteSessionData
+      )
 
       // Assert
-      await expect(actual).resolves.not.toThrow()
-      expect(mockUsersService.hasAccessToSite).toHaveBeenCalledTimes(0)
+      expect(actual instanceof ForbiddenError).toBe(false)
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(0)
       expect(mockIdentityAuthService.hasAccessToSite).toHaveBeenCalledWith(
         mockUserWithSiteSessionData
       )
@@ -82,17 +92,21 @@ describe("Authorization Middleware Service", () => {
       mockIsomerAdminsService.getByUserId.mockImplementationOnce(
         () => "adminObj"
       )
-      mockUsersService.hasAccessToSite.mockImplementationOnce(() => false)
+      mockCollaboratorsService.getRole.mockImplementationOnce(
+        () => CollaboratorRoles.Admin
+      )
 
       // Act
-      const actual = service.checkIsSiteMember(mockSessionDataEmailUserWithSite)
+      const actual = await service.checkIsSiteMember(
+        mockSessionDataEmailUserWithSite
+      )
 
       // Assert
-      await expect(actual).resolves.not.toThrow()
+      expect(actual instanceof ForbiddenError).toBe(false)
       expect(mockIdentityAuthService.hasAccessToSite).toHaveBeenCalledTimes(0)
-      expect(mockUsersService.hasAccessToSite).toHaveBeenCalledWith(
-        mockIsomerUserId,
-        mockSiteName
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledWith(
+        mockSiteName,
+        mockIsomerUserId
       )
       expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
@@ -102,17 +116,20 @@ describe("Authorization Middleware Service", () => {
     it("Throws error for users without site access", async () => {
       // Arrange
       mockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
-      mockUsersService.hasAccessToSite.mockImplementationOnce(() => false)
+      mockCollaboratorsService.getRole.mockImplementationOnce(() => null)
 
       // Act
-      const actual = service.checkIsSiteMember(mockSessionDataEmailUserWithSite)
+      const actual = await service.checkIsSiteMember(
+        mockSessionDataEmailUserWithSite
+      )
 
       // Assert
-      await expect(actual).rejects.toThrowError(NotFoundError)
+      expect(actual)
+      expect(actual instanceof ForbiddenError).toBe(true)
       expect(mockIdentityAuthService.hasAccessToSite).toHaveBeenCalledTimes(0)
-      expect(mockUsersService.hasAccessToSite).toHaveBeenCalledWith(
-        mockIsomerUserId,
-        mockSiteName
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledWith(
+        mockSiteName,
+        mockIsomerUserId
       )
       expect(mockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId

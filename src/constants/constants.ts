@@ -14,6 +14,12 @@ export enum RedirectionTypes {
   CNAME = "CNAME",
   A = "A",
 }
+
+export enum CollaboratorRoles {
+  Admin = "ADMIN",
+  Contributor = "CONTRIBUTOR",
+}
+
 export const E2E_ISOMER_ID = "-1"
 export const E2E_TEST_EMAIL = "test@e2e"
 export const E2E_TEST_CONTACT = "12345678"

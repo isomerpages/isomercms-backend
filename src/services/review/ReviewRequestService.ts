@@ -7,8 +7,8 @@ import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
-import { RawFileChangeInfo } from "@root/types/github"
-import { FileChangeInfo } from "@root/types/review"
+import { EditedItemDto, FileType } from "@root/types/dto /review"
+import { Commit, RawFileChangeInfo } from "@root/types/github"
 
 import { isomerRepoAxiosInstance } from "../api/AxiosInstance"
 
@@ -51,15 +51,15 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     base = "staging",
     head = "master"
-  ): Promise<FileChangeInfo[]> => {
+  ): Promise<EditedItemDto[]> => {
     // Step 1: Get the site name
     const { siteName, accessToken } = sessionData
 
     // Step 2: Get the list of changed files using Github's API
     // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
     // Note that we need a triple dot (...) between base and head refs
-    const files = await this.apiService
-      .get<{ files: RawFileChangeInfo[] }>(
+    const { files, commits } = await this.apiService
+      .get<{ files: RawFileChangeInfo[]; commits: Commit[] }>(
         `${siteName}/compare/${base}...${head}`,
         {
           headers: {
@@ -67,17 +67,39 @@ export default class ReviewRequestService {
           },
         }
       )
-      .then(({ data }) => data.files)
+      .then(({ data }) => data)
 
-    // eslint-disable-next-line camelcase
-    return files.map(({ additions, deletions, changes, status, raw_url }) => ({
-      additions,
-      deletions,
-      changes,
-      status,
-      rawUrl: raw_url,
-    }))
+    const mappings = this.computeShaMappings(commits)
+
+    return files.map(({ filename, sha }) => {
+      const fullPath = filename.split("/")
+      return {
+        type: this.computeFileType(filename),
+        // NOTE: The string is guaranteed to be non-empty
+        // and hence this should exist.
+        name: fullPath.pop() || "",
+        // NOTE: pop alters in place
+        path: fullPath,
+        url: this.computeFileUrl(filename, siteName),
+        lastEditedBy: mappings[sha].author,
+        lastEditedTime: mappings[sha].unixTime,
+      }
+    })
   }
+
+  // TODO
+  computeFileType = (filename: string): FileType[] => ["page"]
+
+  computeFileUrl = (filename: string, siteName: string) => "www.google.com"
+
+  computeShaMappings = (
+    commits: Commit[]
+  ): Record<string, { author: string; unixTime: number }> => ({
+    random_sha: {
+      author: "a person",
+      unixTime: 232345345,
+    },
+  })
 
   createReviewRequest = async (
     sessionData: UserWithSiteSessionData,

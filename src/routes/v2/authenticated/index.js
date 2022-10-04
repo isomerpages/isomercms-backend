@@ -1,5 +1,3 @@
-import InfraService from "@services/infra/InfraService"
-
 const express = require("express")
 
 const {
@@ -7,6 +5,7 @@ const {
 } = require("@services/configServices/NetlifyTomlService")
 const { SitesService } = require("@services/utilServices/SitesService")
 
+const { CollaboratorsRouter } = require("./collaborators")
 const { NetlifyTomlRouter } = require("./netlifyToml")
 const { SitesRouter } = require("./sites")
 const { UsersRouter } = require("./users")
@@ -17,6 +16,8 @@ const getAuthenticatedSubrouter = ({
   configYmlService,
   usersService,
   isomerAdminsService,
+  collaboratorsService,
+  authorizationMiddleware,
 }) => {
   const sitesService = new SitesService({
     gitHubService,
@@ -27,6 +28,10 @@ const getAuthenticatedSubrouter = ({
   const netlifyTomlService = new NetlifyTomlService()
 
   const sitesV2Router = new SitesRouter({ sitesService })
+  const collaboratorsRouter = new CollaboratorsRouter({
+    collaboratorsService,
+    authorizationMiddleware,
+  })
   const usersRouter = new UsersRouter({ usersService })
   const netlifyTomlV2Router = new NetlifyTomlRouter({ netlifyTomlService })
 
@@ -34,6 +39,10 @@ const getAuthenticatedSubrouter = ({
 
   authenticatedSubrouter.use(authenticationMiddleware.verifyJwt)
 
+  authenticatedSubrouter.use(
+    "/sites/:siteName/collaborators",
+    collaboratorsRouter.getRouter()
+  )
   authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
   authenticatedSubrouter.use("/user", usersRouter.getRouter())
   authenticatedSubrouter.use("/netlify-toml", netlifyTomlV2Router.getRouter())

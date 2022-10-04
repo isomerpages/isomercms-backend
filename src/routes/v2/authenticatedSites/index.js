@@ -189,7 +189,7 @@ const getAuthenticatedSitesSubrouter = ({
 
   authenticatedSitesSubrouter.use(authenticationMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(attachSiteHandler)
-  authenticatedSitesSubrouter.use(authorizationMiddleware.checkIsSiteMember)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteMember)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

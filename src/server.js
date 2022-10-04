@@ -14,6 +14,9 @@ import {
   Deployment,
   IsomerAdmin,
   Notification,
+  ReviewRequest,
+  ReviewMeta,
+  Reviewer,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import {
@@ -51,6 +54,9 @@ const sequelize = initSequelize([
   Deployment,
   IsomerAdmin,
   Notification,
+  ReviewMeta,
+  Reviewer,
+  ReviewRequest,
 ])
 const usersService = getUsersService(sequelize)
 

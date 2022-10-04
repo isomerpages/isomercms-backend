@@ -10,6 +10,28 @@ export type FileChangeStatus =
   | "changed"
   | "unchanged"
 
+export interface Author {
+  name: string
+  email: string
+  date: string
+}
+
+export interface RawCommit {
+  url: string
+  author: Author
+}
+
+export interface Commit {
+  url: string
+  sha: string
+  commit: RawCommit
+  // NOTE: message is assumed to have a JSON structure with
+  // the field `email` existing.
+  // Moreover, this field is assumed to point to the
+  // author of the commit.
+  message: string
+}
+
 export interface RawFileChangeInfo {
   sha: string
   filename: string

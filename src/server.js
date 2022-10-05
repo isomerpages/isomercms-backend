@@ -90,6 +90,9 @@ const infraService = new InfraService({
   launchesService,
 })
 
+// poller for incoming queue
+infraService.pollQueue()
+
 const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
 })

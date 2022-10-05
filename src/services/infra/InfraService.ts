@@ -10,13 +10,14 @@ import LaunchesService from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
-import QueueClient from "../identity/QueueClient"
+import QueueService from "../identity/QueueService"
 
 interface InfraServiceProps {
   sitesService: SitesService
   reposService: ReposService
   deploymentsService: DeploymentsService
   launchesService: LaunchesService
+  queueService: QueueService
 }
 
 export default class InfraService {
@@ -28,6 +29,8 @@ export default class InfraService {
 
   private readonly launchesService: InfraServiceProps["launchesService"]
 
+  private readonly queueService: InfraServiceProps["queueService"]
+
   constructor({
     sitesService,
     reposService,
@@ -38,6 +41,7 @@ export default class InfraService {
     this.reposService = reposService
     this.deploymentsService = deploymentsService
     this.launchesService = launchesService
+    this.queueService = new QueueService()
   }
 
   createSite = async (
@@ -168,21 +172,20 @@ export default class InfraService {
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
 
-      // Send message to SQS
-      const queueClient = new QueueClient()
-      // todo remove hardcoded url
-      const url = "http://localhost:4566/000000000000/outgoingQueue"
-      const queueResestParams: SQS.Types.SendMessageRequest = {
-        QueueUrl: url,
-        // todo figure out the exact shape of the message to be put in message queue
-        MessageBody: JSON.stringify(newLaunchParams),
-      }
-      queueClient.sendMessage(queueResestParams)
+      // todo figure out the exact shape of the message to be put in message queue
+      this.queueService.sendMessage(JSON.stringify(newLaunchParams))
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       throw error
     }
-
     return null
+  }
+
+  pollQueue = async () => {
+    try {
+      setInterval(this.queueService.receiveMessage, 6000) // todo check if queue stil works even when callback throws an error
+    } catch (err) {
+      console.log(err)
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { SQS } from "aws-sdk"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
 import { Err, err, Ok, ok } from "neverthrow"

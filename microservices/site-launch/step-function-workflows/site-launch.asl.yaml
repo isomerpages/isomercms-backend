@@ -1,0 +1,105 @@
+Comment: Site launch state machine
+StartAt: Parallel
+States:
+  Parallel:
+    Type: Parallel
+    Branches:
+      - StartAt: General domain validation
+        States:
+          General domain validation:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            OutputPath: $.Payload
+            Parameters:
+              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-generalDomainValidation"
+              Payload.$: $
+            Retry:
+              - ErrorEquals:
+                  - Lambda.ServiceException
+                  - Lambda.AWSLambdaException
+                  - Lambda.SdkClientException
+                IntervalSeconds: 2
+                MaxAttempts: 6
+                BackoffRate: 2
+            End: true
+      - StartAt: Primary domain validation
+        States:
+          Primary domain validation:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            OutputPath: $.Payload
+            Parameters:
+              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
+              Payload.$: $
+            Retry:
+              - ErrorEquals:
+                  - Lambda.ServiceException
+                  - Lambda.AWSLambdaException
+                  - Lambda.SdkClientException
+                IntervalSeconds: 2
+                MaxAttempts: 6
+                BackoffRate: 2
+            End: true
+      - StartAt: Redirection domain validation
+        States:
+          Redirection domain validation:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            OutputPath: $.Payload
+            Parameters:
+              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-hello"
+              Payload.$: $
+            Retry:
+              - ErrorEquals:
+                  - Lambda.ServiceException
+                  - Lambda.AWSLambdaException
+                  - Lambda.SdkClientException
+                IntervalSeconds: 2
+                MaxAttempts: 6
+                BackoffRate: 2
+            End: true
+    Catch:
+      - ErrorEquals:
+          - States.ALL
+        Next: Launch error handler
+    Next: Launch success notification
+  Launch success notification:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-hithere"
+      Payload.$: $
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: Success
+    Catch:
+      - ErrorEquals:
+          - States.ALL
+        Next: Launch error handler
+  Success:
+    Type: Succeed
+  Launch error handler:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-hello"
+      Payload.$: $
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: Fail
+  Fail:
+    Type: Fail

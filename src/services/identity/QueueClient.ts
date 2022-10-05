@@ -92,4 +92,37 @@ export default class QueueClient {
       })
     }
   }
+
+  createDeleteMessageParams = (
+    receiptHandle: string
+  ): SQS.DeleteMessageRequest => ({
+    QueueUrl: this.incomingQueueUrl,
+    ReceiptHandle: receiptHandle,
+  })
+
+  deleteMessage = async (data: SQS.ReceiveMessageResult) => {
+    logger.info(`deleting message ${data}`)
+    const receiptHandles = data?.Messages?.map(
+      (message) => message.ReceiptHandle
+    )
+    if (receiptHandles) {
+      receiptHandles?.forEach((receiptHandle) => {
+        try {
+          if (receiptHandle) {
+            this.sqs.deleteMessage(
+              this.createDeleteMessageParams(receiptHandle),
+              (err) => {
+                if (err) {
+                  logger.error(err, err.stack)
+                  throw err
+                }
+              }
+            )
+          }
+        } catch (err) {
+          logger.error(`error trying to delete message handle ${receiptHandle}`)
+        }
+      })
+    }
+  }
 }

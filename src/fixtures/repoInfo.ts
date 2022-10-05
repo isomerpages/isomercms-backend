@@ -1,4 +1,6 @@
-const repoInfo = {
+import { GitHubRepositoryData } from "@root/types/repoInfo"
+
+export const repoInfo: GitHubRepositoryData = {
   name: "repo",
   private: false,
   description:
@@ -13,7 +15,7 @@ const repoInfo = {
   },
 }
 
-const repoInfo2 = {
+export const repoInfo2: GitHubRepositoryData = {
   name: "repo2",
   private: false,
   description:
@@ -28,7 +30,7 @@ const repoInfo2 = {
   },
 }
 
-const adminRepo = {
+export const adminRepo: GitHubRepositoryData = {
   name: "isomercms-backend",
   private: false,
   description:
@@ -43,7 +45,7 @@ const adminRepo = {
   },
 }
 
-const noAccessRepo = {
+export const noAccessRepo: GitHubRepositoryData = {
   name: "noaccess",
   private: false,
   description:
@@ -56,11 +58,4 @@ const noAccessRepo = {
     triage: false,
     pull: true,
   },
-}
-
-module.exports = {
-  repoInfo,
-  repoInfo2,
-  adminRepo,
-  noAccessRepo,
 }

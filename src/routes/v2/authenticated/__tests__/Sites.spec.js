@@ -71,7 +71,7 @@ describe("Sites Router", () => {
 
       expect(resp.body).toStrictEqual({ lastUpdated })
       expect(mockSitesService.getLastUpdated).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData
+        mockUserWithSiteSessionData.siteName
       )
     })
   })
@@ -87,7 +87,7 @@ describe("Sites Router", () => {
 
       expect(resp.body).toStrictEqual({ stagingUrl })
       expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData
+        mockUserWithSiteSessionData.siteName
       )
     })
   })

@@ -8,7 +8,11 @@ import { ReviewRequest } from "@database/models/ReviewRequest"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import { EditedItemDto, FileType } from "@root/types/dto /review"
-import { Commit, RawFileChangeInfo } from "@root/types/github"
+import {
+  Commit,
+  fromGithubCommitMessage,
+  RawFileChangeInfo,
+} from "@root/types/github"
 
 import { isomerRepoAxiosInstance } from "../api/AxiosInstance"
 
@@ -94,12 +98,22 @@ export default class ReviewRequestService {
 
   computeShaMappings = (
     commits: Commit[]
-  ): Record<string, { author: string; unixTime: number }> => ({
-    random_sha: {
-      author: "a person",
-      unixTime: 232345345,
-    },
-  })
+  ): Record<string, { author: string; unixTime: number }> => {
+    const mappings: Record<string, { author: string; unixTime: number }> = {}
+
+    // NOTE: commits are allowed to be arbitrarily large.
+    // This mode of processing assumes that this is not the case
+    // and that n(commits) << BE capability
+    commits.forEach(({ commit, message, sha }) => {
+      const { userId } = fromGithubCommitMessage(message)
+      const lastChangedTime = new Date(commit.author.date).getTime()
+      mappings[sha] = {
+        author: userId || commit.author.name,
+        unixTime: lastChangedTime,
+      }
+    })
+    return mappings
+  }
 
   createReviewRequest = async (
     sessionData: UserWithSiteSessionData,

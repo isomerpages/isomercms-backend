@@ -47,3 +47,27 @@ export interface RawFileChangeInfo {
   contents_url: string
   patch: string
 }
+
+export interface IsomerCommitMessage {
+  message: string
+  fileName: string
+  userId: string
+}
+
+/**
+ * NOTE: Properties can be undefined and caller should validate/give sane default.
+ *
+ * This should happen as our current format is not backward compat
+ * as this implies we rewrite all existing commit messages to have this format.
+ * We should instead default to the one existing on Github.
+ */
+export const fromGithubCommitMessage = (
+  message: string
+): Partial<IsomerCommitMessage> => {
+  const parsed = JSON.parse(message)
+  return {
+    message: parsed.message,
+    fileName: parsed.filename,
+    userId: parsed.userId,
+  }
+}

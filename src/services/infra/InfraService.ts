@@ -345,4 +345,12 @@ export default class InfraService {
   pollQueue = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
   }
+
+  pollQueue = async () => {
+    try {
+      setInterval(this.queueService.receiveMessage, 6000) // todo check if queue stil works even when callback throws an error
+    } catch (err) {
+      console.log(err)
+    }
+  }
 }

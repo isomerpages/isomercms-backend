@@ -92,4 +92,5 @@ export default class QueueClient {
       })
     }
   }
+
 }

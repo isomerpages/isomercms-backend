@@ -1,3 +1,4 @@
+import { SQS } from "aws-sdk"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 
 import { Site } from "@database/models"
@@ -8,6 +9,8 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import LaunchesService from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
+
+import QueueClient from "../identity/QueueClient"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -164,6 +167,17 @@ export default class InfraService {
       // Create launches records table
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
+
+      // Send message to SQS
+      const queueClient = new QueueClient()
+      // todo remove hardcoded url
+      const url = "http://localhost:4566/000000000000/outgoingQueue"
+      const queueResestParams: SQS.Types.SendMessageRequest = {
+        QueueUrl: url,
+        // todo figure out the exact shape of the message to be put in message queue
+        MessageBody: JSON.stringify(newLaunchParams),
+      }
+      queueClient.sendMessage(queueResestParams)
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       throw error

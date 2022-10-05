@@ -63,7 +63,8 @@ export const primaryDomainValidation = async (
       `Amplify app with id ${appId} and domain ${primaryDomain} successfully completed primary domain validation step with status ${domainAssociationStatus}`
     )
 
-    // Check if the primary DNS record was set correctly
+    // Check if the primary DNS record was set correctly. This is necessary because Amplify doesn't actually check if the
+    // primary domain record has been pointed correctly.
     const cnameRecords = await dns.promises.resolveCname(primaryDomain)
     if (!cnameRecords.includes(cloudfrontDomain)) {
       throw new Error(

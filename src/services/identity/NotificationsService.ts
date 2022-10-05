@@ -1,4 +1,4 @@
-import { ModelStatic, Op, Sequelize } from "sequelize"
+import { ModelStatic, Op } from "sequelize"
 
 import { Notification, Site, Repo, SiteMember } from "@database/models"
 import {
@@ -12,7 +12,6 @@ const NUM_RECENT_NOTIFICATIONS = 6
 
 interface NotificationsServiceProps {
   repository: ModelStatic<Notification>
-  site: ModelStatic<Site>
   siteMember: ModelStatic<SiteMember>
 }
 
@@ -21,13 +20,10 @@ class NotificationsService {
   // that the types are synced.
   private readonly repository: NotificationsServiceProps["repository"]
 
-  private readonly site: NotificationsServiceProps["site"]
-
   private readonly siteMember: NotificationsServiceProps["siteMember"]
 
-  constructor({ repository, site, siteMember }: NotificationsServiceProps) {
+  constructor({ repository, siteMember }: NotificationsServiceProps) {
     this.repository = repository
-    this.site = site
     this.siteMember = siteMember
   }
 

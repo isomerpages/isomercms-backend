@@ -67,6 +67,5 @@ export const isomerAdminsService = new IsomerAdminsService({
 
 export const notificationsService = new NotificationsService({
   repository: Notification,
-  site: Site,
   siteMember: SiteMember,
 })

@@ -1,46 +1,58 @@
-const autoBind = require("auto-bind")
-const express = require("express")
+import autoBind from "auto-bind"
+import express from "express"
 
-// Import middleware
-const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-const {
-  default: UserWithSiteSessionData,
-} = require("@classes/UserWithSiteSessionData")
+import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-const { attachSiteHandler } = require("@root/middleware")
+import { attachSiteHandler } from "@root/middleware"
+import type { RequestHandler } from "@root/types"
+import type SitesService from "@services/identity/SitesService"
 
-class SitesRouter {
-  constructor({ sitesService }) {
+type SitesRouterProps = {
+  sitesService: SitesService
+}
+
+export class SitesRouter {
+  private readonly sitesService
+
+  constructor({ sitesService }: SitesRouterProps) {
     this.sitesService = sitesService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
 
-  addSiteNameToSessionData(userSessionData, siteName) {
-    const { githubId, accessToken, isomerUserId, email } = userSessionData
-    return new UserWithSiteSessionData({
-      githubId,
-      accessToken,
-      isomerUserId,
-      email,
-      siteName,
-    })
-  }
-
-  async getSites(req, res) {
+  getSites: RequestHandler<
+    never,
+    unknown,
+    never,
+    never,
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
     const { userSessionData } = res.locals
     const siteNames = await this.sitesService.getSites(userSessionData)
     return res.status(200).json({ siteNames })
   }
 
-  async getLastUpdated(req, res) {
+  getLastUpdated: RequestHandler<
+    never,
+    unknown,
+    never,
+    { siteName: string },
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
     const { siteName } = req.params
     const lastUpdated = await this.sitesService.getLastUpdated(siteName)
     return res.status(200).json({ lastUpdated })
   }
 
-  async getStagingUrl(req, res) {
+  getStagingUrl: RequestHandler<
+    never,
+    unknown,
+    never,
+    { siteName: string },
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
     const { siteName } = req.params
     const stagingUrl = await this.sitesService.getStagingUrl(siteName)
     return res.status(200).json({ stagingUrl })
@@ -64,5 +76,3 @@ class SitesRouter {
     return router
   }
 }
-
-module.exports = { SitesRouter }

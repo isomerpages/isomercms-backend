@@ -1,2 +1,0 @@
-name: FirstStepFunction${self:service}${opt:stage, 'dev'}
-definition: ${file(./src/serverlessfns/step-functions/first-step-function.asl.yaml)}

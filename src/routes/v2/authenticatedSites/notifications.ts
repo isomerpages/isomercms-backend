@@ -1,20 +1,13 @@
 import autoBind from "auto-bind"
 import express from "express"
-import validator from "validator"
-
-import logger from "@logger/logger"
-
-import { BadRequestError } from "@errors/BadRequestError"
 
 import {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
 } from "@middleware/routeHandler"
 
-import UserSessionData from "@classes/UserSessionData"
-
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { isError, RequestHandler } from "@root/types"
+import { RequestHandler } from "@root/types"
 import NotificationsService from "@services/identity/NotificationsService"
 
 interface NotificationsRouterProps {

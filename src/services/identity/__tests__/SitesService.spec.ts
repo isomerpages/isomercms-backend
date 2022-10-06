@@ -56,7 +56,6 @@ const SitesService = new _SitesService({
   tokenStore: (MockTokenStore as unknown) as TokenStore,
 })
 
-const mockSiteToken = "token black"
 const mockSiteName = "some site name"
 const mockSite = ({
   name: "i m a site",

@@ -15,6 +15,7 @@ const getAuthenticatedSubrouter = ({
   usersService,
   collaboratorsService,
   authorizationMiddleware,
+  reviewRouter,
 }) => {
   const netlifyTomlService = new NetlifyTomlService()
 

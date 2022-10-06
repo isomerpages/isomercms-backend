@@ -19,17 +19,17 @@ export interface Author {
 export interface RawCommit {
   url: string
   author: Author
+  // NOTE: message is assumed to have a JSON structure with
+  // the field `email` existing.
+  // Moreover, this field is assumed to point to the
+  // author of the commit.
+  message: string
 }
 
 export interface Commit {
   url: string
   sha: string
   commit: RawCommit
-  // NOTE: message is assumed to have a JSON structure with
-  // the field `email` existing.
-  // Moreover, this field is assumed to point to the
-  // author of the commit.
-  message: string
 }
 
 export interface RawFileChangeInfo {
@@ -64,10 +64,14 @@ export interface IsomerCommitMessage {
 export const fromGithubCommitMessage = (
   message: string
 ): Partial<IsomerCommitMessage> => {
-  const parsed = JSON.parse(message)
-  return {
-    message: parsed.message,
-    fileName: parsed.filename,
-    userId: parsed.userId,
+  try {
+    const parsed = JSON.parse(message)
+    return {
+      message: parsed.message,
+      fileName: parsed.filename,
+      userId: parsed.userId,
+    }
+  } catch {
+    return {}
   }
 }

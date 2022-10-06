@@ -4,6 +4,7 @@ import {
   Model,
   Table,
   ForeignKey,
+  BelongsTo,
 } from "sequelize-typescript"
 
 import { ReviewRequest } from "./ReviewRequest"
@@ -24,8 +25,10 @@ export class ReviewMeta extends Model {
   reviewerId!: number
 
   @ForeignKey(() => ReviewRequest)
-  @Column
   reviewId!: number
+
+  @BelongsTo(() => ReviewRequest)
+  reviewRequest!: ReviewRequest
 
   @Column({
     allowNull: false,

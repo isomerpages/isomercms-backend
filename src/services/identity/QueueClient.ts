@@ -113,7 +113,7 @@ export default class QueueClient {
               this.createDeleteMessageParams(receiptHandle),
               (err) => {
                 if (err) {
-                  logger.error(err, err.stack)
+                  logger.error(err)
                   throw err
                 }
               }

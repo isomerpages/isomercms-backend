@@ -7,11 +7,18 @@ import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
-import { EditedItemDto, FileType } from "@root/types/dto /review"
+import RequestNotFoundError from "@root/errors/RequestNotFoundERror"
+import {
+  DashboardReviewRequestDto,
+  EditedItemDto,
+  FileType,
+  ReviewRequestDto,
+} from "@root/types/dto /review"
 import {
   Commit,
   fromGithubCommitMessage,
   RawFileChangeInfo,
+  RawPullRequest,
 } from "@root/types/github"
 
 import { isomerRepoAxiosInstance } from "../api/AxiosInstance"
@@ -161,9 +168,126 @@ export default class ReviewRequestService {
     await this.reviewMeta.create({
       reviewId: reviewRequest.id,
       pullRequestNumber,
-      reviewLink: `cms.isomer.gov.sg/${siteName}/review/${reviewRequest.id}`,
+      reviewLink: `cms.isomer.gov.sg/sites/${siteName}/review/${reviewRequest.id}`,
     })
 
     return pullRequestNumber
+  }
+
+  listReviewRequest = async (
+    { siteName, accessToken }: UserWithSiteSessionData,
+    site: Site
+  ): Promise<DashboardReviewRequestDto[]> => {
+    // Find all review requests associated with the site
+    const requests = await this.repository.findAll({
+      where: {
+        siteId: site.id,
+        // TODO!: add status
+      },
+      include: [
+        {
+          model: ReviewMeta,
+          as: "reviewMeta",
+        },
+        {
+          model: User,
+          as: "requestor",
+        },
+      ],
+    })
+
+    // NOTE: This has a max of 30 pull requests
+    // and returns only open pull requests.
+    return Promise.all(
+      requests.map(async (req) => {
+        const prNumber = req.reviewMeta.pullRequestNumber
+        // NOTE: We explicitly destructure as the raw data
+        // contains ALOT more than these fields, which we want to
+        // discard to lower retrieval times for FE
+        const { title, body, changed_files, created_at } = await this.apiService
+          .get<RawPullRequest>(`${siteName}/pulls/${prNumber}`, {
+            headers: {
+              Authorization: `token ${accessToken}`,
+            },
+          })
+          .then(({ data }) => data)
+
+        return {
+          id: prNumber,
+          author: req.requestor.email || "Unknown user",
+          // TODO!
+          status: "PENDING",
+          title,
+          description: body,
+          changedFiles: changed_files,
+          createdAt: new Date(created_at).getTime(),
+          // TODO!
+          newComments: 0,
+          // TODO!
+          firstView: false,
+        }
+      })
+    )
+  }
+
+  getReviewRequest = async (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    site: Site,
+    pullRequestNumber: number
+  ): Promise<ReviewRequestDto | RequestNotFoundError> => {
+    const { siteName, accessToken } = userWithSiteSessionData
+    const review = await this.repository.findOne({
+      where: {
+        siteId: site.id,
+      },
+      include: [
+        {
+          model: ReviewMeta,
+          as: "reviewMeta",
+          where: {
+            pullRequestNumber,
+          },
+        },
+        {
+          model: User,
+          as: "requestor",
+        },
+        {
+          model: User,
+          as: "reviewers",
+        },
+      ],
+    })
+
+    // As the db stores github's PR # and (siteName, prNumber)
+    // should be a unique identifier for a specific review request,
+    // unable to find a RR with the tuple implies that said RR does not exist.
+    // This could happen when the user queries for an existing PR that is on github,
+    // but created prior to this feature rolling out.
+    if (!review) {
+      return new RequestNotFoundError()
+    }
+
+    // NOTE: We explicitly destructure as the raw data
+    // contains ALOT more than these fields, which we want to
+    // discard to lower retrieval times for FE
+    const { title, created_at } = await this.apiService
+      .get<RawPullRequest>(`${siteName}/pulls/${pullRequestNumber}`, {
+        headers: {
+          Authorization: `token ${accessToken}`,
+        },
+      })
+      .then(({ data }) => data)
+
+    const changedItems = await this.compareDiff(userWithSiteSessionData)
+
+    return {
+      reviewUrl: review.reviewMeta.reviewLink || "",
+      title,
+      requestor: review.requestor.email || "",
+      reviewers: review.reviewers.map(({ email }) => email || "") || [],
+      reviewRequestedTime: new Date(created_at).getTime(),
+      changedItems,
+    }
   }
 }

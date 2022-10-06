@@ -1,9 +1,9 @@
-import Bluebird from "bluebird"
 import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
-import { Site, SiteMember, User } from "@database/models"
-import UserSessionData from "@root/classes/UserSessionData"
+import { Site } from "@database/models"
+import type UserSessionData from "@root/classes/UserSessionData"
+import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
   ISOMER_GITHUB_ORG_NAME,
   ISOMERPAGES_REPO_PAGE_COUNT,
@@ -94,21 +94,19 @@ class SitesService {
       })
     )
 
-    const allSites: RepositoryData[] = await Bluebird.map(
-      paramsArr,
-      async (params) => {
-        const { data: respData } = await genericGitHubAxiosInstance.get(
-          endpoint,
-          {
-            params,
-            headers: {
-              Authorization: `token ${accessToken}`,
-            },
-          }
-        )
+    const allSites = await Promise.all(
+      paramsArr.map(async (params) => {
+        const {
+          data: respData,
+        }: {
+          data: GitHubRepositoryData[]
+        } = await genericGitHubAxiosInstance.get(endpoint, {
+          headers: { Authorization: `token ${accessToken}` },
+          params,
+        })
 
         return respData
-          .map((gitHubRepoData: GitHubRepositoryData) => {
+          .map((gitHubRepoData) => {
             const {
               pushed_at: updatedAt,
               permissions,
@@ -121,14 +119,14 @@ class SitesService {
               permissions,
               repoName: name,
               isPrivate,
-            }
+            } as RepositoryData
           })
           .filter(
-            (repoData: RepositoryData) =>
+            (repoData) =>
               repoData.permissions.push === true &&
               !ISOMER_ADMIN_REPOS.includes(repoData.repoName)
           )
-      }
+      })
     )
 
     const flattenedAllSites = _.flatten(allSites)
@@ -195,17 +193,6 @@ class SitesService {
     return this.siteRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
-  }
-
-  async getSiteAccessToken(siteName: string) {
-    const site = await this.getBySiteName(siteName)
-
-    if (!site) {
-      return null
-    }
-
-    const token = await this.tokenStore.getToken(site.apiTokenName)
-    return token
   }
 }
 

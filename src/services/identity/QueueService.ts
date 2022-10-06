@@ -1,7 +1,3 @@
-import AWS, { SQS } from "aws-sdk"
-
-import logger from "@root/logger/logger"
-
 import QueueClient from "./QueueClient"
 
 export default class QueueService {
@@ -13,5 +9,13 @@ export default class QueueService {
 
   sendMessage = async (message: string) => this.queueClient.sendMessage(message)
 
-  receiveMessage = async () => this.queueClient.receiveMessage()
+  pollMessages = async () => {
+    const messages: string[] = []
+    await (await this.queueClient.receiveMessage()).promise().then((res) => {
+      res.Messages?.forEach((message) => {
+        if (message.Body) messages.push(message.Body)
+      })
+    })
+    return messages
+  }
 }

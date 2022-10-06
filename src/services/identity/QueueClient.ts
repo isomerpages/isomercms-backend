@@ -5,6 +5,7 @@ import logger from "@root/logger/logger"
 export default class QueueClient {
   private readonly sqs: AWS.SQS
 
+  // todo remove hardcoded URLs
   private readonly incomingQueueUrl =
     "http://localhost:4566/000000000000/incomingQueue"
 
@@ -32,7 +33,6 @@ export default class QueueClient {
   receiveMessage = async () => {
     logger.info(`checking queue`)
     const params: SQS.ReceiveMessageRequest = {
-      // todo remove hardcoded url
       QueueUrl: this.incomingQueueUrl,
       AttributeNames: ["All"],
       VisibilityTimeout: 0,
@@ -40,6 +40,7 @@ export default class QueueClient {
       // todo figure out why queue returns the same message 10 times rather than 10 different messages
       // MaxNumberOfMessages:10
     }
+
     return this.sqs.receiveMessage(params, (err, data) => {
       if (err) {
         console.log(err, err.stack)
@@ -75,7 +76,7 @@ export default class QueueClient {
               this.createDeleteMessageParams(receiptHandle),
               (err) => {
                 if (err) {
-                  logger.error(err, err.stack)
+                  logger.error(err)
                   throw err
                 }
               }

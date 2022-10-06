@@ -75,3 +75,12 @@ export const fromGithubCommitMessage = (
     return {}
   }
 }
+
+export interface RawPullRequest {
+  title: string
+  body: string
+  changed_files: number
+  created_at: string
+}
+
+export interface PullRequestSummary {}

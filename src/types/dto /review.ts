@@ -15,3 +15,26 @@ export interface UserDto {
   email: string
   role: CollaboratorRoles
 }
+
+export type DashboardReviewRequestDto = {
+  id: number
+  title: string
+  description: string
+  author: string
+  // TODO! - db
+  status: "PENDING" | "APPROVED"
+  changedFiles: number
+  // TODO!
+  newComments: number
+  firstView: boolean
+  createdAt: number // Unix timestamp
+}
+
+export interface ReviewRequestDto {
+  reviewUrl: string
+  title: string
+  requestor: string
+  reviewers: string[]
+  reviewRequestedTime: number
+  changedItems: EditedItemDto[]
+}

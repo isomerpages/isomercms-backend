@@ -82,7 +82,6 @@ class SitesService {
     const isEmailUser = sessionData.isEmailUser()
     const { isomerUserId: userId } = sessionData
     const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
-
     const { accessToken } = sessionData
     const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
@@ -145,26 +144,18 @@ class SitesService {
     )
   }
 
-  async checkHasAccessForGitHubUser(sessionData: UserSessionData) {
+  async checkHasAccessForGitHubUser(sessionData: UserWithSiteSessionData) {
     await this.gitHubService.checkHasAccess(sessionData)
   }
 
-  async getLastUpdated(siteName: string): Promise<string> {
-    const sessionData = {
-      siteName,
-      accessToken: await this.getSiteAccessToken(siteName),
-    }
+  async getLastUpdated(sessionData: UserWithSiteSessionData): Promise<string> {
     const { pushed_at: updatedAt } = await this.gitHubService.getRepoInfo(
       sessionData
     )
     return updatedAt
   }
 
-  async getStagingUrl(siteName: string): Promise<string> {
-    const sessionData = {
-      siteName,
-      accessToken: await this.getSiteAccessToken(siteName),
-    }
+  async getStagingUrl(sessionData: UserWithSiteSessionData): Promise<string> {
     // Check config.yml for staging url if it exists, and github site description otherwise
     const { content: configData } = await this.configYmlService.read(
       sessionData

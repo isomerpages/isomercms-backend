@@ -5,6 +5,7 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
+import type UserSessionData from "@root/classes/UserSessionData"
 import { attachSiteHandler } from "@root/middleware"
 import type { RequestHandler } from "@root/types"
 import type SitesService from "@services/identity/SitesService"
@@ -22,6 +23,17 @@ export class SitesRouter {
     autoBind(this)
   }
 
+  addSiteNameToSessionData(userSessionData: UserSessionData, siteName: string) {
+    const { githubId, accessToken, isomerUserId, email } = userSessionData
+    return new UserWithSiteSessionData({
+      githubId,
+      accessToken,
+      isomerUserId,
+      email,
+      siteName,
+    })
+  }
+
   getSites: RequestHandler<
     never,
     unknown,
@@ -35,26 +47,40 @@ export class SitesRouter {
   }
 
   getLastUpdated: RequestHandler<
-    never,
+    { siteName: string },
     unknown,
     never,
-    { siteName: string },
+    never,
     { userSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { userSessionData } = res.locals
     const { siteName } = req.params
-    const lastUpdated = await this.sitesService.getLastUpdated(siteName)
+    const userWithSiteSessionData = this.addSiteNameToSessionData(
+      userSessionData,
+      siteName
+    )
+    const lastUpdated = await this.sitesService.getLastUpdated(
+      userWithSiteSessionData
+    )
     return res.status(200).json({ lastUpdated })
   }
 
   getStagingUrl: RequestHandler<
-    never,
+    { siteName: string },
     unknown,
     never,
-    { siteName: string },
+    never,
     { userSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { userSessionData } = res.locals
     const { siteName } = req.params
-    const stagingUrl = await this.sitesService.getStagingUrl(siteName)
+    const userWithSiteSessionData = this.addSiteNameToSessionData(
+      userSessionData,
+      siteName
+    )
+    const stagingUrl = await this.sitesService.getStagingUrl(
+      userWithSiteSessionData
+    )
     return res.status(200).json({ stagingUrl })
   }
 

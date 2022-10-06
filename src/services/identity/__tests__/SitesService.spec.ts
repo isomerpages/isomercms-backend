@@ -58,10 +58,6 @@ const SitesService = new _SitesService({
 
 const mockSiteToken = "token black"
 const mockSiteName = "some site name"
-const mockSessionData = {
-  accessToken: mockSiteToken,
-  siteName: mockSiteName,
-}
 const mockSite = ({
   name: "i m a site",
   apiTokenName: "0000",
@@ -100,37 +96,6 @@ describe("SitesService", () => {
           name: mockSiteName,
         },
       })
-    })
-  })
-
-  describe("getSiteAccessToken", () => {
-    it("should call the underlying getToken method of the token store when the site exists", async () => {
-      // Arrange
-      const expected = mockSiteToken
-      const getSpy = jest.spyOn(SitesService, "getBySiteName")
-      getSpy.mockResolvedValueOnce(mockSite)
-      MockTokenStore.getToken.mockResolvedValue(mockSiteToken)
-
-      // Act
-      const actual = await SitesService.getSiteAccessToken(mockSiteName)
-
-      // Assert
-      expect(actual).toBe(expected)
-      expect(getSpy).toBeCalledWith(mockSiteName)
-      expect(MockTokenStore.getToken).toBeCalledWith(mockSite.apiTokenName)
-    })
-
-    it("should return null when there is no site with siteName", async () => {
-      // Arrange
-      const getSpy = jest.spyOn(SitesService, "getBySiteName")
-      getSpy.mockResolvedValueOnce(null)
-
-      // Act
-      const actual = await SitesService.getSiteAccessToken(mockSiteName)
-
-      // Assert
-      expect(actual).toBeNull()
-      expect(MockTokenStore.getToken).not.toBeCalled()
     })
   })
 
@@ -277,7 +242,7 @@ describe("SitesService", () => {
     })
   })
 
-  describe("checkHasAccess", () => {
+  describe("checkHasAccessForGitHubUser", () => {
     it("Checks if a user has access to a site", async () => {
       await expect(
         SitesService.checkHasAccessForGitHubUser(mockUserWithSiteSessionData)
@@ -294,11 +259,11 @@ describe("SitesService", () => {
       MockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
 
       await expect(
-        SitesService.getLastUpdated(mockSessionData.siteName)
+        SitesService.getLastUpdated(mockUserWithSiteSessionData)
       ).resolves.toEqual(repoInfo.pushed_at)
 
       expect(MockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })
@@ -314,10 +279,12 @@ describe("SitesService", () => {
       MockGithubService.getRepoInfo.mockResolvedValue(repoInfo2)
 
       await expect(
-        SitesService.getStagingUrl(mockSessionData.siteName)
+        SitesService.getStagingUrl(mockUserWithSiteSessionData)
       ).resolves.toEqual(stagingUrl)
 
-      expect(MockConfigYmlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(MockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
     it("Retrieves the staging url for a site from repo info otherwise", async () => {
       MockConfigYmlService.read.mockResolvedValue({
@@ -326,12 +293,14 @@ describe("SitesService", () => {
       MockGithubService.getRepoInfo.mockResolvedValue(repoInfo)
 
       await expect(
-        SitesService.getStagingUrl(mockSessionData.siteName)
+        SitesService.getStagingUrl(mockUserWithSiteSessionData)
       ).resolves.toEqual(stagingUrl)
 
-      expect(MockConfigYmlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(MockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
       expect(MockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
     it("throws an error when the staging url for a repo is not found", async () => {
@@ -343,12 +312,14 @@ describe("SitesService", () => {
       })
 
       await expect(
-        SitesService.getStagingUrl(mockSessionData.siteName)
+        SitesService.getStagingUrl(mockUserWithSiteSessionData)
       ).rejects.toThrowError(NotFoundError)
 
-      expect(MockConfigYmlService.read).toHaveBeenCalledWith(mockSessionData)
+      expect(MockConfigYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
       expect(MockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockSessionData
+        mockUserWithSiteSessionData
       )
     })
   })

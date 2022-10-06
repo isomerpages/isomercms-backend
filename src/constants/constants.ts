@@ -22,7 +22,7 @@ export const E2E_TEST_CONTACT = "12345678"
 export const GH_MAX_REPO_COUNT = 100
 export const ISOMERPAGES_REPO_PAGE_COUNT =
   (process.env.ISOMERPAGES_REPO_PAGE_COUNT &&
-    parseInt(process.env.ISOMERPAGES_REPO_PAGE_COUNT)) ||
+    parseInt(process.env.ISOMERPAGES_REPO_PAGE_COUNT, 10)) ||
   3
 export const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
 export const ISOMER_ADMIN_REPOS = [

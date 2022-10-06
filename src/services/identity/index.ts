@@ -2,13 +2,7 @@ import { Sequelize } from "sequelize-typescript"
 
 import logger from "@logger/logger"
 
-import {
-  User,
-  Site,
-  Whitelist,
-  IsomerAdmin,
-  Deployment,
-} from "@database/models"
+import { User, Whitelist, IsomerAdmin } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"

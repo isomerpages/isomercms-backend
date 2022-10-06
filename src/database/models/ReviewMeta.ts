@@ -24,7 +24,8 @@ export class ReviewMeta extends Model {
   reviewerId!: number
 
   @ForeignKey(() => ReviewRequest)
-  requestId!: number
+  @Column
+  reviewId!: number
 
   @Column({
     allowNull: false,

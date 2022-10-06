@@ -2,12 +2,16 @@ import autoBind from "auto-bind"
 import express from "express"
 import _ from "lodash"
 
-import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
+import {
+  attachReadRouteHandlerWrapper,
+  attachWriteRouteHandlerWrapper,
+} from "@middleware/routeHandler"
 
 import UserSessionData from "@classes/UserSessionData"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-import { User } from "@root/database/models"
+import { CollaboratorRoles } from "@root/constants"
+import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import SitesService from "@root/services/identity/SitesService"
 import UsersService from "@root/services/identity/UsersService"
 import { RequestHandler } from "@root/types"
@@ -22,14 +26,19 @@ export class ReviewsRouter {
 
   private readonly sitesService
 
+  private readonly collaboratorsService
+
   constructor(
     reviewRequestService: ReviewRequestService,
     identityUsersService: UsersService,
-    sitesService: SitesService
+    sitesService: SitesService,
+    collaboratorsService: CollaboratorsService
   ) {
     this.reviewRequestService = reviewRequestService
     this.identityUsersService = identityUsersService
     this.sitesService = sitesService
+    this.collaboratorsService = collaboratorsService
+
     autoBind(this)
   }
 
@@ -65,7 +74,7 @@ export class ReviewsRouter {
       userWithSiteSessionData
     )
 
-    return res.json({ items: files }).sendStatus(200)
+    return res.status(200).json({ items: files })
   }
 
   createReviewRequest: RequestHandler<
@@ -92,27 +101,45 @@ export class ReviewsRouter {
     const { userSessionData } = res.locals
 
     // Check if they are a site admin
-    const admin = await this.identityUsersService.isSiteAdmin(
-      userSessionData.isomerUserId,
-      siteName
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userSessionData.isomerUserId
     )
 
-    if (!admin) {
+    if (!role || role !== CollaboratorRoles.Admin) {
       return res.status(400).send({
         message: "Only admins can request reviews!",
       })
     }
 
+    const admin = await this.identityUsersService.findByEmail(
+      userSessionData.email
+    )
     const { reviewers, title, description } = req.body
 
     // Step 3: Check if reviewers are admins of repo
-    const possibleAdmins = await Promise.all(
-      reviewers.map((userId) =>
-        this.identityUsersService.isSiteAdmin(userId, siteName)
-      )
-    )
-    const areAllReviewersAdmin = _.every(possibleAdmins)
+    const reviewersMap: Record<string, boolean> = {}
 
+    // May we repent for writing such code in production.
+    reviewers.forEach((email) => {
+      reviewersMap[email] = true
+    })
+
+    const collaborators = await this.collaboratorsService.list(
+      siteName,
+      userSessionData.isomerUserId
+    )
+
+    // Filter to get admins,
+    // then ensure that they have been requested for review
+    const admins = collaborators
+      .filter(
+        (collaborator) =>
+          collaborator.SiteMember.role === CollaboratorRoles.Admin
+      )
+      .filter((collaborator) => reviewersMap[collaborator.email || ""])
+
+    const areAllReviewersAdmin = admins.length === reviewers.length
     if (!areAllReviewersAdmin) {
       return res.status(400).send({
         message: "Please ensure that all requested reviewers are admins!",
@@ -125,17 +152,13 @@ export class ReviewsRouter {
       siteName,
     })
 
-    // NOTE: The cast is required as ts is unable to infer that
-    // the filter ensures that each item is non-null
-    const verifiedReviewers = _.filter(
-      possibleAdmins,
-      (user) => !!user && user.id !== admin.id
-    ) as User[]
-
     const pullRequestNumber = await this.reviewRequestService.createReviewRequest(
       userWithSiteSessionData,
-      verifiedReviewers,
-      admin,
+      admins,
+      // NOTE: Safe assertion as we first retrieve the role
+      // and assert that the user is an admin of said site.
+      // This guarantees that the user exists in our database.
+      admin!,
       site,
       title,
       description
@@ -149,7 +172,11 @@ export class ReviewsRouter {
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
-    router.post("/compare", attachReadRouteHandlerWrapper(this.compareDiff))
+    router.get("/compare", attachReadRouteHandlerWrapper(this.compareDiff))
+    router.post(
+      "/request",
+      attachWriteRouteHandlerWrapper(this.createReviewRequest)
+    )
 
     return router
   }

@@ -81,7 +81,9 @@ class UsersService {
 
   async findSitesByUserId(
     isomerId: string
-  ): Promise<User & { site_members: Site[] }> {
+  ): Promise<
+    User & { site_members: Array<Site & { SiteMember: SiteMember }> }
+  > {
     // NOTE: The type casting is necessary to allow site_members to be
     // safely read
     return this.repository.findOne({
@@ -94,7 +96,9 @@ class UsersService {
           include: [{ model: Repo, required: true }],
         },
       ],
-    }) as Promise<User & { site_members: Site[] }>
+    }) as Promise<
+      User & { site_members: Array<Site & { SiteMember: SiteMember }> }
+    >
   }
 
   async updateUserByGitHubId(

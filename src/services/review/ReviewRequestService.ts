@@ -53,8 +53,8 @@ export default class ReviewRequestService {
 
   compareDiff = async (
     sessionData: UserWithSiteSessionData,
-    base = "staging",
-    head = "master"
+    base = "master",
+    head = "staging"
   ): Promise<EditedItemDto[]> => {
     // Step 1: Get the site name
     const { siteName, accessToken } = sessionData
@@ -75,8 +75,12 @@ export default class ReviewRequestService {
 
     const mappings = this.computeShaMappings(commits)
 
-    return files.map(({ filename, sha }) => {
+    return files.map(({ filename, contents_url }) => {
       const fullPath = filename.split("/")
+      const items = contents_url.split("?ref=")
+      // NOTE: We have to compute sha this way rather than
+      const sha = items[items.length - 1]
+
       return {
         type: this.computeFileType(filename),
         // NOTE: The string is guaranteed to be non-empty
@@ -85,8 +89,8 @@ export default class ReviewRequestService {
         // NOTE: pop alters in place
         path: fullPath,
         url: this.computeFileUrl(filename, siteName),
-        lastEditedBy: mappings[sha].author,
-        lastEditedTime: mappings[sha].unixTime,
+        lastEditedBy: mappings[sha]?.author || "Unknown user",
+        lastEditedTime: mappings[sha]?.unixTime || 0,
       }
     })
   }
@@ -101,11 +105,11 @@ export default class ReviewRequestService {
   ): Record<string, { author: string; unixTime: number }> => {
     const mappings: Record<string, { author: string; unixTime: number }> = {}
 
-    // NOTE: commits are allowed to be arbitrarily large.
-    // This mode of processing assumes that this is not the case
-    // and that n(commits) << BE capability
-    commits.forEach(({ commit, message, sha }) => {
-      const { userId } = fromGithubCommitMessage(message)
+    // NOTE: commits from github are capped at 300.
+    // This implies that there might possibly be some files
+    // whose commit isn't being returned.
+    commits.forEach(({ commit, sha }) => {
+      const { userId } = fromGithubCommitMessage(commit.message)
       const lastChangedTime = new Date(commit.author.date).getTime()
       mappings[sha] = {
         author: userId || commit.author.name,
@@ -122,8 +126,8 @@ export default class ReviewRequestService {
     site: Site,
     title: string,
     description: string,
-    base = "staging",
-    head = "master"
+    base = "master",
+    head = "staging"
   ): Promise<number> => {
     const { siteName, accessToken } = sessionData
     // Step 1: Create an actual pull request on Github
@@ -141,11 +145,19 @@ export default class ReviewRequestService {
       .then(({ data }) => data.number)
 
     // Step 2: Only update internal model state once PR is created
-    const reviewRequest = await this.repository.create({ requestor, site })
-    await this.reviewers.create({
-      requestId: reviewRequest.id,
-      reviewerId: reviewers.map(({ id }) => id),
+    const reviewRequest = await this.repository.create({
+      requestorId: requestor.id,
+      siteId: site.id,
     })
+    await Promise.all(
+      reviewers.map(({ id }) =>
+        this.reviewers.create({
+          requestId: reviewRequest.id,
+          reviewerId: id,
+        })
+      )
+    )
+
     await this.reviewMeta.create({
       reviewId: reviewRequest.id,
       pullRequestNumber,

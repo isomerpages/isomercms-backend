@@ -1,4 +1,3 @@
-import mockAxios from "jest-mock-axios"
 import { ModelStatic } from "sequelize"
 
 import { Site } from "@database/models"
@@ -13,6 +12,7 @@ import {
   mockSessionDataEmailUser,
   mockIsomerUserId,
 } from "@fixtures/sessionData"
+import { mockAxiosInstance, prepareAxiosMock } from "@mocks/axios"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import type { RepositoryData } from "@root/types/repoInfo"
 import { GitHubService } from "@services/db/GitHubService"
@@ -62,18 +62,10 @@ const mockSite = ({
   apiTokenName: "0000",
   users: [],
 } as unknown) as Site
-const genericGitHubAxiosInstance = mockAxios.create()
 
 describe("SitesService", () => {
   beforeAll(() => {
-    // NOTE: Because SitesService uses an axios instance,
-    // we need to mock the axios instance using es5 named exports
-    // to ensure that the calls for .get() on the instance
-    // will actually return a value and not fail.
-    jest.mock("../../../services/api/AxiosInstance.ts", () => ({
-      __esModule: true, // this property makes it work
-      genericGitHubAxiosInstance,
-    }))
+    prepareAxiosMock()
   })
 
   // Prevent inter-test pollution of mocks
@@ -119,17 +111,17 @@ describe("SitesService", () => {
         },
       ]
       MockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
 
       await expect(
         SitesService.getSites(mockUserWithSiteSessionData)
       ).resolves.toMatchObject(expectedResp)
 
-      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3)
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
       expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
     })
@@ -151,11 +143,11 @@ describe("SitesService", () => {
       MockUsersService.findSitesByUserId.mockImplementationOnce(() => ({
         site_members: [{ repo: { name: repoInfo.name } }],
       }))
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
 
       await expect(
         SitesService.getSites(mockSessionDataEmailUser)
@@ -164,7 +156,7 @@ describe("SitesService", () => {
       expect(MockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
       )
-      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3)
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
       expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
     })
@@ -177,11 +169,11 @@ describe("SitesService", () => {
       const expectedResp: RepositoryData[] = []
       MockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
       MockUsersService.findSitesByUserId.mockImplementationOnce(() => null)
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
 
       await expect(
         SitesService.getSites(mockSessionDataEmailUser)
@@ -193,7 +185,7 @@ describe("SitesService", () => {
       expect(MockUsersService.findSitesByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
       )
-      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3)
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
       expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
     })
@@ -222,11 +214,11 @@ describe("SitesService", () => {
         repoInfo.name,
         repoInfo2.name,
       ])
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
-      genericGitHubAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: [] })
 
       await expect(
         SitesService.getSites(mockUserWithSiteSessionData)
@@ -235,7 +227,7 @@ describe("SitesService", () => {
       expect(MockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
       )
-      expect(genericGitHubAxiosInstance.get).toHaveBeenCalledTimes(3)
+      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3)
       process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
       expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
     })

@@ -1,9 +1,9 @@
 import express from "express"
-import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
 import { IsomerAdmin, Repo, Site, SiteMember, User } from "@database/models"
 import { generateRouter } from "@fixtures/app"
+import { mockAxiosInstance, prepareAxiosMock } from "@mocks/axios"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockEmail, mockIsomerUserId } from "@root/fixtures/sessionData"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
@@ -22,7 +22,7 @@ const mockUpdatedAt = "now"
 const mockPermissions = { push: true }
 const mockPrivate = true
 
-const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
+const gitHubService = new GitHubService({ axiosInstance: mockAxiosInstance })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
@@ -55,21 +55,9 @@ subrouter.use((req, res, next) => {
 subrouter.use(sitesSubrouter)
 const app = generateRouter(subrouter)
 
-const mockGenericAxios = mockAxios.create()
-mockGenericAxios.get.mockResolvedValue({
-  data: [],
-})
-
 describe("Sites Router", () => {
   beforeAll(() => {
-    // NOTE: Because SitesService uses an axios instance,
-    // we need to mock the axios instance using es5 named exports
-    // to ensure that the calls for .get() on the instance
-    // will actually return a value and not fail.
-    jest.mock("../services/api/AxiosInstance.ts", () => ({
-      __esModule: true, // this property makes it work
-      genericGitHubAxiosInstance: mockGenericAxios,
-    }))
+    prepareAxiosMock()
   })
 
   describe("/", () => {
@@ -125,7 +113,7 @@ describe("Sites Router", () => {
         ],
       }
 
-      mockGenericAxios.get.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: [
           {
             pushed_at: mockUpdatedAt,
@@ -169,7 +157,7 @@ describe("Sites Router", () => {
           },
         ],
       }
-      mockGenericAxios.get.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: [
           {
             pushed_at: mockUpdatedAt,

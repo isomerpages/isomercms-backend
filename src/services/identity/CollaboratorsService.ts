@@ -222,7 +222,10 @@ class CollaboratorsService {
     })
   }
 
-  getRole = async (siteName: string, userId: string) => {
+  getRole = async (
+    siteName: string,
+    userId: string
+  ): Promise<CollaboratorRoles | null> => {
     const site = await this.siteRepository.findOne({
       where: { name: siteName },
       include: [
@@ -236,7 +239,7 @@ class CollaboratorsService {
       ],
     })
 
-    return (site?.site_members?.[0]?.SiteMember?.role as string | null) ?? null
+    return site?.site_members?.[0]?.SiteMember?.role ?? null
   }
 
   getStatistics = async (siteName: string) => {

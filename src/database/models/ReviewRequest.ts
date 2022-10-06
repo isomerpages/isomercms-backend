@@ -6,12 +6,14 @@ import {
   Table,
   BelongsTo,
   BelongsToMany,
+  HasOne,
 } from "sequelize-typescript"
 
 import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
 
 import { Reviewer } from "./Reviewers"
+import { ReviewMeta } from "./ReviewMeta"
 
 @Table({ tableName: "review_requests" })
 // eslint-disable-next-line import/prefer-default-export
@@ -45,6 +47,9 @@ export class ReviewRequest extends Model {
     onDelete: "CASCADE",
   })
   site!: Site
+
+  @HasOne(() => ReviewMeta)
+  reviewMeta!: ReviewMeta
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",

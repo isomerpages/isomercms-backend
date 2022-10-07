@@ -2,18 +2,21 @@ import AWS, { SQS } from "aws-sdk"
 
 import logger from "@root/logger/logger"
 
+const { INCOMING_QUEUE_URL, OUTGOING_QUEUE_URL } = process.env
 export default class QueueClient {
   private readonly sqs: AWS.SQS
 
-  // todo remove hardcoded URLs
-  private readonly incomingQueueUrl =
-    "http://localhost:4566/000000000000/incomingQueue"
+  private readonly incomingQueueUrl
 
-  private readonly outgoingQueueUrl =
-    "http://localhost:4566/000000000000/outgoingQueue"
+  private readonly outgoingQueueUrl
 
   constructor() {
     this.sqs = new AWS.SQS()
+    if (!INCOMING_QUEUE_URL || !OUTGOING_QUEUE_URL) {
+      throw Error(`Queue URLs are not configured in environment variable`)
+    }
+    this.incomingQueueUrl = INCOMING_QUEUE_URL
+    this.outgoingQueueUrl = OUTGOING_QUEUE_URL
   }
 
   sendMessage = async (MessageBody: string) => {
@@ -33,26 +36,23 @@ export default class QueueClient {
   receiveMessage = async () => {
     logger.info(`checking queue`)
     const params: SQS.ReceiveMessageRequest = {
-      QueueUrl: this.incomingQueueUrl,
+      QueueUrl: this.outgoingQueueUrl,
       AttributeNames: ["All"],
       VisibilityTimeout: 0,
       WaitTimeSeconds: 10,
-      // todo figure out why queue returns the same message 10 times rather than 10 different messages
-      // MaxNumberOfMessages:10
     }
 
     return this.sqs.receiveMessage(params, (err, data) => {
       if (err) {
-        console.log(err, err.stack)
+        logger.error(err)
         throw err
-      } else {
-        console.log("successful retrival of queue")
-        console.log(data)
-        if (data.Messages) {
-          this.deleteMessage(data)
-        }
-        return data
       }
+
+      if (data.Messages) {
+        this.deleteMessage(data)
+      }
+
+      return data
     })
   }
 

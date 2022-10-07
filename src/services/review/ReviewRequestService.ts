@@ -7,7 +7,7 @@ import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
-import RequestNotFoundError from "@root/errors/RequestNotFoundERror"
+import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
   DashboardReviewRequestDto,
   EditedItemDto,
@@ -215,8 +215,7 @@ export default class ReviewRequestService {
         return {
           id: prNumber,
           author: req.requestor.email || "Unknown user",
-          // TODO!
-          status: "PENDING",
+          status: req.reviewStatus,
           title,
           description: body,
           changedFiles: changed_files,

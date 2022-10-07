@@ -79,14 +79,13 @@ export class CollaboratorsRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { siteName } = req.params
-    const x = req.query
     const { userWithSiteSessionData } = res.locals
     const rawCollaborators = await this.collaboratorsService.list(
       siteName,
       userWithSiteSessionData.isomerUserId
     )
     const collaborators = rawCollaborators.map((collaborator) => ({
-      ...collaborator,
+      ...collaborator.toJSON(),
       email: collaborator.email || "",
       role: collaborator.SiteMember.role,
     }))

@@ -37,5 +37,6 @@ export interface ReviewRequestDto {
   requestor: string
   reviewers: string[]
   reviewRequestedTime: number
+  status: ReviewRequestStatus
   changedItems: EditedItemDto[]
 }

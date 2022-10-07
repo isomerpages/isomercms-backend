@@ -1,5 +1,7 @@
 import { CollaboratorRoles } from "@constants/constants"
 
+export type ReviewRequestStatus = "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
+
 export type FileType = "page" | "nav" | "setting" | "file" | "image"
 
 export interface EditedItemDto {
@@ -21,8 +23,7 @@ export type DashboardReviewRequestDto = {
   title: string
   description: string
   author: string
-  // TODO! - db
-  status: "PENDING" | "APPROVED"
+  status: ReviewRequestStatus
   changedFiles: number
   // TODO!
   newComments: number

@@ -182,7 +182,6 @@ export default class ReviewRequestService {
     const requests = await this.repository.findAll({
       where: {
         siteId: site.id,
-        // TODO!: add status
       },
       include: [
         {
@@ -281,22 +280,53 @@ export default class ReviewRequestService {
     const changedItems = await this.compareDiff(userWithSiteSessionData)
 
     return {
-      reviewUrl: review.reviewMeta.reviewLink || "",
+      reviewUrl: review.reviewMeta.reviewLink,
       title,
+      status: review.reviewStatus,
       requestor: review.requestor.email || "",
-      reviewers: review.reviewers.map(({ email }) => email || "") || [],
+      reviewers: review.reviewers.map(({ email }) => email || ""),
       reviewRequestedTime: new Date(created_at).getTime(),
       changedItems,
     }
   }
 
-  mergeReviewRequest = async (siteName: string, pullRequestNumber: number) => {
+  // NOTE: The semantics of our reviewing system is slightly different from github.
+  // The approval is tied to the request, rather than the user.
+  approvePullRequest = async (siteName: string, pullRequestNumber: number) => {}
+
+  mergeReviewRequest = async (
+    siteName: string,
+    pullRequestNumber: number,
+    siteId: number
+  ): Promise<ReviewRequest | RequestNotFoundError> => {
+    const reviewRequest = await this.repository.findOne({
+      where: {
+        siteId,
+      },
+      include: {
+        model: ReviewMeta,
+        as: "reviewMeta",
+        where: {
+          pullRequestNumber,
+        },
+      },
+    })
+
+    if (!reviewRequest) {
+      return new RequestNotFoundError()
+    }
+
     await this.apiService.post<void>(
       `${siteName}/pulls/${pullRequestNumber}/reviews`,
       {
         event: "APPROVE",
       }
     )
-    this.apiService.put<void>(`${siteName}/pulls/${pullRequestNumber}/merge`)
+    await this.apiService.put<void>(
+      `${siteName}/pulls/${pullRequestNumber}/merge`
+    )
+
+    reviewRequest.reviewStatus = "MERGED"
+    return reviewRequest.save()
   }
 }

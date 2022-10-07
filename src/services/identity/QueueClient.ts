@@ -38,7 +38,7 @@ export default class QueueClient {
 
   receiveMessage = async (): Promise<SQS.MessageList> => {
     const params: SQS.ReceiveMessageRequest = {
-      QueueUrl: this.incomingQueueUrl,
+      QueueUrl: this.outgoingQueueUrl,
       AttributeNames: ["All"],
       MaxNumberOfMessages: 10,
     }

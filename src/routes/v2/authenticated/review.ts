@@ -315,7 +315,11 @@ export class ReviewsRouter {
     // NOTE: We are not checking for existence of RR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
-    await this.reviewRequestService.mergeReviewRequest(siteName, requestId)
+    await this.reviewRequestService.mergeReviewRequest(
+      siteName,
+      requestId,
+      site.id
+    )
     res.status(200).send()
   }
 

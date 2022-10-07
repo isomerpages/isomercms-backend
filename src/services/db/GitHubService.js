@@ -284,6 +284,27 @@ class GitHubService {
     return { treeSha, currentCommitSha }
   }
 
+  async getLatestCommitOfBranch(sessionData, branch) {
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
+    const endpoint = `${siteName}/commits`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+    const params = {
+      ref: branch,
+      per_page: 1,
+    }
+    // Get the commits of the repo
+    const { data: commits } = await this.axiosInstance.get(endpoint, {
+      params,
+      headers,
+    })
+
+    const { commit: latestCommit } = commits[0]
+    return latestCommit
+  }
+
   async getTree(sessionData, githubSessionData, { isRecursive }) {
     const { accessToken } = sessionData
     const { siteName } = sessionData

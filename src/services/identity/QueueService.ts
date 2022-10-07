@@ -1,5 +1,13 @@
 import QueueClient from "./QueueClient"
 
+export interface MessageBody {
+  repoName: string
+  appId: string
+  primaryDomain: string
+  domainValidation: string
+  githubRedirectionUrl?: string
+}
+
 export default class QueueService {
   private readonly queueClient: QueueClient
 
@@ -10,12 +18,14 @@ export default class QueueService {
   sendMessage = async (message: string) => this.queueClient.sendMessage(message)
 
   pollMessages = async () => {
-    const messages: string[] = []
+    const messageBodies: MessageBody[] = []
     await (await this.queueClient.receiveMessage()).promise().then((res) => {
       res.Messages?.forEach((message) => {
-        if (message.Body) messages.push(message.Body)
+        if (message.Body) {
+          messageBodies.push(JSON.parse(message.Body))
+        }
       })
     })
-    return messages
+    return messageBodies
   }
 }

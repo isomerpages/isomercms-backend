@@ -289,4 +289,14 @@ export default class ReviewRequestService {
       changedItems,
     }
   }
+
+  mergeReviewRequest = async (siteName: string, pullRequestNumber: number) => {
+    await this.apiService.post<void>(
+      `${siteName}/pulls/${pullRequestNumber}/reviews`,
+      {
+        event: "APPROVE",
+      }
+    )
+    this.apiService.put<void>(`${siteName}/pulls/${pullRequestNumber}/merge`)
+  }
 }

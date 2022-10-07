@@ -1,7 +1,7 @@
 import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
-import { Site } from "@database/models"
+import { Deployment, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
@@ -12,7 +12,10 @@ import {
 } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
+import { GitHubCommitData } from "@root/types/commitData"
+import { ConfigYmlData } from "@root/types/configYml"
 import type { GitHubRepositoryData, RepositoryData } from "@root/types/repoInfo"
+import { SiteInfo } from "@root/types/siteInfo"
 import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
@@ -28,6 +31,9 @@ interface SitesServiceProps {
   isomerAdminsService: IsomerAdminsService
   tokenStore: TokenStore
 }
+
+type SiteUrlTypes = "staging" | "prod"
+type SiteUrls = { [key in SiteUrlTypes]: string }
 
 class SitesService {
   // NOTE: Explicitly specifying using keyed properties to ensure
@@ -76,6 +82,107 @@ class SitesService {
     }
 
     return user.site_members.map((site) => site.repo?.name)
+  }
+
+  async getCommitAuthorEmail(commit: GitHubCommitData) {
+    const { message } = commit
+
+    // Commit message created as part of phase 2 identity
+    if (message.startsWith("{") && message.endsWith("}")) {
+      const { userId }: { userId: string } = JSON.parse(message)
+      const user = await this.usersService.findById(userId)
+
+      if (user) {
+        return user.email
+      }
+    }
+
+    // Legacy style of commits, or if the user is not found
+    const {
+      author: { email: authorEmail },
+    } = commit
+    return authorEmail
+  }
+
+  async getUrlsOfSite(
+    sessionData: UserWithSiteSessionData,
+    urlTypes: SiteUrlTypes[]
+  ): Promise<SiteUrls> {
+    // Tries to get the site urls in the following order:
+    // 1. From the deployments database table
+    // 2. From the config.yml file
+    // 3. From the GitHub repository description
+    // Otherwise, returns an empty string for the url
+    const { siteName } = sessionData
+    let configYmlData: ConfigYmlData = {}
+    let repoDescTokens: string[] = []
+
+    const site = await this.siteRepository.findOne({
+      where: { name: siteName },
+      include: {
+        model: Deployment,
+        as: "deployment",
+      },
+    })
+
+    if (!site) {
+      return {
+        staging: "",
+        prod: "",
+      }
+    }
+
+    const deployment = site?.deployment
+    const output: SiteUrls = {
+      staging: deployment?.stagingUrl ? deployment.stagingUrl : "",
+      prod: deployment?.productionUrl ? deployment.productionUrl : "",
+    }
+
+    for (const urlType of urlTypes) {
+      // We only call ConfigYmlService only when necessary
+      if (!output[urlType] && Object.keys(configYmlData).length === 0) {
+        const {
+          content: configData,
+        }: { content: ConfigYmlData } = await this.configYmlService.read(
+          sessionData
+        )
+
+        configYmlData = configData
+      }
+
+      if (!output[urlType] && urlType in configYmlData) {
+        const configSiteUrl = configYmlData[urlType]
+
+        if (configSiteUrl) {
+          output[urlType] = configSiteUrl
+        }
+      }
+
+      // We only call GitHubService only when necessary
+      if (!output[urlType] && repoDescTokens.length == 0) {
+        const {
+          description,
+        }: { description: string } = await this.gitHubService.getRepoInfo(
+          sessionData
+        )
+
+        // Retrieve the url from the description
+        // repo descriptions have varying formats, so we look for the first link
+        repoDescTokens = description.replace("/;/g", " ").split(" ")
+      }
+
+      if (!output[urlType]) {
+        // Site urls also contain the site url types in their url
+        const siteUrl = repoDescTokens.find(
+          (token) => token.includes("http") && token.includes(urlType)
+        )
+        if (siteUrl) {
+          output[urlType] = siteUrl
+        }
+      }
+    }
+
+    return output
   }
 
   async getSites(sessionData: UserSessionData): Promise<RepositoryData[]> {
@@ -154,29 +261,13 @@ class SitesService {
   }
 
   async getStagingUrl(sessionData: UserWithSiteSessionData): Promise<string> {
-    // Check config.yml for staging url if it exists, and github site description otherwise
-    const { content: configData } = await this.configYmlService.read(
-      sessionData
-    )
-    if ("staging" in configData) return configData.staging
-
-    const {
-      description,
-    }: { description: string } = await this.gitHubService.getRepoInfo(
-      sessionData
-    )
-
-    if (description) {
-      // Retrieve the url from the description - repo descriptions have varying formats, so we look for the first link
-      const descTokens = description.replace("/;/g", " ").split(" ")
-      // Staging urls also contain staging in their url
-      const stagingUrl = descTokens.find(
-        (token) => token.includes("http") && token.includes("staging")
+    const { staging } = await this.getUrlsOfSite(sessionData, ["staging"])
+    if (!staging) {
+      throw new NotFoundError(
+        `${sessionData.siteName} does not have a staging url`
       )
-      if (stagingUrl) return stagingUrl
     }
-
-    throw new NotFoundError(`${sessionData.siteName} has no staging url`)
+    return staging
   }
 
   async create(
@@ -193,6 +284,41 @@ class SitesService {
     return this.siteRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
+  }
+
+  async getSiteInfo(sessionData: UserWithSiteSessionData): Promise<SiteInfo> {
+    const {
+      staging: stagingUrl,
+      prod: prodUrl,
+    } = await this.getUrlsOfSite(sessionData, ["staging", "prod"])
+
+    const stagingCommit = ((await this.gitHubService.getLatestCommitOfBranch(
+      sessionData,
+      "staging"
+    )) as unknown) as GitHubCommitData
+    const prodCommit = ((await this.gitHubService.getLatestCommitOfBranch(
+      sessionData,
+      "master"
+    )) as unknown) as GitHubCommitData
+
+    const {
+      author: { date: stagingDate },
+    } = stagingCommit
+    const {
+      author: { date: prodDate },
+    } = prodCommit
+
+    const stagingAuthor = await this.getCommitAuthorEmail(stagingCommit)
+    const prodAuthor = await this.getCommitAuthorEmail(prodCommit)
+
+    return {
+      savedAt: new Date(stagingDate).getTime(),
+      savedBy: stagingAuthor || "Unknown Author",
+      publishedAt: new Date(prodDate).getTime(),
+      publishedBy: prodAuthor || "Unknown Author",
+      stagingUrl: stagingUrl || "",
+      siteUrl: prodUrl || "",
+    }
   }
 }
 

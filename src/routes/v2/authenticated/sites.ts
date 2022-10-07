@@ -84,6 +84,25 @@ export class SitesRouter {
     return res.status(200).json({ stagingUrl })
   }
 
+  getSiteInfo: RequestHandler<
+    { siteName: string },
+    unknown,
+    never,
+    never,
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userSessionData } = res.locals
+    const { siteName } = req.params
+    const userWithSiteSessionData = this.addSiteNameToSessionData(
+      userSessionData,
+      siteName
+    )
+    const siteInfo = await this.sitesService.getSiteInfo(
+      userWithSiteSessionData
+    )
+    return res.status(200).json(siteInfo)
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
@@ -97,6 +116,11 @@ export class SitesRouter {
       "/:siteName/stagingUrl",
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getStagingUrl)
+    )
+    router.get(
+      "/:siteName/info",
+      attachSiteHandler,
+      attachReadRouteHandlerWrapper(this.getSiteInfo)
     )
 
     return router

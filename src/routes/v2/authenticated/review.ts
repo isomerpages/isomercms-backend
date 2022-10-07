@@ -277,6 +277,48 @@ export class ReviewsRouter {
     return res.status(200).json({ reviewRequest: possibleReviewRequest })
   }
 
+  mergeReviewRequest: RequestHandler<
+    { siteName: string; requestId: number },
+    ResponseErrorBody,
+    never,
+    unknown,
+    { userSessionData: UserSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Check that user exists.
+    // Having session data is proof that this user exists
+    // as otherwise, they would be rejected by our middleware
+    const { userSessionData } = res.locals
+
+    // Check if they are a collaborator
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userSessionData.isomerUserId
+    )
+
+    if (!role) {
+      return res.status(400).send({
+        message: "Only collaborators of a site can view reviews!",
+      })
+    }
+
+    // Step 3: Merge review request
+    // NOTE: We are not checking for existence of RR
+    // as the underlying Github API returns 404 if
+    // the requested review could not be found.
+    await this.reviewRequestService.mergeReviewRequest(siteName, requestId)
+    res.status(200).send()
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
@@ -289,6 +331,10 @@ export class ReviewsRouter {
     router.get(
       "/:requestId",
       attachReadRouteHandlerWrapper(this.getReviewRequest)
+    )
+    router.put(
+      "/:requestId/merge",
+      attachWriteRouteHandlerWrapper(this.mergeReviewRequest)
     )
 
     return router

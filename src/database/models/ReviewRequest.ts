@@ -51,6 +51,13 @@ export class ReviewRequest extends Model {
   @HasOne(() => ReviewMeta)
   reviewMeta!: ReviewMeta
 
+  @Column({
+    allowNull: false,
+    defaultValue: "OPEN",
+    type: DataType.ENUM("OPEN", "APPROVED", "MERGED", "CLOSED"),
+  })
+  reviewStatus!: "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
+
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",

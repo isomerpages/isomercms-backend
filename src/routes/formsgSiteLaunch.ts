@@ -56,13 +56,19 @@ export class FormsgSiteLaunchRouter {
     let redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
     let agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
 
-    // todo figure out what sub domain settings refers to
     const subDomainSettings = [
       {
         branchName: "master",
-        prefix: "www",
+        prefix: "",
       },
     ]
+
+    if (redirectionDomain) {
+      subDomainSettings.push({
+        branchName: "master",
+        prefix: "www",
+      })
+    }
 
     // todo remove this after local dev is done
     const isDev = true
@@ -71,7 +77,7 @@ export class FormsgSiteLaunchRouter {
       requesterEmail = "kishore@open.gov.sg"
       repoName = "kishore-test"
       primaryDomain = "kishoretest.isomer.gov.sg"
-      redirectionDomain = "www.kishore-test.isomer.gov.sg"
+      redirectionDomain = "www.kishoretest.isomer.gov.sg"
       agencyEmail = "kishore@open.gov.sg"
     }
 
@@ -140,7 +146,8 @@ export class FormsgSiteLaunchRouter {
       }
 
       // 3. Use service to Launch site
-      await this.infraService.launchSite(
+      // note: this function is not be async due to the timeout for http requests.
+      const launchSite = this.infraService.launchSite(
         submissionId,
         requesterUser,
         agencyUser,
@@ -148,7 +155,16 @@ export class FormsgSiteLaunchRouter {
         primaryDomain,
         subDomainSettings
       )
-      await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
+
+      // only send success message after promise has been resolved
+      launchSite.then(async () => {
+        await this.sendLaunchSuccess(
+          // fields below are guarenteed to be a string due to prior checks
+          <string>requesterEmail,
+          <string>repoName,
+          submissionId
+        )
+      })
     } catch (err) {
       await this.sendLaunchError(
         [requesterEmail, agencyEmail],

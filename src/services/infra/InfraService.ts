@@ -1,4 +1,3 @@
-import { SQS } from "aws-sdk"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
 import { Err, err, Ok, ok } from "neverthrow"
@@ -298,7 +297,6 @@ export default class InfraService {
       // Create launches records table
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
-      const appId = await this.launchesService.getAppId(repoName)
 
       const message: MessageBody = {
         repoName,

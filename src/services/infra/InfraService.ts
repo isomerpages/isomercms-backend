@@ -300,6 +300,7 @@ export default class InfraService {
       // Create launches records table
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
+     
 
       const message: MessageBody = {
         repoName,

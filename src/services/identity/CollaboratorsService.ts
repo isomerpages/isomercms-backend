@@ -105,23 +105,12 @@ class CollaboratorsService {
       collaborators,
       [
         // Prioritize Admins over Contributors
-        (
-          collaborator: User & {
-            SiteMember: SiteMember
-          }
-        ) => collaborator.SiteMember.role === CollaboratorRoles.Admin,
+        (collaborator) =>
+          collaborator.SiteMember.role === CollaboratorRoles.Admin,
         // Prioritize elements where the userId matches the requesterId (i.e. "you")
-        (
-          collaborator: User & {
-            SiteMember: SiteMember
-          }
-        ) => collaborator.id.toString() === requesterId,
+        (collaborator) => collaborator.id.toString() === requesterId,
         // Prioritize the user that has not logged in for the longest time
-        (
-          collaborator: User & {
-            SiteMember: SiteMember
-          }
-        ) => collaborator.lastLoggedIn,
+        (collaborator) => collaborator.lastLoggedIn,
       ],
       ["desc", "desc", "asc"]
     )

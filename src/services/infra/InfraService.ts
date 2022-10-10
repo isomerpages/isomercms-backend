@@ -10,7 +10,7 @@ import LaunchesService from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
-import QueueService from "../identity/QueueService"
+import QueueService, { MessageBody } from "../identity/QueueService"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -117,24 +117,21 @@ export default class InfraService {
   ) => {
     // call amplify to trigger site launch process
     try {
-      const newDomainAssociationParams = {}
-
       // Set up domain association using LaunchesService
-      const launch = await this.launchesService.configureDomainInAmplify(
+      await this.launchesService.configureDomainInAmplify(
         repoName,
         primaryDomain,
         subDomainSettings
       )
+
       logger.info(
         `Created Domain association for ${repoName} to ${primaryDomain}`
       )
-      console.log(launch)
 
       // Get DNS records from Amplify
       const dnsInfo = await this.launchesService.getDomainAssociationRecord(
         primaryDomain
       )
-      logger.info(JSON.stringify(dnsInfo))
 
       const certificationRecord = dnsInfo.domainAssociation?.certificateVerificationDNSRecord?.split(
         " "
@@ -171,9 +168,16 @@ export default class InfraService {
       // Create launches records table
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
+      const appId = await this.launchesService.getAppId(repoName)
 
-      // todo figure out the exact shape of the message to be put in message queue
-      this.queueService.sendMessage(JSON.stringify(newLaunchParams))
+      const message: MessageBody = {
+        repoName,
+        appId,
+        primaryDomain,
+        domainValidationSource,
+        domainValidationTarget,
+      }
+      this.queueService.sendMessage(message)
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       throw error
@@ -200,9 +204,10 @@ export default class InfraService {
     }
 
     try {
-      setInterval(siteUpdate, 6000) // todo check if queue stil works even when callback throws an error
+      setInterval(siteUpdate, 6000)
     } catch (err) {
-      console.log(err)
+      logger.error(err)
+      this.pollQueue() // fault tolerence - poller should not stop polling
     }
   }
 }

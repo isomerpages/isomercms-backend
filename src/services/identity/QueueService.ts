@@ -4,7 +4,8 @@ export interface MessageBody {
   repoName: string
   appId: string
   primaryDomain: string
-  domainValidation: string
+  domainValidationSource: string
+  domainValidationTarget: string
   githubRedirectionUrl?: string
 }
 
@@ -15,7 +16,9 @@ export default class QueueService {
     this.queueClient = new QueueClient()
   }
 
-  sendMessage = async (message: string) => this.queueClient.sendMessage(message)
+  sendMessage = async (message: MessageBody) => {
+    this.queueClient.sendMessage(JSON.stringify(message))
+  }
 
   pollMessages = async () => {
     const messageBodies: MessageBody[] = []

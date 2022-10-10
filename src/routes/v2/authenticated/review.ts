@@ -19,6 +19,7 @@ import { ResponseErrorBody } from "@root/types/dto /error"
 import {
   DashboardReviewRequestDto,
   EditedItemDto,
+  RequestChangeDto,
   ReviewRequestDto,
 } from "@root/types/dto /review"
 import ReviewRequestService from "@services/review/ReviewRequestService"

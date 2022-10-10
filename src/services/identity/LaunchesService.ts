@@ -1,3 +1,7 @@
+import {
+  CreateDomainAssociationCommandOutput,
+  DomainAssociation,
+} from "@aws-sdk/client-amplify"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import { ModelStatic } from "sequelize"
 
@@ -22,6 +26,12 @@ interface LaunchesServiceProps {
   user: ModelStatic<User>
 }
 
+export interface DomainAssocationInterface {
+  domainAssociationResult: DomainAssociation
+  appId: string
+  repoName: string
+  siteId: number
+}
 export class LaunchesService {
   private readonly deployment: LaunchesServiceProps["deployment"]
 
@@ -30,11 +40,6 @@ export class LaunchesService {
   private readonly repo: LaunchesServiceProps["repo"]
 
   private readonly launchClient: LaunchClient
-
-  // todo rethink using class level variables here
-  private appID = ""
-
-  private siteId?: number
 
   constructor({ deployment, launches, repo }: LaunchesServiceProps) {
     this.deployment = deployment
@@ -47,15 +52,15 @@ export class LaunchesService {
     this.launches.create(createParams)
 
   getAppId = async (repoName: string) => {
-    const id = await this.getSiteId(repoName)
-    if (!this.siteId) {
+    const siteId = await this.getSiteId(repoName)
+    if (!siteId) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
       logger.error(error)
       throw error
     }
 
     const deploy = await this.deployment.findOne({
-      where: { site_id: this.siteId },
+      where: { site_id: siteId },
     })
     const hostingID = deploy?.hostingId
 
@@ -66,26 +71,21 @@ export class LaunchesService {
       logger.error(error)
       throw error
     }
-    this.appID = hostingID
     return hostingID
   }
 
   getSiteId = async (repoName: string) => {
-    if (this.siteId) {
-      return this.siteId
-    }
-
     const site = await this.repo.findOne({
       where: { name: repoName },
     })
-    this.siteId = site?.siteId
+    const siteId = site?.siteId
 
-    if (!this.siteId) {
+    if (!siteId) {
       const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
       logger.error(error)
       throw error
     }
-    return this.siteId
+    return siteId
   }
 
   configureDomainInAmplify = async (
@@ -95,6 +95,7 @@ export class LaunchesService {
   ) => {
     // Get appId, which is stored as hostingID in database table.
     const appId = await this.getAppId(repoName)
+    const siteId = await this.getSiteId(repoName)
 
     const launchAppOptions = this.launchClient.createDomainAssociationCommandInput(
       appId,
@@ -103,23 +104,30 @@ export class LaunchesService {
     )
 
     // Create Domain Association
-    return this.launchClient
+    const domainAssociationResult = await this.launchClient
       .sendCreateDomainAssociation(launchAppOptions)
       .then((out) => {
         const { domainAssociation } = out
         if (!domainAssociation) {
-          return new AmplifyError(
+          throw new AmplifyError(
             "Call to CreateApp on Amplify returned malformed output."
           )
         }
         logger.info(`Successfully published '${domainAssociation}'`)
         return domainAssociation
       })
+    const redirectionDomainObject: DomainAssocationInterface = {
+      repoName,
+      domainAssociationResult,
+      appId,
+      siteId,
+    }
+    return redirectionDomainObject
   }
 
-  getDomainAssociationRecord = async (domainName: string) => {
+  getDomainAssociationRecord = async (domainName: string, appId: string) => {
     const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
-      this.appID,
+      appId,
       domainName
     )
 

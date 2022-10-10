@@ -1,4 +1,3 @@
-import { SQS } from "aws-sdk"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 
 import { Site } from "@database/models"
@@ -118,19 +117,22 @@ export default class InfraService {
     // call amplify to trigger site launch process
     try {
       // Set up domain association using LaunchesService
-      await this.launchesService.configureDomainInAmplify(
+      const {
+        appId,
+        siteId,
+      } = await this.launchesService.configureDomainInAmplify(
         repoName,
         primaryDomain,
         subDomainSettings
       )
-
       logger.info(
         `Created Domain association for ${repoName} to ${primaryDomain}`
       )
 
       // Get DNS records from Amplify
       const dnsInfo = await this.launchesService.getDomainAssociationRecord(
-        primaryDomain
+        primaryDomain,
+        appId
       )
 
       const certificationRecord = dnsInfo.domainAssociation?.certificateVerificationDNSRecord?.split(
@@ -155,7 +157,6 @@ export default class InfraService {
       const domainValidationTarget = certificationRecord[2]
 
       const userId = agency.id
-      const siteId = (await this.launchesService.getSiteId(repoName)) as number
       const newLaunchParams = {
         userId,
         siteId,
@@ -168,7 +169,6 @@ export default class InfraService {
       // Create launches records table
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
-      const appId = await this.launchesService.getAppId(repoName)
 
       const message: MessageBody = {
         repoName,

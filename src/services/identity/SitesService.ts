@@ -312,9 +312,9 @@ class SitesService {
     const prodAuthor = await this.getCommitAuthorEmail(prodCommit)
 
     return {
-      savedAt: new Date(stagingDate).getTime(),
+      savedAt: new Date(stagingDate).getTime() || 0,
       savedBy: stagingAuthor || "Unknown Author",
-      publishedAt: new Date(prodDate).getTime(),
+      publishedAt: new Date(prodDate).getTime() || 0,
       publishedBy: prodAuthor || "Unknown Author",
       stagingUrl: stagingUrl || "",
       siteUrl: prodUrl || "",

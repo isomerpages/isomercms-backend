@@ -1,6 +1,6 @@
 import { ModelStatic } from "sequelize"
 
-import { Deployment, Site } from "@database/models"
+import { Deployment, Site, User } from "@database/models"
 import {
   mockCommitMessageObject1,
   mockCommitMessageObject2,
@@ -149,9 +149,17 @@ describe("SitesService", () => {
       stagingUrl: "https://repo-deployment-staging.netlify.app",
       productionUrl: "https://repo-deployment-prod.netlify.app",
     }
+    const emptyDeployment: Partial<Deployment> = {
+      stagingUrl: "",
+      productionUrl: "",
+    }
     const configYmlData: Partial<ConfigYmlData> = {
       staging: "https://repo-configyml-staging.netlify.app",
       prod: "https://repo-configyml-prod.netlify.app",
+    }
+    const emptyConfigYmlData: Partial<ConfigYmlData> = {
+      staging: "",
+      prod: "",
     }
     const gitHubUrls = {
       staging: "https://repo-repoinfo-staging.netlify.app",
@@ -196,8 +204,7 @@ describe("SitesService", () => {
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
-          stagingUrl: null,
-          productionUrl: null,
+          ...emptyDeployment,
         },
       }
 
@@ -228,14 +235,15 @@ describe("SitesService", () => {
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
-          stagingUrl: null,
-          productionUrl: null,
+          ...emptyDeployment,
         },
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithNullDeployment)
       MockConfigYmlService.read.mockResolvedValueOnce({
-        content: {},
+        content: {
+          ...emptyConfigYmlData,
+        },
       })
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
 
@@ -261,16 +269,19 @@ describe("SitesService", () => {
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
-          stagingUrl: null,
-          productionUrl: null,
+          ...emptyDeployment,
         },
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithNullDeployment)
       MockConfigYmlService.read.mockResolvedValueOnce({
-        content: {},
+        content: {
+          ...emptyConfigYmlData,
+        },
       })
-      MockGithubService.getRepoInfo.mockResolvedValueOnce({})
+      MockGithubService.getRepoInfo.mockResolvedValueOnce({
+        description: "",
+      })
 
       // Act
       const actual = await SitesService.getUrlsOfSite(
@@ -482,15 +493,19 @@ describe("SitesService", () => {
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
-          stagingUrl: null,
+          stagingUrl: "",
         },
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithNullDeployment)
       MockConfigYmlService.read.mockResolvedValueOnce({
-        content: {},
+        content: {
+          staging: "",
+        },
       })
-      MockGithubService.getRepoInfo.mockResolvedValueOnce({})
+      MockGithubService.getRepoInfo.mockResolvedValueOnce({
+        description: "",
+      })
 
       // Act
       await expect(
@@ -524,12 +539,18 @@ describe("SitesService", () => {
         },
         message: JSON.stringify(mockCommitMessageObject1),
       }
+      const mockStagingCommitAuthor: Partial<User> = {
+        email: mockGitHubEmailAddress1,
+      }
       const mockProductionCommit: GitHubCommitData = {
         author: {
           email: mockGitHubEmailAddress2,
           date: mockGitHubDate2,
         },
         message: JSON.stringify(mockCommitMessageObject2),
+      }
+      const mockProductionCommitAuthor: Partial<User> = {
+        email: mockGitHubEmailAddress2,
       }
       const expected: SiteInfo = {
         savedAt: new Date(mockGitHubDate1).getTime(),
@@ -547,7 +568,10 @@ describe("SitesService", () => {
       MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(
         mockProductionCommit
       )
-      MockUsersService.findById.mockResolvedValueOnce(mockSessionDataEmailUser)
+      MockUsersService.findById.mockResolvedValueOnce(mockStagingCommitAuthor)
+      MockUsersService.findById.mockResolvedValueOnce(
+        mockProductionCommitAuthor
+      )
 
       // Act
       const actual = await SitesService.getSiteInfo(
@@ -624,7 +648,7 @@ describe("SitesService", () => {
         message: "",
       }
 
-      MockRepository.findOne.mockResolvedValueOnce({})
+      MockRepository.findOne.mockResolvedValueOnce(null)
       MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(
         mockEmptyCommit
       )

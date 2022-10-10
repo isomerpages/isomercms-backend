@@ -263,7 +263,7 @@ export class ReviewsRouter {
       siteName,
     })
 
-    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+    const possibleReviewRequest = await this.reviewRequestService.getFullReviewRequest(
       userWithSiteSessionData,
       site,
       requestId
@@ -379,16 +379,118 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 3: Merge review request
-    // NOTE: We are not checking for existence of RR
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Merge review request
+    // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
-    await this.reviewRequestService.mergeReviewRequest(
-      siteName,
-      requestId,
-      site.id
+    await this.reviewRequestService.mergeReviewRequest(possibleReviewRequest)
+    return res.status(200).send()
+  }
+
+  approveReviewRequest: RequestHandler<
+    { siteName: string; requestId: number },
+    ResponseErrorBody,
+    never,
+    unknown,
+    { userSessionData: UserSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
     )
-    res.status(200).send()
+
+    if (isIsomerError(possibleReviewRequest)) {
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Check if the user is a reviewer of the RR
+    const { userSessionData } = res.locals
+    const { reviewers } = possibleReviewRequest
+    const isReviewer = _.some(
+      reviewers,
+      (user) => user.email === userSessionData.email
+    )
+
+    if (!isReviewer) {
+      return res.status(401).json({
+        message: "Only reviewers can approve Review Requests!",
+      })
+    }
+
+    // Step 5: Approve review request
+    // NOTE: We are not checking for existence of PR
+    // as the underlying Github API returns 404 if
+    // the requested review could not be found.
+    await this.reviewRequestService.approveReviewRequest(possibleReviewRequest)
+    return res.status(200).send()
+  }
+
+  closeReviewRequest: RequestHandler<
+    { siteName: string; requestId: number },
+    ResponseErrorBody,
+    never,
+    unknown,
+    { userSessionData: UserSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      return res
+        .status(possibleReviewRequest.status)
+        .json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Check if the user is the requestor
+    const { userSessionData } = res.locals
+    const { requestor } = possibleReviewRequest
+    const isRequestor = requestor.email === userSessionData.email
+    if (!isRequestor) {
+      return res.status(401).json({
+        message: "Only the requestor can close the Review Request!",
+      })
+    }
+
+    // Step 5: Close review request
+    // NOTE: We are not checking for existence of PR
+    // as the underlying Github API returns 404 if
+    // the requested review could not be found.
+    await this.reviewRequestService.closeReviewRequest(possibleReviewRequest)
+    return res.status(200).send()
   }
 
   getRouter() {
@@ -404,13 +506,21 @@ export class ReviewsRouter {
       "/:requestId",
       attachReadRouteHandlerWrapper(this.getReviewRequest)
     )
-    router.put(
+    router.post(
       "/:requestId/merge",
       attachWriteRouteHandlerWrapper(this.mergeReviewRequest)
     )
     router.post(
+      "/:requestId/approve",
+      attachReadRouteHandlerWrapper(this.approveReviewRequest)
+    )
+    router.post(
       "/:requestId",
       attachWriteRouteHandlerWrapper(this.updateReviewRequest)
+    )
+    router.delete(
+      "/:requestId",
+      attachReadRouteHandlerWrapper(this.closeReviewRequest)
     )
 
     return router

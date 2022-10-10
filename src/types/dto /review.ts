@@ -40,3 +40,9 @@ export interface ReviewRequestDto {
   status: ReviewRequestStatus
   changedItems: EditedItemDto[]
 }
+
+export interface RequestChangeDto {
+  title: string
+  description?: string
+  reviewers: string[]
+}

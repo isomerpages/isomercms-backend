@@ -20,6 +20,7 @@ import {
   RawFileChangeInfo,
   RawPullRequest,
 } from "@root/types/github"
+import { RequestChangeInfo } from "@root/types/review"
 
 import { isomerRepoAxiosInstance } from "../api/AxiosInstance"
 
@@ -320,6 +321,37 @@ export default class ReviewRequestService {
       reviewRequestedTime: new Date(created_at).getTime(),
       changedItems,
     }
+  }
+
+  /**
+   * Updates the review request with provided details.
+   * Note that the semantics for updating the review request description
+   * is as follows:
+   *
+   * 1. If the body is `undefined`, we **do not** update it.
+   * 2. If the body is `""` (an empty string), we update the\
+   * github pull request description to be empty too.
+   * 3. Otherwise, we just write through to github.
+   */
+  updateReviewRequest = async (
+    reviewRequest: ReviewRequest,
+    { title, description, reviewers }: RequestChangeInfo
+  ) => {
+    // Update db state with new reviewers
+    reviewRequest.reviewers = reviewers
+    const savePromise = reviewRequest.save()
+
+    const siteName = reviewRequest.site.name
+    const { pullRequestNumber } = reviewRequest.reviewMeta
+
+    // Update github state
+    const githubUpdatePromise = this.apiService.post<void>(
+      `${siteName}/pulls/${pullRequestNumber}`,
+      // NOTE: only create body if a valid description is given
+      { title, ...(description && { body: description }) }
+    )
+
+    await Promise.all([savePromise, githubUpdatePromise])
   }
 
   // NOTE: The semantics of our reviewing system is slightly different from github.

@@ -111,8 +111,7 @@ export default class InfraService {
     agency: User,
     repoName: string,
     primaryDomain: string,
-    subDomainSettings: SubDomainSettings,
-    redirectionDomain?: string
+    subDomainSettings: SubDomainSettings
   ) => {
     // call amplify to trigger site launch process
     try {
@@ -150,7 +149,6 @@ export default class InfraService {
 
       const primaryDomainInfo = subDomainList[0].dnsRecord?.split(" ")
       logger.info(primaryDomainInfo)
-      const primaryDomainSource = primaryDomainInfo[0]
       const primaryDomainTarget = primaryDomainInfo[2]
       logger.info(certificationRecord)
       const domainValidationSource = certificationRecord[0]
@@ -164,7 +162,7 @@ export default class InfraService {
       const newLaunchParams = {
         userId,
         siteId,
-        primaryDomainSource,
+        primaryDomainSource: primaryDomain,
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
@@ -178,7 +176,7 @@ export default class InfraService {
       const message: MessageBody = {
         repoName,
         appId,
-        primaryDomainSource,
+        primaryDomainSource: primaryDomain,
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,

@@ -364,8 +364,8 @@ export default class InfraService {
     setInterval(this.siteUpdate, 30000)
   }
 
-  pollQueue = async () => {
-    const siteUpdate = async () => {
+  siteUpdate = async () => {
+    try {
       const messages = await this.queueService.pollMessages()
       if (messages) {
         messages.forEach(async (message) => {
@@ -380,13 +380,12 @@ export default class InfraService {
           }
         })
       }
+    } catch (error) {
+      logger.error(error)
     }
+  }
 
-    try {
-      setInterval(siteUpdate, 6000)
-    } catch (err) {
-      logger.error(err)
-      this.pollQueue() // fault tolerence - poller should not stop polling
-    }
+  pollQueue = async () => {
+    setInterval(this.siteUpdate, 6000)
   }
 }

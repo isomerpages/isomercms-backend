@@ -1,12 +1,27 @@
+import { resolve } from "path"
+
+import { Request, SQS } from "aws-sdk"
+import { Error } from "aws-sdk/clients/ses"
+import { ConfigurationServicePlaceholders } from "aws-sdk/lib/config_service_placeholders"
+
+import logger from "@root/logger/logger"
+
 import QueueClient from "./QueueClient"
 
 export interface MessageBody {
   repoName: string
   appId: string
-  primaryDomain: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
   domainValidationSource: string
   domainValidationTarget: string
   githubRedirectionUrl?: string
+  redirectionDomain?: [
+    {
+      source: string
+      target: string
+    }
+  ]
 }
 
 export default class QueueService {
@@ -22,13 +37,20 @@ export default class QueueService {
 
   pollMessages = async () => {
     const messageBodies: MessageBody[] = []
-    await (await this.queueClient.receiveMessage()).promise().then((res) => {
-      res.Messages?.forEach((message) => {
-        if (message.Body) {
-          messageBodies.push(JSON.parse(message.Body))
-        }
-      })
-    })
+    try {
+      // Do not use a `.promise`. See more: https://github.com/aws/aws-sdk-js/issues/1453
+      ;(await this.queueClient.receiveMessage())
+        .on("extractData", (response) => {
+          response.data?.Messages?.forEach((message) => {
+            if (message.Body) {
+              messageBodies.push(JSON.parse(message.Body))
+            }
+          })
+        })
+        .send()
+    } catch (err) {
+      logger.error(err)
+    }
     return messageBodies
   }
 }

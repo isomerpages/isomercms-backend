@@ -276,6 +276,7 @@ export default class InfraService {
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
+      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
 
       /**
        * Amplify only stores the prefix.
@@ -291,6 +292,7 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        redirectionDomainSource,
       }
 
       if (redirectionDomainList?.length) {

@@ -229,7 +229,38 @@ export default class ReviewRequestService {
     )
   }
 
-  getReviewRequest = async (
+  getReviewRequest = async (site: Site, pullRequestNumber: number) => {
+    const possibleReviewRequest = await this.repository.findOne({
+      where: {
+        siteId: site.id,
+      },
+      include: [
+        {
+          model: ReviewMeta,
+          as: "reviewMeta",
+          where: {
+            pullRequestNumber,
+          },
+        },
+        {
+          model: User,
+          as: "requestor",
+        },
+        {
+          model: User,
+          as: "reviewers",
+        },
+      ],
+    })
+
+    if (!possibleReviewRequest) {
+      return new RequestNotFoundError()
+    }
+
+    return possibleReviewRequest
+  }
+
+  getFullReviewRequest = async (
     userWithSiteSessionData: UserWithSiteSessionData,
     site: Site,
     pullRequestNumber: number

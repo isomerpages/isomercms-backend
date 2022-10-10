@@ -82,5 +82,3 @@ export interface RawPullRequest {
   changed_files: number
   created_at: string
 }
-
-export interface PullRequestSummary {}

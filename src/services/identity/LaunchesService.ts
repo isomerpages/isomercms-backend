@@ -20,7 +20,6 @@ interface LaunchesServiceProps {
   deployment: ModelStatic<Deployment>
   repo: ModelStatic<Repo>
   user: ModelStatic<User>
-  appId: string
 }
 
 export class LaunchesService {
@@ -32,6 +31,7 @@ export class LaunchesService {
 
   private readonly launchClient: LaunchClient
 
+  // todo rethink using class level variables here
   private appID = ""
 
   private siteId?: number
@@ -48,7 +48,6 @@ export class LaunchesService {
 
   getAppId = async (repoName: string) => {
     const id = await this.getSiteId(repoName)
-    console.log(`this is id${id}`)
     if (!this.siteId) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
       logger.error(error)

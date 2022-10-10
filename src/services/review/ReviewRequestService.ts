@@ -324,7 +324,15 @@ export default class ReviewRequestService {
 
   // NOTE: The semantics of our reviewing system is slightly different from github.
   // The approval is tied to the request, rather than the user.
-  approvePullRequest = async (siteName: string, pullRequestNumber: number) => {}
+  approveReviewRequest = async (reviewRequest: ReviewRequest) => {
+    reviewRequest.reviewStatus = "APPROVED"
+    await reviewRequest.save()
+  }
+
+  closePullReviewRequest = async (reviewRequest: ReviewRequest) => {
+    reviewRequest.reviewStatus = "CLOSED"
+    await reviewRequest.save()
+  }
 
   mergeReviewRequest = async (
     siteName: string,

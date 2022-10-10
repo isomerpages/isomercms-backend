@@ -1,9 +1,3 @@
-import { resolve } from "path"
-
-import { Request, SQS } from "aws-sdk"
-import { Error } from "aws-sdk/clients/ses"
-import { ConfigurationServicePlaceholders } from "aws-sdk/lib/config_service_placeholders"
-
 import logger from "@root/logger/logger"
 
 import QueueClient from "./QueueClient"

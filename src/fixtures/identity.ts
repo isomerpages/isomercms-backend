@@ -141,22 +141,22 @@ export const mockSiteOrmResponseWithNoCollaborators = {
   site_members: "",
 }
 
-export const mockCommitMessage1 = "Update file: Example.md"
-export const mockCommitFileName1 = "Example.md"
-export const mockGitHubEmailAddress1 = "test@example.com"
-export const mockGitHubDate1 = "2022-09-22T04:07:53Z"
-export const mockCommitMessageObject1 = {
-  message: mockCommitMessage1,
-  fileName: mockCommitFileName1,
+export const MOCK_COMMIT_MESSAGE_ONE = "Update file: Example.md"
+export const MOCK_COMMIT_FILENAME_ONE = "Example.md"
+export const MOCK_GITHUB_EMAIL_ADDRESS_ONE = "test@example.com"
+export const MOCK_GITHUB_DATE_ONE = "2022-09-22T04:07:53Z"
+export const MOCK_COMMIT_MESSAGE_OBJECT_ONE = {
+  message: MOCK_COMMIT_MESSAGE_ONE,
+  fileName: MOCK_COMMIT_FILENAME_ONE,
   userId: mockIsomerUserId,
 }
 
-export const mockCommitMessage2 = "Update file: Test.md"
-export const mockCommitFileName2 = "Test.md"
-export const mockGitHubEmailAddress2 = "test2@example.com"
-export const mockGitHubDate2 = "2022-09-28T06:25:14Z"
-export const mockCommitMessageObject2 = {
-  message: mockCommitMessage2,
-  fileName: mockCommitFileName2,
+export const MOCK_COMMIT_MESSAGE_TWO = "Update file: Test.md"
+export const MOCK_COMMIT_FILENAME_TWO = "Test.md"
+export const MOCK_GITHUB_EMAIL_ADDRESS_TWO = "test2@example.com"
+export const MOCK_GITHUB_DATE_TWO = "2022-09-28T06:25:14Z"
+export const MOCK_COMMIT_MESSAGE_OBJECT_TWO = {
+  message: MOCK_COMMIT_MESSAGE_TWO,
+  fileName: MOCK_COMMIT_FILENAME_TWO,
   userId: mockIsomerUserId,
 }

@@ -2,14 +2,14 @@ import { ModelStatic } from "sequelize"
 
 import { Deployment, Site, User } from "@database/models"
 import {
-  mockCommitMessageObject1,
-  mockCommitMessageObject2,
-  mockGitHubEmailAddress1,
-  mockGitHubEmailAddress2,
-  mockGitHubDate1,
-  mockGitHubDate2,
-  mockCommitMessage1,
-  mockCommitMessage2,
+  MOCK_COMMIT_MESSAGE_OBJECT_ONE,
+  MOCK_COMMIT_MESSAGE_OBJECT_TWO,
+  MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+  MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+  MOCK_GITHUB_DATE_ONE,
+  MOCK_GITHUB_DATE_TWO,
+  MOCK_COMMIT_MESSAGE_ONE,
+  MOCK_COMMIT_MESSAGE_TWO,
 } from "@fixtures/identity"
 import {
   repoInfo,
@@ -109,10 +109,10 @@ describe("SitesService", () => {
       const expected = mockEmail
       const commit: GitHubCommitData = {
         author: {
-          email: mockGitHubEmailAddress1,
-          date: mockGitHubDate1,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+          date: MOCK_GITHUB_DATE_ONE,
         },
-        message: JSON.stringify(mockCommitMessageObject1),
+        message: JSON.stringify(MOCK_COMMIT_MESSAGE_OBJECT_ONE),
       }
       MockUsersService.findById.mockResolvedValueOnce(mockSessionDataEmailUser)
 
@@ -126,13 +126,13 @@ describe("SitesService", () => {
 
     it("should return the email of the commit author who is a GitHub login user", async () => {
       // Arrange
-      const expected = mockGitHubEmailAddress1
+      const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
       const commit: GitHubCommitData = {
         author: {
-          email: mockGitHubEmailAddress1,
-          date: mockGitHubDate1,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+          date: MOCK_GITHUB_DATE_ONE,
         },
-        message: mockCommitMessage1,
+        message: MOCK_COMMIT_MESSAGE_ONE,
       }
 
       // Act
@@ -534,29 +534,29 @@ describe("SitesService", () => {
       // Arrange
       const mockStagingCommit: GitHubCommitData = {
         author: {
-          email: mockGitHubEmailAddress1,
-          date: mockGitHubDate1,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+          date: MOCK_GITHUB_DATE_ONE,
         },
-        message: JSON.stringify(mockCommitMessageObject1),
+        message: JSON.stringify(MOCK_COMMIT_MESSAGE_OBJECT_ONE),
       }
       const mockStagingCommitAuthor: Partial<User> = {
-        email: mockGitHubEmailAddress1,
+        email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
       }
       const mockProductionCommit: GitHubCommitData = {
         author: {
-          email: mockGitHubEmailAddress2,
-          date: mockGitHubDate2,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+          date: MOCK_GITHUB_DATE_TWO,
         },
-        message: JSON.stringify(mockCommitMessageObject2),
+        message: JSON.stringify(MOCK_COMMIT_MESSAGE_OBJECT_TWO),
       }
       const mockProductionCommitAuthor: Partial<User> = {
-        email: mockGitHubEmailAddress2,
+        email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
       }
       const expected: SiteInfo = {
-        savedAt: new Date(mockGitHubDate1).getTime(),
-        savedBy: mockGitHubEmailAddress1,
-        publishedAt: new Date(mockGitHubDate2).getTime(),
-        publishedBy: mockGitHubEmailAddress2,
+        savedAt: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
+        savedBy: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+        publishedAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
+        publishedBy: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
         stagingUrl,
         siteUrl: productionUrl,
       }
@@ -589,23 +589,23 @@ describe("SitesService", () => {
       // Arrange
       const mockStagingCommit: GitHubCommitData = {
         author: {
-          email: mockGitHubEmailAddress1,
-          date: mockGitHubDate1,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+          date: MOCK_GITHUB_DATE_ONE,
         },
-        message: mockCommitMessage1,
+        message: MOCK_COMMIT_MESSAGE_ONE,
       }
       const mockProductionCommit: GitHubCommitData = {
         author: {
-          email: mockGitHubEmailAddress2,
-          date: mockGitHubDate2,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+          date: MOCK_GITHUB_DATE_TWO,
         },
-        message: mockCommitMessage2,
+        message: MOCK_COMMIT_MESSAGE_TWO,
       }
       const expected: SiteInfo = {
-        savedAt: new Date(mockGitHubDate1).getTime(),
-        savedBy: mockGitHubEmailAddress1,
-        publishedAt: new Date(mockGitHubDate2).getTime(),
-        publishedBy: mockGitHubEmailAddress2,
+        savedAt: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
+        savedBy: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+        publishedAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
+        publishedBy: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
         stagingUrl,
         siteUrl: productionUrl,
       }

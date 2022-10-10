@@ -36,13 +36,12 @@ export default class QueueClient {
   receiveMessage = async () => {
     logger.info(`checking queue`)
     const params: SQS.ReceiveMessageRequest = {
-      QueueUrl: this.outgoingQueueUrl,
+      QueueUrl: this.incomingQueueUrl,
       AttributeNames: ["All"],
       VisibilityTimeout: 0,
       WaitTimeSeconds: 10,
     }
-
-    return this.sqs.receiveMessage(params, (err, data) => {
+    const response = this.sqs.receiveMessage(params, (err, data) => {
       if (err) {
         logger.error(err)
         throw err
@@ -54,6 +53,7 @@ export default class QueueClient {
 
       return data
     })
+    return response
   }
 
   createDeleteMessageParams = (

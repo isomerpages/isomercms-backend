@@ -335,26 +335,10 @@ export default class ReviewRequestService {
   }
 
   mergeReviewRequest = async (
-    siteName: string,
-    pullRequestNumber: number,
-    siteId: number
+    reviewRequest: ReviewRequest
   ): Promise<ReviewRequest | RequestNotFoundError> => {
-    const reviewRequest = await this.repository.findOne({
-      where: {
-        siteId,
-      },
-      include: {
-        model: ReviewMeta,
-        as: "reviewMeta",
-        where: {
-          pullRequestNumber,
-        },
-      },
-    })
-
-    if (!reviewRequest) {
-      return new RequestNotFoundError()
-    }
+    const siteName = reviewRequest.site.name
+    const { pullRequestNumber } = reviewRequest.reviewMeta
 
     await this.apiService.post<void>(
       `${siteName}/pulls/${pullRequestNumber}/reviews`,

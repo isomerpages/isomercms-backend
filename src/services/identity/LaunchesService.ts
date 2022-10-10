@@ -4,7 +4,8 @@ import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launches, Repo, User } from "@database/models"
+import { Deployment, Launches, Repo, Site, User } from "@database/models"
+import { Redirections } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
@@ -18,9 +19,17 @@ type launchesCreateParamsType = Partial<Launches> & {
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
 }
+
+type redirectionsCreateParamsType = Partial<Redirections> & {
+  launchId: number
+  type: string
+  source: string
+  target: string
+}
 interface LaunchesServiceProps {
   launches: ModelStatic<Launches>
   deployment: ModelStatic<Deployment>
+  redirections: ModelStatic<Redirections>
   repo: ModelStatic<Repo>
   user: ModelStatic<User>
 }
@@ -38,17 +47,46 @@ export class LaunchesService {
 
   private readonly repo: LaunchesServiceProps["repo"]
 
+  private readonly redirections: LaunchesServiceProps["redirections"]
+
   private readonly launchClient: LaunchClient
 
-  constructor({ deployment, launches, repo }: LaunchesServiceProps) {
+  constructor({
+    deployment,
+    launches,
+    repo,
+    redirections,
+  }: LaunchesServiceProps) {
     this.deployment = deployment
     this.launchClient = new LaunchClient()
     this.launches = launches
     this.repo = repo
+    this.redirections = redirections
   }
 
-  create = async (createParams: launchesCreateParamsType): Promise<Launches> =>
-    this.launches.create(createParams)
+  create = async (
+    createParams: launchesCreateParamsType
+  ): Promise<Launches> => {
+    const createLaunch = await this.launches.create(createParams)
+    if (createParams.redirectionDomainSource) {
+      logger.info(
+        `creating redirection record for ${createParams.redirectionDomainSource}`
+      )
+      const createRedirectionParams: redirectionsCreateParamsType = {
+        launchId: createLaunch.id,
+        type: "CNAME",
+        source: createParams.redirectionDomainSource,
+        target: createParams.primaryDomainTarget,
+      }
+      await this.redirections.create(createRedirectionParams)
+    }
+
+    return createLaunch
+  }
+
+  createRedirection = async (
+    createParams: redirectionsCreateParamsType
+  ): Promise<Redirections> => this.redirections.create(createParams)
 
   getAppId = async (repoName: string) => {
     const siteId = await this.getSiteId(repoName)
@@ -146,6 +184,22 @@ export class LaunchesService {
     return this.launchClient.sendGetDomainAssociationCommandInput(
       getDomainAssociationOptions
     )
+  }
+
+  async updateLaunchTable(
+    updateParams: Partial<Launches> & { id: Site["id"] }
+  ) {
+    return this.launches.update(updateParams, {
+      where: { id: updateParams.id },
+    })
+  }
+
+  async updateRedirectionTable(
+    updateParams: Partial<Redirections> & { id: Launches["id"] }
+  ) {
+    return this.redirections.update(updateParams, {
+      where: { id: updateParams.id },
+    })
   }
 }
 

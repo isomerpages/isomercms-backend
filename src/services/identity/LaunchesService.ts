@@ -1,7 +1,4 @@
-import {
-  CreateDomainAssociationCommandOutput,
-  DomainAssociation,
-} from "@aws-sdk/client-amplify"
+import { DomainAssociation } from "@aws-sdk/client-amplify"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import { ModelStatic } from "sequelize"
 

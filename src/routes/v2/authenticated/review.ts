@@ -52,28 +52,23 @@ export class ReviewsRouter {
     { items: EditedItemDto[] },
     unknown,
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userSessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
     const { siteName } = req.params
 
     // Check if they have access to site
     const hasAccess = this.identityUsersService.hasAccessToSite(
-      userSessionData.isomerUserId,
+      userWithSiteSessionData.isomerUserId,
       siteName
     )
 
     if (!hasAccess) {
       return res.status(400).send()
     }
-
-    const userWithSiteSessionData = new UserWithSiteSessionData({
-      ...userSessionData,
-      siteName,
-    })
 
     const files = await this.reviewRequestService.compareDiff(
       userWithSiteSessionData
@@ -87,7 +82,7 @@ export class ReviewsRouter {
     { pullRequestNumber: number } | ResponseErrorBody,
     { reviewers: string[]; title: string; description: string },
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName } = req.params
@@ -103,12 +98,12 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userSessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     // Check if they are a site admin
     const role = await this.collaboratorsService.getRole(
       siteName,
-      userSessionData.isomerUserId
+      userWithSiteSessionData.isomerUserId
     )
 
     if (!role || role !== CollaboratorRoles.Admin) {
@@ -118,7 +113,7 @@ export class ReviewsRouter {
     }
 
     const admin = await this.identityUsersService.findByEmail(
-      userSessionData.email
+      userWithSiteSessionData.email
     )
     const { reviewers, title, description } = req.body
 
@@ -132,7 +127,7 @@ export class ReviewsRouter {
 
     const collaborators = await this.collaboratorsService.list(
       siteName,
-      userSessionData.isomerUserId
+      userWithSiteSessionData.isomerUserId
     )
 
     // Filter to get admins,
@@ -152,11 +147,6 @@ export class ReviewsRouter {
     }
 
     // Step 4: Create RR
-    const userWithSiteSessionData = new UserWithSiteSessionData({
-      ...userSessionData,
-      siteName,
-    })
-
     const pullRequestNumber = await this.reviewRequestService.createReviewRequest(
       userWithSiteSessionData,
       admins,
@@ -179,7 +169,7 @@ export class ReviewsRouter {
     { reviews: DashboardReviewRequestDto[] } | ResponseErrorBody,
     never,
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName } = req.params
@@ -194,12 +184,12 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userSessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
-      userSessionData.isomerUserId
+      userWithSiteSessionData.isomerUserId
     )
 
     if (!role) {
@@ -207,11 +197,6 @@ export class ReviewsRouter {
         message: "Only collaborators of a site can view reviews!",
       })
     }
-
-    const userWithSiteSessionData = new UserWithSiteSessionData({
-      ...userSessionData,
-      siteName,
-    })
 
     // Step 3: Fetch data and return
     const reviews = await this.reviewRequestService.listReviewRequest(
@@ -229,7 +214,7 @@ export class ReviewsRouter {
     { reviewRequest: ReviewRequestDto } | ResponseErrorBody,
     never,
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
@@ -244,12 +229,12 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userSessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
-      userSessionData.isomerUserId
+      userWithSiteSessionData.isomerUserId
     )
 
     if (!role) {
@@ -257,11 +242,6 @@ export class ReviewsRouter {
         message: "Only collaborators of a site can view reviews!",
       })
     }
-
-    const userWithSiteSessionData = new UserWithSiteSessionData({
-      ...userSessionData,
-      siteName,
-    })
 
     const possibleReviewRequest = await this.reviewRequestService.getFullReviewRequest(
       userWithSiteSessionData,
@@ -283,7 +263,7 @@ export class ReviewsRouter {
     ResponseErrorBody,
     RequestChangeDto,
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
@@ -307,8 +287,8 @@ export class ReviewsRouter {
 
     // Step 3: Check that the user updating is the requestor
     const { requestor } = possibleReviewRequest
-    const { userSessionData } = res.locals
-    if (requestor.email !== userSessionData.email) {
+    const { userWithSiteSessionData } = res.locals
+    if (requestor.email !== userWithSiteSessionData.email) {
       return res.status(401).json({
         message: "Only requestors can update the review request!",
       })
@@ -338,11 +318,14 @@ export class ReviewsRouter {
     }
 
     // Step 5: Update the rr with the appropriate details
-    await this.reviewRequestService.updateReviewRequest(possibleReviewRequest, {
-      title,
-      description,
-      reviewers: verifiedReviewers,
-    })
+    return this.reviewRequestService.updateReviewRequest(
+      possibleReviewRequest,
+      {
+        title,
+        description,
+        reviewers: verifiedReviewers,
+      }
+    )
   }
 
   mergeReviewRequest: RequestHandler<
@@ -402,7 +385,7 @@ export class ReviewsRouter {
     ResponseErrorBody,
     never,
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
@@ -425,11 +408,11 @@ export class ReviewsRouter {
     }
 
     // Step 4: Check if the user is a reviewer of the RR
-    const { userSessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,
-      (user) => user.email === userSessionData.email
+      (user) => user.email === userWithSiteSessionData.email
     )
 
     if (!isReviewer) {
@@ -451,7 +434,7 @@ export class ReviewsRouter {
     ResponseErrorBody,
     never,
     unknown,
-    { userSessionData: UserSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
@@ -476,9 +459,9 @@ export class ReviewsRouter {
     }
 
     // Step 4: Check if the user is the requestor
-    const { userSessionData } = res.locals
+    const { userWithSiteSessionData } = res.locals
     const { requestor } = possibleReviewRequest
-    const isRequestor = requestor.email === userSessionData.email
+    const isRequestor = requestor.email === userWithSiteSessionData.email
     if (!isRequestor) {
       return res.status(401).json({
         message: "Only the requestor can close the Review Request!",

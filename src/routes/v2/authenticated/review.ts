@@ -277,6 +277,73 @@ export class ReviewsRouter {
     return res.status(200).json({ reviewRequest: possibleReviewRequest })
   }
 
+  updateReviewRequest: RequestHandler<
+    { siteName: string; requestId: number },
+    ResponseErrorBody,
+    RequestChangeDto,
+    unknown,
+    { userSessionData: UserSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 3: Check that the user updating is the requestor
+    const { requestor } = possibleReviewRequest
+    const { userSessionData } = res.locals
+    if (requestor.email !== userSessionData.email) {
+      return res.status(401).json({
+        message: "Only requestors can update the review request!",
+      })
+    }
+
+    // Step 4: Check that all new reviewers are admins of the site
+    const { reviewers, title, description } = req.body
+    const collaborators = await this.collaboratorsService.list(siteName)
+    const collaboratorMappings = Object.fromEntries(
+      reviewers.map((reviewer) => [reviewer, true])
+    )
+    const verifiedReviewers = collaborators.filter(
+      (collaborator) =>
+        collaborator.SiteMember.role === CollaboratorRoles.Admin &&
+        // NOTE: We check for existence of email on the user - since this
+        // is an identity feature, we assume that **all** users calling this endpoint
+        // will have a valid email (guaranteed by our modal)
+        collaborator.email &&
+        !!collaboratorMappings[collaborator.email]
+    )
+
+    if (verifiedReviewers.length !== reviewers.length) {
+      return res.status(400).json({
+        message:
+          "Please ensure that all requested reviewers are admins of the site!",
+      })
+    }
+
+    // Step 5: Update the rr with the appropriate details
+    await this.reviewRequestService.updateReviewRequest(possibleReviewRequest, {
+      title,
+      description,
+      reviewers: verifiedReviewers,
+    })
+  }
+
   mergeReviewRequest: RequestHandler<
     { siteName: string; requestId: number },
     ResponseErrorBody,
@@ -339,6 +406,10 @@ export class ReviewsRouter {
     router.put(
       "/:requestId/merge",
       attachWriteRouteHandlerWrapper(this.mergeReviewRequest)
+    )
+    router.post(
+      "/:requestId",
+      attachWriteRouteHandlerWrapper(this.updateReviewRequest)
     )
 
     return router

@@ -1,3 +1,5 @@
+import type { User } from "@root/database/models/User"
+
 import { RawFileChangeInfo } from "./github"
 
 export interface FileChangeInfo
@@ -6,4 +8,10 @@ export interface FileChangeInfo
     "additions" | "deletions" | "changes" | "status" | "filename"
   > {
   rawUrl: string
+}
+
+export interface RequestChangeInfo {
+  title: string
+  description?: string
+  reviewers: User[]
 }

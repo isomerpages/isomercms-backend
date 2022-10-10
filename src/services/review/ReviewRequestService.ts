@@ -132,7 +132,7 @@ export default class ReviewRequestService {
     requestor: User,
     site: Site,
     title: string,
-    description: string,
+    description?: string,
     base = "master",
     head = "staging"
   ): Promise<number> => {
@@ -142,7 +142,8 @@ export default class ReviewRequestService {
     const pullRequestNumber = await this.apiService
       .post<{ number: number }>(
         `${siteName}/pulls`,
-        { title, base, head, body: description },
+        // NOTE: only create body if a valid description is given
+        { title, base, head, ...(description && { body: description }) },
         {
           headers: {
             Authorization: `token ${accessToken}`,
@@ -216,7 +217,7 @@ export default class ReviewRequestService {
           author: req.requestor.email || "Unknown user",
           status: req.reviewStatus,
           title,
-          description: body,
+          description: body || "",
           changedFiles: changed_files,
           createdAt: new Date(created_at).getTime(),
           // TODO!

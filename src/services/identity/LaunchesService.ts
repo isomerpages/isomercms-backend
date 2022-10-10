@@ -15,6 +15,8 @@ type launchesCreateParamsType = Partial<Launches> & {
   primaryDomainTarget: string
   domainValidationSource: string
   domainValidationTarget: string
+  redirectionDomainSource?: string
+  redirectionDomainTarget?: string
 }
 interface LaunchesServiceProps {
   launches: ModelStatic<Launches>

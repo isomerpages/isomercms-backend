@@ -234,6 +234,22 @@ export class LaunchesService {
       getDomainAssociationOptions
     )
   }
+
+  async updateLaunchTable(
+    updateParams: Partial<Launches> & { id: Site["id"] }
+  ) {
+    return this.launches.update(updateParams, {
+      where: { id: updateParams.id },
+    })
+  }
+
+  async updateRedirectionTable(
+    updateParams: Partial<Redirections> & { id: Launches["id"] }
+  ) {
+    return this.redirections.update(updateParams, {
+      where: { id: updateParams.id },
+    })
+  }
 }
 
 export default LaunchesService

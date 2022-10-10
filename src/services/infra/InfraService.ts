@@ -158,8 +158,7 @@ export default class InfraService {
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
-      const redirectionSource =
-        redirectionDomainList?.[0].subDomainSetting?.prefix
+      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
 
       const userId = agency.id
       const newLaunchParams = {
@@ -169,6 +168,7 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        redirectionDomainSource,
       }
 
       // Create launches records table
@@ -184,10 +184,10 @@ export default class InfraService {
         domainValidationTarget,
       }
 
-      if (redirectionSource) {
+      if (redirectionDomainSource) {
         message.redirectionDomain = [
           {
-            source: redirectionSource,
+            source: redirectionDomainSource,
             target: primaryDomainTarget,
           },
         ]

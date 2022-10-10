@@ -155,6 +155,11 @@ export default class InfraService {
       logger.info(certificationRecord)
       const domainValidationSource = certificationRecord[0]
       const domainValidationTarget = certificationRecord[2]
+      const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
+        (subDomain) => subDomain.subDomainSetting?.prefix
+      )
+      const redirectionSource =
+        redirectionDomainList?.[0].subDomainSetting?.prefix
 
       const userId = agency.id
       const newLaunchParams = {
@@ -173,10 +178,21 @@ export default class InfraService {
       const message: MessageBody = {
         repoName,
         appId,
-        primaryDomain,
+        primaryDomainSource,
+        primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
       }
+
+      if (redirectionSource) {
+        message.redirectionDomain = [
+          {
+            source: redirectionSource,
+            target: primaryDomainTarget,
+          },
+        ]
+      }
+
       this.queueService.sendMessage(message)
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)

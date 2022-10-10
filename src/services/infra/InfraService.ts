@@ -347,8 +347,8 @@ export default class InfraService {
           }
         })
       )
-    } catch (e) {
-      logger.error(e)
+    } catch (error) {
+      logger.error(error)
     }
   }
 

@@ -351,7 +351,7 @@ export default class InfraService {
               siteStatus: SiteStatus.Launched,
               jobStatus: JobStatus.Running,
             }
-            this.sitesService.update(updateSuccessSiteLaunchParams).then()
+            await this.sitesService.update(updateSuccessSiteLaunchParams)
           }
         })
       }

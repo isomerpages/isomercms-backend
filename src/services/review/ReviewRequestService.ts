@@ -345,7 +345,7 @@ export default class ReviewRequestService {
     const { pullRequestNumber } = reviewRequest.reviewMeta
 
     // Update github state
-    const githubUpdatePromise = this.apiService.post<void>(
+    const githubUpdatePromise = this.apiService.patch<void>(
       `${siteName}/pulls/${pullRequestNumber}`,
       // NOTE: only create body if a valid description is given
       { title, ...(description && { body: description }) }
@@ -361,7 +361,15 @@ export default class ReviewRequestService {
     await reviewRequest.save()
   }
 
-  closePullReviewRequest = async (reviewRequest: ReviewRequest) => {
+  closeReviewRequest = async (reviewRequest: ReviewRequest) => {
+    const siteName = reviewRequest.site.name
+    const { pullRequestNumber } = reviewRequest.reviewMeta
+    await this.apiService.patch<void>(
+      `${siteName}/pulls/${pullRequestNumber}`,
+      // NOTE: only create body if a valid description is given
+      { state: "closed" }
+    )
+
     reviewRequest.reviewStatus = "CLOSED"
     await reviewRequest.save()
   }

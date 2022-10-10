@@ -125,21 +125,17 @@ export class LaunchesService {
   }
 
   getSiteId = async (repoName: string) => {
-    if (this.siteId) {
-      return this.siteId
-    }
-
     const site = await this.repo.findOne({
       where: { name: repoName },
     })
-    this.siteId = site?.siteId
+    const siteId = site?.siteId
 
-    if (!this.siteId) {
+    if (!siteId) {
       const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
       logger.error(error)
       throw error
     }
-    return this.siteId
+    return siteId
   }
 
   configureDomainInAmplify = async (
@@ -215,9 +211,9 @@ export class LaunchesService {
     })
   }
 
-  getDomainAssociationRecord = async (domainName: string) => {
+  getDomainAssociationRecord = async (domainName: string, appId: string) => {
     const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
-      this.appID,
+      appId,
       domainName
     )
 

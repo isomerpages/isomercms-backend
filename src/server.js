@@ -122,7 +122,7 @@ const collaboratorsService = new CollaboratorsService({
 })
 
 const reviewRequestService = new ReviewRequestService(
-  isomerRepoAxiosInstance,
+  gitHubService,
   User,
   ReviewRequest,
   Reviewer,

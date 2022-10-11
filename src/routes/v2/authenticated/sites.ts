@@ -111,6 +111,11 @@ export class SitesRouter {
     const siteInfo = await this.sitesService.getSiteInfo(
       userWithSiteSessionData
     )
+
+    // Check for error and throw
+    if (siteInfo instanceof BaseIsomerError) {
+      throw siteInfo
+    }
     return res.status(200).json(siteInfo)
   }
 

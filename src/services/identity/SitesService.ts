@@ -11,6 +11,7 @@ import {
   ISOMER_ADMIN_REPOS,
 } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import { UnprocessableError } from "@root/errors/UnprocessableError"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
@@ -64,6 +65,19 @@ class SitesService {
     this.usersService = usersService
     this.isomerAdminsService = isomerAdminsService
     this.tokenStore = tokenStore
+  }
+
+  assertGitHubCommitData(commit: any): commit is GitHubCommitData {
+    if (
+      (commit as GitHubCommitData).author !== undefined &&
+      (commit as GitHubCommitData).author.date !== undefined &&
+      (commit as GitHubCommitData).author.email !== undefined &&
+      (commit as GitHubCommitData).message !== undefined
+    ) {
+      return true
+    }
+
+    return false
   }
 
   async getBySiteName(siteName: string): Promise<Site | null> {
@@ -291,7 +305,9 @@ class SitesService {
     })
   }
 
-  async getSiteInfo(sessionData: UserWithSiteSessionData): Promise<SiteInfo> {
+  async getSiteInfo(
+    sessionData: UserWithSiteSessionData
+  ): Promise<SiteInfo | UnprocessableError> {
     const {
       staging: stagingUrl,
       prod: prodUrl,
@@ -305,6 +321,13 @@ class SitesService {
       sessionData,
       "master"
     )) as unknown) as GitHubCommitData
+
+    if (
+      !this.assertGitHubCommitData(stagingCommit) ||
+      !this.assertGitHubCommitData(prodCommit)
+    ) {
+      return new UnprocessableError("Unable to retrieve GitHub commit info")
+    }
 
     const {
       author: { date: stagingDate },

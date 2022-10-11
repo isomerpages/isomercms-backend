@@ -93,9 +93,7 @@ describe("Notification Service", () => {
       // Arrange
       const expected = mockNotifications.slice(0, 6)
 
-      MockRepository.findAll.mockResolvedValueOnce(
-        mockNotificationsResponse.slice(0, 3)
-      )
+      MockRepository.findAll.mockResolvedValueOnce([])
       MockRepository.findAll.mockResolvedValueOnce(
         mockNotificationsResponse.slice(0, 6)
       )
@@ -111,10 +109,12 @@ describe("Notification Service", () => {
       expect(MockRepository.findAll).toHaveBeenCalledTimes(2)
     })
 
-    it("should return the result directly if more than 6 new notifications available", async () => {
+    it("should return the result directly if new notifications available", async () => {
       // Arrange
-      const expected = mockNotifications
-      MockRepository.findAll.mockResolvedValueOnce(mockNotificationsResponse)
+      const expected = mockNotifications.slice(0, 2)
+      MockRepository.findAll.mockResolvedValueOnce(
+        mockNotificationsResponse.slice(0, 2)
+      )
 
       // Act
       const actual = NotificationsService.listRecent({

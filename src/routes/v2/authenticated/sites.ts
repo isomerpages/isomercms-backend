@@ -1,24 +1,30 @@
 import autoBind from "auto-bind"
 import express from "express"
 
+import type { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import type UserSessionData from "@root/classes/UserSessionData"
+import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
 import type { RequestHandler } from "@root/types"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
   sitesService: SitesService
+  authorizationMiddleware: AuthorizationMiddleware
 }
 
 export class SitesRouter {
   private readonly sitesService
 
-  constructor({ sitesService }: SitesRouterProps) {
+  private readonly authorizationMiddleware
+
+  constructor({ sitesService, authorizationMiddleware }: SitesRouterProps) {
     this.sitesService = sitesService
+    this.authorizationMiddleware = authorizationMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -120,6 +126,7 @@ export class SitesRouter {
     router.get(
       "/:siteName/info",
       attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getSiteInfo)
     )
 

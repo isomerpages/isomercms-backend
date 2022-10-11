@@ -29,23 +29,12 @@ export class SitesRouter {
     autoBind(this)
   }
 
-  addSiteNameToSessionData(userSessionData: UserSessionData, siteName: string) {
-    const { githubId, accessToken, isomerUserId, email } = userSessionData
-    return new UserWithSiteSessionData({
-      githubId,
-      accessToken,
-      isomerUserId,
-      email,
-      siteName,
-    })
-  }
-
   getSites: RequestHandler<
     never,
     unknown,
     never,
     never,
-    { userSessionData: UserWithSiteSessionData }
+    { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { userSessionData } = res.locals
     const siteNames = await this.sitesService.getSites(userSessionData)
@@ -57,14 +46,9 @@ export class SitesRouter {
     unknown,
     never,
     never,
-    { userSessionData: UserWithSiteSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
-    const { userSessionData } = res.locals
-    const { siteName } = req.params
-    const userWithSiteSessionData = this.addSiteNameToSessionData(
-      userSessionData,
-      siteName
-    )
+    const { userWithSiteSessionData } = res.locals
     const lastUpdated = await this.sitesService.getLastUpdated(
       userWithSiteSessionData
     )
@@ -76,14 +60,9 @@ export class SitesRouter {
     unknown,
     never,
     never,
-    { userSessionData: UserWithSiteSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
-    const { userSessionData } = res.locals
-    const { siteName } = req.params
-    const userWithSiteSessionData = this.addSiteNameToSessionData(
-      userSessionData,
-      siteName
-    )
+    const { userWithSiteSessionData } = res.locals
     const stagingUrl = await this.sitesService.getStagingUrl(
       userWithSiteSessionData
     )
@@ -100,14 +79,10 @@ export class SitesRouter {
     unknown,
     never,
     never,
-    { userSessionData: UserWithSiteSessionData }
+    { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
-    const { userSessionData } = res.locals
-    const { siteName } = req.params
-    const userWithSiteSessionData = this.addSiteNameToSessionData(
-      userSessionData,
-      siteName
-    )
+    const { userWithSiteSessionData } = res.locals
+
     const siteInfo = await this.sitesService.getSiteInfo(
       userWithSiteSessionData
     )

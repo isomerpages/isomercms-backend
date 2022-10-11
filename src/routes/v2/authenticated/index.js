@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const {
@@ -37,6 +39,11 @@ const getAuthenticatedSubrouter = ({
   authenticatedSubrouter.use(
     "/sites/:siteName/collaborators",
     collaboratorsRouter.getRouter()
+  )
+  sitesV2Router.use(
+    "/:siteName/review",
+    attachSiteHandler,
+    reviewRouter.getRouter()
   )
   authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
   authenticatedSubrouter.use("/user", usersRouter.getRouter())

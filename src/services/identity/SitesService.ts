@@ -136,10 +136,9 @@ class SitesService {
       }
     }
 
-    const deployment = site?.deployment
     const output: SiteUrls = {
-      staging: deployment?.stagingUrl ? deployment.stagingUrl : "",
-      prod: deployment?.productionUrl ? deployment.productionUrl : "",
+      staging: site.deployment?.stagingUrl ? site.deployment.stagingUrl : "",
+      prod: site.deployment?.productionUrl ? site.deployment.productionUrl : "",
     }
 
     for (const urlType of urlTypes) {

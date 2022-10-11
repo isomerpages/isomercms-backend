@@ -68,7 +68,7 @@ class NotificationsService {
       ],
     })
 
-    if (newNotifications.length > NUM_RECENT_NOTIFICATIONS)
+    if (newNotifications.length > 0)
       return this.formatNotifications(newNotifications)
 
     const mostRecentNotifications = await this.repository.findAll({

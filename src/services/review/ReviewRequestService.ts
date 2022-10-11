@@ -14,15 +14,9 @@ import {
   FileType,
   ReviewRequestDto,
 } from "@root/types/dto /review"
-import {
-  Commit,
-  fromGithubCommitMessage,
-  RawFileChangeInfo,
-  RawPullRequest,
-} from "@root/types/github"
+import { Commit, fromGithubCommitMessage } from "@root/types/github"
 import { RequestChangeInfo } from "@root/types/review"
-
-import { isomerRepoAxiosInstance } from "../api/AxiosInstance"
+import * as ReviewApi from "@services/db/review"
 
 /**
  * NOTE: This class does not belong as a subset of GitHub service.
@@ -35,7 +29,7 @@ import { isomerRepoAxiosInstance } from "../api/AxiosInstance"
  * Separately, this also allows us to add typings into this service.
  */
 export default class ReviewRequestService {
-  private readonly apiService: typeof isomerRepoAxiosInstance
+  private readonly apiService: typeof ReviewApi
 
   private readonly repository: ModelStatic<ReviewRequest>
 
@@ -46,7 +40,7 @@ export default class ReviewRequestService {
   private readonly reviewMeta: ModelStatic<ReviewMeta>
 
   constructor(
-    apiService: typeof isomerRepoAxiosInstance,
+    apiService: typeof ReviewApi,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,
@@ -60,26 +54,15 @@ export default class ReviewRequestService {
   }
 
   compareDiff = async (
-    sessionData: UserWithSiteSessionData,
-    base = "master",
-    head = "staging"
+    sessionData: UserWithSiteSessionData
   ): Promise<EditedItemDto[]> => {
     // Step 1: Get the site name
-    const { siteName, accessToken } = sessionData
+    const { siteName } = sessionData
 
     // Step 2: Get the list of changed files using Github's API
     // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
     // Note that we need a triple dot (...) between base and head refs
-    const { files, commits } = await this.apiService
-      .get<{ files: RawFileChangeInfo[]; commits: Commit[] }>(
-        `${siteName}/compare/${base}...${head}`,
-        {
-          headers: {
-            Authorization: `token ${accessToken}`,
-          },
-        }
-      )
-      .then(({ data }) => data)
+    const { files, commits } = await this.apiService.getCommitDiff(siteName)
 
     const mappings = this.computeShaMappings(commits)
 
@@ -133,25 +116,16 @@ export default class ReviewRequestService {
     requestor: User,
     site: Site,
     title: string,
-    description?: string,
-    base = "master",
-    head = "staging"
+    description?: string
   ): Promise<number> => {
-    const { siteName, accessToken } = sessionData
+    const { siteName } = sessionData
     // Step 1: Create an actual pull request on Github
     // From head -> base
-    const pullRequestNumber = await this.apiService
-      .post<{ number: number }>(
-        `${siteName}/pulls`,
-        // NOTE: only create body if a valid description is given
-        { title, base, head, ...(description && { body: description }) },
-        {
-          headers: {
-            Authorization: `token ${accessToken}`,
-          },
-        }
-      )
-      .then(({ data }) => data.number)
+    const pullRequestNumber = await this.apiService.createPullRequest(
+      siteName,
+      title,
+      description
+    )
 
     // Step 2: Only update internal model state once PR is created
     const reviewRequest = await this.repository.create({
@@ -177,7 +151,7 @@ export default class ReviewRequestService {
   }
 
   listReviewRequest = async (
-    { siteName, accessToken }: UserWithSiteSessionData,
+    { siteName }: UserWithSiteSessionData,
     site: Site
   ): Promise<DashboardReviewRequestDto[]> => {
     // Find all review requests associated with the site
@@ -201,20 +175,19 @@ export default class ReviewRequestService {
     // and returns only open pull requests.
     return Promise.all(
       requests.map(async (req) => {
-        const prNumber = req.reviewMeta.pullRequestNumber
+        const { pullRequestNumber } = req.reviewMeta
         // NOTE: We explicitly destructure as the raw data
         // contains ALOT more than these fields, which we want to
         // discard to lower retrieval times for FE
-        const { title, body, changed_files, created_at } = await this.apiService
-          .get<RawPullRequest>(`${siteName}/pulls/${prNumber}`, {
-            headers: {
-              Authorization: `token ${accessToken}`,
-            },
-          })
-          .then(({ data }) => data)
+        const {
+          title,
+          body,
+          changed_files,
+          created_at,
+        } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
 
         return {
-          id: prNumber,
+          id: pullRequestNumber,
           author: req.requestor.email || "Unknown user",
           status: req.reviewStatus,
           title,
@@ -266,7 +239,7 @@ export default class ReviewRequestService {
     site: Site,
     pullRequestNumber: number
   ): Promise<ReviewRequestDto | RequestNotFoundError> => {
-    const { siteName, accessToken } = userWithSiteSessionData
+    const { siteName } = userWithSiteSessionData
     const review = await this.repository.findOne({
       where: {
         siteId: site.id,
@@ -302,13 +275,10 @@ export default class ReviewRequestService {
     // NOTE: We explicitly destructure as the raw data
     // contains ALOT more than these fields, which we want to
     // discard to lower retrieval times for FE
-    const { title, created_at } = await this.apiService
-      .get<RawPullRequest>(`${siteName}/pulls/${pullRequestNumber}`, {
-        headers: {
-          Authorization: `token ${accessToken}`,
-        },
-      })
-      .then(({ data }) => data)
+    const { title, created_at } = await this.apiService.getPullRequest(
+      siteName,
+      pullRequestNumber
+    )
 
     const changedItems = await this.compareDiff(userWithSiteSessionData)
 
@@ -345,10 +315,11 @@ export default class ReviewRequestService {
     const { pullRequestNumber } = reviewRequest.reviewMeta
 
     // Update github state
-    const githubUpdatePromise = this.apiService.patch<void>(
-      `${siteName}/pulls/${pullRequestNumber}`,
-      // NOTE: only create body if a valid description is given
-      { title, ...(description && { body: description }) }
+    const githubUpdatePromise = this.apiService.updatePullRequest(
+      siteName,
+      pullRequestNumber,
+      title,
+      description
     )
 
     await Promise.all([savePromise, githubUpdatePromise])
@@ -364,11 +335,7 @@ export default class ReviewRequestService {
   closeReviewRequest = async (reviewRequest: ReviewRequest) => {
     const siteName = reviewRequest.site.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
-    await this.apiService.patch<void>(
-      `${siteName}/pulls/${pullRequestNumber}`,
-      // NOTE: only create body if a valid description is given
-      { state: "closed" }
-    )
+    await this.apiService.closeReviewRequest(siteName, pullRequestNumber)
 
     reviewRequest.reviewStatus = "CLOSED"
     await reviewRequest.save()
@@ -380,15 +347,8 @@ export default class ReviewRequestService {
     const siteName = reviewRequest.site.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
 
-    await this.apiService.post<void>(
-      `${siteName}/pulls/${pullRequestNumber}/reviews`,
-      {
-        event: "APPROVE",
-      }
-    )
-    await this.apiService.put<void>(
-      `${siteName}/pulls/${pullRequestNumber}/merge`
-    )
+    await this.apiService.approvePullRequest(siteName, pullRequestNumber)
+    await this.apiService.mergePullRequest(siteName, pullRequestNumber)
 
     reviewRequest.reviewStatus = "MERGED"
     return reviewRequest.save()

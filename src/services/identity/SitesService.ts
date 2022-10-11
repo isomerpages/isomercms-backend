@@ -69,6 +69,7 @@ class SitesService {
 
   assertGitHubCommitData(commit: any): commit is GitHubCommitData {
     if (
+      commit &&
       (commit as GitHubCommitData).author !== undefined &&
       (commit as GitHubCommitData).author.date !== undefined &&
       (commit as GitHubCommitData).author.email !== undefined &&
@@ -78,6 +79,74 @@ class SitesService {
     }
 
     return false
+  }
+
+  async insertUrlsFromConfigYml(
+    siteUrls: SiteUrls,
+    sessionData: UserWithSiteSessionData
+  ): Promise<SiteUrls> {
+    if (siteUrls.staging && siteUrls.prod) {
+      // We call ConfigYmlService only when necessary
+      return siteUrls
+    }
+
+    const {
+      content: configYmlData,
+    }: { content: ConfigYmlData } = await this.configYmlService.read(
+      sessionData
+    )
+
+    // Only replace the urls if they are not already present
+    siteUrls = {
+      staging:
+        configYmlData.staging && !siteUrls.staging
+          ? configYmlData.staging
+          : siteUrls.staging,
+      prod:
+        configYmlData.prod && !siteUrls.prod
+          ? configYmlData.prod
+          : siteUrls.prod,
+    }
+
+    return siteUrls
+  }
+
+  async insertUrlsFromGitHubDescription(
+    siteUrls: SiteUrls,
+    sessionData: UserWithSiteSessionData
+  ): Promise<SiteUrls> {
+    if (siteUrls.staging && siteUrls.prod) {
+      // We call GitHubService only when necessary
+      return siteUrls
+    }
+
+    const {
+      description,
+    }: { description: string } = await this.gitHubService.getRepoInfo(
+      sessionData
+    )
+
+    // Retrieve the url from the description
+    // repo descriptions have varying formats, so we look for the first link
+    const repoDescTokens = description.replace("/;/g", " ").split(" ")
+
+    const stagingUrlFromDesc = repoDescTokens.find(
+      (token) => token.includes("http") && token.includes("staging")
+    )
+    const prodUrlFromDesc = repoDescTokens.find(
+      (token) => token.includes("http") && token.includes("prod")
+    )
+
+    // Only replace the urls if they are not already present
+    siteUrls = {
+      staging:
+        stagingUrlFromDesc && !siteUrls.staging
+          ? stagingUrlFromDesc
+          : siteUrls.staging,
+      prod: prodUrlFromDesc && !siteUrls.prod ? prodUrlFromDesc : siteUrls.prod,
+    }
+
+    return siteUrls
   }
 
   async getBySiteName(siteName: string): Promise<Site | null> {
@@ -123,17 +192,14 @@ class SitesService {
   }
 
   async getUrlsOfSite(
-    sessionData: UserWithSiteSessionData,
-    urlTypes: SiteUrlTypes[]
-  ): Promise<SiteUrls> {
+    sessionData: UserWithSiteSessionData
+  ): Promise<SiteUrls | NotFoundError> {
     // Tries to get the site urls in the following order:
     // 1. From the deployments database table
     // 2. From the config.yml file
     // 3. From the GitHub repository description
-    // Otherwise, returns an empty string for the url
+    // Otherwise, returns a NotFoundError
     const { siteName } = sessionData
-    let configYmlData: ConfigYmlData = {}
-    let repoDescTokens: string[] = []
 
     const site = await this.siteRepository.findOne({
       where: { name: siteName },
@@ -143,63 +209,24 @@ class SitesService {
       },
     })
 
-    if (!site) {
-      return {
-        staging: "",
-        prod: "",
-      }
+    // Note: site may be null if the site does not exist
+    let siteUrls: SiteUrls = {
+      staging: site?.deployment?.stagingUrl ? site.deployment.stagingUrl : "",
+      prod: site?.deployment?.productionUrl
+        ? site.deployment.productionUrl
+        : "",
     }
 
-    const output: SiteUrls = {
-      staging: site.deployment?.stagingUrl ? site.deployment.stagingUrl : "",
-      prod: site.deployment?.productionUrl ? site.deployment.productionUrl : "",
+    siteUrls = await this.insertUrlsFromConfigYml(siteUrls, sessionData)
+    siteUrls = await this.insertUrlsFromGitHubDescription(siteUrls, sessionData)
+
+    if (!siteUrls.staging && !siteUrls.prod) {
+      return new NotFoundError(
+        `The site ${siteName} does not have a staging or production url`
+      )
     }
 
-    for (const urlType of urlTypes) {
-      // We only call ConfigYmlService only when necessary
-      if (!output[urlType] && Object.keys(configYmlData).length === 0) {
-        const {
-          content: configData,
-        }: { content: ConfigYmlData } = await this.configYmlService.read(
-          sessionData
-        )
-
-        configYmlData = configData
-      }
-
-      if (!output[urlType] && urlType in configYmlData) {
-        const configSiteUrl = configYmlData[urlType]
-
-        if (configSiteUrl) {
-          output[urlType] = configSiteUrl
-        }
-      }
-
-      // We only call GitHubService only when necessary
-      if (!output[urlType] && repoDescTokens.length == 0) {
-        const {
-          description,
-        }: { description: string } = await this.gitHubService.getRepoInfo(
-          sessionData
-        )
-
-        // Retrieve the url from the description
-        // repo descriptions have varying formats, so we look for the first link
-        repoDescTokens = description.replace("/;/g", " ").split(" ")
-      }
-
-      if (!output[urlType]) {
-        // Site urls also contain the site url types in their url
-        const siteUrl = repoDescTokens.find(
-          (token) => token.includes("http") && token.includes(urlType)
-        )
-        if (siteUrl) {
-          output[urlType] = siteUrl
-        }
-      }
-    }
-
-    return output
+    return siteUrls
   }
 
   async getSites(sessionData: UserSessionData): Promise<RepositoryData[]> {
@@ -280,12 +307,15 @@ class SitesService {
   async getStagingUrl(
     sessionData: UserWithSiteSessionData
   ): Promise<string | NotFoundError> {
-    const { staging } = await this.getUrlsOfSite(sessionData, ["staging"])
-    if (!staging) {
+    const siteUrls = await this.getUrlsOfSite(sessionData)
+    if (siteUrls instanceof NotFoundError) {
       return new NotFoundError(
         `${sessionData.siteName} does not have a staging url`
       )
     }
+
+    const { staging } = siteUrls
+
     return staging
   }
 
@@ -308,19 +338,21 @@ class SitesService {
   async getSiteInfo(
     sessionData: UserWithSiteSessionData
   ): Promise<SiteInfo | UnprocessableError> {
-    const {
-      staging: stagingUrl,
-      prod: prodUrl,
-    } = await this.getUrlsOfSite(sessionData, ["staging", "prod"])
+    const siteUrls = await this.getUrlsOfSite(sessionData)
+    if (siteUrls instanceof NotFoundError) {
+      return new UnprocessableError("Unable to retrieve site info")
+    }
+    const { staging: stagingUrl, prod: prodUrl } = siteUrls
 
-    const stagingCommit = ((await this.gitHubService.getLatestCommitOfBranch(
+    const stagingCommit = await this.gitHubService.getLatestCommitOfBranch(
       sessionData,
       "staging"
-    )) as unknown) as GitHubCommitData
-    const prodCommit = ((await this.gitHubService.getLatestCommitOfBranch(
+    )
+
+    const prodCommit = await this.gitHubService.getLatestCommitOfBranch(
       sessionData,
       "master"
-    )) as unknown) as GitHubCommitData
+    )
 
     if (
       !this.assertGitHubCommitData(stagingCommit) ||

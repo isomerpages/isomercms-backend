@@ -26,6 +26,7 @@ import {
 } from "@fixtures/sessionData"
 import mockAxios from "@mocks/axios"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import { UnprocessableError } from "@root/errors/UnprocessableError"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import type { RepositoryData } from "@root/types/repoInfo"
@@ -184,8 +185,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.getUrlsOfSite(
-        mockSessionDataEmailUserWithSite,
-        ["staging", "prod"]
+        mockSessionDataEmailUserWithSite
       )
 
       // Assert
@@ -215,8 +215,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.getUrlsOfSite(
-        mockSessionDataEmailUserWithSite,
-        ["staging", "prod"]
+        mockSessionDataEmailUserWithSite
       )
 
       // Assert
@@ -249,8 +248,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.getUrlsOfSite(
-        mockSessionDataEmailUserWithSite,
-        ["staging", "prod"]
+        mockSessionDataEmailUserWithSite
       )
 
       // Assert
@@ -260,12 +258,8 @@ describe("SitesService", () => {
       expect(MockGithubService.getRepoInfo).toHaveBeenCalled()
     })
 
-    it("should return empty strings as urls of the site if all fails", async () => {
+    it("should return a NotFoundError if all fails", async () => {
       // Arrange
-      const expected = {
-        staging: "",
-        prod: "",
-      }
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
@@ -285,12 +279,11 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.getUrlsOfSite(
-        mockSessionDataEmailUserWithSite,
-        ["staging", "prod"]
+        mockSessionDataEmailUserWithSite
       )
 
       // Assert
-      expect(actual).toEqual(expected)
+      expect(actual).toBeInstanceOf(NotFoundError)
       expect(MockRepository.findOne).toHaveBeenCalled()
       expect(MockConfigYmlService.read).toHaveBeenCalled()
       expect(MockGithubService.getRepoInfo).toHaveBeenCalled()
@@ -468,12 +461,13 @@ describe("SitesService", () => {
 
   describe("getStagingUrl", () => {
     const stagingUrl = "https://repo-staging.netlify.app"
+    const productionUrl = "https://repo-prod.netlify.app"
 
     it("should return the staging URL if it is available", async () => {
       // Arrange
       const mockSiteWithDeployment = {
         ...mockSite,
-        deployment: { stagingUrl },
+        deployment: { stagingUrl, productionUrl },
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
@@ -488,20 +482,11 @@ describe("SitesService", () => {
       expect(MockRepository.findOne).toHaveBeenCalled()
     })
 
-    it("should throw an error when the staging url for a repo is not found", async () => {
+    it("should return an error when the staging url for a repo is not found", async () => {
       // Arrange
-      const mockSiteWithNullDeployment = {
-        ...mockSite,
-        deployment: {
-          stagingUrl: "",
-        },
-      }
-
-      MockRepository.findOne.mockResolvedValueOnce(mockSiteWithNullDeployment)
+      MockRepository.findOne.mockResolvedValueOnce(null)
       MockConfigYmlService.read.mockResolvedValueOnce({
-        content: {
-          staging: "",
-        },
+        content: {},
       })
       MockGithubService.getRepoInfo.mockResolvedValueOnce({
         description: "",
@@ -630,16 +615,54 @@ describe("SitesService", () => {
       expect(MockUsersService.findById).not.toHaveBeenCalled()
     })
 
-    it("should return empty values when the site info is not found", async () => {
+    it("should return UnprocessableError when the site is not found", async () => {
+      // Arrange
+      MockRepository.findOne.mockResolvedValueOnce(null)
+      MockConfigYmlService.read.mockResolvedValueOnce({
+        content: {},
+      })
+      MockGithubService.getRepoInfo.mockResolvedValueOnce({
+        description: "",
+      })
+
+      // Act
+      await expect(
+        SitesService.getSiteInfo(mockSessionDataEmailUserWithSite)
+      ).resolves.toBeInstanceOf(UnprocessableError)
+
+      // Assert
+      expect(MockRepository.findOne).toHaveBeenCalled()
+      expect(MockUsersService.findById).not.toHaveBeenCalled()
+    })
+
+    it("should return UnprocessableError when the GitHub commit is not found", async () => {
+      // Arrange
+      MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
+      MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(null)
+      MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(null)
+
+      // Act
+      await expect(
+        SitesService.getSiteInfo(mockSessionDataEmailUserWithSite)
+      ).resolves.toBeInstanceOf(UnprocessableError)
+
+      // Assert
+      expect(MockRepository.findOne).toHaveBeenCalled()
+      expect(MockGithubService.getLatestCommitOfBranch).toHaveBeenCalledTimes(2)
+      expect(MockUsersService.findById).not.toHaveBeenCalled()
+    })
+
+    it("should return with unknown author when the GitHub commit is empty", async () => {
       // Arrange
       const expected: SiteInfo = {
         savedAt: 0,
         savedBy: "Unknown Author",
         publishedAt: 0,
         publishedBy: "Unknown Author",
-        stagingUrl: "",
-        siteUrl: "",
+        stagingUrl,
+        siteUrl: productionUrl,
       }
+
       const mockEmptyCommit: GitHubCommitData = {
         author: {
           email: "",
@@ -648,7 +671,7 @@ describe("SitesService", () => {
         message: "",
       }
 
-      MockRepository.findOne.mockResolvedValueOnce(null)
+      MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
       MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(
         mockEmptyCommit
       )

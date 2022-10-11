@@ -1,17 +1,9 @@
 import express from "express"
-import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
 import { NotificationsRouter as _NotificationsRouter } from "@routes/v2/authenticatedSites/notifications"
 
-import {
-  IsomerAdmin,
-  Notification,
-  Repo,
-  Site,
-  SiteMember,
-  User,
-} from "@database/models"
+import { Notification, Repo, Site, SiteMember, User } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import {
@@ -29,19 +21,10 @@ import {
   mockSiteName,
 } from "@root/fixtures/sessionData"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
-import { GitHubService } from "@root/services/db/GitHubService"
-import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
-import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
-import { SitesService } from "@root/services/utilServices/SitesService"
-import { getUsersService, notificationsService } from "@services/identity"
-import { sequelize } from "@tests/database"
+import { notificationsService } from "@services/identity"
 
 const mockSite = "mockSite"
 const mockSiteId = "1"
-const mockAdminSite = "adminOnly"
-const mockUpdatedAt = "now"
-const mockPermissions = { push: true }
-const mockPrivate = true
 const mockSiteMemberId = "1"
 
 const notificationsRouter = new _NotificationsRouter({ notificationsService })
@@ -130,7 +113,7 @@ describe("Notifications Router", () => {
         where: {},
       })
     })
-    it("should return sorted list of most recent notifications if there are less than 6 unread", async () => {
+    it("should return sorted list of most recent notifications if there are no unread", async () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,
@@ -154,7 +137,7 @@ describe("Notifications Router", () => {
         userId: mockIsomerUserId,
         siteId: mockSiteId,
         siteMemberId: 1,
-        ...highPriorityUnreadNotification,
+        ...normalPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
@@ -166,7 +149,13 @@ describe("Notifications Router", () => {
         userId: mockIsomerUserId,
         siteId: mockSiteId,
         siteMemberId: 1,
-        ...normalPriorityUnreadNotification,
+        ...normalPriorityReadNotification,
+      })
+      await Notification.create({
+        userId: mockIsomerUserId,
+        siteId: mockSiteId,
+        siteMemberId: 1,
+        ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockAdditionalUserId,
@@ -181,9 +170,9 @@ describe("Notifications Router", () => {
         ...normalPriorityUnreadNotification,
       })
       const expected = [
-        highPriorityUnreadNotification,
-        normalPriorityUnreadNotification,
         highPriorityReadNotification,
+        normalPriorityReadNotification,
+        normalPriorityReadNotification,
         normalPriorityReadNotification,
         highPriorityOldReadNotification,
         normalPriorityOldReadNotification,
@@ -196,7 +185,7 @@ describe("Notifications Router", () => {
       expect(actual.body).toMatchObject(expected)
     })
 
-    it("should return only unread notifications if there are 6 or more", async () => {
+    it("should return only unread notifications if there are any", async () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,

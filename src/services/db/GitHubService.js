@@ -1,7 +1,5 @@
 const { Base64 } = require("js-base64")
 
-const validateStatus = require("@utils/axios-utils")
-
 const BRANCH_REF = "staging"
 
 const {
@@ -11,9 +9,46 @@ const {
 const { NotFoundError } = require("@errors/NotFoundError")
 const { UnprocessableError } = require("@errors/UnprocessableError")
 
+const validateStatus = require("@utils/axios-utils")
+
+const ReviewApi = require("./review")
+
 class GitHubService {
   constructor({ axiosInstance }) {
     this.axiosInstance = axiosInstance
+  }
+
+  getCommitDiff(siteName, base, head) {
+    return ReviewApi.getCommitDiff(siteName, base, head)
+  }
+
+  createPullRequest(siteName, title, description) {
+    return ReviewApi.createPullRequest(siteName, title, description)
+  }
+
+  getPullRequest(siteName, pullRequestNumber) {
+    return ReviewApi.getPullRequest(siteName, pullRequestNumber)
+  }
+
+  updatePullRequest(siteName, pullRequestNumber, title, description) {
+    return ReviewApi.updatePullRequest(
+      siteName,
+      pullRequestNumber,
+      title,
+      description
+    )
+  }
+
+  closeReviewRequest(siteName, pullRequestNumber) {
+    return ReviewApi.closeReviewRequest(siteName, pullRequestNumber)
+  }
+
+  mergePullRequest(siteName, pullRequestNumber) {
+    return ReviewApi.mergePullRequest(siteName, pullRequestNumber)
+  }
+
+  approvePullRequest(siteName, pullRequestNumber) {
+    return ReviewApi.approvePullRequest(siteName, pullRequestNumber)
   }
 
   getFilePath({ siteName, fileName, directoryName }) {

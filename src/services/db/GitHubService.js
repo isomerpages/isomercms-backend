@@ -285,8 +285,7 @@ class GitHubService {
   }
 
   async getLatestCommitOfBranch(sessionData, branch) {
-    const { accessToken } = sessionData
-    const { siteName } = sessionData
+    const { accessToken, siteName } = sessionData
     const endpoint = `${siteName}/commits`
     const headers = {
       Authorization: `token ${accessToken}`,

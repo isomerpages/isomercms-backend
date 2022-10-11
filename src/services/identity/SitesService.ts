@@ -89,11 +89,15 @@ class SitesService {
 
     // Commit message created as part of phase 2 identity
     if (message.startsWith("{") && message.endsWith("}")) {
-      const { userId }: { userId: string } = JSON.parse(message)
-      const user = await this.usersService.findById(userId)
+      try {
+        const { userId }: { userId: string } = JSON.parse(message)
+        const user = await this.usersService.findById(userId)
 
-      if (user) {
-        return user.email
+        if (user) {
+          return user.email
+        }
+      } catch (e) {
+        // Do nothing
       }
     }
 

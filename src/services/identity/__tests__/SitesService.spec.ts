@@ -510,7 +510,7 @@ describe("SitesService", () => {
       // Act
       await expect(
         SitesService.getStagingUrl(mockUserWithSiteSessionData)
-      ).rejects.toThrowError(NotFoundError)
+      ).resolves.toBeInstanceOf(NotFoundError)
 
       // Assert
       expect(MockRepository.findOne).toHaveBeenCalled()

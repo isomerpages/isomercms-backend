@@ -263,10 +263,12 @@ class SitesService {
     return updatedAt
   }
 
-  async getStagingUrl(sessionData: UserWithSiteSessionData): Promise<string> {
+  async getStagingUrl(
+    sessionData: UserWithSiteSessionData
+  ): Promise<string | NotFoundError> {
     const { staging } = await this.getUrlsOfSite(sessionData, ["staging"])
     if (!staging) {
-      throw new NotFoundError(
+      return new NotFoundError(
         `${sessionData.siteName} does not have a staging url`
       )
     }

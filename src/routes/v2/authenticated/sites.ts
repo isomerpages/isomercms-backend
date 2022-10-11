@@ -87,6 +87,11 @@ export class SitesRouter {
     const stagingUrl = await this.sitesService.getStagingUrl(
       userWithSiteSessionData
     )
+
+    // Check for error and throw
+    if (stagingUrl instanceof BaseIsomerError) {
+      throw stagingUrl
+    }
     return res.status(200).json({ stagingUrl })
   }
 

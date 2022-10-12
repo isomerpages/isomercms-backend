@@ -39,7 +39,7 @@ class SettingsRouter {
     })
   }
 
-  async updateSettingsPage(req, res) {
+  async updateSettingsPage(req, res, next) {
     const { body } = req
     const { userWithSiteSessionData } = res.locals
 
@@ -73,7 +73,8 @@ class SettingsRouter {
       updatedFooterContent,
       updatedNavigationContent,
     })
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

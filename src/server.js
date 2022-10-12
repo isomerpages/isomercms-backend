@@ -23,11 +23,11 @@ import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import {
   getIdentityAuthService,
   getUsersService,
-  sitesService,
   isomerAdminsService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
+import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 
 import { AuthorizationMiddleware } from "./middleware/authorization"
@@ -58,7 +58,14 @@ const helmet = require("helmet")
 const createError = require("http-errors")
 
 // Env vars
-const { FRONTEND_URL } = process.env
+const { FRONTEND_URL, NODE_ENV, LOCAL_SITE_ACCESS_TOKEN } = process.env
+const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
+
+const tokenStore = IS_LOCAL_DEV
+  ? {
+      getToken: (_apiTokenName) => LOCAL_SITE_ACCESS_TOKEN,
+    }
+  : new TokenStore()
 
 // Import middleware
 
@@ -78,6 +85,19 @@ const { AuthService } = require("@services/utilServices/AuthService")
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
+const gitHubService = new GitHubService({
+  axiosInstance: isomerRepoAxiosInstance,
+})
+const identityAuthService = getIdentityAuthService(gitHubService)
+const configYmlService = new ConfigYmlService({ gitHubService })
+const sitesService = new SitesService({
+  siteRepository: Site,
+  gitHubService,
+  configYmlService,
+  usersService,
+  isomerAdminsService,
+  tokenStore,
+})
 const infraService = new InfraService({
   sitesService,
   reposService,
@@ -90,13 +110,6 @@ const collaboratorsService = new CollaboratorsService({
   usersService,
   whitelist: Whitelist,
 })
-
-const gitHubService = new GitHubService({
-  axiosInstance: isomerRepoAxiosInstance,
-})
-const identityAuthService = getIdentityAuthService(gitHubService)
-
-const configYmlService = new ConfigYmlService({ gitHubService })
 
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({
@@ -117,12 +130,8 @@ const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authenticationMiddleware,
-  gitHubService,
-  configYmlService,
+  sitesService,
   usersService,
-  reposService,
-  deploymentsService,
-  isomerAdminsService,
   collaboratorsService,
   authorizationMiddleware,
 })

@@ -1,23 +1,29 @@
-const autoBind = require("auto-bind")
-const express = require("express")
+import autoBind from "auto-bind"
+import express from "express"
 
-// Import middleware
-const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-const {
-  default: UserWithSiteSessionData,
-} = require("@classes/UserWithSiteSessionData")
+import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-const { attachSiteHandler } = require("@root/middleware")
+import type UserSessionData from "@root/classes/UserSessionData"
+import { attachSiteHandler } from "@root/middleware"
+import type { RequestHandler } from "@root/types"
+import type SitesService from "@services/identity/SitesService"
 
-class SitesRouter {
-  constructor({ sitesService }) {
+type SitesRouterProps = {
+  sitesService: SitesService
+}
+
+export class SitesRouter {
+  private readonly sitesService
+
+  constructor({ sitesService }: SitesRouterProps) {
     this.sitesService = sitesService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
 
-  addSiteNameToSessionData(userSessionData, siteName) {
+  addSiteNameToSessionData(userSessionData: UserSessionData, siteName: string) {
     const { githubId, accessToken, isomerUserId, email } = userSessionData
     return new UserWithSiteSessionData({
       githubId,
@@ -28,13 +34,25 @@ class SitesRouter {
     })
   }
 
-  async getSites(req, res) {
+  getSites: RequestHandler<
+    never,
+    unknown,
+    never,
+    never,
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
     const { userSessionData } = res.locals
     const siteNames = await this.sitesService.getSites(userSessionData)
     return res.status(200).json({ siteNames })
   }
 
-  async getLastUpdated(req, res) {
+  getLastUpdated: RequestHandler<
+    { siteName: string },
+    unknown,
+    never,
+    never,
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
     const { userSessionData } = res.locals
     const { siteName } = req.params
     const userWithSiteSessionData = this.addSiteNameToSessionData(
@@ -47,9 +65,14 @@ class SitesRouter {
     return res.status(200).json({ lastUpdated })
   }
 
-  async getStagingUrl(req, res) {
+  getStagingUrl: RequestHandler<
+    { siteName: string },
+    unknown,
+    never,
+    never,
+    { userSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
     const { userSessionData } = res.locals
-
     const { siteName } = req.params
     const userWithSiteSessionData = this.addSiteNameToSessionData(
       userSessionData,
@@ -79,5 +102,3 @@ class SitesRouter {
     return router
   }
 }
-
-module.exports = { SitesRouter }

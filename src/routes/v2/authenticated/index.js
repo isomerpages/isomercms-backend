@@ -3,7 +3,6 @@ const express = require("express")
 const {
   NetlifyTomlService,
 } = require("@services/configServices/NetlifyTomlService")
-const { SitesService } = require("@services/utilServices/SitesService")
 
 const { CollaboratorsRouter } = require("./collaborators")
 const { NetlifyTomlRouter } = require("./netlifyToml")
@@ -12,20 +11,13 @@ const { UsersRouter } = require("./users")
 
 const getAuthenticatedSubrouter = ({
   authenticationMiddleware,
-  gitHubService,
-  configYmlService,
+  sitesService,
   usersService,
   apiLogger,
   isomerAdminsService,
   collaboratorsService,
   authorizationMiddleware,
 }) => {
-  const sitesService = new SitesService({
-    gitHubService,
-    configYmlService,
-    usersService,
-    isomerAdminsService,
-  })
   const netlifyTomlService = new NetlifyTomlService()
 
   const sitesV2Router = new SitesRouter({ sitesService })

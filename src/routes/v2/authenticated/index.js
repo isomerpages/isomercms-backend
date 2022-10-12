@@ -40,12 +40,13 @@ const getAuthenticatedSubrouter = ({
     "/sites/:siteName/collaborators",
     collaboratorsRouter.getRouter()
   )
-  sitesV2Router.use(
+  const baseSitesV2Router = sitesV2Router.getRouter()
+  const sitesRouterWithReviewRequest = baseSitesV2Router.use(
     "/:siteName/review",
     attachSiteHandler,
     reviewRouter.getRouter()
   )
-  authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
+  authenticatedSubrouter.use("/sites", sitesRouterWithReviewRequest)
   authenticatedSubrouter.use("/user", usersRouter.getRouter())
   authenticatedSubrouter.use("/netlify-toml", netlifyTomlV2Router.getRouter())
 

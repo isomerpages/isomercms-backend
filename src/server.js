@@ -37,6 +37,7 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
+import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -128,6 +129,12 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   isomerAdminsService,
   collaboratorsService,
 })
+const notificationOnEditHandler = new NotificationOnEditHandler({
+  reviewRequestService,
+  sitesService,
+  collaboratorsService,
+  notificationsService,
+})
 
 const reviewRouter = new ReviewsRouter(
   reviewRequestService,
@@ -151,6 +158,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
+  notificationsService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
@@ -158,7 +166,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authenticationMiddleware,
   gitHubService,
   configYmlService,
-  notificationsService,
+  notificationOnEditHandler,
 })
 const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })

@@ -224,6 +224,9 @@ export default class ReviewRequestService {
           model: User,
           as: "reviewers",
         },
+        {
+          model: Site,
+        },
       ],
     })
 
@@ -259,6 +262,9 @@ export default class ReviewRequestService {
         {
           model: User,
           as: "reviewers",
+        },
+        {
+          model: Site,
         },
       ],
     })

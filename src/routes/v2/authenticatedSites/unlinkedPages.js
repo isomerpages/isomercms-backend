@@ -34,7 +34,7 @@ class UnlinkedPagesRouter {
     return res.status(200).json(listResp)
   }
 
-  async createUnlinkedPage(req, res) {
+  async createUnlinkedPage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { error } = CreatePageRequestSchema.validate(req.body)
@@ -52,7 +52,8 @@ class UnlinkedPagesRouter {
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   async readUnlinkedPage(req, res) {
@@ -69,7 +70,7 @@ class UnlinkedPagesRouter {
     return res.status(200).json({ pageName, sha, content })
   }
 
-  async updateUnlinkedPage(req, res) {
+  async updateUnlinkedPage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { pageName } = req.params
@@ -105,10 +106,11 @@ class UnlinkedPagesRouter {
       )
     }
 
-    return res.status(200).json(updateResp)
+    res.status(200).json(updateResp)
+    return next()
   }
 
-  async deleteUnlinkedPage(req, res) {
+  async deleteUnlinkedPage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { pageName } = req.params
@@ -120,10 +122,11 @@ class UnlinkedPagesRouter {
       sha,
     })
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
-  async moveUnlinkedPages(req, res) {
+  async moveUnlinkedPages(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)
@@ -143,7 +146,8 @@ class UnlinkedPagesRouter {
         objArray: items,
       }
     )
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

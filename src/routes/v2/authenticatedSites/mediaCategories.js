@@ -37,7 +37,7 @@ class MediaCategoriesRouter {
   }
 
   // Create new media directory
-  async createMediaDirectory(req, res) {
+  async createMediaDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { error } = CreateMediaDirectoryRequestSchema.validate(req.body)
@@ -52,11 +52,12 @@ class MediaCategoriesRouter {
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Rename resource category
-  async renameMediaDirectory(req, res) {
+  async renameMediaDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { directoryName } = req.params
@@ -72,11 +73,12 @@ class MediaCategoriesRouter {
       }
     )
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Delete resource category
-  async deleteMediaDirectory(req, res) {
+  async deleteMediaDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { directoryName } = req.params
@@ -87,11 +89,12 @@ class MediaCategoriesRouter {
         directoryName,
       }
     )
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Move resource category
-  async moveMediaFiles(req, res) {
+  async moveMediaFiles(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { directoryName } = req.params
@@ -110,7 +113,8 @@ class MediaCategoriesRouter {
         objArray: items,
       }
     )
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

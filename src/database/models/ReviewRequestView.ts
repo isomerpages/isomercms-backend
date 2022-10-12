@@ -8,12 +8,13 @@ import {
   PrimaryKey,
 } from "sequelize-typescript"
 
+import { ReviewRequest } from "@database/models/ReviewRequest"
 import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
 
 @Table({ tableName: "review_request_views" })
 // eslint-disable-next-line import/prefer-default-export
-export class ReviewRequest extends Model {
+export class ReviewRequestView extends Model {
   @ForeignKey(() => ReviewRequest)
   @PrimaryKey
   reviewRequestId!: number

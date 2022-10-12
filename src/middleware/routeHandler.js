@@ -24,7 +24,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
 ) => {
   const { siteName } = req.params
   await lock(siteName)
-  routeHandler(req, res).catch(async (err) => {
+  routeHandler(req, res, next).catch(async (err) => {
     await unlock(siteName)
     next(err)
   })
@@ -61,7 +61,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     await unlock(siteName)
     next(err)
   }
-  routeHandler(req, res).catch(async (err) => {
+  routeHandler(req, res, next).catch(async (err) => {
     try {
       await backOff(() =>
         revertCommit(originalCommitSha, siteName, accessToken)

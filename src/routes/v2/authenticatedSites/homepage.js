@@ -30,7 +30,7 @@ class HomepageRouter {
   }
 
   // Update homepage index file
-  async updateHomepage(req, res) {
+  async updateHomepage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { error } = UpdateHomepageSchema.validate(req.body, {
@@ -51,7 +51,8 @@ class HomepageRouter {
       }
     )
 
-    return res.status(200).json(updatedHomepage)
+    res.status(200).json(updatedHomepage)
+    return next()
   }
 
   getRouter() {

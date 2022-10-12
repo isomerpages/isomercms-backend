@@ -175,39 +175,19 @@ class NotificationsService {
   }
 
   async create({
-    siteName,
-    userId,
+    siteMember,
     link,
     notificationType,
     notificationSourceUsername,
   }: {
-    siteName: string
-    userId: string
+    siteMember: SiteMember
     link: string
     notificationType: NotificationType
     notificationSourceUsername: string
   }) {
-    const siteMember = await this.siteMember.findOne({
-      where: { user_id: userId },
-      include: [
-        {
-          model: Site,
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
-    })
     const recentTargetNotification = await this.repository.findOne({
       where: {
-        user_id: userId,
+        user_id: siteMember.userId,
         type: notificationType,
         created_at: {
           [Op.gte]: getNotificationExpiryDate(notificationType),
@@ -220,15 +200,9 @@ class NotificationsService {
           model: Site,
           as: "site",
           required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
+          where: {
+            id: siteMember.siteId,
+          },
         },
       ],
     })
@@ -244,7 +218,7 @@ class NotificationsService {
       await this.repository.create({
         siteMemberId: siteMember?.id,
         siteId: siteMember?.siteId,
-        userId,
+        userId: siteMember.userId,
         message: getNotificationMessage(
           notificationType,
           notificationSourceUsername

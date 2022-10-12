@@ -64,7 +64,7 @@ export default class ReviewRequestService {
     // Note that we need a triple dot (...) between base and head refs
     const { files, commits } = await this.apiService.getCommitDiff(siteName)
 
-    const mappings = this.computeShaMappings(commits)
+    const mappings = await this.computeShaMappings(commits)
 
     return files.map(({ filename, contents_url }) => {
       const fullPath = filename.split("/")
@@ -91,22 +91,25 @@ export default class ReviewRequestService {
 
   computeFileUrl = (filename: string, siteName: string) => "www.google.com"
 
-  computeShaMappings = (
+  computeShaMappings = async (
     commits: Commit[]
-  ): Record<string, { author: string; unixTime: number }> => {
+  ): Promise<Record<string, { author: string; unixTime: number }>> => {
     const mappings: Record<string, { author: string; unixTime: number }> = {}
 
     // NOTE: commits from github are capped at 300.
     // This implies that there might possibly be some files
     // whose commit isn't being returned.
-    commits.forEach(({ commit, sha }) => {
-      const { userId } = fromGithubCommitMessage(commit.message)
-      const lastChangedTime = new Date(commit.author.date).getTime()
-      mappings[sha] = {
-        author: userId || commit.author.name,
-        unixTime: lastChangedTime,
-      }
-    })
+    await Promise.all(
+      commits.map(async ({ commit, sha }) => {
+        const { userId } = fromGithubCommitMessage(commit.message)
+        const author = await this.users.findByPk(userId)
+        const lastChangedTime = new Date(commit.author.date).getTime()
+        mappings[sha] = {
+          author: author?.email || commit.author.name,
+          unixTime: lastChangedTime,
+        }
+      })
+    )
     return mappings
   }
 
@@ -144,7 +147,7 @@ export default class ReviewRequestService {
     await this.reviewMeta.create({
       reviewId: reviewRequest.id,
       pullRequestNumber,
-      reviewLink: `cms.isomer.gov.sg/sites/${siteName}/review/${reviewRequest.id}`,
+      reviewLink: `cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}`,
     })
 
     return pullRequestNumber

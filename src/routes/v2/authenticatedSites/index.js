@@ -88,6 +88,7 @@ const getAuthenticatedSitesSubrouter = ({
   authorizationMiddleware,
   gitHubService,
   configYmlService,
+  notificationOnEditHandler,
 }) => {
   const collectionYmlService = new CollectionYmlService({ gitHubService })
   const homepagePageService = new HomepagePageService({ gitHubService })
@@ -221,6 +222,7 @@ const getAuthenticatedSitesSubrouter = ({
   authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
   authenticatedSitesSubrouter.use("/homepage", homepageV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
+  authenticatedSitesSubrouter.use(notificationOnEditHandler.createNotification)
 
   return authenticatedSitesSubrouter
 }

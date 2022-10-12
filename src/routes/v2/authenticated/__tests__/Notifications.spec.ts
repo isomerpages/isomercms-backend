@@ -3,10 +3,9 @@ import request from "supertest"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-import { NotificationsRouter as _NotificationsRouter } from "@routes/v2/authenticatedSites/notifications"
-
 import { generateRouter } from "@fixtures/app"
 import { mockSiteName, mockIsomerUserId } from "@fixtures/sessionData"
+import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
 import NotificationsService from "@services/identity/NotificationsService"
 
 describe("Notifications Router", () => {

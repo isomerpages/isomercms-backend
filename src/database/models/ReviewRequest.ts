@@ -7,6 +7,7 @@ import {
   BelongsTo,
   BelongsToMany,
   HasOne,
+  HasMany,
 } from "sequelize-typescript"
 
 import { Site } from "@database/models/Site"
@@ -14,6 +15,7 @@ import { User } from "@database/models/User"
 
 import { Reviewer } from "./Reviewers"
 import { ReviewMeta } from "./ReviewMeta"
+import { ReviewRequestView } from "./ReviewRequestView"
 
 @Table({ tableName: "review_requests" })
 // eslint-disable-next-line import/prefer-default-export
@@ -65,4 +67,7 @@ export class ReviewRequest extends Model {
     as: "reviewers",
   })
   reviewers!: User[]
+
+  @HasMany(() => ReviewRequestView)
+  reviewRequestViews!: ReviewRequestView[]
 }

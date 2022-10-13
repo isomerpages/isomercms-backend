@@ -94,7 +94,7 @@ class SitesService {
     )
 
     // Only replace the urls if they are not already present
-    siteUrls = {
+    const newSiteUrls: SiteUrls = {
       staging:
         configYmlData.staging && !siteUrls.staging
           ? configYmlData.staging
@@ -105,7 +105,7 @@ class SitesService {
           : siteUrls.prod,
     }
 
-    return siteUrls
+    return newSiteUrls
   }
 
   async insertUrlsFromGitHubDescription(
@@ -135,7 +135,7 @@ class SitesService {
     )
 
     // Only replace the urls if they are not already present
-    siteUrls = {
+    const newSiteUrls: SiteUrls = {
       staging:
         stagingUrlFromDesc && !siteUrls.staging
           ? stagingUrlFromDesc
@@ -143,7 +143,7 @@ class SitesService {
       prod: prodUrlFromDesc && !siteUrls.prod ? prodUrlFromDesc : siteUrls.prod,
     }
 
-    return siteUrls
+    return newSiteUrls
   }
 
   async getBySiteName(siteName: string): Promise<Site | null> {

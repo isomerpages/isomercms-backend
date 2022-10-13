@@ -4,6 +4,8 @@ import { Deployment, Site, User } from "@database/models"
 import {
   MOCK_COMMIT_MESSAGE_OBJECT_ONE,
   MOCK_COMMIT_MESSAGE_OBJECT_TWO,
+  MOCK_GITHUB_NAME_ONE,
+  MOCK_GITHUB_NAME_TWO,
   MOCK_GITHUB_EMAIL_ADDRESS_ONE,
   MOCK_GITHUB_EMAIL_ADDRESS_TWO,
   MOCK_GITHUB_DATE_ONE,
@@ -110,6 +112,7 @@ describe("SitesService", () => {
       const expected = mockEmail
       const commit: GitHubCommitData = {
         author: {
+          name: MOCK_GITHUB_NAME_ONE,
           email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           date: MOCK_GITHUB_DATE_ONE,
         },
@@ -130,6 +133,7 @@ describe("SitesService", () => {
       const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
       const commit: GitHubCommitData = {
         author: {
+          name: MOCK_GITHUB_NAME_ONE,
           email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           date: MOCK_GITHUB_DATE_ONE,
         },
@@ -519,6 +523,7 @@ describe("SitesService", () => {
       // Arrange
       const mockStagingCommit: GitHubCommitData = {
         author: {
+          name: MOCK_GITHUB_NAME_ONE,
           email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           date: MOCK_GITHUB_DATE_ONE,
         },
@@ -529,6 +534,7 @@ describe("SitesService", () => {
       }
       const mockProductionCommit: GitHubCommitData = {
         author: {
+          name: MOCK_GITHUB_NAME_TWO,
           email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
           date: MOCK_GITHUB_DATE_TWO,
         },
@@ -574,6 +580,7 @@ describe("SitesService", () => {
       // Arrange
       const mockStagingCommit: GitHubCommitData = {
         author: {
+          name: MOCK_GITHUB_NAME_ONE,
           email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           date: MOCK_GITHUB_DATE_ONE,
         },
@@ -581,6 +588,7 @@ describe("SitesService", () => {
       }
       const mockProductionCommit: GitHubCommitData = {
         author: {
+          name: MOCK_GITHUB_NAME_TWO,
           email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
           date: MOCK_GITHUB_DATE_TWO,
         },
@@ -665,6 +673,7 @@ describe("SitesService", () => {
 
       const mockEmptyCommit: GitHubCommitData = {
         author: {
+          name: "",
           email: "",
           date: "",
         },

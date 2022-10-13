@@ -71,6 +71,7 @@ class SitesService {
     if (
       commit &&
       (commit as GitHubCommitData).author !== undefined &&
+      (commit as GitHubCommitData).author.name !== undefined &&
       (commit as GitHubCommitData).author.date !== undefined &&
       (commit as GitHubCommitData).author.email !== undefined &&
       (commit as GitHubCommitData).message !== undefined
@@ -185,6 +186,23 @@ class SitesService {
     }
 
     // Legacy style of commits, or if the user is not found
+    const {
+      author: { email: authorEmail },
+    } = commit
+    return authorEmail
+  }
+
+  async getMergeAuthorEmail(commit: GitHubCommitData) {
+    const {
+      author: { name: authorName },
+    } = commit
+
+    // Commit was made by our common identity GitHub user
+    if (authorName.startsWith("isomergithub")) {
+      // TODO: Retrieve email address of user from review request table
+    }
+
+    // Legacy style of using pull requests, or if the user is not found
     const {
       author: { email: authorEmail },
     } = commit
@@ -369,7 +387,7 @@ class SitesService {
     } = prodCommit
 
     const stagingAuthor = await this.getCommitAuthorEmail(stagingCommit)
-    const prodAuthor = await this.getCommitAuthorEmail(prodCommit)
+    const prodAuthor = await this.getMergeAuthorEmail(prodCommit)
 
     return {
       savedAt: new Date(stagingDate).getTime() || 0,

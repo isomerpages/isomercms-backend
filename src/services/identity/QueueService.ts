@@ -31,19 +31,15 @@ export default class QueueService {
 
   pollMessages = async () => {
     const messageBodies: MessageBody[] = []
+    const messages = await this.queueClient.receiveMessage()
     try {
-      // Do not use a `.promise`. See more: https://github.com/aws/aws-sdk-js/issues/1453
-      ;(await this.queueClient.receiveMessage())
-        .on("extractData", (response) => {
-          response.data?.Messages?.forEach((message) => {
-            if (message.Body) {
-              messageBodies.push(JSON.parse(message.Body))
-            }
-          })
-        })
-        .send()
-    } catch (err) {
-      logger.error(err)
+      messages?.forEach((message) => {
+        if (message.Body) {
+          messageBodies.push(JSON.parse(message.Body))
+        }
+      })
+    } catch (error) {
+      logger.error(`error while parsing: ${messages}`)
     }
     return messageBodies
   }

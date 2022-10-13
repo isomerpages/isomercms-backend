@@ -224,15 +224,19 @@ class SitesService {
     })
 
     // Note: site may be null if the site does not exist
-    let siteUrls: SiteUrls = {
-      staging: site?.deployment?.stagingUrl ? site.deployment.stagingUrl : "",
-      prod: site?.deployment?.productionUrl
-        ? site.deployment.productionUrl
-        : "",
+    const siteUrls: SiteUrls = {
+      staging: site?.deployment?.stagingUrl ?? "",
+      prod: site?.deployment?.productionUrl ?? "",
     }
 
-    siteUrls = await this.insertUrlsFromConfigYml(siteUrls, sessionData)
-    siteUrls = await this.insertUrlsFromGitHubDescription(siteUrls, sessionData)
+    _.assign(
+      siteUrls,
+      await this.insertUrlsFromConfigYml(siteUrls, sessionData)
+    )
+    _.assign(
+      siteUrls,
+      await this.insertUrlsFromGitHubDescription(siteUrls, sessionData)
+    )
 
     if (!siteUrls.staging && !siteUrls.prod) {
       return new NotFoundError(

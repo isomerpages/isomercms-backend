@@ -42,3 +42,5 @@ export const ISOMER_ADMIN_REPOS = [
   "infra",
   "markdown-helper",
 ]
+
+export const INACTIVE_USER_THRESHOLD_DAYS = 60

@@ -2,6 +2,8 @@ import { Attributes } from "sequelize/types"
 
 import { User, SiteMember } from "@database/models"
 
+import { mockIsomerUserId } from "./sessionData"
+
 export const mockRecipient = "hello@world.com"
 export const mockSubject = "mock subject"
 export const mockBody = "somebody"
@@ -137,4 +139,24 @@ export const mockSiteOrmResponseWithOneContributorCollaborator = {
 export const mockSiteOrmResponseWithNoCollaborators = {
   id: 1,
   site_members: "",
+}
+
+export const MOCK_COMMIT_MESSAGE_ONE = "Update file: Example.md"
+export const MOCK_COMMIT_FILENAME_ONE = "Example.md"
+export const MOCK_GITHUB_EMAIL_ADDRESS_ONE = "test@example.com"
+export const MOCK_GITHUB_DATE_ONE = "2022-09-22T04:07:53Z"
+export const MOCK_COMMIT_MESSAGE_OBJECT_ONE = {
+  message: MOCK_COMMIT_MESSAGE_ONE,
+  fileName: MOCK_COMMIT_FILENAME_ONE,
+  userId: mockIsomerUserId,
+}
+
+export const MOCK_COMMIT_MESSAGE_TWO = "Update file: Test.md"
+export const MOCK_COMMIT_FILENAME_TWO = "Test.md"
+export const MOCK_GITHUB_EMAIL_ADDRESS_TWO = "test2@example.com"
+export const MOCK_GITHUB_DATE_TWO = "2022-09-28T06:25:14Z"
+export const MOCK_COMMIT_MESSAGE_OBJECT_TWO = {
+  message: MOCK_COMMIT_MESSAGE_TWO,
+  fileName: MOCK_COMMIT_FILENAME_TWO,
+  userId: mockIsomerUserId,
 }

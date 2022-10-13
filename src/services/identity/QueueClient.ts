@@ -1,4 +1,5 @@
 import AWS, { SQS } from "aws-sdk"
+import { ReceiveMessageResult } from "aws-sdk/clients/sqs"
 
 import logger from "@root/logger/logger"
 
@@ -38,22 +39,22 @@ export default class QueueClient {
     const params: SQS.ReceiveMessageRequest = {
       QueueUrl: this.incomingQueueUrl,
       AttributeNames: ["All"],
-      VisibilityTimeout: 0,
-      WaitTimeSeconds: 10,
+      MaxNumberOfMessages: 10,
     }
-    const response = this.sqs.receiveMessage(params, (err, data) => {
-      if (err) {
-        logger.error(err)
-        throw err
-      }
 
-      if (data.Messages) {
-        this.deleteMessage(data)
-      }
-
-      return data
-    })
-    return response
+    /**
+     * Note: using `.promise` might be an issue `.promise`. See more: https://github.com/aws/aws-sdk-js/issues/1453
+     * Through some internal testing, this issue "seems" to have disappeared (it is an undeterministic bug), assumed to
+     * be a safe operation for now.
+     */
+    const response = await this.sqs.receiveMessage(params).promise()
+    if (response.$response.error) {
+      logger.error(response.$response.error)
+    }
+    if (response.Messages) {
+      this.deleteMessage(response)
+    }
+    return response.Messages
   }
 
   createDeleteMessageParams = (

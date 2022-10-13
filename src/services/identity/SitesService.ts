@@ -67,19 +67,15 @@ class SitesService {
     this.tokenStore = tokenStore
   }
 
-  assertGitHubCommitData(commit: any): commit is GitHubCommitData {
-    if (
+  isGitHubCommitData(commit: any): commit is GitHubCommitData {
+    return (
       commit &&
       (commit as GitHubCommitData).author !== undefined &&
       (commit as GitHubCommitData).author.name !== undefined &&
       (commit as GitHubCommitData).author.date !== undefined &&
       (commit as GitHubCommitData).author.email !== undefined &&
       (commit as GitHubCommitData).message !== undefined
-    ) {
-      return true
-    }
-
-    return false
+    )
   }
 
   async insertUrlsFromConfigYml(
@@ -373,8 +369,8 @@ class SitesService {
     )
 
     if (
-      !this.assertGitHubCommitData(stagingCommit) ||
-      !this.assertGitHubCommitData(prodCommit)
+      !this.isGitHubCommitData(stagingCommit) ||
+      !this.isGitHubCommitData(prodCommit)
     ) {
       return new UnprocessableError("Unable to retrieve GitHub commit info")
     }

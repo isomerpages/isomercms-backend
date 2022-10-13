@@ -13,7 +13,9 @@ import UserSessionData from "@classes/UserSessionData"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { CollaboratorRoles } from "@root/constants"
+import { SiteMember, User } from "@root/database/models"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import NotificationsService from "@root/services/identity/NotificationsService"
 import SitesService from "@root/services/identity/SitesService"
 import UsersService from "@root/services/identity/UsersService"
 import { isIsomerError, RequestHandler } from "@root/types"
@@ -37,16 +39,20 @@ export class ReviewsRouter {
 
   private readonly collaboratorsService
 
+  private readonly notificationsService
+
   constructor(
     reviewRequestService: ReviewRequestService,
     identityUsersService: UsersService,
     sitesService: SitesService,
-    collaboratorsService: CollaboratorsService
+    collaboratorsService: CollaboratorsService,
+    notificationsService: NotificationsService
   ) {
     this.reviewRequestService = reviewRequestService
     this.identityUsersService = identityUsersService
     this.sitesService = sitesService
     this.collaboratorsService = collaboratorsService
+    this.notificationsService = notificationsService
 
     autoBind(this)
   }
@@ -186,6 +192,21 @@ export class ReviewsRouter {
       title,
       description
     )
+
+    // Step 5: Create notifications
+    collaborators.forEach(async (user: User & { SiteMember: SiteMember }) => {
+      // Don't send notification to self
+      if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+      const notificationType = reviewersMap[user.email || ""]
+        ? "sent_request"
+        : "request_created"
+      await this.notificationsService.create({
+        siteMember: user.SiteMember,
+        link: "TODO",
+        notificationType,
+        notificationSourceUsername: userWithSiteSessionData.email,
+      })
+    })
 
     return res.status(200).send({
       pullRequestNumber,
@@ -917,6 +938,43 @@ export class ReviewsRouter {
       possibleReviewRequest
     )
 
+    if (isIsomerError(possibleReviewRequest)) {
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Check if the user is a reviewer of the RR
+    const { userWithSiteSessionData } = res.locals
+    const { reviewers } = possibleReviewRequest
+    const isReviewer = _.some(
+      reviewers,
+      (user) => user.email === userWithSiteSessionData.email
+    )
+
+    if (!isReviewer) {
+      return res.status(401).json({
+        message: "Only reviewers can approve Review Requests!",
+      })
+    }
+
+    // Step 5: Approve review request
+    // NOTE: We are not checking for existence of PR
+    // as the underlying Github API returns 404 if
+    // the requested review could not be found.
+    await this.reviewRequestService.approveReviewRequest(possibleReviewRequest)
+
+    // Step 6: Create notifications
+    const collaborators = await this.collaboratorsService.list(siteName)
+    collaborators.forEach(async (user: User & { SiteMember: SiteMember }) => {
+      // Don't send notification to self
+      if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+      await this.notificationsService.create({
+        siteMember: user.SiteMember,
+        link: "TODO",
+        notificationType: "request_approved",
+        notificationSourceUsername: userWithSiteSessionData.email,
+      })
+    })
+
     return res.status(200).send()
   }
 
@@ -998,6 +1056,18 @@ export class ReviewsRouter {
     // The error is discarded as we are guaranteed to have a review request
     await this.reviewRequestService.deleteAllReviewRequestViews(site, requestId)
 
+    // Step 7: Create notifications
+    const collaborators = await this.collaboratorsService.list(siteName)
+    collaborators.forEach(async (user: User & { SiteMember: SiteMember }) => {
+      // Don't send notification to self
+      if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+      await this.notificationsService.create({
+        siteMember: user.SiteMember,
+        link: "TODO",
+        notificationType: "request_cancelled",
+        notificationSourceUsername: userWithSiteSessionData.email,
+      })
+    })
     return res.status(200).send()
   }
 

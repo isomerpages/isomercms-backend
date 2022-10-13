@@ -173,7 +173,7 @@ class SitesService {
         const { userId }: { userId: string } = JSON.parse(message)
         const user = await this.usersService.findById(userId)
 
-        if (user) {
+        if (user && user.email) {
           return user.email
         }
       } catch (e) {

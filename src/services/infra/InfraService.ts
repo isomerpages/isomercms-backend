@@ -386,6 +386,6 @@ export default class InfraService {
   }
 
   pollQueue = async () => {
-    setInterval(this.siteUpdate, 6000)
+    setInterval(this.siteUpdate, 30000)
   }
 }

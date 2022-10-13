@@ -63,15 +63,15 @@ export class SitesRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-    const stagingUrl = await this.sitesService.getStagingUrl(
+    const possibleStagingUrl = await this.sitesService.getStagingUrl(
       userWithSiteSessionData
     )
 
     // Check for error and throw
-    if (stagingUrl instanceof BaseIsomerError) {
-      throw stagingUrl
+    if (possibleStagingUrl instanceof BaseIsomerError) {
+      return res.status(404).json({ message: possibleStagingUrl.message })
     }
-    return res.status(200).json({ stagingUrl })
+    return res.status(200).json({ possibleStagingUrl })
   }
 
   getSiteInfo: RequestHandler<
@@ -83,15 +83,15 @@ export class SitesRouter {
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
 
-    const siteInfo = await this.sitesService.getSiteInfo(
+    const possibleSiteInfo = await this.sitesService.getSiteInfo(
       userWithSiteSessionData
     )
 
     // Check for error and throw
-    if (siteInfo instanceof BaseIsomerError) {
-      throw siteInfo
+    if (possibleSiteInfo instanceof BaseIsomerError) {
+      return res.status(400).json({ message: possibleSiteInfo.message })
     }
-    return res.status(200).json(siteInfo)
+    return res.status(200).json(possibleSiteInfo)
   }
 
   getRouter() {

@@ -1,4 +1,5 @@
 import AWS, { SQS } from "aws-sdk"
+import { ReceiveMessageResult } from "aws-sdk/clients/sqs"
 
 import logger from "@root/logger/logger"
 

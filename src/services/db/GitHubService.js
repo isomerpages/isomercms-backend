@@ -302,7 +302,7 @@ class GitHubService {
       const { status } = err.response
       if (status === 422)
         throw new UnprocessableError(`Branch ${branch} does not exist`)
-      throw err.response
+      throw err
     }
   }
 

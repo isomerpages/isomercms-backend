@@ -601,6 +601,22 @@ describe("Github Service", () => {
         headers,
       })
     })
+
+    it("Getting other kinds of errors should throw the original error", async () => {
+      mockAxiosInstance.get.mockImplementationOnce(() => {
+        const err = new Error()
+        err.response = {
+          status: 418,
+        }
+        throw err
+      })
+      await expect(
+        service.getLatestCommitOfBranch(sessionData, "staging")
+      ).rejects.toThrowError()
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        headers,
+      })
+    })
   })
 
   describe("GetTree", () => {

@@ -17,6 +17,7 @@ import { User } from "@database/models/User"
 export class ReviewRequestView extends Model {
   @ForeignKey(() => ReviewRequest)
   @PrimaryKey
+  @Column
   reviewRequestId!: number
 
   @BelongsTo(() => ReviewRequest, {
@@ -27,6 +28,7 @@ export class ReviewRequestView extends Model {
 
   @ForeignKey(() => Site)
   @PrimaryKey
+  @Column
   siteId!: number
 
   @BelongsTo(() => Site, {
@@ -37,6 +39,7 @@ export class ReviewRequestView extends Model {
 
   @ForeignKey(() => User)
   @PrimaryKey
+  @Column
   userId!: number
 
   @BelongsTo(() => User, {

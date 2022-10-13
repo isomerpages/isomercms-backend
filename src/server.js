@@ -140,7 +140,8 @@ const reviewRouter = new ReviewsRouter(
   reviewRequestService,
   usersService,
   sitesService,
-  collaboratorsService
+  collaboratorsService,
+  notificationsService
 )
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,

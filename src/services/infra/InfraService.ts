@@ -5,7 +5,6 @@ import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
-import UsersService from "@services/identity/UsersService"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -30,12 +29,7 @@ export default class InfraService {
     this.deploymentsService = deploymentsService
   }
 
-  createSite = async (
-    submissionId: string,
-    creator: User,
-    siteName: string,
-    repoName: string
-  ) => {
+  createSite = async (creator: User, siteName: string, repoName: string) => {
     let site: Site | undefined // For error handling
     try {
       // 1. Create a new site record in the Sites table

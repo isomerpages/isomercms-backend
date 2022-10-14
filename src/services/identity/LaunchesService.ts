@@ -125,7 +125,7 @@ export class LaunchesService {
   }
 
   getSiteId = async (repoName: string) => {
-    const site = await this.repo.findOne({
+    const site = await this.repoRepository.findOne({
       where: { name: repoName },
     })
     const siteId = site?.siteId
@@ -236,13 +236,13 @@ export class LaunchesService {
   }
 
   async updateLaunchTable(updateParams: Pick<Launches, "id">) {
-    return this.launches.update(updateParams, {
+    return this.launchesRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
   async updateRedirectionTable(updateParams: Pick<Redirections, "id">) {
-    return this.redirections.update(updateParams, {
+    return this.redirectionsRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }

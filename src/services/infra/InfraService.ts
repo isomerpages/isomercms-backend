@@ -275,7 +275,6 @@ export default class InfraService {
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
-      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
 
       /**
        * Amplify only stores the prefix.
@@ -283,6 +282,8 @@ export default class InfraService {
        * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
+      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
+      
       const userId = agency.id
       newLaunchParams = {
         userId,

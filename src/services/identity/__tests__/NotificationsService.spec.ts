@@ -162,6 +162,10 @@ describe("Notification Service", () => {
   })
 
   describe("create", () => {
+    const mockSiteMember = ({
+      userId: mockUserId,
+      siteId: 1,
+    } as unknown) as SiteMember
     it("should create a new notification if no similar one exists", async () => {
       // Arrange
       MockSiteMember.findOne.mockResolvedValueOnce({ id: mockUserId })
@@ -169,8 +173,7 @@ describe("Notification Service", () => {
 
       // Act
       const actual = NotificationsService.create({
-        userId: mockUserId,
-        siteName: mockSiteName,
+        siteMember: mockSiteMember,
         link: "link",
         notificationType: "sent_request",
         notificationSourceUsername: "user",
@@ -178,7 +181,6 @@ describe("Notification Service", () => {
 
       // Assert
       await expect(actual).resolves.not.toThrow()
-      expect(MockSiteMember.findOne).toHaveBeenCalledTimes(1)
       expect(MockRepository.findOne).toHaveBeenCalledTimes(1)
       expect(MockRepository.create).toHaveBeenCalledTimes(1)
     })
@@ -189,12 +191,12 @@ describe("Notification Service", () => {
       MockSiteMember.findOne.mockResolvedValueOnce({ id: mockUserId })
       MockRepository.findOne.mockResolvedValueOnce({
         update: notificationUpdate,
+        changed: jest.fn(),
       })
 
       // Act
       const actual = NotificationsService.create({
-        userId: mockUserId,
-        siteName: mockSiteName,
+        siteMember: mockSiteMember,
         link: "link",
         notificationType: "sent_request",
         notificationSourceUsername: "user",
@@ -202,7 +204,6 @@ describe("Notification Service", () => {
 
       // Assert
       await expect(actual).resolves.not.toThrow()
-      expect(MockSiteMember.findOne).toHaveBeenCalledTimes(1)
       expect(MockRepository.findOne).toHaveBeenCalledTimes(1)
       expect(notificationUpdate).toHaveBeenCalledTimes(1)
     })

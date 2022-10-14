@@ -63,12 +63,7 @@ export default class InfraService {
     this.queueService = queueService
   }
 
-  createSite = async (
-    submissionId: string,
-    creator: User,
-    siteName: string,
-    repoName: string
-  ) => {
+  createSite = async (creator: User, siteName: string, repoName: string) => {
     let site: Site | undefined // For error handling
     try {
       // 1. Create a new site record in the Sites table

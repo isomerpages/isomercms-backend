@@ -32,5 +32,16 @@ services:
       LAMBDA_ENDPOINT: http://host.docker.internal:3002
     ports:
       - 8083:8083
+    
+  # Start local stack
+  localstack:
+    image: localstack/localstack
+    environment: 
+      - AWS_DEFAULT_REGION=ap-southeast-1
+      - EDGE_PORT=4566
+      - SERVICES=sqs
+    ports:
+      - "4566-4599:4566-4599"
+
 volumes:
   isomercms_data:

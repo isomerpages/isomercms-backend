@@ -206,5 +206,24 @@ describe("Collaborator Router", () => {
         mockSiteName
       )
     })
+
+    it("should return 404 if a NotFoundError occurred", async () => {
+      // Arrange
+      const mockErrorMessage = "error"
+      mockCollaboratorsService.getStatistics.mockResolvedValue(
+        new NotFoundError(mockErrorMessage)
+      )
+
+      // Act
+      const resp = await request(app)
+        .get(`/${mockSiteName}/collaborators/statistics`)
+        .expect(404)
+
+      // Assert
+      expect(resp.body).toStrictEqual({ message: mockErrorMessage })
+      expect(mockCollaboratorsService.getStatistics).toHaveBeenCalledWith(
+        mockSiteName
+      )
+    })
   })
 })

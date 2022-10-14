@@ -1,4 +1,4 @@
-import { ModelStatic, Op } from "sequelize"
+import { FindOptions, ModelStatic, Op } from "sequelize"
 
 import { Notification, Site, Repo, SiteMember } from "@database/models"
 import {
@@ -38,13 +38,18 @@ class NotificationsService {
     }))
   }
 
-  async listRecent({ siteName, userId }: { siteName: string; userId: string }) {
-    const newNotifications = await this.repository.findAll({
+  async findAll({
+    siteName,
+    userId,
+    findOptions,
+  }: {
+    siteName: string
+    userId: string
+    findOptions?: FindOptions<Notification>
+  }) {
+    return this.repository.findAll({
       where: {
         user_id: userId,
-        first_read_time: {
-          [Op.eq]: null,
-        },
       },
       order: [
         ["first_read_time", "DESC NULLS FIRST"],
@@ -66,68 +71,43 @@ class NotificationsService {
           ],
         },
       ],
+      ...findOptions,
+    })
+  }
+
+  async listRecent({ siteName, userId }: { siteName: string; userId: string }) {
+    const newNotifications = await this.findAll({
+      siteName,
+      userId,
+      findOptions: {
+        where: {
+          userId,
+          firstReadTime: {
+            [Op.eq]: null,
+          },
+        },
+      },
     })
 
     if (newNotifications.length > 0)
       return this.formatNotifications(newNotifications)
 
-    const mostRecentNotifications = await this.repository.findAll({
-      where: {
-        user_id: userId,
+    const mostRecentNotifications = await this.findAll({
+      siteName,
+      userId,
+      findOptions: {
+        limit: NUM_RECENT_NOTIFICATIONS,
       },
-      order: [
-        ["first_read_time", "DESC NULLS FIRST"],
-        ["priority", "ASC"],
-      ],
-      limit: NUM_RECENT_NOTIFICATIONS,
-      include: [
-        {
-          model: Site,
-          as: "site",
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
     })
 
     return this.formatNotifications(mostRecentNotifications)
   }
 
   async listAll({ siteName, userId }: { siteName: string; userId: string }) {
-    const notifications = await this.repository.findAll({
-      where: {
-        user_id: userId,
-      },
-      order: [
-        ["first_read_time", "DESC NULLS FIRST"],
-        ["priority", "ASC"],
-      ],
-      include: [
-        {
-          model: Site,
-          as: "site",
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
+    const notifications = await this.findAll({
+      siteName,
+      userId,
     })
-
     return this.formatNotifications(notifications)
   }
 
@@ -201,6 +181,8 @@ class NotificationsService {
         },
       ],
     })
+
+    // Look for a recent notification to decide whether to create a new notification or update the old one
     const recentTargetNotification = await this.repository.findOne({
       where: {
         user_id: userId,

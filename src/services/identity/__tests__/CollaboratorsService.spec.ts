@@ -4,7 +4,7 @@ import { ForbiddenError } from "@errors/ForbiddenError"
 import { NotFoundError } from "@errors/NotFoundError"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
-import { Site, SiteMember, Whitelist } from "@database/models"
+import { Site, SiteMember, User, Whitelist } from "@database/models"
 import {
   expectedSortedMockCollaboratorsList,
   mockSiteOrmResponseWithAllCollaborators,
@@ -12,7 +12,10 @@ import {
   mockSiteOrmResponseWithOneContributorCollaborator,
   mockSiteOrmResponseWithNoCollaborators,
 } from "@fixtures/identity"
-import { CollaboratorRoles } from "@root/constants"
+import {
+  CollaboratorRoles,
+  INACTIVE_USER_THRESHOLD_DAYS,
+} from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { ConflictError } from "@root/errors/ConflictError"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -471,6 +474,72 @@ describe("CollaboratorsService", () => {
       expect(mockSiteMemberRepo.findOne).toBeCalled()
       expect(mockSiteMemberRepo.create).not.toBeCalled()
       expect(resp instanceof UnprocessableError).toBe(true)
+    })
+  })
+
+  describe("getStatistics", () => {
+    const inactiveDate = new Date()
+    inactiveDate.setDate(
+      inactiveDate.getDate() - INACTIVE_USER_THRESHOLD_DAYS - 1
+    )
+    const mockActiveCollaborator: Partial<User> = {
+      lastLoggedIn: new Date(),
+    }
+    const mockInactiveCollaborator: Partial<User> = {
+      lastLoggedIn: inactiveDate,
+    }
+
+    it("should return non-zero collaborators statistics", async () => {
+      // Arrange
+      const expected = {
+        total: 2,
+        inactive: 1,
+      }
+      mockSiteRepo.findOne.mockResolvedValue({
+        site_members: [mockActiveCollaborator, mockInactiveCollaborator],
+      })
+
+      // Act
+      const actual = await collaboratorsService.getStatistics(mockSiteName)
+
+      // Assert
+      expect(actual).toEqual(expected)
+      expect(mockSiteRepo.findOne).toBeCalled()
+    })
+
+    it("should return zero inactive collaborators statistics if there is none", async () => {
+      // Arrange
+      const expected = {
+        total: 1,
+        inactive: 0,
+      }
+      mockSiteRepo.findOne.mockResolvedValue({
+        site_members: [mockActiveCollaborator],
+      })
+
+      // Act
+      const actual = await collaboratorsService.getStatistics(mockSiteName)
+
+      // Assert
+      expect(actual).toEqual(expected)
+      expect(mockSiteRepo.findOne).toBeCalled()
+    })
+
+    it("should return NotFoundError if site is not found", async () => {
+      // Arrange
+      const expected = {
+        total: 0,
+        inactive: 0,
+      }
+      mockSiteRepo.findOne.mockResolvedValue(null)
+
+      // Act
+      await expect(
+        collaboratorsService.getStatistics(mockSiteName)
+      ).resolves.toBeInstanceOf(NotFoundError)
+
+      // Assert
+      expect(mockSiteRepo.findOne).toBeCalled()
     })
   })
 })

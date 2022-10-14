@@ -10,7 +10,6 @@ import {
   HasMany,
 } from "sequelize-typescript"
 
-import { Notification } from "@database/models/Notification"
 import { Site } from "@database/models/Site"
 import { SiteMember } from "@database/models/SiteMember"
 

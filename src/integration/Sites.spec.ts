@@ -19,7 +19,6 @@ import { GitHubService } from "@root/services/db/GitHubService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
-import TokenStore from "@root/services/identity/TokenStore"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import { sequelize } from "@tests/database"
@@ -35,7 +34,6 @@ const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
-const tokenStore = new TokenStore()
 const identityAuthService = getIdentityAuthService(gitHubService)
 const sitesService = new SitesService({
   siteRepository: Site,
@@ -43,7 +41,6 @@ const sitesService = new SitesService({
   configYmlService,
   usersService,
   isomerAdminsService,
-  tokenStore,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

@@ -22,15 +22,12 @@ import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigY
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 
-import TokenStore from "./TokenStore"
-
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
   gitHubService: GitHubService
   configYmlService: ConfigYmlService
   usersService: UsersService
   isomerAdminsService: IsomerAdminsService
-  tokenStore: TokenStore
 }
 
 type SiteUrlTypes = "staging" | "prod"
@@ -49,22 +46,18 @@ class SitesService {
 
   private readonly isomerAdminsService: SitesServiceProps["isomerAdminsService"]
 
-  private readonly tokenStore: SitesServiceProps["tokenStore"]
-
   constructor({
     siteRepository,
     gitHubService,
     configYmlService,
     usersService,
     isomerAdminsService,
-    tokenStore,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
     this.configYmlService = configYmlService
     this.usersService = usersService
     this.isomerAdminsService = isomerAdminsService
-    this.tokenStore = tokenStore
   }
 
   isGitHubCommitData(commit: any): commit is GitHubCommitData {

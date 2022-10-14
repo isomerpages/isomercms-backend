@@ -8,7 +8,9 @@ import {
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { RequestHandler } from "@root/types"
-import NotificationsService from "@services/identity/NotificationsService"
+import NotificationsService, {
+  NotificationResponse,
+} from "@services/identity/NotificationsService"
 
 interface NotificationsRouterProps {
   notificationsService: NotificationsService
@@ -25,7 +27,7 @@ export class NotificationsRouter {
 
   getRecentNotifications: RequestHandler<
     never,
-    unknown,
+    NotificationResponse[],
     unknown,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -42,7 +44,7 @@ export class NotificationsRouter {
 
   getAllNotifications: RequestHandler<
     never,
-    unknown,
+    NotificationResponse[],
     unknown,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }

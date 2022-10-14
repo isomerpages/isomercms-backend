@@ -15,6 +15,15 @@ interface NotificationsServiceProps {
   siteMember: ModelStatic<SiteMember>
 }
 
+export interface NotificationResponse {
+  message: string
+  createdAt: Date
+  link: string
+  isRead: boolean
+  sourceUsername: string
+  type: string
+}
+
 class NotificationsService {
   // NOTE: Explicitly specifying using keyed properties to ensure
   // that the types are synced.

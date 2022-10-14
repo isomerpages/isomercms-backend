@@ -2,17 +2,26 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
-import { IsomerAdmin, Repo, Site, SiteMember, User } from "@database/models"
+import {
+  IsomerAdmin,
+  Repo,
+  Site,
+  SiteMember,
+  User,
+  Whitelist,
+} from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockEmail, mockIsomerUserId } from "@root/fixtures/sessionData"
+import { getAuthorizationMiddleware } from "@root/middleware"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { GitHubService } from "@root/services/db/GitHubService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
 import TokenStore from "@root/services/identity/TokenStore"
-import { getUsersService } from "@services/identity"
+import { getIdentityAuthService, getUsersService } from "@services/identity"
+import CollaboratorsService from "@services/identity/CollaboratorsService"
 import { sequelize } from "@tests/database"
 
 const mockSite = "mockSite"
@@ -27,6 +36,7 @@ const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const tokenStore = new TokenStore()
+const identityAuthService = getIdentityAuthService(gitHubService)
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -35,8 +45,22 @@ const sitesService = new SitesService({
   isomerAdminsService,
   tokenStore,
 })
+const collaboratorsService = new CollaboratorsService({
+  siteRepository: Site,
+  siteMemberRepository: SiteMember,
+  sitesService,
+  usersService,
+  whitelist: Whitelist,
+})
 
-const SitesRouter = new _SitesRouter({ sitesService })
+const authorizationMiddleware = getAuthorizationMiddleware({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+  collaboratorsService,
+})
+
+const SitesRouter = new _SitesRouter({ sitesService, authorizationMiddleware })
 const sitesSubrouter = SitesRouter.getRouter()
 
 // Set up express with defaults and use the router under test

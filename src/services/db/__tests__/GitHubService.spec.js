@@ -1,5 +1,6 @@
 const { ConflictError } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
+const { UnprocessableError } = require("@errors/UnprocessableError")
 
 const validateStatus = require("@utils/axios-utils")
 
@@ -552,6 +553,67 @@ describe("Github Service", () => {
       await service.getRepoState(sessionData)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
         params,
+        headers,
+      })
+    })
+  })
+
+  describe("getLatestCommitOfBranch", () => {
+    const endpoint = `${siteName}/commits/staging`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+
+    it("Getting the latest commit of branch works correctly", async () => {
+      const expected = {
+        author: {
+          name: "test",
+        },
+      }
+      const resp = {
+        data: {
+          commit: expected,
+        },
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      const actual = await service.getLatestCommitOfBranch(
+        sessionData,
+        "staging"
+      )
+      expect(actual).toEqual(expected)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        headers,
+      })
+    })
+
+    it("Getting an invalid branch should throw UnprocessableError", async () => {
+      mockAxiosInstance.get.mockImplementationOnce(() => {
+        const err = new Error()
+        err.response = {
+          status: 422,
+        }
+        throw err
+      })
+      await expect(
+        service.getLatestCommitOfBranch(sessionData, "staging")
+      ).rejects.toThrowError(UnprocessableError)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        headers,
+      })
+    })
+
+    it("Getting other kinds of errors should throw the original error", async () => {
+      mockAxiosInstance.get.mockImplementationOnce(() => {
+        const err = new Error()
+        err.response = {
+          status: 418,
+        }
+        throw err
+      })
+      await expect(
+        service.getLatestCommitOfBranch(sessionData, "staging")
+      ).rejects.toThrowError()
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
         headers,
       })
     })

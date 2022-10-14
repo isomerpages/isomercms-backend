@@ -21,8 +21,8 @@ export interface MessageBody {
 export default class QueueService {
   private readonly queueClient: QueueClient
 
-  constructor() {
-    this.queueClient = new QueueClient()
+  constructor(queueClient?: QueueClient) {
+    this.queueClient = queueClient ?? new QueueClient()
   }
 
   sendMessage = async (message: MessageBody) => {

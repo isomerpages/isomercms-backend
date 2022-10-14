@@ -2,6 +2,8 @@ import autoBind from "auto-bind"
 import express from "express"
 import _ from "lodash"
 
+import logger from "@logger/logger"
+
 import {
   attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
@@ -87,8 +89,18 @@ export class ReviewsRouter {
     // Step 1: Check that the site exists
     const { siteName } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
+    const { userWithSiteSessionData } = res.locals
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "createReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(404).send({
         message:
           "Please ensure that the site you are requesting a review for exists!",
@@ -98,8 +110,6 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userWithSiteSessionData } = res.locals
-
     // Check if they are a site admin
     const role = await this.collaboratorsService.getRole(
       siteName,
@@ -107,6 +117,16 @@ export class ReviewsRouter {
     )
 
     if (!role || role !== CollaboratorRoles.Admin) {
+      logger.error({
+        message:
+          "User atttempted to create review request with invalid permissions",
+        method: "createReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(400).send({
         message: "Only admins can request reviews!",
       })
@@ -118,6 +138,12 @@ export class ReviewsRouter {
     const { reviewers, title, description } = req.body
 
     // Step 3: Check if reviewers are admins of repo
+    // Check if number of requested reviewers > 0
+    if (reviewers.length === 0) {
+      res.status(400).json({
+        message: "Please ensure that you have selected at least 1 reviewer!",
+      })
+    }
     const reviewersMap: Record<string, boolean> = {}
 
     // May we repent for writing such code in production.
@@ -174,8 +200,18 @@ export class ReviewsRouter {
     // Step 1: Check that the site exists
     const { siteName } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
+    const { userWithSiteSessionData } = res.locals
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "listReviews",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -184,8 +220,6 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userWithSiteSessionData } = res.locals
-
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
@@ -193,6 +227,15 @@ export class ReviewsRouter {
     )
 
     if (!role) {
+      logger.error({
+        message: "Insufficient permissions to view review request",
+        method: "listReviews",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(400).send({
         message: "Only collaborators of a site can view reviews!",
       })
@@ -218,9 +261,20 @@ export class ReviewsRouter {
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "getReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -229,8 +283,6 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userWithSiteSessionData } = res.locals
-
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
@@ -238,6 +290,16 @@ export class ReviewsRouter {
     )
 
     if (!role) {
+      logger.error({
+        message: "Insufficient permissoins to retrieve review request",
+        method: "getReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(400).send({
         message: "Only collaborators of a site can view reviews!",
       })
@@ -250,6 +312,16 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "getReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(possibleReviewRequest.status).send({
         message: possibleReviewRequest.message,
       })
@@ -267,9 +339,20 @@ export class ReviewsRouter {
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "updateReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -282,13 +365,32 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "updateReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(404).json({ message: possibleReviewRequest.message })
     }
 
     // Step 3: Check that the user updating is the requestor
     const { requestor } = possibleReviewRequest
-    const { userWithSiteSessionData } = res.locals
     if (requestor.email !== userWithSiteSessionData.email) {
+      logger.error({
+        message: "Insufficient to update review request",
+        method: "updateReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(401).json({
         message: "Only requestors can update the review request!",
       })
@@ -337,9 +439,19 @@ export class ReviewsRouter {
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
+    const { userSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "mergeReviewRequest",
+        meta: {
+          userId: userSessionData.isomerUserId,
+          email: userSessionData.email,
+          siteName,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -348,8 +460,6 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
-    const { userSessionData } = res.locals
-
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
@@ -357,6 +467,16 @@ export class ReviewsRouter {
     )
 
     if (!role) {
+      logger.error({
+        message: "Insufficient permissions to merge review request",
+        method: "mergeReviewRequest",
+        meta: {
+          userId: userSessionData.isomerUserId,
+          email: userSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(400).send({
         message: "Only collaborators of a site can view reviews!",
       })
@@ -369,6 +489,16 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "mergeReviewRequest",
+        meta: {
+          userId: userSessionData.isomerUserId,
+          email: userSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(404).json({ message: possibleReviewRequest.message })
     }
 
@@ -389,9 +519,19 @@ export class ReviewsRouter {
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "approveReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -404,11 +544,22 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      return res.status(404).json({ message: possibleReviewRequest.message })
+      logger.error({
+        message: "Invalid review request requested",
+        method: "approveReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
     }
 
     // Step 4: Check if the user is a reviewer of the RR
-    const { userWithSiteSessionData } = res.locals
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,
@@ -416,8 +567,17 @@ export class ReviewsRouter {
     )
 
     if (!isReviewer) {
-      return res.status(401).json({
-        message: "Only reviewers can approve Review Requests!",
+      logger.error({
+        message: "Invalid site requested",
+        method: "approveReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
       })
     }
 
@@ -438,9 +598,19 @@ export class ReviewsRouter {
   > = async (req, res) => {
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "closeReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -453,16 +623,35 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "closeReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res
         .status(possibleReviewRequest.status)
         .json({ message: possibleReviewRequest.message })
     }
 
     // Step 4: Check if the user is the requestor
-    const { userWithSiteSessionData } = res.locals
     const { requestor } = possibleReviewRequest
     const isRequestor = requestor.email === userWithSiteSessionData.email
     if (!isRequestor) {
+      logger.error({
+        message: "Insufficient permissions to close review request",
+        method: "closeReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
       return res.status(401).json({
         message: "Only the requestor can close the Review Request!",
       })

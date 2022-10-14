@@ -1,5 +1,4 @@
 import AWS, { SQS } from "aws-sdk"
-import { ReceiveMessageResult } from "aws-sdk/clients/sqs"
 
 import logger from "@root/logger/logger"
 
@@ -7,9 +6,9 @@ const { INCOMING_QUEUE_URL, OUTGOING_QUEUE_URL } = process.env
 export default class QueueClient {
   private readonly sqs: AWS.SQS
 
-  private readonly incomingQueueUrl
+  private readonly incomingQueueUrl: string
 
-  private readonly outgoingQueueUrl
+  private readonly outgoingQueueUrl: string
 
   constructor() {
     this.sqs = new AWS.SQS()
@@ -43,7 +42,7 @@ export default class QueueClient {
     }
 
     /**
-     * Note: using `.promise` might be an issue `.promise`. See more: https://github.com/aws/aws-sdk-js/issues/1453
+     * Note: using `.promise` might be an issue. See more: https://github.com/aws/aws-sdk-js/issues/1453
      * Through some internal testing, this issue "seems" to have disappeared (it is an undeterministic bug), assumed to
      * be a safe operation for now.
      */

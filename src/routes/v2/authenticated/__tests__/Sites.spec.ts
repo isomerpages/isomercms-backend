@@ -92,7 +92,7 @@ describe("Sites Router", () => {
         .get(`/${mockSiteName}/stagingUrl`)
         .expect(200)
 
-      expect(resp.body).toStrictEqual({ stagingUrl })
+      expect(resp.body).toStrictEqual({ possibleStagingUrl: stagingUrl })
       expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(
         mockUserWithSiteSessionData
       )

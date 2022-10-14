@@ -9,6 +9,7 @@ const {
   inputNameConflictErrorMsg,
 } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
+const { UnprocessableError } = require("@errors/UnprocessableError")
 
 class GitHubService {
   constructor({ axiosInstance }) {
@@ -286,22 +287,23 @@ class GitHubService {
 
   async getLatestCommitOfBranch(sessionData, branch) {
     const { accessToken, siteName } = sessionData
-    const endpoint = `${siteName}/commits`
+    const endpoint = `${siteName}/commits/${branch}`
     const headers = {
       Authorization: `token ${accessToken}`,
     }
-    const params = {
-      ref: branch,
-      per_page: 1,
-    }
     // Get the commits of the repo
-    const { data: commits } = await this.axiosInstance.get(endpoint, {
-      params,
-      headers,
-    })
-
-    const { commit: latestCommit } = commits[0]
-    return latestCommit
+    try {
+      const { data: latestCommit } = await this.axiosInstance.get(endpoint, {
+        headers,
+      })
+      const { commit: latestCommitMeta } = latestCommit
+      return latestCommitMeta
+    } catch (err) {
+      const { status } = err.response
+      if (status === 422)
+        throw new UnprocessableError(`Branch ${branch} does not exist`)
+      throw err
+    }
   }
 
   async getTree(sessionData, githubSessionData, { isRecursive }) {

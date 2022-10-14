@@ -67,18 +67,15 @@ class SitesService {
     this.tokenStore = tokenStore
   }
 
-  assertGitHubCommitData(commit: any): commit is GitHubCommitData {
-    if (
+  isGitHubCommitData(commit: any): commit is GitHubCommitData {
+    return (
       commit &&
       (commit as GitHubCommitData).author !== undefined &&
+      (commit as GitHubCommitData).author.name !== undefined &&
       (commit as GitHubCommitData).author.date !== undefined &&
       (commit as GitHubCommitData).author.email !== undefined &&
       (commit as GitHubCommitData).message !== undefined
-    ) {
-      return true
-    }
-
-    return false
+    )
   }
 
   async insertUrlsFromConfigYml(
@@ -97,7 +94,7 @@ class SitesService {
     )
 
     // Only replace the urls if they are not already present
-    siteUrls = {
+    const newSiteUrls: SiteUrls = {
       staging:
         configYmlData.staging && !siteUrls.staging
           ? configYmlData.staging
@@ -108,7 +105,7 @@ class SitesService {
           : siteUrls.prod,
     }
 
-    return siteUrls
+    return newSiteUrls
   }
 
   async insertUrlsFromGitHubDescription(
@@ -138,7 +135,7 @@ class SitesService {
     )
 
     // Only replace the urls if they are not already present
-    siteUrls = {
+    const newSiteUrls: SiteUrls = {
       staging:
         stagingUrlFromDesc && !siteUrls.staging
           ? stagingUrlFromDesc
@@ -146,7 +143,7 @@ class SitesService {
       prod: prodUrlFromDesc && !siteUrls.prod ? prodUrlFromDesc : siteUrls.prod,
     }
 
-    return siteUrls
+    return newSiteUrls
   }
 
   async getBySiteName(siteName: string): Promise<Site | null> {
@@ -176,7 +173,7 @@ class SitesService {
         const { userId }: { userId: string } = JSON.parse(message)
         const user = await this.usersService.findById(userId)
 
-        if (user) {
+        if (user && user.email) {
           return user.email
         }
       } catch (e) {
@@ -185,6 +182,23 @@ class SitesService {
     }
 
     // Legacy style of commits, or if the user is not found
+    const {
+      author: { email: authorEmail },
+    } = commit
+    return authorEmail
+  }
+
+  async getMergeAuthorEmail(commit: GitHubCommitData) {
+    const {
+      author: { name: authorName },
+    } = commit
+
+    // Commit was made by our common identity GitHub user
+    if (authorName.startsWith("isomergithub")) {
+      // TODO: Retrieve email address of user from review request table
+    }
+
+    // Legacy style of using pull requests, or if the user is not found
     const {
       author: { email: authorEmail },
     } = commit
@@ -210,15 +224,19 @@ class SitesService {
     })
 
     // Note: site may be null if the site does not exist
-    let siteUrls: SiteUrls = {
-      staging: site?.deployment?.stagingUrl ? site.deployment.stagingUrl : "",
-      prod: site?.deployment?.productionUrl
-        ? site.deployment.productionUrl
-        : "",
+    const siteUrls: SiteUrls = {
+      staging: site?.deployment?.stagingUrl ?? "",
+      prod: site?.deployment?.productionUrl ?? "",
     }
 
-    siteUrls = await this.insertUrlsFromConfigYml(siteUrls, sessionData)
-    siteUrls = await this.insertUrlsFromGitHubDescription(siteUrls, sessionData)
+    _.assign(
+      siteUrls,
+      await this.insertUrlsFromConfigYml(siteUrls, sessionData)
+    )
+    _.assign(
+      siteUrls,
+      await this.insertUrlsFromGitHubDescription(siteUrls, sessionData)
+    )
 
     if (!siteUrls.staging && !siteUrls.prod) {
       return new NotFoundError(
@@ -355,8 +373,8 @@ class SitesService {
     )
 
     if (
-      !this.assertGitHubCommitData(stagingCommit) ||
-      !this.assertGitHubCommitData(prodCommit)
+      !this.isGitHubCommitData(stagingCommit) ||
+      !this.isGitHubCommitData(prodCommit)
     ) {
       return new UnprocessableError("Unable to retrieve GitHub commit info")
     }
@@ -369,7 +387,7 @@ class SitesService {
     } = prodCommit
 
     const stagingAuthor = await this.getCommitAuthorEmail(stagingCommit)
-    const prodAuthor = await this.getCommitAuthorEmail(prodCommit)
+    const prodAuthor = await this.getMergeAuthorEmail(prodCommit)
 
     return {
       savedAt: new Date(stagingDate).getTime() || 0,

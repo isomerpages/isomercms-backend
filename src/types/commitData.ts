@@ -1,5 +1,6 @@
 export type GitHubCommitData = {
   author: {
+    name: string
     email: string
     date: string
   }

@@ -1,9 +1,14 @@
 import express from "express"
 import request from "supertest"
 
-import { NotificationsRouter as _NotificationsRouter } from "@routes/v2/authenticatedSites/notifications"
-
-import { Notification, Repo, Site, SiteMember, User } from "@database/models"
+import {
+  Notification,
+  Repo,
+  Site,
+  SiteMember,
+  User,
+  Whitelist,
+} from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import {
@@ -20,14 +25,46 @@ import {
   mockIsomerUserId,
   mockSiteName,
 } from "@root/fixtures/sessionData"
+import { getAuthorizationMiddleware } from "@root/middleware"
+import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
-import { notificationsService } from "@services/identity"
+import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
+import { GitHubService } from "@root/services/db/GitHubService"
+import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import {
+  getIdentityAuthService,
+  getUsersService,
+  isomerAdminsService,
+  notificationsService,
+  sitesService,
+} from "@services/identity"
+import { sequelize } from "@tests/database"
 
-const mockSite = "mockSite"
 const mockSiteId = "1"
 const mockSiteMemberId = "1"
 
-const notificationsRouter = new _NotificationsRouter({ notificationsService })
+const githubService = new GitHubService({
+  axiosInstance: genericGitHubAxiosInstance,
+})
+const identityAuthService = getIdentityAuthService(githubService)
+const usersService = getUsersService(sequelize)
+const collaboratorsService = new CollaboratorsService({
+  siteRepository: Site,
+  siteMemberRepository: SiteMember,
+  sitesService,
+  usersService,
+  whitelist: Whitelist,
+})
+const authorizationMiddleware = getAuthorizationMiddleware({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+  collaboratorsService,
+})
+const notificationsRouter = new _NotificationsRouter({
+  notificationsService,
+  authorizationMiddleware,
+})
 const notificationsSubrouter = notificationsRouter.getRouter()
 
 // Set up express with defaults and use the router under test
@@ -43,7 +80,7 @@ subrouter.use((req, res, next) => {
   res.locals.userSessionData = userSessionData
   next()
 })
-subrouter.use(notificationsSubrouter)
+subrouter.use("/:siteName", notificationsSubrouter)
 const app = generateRouter(subrouter)
 
 describe("Notifications Router", () => {
@@ -62,7 +99,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: mockSiteId,
-      name: mockSite,
+      name: mockSiteName,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -87,7 +124,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: mockAdditionalSiteId,
-      name: mockSite,
+      name: mockSiteName,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -179,7 +216,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get("/")
+      const actual = await request(app).get(`/${mockSiteName}`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -269,7 +306,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get("/")
+      const actual = await request(app).get(`/${mockSiteName}`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -351,7 +388,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get("/allNotifications")
+      const actual = await request(app).get(`/${mockSiteName}/allNotifications`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -419,7 +456,7 @@ describe("Notifications Router", () => {
       const expected = 200
 
       // Act
-      const actual = await request(app).post("/").send({})
+      const actual = await request(app).post(`/${mockSiteName}`).send({})
 
       // Assert
       expect(actual.statusCode).toBe(expected)

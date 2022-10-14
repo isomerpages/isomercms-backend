@@ -115,7 +115,7 @@ export class CollaboratorsRouter {
 
     // Check for error and throw
     if (statistics instanceof BaseIsomerError) {
-      throw statistics
+      return res.status(404).json({ message: statistics.message })
     }
     return res.status(200).json(statistics)
   }

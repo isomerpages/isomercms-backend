@@ -17,7 +17,7 @@ export const getNotificationExpiryDate = (
       // Always notify for review request information
       return moment()
     default:
-      return moment().subtract(3, "months")
+      return moment().subtract(3, "hours")
   }
 }
 

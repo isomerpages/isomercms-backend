@@ -6,7 +6,10 @@ import { ForbiddenError } from "@errors/ForbiddenError"
 import { NotFoundError } from "@errors/NotFoundError"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
-import { CollaboratorRoles } from "@constants/constants"
+import {
+  CollaboratorRoles,
+  INACTIVE_USER_THRESHOLD_DAYS,
+} from "@constants/constants"
 
 import { Whitelist, User, Site, SiteMember } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
@@ -234,6 +237,39 @@ class CollaboratorsService {
     })
 
     return (site?.site_members?.[0]?.SiteMember?.role as string | null) ?? null
+  }
+
+  getStatistics = async (siteName: string) => {
+    const inactiveLimit = new Date()
+    inactiveLimit.setDate(
+      inactiveLimit.getDate() - INACTIVE_USER_THRESHOLD_DAYS
+    )
+    const site = await this.siteRepository.findOne({
+      where: { name: siteName },
+      include: [
+        {
+          model: User,
+          as: "site_members",
+        },
+      ],
+    })
+
+    const collaborators = site?.site_members ?? []
+    const totalCount = collaborators.length
+
+    if (totalCount === 0) {
+      // Every site must have at least one collaborator
+      return new NotFoundError(`Site does not exist`)
+    }
+
+    const inactiveCount = collaborators.filter(
+      (collaborator) => collaborator.lastLoggedIn < inactiveLimit
+    ).length
+
+    return {
+      total: totalCount,
+      inactive: inactiveCount,
+    }
   }
 }
 

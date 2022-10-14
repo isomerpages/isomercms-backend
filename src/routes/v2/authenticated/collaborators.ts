@@ -103,6 +103,23 @@ export class CollaboratorsRouter {
     return res.status(200).json({ role })
   }
 
+  getCollaboratorsStatistics: RequestHandler<
+    { siteName: string },
+    unknown,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { siteName } = req.params
+    const statistics = await this.collaboratorsService.getStatistics(siteName)
+
+    // Check for error and throw
+    if (statistics instanceof BaseIsomerError) {
+      return res.status(404).json({ message: statistics.message })
+    }
+    return res.status(200).json(statistics)
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
     router.get(
@@ -128,6 +145,12 @@ export class CollaboratorsRouter {
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteAdmin,
       attachReadRouteHandlerWrapper(this.deleteCollaborator)
+    )
+    router.get(
+      "/statistics",
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.getCollaboratorsStatistics)
     )
 
     return router

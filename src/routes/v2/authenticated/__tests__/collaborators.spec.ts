@@ -20,6 +20,7 @@ describe("Collaborator Router", () => {
     delete: jest.fn(),
     list: jest.fn(),
     getRole: jest.fn(),
+    getStatistics: jest.fn(),
   }
   const mockAuthorizationMiddleware = {
     verifySiteAdmin: jest.fn(),
@@ -49,6 +50,12 @@ describe("Collaborator Router", () => {
   subrouter.delete(
     `/:siteName/collaborators/:userId`,
     attachReadRouteHandlerWrapper(collaboratorsRouter.deleteCollaborator)
+  )
+  subrouter.get(
+    `/:siteName/collaborators/statistics`,
+    attachReadRouteHandlerWrapper(
+      collaboratorsRouter.getCollaboratorsStatistics
+    )
   )
 
   const app = generateRouter(subrouter)
@@ -173,6 +180,49 @@ describe("Collaborator Router", () => {
       expect(mockCollaboratorsService.getRole).toHaveBeenCalledWith(
         mockSiteName,
         mockIsomerUserId
+      )
+    })
+  })
+
+  describe("get collaborators statistics", () => {
+    it("should get collaborators statistics", async () => {
+      // Arrange
+      const MOCK_COLLABORATORS_STATISTICS = {
+        total: 1,
+        inactive: 1,
+      }
+      mockCollaboratorsService.getStatistics.mockResolvedValue(
+        MOCK_COLLABORATORS_STATISTICS
+      )
+
+      // Act
+      const resp = await request(app)
+        .get(`/${mockSiteName}/collaborators/statistics`)
+        .expect(200)
+
+      // Assert
+      expect(resp.body).toStrictEqual(MOCK_COLLABORATORS_STATISTICS)
+      expect(mockCollaboratorsService.getStatistics).toHaveBeenCalledWith(
+        mockSiteName
+      )
+    })
+
+    it("should return 404 if a NotFoundError occurred", async () => {
+      // Arrange
+      const mockErrorMessage = "error"
+      mockCollaboratorsService.getStatistics.mockResolvedValue(
+        new NotFoundError(mockErrorMessage)
+      )
+
+      // Act
+      const resp = await request(app)
+        .get(`/${mockSiteName}/collaborators/statistics`)
+        .expect(404)
+
+      // Assert
+      expect(resp.body).toStrictEqual({ message: mockErrorMessage })
+      expect(mockCollaboratorsService.getStatistics).toHaveBeenCalledWith(
+        mockSiteName
       )
     })
   })

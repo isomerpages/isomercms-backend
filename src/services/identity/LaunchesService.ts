@@ -27,11 +27,11 @@ type redirectionsCreateParamsType = Partial<Redirections> & {
   target: string
 }
 interface LaunchesServiceProps {
-  launches: ModelStatic<Launches>
-  deployment: ModelStatic<Deployment>
-  redirections: ModelStatic<Redirections>
-  repo: ModelStatic<Repo>
-  user: ModelStatic<User>
+  launchesRepository: ModelStatic<Launches>
+  deploymentRepository: ModelStatic<Deployment>
+  redirectionsRepository: ModelStatic<Redirections>
+  repoRepository: ModelStatic<Repo>
+  userRepository: ModelStatic<User>
 }
 
 export interface DomainAssocationInterface {
@@ -41,33 +41,33 @@ export interface DomainAssocationInterface {
   siteId: number
 }
 export class LaunchesService {
-  private readonly deployment: LaunchesServiceProps["deployment"]
+  private readonly deploymentRepository: LaunchesServiceProps["deploymentRepository"]
 
-  private readonly launches: LaunchesServiceProps["launches"]
+  private readonly launchesRepository: LaunchesServiceProps["launchesRepository"]
 
-  private readonly repo: LaunchesServiceProps["repo"]
+  private readonly repoRepository: LaunchesServiceProps["repoRepository"]
 
-  private readonly redirections: LaunchesServiceProps["redirections"]
+  private readonly redirectionsRepository: LaunchesServiceProps["redirectionsRepository"]
 
   private readonly launchClient: LaunchClient
 
   constructor({
-    deployment,
-    launches,
-    repo,
-    redirections,
+    deploymentRepository: deployment,
+    launchesRepository: launches,
+    repoRepository: repo,
+    redirectionsRepository: redirections,
   }: LaunchesServiceProps) {
-    this.deployment = deployment
+    this.deploymentRepository = deployment
     this.launchClient = new LaunchClient()
-    this.launches = launches
-    this.repo = repo
-    this.redirections = redirections
+    this.launchesRepository = launches
+    this.repoRepository = repo
+    this.redirectionsRepository = redirections
   }
 
   create = async (
     createParams: launchesCreateParamsType
   ): Promise<Launches> => {
-    const createLaunch = await this.launches.create(createParams)
+    const createLaunch = await this.launchesRepository.create(createParams)
     if (createParams.redirectionDomainSource) {
       logger.info(
         `creating redirection record for ${createParams.redirectionDomainSource}`
@@ -78,7 +78,7 @@ export class LaunchesService {
         source: createParams.redirectionDomainSource,
         target: createParams.primaryDomainTarget,
       }
-      await this.redirections.create(createRedirectionParams)
+      await this.redirectionsRepository.create(createRedirectionParams)
     }
 
     return createLaunch
@@ -86,7 +86,7 @@ export class LaunchesService {
 
   createRedirection = async (
     createParams: redirectionsCreateParamsType
-  ): Promise<Redirections> => this.redirections.create(createParams)
+  ): Promise<Redirections> => this.redirectionsRepository.create(createParams)
 
   getAppId = async (repoName: string) => {
     const siteId = await this.getSiteId(repoName)
@@ -96,7 +96,7 @@ export class LaunchesService {
       throw error
     }
 
-    const deploy = await this.deployment.findOne({
+    const deploy = await this.deploymentRepository.findOne({
       where: { site_id: siteId },
     })
     const hostingID = deploy?.hostingId
@@ -112,7 +112,7 @@ export class LaunchesService {
   }
 
   getSiteId = async (repoName: string) => {
-    const site = await this.repo.findOne({
+    const site = await this.repoRepository.findOne({
       where: { name: repoName },
     })
     const siteId = site?.siteId
@@ -187,13 +187,13 @@ export class LaunchesService {
   }
 
   async updateLaunchTable(updateParams: Pick<Launches, "id">) {
-    return this.launches.update(updateParams, {
+    return this.launchesRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
   async updateRedirectionTable(updateParams: Pick<Redirections, "id">) {
-    return this.redirections.update(updateParams, {
+    return this.redirectionsRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }

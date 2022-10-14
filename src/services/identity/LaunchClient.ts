@@ -47,7 +47,7 @@ class LaunchClient {
     domainName,
   })
 
-  sendGetDomainAssociationCommandInput = (
+  sendGetDomainAssociationCommand = (
     input: GetDomainAssociationCommandInput
   ) => {
     logger.info(`getting domain association command`)

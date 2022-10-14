@@ -72,7 +72,7 @@ export class Notification extends Model {
     allowNull: true,
     type: DataType.DATE,
   })
-  firstReadTime!: Date
+  firstReadTime!: Date | null
 
   @Column({
     allowNull: false,

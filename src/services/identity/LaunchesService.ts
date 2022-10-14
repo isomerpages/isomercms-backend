@@ -178,6 +178,20 @@ export class LaunchesService {
       appId,
       domainName
     )
+
+    /**
+     * note: we wait for ard 90 sec as there is a time taken
+     * for amplify to generate the certification manager in the first place
+     * This is a dirty workaround for now, and will cause issues when we integrate
+     * this directly within the Isomer CMS.
+     * todo: push this check into a queue-like system when integrating this with cms
+     */
+    await new Promise((resolve) => setTimeout(resolve, 90000))
+
+    /**
+     * todo: add some level of retry logic if get domain association command
+     * does not contain the DNS redirections info.
+     */
     return this.launchClient.sendGetDomainAssociationCommand(
       getDomainAssociationOptions
     )

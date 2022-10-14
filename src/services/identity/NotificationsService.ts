@@ -205,10 +205,15 @@ class NotificationsService {
 
     if (recentTargetNotification) {
       // Update existing notification
-      await recentTargetNotification.update({
-        firstReadTime: null,
-        createdAt: new Date(),
-      })
+      // createdAt is a special column which must be flagged as changed
+      recentTargetNotification.changed("createdAt", true)
+      await recentTargetNotification.update(
+        {
+          firstReadTime: null,
+          createdAt: new Date(),
+        },
+        { raw: true }
+      )
     } else {
       // Create new notification
       await this.repository.create({

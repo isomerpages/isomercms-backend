@@ -5,6 +5,7 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import { generateRouter } from "@fixtures/app"
 import { mockSiteName, mockIsomerUserId } from "@fixtures/sessionData"
+import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
 import NotificationsService from "@services/identity/NotificationsService"
 
@@ -14,9 +15,13 @@ describe("Notifications Router", () => {
     listAll: jest.fn(),
     markNotificationsAsRead: jest.fn(),
   }
+  const mockAuthorizationMiddleware = {
+    verifySiteMember: jest.fn(),
+  }
 
   const NotificationsRouter = new _NotificationsRouter({
     notificationsService: (mockNotificationsService as unknown) as NotificationsService,
+    authorizationMiddleware: (mockAuthorizationMiddleware as unknown) as AuthorizationMiddleware,
   })
 
   const subrouter = express()

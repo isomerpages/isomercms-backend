@@ -82,7 +82,7 @@ export class FormsgSiteLaunchRouter {
     }
 
     logger.info(
-      `Lauch site form submission [${submissionId}] (repoName '${repoName}', domain '${primaryDomain}') requested by <${requesterEmail}>`
+      `Launch site form submission [${submissionId}] (repoName '${repoName}', domain '${primaryDomain}') requested by <${requesterEmail}>`
     )
 
     // 2. Check arguments

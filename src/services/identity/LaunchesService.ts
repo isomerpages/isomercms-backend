@@ -4,7 +4,7 @@ import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launches, Repo, Site, User } from "@database/models"
+import { Deployment, Launches, Repo, User } from "@database/models"
 import { Redirections } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
@@ -186,17 +186,13 @@ export class LaunchesService {
     )
   }
 
-  async updateLaunchTable(
-    updateParams: Partial<Launches> & { id: Site["id"] }
-  ) {
+  async updateLaunchTable(updateParams: Pick<Launches, "id">) {
     return this.launches.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
-  async updateRedirectionTable(
-    updateParams: Partial<Redirections> & { id: Launches["id"] }
-  ) {
+  async updateRedirectionTable(updateParams: Pick<Redirections, "id">) {
     return this.redirections.update(updateParams, {
       where: { id: updateParams.id },
     })

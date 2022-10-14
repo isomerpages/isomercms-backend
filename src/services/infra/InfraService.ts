@@ -105,6 +105,20 @@ export default class InfraService {
     }
   }
 
+  parseDNSRecords = (record?: string) => {
+    if (!record) {
+      return undefined
+    }
+
+    // Note: the records would have the shape of 'blah.gov.sg CNAME blah.validaations.aws'
+    const recordsInfo = record.split(" ")
+    return {
+      source: recordsInfo[0],
+      target: recordsInfo[2],
+      type: recordsInfo[1],
+    }
+  }
+
   launchSite = async (
     submissionId: string,
     requestor: User,
@@ -134,28 +148,49 @@ export default class InfraService {
         appId
       )
 
-      const certificationRecord = dnsInfo.domainAssociation?.certificateVerificationDNSRecord?.split(
-        " "
+      const certificationRecord = this.parseDNSRecords(
+        dnsInfo.domainAssociation?.certificateVerificationDNSRecord
       )
-
       if (!certificationRecord) {
-        throw Error("certification record not created yet")
+        throw new Error(`error while parsing ${dnsInfo}`)
       }
+
+      const domainValidationSource = certificationRecord.source
+      const domainValidationTarget = certificationRecord.target
 
       const subDomainList = dnsInfo.domainAssociation?.subDomains
       if (!subDomainList || !subDomainList[0].dnsRecord) {
         throw Error("subdomain list not created yet")
       }
 
-      const primaryDomainInfo = subDomainList[0].dnsRecord?.split(" ")
-      logger.info(primaryDomainInfo)
-      const primaryDomainTarget = primaryDomainInfo[2]
-      logger.info(certificationRecord)
-      const domainValidationSource = certificationRecord[0]
-      const domainValidationTarget = certificationRecord[2]
+      const primaryDomainInfo = this.parseDNSRecords(subDomainList[0].dnsRecord)
+
+      if (!primaryDomainInfo) {
+        throw Error("primary domain info not created yet")
+      }
+
+      /**
+       * shape of dnsInfo.domainAssociation.subDomains:
+       * {
+       *   dnsRecord: "CNAME gibberish.cloudfront.net",
+       *   subDomainSettings: {
+       *     branchName : "master",
+       *     prefix? : "www"
+       *   }
+       * }
+       */
+
+      const primaryDomainTarget = primaryDomainInfo.target
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
+
+      /**
+       * Amplify only stores the prefix.
+       * ie: if I wanted to have a www.blah.gov.sg -> giberish.cloudfront.net,
+       * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
+       * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
+       */
       const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
 
       const userId = agency.id

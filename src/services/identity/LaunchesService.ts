@@ -230,7 +230,7 @@ export class LaunchesService {
      * todo: add some level of retry logic if get domain association command
      * does not contain the DNS redirections info.
      */
-    return this.launchClient.sendGetDomainAssociationCommandInput(
+    return this.launchClient.sendGetDomainAssociationCommand(
       getDomainAssociationOptions
     )
   }

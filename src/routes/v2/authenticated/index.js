@@ -18,7 +18,10 @@ const getAuthenticatedSubrouter = ({
 }) => {
   const netlifyTomlService = new NetlifyTomlService()
 
-  const sitesV2Router = new SitesRouter({ sitesService })
+  const sitesV2Router = new SitesRouter({
+    sitesService,
+    authorizationMiddleware,
+  })
   const collaboratorsRouter = new CollaboratorsRouter({
     collaboratorsService,
     authorizationMiddleware,

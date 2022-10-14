@@ -273,17 +273,13 @@ export class LaunchesService {
     )
   }
 
-  async updateLaunchTable(
-    updateParams: Partial<Launches> & { id: Site["id"] }
-  ) {
+  async updateLaunchTable(updateParams: Pick<Launches, "id">) {
     return this.launches.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
-  async updateRedirectionTable(
-    updateParams: Partial<Redirections> & { id: Launches["id"] }
-  ) {
+  async updateRedirectionTable(updateParams: Pick<Redirections, "id">) {
     return this.redirections.update(updateParams, {
       where: { id: updateParams.id },
     })

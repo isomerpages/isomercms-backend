@@ -32,6 +32,7 @@ interface LaunchesServiceProps {
   redirectionsRepository: ModelStatic<Redirections>
   repoRepository: ModelStatic<Repo>
   userRepository: ModelStatic<User>
+  launchClient: LaunchClient
 }
 
 export interface DomainAssocationInterface {
@@ -49,19 +50,20 @@ export class LaunchesService {
 
   private readonly redirectionsRepository: LaunchesServiceProps["redirectionsRepository"]
 
-  private readonly launchClient: LaunchClient
+  private readonly launchClient: LaunchesServiceProps["launchClient"]
 
   constructor({
-    deploymentRepository: deployment,
-    launchesRepository: launches,
-    repoRepository: repo,
-    redirectionsRepository: redirections,
+    deploymentRepository,
+    launchesRepository,
+    repoRepository,
+    redirectionsRepository,
+    launchClient,
   }: LaunchesServiceProps) {
-    this.deploymentRepository = deployment
-    this.launchClient = new LaunchClient()
-    this.launchesRepository = launches
-    this.repoRepository = repo
-    this.redirectionsRepository = redirections
+    this.deploymentRepository = deploymentRepository
+    this.launchClient = launchClient ?? new LaunchClient()
+    this.launchesRepository = launchesRepository
+    this.repoRepository = repoRepository
+    this.redirectionsRepository = redirectionsRepository
   }
 
   create = async (
@@ -181,7 +183,7 @@ export class LaunchesService {
      * todo: add some level of retry logic if get domain association command
      * does not contain the DNS redirections info.
      */
-    return this.launchClient.sendGetDomainAssociationCommandInput(
+    return this.launchClient.sendGetDomainAssociationCommand(
       getDomainAssociationOptions
     )
   }

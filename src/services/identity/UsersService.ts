@@ -47,6 +47,10 @@ class UsersService {
     this.whitelist = whitelist
   }
 
+  async findById(id: string) {
+    return this.repository.findOne({ where: { id } })
+  }
+
   async findByEmail(email: string) {
     return this.repository.findOne({ where: { email } })
   }

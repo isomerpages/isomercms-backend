@@ -45,7 +45,6 @@ export interface RawFileChangeInfo {
   raw_url: string
   // eslint-disable-next-line camelcase
   contents_url: string
-  patch: string
 }
 
 export interface IsomerCommitMessage {

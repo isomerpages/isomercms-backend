@@ -260,16 +260,21 @@ export default class ReviewRequestService {
       requestIdsViewed
     )
 
-    requestIdsToMarkAsViewed.forEach(async (requestId) => {
-      await this.reviewRequestView.create({
-        reviewRequestId: requestId,
-        siteId: site.id,
-        userId,
-        // This field represents the user opening the review request
-        // itself, which the user has not done so yet at this stage.
-        lastViewedAt: null,
-      })
-    })
+    await Promise.all(
+      // Using map here to allow creations to be done concurrently
+      // But we do not actually need the result of the view creation
+      requestIdsToMarkAsViewed.map(
+        async (requestId) =>
+          await this.reviewRequestView.create({
+            reviewRequestId: requestId,
+            siteId: site.id,
+            userId,
+            // This field represents the user opening the review request
+            // itself, which the user has not done so yet at this stage.
+            lastViewedAt: null,
+          })
+      )
+    )
   }
 
   updateReviewRequestLastViewedAt = async (

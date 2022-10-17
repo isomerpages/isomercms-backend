@@ -283,13 +283,16 @@ export default class ReviewRequestService {
     pullRequestNumber: number
   ): Promise<void | RequestNotFoundError> => {
     const { isomerUserId: userId } = sessionData
-    const reviewRequest = await this.getReviewRequest(site, pullRequestNumber)
+    const possibleReviewRequest = await this.getReviewRequest(
+      site,
+      pullRequestNumber
+    )
 
-    if (isIsomerError(reviewRequest)) {
-      return reviewRequest
+    if (isIsomerError(possibleReviewRequest)) {
+      return possibleReviewRequest
     }
 
-    const { id: reviewRequestId } = reviewRequest
+    const { id: reviewRequestId } = possibleReviewRequest
 
     await this.reviewRequestView.update(
       {
@@ -309,13 +312,16 @@ export default class ReviewRequestService {
     site: Site,
     pullRequestNumber: number
   ): Promise<void | RequestNotFoundError> => {
-    const reviewRequest = await this.getReviewRequest(site, pullRequestNumber)
+    const possibleReviewRequest = await this.getReviewRequest(
+      site,
+      pullRequestNumber
+    )
 
-    if (isIsomerError(reviewRequest)) {
-      return reviewRequest
+    if (isIsomerError(possibleReviewRequest)) {
+      return possibleReviewRequest
     }
 
-    const { id: reviewRequestId } = reviewRequest
+    const { id: reviewRequestId } = possibleReviewRequest
 
     await this.reviewRequestView.destroy({
       where: {

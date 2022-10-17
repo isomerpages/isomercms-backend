@@ -280,19 +280,10 @@ export default class ReviewRequestService {
   updateReviewRequestLastViewedAt = async (
     sessionData: UserWithSiteSessionData,
     site: Site,
-    pullRequestNumber: number
+    reviewRequest: ReviewRequest
   ): Promise<void | RequestNotFoundError> => {
     const { isomerUserId: userId } = sessionData
-    const possibleReviewRequest = await this.getReviewRequest(
-      site,
-      pullRequestNumber
-    )
-
-    if (isIsomerError(possibleReviewRequest)) {
-      return possibleReviewRequest
-    }
-
-    const { id: reviewRequestId } = possibleReviewRequest
+    const { id: reviewRequestId } = reviewRequest
 
     await this.reviewRequestView.update(
       {

@@ -12,6 +12,7 @@ import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
+  CommentItem,
   DashboardReviewRequestDto,
   EditedItemDto,
   FileType,
@@ -454,5 +455,68 @@ export default class ReviewRequestService {
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()
+  }
+
+  createComment = async (
+    sessionData: UserWithSiteSessionData,
+    pullRequestNumber: number,
+    message: string
+  ) => {
+    const { siteName, email } = sessionData
+
+    return this.apiService.createComment(
+      siteName,
+      pullRequestNumber,
+      email,
+      message
+    )
+  }
+
+  getComments = async (
+    sessionData: UserWithSiteSessionData,
+    site: Site,
+    pullRequestNumber: number
+  ): Promise<CommentItem[]> => {
+    const { siteName, isomerUserId: userId } = sessionData
+
+    // Find all review requests associated with the site
+    const comments = await this.apiService.getComments(
+      siteName,
+      pullRequestNumber
+    )
+
+    const requestsView = await this.reviewRequestView.findOne({
+      where: {
+        siteId: site.id,
+        userId,
+      },
+      include: [
+        {
+          model: ReviewRequest,
+          required: true,
+          include: [
+            {
+              model: ReviewMeta,
+              required: true,
+              where: {
+                pullRequestNumber,
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
+
+    return comments.map((comment) => {
+      const createdTime = new Date(comment.createdAt)
+      return {
+        user: comment.user,
+        message: comment.message,
+        createdAt: createdTime.getTime(),
+        isRead: viewedTime ? createdTime < viewedTime : false,
+      }
+    })
   }
 }

@@ -14,6 +14,8 @@ import SitesService from "@services/identity/SitesService"
 
 import QueueService, { MessageBody } from "../identity/QueueService"
 
+const SITE_LAUNCH_UPDATE_INTERVAL = 30000
+
 interface InfraServiceProps {
   sitesService: SitesService
   reposService: ReposService
@@ -336,7 +338,7 @@ export default class InfraService {
   }
 
   pollQueue = async () => {
-    setInterval(this.siteUpdate, 30000)
+    setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
   }
 
   siteUpdate = async () => {

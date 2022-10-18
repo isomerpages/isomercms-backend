@@ -8,7 +8,7 @@ const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 export const successNotification = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  logger.log(JSON.stringify(event))
+  logger.info(JSON.stringify(event))
 
   const sqs = new SQS({ region: AWS_REGION })
   const messageParams = {

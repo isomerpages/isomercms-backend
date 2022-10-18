@@ -19,6 +19,7 @@ import UsersService from "@root/services/identity/UsersService"
 import { isIsomerError, RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import {
+  CommentItem,
   DashboardReviewRequestDto,
   EditedItemDto,
   UpdateReviewRequestDto,
@@ -634,6 +635,52 @@ export class ReviewsRouter {
     return res.status(200).send()
   }
 
+  getComments: RequestHandler<
+    { siteName: string; requestId: number },
+    CommentItem[] | ResponseErrorBody,
+    never,
+    unknown,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
+    // Step 1: Check that the site exists
+    const site = await this.sitesService.getBySiteName(siteName)
+    if (!site) {
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Retrieve comments
+    const comments = await this.reviewRequestService.getComments(
+      userWithSiteSessionData,
+      site,
+      requestId
+    )
+
+    return res.status(200).json(comments)
+  }
+
+  createComment: RequestHandler<
+    { siteName: string; requestId: number },
+    string | ResponseErrorBody,
+    { message: string },
+    unknown,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { requestId } = req.params
+    const { message } = req.body
+    const { userWithSiteSessionData } = res.locals
+    await this.reviewRequestService.createComment(
+      userWithSiteSessionData,
+      requestId,
+      message
+    )
+
+    return res.status(200).send("OK")
+  }
+
   markReviewRequestCommentsAsViewed: RequestHandler<
     { siteName: string; requestId: number },
     string | ResponseErrorBody,
@@ -794,8 +841,16 @@ export class ReviewsRouter {
       "/:requestId/approve",
       attachReadRouteHandlerWrapper(this.approveReviewRequest)
     )
+    router.get(
+      "/:requestId/comments",
+      attachWriteRouteHandlerWrapper(this.getComments)
+    )
     router.post(
-      "/:requestId/viewedComments",
+      "/:requestId/comments",
+      attachWriteRouteHandlerWrapper(this.createComment)
+    )
+    router.post(
+      "/:requestId/comments/viewedComments",
       attachWriteRouteHandlerWrapper(this.markReviewRequestCommentsAsViewed)
     )
     router.post(

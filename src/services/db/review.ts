@@ -1,4 +1,9 @@
-import { RawFileChangeInfo, Commit, RawPullRequest } from "@root/types/github"
+import {
+  RawFileChangeInfo,
+  Commit,
+  RawPullRequest,
+  RawComment,
+} from "@root/types/github"
 
 import { isomerRepoAxiosInstance as axiosInstance } from "../api/AxiosInstance"
 
@@ -83,3 +88,38 @@ export const approvePullRequest = (
       },
     }
   )
+
+export const getComments = async (
+  siteName: string,
+  pullRequestNumber: number
+) => {
+  const rawComments = await axiosInstance
+    .get<RawComment[]>(`${siteName}/issues/${pullRequestNumber}/comments`)
+    .then(({ data }) => data)
+  return rawComments.map((rawComment) => {
+    const commentData = JSON.parse(rawComment.body)
+    const { user, message } = commentData
+    return {
+      user,
+      message,
+      createdAt: rawComment.created_at,
+    }
+  })
+}
+
+export const createComment = async (
+  siteName: string,
+  pullRequestNumber: number,
+  user: string,
+  message: string
+) => {
+  const stringifiedMessage = JSON.stringify({
+    user,
+    message,
+  })
+  return axiosInstance.post<void>(
+    `${siteName}/issues/${pullRequestNumber}/comments`,
+    // NOTE: only create body if a valid description is given
+    { body: stringifiedMessage }
+  )
+}

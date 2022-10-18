@@ -19,6 +19,7 @@ describe("Sites Router", () => {
     getSites: jest.fn(),
     getLastUpdated: jest.fn(),
     getStagingUrl: jest.fn(),
+    getSiteUrl: jest.fn(),
     getSiteInfo: jest.fn(),
   }
 
@@ -42,6 +43,10 @@ describe("Sites Router", () => {
   subrouter.get(
     "/:siteName/stagingUrl",
     attachReadRouteHandlerWrapper(router.getStagingUrl)
+  )
+  subrouter.get(
+    "/:siteName/siteUrl",
+    attachReadRouteHandlerWrapper(router.getSiteUrl)
   )
   subrouter.get(
     "/:siteName/info",
@@ -92,8 +97,24 @@ describe("Sites Router", () => {
         .get(`/${mockSiteName}/stagingUrl`)
         .expect(200)
 
-      expect(resp.body).toStrictEqual({ possibleStagingUrl: stagingUrl })
+      expect(resp.body).toStrictEqual({ stagingUrl })
       expect(mockSitesService.getStagingUrl).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
+    })
+  })
+
+  describe("getSiteUrl", () => {
+    it("returns the site's site URL", async () => {
+      const siteUrl = "prod-url"
+      mockSitesService.getSiteUrl.mockResolvedValueOnce(siteUrl)
+
+      const resp = await request(app)
+        .get(`/${mockSiteName}/siteUrl`)
+        .expect(200)
+
+      expect(resp.body).toStrictEqual({ siteUrl })
+      expect(mockSitesService.getSiteUrl).toHaveBeenCalledWith(
         mockUserWithSiteSessionData
       )
     })

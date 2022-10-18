@@ -47,7 +47,7 @@ States:
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
             Parameters:
-              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-hello"
+              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
               Payload.$: $
             Retry:
               - ErrorEquals:

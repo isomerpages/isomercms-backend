@@ -13,7 +13,6 @@ plugins:
 provider:
   name: aws
   runtime: nodejs14.x
-  region: ${env:AWS_REGION}
   environment:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}

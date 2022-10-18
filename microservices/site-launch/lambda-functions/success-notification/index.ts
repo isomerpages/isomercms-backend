@@ -13,7 +13,7 @@ export const successNotification = async (
   const sqs = new SQS({ region: AWS_REGION })
   const messageParams = {
     QueueUrl: INCOMING_QUEUE_URL || "",
-    MessageBody: JSON.stringify({ ...event, success: true }),
+    MessageBody: JSON.stringify(event),
   }
 
   sqs.sendMessage(messageParams, (err, data) => {

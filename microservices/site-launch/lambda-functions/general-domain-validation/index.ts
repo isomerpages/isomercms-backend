@@ -77,6 +77,6 @@ export const generalDomainValidation = async (
     }
   } catch (error) {
     console.error(error)
-    throw error
+    throw new Error(JSON.stringify({ ...event, success: false }))
   }
 }

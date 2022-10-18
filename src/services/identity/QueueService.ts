@@ -16,6 +16,7 @@ export interface MessageBody {
       target: string
     }
   ]
+  success?: boolean
 }
 
 export default class QueueService {

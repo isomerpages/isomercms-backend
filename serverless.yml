@@ -13,6 +13,10 @@ plugins:
 provider:
   name: aws
   runtime: nodejs14.x
+  environment:
+    INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
+    OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
+    AWS_REGION: ${env:AWS_REGION}
 
 custom:
   stepFunctionsLocal:
@@ -36,6 +40,10 @@ functions:
     handler: handler.generalDomainValidation
   primaryDomainValidation:
     handler: handler.primaryDomainValidation
+  successNotification:
+    handler: handler.successNotification
+  failureNotification:
+    handler: handler.failureNotification
 
 stepFunctions:
   stateMachines:

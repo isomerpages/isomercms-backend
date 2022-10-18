@@ -44,3 +44,10 @@ export interface ReviewRequestDto {
 export interface UpdateReviewRequestDto {
   reviewers: string[]
 }
+
+export interface CommentItem {
+  user: string
+  createdAt: number
+  message: string
+  isRead: boolean
+}

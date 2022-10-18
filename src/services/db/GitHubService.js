@@ -51,6 +51,14 @@ class GitHubService {
     return ReviewApi.approvePullRequest(siteName, pullRequestNumber)
   }
 
+  async getComments(siteName, pullRequestNumber) {
+    return ReviewApi.getComments(siteName, pullRequestNumber)
+  }
+
+  async createComment(siteName, pullRequestNumber, user, message) {
+    return ReviewApi.createComment(siteName, pullRequestNumber, user, message)
+  }
+
   getFilePath({ siteName, fileName, directoryName }) {
     if (!directoryName)
       return `${siteName}/contents/${encodeURIComponent(fileName)}`

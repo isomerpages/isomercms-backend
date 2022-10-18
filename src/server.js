@@ -58,15 +58,7 @@ const helmet = require("helmet")
 const createError = require("http-errors")
 
 // Env vars
-const { FRONTEND_URL, NODE_ENV, LOCAL_SITE_ACCESS_TOKEN } = process.env
-const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
-
-const tokenStore = IS_LOCAL_DEV
-  ? {
-      getToken: (_apiTokenName) => LOCAL_SITE_ACCESS_TOKEN,
-    }
-  : new TokenStore()
-
+const { FRONTEND_URL } = process.env
 // Import middleware
 
 // Import routes
@@ -96,7 +88,6 @@ const sitesService = new SitesService({
   configYmlService,
   usersService,
   isomerAdminsService,
-  tokenStore,
 })
 const infraService = new InfraService({
   sitesService,

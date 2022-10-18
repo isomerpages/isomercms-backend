@@ -37,7 +37,6 @@ import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import _SitesService from "@services/identity/SitesService"
-import TokenStore from "@services/identity/TokenStore"
 import UsersService from "@services/identity/UsersService"
 
 const MockRepository = {
@@ -63,17 +62,12 @@ const MockIsomerAdminsService = {
   getByUserId: jest.fn(),
 }
 
-const MockTokenStore = {
-  getToken: jest.fn(),
-}
-
 const SitesService = new _SitesService({
   siteRepository: (MockRepository as unknown) as ModelStatic<Site>,
   gitHubService: (MockGithubService as unknown) as GitHubService,
   configYmlService: (MockConfigYmlService as unknown) as ConfigYmlService,
   usersService: (MockUsersService as unknown) as UsersService,
   isomerAdminsService: (MockIsomerAdminsService as unknown) as IsomerAdminsService,
-  tokenStore: (MockTokenStore as unknown) as TokenStore,
 })
 
 const mockSiteName = "some site name"

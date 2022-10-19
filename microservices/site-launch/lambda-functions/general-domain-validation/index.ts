@@ -16,7 +16,8 @@ import {
 
 interface GeneralDomainValidationLambdaParams {
   appId: string
-  primaryDomain: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
 }
 
 interface GeneralDomainValidationLambdaResponse {
@@ -42,7 +43,7 @@ export const generalDomainValidation = async (
   })
 
   // Validation check
-  const { appId, primaryDomain } = event
+  const { appId, primaryDomainSource: primaryDomain } = event
 
   if (!appId) throw new Error(`appId was undefined`)
   if (!primaryDomain) throw new Error(`primaryDomain was undefined`)

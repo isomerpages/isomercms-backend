@@ -889,6 +889,84 @@ export class ReviewsRouter {
     return res.status(200).send()
   }
 
+  deleteReviewRequestApproval: RequestHandler<
+    { siteName: string; requestId: number },
+    ResponseErrorBody,
+    never,
+    unknown,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "approveReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "approveReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 4: Check if the user is a reviewer of the RR
+    const { reviewers } = possibleReviewRequest
+    const isReviewer = _.some(
+      reviewers,
+      (user) => user.email === userWithSiteSessionData.email
+    )
+
+    if (!isReviewer) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "approveReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 5: Delete review request approval
+    await this.reviewRequestService.deleteReviewRequestApproval(
+      possibleReviewRequest
+    )
+    return res.status(200).send()
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
@@ -925,6 +1003,10 @@ export class ReviewsRouter {
     router.post(
       "/:requestId/comments",
       attachWriteRouteHandlerWrapper(this.createComment)
+    )
+    router.delete(
+      "/:requestId/approve",
+      attachReadRouteHandlerWrapper(this.deleteReviewRequestApproval)
     )
     router.post(
       "/:requestId/comments/viewedComments",

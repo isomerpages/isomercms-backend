@@ -17,13 +17,13 @@ import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import SitesService from "@root/services/identity/SitesService"
 import UsersService from "@root/services/identity/UsersService"
 import { isIsomerError, RequestHandler } from "@root/types"
-import { ResponseErrorBody } from "@root/types/dto /error"
+import { ResponseErrorBody } from "@root/types/dto/error"
 import {
   DashboardReviewRequestDto,
   EditedItemDto,
-  RequestChangeDto,
+  UpdateReviewRequestDto,
   ReviewRequestDto,
-} from "@root/types/dto /review"
+} from "@root/types/dto/review"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
 export class ReviewsRouter {
@@ -333,7 +333,7 @@ export class ReviewsRouter {
   updateReviewRequest: RequestHandler<
     { siteName: string; requestId: number },
     ResponseErrorBody,
-    RequestChangeDto,
+    UpdateReviewRequestDto,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
@@ -397,7 +397,7 @@ export class ReviewsRouter {
     }
 
     // Step 4: Check that all new reviewers are admins of the site
-    const { reviewers, title, description } = req.body
+    const { reviewers } = req.body
     const collaborators = await this.collaboratorsService.list(siteName)
     const collaboratorMappings = Object.fromEntries(
       reviewers.map((reviewer) => [reviewer, true])
@@ -420,14 +420,11 @@ export class ReviewsRouter {
     }
 
     // Step 5: Update the rr with the appropriate details
-    return this.reviewRequestService.updateReviewRequest(
-      possibleReviewRequest,
-      {
-        title,
-        description,
-        reviewers: verifiedReviewers,
-      }
-    )
+    await this.reviewRequestService.updateReviewRequest(possibleReviewRequest, {
+      reviewers: verifiedReviewers,
+    })
+
+    return res.status(200).send()
   }
 
   mergeReviewRequest: RequestHandler<

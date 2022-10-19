@@ -55,15 +55,18 @@ export class NotificationOnEditHandler {
     if (reviewRequests.length === 0) return
     // For now, we only have 1 active review request
     const reviewRequest = reviewRequests[0]
-    users.forEach(async (user: User & { SiteMember: SiteMember }) => {
-      if (user.id.toString() === userId) return // Don't create notification for the source user
-      const { SiteMember: siteMember } = user
-      await this.notificationsService.create({
-        siteMember,
-        link: "TODO",
-        notificationType: "updated_request",
-        notificationSourceUsername: email,
+
+    await Promise.all(
+      users.map(async (user: User & { SiteMember: SiteMember }) => {
+        if (user.id.toString() === userId) return // Don't create notification for the source user
+        const { SiteMember: siteMember } = user
+        await this.notificationsService.create({
+          siteMember,
+          link: "TODO",
+          notificationType: "updated_request",
+          notificationSourceUsername: email,
+        })
       })
-    })
+    )
   }
 }

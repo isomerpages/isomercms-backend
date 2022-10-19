@@ -17,8 +17,8 @@ import {
 
 interface PrimaryDomainValidationLambdaParams {
   appId: string
-  primaryDomain: string
-  cloudfrontDomain: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
 }
 
 interface PrimaryDomainValidationLambdaResponse {
@@ -39,11 +39,15 @@ export const primaryDomainValidation = async (
   })
 
   // Validation check
-  const { appId, primaryDomain, cloudfrontDomain } = event
+  const {
+    appId,
+    primaryDomainSource,
+    primaryDomainTarget: cloudfrontDomain,
+  } = event
 
   const params: GetDomainAssociationCommandInput = {
     appId,
-    domainName: primaryDomain,
+    domainName: primaryDomainSource,
   }
   const getDomainAssociationCommand = new GetDomainAssociationCommand(params)
 
@@ -56,30 +60,30 @@ export const primaryDomainValidation = async (
     const domainAssociationStatus = data.domainAssociation?.domainStatus
     if (domainAssociationStatus !== DomainStatus.AVAILABLE) {
       throw new Error(
-        `Amplify app with id ${appId} and domain ${primaryDomain} has not completed primary domain validation step.  Current status: ${domainAssociationStatus}`
+        `Amplify app with id ${appId} and domain ${primaryDomainSource} has not completed primary domain validation step.  Current status: ${domainAssociationStatus}`
       )
     }
     console.log(
-      `Amplify app with id ${appId} and domain ${primaryDomain} successfully completed primary domain validation step with status ${domainAssociationStatus}`
+      `Amplify app with id ${appId} and domain ${primaryDomainSource} successfully completed primary domain validation step with status ${domainAssociationStatus}`
     )
 
     // Check if the primary DNS record was set correctly. This is necessary because Amplify doesn't actually check if the
     // primary domain record has been pointed correctly.
-    const cnameRecords = await dns.promises.resolveCname(primaryDomain)
+    const cnameRecords = await dns.promises.resolveCname(primaryDomainSource)
     if (!cnameRecords.includes(cloudfrontDomain)) {
       throw new Error(
-        `Website administrator has not set up the primary domain ${primaryDomain} to point to the correct Cloudfront domain name`
+        `Website administrator has not set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
       )
     }
 
     console.log(
-      `Website administrator has successfully set up the primary domain ${primaryDomain} to point to the correct Cloudfront domain name`
+      `Website administrator has successfully set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
     )
     return {
       lambdaType: SITE_LAUNCH_LAMBDA_TYPE.PRIMARY_DOMAIN_VALIDATION,
       status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
       appId,
-      primaryDomain,
+      primaryDomain: primaryDomainSource,
     }
   } catch (error) {
     console.error(error)

@@ -15,8 +15,8 @@ import {
 
 interface GeneralDomainValidationLambdaParams {
   appId: string
-  primaryDomain: string
-  cloudfrontDomain: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
 }
 
 interface GeneralDomainValidationLambdaResponse {
@@ -42,7 +42,7 @@ export const generalDomainValidation = async (
   })
 
   // Validation check
-  const { appId, primaryDomain } = event
+  const { appId, primaryDomainSource: primaryDomain } = event
 
   const params: GetDomainAssociationCommandInput = {
     appId,

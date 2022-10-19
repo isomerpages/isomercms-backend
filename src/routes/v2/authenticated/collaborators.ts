@@ -9,7 +9,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
 import { RequestHandler } from "@root/types"
-import { UserDto } from "@root/types/dto /review"
+import { UserDto } from "@root/types/dto/review"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 
 interface CollaboratorsRouterProps {

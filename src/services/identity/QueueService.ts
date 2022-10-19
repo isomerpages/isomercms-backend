@@ -14,6 +14,7 @@ export interface MessageBody {
     {
       source: string
       target: string
+      type: string
     }
   ]
   success?: boolean

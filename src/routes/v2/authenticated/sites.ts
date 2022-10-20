@@ -71,7 +71,26 @@ export class SitesRouter {
     if (possibleStagingUrl instanceof BaseIsomerError) {
       return res.status(404).json({ message: possibleStagingUrl.message })
     }
-    return res.status(200).json({ possibleStagingUrl })
+    return res.status(200).json({ stagingUrl: possibleStagingUrl })
+  }
+
+  getSiteUrl: RequestHandler<
+    { siteName: string },
+    unknown,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const possibleSiteUrl = await this.sitesService.getSiteUrl(
+      userWithSiteSessionData
+    )
+
+    // Check for error and throw
+    if (possibleSiteUrl instanceof BaseIsomerError) {
+      return res.status(404).json({ message: possibleSiteUrl.message })
+    }
+    return res.status(200).json({ siteUrl: possibleSiteUrl })
   }
 
   getSiteInfo: RequestHandler<
@@ -107,6 +126,11 @@ export class SitesRouter {
       "/:siteName/stagingUrl",
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getStagingUrl)
+    )
+    router.get(
+      "/:siteName/siteUrl",
+      attachSiteHandler,
+      attachReadRouteHandlerWrapper(this.getSiteUrl)
     )
     router.get(
       "/:siteName/info",

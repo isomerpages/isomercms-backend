@@ -330,6 +330,21 @@ class SitesService {
     return staging
   }
 
+  async getSiteUrl(
+    sessionData: UserWithSiteSessionData
+  ): Promise<string | NotFoundError> {
+    const siteUrls = await this.getUrlsOfSite(sessionData)
+    if (siteUrls instanceof NotFoundError) {
+      return new NotFoundError(
+        `${sessionData.siteName} does not have a site url`
+      )
+    }
+
+    const { prod } = siteUrls
+
+    return prod
+  }
+
   async create(
     createParams: Partial<Site> & {
       name: Site["name"]

@@ -63,6 +63,7 @@ class NotificationsService {
       order: [
         ["first_read_time", "DESC NULLS FIRST"],
         ["priority", "ASC"],
+        ["created_at", "DESC"],
       ],
       include: [
         {

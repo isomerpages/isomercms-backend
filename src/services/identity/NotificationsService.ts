@@ -1,4 +1,4 @@
-import { FindOptions, ModelStatic, Op } from "sequelize"
+import { FindOptions, ModelStatic, Op, Sequelize } from "sequelize"
 
 import { Notification, Site, Repo, SiteMember } from "@database/models"
 import {
@@ -62,8 +62,14 @@ class NotificationsService {
       },
       order: [
         ["first_read_time", "DESC NULLS FIRST"],
-        ["priority", "ASC"],
+        [
+          Sequelize.literal(
+            "CASE WHEN first_read_time IS NULL THEN priority ELSE 999 END"
+          ),
+          "ASC",
+        ], // Specifically to make unread high priority notifications first
         ["created_at", "DESC"],
+        ["priority", "ASC"],
       ],
       include: [
         {

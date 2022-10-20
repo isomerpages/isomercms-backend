@@ -10,6 +10,9 @@ import {
   Repo,
   Deployment,
   IsomerAdmin,
+  ReviewMeta,
+  ReviewRequest,
+  Reviewer,
 } from "@database/models"
 
 const sequelize = new Sequelize({
@@ -25,6 +28,9 @@ sequelize.addModels([
   Repo,
   Deployment,
   IsomerAdmin,
+  ReviewMeta,
+  ReviewRequest,
+  Reviewer,
 ])
 
 // eslint-disable-next-line import/prefer-default-export

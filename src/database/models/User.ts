@@ -13,7 +13,10 @@ import {
 import { Site } from "@database/models/Site"
 import { SiteMember } from "@database/models/SiteMember"
 
+import { ReviewRequest } from "./ReviewRequest"
+
 @Table({ tableName: "users", paranoid: true })
+// eslint-disable-next-line import/prefer-default-export
 export class User extends Model {
   @Column({
     autoIncrement: true,
@@ -73,4 +76,7 @@ export class User extends Model {
     as: "sites_created",
   })
   sitesCreated?: Site[]
+
+  @HasMany(() => ReviewRequest)
+  reviewRequests?: ReviewRequest[]
 }

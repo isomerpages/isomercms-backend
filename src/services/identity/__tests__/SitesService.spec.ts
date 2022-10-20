@@ -502,6 +502,51 @@ describe("SitesService", () => {
     })
   })
 
+  describe("getSiteUrl", () => {
+    const stagingUrl = "https://repo-staging.netlify.app"
+    const productionUrl = "https://repo-prod.netlify.app"
+
+    it("should return the site URL if it is available", async () => {
+      // Arrange
+      const mockSiteWithDeployment = {
+        ...mockSite,
+        deployment: { stagingUrl, productionUrl },
+      }
+
+      MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
+
+      // Act
+      const actual = await SitesService.getSiteUrl(
+        mockSessionDataEmailUserWithSite
+      )
+
+      // Assert
+      expect(actual).toEqual(productionUrl)
+      expect(MockRepository.findOne).toHaveBeenCalled()
+    })
+
+    it("should return an error when the site url for a repo is not found", async () => {
+      // Arrange
+      MockRepository.findOne.mockResolvedValueOnce(null)
+      MockConfigYmlService.read.mockResolvedValueOnce({
+        content: {},
+      })
+      MockGithubService.getRepoInfo.mockResolvedValueOnce({
+        description: "",
+      })
+
+      // Act
+      await expect(
+        SitesService.getSiteUrl(mockUserWithSiteSessionData)
+      ).resolves.toBeInstanceOf(NotFoundError)
+
+      // Assert
+      expect(MockRepository.findOne).toHaveBeenCalled()
+      expect(MockConfigYmlService.read).toHaveBeenCalled()
+      expect(MockGithubService.getRepoInfo).toHaveBeenCalled()
+    })
+  })
+
   describe("getSiteInfo", () => {
     const stagingUrl = "https://repo-staging.netlify.app"
     const productionUrl = "https://repo-prod.netlify.app"

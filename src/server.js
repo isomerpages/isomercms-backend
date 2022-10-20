@@ -111,6 +111,13 @@ const collaboratorsService = new CollaboratorsService({
   usersService,
   whitelist: Whitelist,
 })
+const reviewRequestService = new ReviewRequestService(
+  gitHubService,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta
+)
 
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({
@@ -126,6 +133,7 @@ const reviewRouter = new ReviewsRouter(
   sitesService,
   collaboratorsService
 )
+
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
   usersService,
@@ -143,6 +151,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authorizationMiddleware,
   reviewRouter,
 })
+
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authorizationMiddleware,
   authenticationMiddleware,

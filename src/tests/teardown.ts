@@ -31,6 +31,9 @@ const teardownDb = async () => {
   await sequelize.query(
     'DROP TYPE IF EXISTS "public"."enum_sites_job_status" CASCADE;'
   )
+  await sequelize.query(
+    'DROP TYPE IF EXISTS "public"."enum_review_requests_review_status" CASCADE;'
+  )
   await sequelize.close()
   console.log("done, exiting...")
 }

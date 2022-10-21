@@ -17,7 +17,7 @@ provider:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     AWS_REGION: ${env:AWS_REGION}
-    IS_PROD: ${env:IS_SITE_LAUNCH_DEV}
+    NODE_ENV: ${env:NODE_DEV}
 
 custom:
   stepFunctionsLocal:

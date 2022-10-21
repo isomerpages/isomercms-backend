@@ -5,11 +5,11 @@ import AWS, { Lambda } from "aws-sdk"
 import { MessageBody } from "@root/services/identity/QueueService"
 
 export const stepFunctionsTrigger = async (event: MessageBody) => {
-  const { AWS_REGION, AWS_ACCOUNT_NUMBER, IS_SITE_LAUNCH_DEV } = process.env
+  const { AWS_REGION, AWS_ACCOUNT_NUMBER, NODE_ENV } = process.env
+  const stepFunctionsParams =
+    NODE_ENV === "LOCAL_DEV" ? { endpoint: "http://localhost:8083" } : {}
   try {
-    const stepFunctions = new AWS.StepFunctions({
-      endpoint: IS_SITE_LAUNCH_DEV ?? "http://localhost:8083",
-    })
+    const stepFunctions = new AWS.StepFunctions(stepFunctionsParams)
 
     const stateMachineArn = `arn:aws:states:${AWS_REGION}:${AWS_ACCOUNT_NUMBER}:stateMachine:siteLaunch`
 
@@ -27,9 +27,10 @@ export const stepFunctionsTrigger = async (event: MessageBody) => {
   } catch (err) {
     const lambda = new AWS.Lambda({
       region: AWS_REGION,
-      endpoint: IS_SITE_LAUNCH_DEV // todo change to some env var
-        ? "http://localhost:3002"
-        : `https://lambda.${AWS_REGION}.amazonaws.com`,
+      endpoint:
+        NODE_ENV === "LOCAL_DEV" // todo change to some env var
+          ? "http://localhost:3002"
+          : `https://lambda.${AWS_REGION}.amazonaws.com`,
     })
     const params: Lambda.Types.InvocationRequest = {
       FunctionName: `isomercms-dev-failureNotification`,

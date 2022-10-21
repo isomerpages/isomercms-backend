@@ -4,7 +4,6 @@ import logger from "@logger/logger"
 
 import {
   User,
-  Site,
   Whitelist,
   IsomerAdmin,
   Notification,
@@ -18,8 +17,6 @@ import { mailer } from "@services/utilServices/MailClient"
 import AuthService from "./AuthService"
 import IsomerAdminsService from "./IsomerAdminsService"
 import NotificationsService from "./NotificationsService"
-import SitesService from "./SitesService"
-import TokenStore from "./TokenStore"
 import UsersService from "./UsersService"
 
 const { OTP_EXPIRY, OTP_SECRET, NODE_ENV } = process.env

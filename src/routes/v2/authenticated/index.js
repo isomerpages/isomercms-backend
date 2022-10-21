@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const {
@@ -15,6 +17,7 @@ const getAuthenticatedSubrouter = ({
   usersService,
   collaboratorsService,
   authorizationMiddleware,
+  reviewRouter,
 }) => {
   const netlifyTomlService = new NetlifyTomlService()
 
@@ -37,7 +40,13 @@ const getAuthenticatedSubrouter = ({
     "/sites/:siteName/collaborators",
     collaboratorsRouter.getRouter()
   )
-  authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
+  const baseSitesV2Router = sitesV2Router.getRouter()
+  const sitesRouterWithReviewRequest = baseSitesV2Router.use(
+    "/:siteName/review",
+    attachSiteHandler,
+    reviewRouter.getRouter()
+  )
+  authenticatedSubrouter.use("/sites", sitesRouterWithReviewRequest)
   authenticatedSubrouter.use("/user", usersRouter.getRouter())
   authenticatedSubrouter.use("/netlify-toml", netlifyTomlV2Router.getRouter())
 

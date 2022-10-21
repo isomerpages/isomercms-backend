@@ -5,5 +5,5 @@ export type RequestHandler<
   ResBody = unknown,
   ReqBody = unknown,
   ReqQuery = unknown,
-  Locals = Record<string, unknown>
+  Locals extends Record<string, unknown> = Record<string, unknown>
 > = ExpressHandler<P, ResBody, ReqBody, ReqQuery, Locals>

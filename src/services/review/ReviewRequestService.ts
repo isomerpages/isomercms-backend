@@ -71,6 +71,10 @@ export default class ReviewRequestService {
       const fullPath = filename.split("/")
       const items = contents_url.split("?ref=")
       // NOTE: We have to compute sha this way rather than
+      // taking the file sha.
+      // This is because the sha present on the file is
+      // a checksum of the files contents.
+      // And the actual commit sha is given by the ref param
       const sha = items[items.length - 1]
 
       return {

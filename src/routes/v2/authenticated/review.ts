@@ -382,7 +382,7 @@ export class ReviewsRouter {
     const { requestor } = possibleReviewRequest
     if (requestor.email !== userWithSiteSessionData.email) {
       logger.error({
-        message: "Insufficient to update review request",
+        message: "Insufficient permissions to update review request",
         method: "updateReviewRequest",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,

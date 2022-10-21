@@ -56,6 +56,10 @@ class NotificationsService {
     userId: string
     findOptions?: FindOptions<Notification>
   }) {
+    // We want separate sorting for unread notifications and read notifications - for unread, high priority notifications should go first
+    // while for read, newer notifications should be displayed first, regardless of priority
+    // The second sort criteria only affects unread notifications and is used to allow high priority notifications to be sorted first (priority > created_at)
+    // Read notifications are unaffected by the second sort criteria and will continue to be sorted in the remaining order (first_read_time > created_at > priority)
     return this.repository.findAll({
       where: {
         user_id: userId,
@@ -67,9 +71,9 @@ class NotificationsService {
             "CASE WHEN first_read_time IS NULL THEN priority ELSE 999 END"
           ),
           "ASC",
-        ], // Specifically to make unread high priority notifications first
+        ],
         ["created_at", "DESC"],
-        ["priority", "ASC"],
+        ["priority", "ASC"], // Low numbers indicate a higher priority
       ],
       include: [
         {

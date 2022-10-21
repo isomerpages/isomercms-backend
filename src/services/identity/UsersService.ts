@@ -81,7 +81,7 @@ class UsersService {
     })
   }
 
-  async isSiteAdmin(userId: string, siteName: string) {
+  async getSiteAdmin(userId: string, siteName: string) {
     return this.repository.findOne({
       where: { id: userId, role: "ADMIN" },
       include: [

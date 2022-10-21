@@ -82,7 +82,6 @@ export class FormsgRouter {
 
       // 3. Use service to create site
       const { deployment } = await this.infraService.createSite(
-        submissionId,
         foundUser,
         siteName,
         repoName

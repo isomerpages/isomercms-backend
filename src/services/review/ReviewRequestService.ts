@@ -5,6 +5,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
+import { ReviewRequestStatus } from "@root/constants"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
@@ -337,7 +338,7 @@ export default class ReviewRequestService {
   // NOTE: The semantics of our reviewing system is slightly different from github.
   // The approval is tied to the request, rather than the user.
   approveReviewRequest = async (reviewRequest: ReviewRequest) => {
-    reviewRequest.reviewStatus = "APPROVED"
+    reviewRequest.reviewStatus = ReviewRequestStatus.Approved
     await reviewRequest.save()
   }
 
@@ -346,7 +347,7 @@ export default class ReviewRequestService {
     const { pullRequestNumber } = reviewRequest.reviewMeta
     await this.apiService.closeReviewRequest(siteName, pullRequestNumber)
 
-    reviewRequest.reviewStatus = "CLOSED"
+    reviewRequest.reviewStatus = ReviewRequestStatus.Closed
     await reviewRequest.save()
   }
 
@@ -359,7 +360,7 @@ export default class ReviewRequestService {
     await this.apiService.approvePullRequest(siteName, pullRequestNumber)
     await this.apiService.mergePullRequest(siteName, pullRequestNumber)
 
-    reviewRequest.reviewStatus = "MERGED"
+    reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()
   }
 }

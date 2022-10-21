@@ -1,3 +1,4 @@
+import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
@@ -6,6 +7,7 @@ import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
 import { ReviewRequestStatus } from "@root/constants"
+import { ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
@@ -15,6 +17,7 @@ import {
   FileType,
   ReviewRequestDto,
 } from "@root/types/dto/review"
+import { isIsomerError } from "@root/types/error"
 import { Commit, fromGithubCommitMessage } from "@root/types/github"
 import { RequestChangeInfo } from "@root/types/review"
 import * as ReviewApi from "@services/db/review"
@@ -40,18 +43,22 @@ export default class ReviewRequestService {
 
   private readonly reviewMeta: ModelStatic<ReviewMeta>
 
+  private readonly reviewRequestView: ModelStatic<ReviewRequestView>
+
   constructor(
     apiService: typeof ReviewApi,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,
-    reviewMeta: ModelStatic<ReviewMeta>
+    reviewMeta: ModelStatic<ReviewMeta>,
+    reviewRequestView: ModelStatic<ReviewRequestView>
   ) {
     this.apiService = apiService
     this.users = users
     this.repository = repository
     this.reviewers = reviewers
     this.reviewMeta = reviewMeta
+    this.reviewRequestView = reviewRequestView
   }
 
   compareDiff = async (
@@ -159,9 +166,11 @@ export default class ReviewRequestService {
   }
 
   listReviewRequest = async (
-    { siteName }: UserWithSiteSessionData,
+    sessionData: UserWithSiteSessionData,
     site: Site
   ): Promise<DashboardReviewRequestDto[]> => {
+    const { siteName, isomerUserId: userId } = sessionData
+
     // Find all review requests associated with the site
     const requests = await this.repository.findAll({
       where: {
@@ -194,6 +203,16 @@ export default class ReviewRequestService {
           created_at,
         } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
 
+        // It is the user's first view if the review request views table
+        // does not contain a record for the user and the review request
+        const isFirstView = !(await this.reviewRequestView.count({
+          where: {
+            reviewId: req.id,
+            siteId: site.id,
+            userId,
+          },
+        }))
+
         return {
           id: pullRequestNumber,
           author: req.requestor.email || "Unknown user",
@@ -204,11 +223,103 @@ export default class ReviewRequestService {
           createdAt: new Date(created_at).getTime(),
           // TODO!
           newComments: 0,
-          // TODO!
-          firstView: false,
+          firstView: isFirstView,
         }
       })
     )
+  }
+
+  markAllReviewRequestsAsViewed = async (
+    sessionData: UserWithSiteSessionData,
+    site: Site
+  ): Promise<void> => {
+    const { isomerUserId: userId } = sessionData
+
+    const requestsViewed = await this.reviewRequestView.findAll({
+      where: {
+        siteId: site.id,
+        userId,
+      },
+    })
+
+    const allActiveRequests = await this.repository.findAll({
+      where: {
+        siteId: site.id,
+        // NOTE: Closed and merged review requests would not have an
+        // entry in the review request views table
+        reviewStatus: ["OPEN", "APPROVED"],
+      },
+    })
+
+    const requestIdsViewed = requestsViewed.map(
+      (request) => request.reviewRequestId
+    )
+    const allActiveRequestIds = allActiveRequests.map((request) => request.id)
+    const requestIdsToMarkAsViewed = _.difference(
+      allActiveRequestIds,
+      requestIdsViewed
+    )
+
+    await Promise.all(
+      // Using map here to allow creations to be done concurrently
+      // But we do not actually need the result of the view creation
+      requestIdsToMarkAsViewed.map(
+        async (requestId) =>
+          await this.reviewRequestView.create({
+            reviewRequestId: requestId,
+            siteId: site.id,
+            userId,
+            // This field represents the user opening the review request
+            // itself, which the user has not done so yet at this stage.
+            lastViewedAt: null,
+          })
+      )
+    )
+  }
+
+  updateReviewRequestLastViewedAt = async (
+    sessionData: UserWithSiteSessionData,
+    site: Site,
+    reviewRequest: ReviewRequest
+  ): Promise<void | RequestNotFoundError> => {
+    const { isomerUserId: userId } = sessionData
+    const { id: reviewRequestId } = reviewRequest
+
+    await this.reviewRequestView.update(
+      {
+        lastViewedAt: new Date(),
+      },
+      {
+        where: {
+          reviewRequestId,
+          siteId: site.id,
+          userId,
+        },
+      }
+    )
+  }
+
+  deleteAllReviewRequestViews = async (
+    site: Site,
+    pullRequestNumber: number
+  ): Promise<void | RequestNotFoundError> => {
+    const possibleReviewRequest = await this.getReviewRequest(
+      site,
+      pullRequestNumber
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      return possibleReviewRequest
+    }
+
+    const { id: reviewRequestId } = possibleReviewRequest
+
+    await this.reviewRequestView.destroy({
+      where: {
+        reviewRequestId,
+        siteId: site.id,
+      },
+    })
   }
 
   getReviewRequest = async (site: Site, pullRequestNumber: number) => {

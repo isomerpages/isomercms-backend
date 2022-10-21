@@ -41,8 +41,6 @@ export interface ReviewRequestDto {
   changedItems: EditedItemDto[]
 }
 
-export interface RequestChangeDto {
-  title: string
-  description?: string
+export interface UpdateReviewRequestDto {
   reviewers: string[]
 }

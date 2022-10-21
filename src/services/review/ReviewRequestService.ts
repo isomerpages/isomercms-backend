@@ -14,7 +14,7 @@ import {
   EditedItemDto,
   FileType,
   ReviewRequestDto,
-} from "@root/types/dto /review"
+} from "@root/types/dto/review"
 import { Commit, fromGithubCommitMessage } from "@root/types/github"
 import { RequestChangeInfo } from "@root/types/review"
 import * as ReviewApi from "@services/db/review"
@@ -307,36 +307,13 @@ export default class ReviewRequestService {
     }
   }
 
-  /**
-   * Updates the review request with provided details.
-   * Note that the semantics for updating the review request description
-   * is as follows:
-   *
-   * 1. If the body is `undefined`, we **do not** update it.
-   * 2. If the body is `""` (an empty string), we update the\
-   * github pull request description to be empty too.
-   * 3. Otherwise, we just write through to github.
-   */
   updateReviewRequest = async (
     reviewRequest: ReviewRequest,
-    { title, description, reviewers }: RequestChangeInfo
+    { reviewers }: RequestChangeInfo
   ) => {
     // Update db state with new reviewers
-    reviewRequest.reviewers = reviewers
-    const savePromise = reviewRequest.save()
-
-    const siteName = reviewRequest.site.name
-    const { pullRequestNumber } = reviewRequest.reviewMeta
-
-    // Update github state
-    const githubUpdatePromise = this.apiService.updatePullRequest(
-      siteName,
-      pullRequestNumber,
-      title,
-      description
-    )
-
-    await Promise.all([savePromise, githubUpdatePromise])
+    reviewRequest.$set("reviewers", reviewers)
+    await reviewRequest.save()
   }
 
   // NOTE: The semantics of our reviewing system is slightly different from github.

@@ -11,7 +11,5 @@ export interface FileChangeInfo
 }
 
 export interface RequestChangeInfo {
-  title: string
-  description?: string
   reviewers: User[]
 }

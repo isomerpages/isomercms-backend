@@ -37,12 +37,14 @@ import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
+import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
 import { AuthorizationMiddleware } from "./middleware/authorization"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
+import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
@@ -135,6 +137,14 @@ const collaboratorsService = new CollaboratorsService({
   usersService,
   whitelist: Whitelist,
 })
+const reviewRequestService = new ReviewRequestService(
+  gitHubService,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta
+)
+
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,
@@ -143,6 +153,12 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   collaboratorsService,
 })
 
+const reviewRouter = new ReviewsRouter(
+  reviewRequestService,
+  usersService,
+  sitesService,
+  collaboratorsService
+)
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
   usersService,
@@ -164,7 +180,9 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   isomerAdminsService,
   collaboratorsService,
   authorizationMiddleware,
+  reviewRouter,
 })
+
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authorizationMiddleware,
   authenticationMiddleware,

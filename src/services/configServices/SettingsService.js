@@ -55,7 +55,6 @@ class SettingsService {
       updatedNavigationContent,
     }
   ) {
-    console.log(sessionData)
     if (!_.isEmpty(updatedConfigContent)) {
       const mergedConfigContent = this.mergeUpdatedData(
         config.content,

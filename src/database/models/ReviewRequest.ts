@@ -11,6 +11,7 @@ import {
 
 import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
+import { ReviewRequestStatus } from "@root/constants"
 
 import { Reviewer } from "./Reviewers"
 import { ReviewMeta } from "./ReviewMeta"
@@ -54,9 +55,9 @@ export class ReviewRequest extends Model {
   @Column({
     allowNull: false,
     defaultValue: "OPEN",
-    type: DataType.ENUM("OPEN", "APPROVED", "MERGED", "CLOSED"),
+    type: DataType.ENUM(...Object.values(ReviewRequestStatus)),
   })
-  reviewStatus!: "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
+  reviewStatus!: ReviewRequestStatus
 
   @BelongsToMany(() => User, {
     onUpdate: "CASCADE",

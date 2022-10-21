@@ -20,6 +20,13 @@ export enum CollaboratorRoles {
   Contributor = "CONTRIBUTOR",
 }
 
+export enum ReviewRequestStatus {
+  Approved = "APPROVED",
+  Open = "OPEN",
+  Merged = "MERGED",
+  Closed = "CLOSED",
+}
+
 export const E2E_ISOMER_ID = "-1"
 export const E2E_TEST_EMAIL = "test@e2e"
 export const E2E_TEST_CONTACT = "12345678"

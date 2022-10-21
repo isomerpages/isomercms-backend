@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { Repo, Site, SiteMember, User, Whitelist } from "@database/models"
+import { Repo, Site, User, Whitelist, SiteMember } from "@database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
@@ -59,8 +59,8 @@ class UsersService {
     return this.repository.findOne({ where: { githubId } })
   }
 
-  async hasAccessToSite(userId: string, siteName: string): Promise<boolean> {
-    const siteMember = await this.repository.findOne({
+  async getSiteMember(userId: string, siteName: string): Promise<User | null> {
+    return this.repository.findOne({
       where: { id: userId },
       include: [
         {
@@ -79,8 +79,28 @@ class UsersService {
         },
       ],
     })
+  }
 
-    return !!siteMember
+  async getSiteAdmin(userId: string, siteName: string) {
+    return this.repository.findOne({
+      where: { id: userId, role: "ADMIN" },
+      include: [
+        {
+          model: SiteMember,
+          as: "site_members",
+          required: true,
+          include: [
+            {
+              model: Repo,
+              required: true,
+              where: {
+                name: siteName,
+              },
+            },
+          ],
+        },
+      ],
+    })
   }
 
   async findSitesByUserId(

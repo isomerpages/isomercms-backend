@@ -9,6 +9,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
 import { RequestHandler } from "@root/types"
+import { UserDto } from "@root/types/dto/review"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 
 interface CollaboratorsRouterProps {
@@ -71,18 +72,23 @@ export class CollaboratorsRouter {
   }
 
   listCollaborators: RequestHandler<
+    { siteName: string },
+    { collaborators: UserDto[] },
     never,
     unknown,
-    never,
-    { siteName: string },
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { siteName } = req.params
     const { userWithSiteSessionData } = res.locals
-    const collaborators = await this.collaboratorsService.list(
+    const rawCollaborators = await this.collaboratorsService.list(
       siteName,
       userWithSiteSessionData.isomerUserId
     )
+    const collaborators = rawCollaborators.map((collaborator) => ({
+      ...collaborator.toJSON(),
+      email: collaborator.email || "",
+      role: collaborator.SiteMember.role,
+    }))
 
     return res.status(200).json({ collaborators })
   }

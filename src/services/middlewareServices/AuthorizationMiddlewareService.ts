@@ -1,4 +1,4 @@
-import { NotFoundError } from "@errors/NotFoundError"
+import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
@@ -8,9 +8,6 @@ import AuthService from "@services/identity/AuthService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
-
-// Import logger
-const logger = require("@logger/logger")
 
 interface AuthorizationMiddlewareServiceProps {
   identityAuthService: AuthService

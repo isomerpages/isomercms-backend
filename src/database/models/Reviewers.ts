@@ -1,12 +1,4 @@
-import {
-  Column,
-  CreatedAt,
-  DataType,
-  ForeignKey,
-  Model,
-  Table,
-  UpdatedAt,
-} from "sequelize-typescript"
+import { Column, ForeignKey, Model, Table } from "sequelize-typescript"
 
 import { User } from "@database/models/User"
 

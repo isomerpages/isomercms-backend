@@ -18,6 +18,7 @@ provider:
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     AWS_REGION: ${env:AWS_REGION}
     IS_PROD: ${env:IS_SITE_LAUNCH_DEV}
+    SYSTEM_GITHUB_TOKEN: ${env:SYSTEM_GITHUB_TOKEN}
 
 custom:
   stepFunctionsLocal:
@@ -34,6 +35,8 @@ functions:
     handler: handler.generalDomainValidation
   primaryDomainValidation:
     handler: handler.primaryDomainValidation
+  redirectionDomainValidation:
+    handler: handler.redirectionDomainValidation
   successNotification:
     handler: handler.successNotification
   failureNotification:

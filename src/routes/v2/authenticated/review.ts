@@ -943,7 +943,6 @@ export class ReviewsRouter {
     }
 
     // Step 4: Check if the user is a reviewer of the RR
-    const { userWithSiteSessionData } = res.locals
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,

@@ -118,7 +118,8 @@ const reviewRequestService = new ReviewRequestService(
   User,
   ReviewRequest,
   Reviewer,
-  ReviewMeta
+  ReviewMeta,
+  ReviewRequestView
 )
 
 const authenticationMiddleware = getAuthenticationMiddleware()

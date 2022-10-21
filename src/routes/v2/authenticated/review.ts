@@ -291,7 +291,7 @@ export class ReviewsRouter {
 
     if (!role) {
       logger.error({
-        message: "Insufficient permissoins to retrieve review request",
+        message: "Insufficient permissions to retrieve review request",
         method: "getReviewRequest",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,

@@ -65,7 +65,6 @@ const sequelize = initSequelize([
   Redirection,
   IsomerAdmin,
   Notification,
-  ReviewRequest,
   ReviewMeta,
   Reviewer,
   ReviewRequest,

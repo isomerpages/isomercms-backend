@@ -5,3 +5,4 @@ export { primaryDomainValidation } from "./microservices/site-launch/lambda-func
 export { successNotification } from "./microservices/site-launch/lambda-functions/success-notification"
 export { failureNotification } from "./microservices/site-launch/lambda-functions/failure-notification"
 export { stepFunctionsTrigger } from "./microservices/site-launch/lambda-functions/step-functions-trigger"
+export { redirectionDomainValidation } from "./microservices/site-launch/lambda-functions/redirection-domain-validation"

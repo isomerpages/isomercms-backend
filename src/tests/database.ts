@@ -16,6 +16,7 @@ import {
   ReviewRequest,
   ReviewMeta,
   Reviewer,
+  ReviewRequestView,
 } from "@database/models"
 
 const sequelize = new Sequelize({
@@ -37,6 +38,7 @@ sequelize.addModels([
   ReviewRequest,
   ReviewMeta,
   Reviewer,
+  ReviewRequestView,
 ])
 
 // eslint-disable-next-line import/prefer-default-export

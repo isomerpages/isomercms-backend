@@ -207,7 +207,7 @@ export default class ReviewRequestService {
         // does not contain a record for the user and the review request
         const isFirstView = !(await this.reviewRequestView.count({
           where: {
-            reviewId: req.id,
+            reviewRequestId: req.id,
             siteId: site.id,
             userId,
           },

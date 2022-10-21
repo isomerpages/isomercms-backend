@@ -17,6 +17,7 @@ import {
   ReviewRequest,
   ReviewMeta,
   Reviewer,
+  ReviewRequestView,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import {
@@ -58,6 +59,8 @@ const sequelize = initSequelize([
   ReviewRequest,
   ReviewMeta,
   Reviewer,
+  ReviewRequest,
+  ReviewRequestView,
 ])
 const usersService = getUsersService(sequelize)
 

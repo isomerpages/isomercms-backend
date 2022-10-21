@@ -69,7 +69,7 @@ export class ReviewsRouter {
     )
 
     if (!hasAccess) {
-      return res.status(400).send()
+      return res.status(404).send()
     }
 
     const files = await this.reviewRequestService.compareDiff(
@@ -119,7 +119,7 @@ export class ReviewsRouter {
     if (!role || role !== CollaboratorRoles.Admin) {
       logger.error({
         message:
-          "User atttempted to create review request with invalid permissions",
+          "User attempted to create review request with invalid permissions",
         method: "createReviewRequest",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,
@@ -127,7 +127,7 @@ export class ReviewsRouter {
           siteName,
         },
       })
-      return res.status(400).send({
+      return res.status(404).send({
         message: "Only admins can request reviews!",
       })
     }
@@ -236,7 +236,7 @@ export class ReviewsRouter {
           siteName,
         },
       })
-      return res.status(400).send({
+      return res.status(404).send({
         message: "Only collaborators of a site can view reviews!",
       })
     }
@@ -300,7 +300,7 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(400).send({
+      return res.status(404).send({
         message: "Only collaborators of a site can view reviews!",
       })
     }
@@ -391,7 +391,7 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(401).json({
+      return res.status(403).json({
         message: "Only requestors can update the review request!",
       })
     }
@@ -477,7 +477,7 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(400).send({
+      return res.status(404).send({
         message: "Only collaborators of a site can view reviews!",
       })
     }
@@ -568,7 +568,7 @@ export class ReviewsRouter {
 
     if (!isReviewer) {
       logger.error({
-        message: "Invalid site requested",
+        message: "Insufficient permissions to approve review request",
         method: "approveReviewRequest",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,
@@ -576,8 +576,8 @@ export class ReviewsRouter {
           siteName,
         },
       })
-      return res.status(404).send({
-        message: "Please ensure that the site exists!",
+      return res.status(403).send({
+        message: "Please ensure that you are a reviewer of the review request!",
       })
     }
 
@@ -652,7 +652,7 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(401).json({
+      return res.status(404).json({
         message: "Only the requestor can close the Review Request!",
       })
     }

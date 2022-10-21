@@ -15,6 +15,10 @@ import {
   Launch,
   Redirection,
   IsomerAdmin,
+  Notification,
+  ReviewRequest,
+  ReviewMeta,
+  Reviewer,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import {
@@ -26,6 +30,7 @@ import {
   getIdentityAuthService,
   getUsersService,
   isomerAdminsService,
+  notificationsService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import QueueService from "@services/identity/QueueService"
@@ -56,6 +61,10 @@ const sequelize = initSequelize([
   Launch,
   Redirection,
   IsomerAdmin,
+  Notification,
+  ReviewRequest,
+  ReviewMeta,
+  Reviewer,
 ])
 const usersService = getUsersService(sequelize)
 
@@ -162,6 +171,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   gitHubService,
   configYmlService,
   apiLogger,
+  notificationsService,
 })
 const authV2Router = new AuthRouter({ authenticationMiddleware, authService, apiLogger })
 const formsgRouter = new FormsgRouter({ usersService, infraService })

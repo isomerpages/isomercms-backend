@@ -59,10 +59,7 @@ class UsersService {
     return this.repository.findOne({ where: { githubId } })
   }
 
-  async hasAccessToSite(
-    userId: string,
-    siteName: string
-  ): Promise<User | null> {
+  async getSiteMember(userId: string, siteName: string): Promise<User | null> {
     return this.repository.findOne({
       where: { id: userId },
       include: [

@@ -1,3 +1,5 @@
+import _ from "lodash"
+
 import {
   RawFileChangeInfo,
   Commit,
@@ -96,15 +98,22 @@ export const getComments = async (
   const rawComments = await axiosInstance
     .get<RawComment[]>(`${siteName}/issues/${pullRequestNumber}/comments`)
     .then(({ data }) => data)
-  return rawComments.map((rawComment) => {
-    const commentData = JSON.parse(rawComment.body)
-    const { user, message } = commentData
-    return {
-      user,
-      message,
-      createdAt: rawComment.created_at,
-    }
-  })
+  return _.compact(
+    rawComments.map((rawComment) => {
+      try {
+        const commentData = JSON.parse(rawComment.body)
+        const { user, message } = commentData
+        return {
+          user,
+          message,
+          createdAt: rawComment.created_at,
+        }
+      } catch (e) {
+        // Not properly formatted comment, ignore
+        return null
+      }
+    })
+  )
 }
 
 export const createComment = async (

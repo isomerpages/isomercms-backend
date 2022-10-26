@@ -291,8 +291,6 @@ export default class InfraService {
        * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
-      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
-
       const userId = agency.id
       newLaunchParams = {
         userId,
@@ -301,7 +299,10 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
-        redirectionDomainSource,
+      }
+
+      if (redirectionDomainList?.length) {
+        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
       }
 
       if (redirectionDomainList?.length) {

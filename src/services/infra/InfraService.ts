@@ -4,6 +4,7 @@ import { Err, err, Ok, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
+import { mailer } from "@root/../build/src/services/utilServices/MailClient"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
@@ -296,10 +297,6 @@ export default class InfraService {
         newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
       }
 
-      if (redirectionDomainList?.length) {
-        newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
-      }
-
       // Create launches records table
       const launchesRecord = await this.launchesService.create(newLaunchParams)
       logger.info(`Created launch record in database:  ${launchesRecord}`)
@@ -335,24 +332,57 @@ export default class InfraService {
   }
 
   siteUpdate = async () => {
-    try {
-      const messages = await this.queueService.pollMessages()
-      await Promise.all(
-        messages.map(async (message) => {
-          const site = await this.sitesService.getBySiteName(message.repoName)
-          if (site) {
-            const updateSuccessSiteLaunchParams = {
-              id: site.id,
-              siteStatus: SiteStatus.Launched,
-              jobStatus: JobStatus.Running,
-            }
-            await this.sitesService.update(updateSuccessSiteLaunchParams)
+    const messages = await this.queueService.pollMessages()
+    await Promise.all(
+      messages.map(async (message) => {
+        const site = await this.sitesService.getBySiteName(message.repoName)
+        if (site) {
+          const updateSuccessSiteLaunchParams = {
+            id: site.id,
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
           }
-        })
-      )
-    } catch (error) {
-      logger.error(error)
-    }
+          await this.sitesService.update(updateSuccessSiteLaunchParams)
+        
+        const emailDetails: { subject: string; body: string } = {
+          subject: "",
+          body: "",
+        }
+        let params
+        if (message.success) {
+          params = {
+            id: site.id,
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
+          }
+          emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
+          emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
+          <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
+          <p>This email was sent from the Isomer CMS backend.</p>`
+        } else {
+          params = { id: site.id, jobStatus: JobStatus.Failed }
+          emailDetails.subject = `Launch site ${message.repoName} FAILURE`
+          emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+          <p>Error: ${message.siteLaunchError}</p>
+          <p>This email was sent from the Isomer CMS backend.</p>
+          `
+        }
+        await this.sitesService.update(params)
+        await mailer.sendMail(
+          message.agencyEmail,
+          emailDetails.subject,
+          emailDetails.body
+        )
+        await mailer.sendMail(
+          message.requestorEmail,
+          emailDetails.subject,
+          emailDetails.body
+        )
+        await this.sitesService.update(updateSuccessSiteLaunchParams)
+        } 
+      })
+    )
+    
   }
 
   pollQueue = async () => {

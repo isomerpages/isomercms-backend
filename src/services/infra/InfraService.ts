@@ -184,7 +184,7 @@ export default class InfraService {
     subDomainSettings: SubDomainSettings
   ): Promise<Err<never, unknown> | Ok<SiteLaunchCreateParams, never>> => {
     // call amplify to trigger site launch process
-    let newLaunchParams: SiteLaunchCreateParams
+    let newLaunchParams : SiteLaunchCreateParams
     try {
       // Set up domain association using LaunchesService
       const redirectionDomainResult = await this.launchesService.configureDomainInAmplify(

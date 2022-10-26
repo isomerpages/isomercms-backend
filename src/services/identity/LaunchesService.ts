@@ -9,7 +9,7 @@ import { Redirections } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
-type launchesCreateParamsType = Partial<Launches> & {
+export type launchesCreateParamsType = Partial<Launches> & {
   userId: number
   siteId: number
   primaryDomainSource: string
@@ -142,6 +142,7 @@ export class LaunchesService {
       subDomainSettings
     )
 
+    console.log(launchAppOptions)
     // Create Domain Association
     const domainAssociationResult = await this.launchClient
       .sendCreateDomainAssociation(launchAppOptions)
@@ -155,6 +156,7 @@ export class LaunchesService {
         logger.info(`Successfully published '${domainAssociation}'`)
         return domainAssociation
       })
+    // .catch((err) => console.log(err))
     const redirectionDomainObject: DomainAssocationInterface = {
       repoName,
       domainAssociationResult,

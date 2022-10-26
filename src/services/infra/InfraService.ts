@@ -3,10 +3,13 @@ import { Length } from "sequelize-typescript"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
+import { redirectionDomainValidation } from "@root/../handler"
 import { SiteStatus, JobStatus } from "@root/constants"
 import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
-import LaunchesService from "@services/identity/LaunchesService"
+import LaunchesService, {
+  launchesCreateParamsType,
+} from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
@@ -203,17 +206,18 @@ export default class InfraService {
        * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
-      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
-
       const userId = agency.id
-      const newLaunchParams = {
+      const newLaunchParams: launchesCreateParamsType = {
         userId,
         siteId,
         primaryDomainSource: primaryDomain,
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
-        redirectionDomainSource,
+      }
+
+      if (redirectionDomainList?.length) {
+        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
       }
 
       // Create launches records table
@@ -229,10 +233,10 @@ export default class InfraService {
         domainValidationTarget,
       }
 
-      if (redirectionDomainSource) {
+      if (newLaunchParams.redirectionDomainSource) {
         message.redirectionDomain = [
           {
-            source: redirectionDomainSource,
+            source: newLaunchParams.redirectionDomainSource,
             target: primaryDomainTarget,
             type: this.isRootDomain(primaryDomain) ? "CNAME" : "A",
           },

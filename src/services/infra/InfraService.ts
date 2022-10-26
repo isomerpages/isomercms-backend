@@ -175,15 +175,6 @@ export default class InfraService {
     return ok(dnsRecord)
   }
 
-  isRootDomain = (primaryDomain: string) => {
-    // method to differentiate root domains with 4th level domains
-    if ((primaryDomain.match(/./g) || []).length < 3) {
-      // eg. blah.gov.sg
-      return true
-    }
-    return false
-  }
-
   launchSite = async (
     requestor: User,
     agency: User,
@@ -284,7 +275,6 @@ export default class InfraService {
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
-      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
 
       /**
        * Amplify only stores the prefix.
@@ -300,10 +290,6 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
-      }
-
-      if (redirectionDomainList?.length) {
-        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
       }
 
       if (redirectionDomainList?.length) {
@@ -328,7 +314,6 @@ export default class InfraService {
         domainValidationTarget,
         requestorEmail: requestor.email ? requestor.email : "",
         agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
-        success: true,
       }
 
       if (newLaunchParams.redirectionDomainSource) {

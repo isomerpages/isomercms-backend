@@ -304,10 +304,6 @@ export default class InfraService {
       }
 
       if (redirectionDomainList?.length) {
-        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
-      }
-
-      if (redirectionDomainList?.length) {
         newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
       }
 
@@ -339,12 +335,11 @@ export default class InfraService {
 
       this.queueService.sendMessage(message)
 
-      return newLaunchParams
+      return ok(newLaunchParams)
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       return err(error)
     }
-    return ok(newLaunchParams)
   }
 
   siteUpdate = async () => {

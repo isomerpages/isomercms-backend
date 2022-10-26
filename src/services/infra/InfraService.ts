@@ -1,4 +1,5 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
+import { Length } from "sequelize-typescript"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
@@ -121,6 +122,15 @@ export default class InfraService {
     }
   }
 
+  isRootDomain = (primaryDomain: string) => {
+    // method to differentiate root domains with 4th level domains
+    if ((primaryDomain.match(/./g) || []).length < 3) {
+      // eg. blah.gov.sg
+      return true
+    }
+    return false
+  }
+
   launchSite = async (
     submissionId: string,
     requestor: User,
@@ -224,6 +234,7 @@ export default class InfraService {
           {
             source: redirectionDomainSource,
             target: primaryDomainTarget,
+            type: this.isRootDomain(primaryDomain) ? "CNAME" : "A",
           },
         ]
       }

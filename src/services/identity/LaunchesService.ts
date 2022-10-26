@@ -159,6 +159,7 @@ export class LaunchesService {
       subDomainSettings
     )
 
+    console.log(launchAppOptions)
     // Create Domain Association
     const domainAssociationResult = await this.launchClient.sendCreateDomainAssociation(
       launchAppOptions

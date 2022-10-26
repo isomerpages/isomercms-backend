@@ -338,6 +338,8 @@ export default class InfraService {
       }
 
       this.queueService.sendMessage(message)
+
+      return newLaunchParams
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       return err(error)

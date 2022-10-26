@@ -301,7 +301,10 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
-        redirectionDomainSource,
+      }
+
+      if (redirectionDomainList?.length) {
+        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
       }
 
       if (redirectionDomainList?.length) {

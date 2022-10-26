@@ -647,7 +647,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 3: Retrieve review request
+    // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
       site,
       requestId
@@ -669,7 +669,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 4: Check if the user is a reviewer of the RR
+    // Step 3: Check if the user is a reviewer of the RR
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,
@@ -691,7 +691,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 5: Approve review request
+    // Step 4: Approve review request
     // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
@@ -835,7 +835,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 3: Retrieve review request
+    // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
       site,
       requestId
@@ -857,7 +857,7 @@ export class ReviewsRouter {
         .json({ message: possibleReviewRequest.message })
     }
 
-    // Step 4: Check if the user is the requestor
+    // Step 3: Check if the user is the requestor
     const { requestor } = possibleReviewRequest
     const isRequestor = requestor.email === userWithSiteSessionData.email
     if (!isRequestor) {
@@ -876,13 +876,13 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 5: Close review request
+    // Step 4: Close review request
     // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
     await this.reviewRequestService.closeReviewRequest(possibleReviewRequest)
 
-    // Step 6: Clean up the review request view records
+    // Step 5: Clean up the review request view records
     // The error is discarded as we are guaranteed to have a review request
     await this.reviewRequestService.deleteAllReviewRequestViews(site, requestId)
 
@@ -904,7 +904,7 @@ export class ReviewsRouter {
     if (!site) {
       logger.error({
         message: "Invalid site requested",
-        method: "approveReviewRequest",
+        method: "deleteReviewRequestApproval",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
@@ -916,7 +916,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 3: Retrieve review request
+    // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
       site,
       requestId
@@ -925,7 +925,7 @@ export class ReviewsRouter {
     if (isIsomerError(possibleReviewRequest)) {
       logger.error({
         message: "Invalid review request requested",
-        method: "approveReviewRequest",
+        method: "deleteReviewRequestApproval",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
@@ -938,7 +938,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 4: Check if the user is a reviewer of the RR
+    // Step 3: Check if the user is a reviewer of the RR
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,
@@ -947,8 +947,8 @@ export class ReviewsRouter {
 
     if (!isReviewer) {
       logger.error({
-        message: "Invalid site requested",
-        method: "approveReviewRequest",
+        message: "",
+        method: "deleteReviewRequestApproval",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
@@ -960,7 +960,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 5: Delete review request approval
+    // Step 4: Delete review request approval
     await this.reviewRequestService.deleteReviewRequestApproval(
       possibleReviewRequest
     )

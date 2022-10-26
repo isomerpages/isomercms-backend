@@ -118,6 +118,7 @@ export class FormsgSiteLaunchRouter {
     // 3. Use service to Launch site
     // note: this function is not be async due to the timeout for http requests.
     const launchSite = await this.infraService.launchSite(
+      requesterUser,
       agencyUser,
       repoName,
       primaryDomain,

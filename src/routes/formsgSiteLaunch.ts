@@ -126,7 +126,8 @@ export class FormsgSiteLaunchRouter {
     )
 
     if (launchSite.isOk()) {
-      await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
+      await this.sendVerificationDetails(requesterEmail, repoName, submissionId, 
+        primaryDomain, launchSite.value.primaryDomainTarget)
     } else {
       await this.sendLaunchError(
         requesterEmail,
@@ -185,7 +186,7 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(isomerEmail, subject, html)
   }
 
-  sendLaunchSuccess = async (
+  sendVerificationDetails = async (
     requestorEmail: string,
     repoName: string,
     submissionId: string

@@ -184,6 +184,7 @@ export default class InfraService {
     subDomainSettings: SubDomainSettings
   ): Promise<Err<never, unknown> | Ok<null, never>> => {
     // call amplify to trigger site launch process
+    let newLaunchParams : SiteLaunchCreateParams
     try {
       // Set up domain association using LaunchesService
       const redirectionDomainResult = await this.launchesService.configureDomainInAmplify(
@@ -283,7 +284,7 @@ export default class InfraService {
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
       const userId = agency.id
-      const newLaunchParams: SiteLaunchCreateParams = {
+      newLaunchParams = {
         userId,
         siteId,
         primaryDomainSource: primaryDomain,
@@ -327,7 +328,7 @@ export default class InfraService {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       return err(error)
     }
-    return ok(null)
+    return ok(newLaunchParams)
   }
 
   siteUpdate = async () => {

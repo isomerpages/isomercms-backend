@@ -2,16 +2,7 @@ import logger from "@root/logger/logger"
 
 import QueueClient from "./QueueClient"
 
-export interface ErrorMessage {
-  repoName: string
-  primaryDomainSource: string
-  requestorEmail: string
-  agencyEmail: string
-  success: false
-  siteLaunchError: string
-}
-
-export interface SuccessMessage {
+export interface MessageBody {
   repoName: string
   appId: string
   primaryDomainSource: string
@@ -28,10 +19,9 @@ export interface SuccessMessage {
       type: string
     }
   ]
-  success: true
+  success?: boolean
+  siteLaunchError?: string
 }
-
-export type MessageBody = ErrorMessage | SuccessMessage
 
 export default class QueueService {
   private readonly queueClient: QueueClient

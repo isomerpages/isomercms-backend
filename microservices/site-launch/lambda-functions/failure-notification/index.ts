@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import type { APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
@@ -9,6 +10,7 @@ export const failureNotification = async (event: {
   Error: string
   Cause: string
 }): Promise<APIGatewayProxyResult> => {
+  console.log(event)
   const { Cause } = event
 
   const sqs = new SQS({ region: AWS_REGION })
@@ -21,6 +23,8 @@ export const failureNotification = async (event: {
     QueueUrl: INCOMING_QUEUE_URL,
     MessageBody: Cause,
   }
+
+  console.log(JSON.stringify(messageParams))
 
   sqs.sendMessage(messageParams, (err, data) => {
     if (err) {

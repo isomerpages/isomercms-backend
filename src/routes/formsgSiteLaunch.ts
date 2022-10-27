@@ -157,12 +157,14 @@ export class FormsgSiteLaunchRouter {
       )
 
       // only send success message after promise has been resolved
-      launchSite.then(async () => {
-        await this.sendLaunchSuccess(
+      launchSite.then(async (siteLaunchDetails) => {
+        await this.sendVerificationDetails(
           // fields below are guarenteed to be a string due to prior checks
           <string>requesterEmail,
           <string>repoName,
-          submissionId
+          submissionId,
+          siteLaunchDetails.domainValidationSource,
+          siteLaunchDetails.domainValidationTarget
         )
       })
     } catch (err) {
@@ -192,14 +194,20 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(email[0], subject, html)
   }
 
-  sendLaunchSuccess = async (
+  sendVerificationDetails = async (
     email: string,
     repoName: string,
-    submissionId: string
+    submissionId: string,
+    domainValidationSource: string,
+    domainValidationTarget: string
   ) => {
-    const subject = `[Isomer] Launch site ${repoName} SUCCESS`
-    const html = `<p>Isomer site ${repoName} was launched successfully. (Form submission id [${submissionId}])</p>
-<p>You may now visit your live website. <a href="${PRIMARY_DOMAIN}">${PRIMARY_DOMAIN}</a> should be accessible within a few minutes.</p>
+    // TODO: content is wrong, should be dns records (retrieved from launchSite)
+    // TODO: also change method name to sendDnsRecords
+    const subject = `[Isomer] Launch site ${repoName} domain validation`
+    const html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
+<p>Please set the following CNAME record:</p>
+<p>Source: ${domainValidationSource}</p>
+<p>Target: ${domainValidationTarget}</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
     await mailer.sendMail(email, subject, html)
   }

@@ -13,7 +13,11 @@ export const failureNotification = async (event: {
   const sqs = new SQS({ region: AWS_REGION })
   const messageParams = {
     QueueUrl: INCOMING_QUEUE_URL || "",
-    MessageBody: Cause,
+    MessageBody: JSON.stringify({
+      ...event,
+      success: true,
+      siteLaunchError: Cause,
+    }),
   }
 
   sqs.sendMessage(messageParams, (err, data) => {

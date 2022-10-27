@@ -1,9 +1,7 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
-import { Length } from "sequelize-typescript"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import { redirectionDomainValidation } from "@root/../handler"
 import { SiteStatus, JobStatus } from "@root/constants"
 import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
@@ -14,6 +12,7 @@ import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
 import QueueService, { MessageBody } from "../identity/QueueService"
+import { mailer } from "../utilServices/MailClient"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
 
@@ -231,6 +230,9 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        requestorEmail: requestor.email ? requestor.email : "",
+        agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
+        success: true,
       }
 
       if (newLaunchParams.redirectionDomainSource) {
@@ -244,11 +246,12 @@ export default class InfraService {
       }
 
       this.queueService.sendMessage(message)
+
+      return newLaunchParams
     } catch (error) {
-      logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
+      logger.error(`Failed to create '${repoName}' site on Isomer: ${error}`)
       throw error
     }
-    return null
   }
 
   siteLaunchUpdate = async () => {
@@ -258,6 +261,10 @@ export default class InfraService {
         messages.forEach(async (message) => {
           const site = await this.sitesService.getBySiteName(message.repoName)
           if (site) {
+            const emailDetails: { subject: string; body: string } = {
+              subject: "",
+              body: "",
+            }
             let params
             if (message.success) {
               params = {
@@ -265,10 +272,29 @@ export default class InfraService {
                 siteStatus: SiteStatus.Launched,
                 jobStatus: JobStatus.Running,
               }
+              emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
+              emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
+              <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
+              <p>This email was sent from the Isomer CMS backend.</p>`
             } else {
               params = { id: site.id, jobStatus: JobStatus.Failed }
+              emailDetails.subject = `Launch site ${message.repoName} FAILURE`
+              emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+              <p>Error: ${message.siteLaunchError}</p>
+              <p>This email was sent from the Isomer CMS backend.</p>
+              `
             }
             await this.sitesService.update(params)
+            await mailer.sendMail(
+              message.agencyEmail,
+              emailDetails.subject,
+              emailDetails.body
+            )
+            await mailer.sendMail(
+              message.requestorEmail,
+              emailDetails.subject,
+              emailDetails.body
+            )
           }
         })
       }

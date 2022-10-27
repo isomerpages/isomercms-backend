@@ -479,7 +479,6 @@ export default class ReviewRequestService {
   ): Promise<CommentItem[]> => {
     const { siteName, isomerUserId: userId } = sessionData
 
-    // Find all review requests associated with the site
     const comments = await this.apiService.getComments(
       siteName,
       pullRequestNumber

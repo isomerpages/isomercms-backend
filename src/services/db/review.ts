@@ -128,7 +128,6 @@ export const createComment = async (
   })
   return axiosInstance.post<void>(
     `${siteName}/issues/${pullRequestNumber}/comments`,
-    // NOTE: only create body if a valid description is given
     { body: stringifiedMessage }
   )
 }

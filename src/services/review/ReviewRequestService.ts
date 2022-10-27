@@ -126,6 +126,29 @@ export default class ReviewRequestService {
     return mappings
   }
 
+  computeCommentDataMappings = async (
+    comments: {
+      userId: string
+      message: string
+      createdAt: string
+    }[],
+    viewedTime: Date | null
+  ) => {
+    const mappings = await Promise.all(
+      comments.map(async ({ userId, message, createdAt }) => {
+        const createdTime = new Date(createdAt)
+        const author = await this.users.findByPk(userId)
+        return {
+          user: author?.email || "",
+          message,
+          createdAt: createdTime.getTime(),
+          isRead: viewedTime ? createdTime < viewedTime : false,
+        }
+      })
+    )
+    return mappings
+  }
+
   createReviewRequest = async (
     sessionData: UserWithSiteSessionData,
     reviewers: User[],
@@ -462,12 +485,12 @@ export default class ReviewRequestService {
     pullRequestNumber: number,
     message: string
   ) => {
-    const { siteName, email } = sessionData
+    const { siteName, isomerUserId } = sessionData
 
     return this.apiService.createComment(
       siteName,
       pullRequestNumber,
-      email,
+      isomerUserId,
       message
     )
   }
@@ -508,14 +531,6 @@ export default class ReviewRequestService {
 
     const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
 
-    return comments.map((comment) => {
-      const createdTime = new Date(comment.createdAt)
-      return {
-        user: comment.user,
-        message: comment.message,
-        createdAt: createdTime.getTime(),
-        isRead: viewedTime ? createdTime < viewedTime : false,
-      }
-    })
+    return this.computeCommentDataMappings(comments, viewedTime)
   }
 }

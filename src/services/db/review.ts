@@ -5,6 +5,7 @@ import {
   Commit,
   RawPullRequest,
   RawComment,
+  fromGithubCommitMessage,
 } from "@root/types/github"
 
 import { isomerRepoAxiosInstance as axiosInstance } from "../api/AxiosInstance"
@@ -100,17 +101,14 @@ export const getComments = async (
     .then(({ data }) => data)
   return _.compact(
     rawComments.map((rawComment) => {
-      try {
-        const commentData = JSON.parse(rawComment.body)
-        const { user, message } = commentData
-        return {
-          user,
-          message,
-          createdAt: rawComment.created_at,
-        }
-      } catch (e) {
-        // Not properly formatted comment, ignore
-        return null
+      const commentData = fromGithubCommitMessage(rawComment.body)
+      if (_.isEmpty(commentData)) return null // Will be filtered out by _.compact
+      const { userId, message } = commentData
+      if (!userId || !message) return null // Will be filtered out by _.compact
+      return {
+        userId,
+        message,
+        createdAt: rawComment.created_at,
       }
     })
   )
@@ -119,11 +117,11 @@ export const getComments = async (
 export const createComment = async (
   siteName: string,
   pullRequestNumber: number,
-  user: string,
+  userId: string,
   message: string
 ) => {
   const stringifiedMessage = JSON.stringify({
-    user,
+    userId,
     message,
   })
   return axiosInstance.post<void>(

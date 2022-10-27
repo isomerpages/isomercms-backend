@@ -56,6 +56,8 @@ export class NotificationOnEditHandler {
       site
     )
     if (reviewRequests.length === 0) return
+    // For now, we only have 1 active review request
+    const reviewRequest = reviewRequests[0]
 
     await Promise.all(
       users.map(async (user: User & { SiteMember: SiteMember }) => {
@@ -63,7 +65,7 @@ export class NotificationOnEditHandler {
         const { SiteMember: siteMember } = user
         await this.notificationsService.create({
           siteMember,
-          link: "TODO",
+          link: `/sites/${siteName}/review/${reviewRequest.id}`,
           notificationType: "updated_request",
           notificationSourceUsername: email,
         })

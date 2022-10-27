@@ -637,7 +637,7 @@ export class ReviewsRouter {
 
   getComments: RequestHandler<
     { siteName: string; requestId: number },
-    CommentItem[] | ResponseErrorBody,
+    CommentItem[],
     never,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }

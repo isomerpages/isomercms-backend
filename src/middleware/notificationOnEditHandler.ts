@@ -36,6 +36,9 @@ export class NotificationOnEditHandler {
     autoBind(this)
   }
 
+  /**
+   * Creates a notification. Requires attachSiteHandler as a precondition
+   */
   createNotification: RequestHandler<
     never,
     unknown,
@@ -53,8 +56,6 @@ export class NotificationOnEditHandler {
       site
     )
     if (reviewRequests.length === 0) return
-    // For now, we only have 1 active review request
-    const reviewRequest = reviewRequests[0]
 
     await Promise.all(
       users.map(async (user: User & { SiteMember: SiteMember }) => {

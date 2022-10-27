@@ -193,19 +193,21 @@ export class ReviewsRouter {
     )
 
     // Step 5: Create notifications
-    collaborators.forEach(async (user: User & { SiteMember: SiteMember }) => {
-      // Don't send notification to self
-      if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
-      const notificationType = reviewersMap[user.email || ""]
-        ? "sent_request"
-        : "request_created"
-      await this.notificationsService.create({
-        siteMember: user.SiteMember,
-        link: "TODO",
-        notificationType,
-        notificationSourceUsername: userWithSiteSessionData.email,
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        const notificationType = reviewersMap[user.email || ""]
+          ? "sent_request"
+          : "request_created"
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${pullRequestNumber}`,
+          notificationType,
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
       })
-    })
+    )
 
     return res.status(200).send({
       pullRequestNumber,
@@ -851,16 +853,18 @@ export class ReviewsRouter {
 
     // Step 6: Create notifications
     const collaborators = await this.collaboratorsService.list(siteName)
-    collaborators.forEach(async (user: User & { SiteMember: SiteMember }) => {
-      // Don't send notification to self
-      if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
-      await this.notificationsService.create({
-        siteMember: user.SiteMember,
-        link: "TODO",
-        notificationType: "request_approved",
-        notificationSourceUsername: userWithSiteSessionData.email,
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${requestId}`,
+          notificationType: "request_approved",
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
       })
-    })
+    )
 
     return res.status(200).send()
   }
@@ -945,16 +949,18 @@ export class ReviewsRouter {
 
     // Step 7: Create notifications
     const collaborators = await this.collaboratorsService.list(siteName)
-    collaborators.forEach(async (user: User & { SiteMember: SiteMember }) => {
-      // Don't send notification to self
-      if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
-      await this.notificationsService.create({
-        siteMember: user.SiteMember,
-        link: "TODO",
-        notificationType: "request_cancelled",
-        notificationSourceUsername: userWithSiteSessionData.email,
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${requestId}`,
+          notificationType: "request_cancelled",
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
       })
-    })
+    )
     return res.status(200).send()
   }
 

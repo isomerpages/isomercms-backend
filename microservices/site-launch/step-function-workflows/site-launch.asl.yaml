@@ -15,9 +15,7 @@ States:
               Payload.$: $
             Retry:
               - ErrorEquals:
-                  - Lambda.ServiceException
-                  - Lambda.AWSLambdaException
-                  - Lambda.SdkClientException
+                  - "States.ALL"
                 IntervalSeconds: 2
                 MaxAttempts: 6
                 BackoffRate: 2
@@ -33,9 +31,7 @@ States:
               Payload.$: $
             Retry:
               - ErrorEquals:
-                  - Lambda.ServiceException
-                  - Lambda.AWSLambdaException
-                  - Lambda.SdkClientException
+                  - "States.ALL"
                 IntervalSeconds: 2
                 MaxAttempts: 6
                 BackoffRate: 2
@@ -51,9 +47,7 @@ States:
               Payload.$: $
             Retry:
               - ErrorEquals:
-                  - Lambda.ServiceException
-                  - Lambda.AWSLambdaException
-                  - Lambda.SdkClientException
+                  - "States.ALL"
                 IntervalSeconds: 2
                 MaxAttempts: 6
                 BackoffRate: 2

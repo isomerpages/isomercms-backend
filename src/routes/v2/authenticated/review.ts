@@ -647,6 +647,15 @@ export class ReviewsRouter {
     // Step 1: Check that the site exists
     const site = await this.sitesService.getBySiteName(siteName)
     if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "getComments",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })

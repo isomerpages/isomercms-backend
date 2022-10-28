@@ -39,8 +39,27 @@ export default class QueueService {
     const messages = await this.queueClient.receiveMessage()
     try {
       messages?.forEach((message) => {
+        /**
+         * Message from SQS wraps the message body with a 'Records'. eg.
+         * {
+         *   ...
+         *   Body {
+         *      Records: [{
+         *        ...
+         *         body: <message Body Content>
+         *        ...
+         *      }]
+         *   }
+         *  ...
+         * }
+         * Thus, to get the final message in `body`, there is a need to have multiple
+         * layers of JSON.parse().
+         */
+
         if (message.Body) {
-          messageBodies.push(JSON.parse(message.Body))
+          messageBodies.push(
+            JSON.parse(JSON.parse(message.Body).Records[0].body)
+          )
         }
       })
     } catch (error) {

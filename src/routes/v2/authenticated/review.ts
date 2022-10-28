@@ -293,7 +293,7 @@ export class ReviewsRouter {
       site
     )
 
-    return res.status(200).json()
+    return res.status(200).send()
   }
 
   markReviewRequestAsViewed: RequestHandler<
@@ -805,7 +805,7 @@ export class ReviewsRouter {
       possibleReviewRequest
     )
 
-    return res.status(200).json()
+    return res.status(200).send()
   }
 
   closeReviewRequest: RequestHandler<

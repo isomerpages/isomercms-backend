@@ -637,7 +637,7 @@ export class ReviewsRouter {
 
   getComments: RequestHandler<
     { siteName: string; requestId: number },
-    CommentItem[],
+    CommentItem[] | ResponseErrorBody,
     never,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -673,7 +673,7 @@ export class ReviewsRouter {
 
   createComment: RequestHandler<
     { siteName: string; requestId: number },
-    string | ResponseErrorBody,
+    string,
     { message: string },
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }

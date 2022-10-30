@@ -51,3 +51,9 @@ export interface CommentItem {
   message: string
   isRead: boolean
 }
+
+export interface GithubCommentData {
+  userId: string
+  message: string
+  createdAt: string
+}

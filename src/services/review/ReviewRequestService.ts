@@ -16,6 +16,7 @@ import {
   DashboardReviewRequestDto,
   EditedItemDto,
   FileType,
+  GithubCommentData,
   ReviewRequestDto,
 } from "@root/types/dto/review"
 import { isIsomerError } from "@root/types/error"
@@ -126,12 +127,8 @@ export default class ReviewRequestService {
     return mappings
   }
 
-  computeCommentDataMappings = async (
-    comments: {
-      userId: string
-      message: string
-      createdAt: string
-    }[],
+  computeCommentData = async (
+    comments: GithubCommentData[],
     viewedTime: Date | null
   ) => {
     const mappings = await Promise.all(
@@ -531,6 +528,6 @@ export default class ReviewRequestService {
 
     const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
 
-    return this.computeCommentDataMappings(comments, viewedTime)
+    return this.computeCommentData(comments, viewedTime)
   }
 }

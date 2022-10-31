@@ -1,10 +1,29 @@
 /* eslint-disable import/prefer-default-export */ // todo remove this and use prefer-default-export
 
-import { MessageBody } from "@root/services/identity/QueueService"
 import AWS, { Lambda } from "aws-sdk"
 
 import logger from "../../shared/logger"
 
+export interface MessageBody {
+  repoName: string
+  appId: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
+  domainValidationSource: string
+  domainValidationTarget: string
+  requestorEmail: string
+  agencyEmail: string
+  githubRedirectionUrl?: string
+  redirectionDomain?: [
+    {
+      source: string
+      target: string
+      type: string
+    }
+  ]
+  success?: boolean
+  siteLaunchError?: string
+}
 export const stepFunctionsTrigger = async (event: MessageBody) => {
   // console.log("in step functions trigger")
   const { AWS_REGION, AWS_ACCOUNT_NUMBER, NODE_ENV } = process.env
@@ -28,7 +47,7 @@ export const stepFunctionsTrigger = async (event: MessageBody) => {
       logger.info(`Your state machine ${stateMachineArn} executed successfully`)
     })
   } catch (err) {
-    const lambda = new AWS.Lambda({
+    const lambda = new Lambda({
       region: AWS_REGION,
       endpoint:
         NODE_ENV === "LOCAL_DEV"

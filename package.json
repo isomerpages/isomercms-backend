@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register build/server.js",
+    "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register build/src/server.js",
     "dev:services": "docker compose up -d",
     "dev": "concurrently -k -p \"[{name}]\" -n \"API,Serverless\" -c \"green.bold,yellow.bold\" \"npm run dev:api\"",
     "dev:api": "source .env && ts-node-dev --respawn src/server.js",

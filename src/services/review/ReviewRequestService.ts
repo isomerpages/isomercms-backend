@@ -243,14 +243,16 @@ export default class ReviewRequestService {
         // 3. The review request views table contains a record in the
         //    lastViewedAt entry, and the comment has a timestamp greater
         //    than the one stored in the database.
-        const newComments = await this.getComments(
+        const allComments = await this.getComments(
           sessionData,
           site,
           pullRequestNumber
         )
         const countNewComments = await Promise.all(
-          newComments.map(async (value) => value.isRead)
-        ).then((arr) => arr.filter((value) => value).length)
+          allComments.map(async (value) => value.isRead)
+        ).then(
+          (arr) => arr.filter((isCommentRead) => isCommentRead === true).length
+        )
 
         return {
           id: pullRequestNumber,

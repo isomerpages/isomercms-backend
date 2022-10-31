@@ -11,13 +11,13 @@ States:
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
             Parameters:
-              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-generalDomainValidation"
+              FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-generalDomainValidation"
               Payload.$: $
             Retry:
               - ErrorEquals:
                   - "States.ALL"
-                IntervalSeconds: 2
-                MaxAttempts: 6
+                IntervalSeconds: 60
+                MaxAttempts: 2
                 BackoffRate: 2
             End: true
       - StartAt: Primary domain validation
@@ -27,13 +27,13 @@ States:
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
             Parameters:
-              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
+              FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
               Payload.$: $
             Retry:
               - ErrorEquals:
                   - "States.ALL"
-                IntervalSeconds: 2
-                MaxAttempts: 6
+                IntervalSeconds: 60
+                MaxAttempts: 2
                 BackoffRate: 2
             End: true
       - StartAt: Redirection domain validation
@@ -43,13 +43,13 @@ States:
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
             Parameters:
-              FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
+              FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
               Payload.$: $
             Retry:
               - ErrorEquals:
                   - "States.ALL"
-                IntervalSeconds: 2
-                MaxAttempts: 6
+                IntervalSeconds: 60
+                MaxAttempts: 2 
                 BackoffRate: 2
             End: true
     Catch:
@@ -62,7 +62,7 @@ States:
     Resource: arn:aws:states:::lambda:invoke
     OutputPath: $.Payload
     Parameters:
-      FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-successNotification"
+      FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-successNotification"
       Payload.$: $
     Retry:
       - ErrorEquals:
@@ -84,7 +84,7 @@ States:
     Resource: arn:aws:states:::lambda:invoke
     OutputPath: $.Payload
     Parameters:
-      FunctionName: "arn:aws:lambda:ap-southeast-1:101010101010:function:${self:service}-${opt:stage, 'dev'}-failureNotification"
+      FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-failureNotification"
       Payload.$: $
     Retry:
       - ErrorEquals:

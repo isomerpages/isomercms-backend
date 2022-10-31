@@ -285,18 +285,41 @@ export default class ReviewRequestService {
     const { isomerUserId: userId } = sessionData
     const { id: reviewRequestId } = reviewRequest
 
-    await this.reviewRequestView.update(
-      {
-        lastViewedAt: new Date(),
+    await this.reviewRequestView.upsert({
+      reviewRequestId,
+      siteId: site.id,
+      userId,
+      lastViewedAt: new Date(),
+    })
+  }
+
+  markReviewRequestAsViewed = async (
+    sessionData: UserWithSiteSessionData,
+    site: Site,
+    requestId: number
+  ): Promise<void> => {
+    const { isomerUserId: userId } = sessionData
+
+    const reviewRequestView = await this.reviewRequestView.findOne({
+      where: {
+        siteId: site.id,
+        userId,
+        reviewRequestId: requestId,
       },
-      {
-        where: {
-          reviewRequestId,
-          siteId: site.id,
-          userId,
-        },
-      }
-    )
+    })
+
+    // We only want to create the entry if it does not exist
+    // (i.e. the review request has never been viewed before)
+    if (!reviewRequestView) {
+      await this.reviewRequestView.create({
+        reviewRequestId: requestId,
+        siteId: site.id,
+        userId,
+        // This field represents the user opening the review request
+        // itself, which the user has not done so yet at this stage.
+        lastViewedAt: null,
+      })
+    }
   }
 
   deleteAllReviewRequestViews = async (

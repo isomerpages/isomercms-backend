@@ -285,18 +285,12 @@ export default class ReviewRequestService {
     const { isomerUserId: userId } = sessionData
     const { id: reviewRequestId } = reviewRequest
 
-    await this.reviewRequestView.update(
-      {
-        lastViewedAt: new Date(),
-      },
-      {
-        where: {
-          reviewRequestId,
-          siteId: site.id,
-          userId,
-        },
-      }
-    )
+    await this.reviewRequestView.upsert({
+      reviewRequestId,
+      siteId: site.id,
+      userId,
+      lastViewedAt: new Date(),
+    })
   }
 
   markReviewRequestAsViewed = async (

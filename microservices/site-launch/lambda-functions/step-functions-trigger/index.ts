@@ -6,6 +6,7 @@ import AWS, { Lambda } from "aws-sdk"
 import logger from "../../shared/logger"
 
 export const stepFunctionsTrigger = async (event: MessageBody) => {
+  // console.log("in step functions trigger")
   const { AWS_REGION, AWS_ACCOUNT_NUMBER, NODE_ENV } = process.env
   const stepFunctionsParams =
     NODE_ENV === "LOCAL_DEV" ? { endpoint: "http://localhost:8003" } : {}

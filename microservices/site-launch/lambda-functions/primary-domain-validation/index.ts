@@ -10,10 +10,16 @@ import type {
   GetDomainAssociationCommandOutput,
 } from "@aws-sdk/client-amplify"
 
-import {
-  SITE_LAUNCH_LAMBDA_TYPE,
-  SITE_LAUNCH_LAMBDA_STATUS,
-} from "../../shared/types" // TODO: Change to aliased imports
+export enum SITE_LAUNCH_LAMBDA_TYPE {
+  GENERAL_DOMAIN_VALIDATION = "general-domain-validation",
+  PRIMARY_DOMAIN_VALIDATION = "primary-domain-validation",
+  REDIRECTION_DOMAIN_VALIDATION = "redirection-domain-validation",
+}
+
+export enum SITE_LAUNCH_LAMBDA_STATUS {
+  SUCCESS = "success",
+  FAILURE = "failure",
+}
 
 interface PrimaryDomainValidationLambdaParams {
   appId: string

@@ -2,30 +2,48 @@
 import type { APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
-import { MessageBody } from "@root/services/identity/QueueService"
-
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
+
+export interface MessageBody {
+  repoName: string
+  appId: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
+  domainValidationSource: string
+  domainValidationTarget: string
+  requestorEmail: string
+  agencyEmail: string
+  githubRedirectionUrl?: string
+  redirectionDomain?: [
+    {
+      source: string
+      target: string
+      type: string
+    }
+  ]
+  success?: boolean
+  siteLaunchError?: string
+}
 
 export const failureNotification = async (event: {
   Error: string
   Cause: string
 }): Promise<APIGatewayProxyResult> => {
-  console.log(event)
   const { Cause } = event
   const sqs = new SQS({ region: AWS_REGION })
 
   /**
    * the shape of the cause is as such:
-   * '{"errorMessage":"{\\"repoName\\":\\"kishoretest\\",\\"appId\\":\\"d302ik027bbbsq\\",\\"primaryDomainSource\\":\\"kishoretest.isomer.gov.sg\\",\\"primaryDomainTarget\\":\\"blah.cloudfront.net\\",\\"domainValidationSource\\":\\"blah.kishoretest.isomer.gov.sg\\",\\"domainValidationTarget\\":\\"blah.acm.aws\\",\\"success\\":false}","errorType":"Error",
-   * "trace":["Error: {\\"repoName\\":\\"kishoretest\\",\\"appId\\":\\"d302ik027bbbsq\\",\\"primaryDomainSource\\":\\"kishoretest.isomer.gov.sg\\",\\"primaryDomainTarget\\":\\"blah.cloudfront.net\\",\\"domainValidationSource\\":\\"blah.kishoretest.isomer.gov.sg\\",\\"domainValidationTarget\\":\\"blah.acm.aws\\",\\"success\\":false}","
+   * '{"errorMessage":"{"repoName":"kishoretest","appId":"d302ik027bbbsq","primaryDomainSource":"kishoretest.isomer.gov.sg","primaryDomainTarget":"blah.cloudfront.net","domainValidationSource":"blah.kishoretest.isomer.gov.sg","domainValidationTarget":"blah.acm.aws","success":false}","errorType":"Error",
+   * "trace":["Error: {"repoName":"kishoretest","appId":"d302ik027bbbsq","primaryDomainSource":"kishoretest.isomer.gov.sg","primaryDomainTarget":"blah.cloudfront.net","domainValidationSource":"blah.kishoretest.isomer.gov.sg","domainValidationTarget":"blah.acm.aws","success":false}","
    * at primaryDomainValidation
    * at processTicksAndRejections
    * at async MessagePort.<anonymous>"]}'
    *
-   * To extract out the relevant message, parse the message and get out the errorMessage
+   * To extract out the relevant messageBody, parse the message and get out the errorMessage
    */
   const messageBody: MessageBody = JSON.parse(JSON.parse(Cause).errorMessage)
-  messageBody.success = true
+  messageBody.success = false
   messageBody.siteLaunchError = Cause
 
   const messageParams = {
@@ -33,15 +51,11 @@ export const failureNotification = async (event: {
     MessageBody: JSON.stringify(messageBody),
   }
 
-  console.log(JSON.stringify(messageParams))
+  console.log("Message params:", JSON.stringify(messageParams))
 
-  sqs.sendMessage(messageParams, (err, data) => {
-    if (err) {
-      console.log("Error", err)
-    } else {
-      console.log("Success", data.MessageId)
-    }
-  })
+  const result = await sqs.sendMessage(messageParams).promise()
+
+  console.log("SQS Message sent:", result)
 
   return {
     statusCode: 200,

@@ -2,8 +2,26 @@
 
 import { Octokit } from "@octokit/rest"
 
-import { MessageBody } from "@root/services/identity/QueueService"
-
+export interface MessageBody {
+  repoName: string
+  appId: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
+  domainValidationSource: string
+  domainValidationTarget: string
+  requestorEmail: string
+  agencyEmail: string
+  githubRedirectionUrl?: string
+  redirectionDomain?: [
+    {
+      source: string
+      target: string
+      type: string
+    }
+  ]
+  success?: boolean
+  siteLaunchError?: string
+}
 export const redirectionDomainValidation = async (
   event: Pick<
     MessageBody,
@@ -53,7 +71,7 @@ export const redirectionDomainValidation = async (
         email: "isomeradmin@open.gov.sg",
       },
       content: Buffer.from(template, "binary").toString("base64"),
-      branch: "test/redirectionLambdaTest",
+      branch: "test/redirectionLambdaTest", // todo change to master in the future.
     }
   )
   console.log(

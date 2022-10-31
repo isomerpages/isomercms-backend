@@ -17,7 +17,6 @@ provider:
   environment:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
-    AWS_REGION: ${env:AWS_REGION}
     NODE_ENV: ${env:NODE_ENV}
 
 custom:
@@ -44,14 +43,8 @@ functions:
   stepFunctionsTrigger:
     handler: handler.stepFunctionsTrigger
     events:
-      - sqs: arn:aws:sqs:${aws:region}:{aws:accountId}:outgoingQueueStaging
+      - sqs: arn:aws:sqs:${aws:region}:${aws:accountId}:outgoingQueueStaging
 stepFunctions:
   stateMachines:
     siteLaunch:
-      definition: ${file(./microservices/site-launch/step-function-workflows/site-launch.asl.yaml)}
-# resources:
-#   Resources:
-#     outgoingQueue:
-#       Type: "AWS::SQS::Queue"
-#       Properties:
-#         QueueName: "outgoingQueueStaging"
+      definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}

@@ -295,6 +295,70 @@ export class ReviewsRouter {
     return res.status(200).json()
   }
 
+  markReviewRequestAsViewed: RequestHandler<
+    { siteName: string; requestId: number },
+    string | ResponseErrorBody,
+    never,
+    unknown,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId: prNumber } = req.params
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Check that user exists.
+    // Having session data is proof that this user exists
+    // as otherwise, they would be rejected by our middleware
+    const { userWithSiteSessionData } = res.locals
+
+    // Check if they are a collaborator
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
+    )
+
+    if (!role) {
+      return res.status(400).send({
+        message: "User is not a collaborator of this site!",
+      })
+    }
+
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      prNumber
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "markReviewRequestAsViewed",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          prNumber,
+        },
+      })
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Mark review request as viewed
+    await this.reviewRequestService.markReviewRequestAsViewed(
+      userWithSiteSessionData,
+      site,
+      possibleReviewRequest.id
+    )
+
+    return res.status(200).json()
+  }
+
   getReviewRequest: RequestHandler<
     { siteName: string; requestId: number },
     { reviewRequest: ReviewRequestDto } | ResponseErrorBody,
@@ -785,6 +849,10 @@ export class ReviewsRouter {
     router.get(
       "/:requestId",
       attachReadRouteHandlerWrapper(this.getReviewRequest)
+    )
+    router.post(
+      "/:requestId/viewed",
+      attachWriteRouteHandlerWrapper(this.markReviewRequestAsViewed)
     )
     router.post(
       "/:requestId/merge",

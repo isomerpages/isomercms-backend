@@ -123,14 +123,13 @@ export class FormsgSiteLaunchRouter {
       subDomainSettings
     )
 
+    
     if (launchSite.isOk()) {
-      await this.sendVerificationDetails(
-        requesterEmail,
-        repoName,
-        submissionId,
-        primaryDomain,
-        launchSite.value.primaryDomainTarget
-      )
+      await this.sendVerificationDetails(requesterEmail, repoName, submissionId, 
+        launchSite.value.domainValidationSource,
+        launchSite.value.domainValidationTarget, 
+        launchSite.value.primaryDomainTarget,
+        launchSite.value.domainValidationSource)
     } else {
       await this.sendLaunchError(
         requesterEmail,
@@ -194,14 +193,25 @@ export class FormsgSiteLaunchRouter {
     repoName: string,
     submissionId: string,
     domainValidationSource: string,
-    domainValidationTarget: string
-  ): Promise<void> => {
+    domainValidationTarget: string,
+    primaryDomainSource: string,
+    primaryDomainTarget: string,
+    redirectionDomainSource?: string,
+    redirectionDomainTarget?: string
+  ) : Promise<void> => {
     const subject = `[Isomer] Launch site ${repoName} domain validation`
-    const html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
+    let html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
 <p>Please set the following CNAME record:</p>
 <p>Source: ${domainValidationSource}</p>
 <p>Target: ${domainValidationTarget}</p>
-<p>This email was sent from the Isomer CMS backend.</p>`
+<p>Source: ${primaryDomainSource}</p>
+<p>Target: ${primaryDomainTarget}</p>`
+    if (redirectionDomainSource) {
+      html += `<p>Source: ${redirectionDomainSource}</p>
+<p>Target: ${redirectionDomainTarget}</p>\n` // todo figure out why this is undefined
+    }
+
+    html += `<p>This email was sent from the Isomer CMS backend.</p>`
     await mailer.sendMail(requestorEmail, subject, html)
   }
 

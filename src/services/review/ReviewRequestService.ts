@@ -234,6 +234,27 @@ export default class ReviewRequestService {
           },
         }))
 
+        // It is a new comment to the user if any of the following
+        // conditions satisfy:
+        // 1. The review request views table does not contain a record
+        //    for the user and the review request.
+        // 2. The review request views table contains a record for that
+        //    user and review request, but the lastViewedAt entry is NULL.
+        // 3. The review request views table contains a record in the
+        //    lastViewedAt entry, and the comment has a timestamp greater
+        //    than the one stored in the database.
+        const allComments = await this.getComments(
+          sessionData,
+          site,
+          pullRequestNumber
+        )
+        const countNewComments = await Promise.all(
+          allComments.map(async (value) => value.isRead)
+        ).then((arr) => {
+          const readComments = arr.filter((isRead) => !!isRead)
+          return readComments.length
+        })
+
         return {
           id: pullRequestNumber,
           author: req.requestor.email || "Unknown user",
@@ -242,8 +263,7 @@ export default class ReviewRequestService {
           description: body || "",
           changedFiles: changed_files,
           createdAt: new Date(created_at).getTime(),
-          // TODO!
-          newComments: 0,
+          newComments: countNewComments,
           firstView: isFirstView,
         }
       })

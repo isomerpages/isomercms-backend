@@ -379,6 +379,39 @@ export default class ReviewRequestService {
     return possibleReviewRequest
   }
 
+  getLatestMergedReviewRequest = async (site: Site) => {
+    const possibleReviewRequest = await this.repository.findOne({
+      where: {
+        siteId: site.id,
+        reviewStatus: ReviewRequestStatus.Merged,
+      },
+      include: [
+        {
+          model: ReviewMeta,
+          as: "reviewMeta",
+        },
+        {
+          model: User,
+          as: "requestor",
+        },
+        {
+          model: User,
+          as: "reviewers",
+        },
+        {
+          model: Site,
+        },
+      ],
+      order: [[ReviewMeta, "pullRequestNumber", "DESC"]],
+    })
+
+    if (!possibleReviewRequest) {
+      return new RequestNotFoundError()
+    }
+
+    return possibleReviewRequest
+  }
+
   getFullReviewRequest = async (
     userWithSiteSessionData: UserWithSiteSessionData,
     site: Site,

@@ -232,7 +232,6 @@ export default class InfraService {
         domainValidationTarget,
         requestorEmail: requestor.email ? requestor.email : "",
         agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
-        success: true,
       }
 
       if (newLaunchParams.redirectionDomainSource) {

@@ -39,6 +39,7 @@ export default class QueueService {
     const messages = await this.queueClient.receiveMessage()
     try {
       messages?.forEach((message) => {
+        console.log(JSON.stringify(message))
         /**
          * Message from SQS wraps the message body with a 'Records'. eg.
          * {

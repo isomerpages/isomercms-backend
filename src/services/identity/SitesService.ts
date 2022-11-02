@@ -11,6 +11,7 @@ import {
   ISOMER_ADMIN_REPOS,
 } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubCommitData } from "@root/types/commitData"
@@ -21,6 +22,7 @@ import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
+import ReviewRequestService from "@services/review/ReviewRequestService"
 
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
@@ -28,6 +30,7 @@ interface SitesServiceProps {
   configYmlService: ConfigYmlService
   usersService: UsersService
   isomerAdminsService: IsomerAdminsService
+  reviewRequestService: ReviewRequestService
 }
 
 type SiteUrlTypes = "staging" | "prod"
@@ -46,18 +49,22 @@ class SitesService {
 
   private readonly isomerAdminsService: SitesServiceProps["isomerAdminsService"]
 
+  private readonly reviewRequestService: SitesServiceProps["reviewRequestService"]
+
   constructor({
     siteRepository,
     gitHubService,
     configYmlService,
     usersService,
     isomerAdminsService,
+    reviewRequestService,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
     this.configYmlService = configYmlService
     this.usersService = usersService
     this.isomerAdminsService = isomerAdminsService
+    this.reviewRequestService = reviewRequestService
   }
 
   isGitHubCommitData(commit: any): commit is GitHubCommitData {
@@ -69,6 +76,13 @@ class SitesService {
       (commit as GitHubCommitData).author.email !== undefined &&
       (commit as GitHubCommitData).message !== undefined
     )
+  }
+
+  extractAuthorEmail(commit: GitHubCommitData): string {
+    const {
+      author: { email: authorEmail },
+    } = commit
+    return authorEmail
   }
 
   async insertUrlsFromConfigYml(
@@ -175,27 +189,49 @@ class SitesService {
     }
 
     // Legacy style of commits, or if the user is not found
-    const {
-      author: { email: authorEmail },
-    } = commit
-    return authorEmail
+    return this.extractAuthorEmail(commit)
   }
 
-  async getMergeAuthorEmail(commit: GitHubCommitData) {
+  async getMergeAuthorEmail(
+    commit: GitHubCommitData,
+    sessionData: UserWithSiteSessionData
+  ) {
     const {
       author: { name: authorName },
     } = commit
+    const { siteName } = sessionData
 
-    // Commit was made by our common identity GitHub user
-    if (authorName.startsWith("isomergithub")) {
-      // TODO: Retrieve email address of user from review request table
+    if (!authorName.startsWith("isomergithub")) {
+      // Legacy style of commits, or if the user is not found
+      return this.extractAuthorEmail(commit)
     }
 
-    // Legacy style of using pull requests, or if the user is not found
+    // Commit was made by our common identity GitHub user
+    const site = await this.getBySiteName(siteName)
+    if (!site) {
+      return this.extractAuthorEmail(commit)
+    }
+
+    // Retrieve the latest merged review request for the site
+    const possibleReviewRequest = await this.reviewRequestService.getLatestMergedReviewRequest(
+      site
+    )
+    if (possibleReviewRequest instanceof RequestNotFoundError) {
+      // No review request found, fallback to the commit author email
+      return this.extractAuthorEmail(commit)
+    }
+
+    // Return the email address of the requestor who made the review request
     const {
-      author: { email: authorEmail },
-    } = commit
-    return authorEmail
+      requestor: { email: requestorEmail },
+    } = possibleReviewRequest
+
+    if (requestorEmail) {
+      return requestorEmail
+    }
+
+    // No email address found, fallback to the commit author email
+    return this.extractAuthorEmail(commit)
   }
 
   async getUrlsOfSite(
@@ -395,7 +431,7 @@ class SitesService {
     } = prodCommit
 
     const stagingAuthor = await this.getCommitAuthorEmail(stagingCommit)
-    const prodAuthor = await this.getMergeAuthorEmail(prodCommit)
+    const prodAuthor = await this.getMergeAuthorEmail(prodCommit, sessionData)
 
     return {
       savedAt: new Date(stagingDate).getTime() || 0,

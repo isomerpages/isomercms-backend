@@ -1,27 +1,7 @@
+import { MessageBody } from "@root/../microservices/site-launch/shared/types"
 import logger from "@root/logger/logger"
 
 import QueueClient from "./QueueClient"
-
-export interface MessageBody {
-  repoName: string
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  requestorEmail: string
-  agencyEmail: string
-  githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
-  success?: boolean
-  siteLaunchError?: string
-}
 
 export default class QueueService {
   private readonly queueClient: QueueClient

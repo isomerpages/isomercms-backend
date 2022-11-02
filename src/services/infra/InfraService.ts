@@ -5,6 +5,7 @@ import { Err, err, Ok, ok } from "neverthrow"
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import { mailer } from "@root/../build/src/services/utilServices/MailClient"
+import { MessageBody } from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
@@ -16,7 +17,7 @@ import {
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
-import QueueService, { MessageBody } from "../identity/QueueService"
+import QueueService from "../identity/QueueService"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
 

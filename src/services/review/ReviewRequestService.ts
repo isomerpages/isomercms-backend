@@ -498,6 +498,11 @@ export default class ReviewRequestService {
     await reviewRequest.save()
   }
 
+  deleteReviewRequestApproval = async (reviewRequest: ReviewRequest) => {
+    reviewRequest.reviewStatus = ReviewRequestStatus.Open
+    await reviewRequest.save()
+  }
+
   closeReviewRequest = async (reviewRequest: ReviewRequest) => {
     const siteName = reviewRequest.site.name
     const { pullRequestNumber } = reviewRequest.reviewMeta

@@ -12,9 +12,11 @@ import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
+  CommentItem,
   DashboardReviewRequestDto,
   EditedItemDto,
   FileType,
+  GithubCommentData,
   ReviewRequestDto,
 } from "@root/types/dto/review"
 import { isIsomerError } from "@root/types/error"
@@ -125,6 +127,25 @@ export default class ReviewRequestService {
     return mappings
   }
 
+  computeCommentData = async (
+    comments: GithubCommentData[],
+    viewedTime: Date | null
+  ) => {
+    const mappings = await Promise.all(
+      comments.map(async ({ userId, message, createdAt }) => {
+        const createdTime = new Date(createdAt)
+        const author = await this.users.findByPk(userId)
+        return {
+          user: author?.email || "",
+          message,
+          createdAt: createdTime.getTime(),
+          isRead: viewedTime ? createdTime < viewedTime : false,
+        }
+      })
+    )
+    return mappings
+  }
+
   createReviewRequest = async (
     sessionData: UserWithSiteSessionData,
     reviewers: User[],
@@ -207,11 +228,32 @@ export default class ReviewRequestService {
         // does not contain a record for the user and the review request
         const isFirstView = !(await this.reviewRequestView.count({
           where: {
-            reviewId: req.id,
+            reviewRequestId: req.id,
             siteId: site.id,
             userId,
           },
         }))
+
+        // It is a new comment to the user if any of the following
+        // conditions satisfy:
+        // 1. The review request views table does not contain a record
+        //    for the user and the review request.
+        // 2. The review request views table contains a record for that
+        //    user and review request, but the lastViewedAt entry is NULL.
+        // 3. The review request views table contains a record in the
+        //    lastViewedAt entry, and the comment has a timestamp greater
+        //    than the one stored in the database.
+        const allComments = await this.getComments(
+          sessionData,
+          site,
+          pullRequestNumber
+        )
+        const countNewComments = await Promise.all(
+          allComments.map(async (value) => value.isRead)
+        ).then((arr) => {
+          const readComments = arr.filter((isRead) => !!isRead)
+          return readComments.length
+        })
 
         return {
           id: pullRequestNumber,
@@ -221,8 +263,7 @@ export default class ReviewRequestService {
           description: body || "",
           changedFiles: changed_files,
           createdAt: new Date(created_at).getTime(),
-          // TODO!
-          newComments: 0,
+          newComments: countNewComments,
           firstView: isFirstView,
         }
       })
@@ -285,18 +326,41 @@ export default class ReviewRequestService {
     const { isomerUserId: userId } = sessionData
     const { id: reviewRequestId } = reviewRequest
 
-    await this.reviewRequestView.update(
-      {
-        lastViewedAt: new Date(),
+    await this.reviewRequestView.upsert({
+      reviewRequestId,
+      siteId: site.id,
+      userId,
+      lastViewedAt: new Date(),
+    })
+  }
+
+  markReviewRequestAsViewed = async (
+    sessionData: UserWithSiteSessionData,
+    site: Site,
+    requestId: number
+  ): Promise<void> => {
+    const { isomerUserId: userId } = sessionData
+
+    const reviewRequestView = await this.reviewRequestView.findOne({
+      where: {
+        siteId: site.id,
+        userId,
+        reviewRequestId: requestId,
       },
-      {
-        where: {
-          reviewRequestId,
-          siteId: site.id,
-          userId,
-        },
-      }
-    )
+    })
+
+    // We only want to create the entry if it does not exist
+    // (i.e. the review request has never been viewed before)
+    if (!reviewRequestView) {
+      await this.reviewRequestView.create({
+        reviewRequestId: requestId,
+        siteId: site.id,
+        userId,
+        // This field represents the user opening the review request
+        // itself, which the user has not done so yet at this stage.
+        lastViewedAt: null,
+      })
+    }
   }
 
   deleteAllReviewRequestViews = async (
@@ -347,6 +411,39 @@ export default class ReviewRequestService {
           model: Site,
         },
       ],
+    })
+
+    if (!possibleReviewRequest) {
+      return new RequestNotFoundError()
+    }
+
+    return possibleReviewRequest
+  }
+
+  getLatestMergedReviewRequest = async (site: Site) => {
+    const possibleReviewRequest = await this.repository.findOne({
+      where: {
+        siteId: site.id,
+        reviewStatus: ReviewRequestStatus.Merged,
+      },
+      include: [
+        {
+          model: ReviewMeta,
+          as: "reviewMeta",
+        },
+        {
+          model: User,
+          as: "requestor",
+        },
+        {
+          model: User,
+          as: "reviewers",
+        },
+        {
+          model: Site,
+        },
+      ],
+      order: [[ReviewMeta, "pullRequestNumber", "DESC"]],
     })
 
     if (!possibleReviewRequest) {
@@ -434,6 +531,11 @@ export default class ReviewRequestService {
     await reviewRequest.save()
   }
 
+  deleteReviewRequestApproval = async (reviewRequest: ReviewRequest) => {
+    reviewRequest.reviewStatus = ReviewRequestStatus.Open
+    await reviewRequest.save()
+  }
+
   closeReviewRequest = async (reviewRequest: ReviewRequest) => {
     const siteName = reviewRequest.site.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
@@ -454,5 +556,59 @@ export default class ReviewRequestService {
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()
+  }
+
+  createComment = async (
+    sessionData: UserWithSiteSessionData,
+    pullRequestNumber: number,
+    message: string
+  ) => {
+    const { siteName, isomerUserId } = sessionData
+
+    return this.apiService.createComment(
+      siteName,
+      pullRequestNumber,
+      isomerUserId,
+      message
+    )
+  }
+
+  getComments = async (
+    sessionData: UserWithSiteSessionData,
+    site: Site,
+    pullRequestNumber: number
+  ): Promise<CommentItem[]> => {
+    const { siteName, isomerUserId: userId } = sessionData
+
+    const comments = await this.apiService.getComments(
+      siteName,
+      pullRequestNumber
+    )
+
+    const requestsView = await this.reviewRequestView.findOne({
+      where: {
+        siteId: site.id,
+        userId,
+      },
+      include: [
+        {
+          model: ReviewRequest,
+          required: true,
+          include: [
+            {
+              model: ReviewMeta,
+              required: true,
+              where: {
+                pullRequestNumber,
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
+
+    return this.computeCommentData(comments, viewedTime)
   }
 }

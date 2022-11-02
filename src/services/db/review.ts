@@ -1,4 +1,12 @@
-import { RawFileChangeInfo, Commit, RawPullRequest } from "@root/types/github"
+import _ from "lodash"
+
+import {
+  RawFileChangeInfo,
+  Commit,
+  RawPullRequest,
+  RawComment,
+  fromGithubCommitMessage,
+} from "@root/types/github"
 
 import { isomerRepoAxiosInstance as axiosInstance } from "../api/AxiosInstance"
 
@@ -83,3 +91,41 @@ export const approvePullRequest = (
       },
     }
   )
+
+export const getComments = async (
+  siteName: string,
+  pullRequestNumber: number
+) => {
+  const rawComments = await axiosInstance
+    .get<RawComment[]>(`${siteName}/issues/${pullRequestNumber}/comments`)
+    .then(({ data }) => data)
+  return _.compact(
+    rawComments.map((rawComment) => {
+      const commentData = fromGithubCommitMessage(rawComment.body)
+      if (_.isEmpty(commentData)) return null // Will be filtered out by _.compact
+      const { userId, message } = commentData
+      if (!userId || !message) return null // Will be filtered out by _.compact
+      return {
+        userId,
+        message,
+        createdAt: rawComment.created_at,
+      }
+    })
+  )
+}
+
+export const createComment = async (
+  siteName: string,
+  pullRequestNumber: number,
+  userId: string,
+  message: string
+) => {
+  const stringifiedMessage = JSON.stringify({
+    userId,
+    message,
+  })
+  return axiosInstance.post<void>(
+    `${siteName}/issues/${pullRequestNumber}/comments`,
+    { body: stringifiedMessage }
+  )
+}

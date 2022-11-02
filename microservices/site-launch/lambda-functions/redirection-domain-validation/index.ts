@@ -28,6 +28,8 @@ export const redirectionDomainValidation = async (
     "redirectionDomain" | "primaryDomainTarget" | "primaryDomainSource"
   >
 ) => {
+  const DEFAULT_BRANCH = "test/redirectionLambdaTest" // todo change to master in the future.
+
   // Validation check
   const { primaryDomainSource, redirectionDomain } = event
 
@@ -59,6 +61,23 @@ export const redirectionDomainValidation = async (
     auth: process.env.SYSTEM_GITHUB_TOKEN,
   })
 
+  let fileExists = true
+  // see if domain commit in github first. If exists, dont create commit.
+  try {
+    await octokit.request(
+      `GET /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
+      {
+        owner: "isomerpages",
+        repo: "isomer-redirection",
+        path: "letsencrypt/.",
+        ref: DEFAULT_BRANCH,
+      }
+    )
+  } catch (fileFoundError) {
+    fileExists = false
+  }
+  if (fileExists) return
+
   const response = await octokit.request(
     `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
     {
@@ -71,7 +90,7 @@ export const redirectionDomainValidation = async (
         email: "isomeradmin@open.gov.sg",
       },
       content: Buffer.from(template, "binary").toString("base64"),
-      branch: "test/redirectionLambdaTest", // todo change to master in the future.
+      branch: DEFAULT_BRANCH,
     }
   )
   console.log(

@@ -499,7 +499,7 @@ export default class ReviewRequestService {
   }
 
   deleteReviewRequestApproval = async (reviewRequest: ReviewRequest) => {
-    reviewRequest.reviewStatus = "OPEN"
+    reviewRequest.reviewStatus = ReviewRequestStatus.Open
     await reviewRequest.save()
   }
 

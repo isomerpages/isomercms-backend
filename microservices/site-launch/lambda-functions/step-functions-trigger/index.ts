@@ -23,17 +23,9 @@ export interface MessageBody {
   siteLaunchError?: string
 }
 export const stepFunctionsTrigger = async (event: MessageBody) => {
-  const {
-    AWS_REGION,
-    AWS_ACCOUNT_NUMBER,
-    NODE_ENV,
-    STATE_MACHINE_NAME,
-  } = process.env
-  const stepFunctionsParams =
-    NODE_ENV === "LOCAL_DEV" ? { endpoint: "http://localhost:8003" } : {}
-
+  const { AWS_REGION, AWS_ACCOUNT_NUMBER, STATE_MACHINE_NAME } = process.env
   try {
-    const stepFunctions = new StepFunctions(stepFunctionsParams)
+    const stepFunctions = new StepFunctions()
     const stateMachineArn = `arn:aws:states:${AWS_REGION}:${AWS_ACCOUNT_NUMBER}:stateMachine:${STATE_MACHINE_NAME}`
     const params = {
       stateMachineArn,
@@ -48,10 +40,7 @@ export const stepFunctionsTrigger = async (event: MessageBody) => {
   } catch (err) {
     const lambda = new Lambda({
       region: AWS_REGION,
-      endpoint:
-        NODE_ENV === "LOCAL_DEV"
-          ? "http://localhost:3002"
-          : `https://lambda.${AWS_REGION}.amazonaws.com`,
+      endpoint: `https://lambda.${AWS_REGION}.amazonaws.com`,
     })
     const params: Lambda.Types.InvocationRequest = {
       FunctionName: `isomercms-dev-failureNotification`,

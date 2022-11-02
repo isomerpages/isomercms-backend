@@ -2,39 +2,13 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
+import {
+  MessageBody,
+  SITE_LAUNCH_LAMBDA_STATUS,
+  SITE_LAUNCH_LAMBDA_TYPE,
+} from "../../shared/types"
+
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
-
-export enum SITE_LAUNCH_LAMBDA_STATUS {
-  SUCCESS = "success",
-  FAILURE = "failure",
-}
-
-export enum SITE_LAUNCH_LAMBDA_TYPE {
-  GENERAL_DOMAIN_VALIDATION = "general-domain-validation",
-  PRIMARY_DOMAIN_VALIDATION = "primary-domain-validation",
-  REDIRECTION_DOMAIN_VALIDATION = "redirection-domain-validation",
-}
-
-export interface MessageBody {
-  repoName: string
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  requestorEmail: string
-  agencyEmail: string
-  githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
-  success?: boolean
-  siteLaunchError?: string
-}
 export interface inputParams {
   lambdaType: SITE_LAUNCH_LAMBDA_TYPE
   status: SITE_LAUNCH_LAMBDA_STATUS

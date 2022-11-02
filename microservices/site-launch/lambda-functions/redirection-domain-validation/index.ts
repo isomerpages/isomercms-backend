@@ -2,26 +2,6 @@
 
 import { Octokit } from "@octokit/rest"
 
-export interface MessageBody {
-  repoName: string
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  requestorEmail: string
-  agencyEmail: string
-  githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
-  success?: boolean
-  siteLaunchError?: string
-}
 export const redirectionDomainValidation = async (
   event: Pick<
     MessageBody,

@@ -2,26 +2,6 @@
 
 import { StepFunctions, Lambda } from "aws-sdk"
 
-export interface MessageBody {
-  repoName: string
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  requestorEmail: string
-  agencyEmail: string
-  githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
-  success?: boolean
-  siteLaunchError?: string
-}
 export const stepFunctionsTrigger = async (event: MessageBody) => {
   const { AWS_REGION, AWS_ACCOUNT_NUMBER, STATE_MACHINE_NAME } = process.env
   try {

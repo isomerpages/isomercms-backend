@@ -8,3 +8,24 @@ export enum SITE_LAUNCH_LAMBDA_STATUS {
   SUCCESS = "success",
   FAILURE = "failure",
 }
+
+export interface MessageBody {
+  repoName: string
+  appId: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
+  domainValidationSource: string
+  domainValidationTarget: string
+  requestorEmail: string
+  agencyEmail: string
+  githubRedirectionUrl?: string
+  redirectionDomain?: [
+    {
+      source: string
+      target: string
+      type: string
+    }
+  ]
+  success?: boolean
+  siteLaunchError?: string
+}

@@ -153,7 +153,9 @@ export class LaunchesService {
             "Call to CreateApp on Amplify returned malformed output."
           )
         }
-        logger.info(`Successfully published '${domainAssociation}'`)
+        logger.info(
+          `Successfully published '${JSON.stringify(domainAssociation)}'`
+        )
         return domainAssociation
       })
     // .catch((err) => console.log(err))

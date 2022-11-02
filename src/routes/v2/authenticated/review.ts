@@ -293,7 +293,7 @@ export class ReviewsRouter {
       site
     )
 
-    return res.status(200).json()
+    return res.status(200).send()
   }
 
   markReviewRequestAsViewed: RequestHandler<
@@ -647,7 +647,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 3: Retrieve review request
+    // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
       site,
       requestId
@@ -669,7 +669,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 4: Check if the user is a reviewer of the RR
+    // Step 3: Check if the user is a reviewer of the RR
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,
@@ -691,7 +691,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 5: Approve review request
+    // Step 4: Approve review request
     // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
@@ -805,7 +805,7 @@ export class ReviewsRouter {
       possibleReviewRequest
     )
 
-    return res.status(200).json()
+    return res.status(200).send()
   }
 
   closeReviewRequest: RequestHandler<
@@ -835,7 +835,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 3: Retrieve review request
+    // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
       site,
       requestId
@@ -857,7 +857,7 @@ export class ReviewsRouter {
         .json({ message: possibleReviewRequest.message })
     }
 
-    // Step 4: Check if the user is the requestor
+    // Step 3: Check if the user is the requestor
     const { requestor } = possibleReviewRequest
     const isRequestor = requestor.email === userWithSiteSessionData.email
     if (!isRequestor) {
@@ -876,16 +876,94 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 5: Close review request
+    // Step 4: Close review request
     // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
     await this.reviewRequestService.closeReviewRequest(possibleReviewRequest)
 
-    // Step 6: Clean up the review request view records
+    // Step 5: Clean up the review request view records
     // The error is discarded as we are guaranteed to have a review request
     await this.reviewRequestService.deleteAllReviewRequestViews(site, requestId)
 
+    return res.status(200).send()
+  }
+
+  deleteReviewRequestApproval: RequestHandler<
+    { siteName: string; requestId: number },
+    ResponseErrorBody,
+    never,
+    unknown,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const { userWithSiteSessionData } = res.locals
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "deleteReviewRequestApproval",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "deleteReviewRequestApproval",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 3: Check if the user is a reviewer of the RR
+    const { reviewers } = possibleReviewRequest
+    const isReviewer = _.some(
+      reviewers,
+      (user) => user.email === userWithSiteSessionData.email
+    )
+
+    if (!isReviewer) {
+      logger.error({
+        message: "",
+        method: "deleteReviewRequestApproval",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 4: Delete review request approval
+    await this.reviewRequestService.deleteReviewRequestApproval(
+      possibleReviewRequest
+    )
     return res.status(200).send()
   }
 
@@ -925,6 +1003,10 @@ export class ReviewsRouter {
     router.post(
       "/:requestId/comments",
       attachWriteRouteHandlerWrapper(this.createComment)
+    )
+    router.delete(
+      "/:requestId/approve",
+      attachReadRouteHandlerWrapper(this.deleteReviewRequestApproval)
     )
     router.post(
       "/:requestId/comments/viewedComments",

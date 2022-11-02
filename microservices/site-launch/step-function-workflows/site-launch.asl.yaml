@@ -10,14 +10,15 @@ States:
             Type: Task
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
+            InputPath: $.Records[0].body
             Parameters:
               FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-generalDomainValidation"
               Payload.$: $
             Retry:
               - ErrorEquals:
                   - "States.ALL"
-                IntervalSeconds: 60
-                MaxAttempts: 2
+                IntervalSeconds: 300
+                MaxAttempts: 12
                 BackoffRate: 2
             End: true
       - StartAt: Primary domain validation
@@ -28,13 +29,13 @@ States:
             OutputPath: $.Payload
             Parameters:
               FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
-              Payload.$: $
+              Payload.$:  $.Records[0].body
             Retry:
               - ErrorEquals:
                   - "States.ALL"
-                IntervalSeconds: 60
-                MaxAttempts: 2
-                BackoffRate: 2
+                IntervalSeconds: 300
+                MaxAttempts: 12
+                BackoffRate: 1
             End: true
       - StartAt: Redirection domain validation
         States:
@@ -43,14 +44,14 @@ States:
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
             Parameters:
-              FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
-              Payload.$: $
+              FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-redirectionDomainValidation"
+              Payload.$:  $.Records[0].body
             Retry:
               - ErrorEquals:
                   - "States.ALL"
-                IntervalSeconds: 60
-                MaxAttempts: 2 
-                BackoffRate: 2
+                IntervalSeconds: 300
+                MaxAttempts: 12
+                BackoffRate: 1
             End: true
     Catch:
       - ErrorEquals:

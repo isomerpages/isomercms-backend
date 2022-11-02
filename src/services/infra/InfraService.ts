@@ -2,6 +2,7 @@ import { SubDomainSettings } from "aws-sdk/clients/amplify"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
+import { MessageBody } from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus } from "@root/constants"
 import logger from "@root/logger/logger"
 import DeploymentsService from "@services/identity/DeploymentsService"
@@ -11,7 +12,7 @@ import LaunchesService, {
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
-import QueueService, { MessageBody } from "../identity/QueueService"
+import QueueService from "../identity/QueueService"
 import { mailer } from "../utilServices/MailClient"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000

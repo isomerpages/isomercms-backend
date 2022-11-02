@@ -3,29 +3,10 @@ import type { APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
 import logger from "../../shared/logger"
+import { MessageBody } from "../../shared/types"
+
 
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
-
-export interface MessageBody {
-  repoName: string
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  requestorEmail: string
-  agencyEmail: string
-  githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
-  success?: boolean
-  siteLaunchError?: string
-}
 
 export const failureNotification = async (event: {
   Error: string

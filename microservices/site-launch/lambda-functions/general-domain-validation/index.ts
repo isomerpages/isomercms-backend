@@ -8,33 +8,11 @@ import type {
   GetDomainAssociationCommandOutput,
 } from "@aws-sdk/client-amplify"
 
-
-import logger from "../../shared/logger"
 import {
-  SITE_LAUNCH_LAMBDA_TYPE,
+  MessageBody,
   SITE_LAUNCH_LAMBDA_STATUS,
-} from "../../shared/types" // TODO: Change to aliased imports
-
-export interface MessageBody {
-  repoName: string
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  requestorEmail: string
-  agencyEmail: string
-  githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
-  success?: boolean
-  siteLaunchError?: string
-}
+  SITE_LAUNCH_LAMBDA_TYPE,
+} from "../../shared/types"
 
 
 interface GeneralDomainValidationLambdaResponse {

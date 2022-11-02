@@ -23,7 +23,7 @@ class MediaFilesRouter {
   }
 
   // Create new page in collection
-  async createMediaFile(req, res) {
+  async createMediaFile(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params
@@ -39,7 +39,8 @@ class MediaFilesRouter {
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Read page in collection
@@ -56,7 +57,7 @@ class MediaFilesRouter {
   }
 
   // Update page in collection
-  async updateMediaFile(req, res) {
+  async updateMediaFile(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { fileName, directoryName } = req.params
@@ -84,11 +85,12 @@ class MediaFilesRouter {
         sha,
       })
     }
-    return res.status(200).json(updateResp)
+    res.status(200).json(updateResp)
+    return next()
   }
 
   // Delete page in collection
-  async deleteMediaFile(req, res) {
+  async deleteMediaFile(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { fileName, directoryName } = req.params
@@ -101,7 +103,8 @@ class MediaFilesRouter {
       sha,
     })
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

@@ -48,7 +48,7 @@ class ResourceRoomRouter {
   }
 
   // Create new resource room
-  async createResourceRoomDirectory(req, res) {
+  async createResourceRoomDirectory(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { error } = CreateResourceDirectoryRequestSchema.validate(req.body)
@@ -61,11 +61,12 @@ class ResourceRoomRouter {
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Rename resource room
-  async renameResourceRoomDirectory(req, res) {
+  async renameResourceRoomDirectory(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName } = req.params
@@ -80,7 +81,8 @@ class ResourceRoomRouter {
       }
     )
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Delete resource room

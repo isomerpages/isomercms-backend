@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */ // todo remove this and use prefer-default-export
 
-import AWS, { Lambda } from "aws-sdk"
+import AWS, { Lambda, StepFunctions } from "aws-sdk"
 
 import logger from "../../shared/logger"
 
@@ -25,15 +25,10 @@ export interface MessageBody {
   siteLaunchError?: string
 }
 export const stepFunctionsTrigger = async (event: MessageBody) => {
-  // console.log("in step functions trigger")
-  const { AWS_REGION, AWS_ACCOUNT_NUMBER, NODE_ENV } = process.env
+  const { AWS_REGION, AWS_ACCOUNT_NUMBER, STATE_MACHINE_NAME } = process.env
   try {
-    const stepFunctions = new AWS.StepFunctions({
-      endpoint: NODE_ENV ?? "http://localhost:8083",
-    })
-
-    const stateMachineArn = `arn:aws:states:${AWS_REGION}:${AWS_ACCOUNT_NUMBER}:stateMachine:siteLaunch`
-
+    const stepFunctions = new StepFunctions()
+    const stateMachineArn = `arn:aws:states:${AWS_REGION}:${AWS_ACCOUNT_NUMBER}:stateMachine:${STATE_MACHINE_NAME}`
     const params = {
       stateMachineArn,
       input: JSON.stringify(event),
@@ -49,10 +44,7 @@ export const stepFunctionsTrigger = async (event: MessageBody) => {
   } catch (err) {
     const lambda = new Lambda({
       region: AWS_REGION,
-      endpoint:
-        NODE_ENV === "LOCAL_DEV"
-          ? "http://localhost:3002"
-          : `https://lambda.${AWS_REGION}.amazonaws.com`,
+      endpoint: `https://lambda.${AWS_REGION}.amazonaws.com`,
     })
     const params: Lambda.Types.InvocationRequest = {
       FunctionName: `isomercms-dev-failureNotification`,

@@ -49,8 +49,7 @@ interface GeneralDomainValidationLambdaParams {
 interface GeneralDomainValidationLambdaResponse {
   lambdaType: SITE_LAUNCH_LAMBDA_TYPE
   status: SITE_LAUNCH_LAMBDA_STATUS
-  appId: string
-  primaryDomain: string
+  message: MessageBody
 }
 
 const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
@@ -59,7 +58,7 @@ const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
 ]
 
 export const generalDomainValidation = async (
-  event: GeneralDomainValidationLambdaParams
+  event: MessageBody
 ): Promise<GeneralDomainValidationLambdaResponse> => {
   console.log(event)
 
@@ -99,8 +98,7 @@ export const generalDomainValidation = async (
     return {
       lambdaType: SITE_LAUNCH_LAMBDA_TYPE.GENERAL_DOMAIN_VALIDATION,
       status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
-      appId,
-      primaryDomain,
+      message: event,
     }
   } catch (error) {
     console.error(error)

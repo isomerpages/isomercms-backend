@@ -36,17 +36,13 @@ export interface MessageBody {
   siteLaunchError?: string
 }
 
-interface GeneralDomainValidationLambdaParams {
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-}
 
 interface GeneralDomainValidationLambdaResponse {
   lambdaType: SITE_LAUNCH_LAMBDA_TYPE
   status: SITE_LAUNCH_LAMBDA_STATUS
   appId: string
   primaryDomain: string
+  message: MessageBody
 }
 
 const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
@@ -55,7 +51,7 @@ const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
 ]
 
 export const generalDomainValidation = async (
-  event: GeneralDomainValidationLambdaParams
+  event: MessageBody
 ): Promise<GeneralDomainValidationLambdaResponse> => {
   logger.info(event)
 
@@ -66,12 +62,6 @@ export const generalDomainValidation = async (
 
   // Validation check
   const { appId, primaryDomainSource: primaryDomain } = event
-
-  if (!appId) throw new Error(`appId was undefined`)
-  if (!primaryDomain) throw new Error(`primaryDomain was undefined`)
-
-  if (!appId) throw new Error(`appId was undefined`)
-  if (!primaryDomain) throw new Error(`primaryDomain was undefined`)
 
   if (!appId) throw new Error(`appId was undefined`)
   if (!primaryDomain) throw new Error(`primaryDomain was undefined`)
@@ -105,5 +95,6 @@ export const generalDomainValidation = async (
     status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
     appId,
     primaryDomain,
+    message: event
   }
 }

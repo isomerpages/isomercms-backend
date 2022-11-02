@@ -94,12 +94,21 @@ const gitHubService = new GitHubService({
 })
 const identityAuthService = getIdentityAuthService(gitHubService)
 const configYmlService = new ConfigYmlService({ gitHubService })
+const reviewRequestService = new ReviewRequestService(
+  gitHubService,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequestView
+)
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
   configYmlService,
   usersService,
   isomerAdminsService,
+  reviewRequestService,
 })
 const infraService = new InfraService({
   sitesService,
@@ -113,14 +122,6 @@ const collaboratorsService = new CollaboratorsService({
   usersService,
   whitelist: Whitelist,
 })
-const reviewRequestService = new ReviewRequestService(
-  gitHubService,
-  User,
-  ReviewRequest,
-  Reviewer,
-  ReviewMeta,
-  ReviewRequestView
-)
 
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({

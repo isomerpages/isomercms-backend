@@ -29,6 +29,7 @@ import {
 import mockAxios from "@mocks/axios"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
+import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import type { RepositoryData } from "@root/types/repoInfo"
@@ -62,12 +63,17 @@ const MockIsomerAdminsService = {
   getByUserId: jest.fn(),
 }
 
+const MockReviewRequestService = {
+  getLatestMergedReviewRequest: jest.fn(),
+}
+
 const SitesService = new _SitesService({
   siteRepository: (MockRepository as unknown) as ModelStatic<Site>,
   gitHubService: (MockGithubService as unknown) as GitHubService,
   configYmlService: (MockConfigYmlService as unknown) as ConfigYmlService,
   usersService: (MockUsersService as unknown) as UsersService,
   isomerAdminsService: (MockIsomerAdminsService as unknown) as IsomerAdminsService,
+  reviewRequestService: (MockReviewRequestService as unknown) as ReviewRequestService,
 })
 
 const mockSiteName = "some site name"

@@ -5,6 +5,10 @@ import request from "supertest"
 import {
   IsomerAdmin,
   Repo,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequest,
+  ReviewRequestView,
   Site,
   SiteMember,
   User,
@@ -19,6 +23,7 @@ import { GitHubService } from "@root/services/db/GitHubService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
+import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import { sequelize } from "@tests/database"
@@ -35,12 +40,21 @@ const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const identityAuthService = getIdentityAuthService(gitHubService)
+const reviewRequestService = new ReviewRequestService(
+  gitHubService,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequestView
+)
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
   configYmlService,
   usersService,
   isomerAdminsService,
+  reviewRequestService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

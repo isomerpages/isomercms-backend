@@ -443,7 +443,16 @@ export default class ReviewRequestService {
           model: Site,
         },
       ],
-      order: [[ReviewMeta, "pullRequestNumber", "DESC"]],
+      order: [
+        [
+          {
+            model: ReviewMeta,
+            as: "reviewMeta",
+          },
+          "pullRequestNumber",
+          "DESC",
+        ],
+      ],
     })
 
     if (!possibleReviewRequest) {

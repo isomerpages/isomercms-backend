@@ -2,6 +2,8 @@
 
 import { StepFunctions, Lambda } from "aws-sdk"
 
+import { MessageBody } from "../../shared/types"
+
 export const stepFunctionsTrigger = async (event: MessageBody) => {
   const { AWS_REGION, AWS_ACCOUNT_NUMBER, STATE_MACHINE_NAME } = process.env
   try {

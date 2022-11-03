@@ -16,6 +16,7 @@ import QueueService from "../identity/QueueService"
 import { mailer } from "../utilServices/MailClient"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
+export const REDIRECTION_SERVER_IP = "18.136.36.203"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -127,7 +128,7 @@ export default class InfraService {
 
   isRootDomain = (primaryDomain: string) => {
     // method to differentiate root domains with 4th level domains
-    if ((primaryDomain.match(/./g) || []).length < 3) {
+    if ((primaryDomain.match(/\./g) || []).length < 3) {
       // eg. blah.gov.sg
       return true
     }
@@ -140,7 +141,8 @@ export default class InfraService {
     agency: User,
     repoName: string,
     primaryDomain: string,
-    subDomainSettings: SubDomainSettings
+    subDomainSettings: SubDomainSettings,
+    redirectionDomain?: string
   ) => {
     // call amplify to trigger site launch process
     try {
@@ -235,12 +237,14 @@ export default class InfraService {
         agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
       }
 
-      if (newLaunchParams.redirectionDomainSource) {
+      if (redirectionDomain) {
         message.redirectionDomain = [
           {
-            source: newLaunchParams.redirectionDomainSource,
-            target: primaryDomainTarget,
-            type: this.isRootDomain(primaryDomain) ? "CNAME" : "A",
+            source: redirectionDomain,
+            target: this.isRootDomain(primaryDomain)
+              ? REDIRECTION_SERVER_IP
+              : primaryDomainTarget,
+            type: this.isRootDomain(primaryDomain) ? "A" : "CNAME",
           },
         ]
       }
@@ -285,11 +289,13 @@ export default class InfraService {
               `
             }
             await this.sitesService.update(params)
-            await mailer.sendMail(
-              message.agencyEmail,
-              emailDetails.subject,
-              emailDetails.body
-            )
+            if (this.isMOEEmail(message.agencyEmail)) {
+              await mailer.sendMail(
+                message.agencyEmail,
+                emailDetails.subject,
+                emailDetails.body
+              )
+            }
             await mailer.sendMail(
               message.requestorEmail,
               emailDetails.subject,
@@ -302,6 +308,10 @@ export default class InfraService {
       logger.error(error)
     }
   }
+
+  // special case for MOE folks, not to send email to the agency directly.
+  isMOEEmail = (email: string) =>
+    email.substring(email.length - 10) === "moe.edu.sg"
 
   pollQueue = async () => {
     setInterval(this.siteLaunchUpdate, SITE_LAUNCH_UPDATE_INTERVAL)

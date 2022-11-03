@@ -12,7 +12,9 @@ import { getField } from "@utils/formsg-utils"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import UsersService from "@services/identity/UsersService"
-import InfraService from "@services/infra/InfraService"
+import InfraService, {
+  REDIRECTION_SERVER_IP,
+} from "@services/infra/InfraService"
 
 const { SITE_LAUNCH_FORM_KEY } = process.env
 const REQUESTER_EMAIL_FIELD = "Government Email"
@@ -66,19 +68,19 @@ export class FormsgSiteLaunchRouter {
     // todo remove this after local dev is done
     const isDev = true
 
-    if (isDev || redirectionDomain) {
-      subDomainSettings.push({
-        branchName: "master",
-        prefix: "www",
-      })
-    }
-
     if (isDev) {
       requesterEmail = "kishore@open.gov.sg"
       repoName = "kishore-test"
       primaryDomain = "kishoretest.isomer.gov.sg"
       redirectionDomain = "www.kishoretest.isomer.gov.sg"
       agencyEmail = "kishore@open.gov.sg"
+    }
+
+    if (primaryDomain && !this.infraService.isRootDomain(primaryDomain)) {
+      subDomainSettings.push({
+        branchName: "master",
+        prefix: "www",
+      })
     }
 
     logger.info(
@@ -153,11 +155,18 @@ export class FormsgSiteLaunchRouter {
         agencyUser,
         repoName,
         primaryDomain,
-        subDomainSettings
+        subDomainSettings,
+        redirectionDomain
       )
 
-      // only send success message after promise has been resolved
+      // only send dns details message after promise has been resolved
       launchSite.then(async (siteLaunchDetails) => {
+        let redirectionDomainTarget = REDIRECTION_SERVER_IP
+        if (
+          !this.infraService.isRootDomain(siteLaunchDetails.primaryDomainSource)
+        ) {
+          redirectionDomainTarget = siteLaunchDetails.primaryDomainTarget
+        }
         await this.sendVerificationDetails(
           // fields below are guarenteed to be a string due to prior checks
           <string>requesterEmail,
@@ -168,7 +177,7 @@ export class FormsgSiteLaunchRouter {
           siteLaunchDetails.primaryDomainSource,
           siteLaunchDetails.primaryDomainTarget,
           siteLaunchDetails.redirectionDomainSource,
-          siteLaunchDetails.redirectionDomainTarget
+          redirectionDomainTarget
         )
       })
     } catch (err) {
@@ -209,6 +218,12 @@ export class FormsgSiteLaunchRouter {
     redirectionDomainSource?: string,
     redirectionDomainTarget?: string
   ) => {
+    let destinationEmail = email
+    // special case for moe, only send email to isomer admins
+    if (this.infraService.isMOEEmail(email)) {
+      destinationEmail = "admin@isomer.gov.sg"
+    }
+
     const subject = `[Isomer] Launch site ${repoName} domain validation`
     let html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
 <p>Please set the following CNAME record:</p>
@@ -218,12 +233,11 @@ export class FormsgSiteLaunchRouter {
 <p>Target: ${primaryDomainTarget}</p>\n`
 
     if (redirectionDomainSource) {
-      html += `<p>Source: ${redirectionDomainSource}</p>
-  <p>Target: ${redirectionDomainTarget}</p>\n` // todo figure out why this is undefined
+      html += `<p>Source: ${redirectionDomainSource}</p>\n<p>Target: ${redirectionDomainTarget}</p>\n`
     }
 
     html += `<p>This email was sent from the Isomer CMS backend.</p>`
-    await mailer.sendMail(email, subject, html)
+    await mailer.sendMail(destinationEmail, subject, html)
   }
 
   getRouter() {

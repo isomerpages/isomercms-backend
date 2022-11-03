@@ -19,7 +19,7 @@ States:
                   - "States.ALL"
                 IntervalSeconds: 300
                 MaxAttempts: 12
-                BackoffRate: 2
+                BackoffRate: 1
             End: true
       - StartAt: Primary domain validation
         States:

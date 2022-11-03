@@ -52,11 +52,11 @@ export class FormsgSiteLaunchRouter {
     const { responses } = res.locals.submission
 
     // todo change back these variables to const
-    let requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
-    let repoName = getField(responses, REPO_NAME_FIELD)
-    let primaryDomain = getField(responses, PRIMARY_DOMAIN)
-    let redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
-    let agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
+    const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
+    const repoName = getField(responses, REPO_NAME_FIELD)
+    const primaryDomain = getField(responses, PRIMARY_DOMAIN)
+    const redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
+    const agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
 
     const subDomainSettings = [
       {
@@ -64,17 +64,6 @@ export class FormsgSiteLaunchRouter {
         prefix: "",
       },
     ]
-
-    // todo remove this after local dev is done
-    const isDev = true
-
-    if (isDev) {
-      requesterEmail = "kishore@open.gov.sg"
-      repoName = "kishore-test"
-      primaryDomain = "kishoretest.isomer.gov.sg"
-      redirectionDomain = "www.kishoretest.isomer.gov.sg"
-      agencyEmail = "kishore@open.gov.sg"
-    }
 
     if (primaryDomain && !this.infraService.isRootDomain(primaryDomain)) {
       subDomainSettings.push({

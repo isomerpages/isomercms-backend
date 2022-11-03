@@ -53,10 +53,7 @@ export class FormsgSiteLaunchRouter {
       },
     ]
 
-    // todo remove this after local dev is done
-    const isDev = true
-
-    if (isDev || redirectionDomain) {
+    if (redirectionDomain) {
       subDomainSettings.push({
         branchName: "master",
         prefix: "www",

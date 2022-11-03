@@ -8,6 +8,7 @@ import type {
   GetDomainAssociationCommandOutput,
 } from "@aws-sdk/client-amplify"
 
+import logger from "../../shared/logger"
 import {
   MessageBody,
   SITE_LAUNCH_LAMBDA_STATUS,

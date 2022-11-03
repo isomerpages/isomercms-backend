@@ -11,6 +11,7 @@ import type {
   GetDomainAssociationCommandOutput,
 } from "@aws-sdk/client-amplify"
 
+import logger from "../../shared/logger"
 import {
   MessageBody,
   SITE_LAUNCH_LAMBDA_STATUS,
@@ -64,23 +65,21 @@ export const primaryDomainValidation = async (
         `Amplify app with id ${appId} and domain ${primaryDomainSource} has not completed primary domain validation step.  Current status: ${domainAssociationStatus}`
       )
     }
-    console.log(
+    logger.info(
       `Amplify app with id ${appId} and domain ${primaryDomainSource} successfully completed primary domain validation step with status ${domainAssociationStatus}`
     )
 
     // Check if the primary DNS record was set correctly. This is necessary because Amplify doesn't actually check if the
     // primary domain record has been pointed correctly.
-    const cnameRecords = await promises.resolveCname(
-      "kishoretest.isomer.gov.sg"
-    )
-    console.log(cnameRecords)
+    const cnameRecords = await promises.resolveCname(primaryDomainSource)
+    logger.info(cnameRecords)
     if (!cnameRecords.includes(cloudfrontDomain)) {
       throw new Error(
         `Website administrator has not set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
       )
     }
 
-    console.log(
+    logger.info(
       `Website administrator has successfully set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
     )
     return {

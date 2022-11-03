@@ -20,6 +20,7 @@ import SitesService from "@services/identity/SitesService"
 import QueueService from "../identity/QueueService"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
+export const REDIRECTION_SERVER_IP = "18.136.36.203"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -179,7 +180,7 @@ export default class InfraService {
 
   isRootDomain = (primaryDomain: string) => {
     // method to differentiate root domains with 4th level domains
-    if ((primaryDomain.match(/./g) || []).length < 3) {
+    if ((primaryDomain.match(/\./g) || []).length < 3) {
       // eg. blah.gov.sg
       return true
     }
@@ -396,6 +397,10 @@ export default class InfraService {
     )
     
   }
+
+  // special case for MOE folks, not to send email to the agency directly.
+  isMOEEmail = (email: string) =>
+    email.substring(email.length - 10) === "moe.edu.sg"
 
   pollQueue = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)

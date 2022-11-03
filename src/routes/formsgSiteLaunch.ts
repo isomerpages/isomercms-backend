@@ -11,7 +11,9 @@ import { getField } from "@utils/formsg-utils"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import UsersService from "@services/identity/UsersService"
-import InfraService from "@services/infra/InfraService"
+import InfraService, {
+  REDIRECTION_SERVER_IP,
+} from "@services/infra/InfraService"
 
 const { SITE_LAUNCH_FORM_KEY } = process.env
 const REQUESTER_EMAIL_FIELD = "Government Email"
@@ -207,8 +209,7 @@ export class FormsgSiteLaunchRouter {
 <p>Source: ${primaryDomainSource}</p>
 <p>Target: ${primaryDomainTarget}</p>`
     if (redirectionDomainSource) {
-      html += `<p>Source: ${redirectionDomainSource}</p>
-<p>Target: ${redirectionDomainTarget}</p>\n` // todo figure out why this is undefined
+      html += `<p>Source: ${redirectionDomainSource}</p>\n<p>Target: ${redirectionDomainTarget}</p>\n`
     }
 
     html += `<p>This email was sent from the Isomer CMS backend.</p>`

@@ -142,7 +142,6 @@ export class LaunchesService {
       subDomainSettings
     )
 
-    console.log(launchAppOptions)
     // Create Domain Association
     const domainAssociationResult = await this.launchClient
       .sendCreateDomainAssociation(launchAppOptions)
@@ -158,7 +157,6 @@ export class LaunchesService {
         )
         return domainAssociation
       })
-    // .catch((err) => console.log(err))
     const redirectionDomainObject: DomainAssocationInterface = {
       repoName,
       domainAssociationResult,

@@ -1,4 +1,5 @@
-import dns from "dns"
+/* eslint-disable import/prefer-default-export */
+import { promises } from "dns"
 
 import {
   AmplifyClient,
@@ -67,19 +68,21 @@ export const primaryDomainValidation = async (
       `Amplify app with id ${appId} and domain ${primaryDomainSource} successfully completed primary domain validation step with status ${domainAssociationStatus}`
     )
 
-    // todo figure out how to load 'dns' module and then uncomment the codes below
-    // // Check if the primary DNS record was set correctly. This is necessary because Amplify doesn't actually check if the
-    // // primary domain record has been pointed correctly.
-    // const cnameRecords = await dns.promises.resolveCname(primaryDomainSource)
-    // if (!cnameRecords.includes(cloudfrontDomain)) {
-    //   throw new Error(
-    //     `Website administrator has not set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
-    //   )
-    // }
+    // Check if the primary DNS record was set correctly. This is necessary because Amplify doesn't actually check if the
+    // primary domain record has been pointed correctly.
+    const cnameRecords = await promises.resolveCname(
+      "kishoretest.isomer.gov.sg"
+    )
+    console.log(cnameRecords)
+    if (!cnameRecords.includes(cloudfrontDomain)) {
+      throw new Error(
+        `Website administrator has not set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
+      )
+    }
 
-    // console.log(
-    //   `Website administrator has successfully set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
-    // )
+    console.log(
+      `Website administrator has successfully set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
+    )
     return {
       lambdaType: SITE_LAUNCH_LAMBDA_TYPE.PRIMARY_DOMAIN_VALIDATION,
       status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,

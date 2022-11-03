@@ -2,6 +2,8 @@
 
 import { Octokit } from "@octokit/rest"
 
+import { MessageBody } from "../../shared/types"
+
 export const redirectionDomainValidation = async (
   event: Pick<
     MessageBody,

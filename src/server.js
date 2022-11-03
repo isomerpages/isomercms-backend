@@ -194,10 +194,10 @@ app.use("/v1/sites/:siteName", authenticatedSitesSubrouterV1)
 app.use("/v1", authenticatedSubrouterV1)
 
 app.use("/v2/auth", authV2Router.getRouter())
-// Endpoints which have siteName, used to inject site access token
-app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
+// Endpoints which have siteName, used to inject site access token
+app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 
 // FormSG Backend handler routes
 app.use("/formsg", formsgRouter.getRouter())

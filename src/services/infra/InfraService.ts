@@ -411,8 +411,10 @@ export default class InfraService {
   }
 
   // special case for MOE folks, not to send email to the agency directly.
-  isMOEEmail = (email: string) =>
-    email.substring(email.length - 10) === "moe.edu.sg"
+  isMOEEmail = (email: string) => {
+    const moeEmail = "moe.edu.sg"
+    return email.substring(email.length - moeEmail.length) === moeEmail
+  }
 
   pollQueue = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)

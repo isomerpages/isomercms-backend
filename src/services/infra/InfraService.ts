@@ -276,42 +276,7 @@ export default class InfraService {
         messages.forEach(async (message) => {
           const site = await this.sitesService.getBySiteName(message.repoName)
           if (site) {
-            const emailDetails: { subject: string; body: string } = {
-              subject: "",
-              body: "",
-            }
-            let params
-            if (message.success) {
-              params = {
-                id: site.id,
-                siteStatus: SiteStatus.Launched,
-                jobStatus: JobStatus.Running,
-              }
-              emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
-              emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
-              <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
-              <p>This email was sent from the Isomer CMS backend.</p>`
-            } else {
-              params = { id: site.id, jobStatus: JobStatus.Failed }
-              emailDetails.subject = `Launch site ${message.repoName} FAILURE`
-              emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-              <p>Error: ${message.siteLaunchError}</p>
-              <p>This email was sent from the Isomer CMS backend.</p>
-              `
-            }
-            await this.sitesService.update(params)
-            if (!this.isMOEEmail(message.agencyEmail)) {
-              await mailer.sendMail(
-                message.agencyEmail,
-                emailDetails.subject,
-                emailDetails.body
-              )
-            }
-            await mailer.sendMail(
-              message.requestorEmail,
-              emailDetails.subject,
-              emailDetails.body
-            )
+            await this.sendStatusEmail(message, site)
           }
         })
       }
@@ -328,5 +293,44 @@ export default class InfraService {
 
   pollQueue = async () => {
     setInterval(this.siteLaunchUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
+  }
+
+  private async sendStatusEmail(message: MessageBody, site: Site) {
+    const emailDetails: { subject: string; body: string } = {
+      subject: "",
+      body: "",
+    }
+    let params
+    if (message.success) {
+      params = {
+        id: site.id,
+        siteStatus: SiteStatus.Launched,
+        jobStatus: JobStatus.Running,
+      }
+      emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
+      emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
+              <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
+              <p>This email was sent from the Isomer CMS backend.</p>`
+    } else {
+      params = { id: site.id, jobStatus: JobStatus.Failed }
+      emailDetails.subject = `Launch site ${message.repoName} FAILURE`
+      emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+              <p>Error: ${message.siteLaunchError}</p>
+              <p>This email was sent from the Isomer CMS backend.</p>
+              `
+    }
+    await this.sitesService.update(params)
+    if (!this.isMOEEmail(message.agencyEmail)) {
+      await mailer.sendMail(
+        message.agencyEmail,
+        emailDetails.subject,
+        emailDetails.body
+      )
+    }
+    await mailer.sendMail(
+      message.requestorEmail,
+      emailDetails.subject,
+      emailDetails.body
+    )
   }
 }

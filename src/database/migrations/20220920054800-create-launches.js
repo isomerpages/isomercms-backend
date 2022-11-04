@@ -22,6 +22,7 @@ module.exports = {
         },
         type: Sequelize.INTEGER,
         allowNull: false,
+        unique: true,
       },
       primary_domain_source: {
         allowNull: false,

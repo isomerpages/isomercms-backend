@@ -341,9 +341,18 @@ export default class InfraService {
 
       return ok(newLaunchParams)
     } catch (error) {
-      logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
-      return err(error)
+      logger.error(`Failed to create '${repoName}' site on Isomer: ${error}`)
+      this.sendRetryToIsomerAdmin(<string>requestor.email, repoName) // email guarented by model
+      throw error
     }
+  }
+
+  sendRetryToIsomerAdmin = async (email: string, repoName: string) => {
+    const subject = `[Isomer] Failure to create domain association for ${repoName}`
+    const body = `<p>Unable to trigger create domain association for ${repoName}.</P
+    <p>If domain association was already created, please log into the amplify console and trigger a retry. </p>
+    <p>Else, resubmit the form and try again.</p>`
+    await mailer.sendMail(email, subject, body)
   }
 
   siteUpdate = async () => {
@@ -356,6 +365,7 @@ export default class InfraService {
             id: site.id,
             siteStatus: SiteStatus.Launched,
             jobStatus: JobStatus.Running,
+            
           }
           await this.sitesService.update(updateSuccessSiteLaunchParams)
         

@@ -66,16 +66,40 @@ export class LaunchesService {
     this.redirectionsRepository = redirectionsRepository
   }
 
-  create = async (
+  createOrUpdate = async (
     createParams: launchesCreateParamsType
   ): Promise<Launches> => {
-    const createLaunch = await this.launchesRepository.create(createParams)
+    // check if prior launch exists for an app
+    let launch = await this.launchesRepository.findOne({
+      where: { site_id: createParams.siteId },
+    })
+    if (launch) {
+      await this.updateLaunchTable({ ...createParams, id: launch.id })
+
+      // delete all redirections related to previous launch
+      const outDatedRedirections =
+        (await this.redirectionsRepository.findAll({
+          where: { launchId: launch.id },
+        })) || []
+      outDatedRedirections.forEach(async (outDatedRedirection) => {
+        if (outDatedRedirection) {
+          const updatedRedirection = outDatedRedirection
+          updatedRedirection.deletedAt = new Date()
+          await this.redirectionsRepository.destroy({
+            where: { id: updatedRedirection.id },
+          })
+        }
+      })
+    } else {
+      launch = await this.launchesRepository.create(createParams)
+    }
+
     if (createParams.redirectionDomainSource) {
       logger.info(
         `creating redirection record for ${createParams.redirectionDomainSource}`
       )
       const createRedirectionParams: redirectionsCreateParamsType = {
-        launchId: createLaunch.id,
+        launchId: launch.id,
         type: "CNAME",
         source: createParams.redirectionDomainSource,
         target: createParams.primaryDomainTarget,
@@ -83,7 +107,7 @@ export class LaunchesService {
       await this.redirectionsRepository.create(createRedirectionParams)
     }
 
-    return createLaunch
+    return launch
   }
 
   createRedirection = async (
@@ -190,13 +214,13 @@ export class LaunchesService {
     )
   }
 
-  async updateLaunchTable(updateParams: Pick<Launches, "id">) {
+  async updateLaunchTable(updateParams: Partial<Launches>) {
     return this.launchesRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
-  async updateRedirectionTable(updateParams: Pick<Redirections, "id">) {
+  async updateRedirectionTable(updateParams: Partial<Redirections>) {
     return this.redirectionsRepository.update(updateParams, {
       where: { id: updateParams.id },
     })

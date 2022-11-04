@@ -117,7 +117,7 @@ export class ReviewsRouter {
       userWithSiteSessionData.isomerUserId
     )
 
-    if (!role || role !== CollaboratorRoles.Admin) {
+    if (!role) {
       logger.error({
         message:
           "User attempted to create review request with invalid permissions",
@@ -129,7 +129,7 @@ export class ReviewsRouter {
         },
       })
       return res.status(404).send({
-        message: "Only admins can request reviews!",
+        message: "Only site members can request reviews!",
       })
     }
 

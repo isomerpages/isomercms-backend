@@ -315,7 +315,7 @@ export default class InfraService {
       params = { id: site.id, jobStatus: JobStatus.Failed }
       emailDetails.subject = `Launch site ${message.repoName} FAILURE`
       emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-              <p>Error: ${message.siteLaunchError}</p>
+              <p>Isomer team will be reaching out to you to assist you soon.<p>
               <p>This email was sent from the Isomer CMS backend.</p>
               `
     }
@@ -326,6 +326,11 @@ export default class InfraService {
         emailDetails.subject,
         emailDetails.body
       )
+    }
+
+    // only admins should receive vebose infomation about failure
+    if (!message.success) {
+      emailDetails.body += `<p>Error: ${message.siteLaunchError}</p>`
     }
     await mailer.sendMail(
       message.requestorEmail,

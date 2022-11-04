@@ -310,7 +310,9 @@ export default class InfraService {
       }
 
       // Create launches records table
-      const launchesRecord = await this.launchesService.create(newLaunchParams)
+      const launchesRecord = await this.launchesService.createOrUpdate(
+        newLaunchParams
+      )
       logger.info(`Created launch record in database:  ${launchesRecord}`)
      
 

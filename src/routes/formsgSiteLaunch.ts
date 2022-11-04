@@ -85,7 +85,7 @@ export class FormsgSiteLaunchRouter {
     }
 
     if (!agencyEmail) {
-      // Most errors are handled by sending an email to the requester, so we can't recover from this.
+      // Need to be able to send emails to agency regarding site launch process, so we can't recover from this.
       throw new BadRequestError("Required 'Agency E-mail' input was not found")
     }
 
@@ -158,6 +158,7 @@ export class FormsgSiteLaunchRouter {
         }
         await this.sendVerificationDetails(
           // fields below are guarenteed to be a string due to prior checks
+          <string>agencyEmail,
           <string>requesterEmail,
           <string>repoName,
           submissionId,
@@ -197,7 +198,8 @@ export class FormsgSiteLaunchRouter {
   }
 
   sendVerificationDetails = async (
-    email: string,
+    agencyEmail: string,
+    requestorEmail: string,
     repoName: string,
     submissionId: string,
     domainValidationSource: string,
@@ -207,10 +209,11 @@ export class FormsgSiteLaunchRouter {
     redirectionDomainSource?: string,
     redirectionDomainTarget?: string
   ) => {
-    let destinationEmail = email
+    const destinationEmails = [requestorEmail]
+
     // special case for moe, only send email to isomer admins
-    if (this.infraService.isMOEEmail(email)) {
-      destinationEmail = "admin@isomer.gov.sg"
+    if (!this.infraService.isMOEEmail(agencyEmail)) {
+      destinationEmails.push(agencyEmail)
     }
 
     const subject = `[Isomer] Launch site ${repoName} domain validation`
@@ -226,7 +229,9 @@ export class FormsgSiteLaunchRouter {
     }
 
     html += `<p>This email was sent from the Isomer CMS backend.</p>`
-    await mailer.sendMail(destinationEmail, subject, html)
+    destinationEmails.forEach(async (destinationEmail) => {
+      await mailer.sendMail(destinationEmail, subject, html)
+    })
   }
 
   getRouter() {

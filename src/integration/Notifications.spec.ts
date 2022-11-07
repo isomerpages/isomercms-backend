@@ -4,6 +4,10 @@ import request from "supertest"
 import {
   Notification,
   Repo,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequest,
+  ReviewRequestView,
   Site,
   SiteMember,
   User,
@@ -30,13 +34,15 @@ import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/aut
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubService } from "@root/services/db/GitHubService"
+import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import SitesService from "@root/services/identity/SitesService"
+import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import {
   getIdentityAuthService,
   getUsersService,
   isomerAdminsService,
   notificationsService,
-  sitesService,
 } from "@services/identity"
 import { sequelize } from "@tests/database"
 
@@ -44,11 +50,28 @@ const MOCK_SITE = "mockSite"
 const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
-const githubService = new GitHubService({
+const gitHubService = new GitHubService({
   axiosInstance: genericGitHubAxiosInstance,
 })
-const identityAuthService = getIdentityAuthService(githubService)
+const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
+const configYmlService = new ConfigYmlService({ gitHubService })
+const reviewRequestService = new ReviewRequestService(
+  gitHubService,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequestView
+)
+const sitesService = new SitesService({
+  siteRepository: Site,
+  gitHubService,
+  configYmlService,
+  usersService,
+  isomerAdminsService,
+  reviewRequestService,
+})
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,

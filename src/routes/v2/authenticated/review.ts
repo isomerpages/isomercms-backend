@@ -13,7 +13,9 @@ import UserSessionData from "@classes/UserSessionData"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { CollaboratorRoles } from "@root/constants"
+import { SiteMember, User } from "@root/database/models"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import NotificationsService from "@root/services/identity/NotificationsService"
 import SitesService from "@root/services/identity/SitesService"
 import UsersService from "@root/services/identity/UsersService"
 import { isIsomerError, RequestHandler } from "@root/types"
@@ -36,16 +38,20 @@ export class ReviewsRouter {
 
   private readonly collaboratorsService
 
+  private readonly notificationsService
+
   constructor(
     reviewRequestService: ReviewRequestService,
     identityUsersService: UsersService,
     sitesService: SitesService,
-    collaboratorsService: CollaboratorsService
+    collaboratorsService: CollaboratorsService,
+    notificationsService: NotificationsService
   ) {
     this.reviewRequestService = reviewRequestService
     this.identityUsersService = identityUsersService
     this.sitesService = sitesService
     this.collaboratorsService = collaboratorsService
+    this.notificationsService = notificationsService
 
     autoBind(this)
   }
@@ -184,6 +190,23 @@ export class ReviewsRouter {
       site,
       title,
       description
+    )
+
+    // Step 5: Create notifications
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        const notificationType = reviewersMap[user.email || ""]
+          ? "sent_request"
+          : "request_created"
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${pullRequestNumber}`,
+          notificationType,
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
+      })
     )
 
     return res.status(200).send({
@@ -696,6 +719,22 @@ export class ReviewsRouter {
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
     await this.reviewRequestService.approveReviewRequest(possibleReviewRequest)
+
+    // Step 6: Create notifications
+    const collaborators = await this.collaboratorsService.list(siteName)
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${requestId}`,
+          notificationType: "request_approved",
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
+      })
+    )
+
     return res.status(200).send()
   }
 
@@ -886,6 +925,20 @@ export class ReviewsRouter {
     // The error is discarded as we are guaranteed to have a review request
     await this.reviewRequestService.deleteAllReviewRequestViews(site, requestId)
 
+    // Step 7: Create notifications
+    const collaborators = await this.collaboratorsService.list(siteName)
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${requestId}`,
+          notificationType: "request_cancelled",
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
+      })
+    )
     return res.status(200).send()
   }
 

@@ -23,7 +23,7 @@ class ResourcePagesRouter {
   }
 
   // Create new page in resource category
-  async createResourcePage(req, res) {
+  async createResourcePage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
@@ -44,7 +44,8 @@ class ResourcePagesRouter {
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Read page in resource category
@@ -66,7 +67,7 @@ class ResourcePagesRouter {
   }
 
   // Update page in resource category
-  async updateResourcePage(req, res) {
+  async updateResourcePage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName, pageName } = req.params
@@ -104,11 +105,12 @@ class ResourcePagesRouter {
         }
       )
     }
-    return res.status(200).json(updateResp)
+    res.status(200).json(updateResp)
+    return next()
   }
 
   // Delete page in resource category
-  async deleteResourcePage(req, res) {
+  async deleteResourcePage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName, pageName } = req.params
@@ -122,7 +124,8 @@ class ResourcePagesRouter {
       sha,
     })
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

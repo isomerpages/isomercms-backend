@@ -24,14 +24,7 @@ where versionType corresponds to npm version types. This only works on non-Windo
 
 The following steps are needed before you can run migrations on a remote database in a private subnet of an AWS VPC.
 
-First, you will need to ensure that your current device IP address is whitelisted to use the EC2 instance.
-
-- Log into the AWS console and navigate to the EC2 Dashboard.
-- Navigate to the Security Groups tab by looking at the Network & Security section in the left pane and clicking on the Security Groups tab.
-- Look for the security group titled `cms-bastion-<ENVIRONMENT>`, where `<ENVIRONMENT>` is either staging or production. Click on the security group and then the Inbound rules tab.
-- If you see your IP address in the Inbound rules whitelist, you are done with this step.
-- If your IP address does not exist in the Inbound rules whitelist, click on the Edit inbound rules button.
-- Click on the Add rule button. Select SSH as the Type, and select My IP as the Source. Give a meaningful description for the security rule, e.g. WeWork City House. Click on Save rules to complete this step.
+First, ensure that you are connected to [AWS VPN](https://www.notion.so/opengov/Instructions-to-use-OGP-s-AWS-VPN-e67226703cac459999b84c02200a3940) as only the VPN is whitelisted to use the EC2 instance<sup>1</sup>.
 
 Next, you will require the correct environment variables and credentials.
 
@@ -56,3 +49,12 @@ Finally, we want to run the migration script.
 - Open another terminal window.
 - Run `source .env`
 - Run `npx sequelize-cli db:migrate`
+
+---
+
+<sup>1</sup> To check whitelisted IPs in EC2 instance,
+
+- Log into the AWS console and navigate to the EC2 Dashboard.
+- Navigate to the Security Groups tab by looking at the Network & Security section in the left pane and clicking on the Security Groups tab.
+- Look for the security group titled `cms-bastion-<ENVIRONMENT>`, where `<ENVIRONMENT>` is either staging or production. Click on the security group and then the Inbound rules tab.
+- If you see your IP address in the Inbound rules whitelist, you are done with this step.

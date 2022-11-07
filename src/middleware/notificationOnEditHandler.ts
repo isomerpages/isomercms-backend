@@ -47,6 +47,9 @@ export class NotificationOnEditHandler {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res, next) => {
     const { userWithSiteSessionData } = res.locals
+
+    if (!userWithSiteSessionData.isEmailUser()) return
+
     const { siteName, isomerUserId: userId, email } = userWithSiteSessionData
     const site = await this.sitesService.getBySiteName(siteName)
     const users = await this.collaboratorsService.list(siteName, userId)

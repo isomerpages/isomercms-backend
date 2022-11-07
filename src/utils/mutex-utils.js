@@ -7,7 +7,8 @@ const { ConflictError } = require("@errors/ConflictError")
 
 // Env vars
 const { NODE_ENV, MUTEX_TABLE_NAME } = process.env
-const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV" || NODE_ENV === "test"
+const IS_LOCAL_DEV =
+  NODE_ENV === "LOCAL_DEV" || NODE_ENV === "test" || NODE_ENV === "vapt"
 const mockMutexObj = {}
 
 // Dynamodb constants

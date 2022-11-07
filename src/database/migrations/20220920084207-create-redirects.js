@@ -8,6 +8,10 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       launch_id: {
+        references: {
+          model: "launches",
+          key: "id",
+        },
         allowNull: false,
         type: Sequelize.INTEGER,
       },

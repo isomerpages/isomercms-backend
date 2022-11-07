@@ -8,10 +8,18 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       user_id: {
+        references: {
+          model: "users",
+          key: "id",
+        },
         allowNull: false,
         type: Sequelize.INTEGER,
       },
       site_id: {
+        references: {
+          model: "users",
+          key: "id",
+        },
         type: Sequelize.INTEGER,
         allowNull: false,
       },

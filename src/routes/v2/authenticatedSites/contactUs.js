@@ -30,7 +30,7 @@ class ContactUsRouter {
   }
 
   // Update contactUs index file
-  async updateContactUs(req, res) {
+  async updateContactUs(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { error } = UpdateContactUsSchema.validate(req.body)
@@ -45,7 +45,8 @@ class ContactUsRouter {
       { content: pageBody, frontMatter, sha }
     )
 
-    return res.status(200).json(updatedContactUsPage)
+    res.status(200).json(updatedContactUsPage)
+    return next()
   }
 
   getRouter() {

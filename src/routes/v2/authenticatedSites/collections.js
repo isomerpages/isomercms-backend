@@ -58,7 +58,7 @@ class CollectionsRouter {
   }
 
   // Create new collection/subcollection
-  async createCollectionDirectory(req, res) {
+  async createCollectionDirectory(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { collectionName } = req.params
@@ -87,11 +87,12 @@ class CollectionsRouter {
       )
     }
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Rename collection/subcollection
-  async renameCollectionDirectory(req, res) {
+  async renameCollectionDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
@@ -119,11 +120,12 @@ class CollectionsRouter {
       )
     }
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Delete collection/subcollection
-  async deleteCollectionDirectory(req, res) {
+  async deleteCollectionDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
@@ -145,11 +147,12 @@ class CollectionsRouter {
         }
       )
     }
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Reorder collection/subcollection
-  async reorderCollectionDirectory(req, res) {
+  async reorderCollectionDirectory(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
@@ -175,11 +178,12 @@ class CollectionsRouter {
         }
       )
     }
-    return res.status(200).json(reorderResp)
+    res.status(200).json(reorderResp)
+    return next()
   }
 
   // Move collection/subcollection pages
-  async moveCollectionDirectoryPages(req, res) {
+  async moveCollectionDirectoryPages(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
@@ -211,7 +215,8 @@ class CollectionsRouter {
         objArray: items,
       })
     }
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

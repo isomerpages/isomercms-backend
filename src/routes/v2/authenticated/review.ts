@@ -719,6 +719,22 @@ export class ReviewsRouter {
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
     await this.reviewRequestService.approveReviewRequest(possibleReviewRequest)
+
+    // Step 6: Create notifications
+    const collaborators = await this.collaboratorsService.list(siteName)
+    await Promise.all(
+      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
+        // Don't send notification to self
+        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
+        await this.notificationsService.create({
+          siteMember: user.SiteMember,
+          link: `/sites/${siteName}/review/${requestId}`,
+          notificationType: "request_approved",
+          notificationSourceUsername: userWithSiteSessionData.email,
+        })
+      })
+    )
+
     return res.status(200).send()
   }
 
@@ -826,44 +842,6 @@ export class ReviewsRouter {
       userWithSiteSessionData,
       site,
       possibleReviewRequest
-    )
-
-    if (isIsomerError(possibleReviewRequest)) {
-      return res.status(404).json({ message: possibleReviewRequest.message })
-    }
-
-    // Step 4: Check if the user is a reviewer of the RR
-    const { reviewers } = possibleReviewRequest
-    const isReviewer = _.some(
-      reviewers,
-      (user) => user.email === userWithSiteSessionData.email
-    )
-
-    if (!isReviewer) {
-      return res.status(401).json({
-        message: "Only reviewers can approve Review Requests!",
-      })
-    }
-
-    // Step 5: Approve review request
-    // NOTE: We are not checking for existence of PR
-    // as the underlying Github API returns 404 if
-    // the requested review could not be found.
-    await this.reviewRequestService.approveReviewRequest(possibleReviewRequest)
-
-    // Step 6: Create notifications
-    const collaborators = await this.collaboratorsService.list(siteName)
-    await Promise.all(
-      collaborators.map(async (user: User & { SiteMember: SiteMember }) => {
-        // Don't send notification to self
-        if (user.id.toString() === userWithSiteSessionData.isomerUserId) return
-        await this.notificationsService.create({
-          siteMember: user.SiteMember,
-          link: `/sites/${siteName}/review/${requestId}`,
-          notificationType: "request_approved",
-          notificationSourceUsername: userWithSiteSessionData.email,
-        })
-      })
     )
 
     return res.status(200).send()

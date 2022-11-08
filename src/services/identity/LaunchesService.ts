@@ -1,5 +1,4 @@
-import { DomainAssociation } from "@aws-sdk/client-amplify"
-import { SubDomainSettings } from "aws-sdk/clients/amplify"
+import { DomainAssociation, SubDomainSetting } from "@aws-sdk/client-amplify"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
@@ -140,7 +139,7 @@ export class LaunchesService {
   configureDomainInAmplify = async (
     repoName: string,
     domainName: string,
-    subDomainSettings: SubDomainSettings
+    subDomainSettings: SubDomainSetting[]
   ) => {
     // Get appId, which is stored as hostingID in database table.
     const appId = await this.getAppId(repoName)

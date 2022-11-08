@@ -283,7 +283,7 @@ export default class InfraService {
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
       const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
-      
+
       const userId = agency.id
       newLaunchParams = {
         userId,

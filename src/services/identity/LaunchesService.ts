@@ -43,7 +43,7 @@ interface LaunchesServiceProps {
   launchClient: LaunchClient
 }
 
-export interface DomainAssocationInterface {
+export interface DomainAssociationInterface {
   domainAssociationResult: DomainAssociation
   appId: string
   repoName: string
@@ -164,7 +164,7 @@ export class LaunchesService {
         logger.info(`Successfully published '${domainAssociation}'`)
         return domainAssociation
       })
-    const redirectionDomainObject: DomainAssocationInterface = {
+    const redirectionDomainObject: DomainAssociationInterface = {
       repoName,
       domainAssociationResult,
       appId,

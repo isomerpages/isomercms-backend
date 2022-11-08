@@ -17,7 +17,7 @@ module.exports = {
       },
       site_id: {
         references: {
-          model: "users",
+          model: "sites",
           key: "id",
         },
         type: Sequelize.INTEGER,

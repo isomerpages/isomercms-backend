@@ -9,7 +9,7 @@ import { Redirections } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
-type launchesCreateParamsType = Partial<Launches> & {
+type siteLaunchCreateParamsType = {
   userId: number
   siteId: number
   primaryDomainSource: string
@@ -20,12 +20,21 @@ type launchesCreateParamsType = Partial<Launches> & {
   redirectionDomainTarget?: string
 }
 
-type redirectionsCreateParamsType = Partial<Redirections> & {
-  launchId: number
-  type: string
-  source: string
-  target: string
-}
+type launchesCreateParamsType = Pick<
+  Launches,
+  | "userId"
+  | "siteId"
+  | "primaryDomainSource"
+  | "primaryDomainTarget"
+  | "domainValidationSource"
+  | "domainValidationTarget"
+>
+
+type redirectionsCreateParamsType = Pick<
+  Redirections,
+  "launchId" | "type" | "source" | "target"
+>
+
 interface LaunchesServiceProps {
   launchesRepository: ModelStatic<Launches>
   deploymentRepository: ModelStatic<Deployment>
@@ -67,9 +76,10 @@ export class LaunchesService {
   }
 
   create = async (
-    createParams: launchesCreateParamsType
+    createParams: siteLaunchCreateParamsType
   ): Promise<Launches> => {
-    const createLaunch = await this.launchesRepository.create(createParams)
+    const launchParams: launchesCreateParamsType = { ...createParams }
+    const createLaunch = await this.launchesRepository.create(launchParams)
     if (createParams.redirectionDomainSource) {
       logger.info(
         `creating redirection record for ${createParams.redirectionDomainSource}`

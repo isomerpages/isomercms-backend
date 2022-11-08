@@ -4,6 +4,7 @@ import { ModelStatic } from "sequelize"
 import logger from "@logger/logger"
 
 import { Deployment, Launches, Repo, User } from "@database/models"
+import { RedirectionTypes } from "@root/constants/constants"
 import { Redirections } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
@@ -85,7 +86,7 @@ export class LaunchesService {
       )
       const createRedirectionParams: redirectionsCreateParamsType = {
         launchId: createLaunch.id,
-        type: "CNAME",
+        type: RedirectionTypes.CNAME,
         source: createParams.redirectionDomainSource,
         target: createParams.primaryDomainTarget,
       }

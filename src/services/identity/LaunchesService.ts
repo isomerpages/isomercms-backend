@@ -73,7 +73,7 @@ export class LaunchesService {
       )
       const createRedirectionParams = {
         launchId: createLaunch.id,
-        type: RedirectionTypes.CNAME,
+        type: RedirectionTypes.A,
         source: createParams.redirectionDomainSource,
         target: createParams.primaryDomainTarget,
       }

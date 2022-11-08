@@ -172,15 +172,6 @@ export default class InfraService {
     return ok(dnsRecord)
   }
 
-  isRootDomain = (primaryDomain: string) => {
-    // method to differentiate root domains with 4th level domains
-    if ((primaryDomain.match(/./g) || []).length < 3) {
-      // eg. blah.gov.sg
-      return true
-    }
-    return false
-  }
-
   launchSite = async (
     agency: User,
     repoName: string,
@@ -318,7 +309,7 @@ export default class InfraService {
           {
             source: newLaunchParams.redirectionDomainSource,
             target: primaryDomainTarget,
-            type: this.isRootDomain(primaryDomain) ? "CNAME" : "A",
+            type: RedirectionTypes.A,
           },
         ]
       }

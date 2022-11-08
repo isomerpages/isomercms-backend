@@ -46,5 +46,6 @@ module.exports = {
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("redirections")
+    await queryInterface.sequelize.query('DROP TYPE "enum_redirections_type";')
   },
 }

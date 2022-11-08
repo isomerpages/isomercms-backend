@@ -24,6 +24,10 @@ export class Redirections extends Model {
 
   @ForeignKey(() => Launches)
   @Column
+  @BelongsTo(() => Launches, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
   launchId!: number
 
   @Column({

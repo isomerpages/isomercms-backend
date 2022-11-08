@@ -6,6 +6,7 @@ import {
   CreatedAt,
   UpdatedAt,
   ForeignKey,
+  BelongsTo,
 } from "sequelize-typescript"
 
 import { Site } from "@database/models/Site"
@@ -23,10 +24,18 @@ export class Launches extends Model {
 
   @ForeignKey(() => User)
   @Column
+  @BelongsTo(() => User, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
   userId!: string
 
   @ForeignKey(() => Site)
   @Column
+  @BelongsTo(() => Site, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
   siteId!: number
 
   @Column({

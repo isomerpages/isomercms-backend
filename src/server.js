@@ -27,6 +27,8 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
+import QueueService from "../build/src/services/identity/QueueService"
+
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -82,11 +84,13 @@ const launchesService = new LaunchesService({
   deploymentRepository: Deployment,
   redirectionsRepository: Redirections,
 })
+const queueService = new QueueService()
 const infraService = new InfraService({
   sitesService,
   reposService,
   deploymentsService,
   launchesService,
+  queueService,
 })
 
 // poller for incoming queue

@@ -35,12 +35,13 @@ export default class InfraService {
     reposService,
     deploymentsService,
     launchesService,
+    queueService,
   }: InfraServiceProps) {
     this.sitesService = sitesService
     this.reposService = reposService
     this.deploymentsService = deploymentsService
     this.launchesService = launchesService
-    this.queueService = new QueueService()
+    this.queueService = queueService
   }
 
   createSite = async (

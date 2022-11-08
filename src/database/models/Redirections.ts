@@ -6,14 +6,13 @@ import {
   CreatedAt,
   UpdatedAt,
   ForeignKey,
+  BelongsTo,
 } from "sequelize-typescript"
 
-import { Launches } from "@database/models/Launches"
-import { Site } from "@database/models/Site"
-import { User } from "@database/models/User"
+import { Launch } from "@database/models/Launches"
 
 @Table({ tableName: "redirections", paranoid: true })
-export class Redirections extends Model {
+export class Redirection extends Model {
   @Column({
     autoIncrement: true,
     primaryKey: true,
@@ -22,13 +21,15 @@ export class Redirections extends Model {
   })
   id!: number
 
-  @ForeignKey(() => Launches)
+  @ForeignKey(() => Launch)
   @Column
-  @BelongsTo(() => Launches, {
+  launchId!: number
+
+  @BelongsTo(() => Launch, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
   })
-  launchId!: number
+  launch!: Launch
 
   @Column({
     allowNull: false,

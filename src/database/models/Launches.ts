@@ -13,7 +13,7 @@ import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
 
 @Table({ tableName: "launches", paranoid: true })
-export class Launches extends Model {
+export class Launch extends Model {
   @Column({
     autoIncrement: true,
     primaryKey: true,
@@ -24,19 +24,23 @@ export class Launches extends Model {
 
   @ForeignKey(() => User)
   @Column
+  userId!: string
+
   @BelongsTo(() => User, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
   })
-  userId!: string
+  user!: User
 
   @ForeignKey(() => Site)
   @Column
+  siteId!: number
+
   @BelongsTo(() => Site, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
   })
-  siteId!: number
+  site!: Site
 
   @Column({
     allowNull: false,

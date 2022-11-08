@@ -170,8 +170,10 @@ export default class InfraService {
         throw new Error(`error while parsing ${dnsInfo}`)
       }
 
-      const domainValidationSource = certificationRecord.source
-      const domainValidationTarget = certificationRecord.target
+      const [domainValidationSource, domainValidationTarget] = [
+        certificationRecord.source,
+        certificationRecord.target,
+      ]
 
       const subDomainList = dnsInfo.domainAssociation?.subDomains
       if (!subDomainList || !subDomainList[0].dnsRecord) {

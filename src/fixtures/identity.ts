@@ -162,3 +162,5 @@ export const MOCK_COMMIT_MESSAGE_OBJECT_TWO = {
   fileName: MOCK_COMMIT_FILENAME_TWO,
   userId: mockIsomerUserId,
 }
+
+export const MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME = "isomergithub1"

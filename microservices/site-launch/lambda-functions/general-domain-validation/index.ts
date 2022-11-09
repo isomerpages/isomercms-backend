@@ -16,7 +16,6 @@ import {
 interface GeneralDomainValidationLambdaParams {
   appId: string
   primaryDomain: string
-  cloudfrontDomain: string
 }
 
 interface GeneralDomainValidationLambdaResponse {

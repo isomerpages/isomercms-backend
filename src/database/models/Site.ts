@@ -15,6 +15,7 @@ import {
 import { SiteStatus, JobStatus } from "@constants/index"
 
 import { Deployment } from "@database/models/Deployment"
+import { Launch } from "@database/models/Launches"
 import { Repo } from "@database/models/Repo"
 import { SiteMember } from "@database/models/SiteMember"
 import { User } from "@database/models/User"
@@ -82,4 +83,7 @@ export class Site extends Model {
 
   @BelongsTo(() => User)
   creator!: User
+
+  @HasOne(() => Launch)
+  launch?: Launch
 }

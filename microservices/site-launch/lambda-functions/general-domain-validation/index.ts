@@ -36,9 +36,9 @@ export const generalDomainValidation = async (
 ): Promise<GeneralDomainValidationLambdaResponse> => {
   console.log(event)
 
-  const AWS_REGION_NAME = "ap-southeast-1"
+  const { AWS_REGION } = process.env
   const amplifyClient = new AmplifyClient({
-    region: AWS_REGION_NAME,
+    region: AWS_REGION,
   })
 
   // Validation check

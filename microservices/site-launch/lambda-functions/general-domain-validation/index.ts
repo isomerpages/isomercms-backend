@@ -44,6 +44,9 @@ export const generalDomainValidation = async (
   // Validation check
   const { appId, primaryDomain } = event
 
+  if (!appId) throw new Error(`appId was undefined`)
+  if (!primaryDomain) throw new Error(`primaryDomain was undefined`)
+
   const params: GetDomainAssociationCommandInput = {
     appId,
     domainName: primaryDomain,

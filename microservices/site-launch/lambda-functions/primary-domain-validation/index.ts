@@ -10,6 +10,7 @@ import type {
   GetDomainAssociationCommandOutput,
 } from "@aws-sdk/client-amplify"
 
+import logger from "../../shared/logger"
 import {
   SITE_LAUNCH_LAMBDA_TYPE,
   SITE_LAUNCH_LAMBDA_STATUS,
@@ -31,7 +32,7 @@ interface PrimaryDomainValidationLambdaResponse {
 export const primaryDomainValidation = async (
   event: PrimaryDomainValidationLambdaParams
 ): Promise<PrimaryDomainValidationLambdaResponse> => {
-  console.log(event)
+  logger.info(event)
 
   const { AWS_REGION } = process.env
   const amplifyClient = new AmplifyClient({
@@ -59,7 +60,7 @@ export const primaryDomainValidation = async (
         `Amplify app with id ${appId} and domain ${primaryDomain} has not completed primary domain validation step.  Current status: ${domainAssociationStatus}`
       )
     }
-    console.log(
+    logger.info(
       `Amplify app with id ${appId} and domain ${primaryDomain} successfully completed primary domain validation step with status ${domainAssociationStatus}`
     )
 
@@ -72,7 +73,7 @@ export const primaryDomainValidation = async (
       )
     }
 
-    console.log(
+    logger.info(
       `Website administrator has successfully set up the primary domain ${primaryDomain} to point to the correct Cloudfront domain name`
     )
     return {
@@ -82,7 +83,7 @@ export const primaryDomainValidation = async (
       primaryDomain,
     }
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     throw error
   }
 }

@@ -8,6 +8,7 @@ import type {
   GetDomainAssociationCommandOutput,
 } from "@aws-sdk/client-amplify"
 
+import logger from "../../shared/logger"
 import {
   SITE_LAUNCH_LAMBDA_TYPE,
   SITE_LAUNCH_LAMBDA_STATUS,
@@ -33,7 +34,7 @@ const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
 export const generalDomainValidation = async (
   event: GeneralDomainValidationLambdaParams
 ): Promise<GeneralDomainValidationLambdaResponse> => {
-  console.log(event)
+  logger.info(event)
 
   const { AWS_REGION } = process.env
   const amplifyClient = new AmplifyClient({
@@ -67,7 +68,7 @@ export const generalDomainValidation = async (
         `Amplify app with id ${appId} and domain ${primaryDomain} has not completed general domain validation step. Current status: ${domainAssociationStatus}`
       )
     }
-    console.log(
+    logger.info(
       `Amplify app with id ${appId} and domain ${primaryDomain} successfully completed general domain validation step with status ${domainAssociationStatus}`
     )
 
@@ -78,7 +79,7 @@ export const generalDomainValidation = async (
       primaryDomain,
     }
   } catch (error) {
-    console.error(error)
+    logger.error(error)
     throw error
   }
 }

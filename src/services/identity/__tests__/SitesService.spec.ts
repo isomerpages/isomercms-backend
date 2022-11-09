@@ -18,6 +18,12 @@ import {
   repoInfo2,
   adminRepo,
   noAccessRepo,
+  MOCK_STAGING_URL_CONFIGYML,
+  MOCK_PRODUCTION_URL_CONFIGYML,
+  MOCK_PRODUCTION_URL_DB,
+  MOCK_STAGING_URL_DB,
+  MOCK_STAGING_URL_GITHUB,
+  MOCK_PRODUCTION_URL_GITHUB,
 } from "@fixtures/repoInfo"
 import {
   mockUserWithSiteSessionData,
@@ -151,24 +157,24 @@ describe("SitesService", () => {
 
   describe("getUrlsOfSite", () => {
     const deployment: Partial<Deployment> = {
-      stagingUrl: "https://repo-deployment-staging.netlify.app",
-      productionUrl: "https://repo-deployment-prod.netlify.app",
+      stagingUrl: MOCK_STAGING_URL_DB,
+      productionUrl: MOCK_PRODUCTION_URL_DB,
     }
     const emptyDeployment: Partial<Deployment> = {
       stagingUrl: "",
       productionUrl: "",
     }
     const configYmlData: Partial<ConfigYmlData> = {
-      staging: "https://repo-configyml-staging.netlify.app",
-      prod: "https://repo-configyml-prod.netlify.app",
+      staging: MOCK_STAGING_URL_CONFIGYML,
+      prod: MOCK_PRODUCTION_URL_CONFIGYML,
     }
     const emptyConfigYmlData: Partial<ConfigYmlData> = {
       staging: "",
       prod: "",
     }
     const gitHubUrls = {
-      staging: "https://repo-repoinfo-staging.netlify.app",
-      prod: "https://repo-repoinfo-prod.netlify.app",
+      staging: MOCK_STAGING_URL_GITHUB,
+      prod: MOCK_PRODUCTION_URL_GITHUB,
     }
     const repoInfo: { description: string } = {
       description: `Staging: ${gitHubUrls.staging} | Production: ${gitHubUrls.prod}`,
@@ -464,14 +470,14 @@ describe("SitesService", () => {
   })
 
   describe("getStagingUrl", () => {
-    const stagingUrl = "https://repo-staging.netlify.app"
-    const productionUrl = "https://repo-prod.netlify.app"
-
     it("should return the staging URL if it is available", async () => {
       // Arrange
       const mockSiteWithDeployment = {
         ...mockSite,
-        deployment: { stagingUrl, productionUrl },
+        deployment: {
+          stagingUrl: MOCK_STAGING_URL_DB,
+          productionUrl: MOCK_PRODUCTION_URL_DB,
+        },
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
@@ -482,7 +488,7 @@ describe("SitesService", () => {
       )
 
       // Assert
-      expect(actual).toEqual(stagingUrl)
+      expect(actual).toEqual(MOCK_STAGING_URL_DB)
       expect(MockRepository.findOne).toHaveBeenCalled()
     })
 
@@ -509,14 +515,14 @@ describe("SitesService", () => {
   })
 
   describe("getSiteUrl", () => {
-    const stagingUrl = "https://repo-staging.netlify.app"
-    const productionUrl = "https://repo-prod.netlify.app"
-
     it("should return the site URL if it is available", async () => {
       // Arrange
       const mockSiteWithDeployment = {
         ...mockSite,
-        deployment: { stagingUrl, productionUrl },
+        deployment: {
+          stagingUrl: MOCK_STAGING_URL_DB,
+          productionUrl: MOCK_PRODUCTION_URL_DB,
+        },
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
@@ -527,7 +533,7 @@ describe("SitesService", () => {
       )
 
       // Assert
-      expect(actual).toEqual(productionUrl)
+      expect(actual).toEqual(MOCK_PRODUCTION_URL_DB)
       expect(MockRepository.findOne).toHaveBeenCalled()
     })
 
@@ -554,13 +560,11 @@ describe("SitesService", () => {
   })
 
   describe("getSiteInfo", () => {
-    const stagingUrl = "https://repo-staging.netlify.app"
-    const productionUrl = "https://repo-prod.netlify.app"
     const mockSiteWithDeployment = {
       ...mockSite,
       deployment: {
-        stagingUrl,
-        productionUrl,
+        stagingUrl: MOCK_STAGING_URL_DB,
+        productionUrl: MOCK_PRODUCTION_URL_DB,
       },
     }
 
@@ -593,8 +597,8 @@ describe("SitesService", () => {
         savedBy: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
         publishedAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
         publishedBy: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
-        stagingUrl,
-        siteUrl: productionUrl,
+        stagingUrl: MOCK_STAGING_URL_DB,
+        siteUrl: MOCK_PRODUCTION_URL_DB,
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
@@ -644,8 +648,8 @@ describe("SitesService", () => {
         savedBy: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
         publishedAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
         publishedBy: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
-        stagingUrl,
-        siteUrl: productionUrl,
+        stagingUrl: MOCK_STAGING_URL_DB,
+        siteUrl: MOCK_PRODUCTION_URL_DB,
       }
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
@@ -712,8 +716,8 @@ describe("SitesService", () => {
         savedBy: "Unknown Author",
         publishedAt: 0,
         publishedBy: "Unknown Author",
-        stagingUrl,
-        siteUrl: productionUrl,
+        stagingUrl: MOCK_STAGING_URL_DB,
+        siteUrl: MOCK_PRODUCTION_URL_DB,
       }
 
       const mockEmptyCommit: GitHubCommitData = {

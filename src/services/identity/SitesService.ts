@@ -16,7 +16,11 @@ import { UnprocessableError } from "@root/errors/UnprocessableError"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
-import type { GitHubRepositoryData, RepositoryData } from "@root/types/repoInfo"
+import type {
+  GitHubRepositoryData,
+  RepositoryData,
+  SiteUrls,
+} from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
 import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -32,9 +36,6 @@ interface SitesServiceProps {
   isomerAdminsService: IsomerAdminsService
   reviewRequestService: ReviewRequestService
 }
-
-type SiteUrlTypes = "staging" | "prod"
-type SiteUrls = { [key in SiteUrlTypes]: string }
 
 class SitesService {
   // NOTE: Explicitly specifying using keyed properties to ensure

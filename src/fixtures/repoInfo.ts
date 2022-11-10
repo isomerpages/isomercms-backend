@@ -1,10 +1,19 @@
 import { GitHubRepositoryData } from "@root/types/repoInfo"
 
+export const MOCK_STAGING_URL_GITHUB = "https://repo-staging.netlify.app"
+export const MOCK_STAGING_URL_CONFIGYML =
+  "https://repo-staging-configyml.netlify.app"
+export const MOCK_STAGING_URL_DB = "https://repo-staging-db.netlify.app"
+
+export const MOCK_PRODUCTION_URL_GITHUB = "https://repo-prod.netlify.app"
+export const MOCK_PRODUCTION_URL_CONFIGYML =
+  "https://repo-prod-configyml.netlify.app"
+export const MOCK_PRODUCTION_URL_DB = "https://repo-prod-db.netlify.app"
+
 export const repoInfo: GitHubRepositoryData = {
   name: "repo",
   private: false,
-  description:
-    "Staging: https://repo-staging.netlify.app | Production: https://repo-prod.netlify.app",
+  description: `Staging: ${MOCK_STAGING_URL_GITHUB} | Production: ${MOCK_PRODUCTION_URL_GITHUB}`,
   pushed_at: "2021-09-09T02:41:37Z",
   permissions: {
     admin: true,

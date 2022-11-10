@@ -49,7 +49,6 @@ export class FormsgSiteLaunchRouter {
     const { submissionId } = req.body.data
     const { responses } = res.locals.submission
 
-    // todo change back these variables to const
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const repoName = getField(responses, REPO_NAME_FIELD)
     const primaryDomain = getField(responses, PRIMARY_DOMAIN)

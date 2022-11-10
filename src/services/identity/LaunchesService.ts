@@ -31,7 +31,7 @@ interface LaunchesServiceProps {
 }
 
 export interface DomainAssociationMeta {
-  domainAssociationResult: DomainAssociation
+  domainAssociation: DomainAssociation
   appId: string
   repoName: string
   siteId: number
@@ -139,21 +139,22 @@ export class LaunchesService {
     )
 
     // Create Domain Association
-    const domainAssociationResult = await this.launchClient
-      .sendCreateDomainAssociation(launchAppOptions)
-      .then((out) => {
-        const { domainAssociation } = out
-        if (!domainAssociation) {
-          throw new AmplifyError(
-            "Call to CreateApp on Amplify returned malformed output."
-          )
-        }
-        logger.info(`Successfully published '${domainAssociation}'`)
-        return domainAssociation
-      })
+    const domainAssociationResult = await this.launchClient.sendCreateDomainAssociation(
+      launchAppOptions
+    )
+
+    if (!domainAssociationResult.domainAssociation) {
+      throw new AmplifyError(
+        `Call to CreateApp on Amplify returned malformed output for ${repoName}`,
+        repoName,
+        appIdResult.value
+      )
+    }
+
+    logger.info(`Successfully created domain assocation for ${repoName}`)
     const redirectionDomainObject: DomainAssociationMeta = {
       repoName,
-      domainAssociationResult,
+      domainAssociation: domainAssociationResult.domainAssociation,
       appId: appIdResult.value,
       siteId: siteIdResult.value,
     }

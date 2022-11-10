@@ -18,3 +18,6 @@ export type RepositoryData = {
   repoName: GitHubRepositoryData["name"]
   isPrivate: GitHubRepositoryData["private"]
 }
+
+type SiteUrlTypes = "staging" | "prod"
+export type SiteUrls = { [key in SiteUrlTypes]: string }

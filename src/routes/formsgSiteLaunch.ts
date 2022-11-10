@@ -156,7 +156,12 @@ export class FormsgSiteLaunchRouter {
     // only send success message after promise has been resolved
     launchSite
       .then(async () => {
-        await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
+        await this.sendLaunchSuccess(
+          requesterEmail,
+          agencyEmail,
+          repoName,
+          submissionId
+        )
       })
       .catch(async (err) => {
         await this.sendLaunchError(
@@ -188,7 +193,8 @@ export class FormsgSiteLaunchRouter {
   }
 
   sendLaunchSuccess = async (
-    email: string,
+    requestorEmail: string,
+    agencyEmail: string,
     repoName: string,
     submissionId: string
   ) => {
@@ -196,7 +202,8 @@ export class FormsgSiteLaunchRouter {
     const html = `<p>Isomer site ${repoName} was launched successfully. (Form submission id [${submissionId}])</p>
 <p>You may now visit your live website. <a href="${PRIMARY_DOMAIN}">${PRIMARY_DOMAIN}</a> should be accessible within a few minutes.</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
-    await mailer.sendMail(email, subject, html)
+    await mailer.sendMail(requestorEmail, subject, html)
+    await mailer.sendMail(agencyEmail, subject, html)
   }
 
   getRouter() {

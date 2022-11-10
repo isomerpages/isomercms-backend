@@ -40,7 +40,7 @@ export class FormsgSiteLaunchRouter {
 
   launchSiteUsingForm: RequestHandler<
     never,
-    Record<string, never>,
+    string,
     { data: { submissionId: string } },
     never,
     { submission: DecryptedContent }
@@ -76,9 +76,9 @@ export class FormsgSiteLaunchRouter {
     // 2. Check arguments
     if (!requesterEmail) {
       // Most errors are handled by sending an email to the requester, so we can't recover from this.
-      throw new BadRequestError(
-        "Required 'Government E-mail' input was not found"
-      )
+      return res
+        .status(400)
+        .send(`Required 'Government E-mail' input was not found`)
     }
 
     if (!agencyEmail) {
@@ -89,7 +89,9 @@ export class FormsgSiteLaunchRouter {
         submissionId,
         `Error: ${"Required 'Agency E-mail' input was not found"}`
       )
-      throw new BadRequestError("Required 'Agency E-mail' input was not found")
+      return res
+        .status(400)
+        .send(`Required 'Agency E-mail' input was not found`)
     }
 
     if (!primaryDomain) {
@@ -216,7 +218,7 @@ export class FormsgSiteLaunchRouter {
     }
     router.post(
       "/launch-site",
-      attachFormSGHandler(SITE_LAUNCH_FORM_KEY || ""),
+      attachFormSGHandler(SITE_LAUNCH_FORM_KEY),
       this.launchSiteUsingForm
     )
 

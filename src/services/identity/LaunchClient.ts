@@ -9,8 +9,6 @@ import {
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
 
-import logger from "@root/logger/logger"
-
 const { AWS_REGION } = process.env
 
 class LaunchClient {
@@ -32,12 +30,8 @@ class LaunchClient {
     subDomainSettings,
   })
 
-  sendCreateDomainAssociation = (
-    input: CreateDomainAssociationCommandInput
-  ) => {
-    logger.info(`before amplify sends command`)
-    return this.amplifyClient.send(new CreateDomainAssociationCommand(input))
-  }
+  sendCreateDomainAssociation = (input: CreateDomainAssociationCommandInput) =>
+    this.amplifyClient.send(new CreateDomainAssociationCommand(input))
 
   createGetDomainAssociationCommandInput = (
     appId: string,
@@ -47,12 +41,8 @@ class LaunchClient {
     domainName,
   })
 
-  sendGetDomainAssociationCommand = (
-    input: GetDomainAssociationCommandInput
-  ) => {
-    logger.info(`getting domain association command`)
-    return this.amplifyClient.send(new GetDomainAssociationCommand(input))
-  }
+  sendGetDomainAssociationCommand = (input: GetDomainAssociationCommandInput) =>
+    this.amplifyClient.send(new GetDomainAssociationCommand(input))
 
   createListAppsCommandInput = (): ListAppsCommandInput => ({})
 

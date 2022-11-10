@@ -84,6 +84,10 @@ const SitesService = new _SitesService({
   reviewRequestService: (MockReviewRequestService as unknown) as ReviewRequestService,
 })
 
+const SpySitesService = {
+  extractAuthorEmail: jest.spyOn(SitesService, "extractAuthorEmail"),
+}
+
 const mockSiteName = "some site name"
 const mockSite = ({
   name: "i m a site",
@@ -587,6 +591,7 @@ describe("SitesService", () => {
       // Assert
       expect(actual).toBe(expected)
       expect(MockUsersService.findById).toHaveBeenCalledWith(mockIsomerUserId)
+      expect(SpySitesService.extractAuthorEmail).not.toHaveBeenCalled()
     })
 
     it("should return the email of the commit author who is a GitHub login user", async () => {
@@ -607,6 +612,7 @@ describe("SitesService", () => {
       // Assert
       expect(actual).toBe(expected)
       expect(MockUsersService.findById).not.toHaveBeenCalled()
+      expect(SpySitesService.extractAuthorEmail).toHaveBeenCalled()
     })
   })
 
@@ -634,6 +640,7 @@ describe("SitesService", () => {
       expect(
         MockReviewRequestService.getLatestMergedReviewRequest
       ).not.toHaveBeenCalled()
+      expect(SpySitesService.extractAuthorEmail).toHaveBeenCalled()
     })
 
     it("should return the email of the merge commit author if the site cannot be found", async () => {
@@ -660,6 +667,7 @@ describe("SitesService", () => {
       expect(
         MockReviewRequestService.getLatestMergedReviewRequest
       ).not.toHaveBeenCalled()
+      expect(SpySitesService.extractAuthorEmail).toHaveBeenCalled()
     })
 
     it("should return the email of the merge commit author if there are no merged review requests", async () => {
@@ -689,6 +697,7 @@ describe("SitesService", () => {
       expect(
         MockReviewRequestService.getLatestMergedReviewRequest
       ).toHaveBeenCalledWith(mockSite)
+      expect(SpySitesService.extractAuthorEmail).toHaveBeenCalled()
     })
 
     it("should return the email of the requestor for the latest merged review request", async () => {
@@ -723,6 +732,7 @@ describe("SitesService", () => {
       expect(
         MockReviewRequestService.getLatestMergedReviewRequest
       ).toHaveBeenCalledWith(mockSite)
+      expect(SpySitesService.extractAuthorEmail).not.toHaveBeenCalled()
     })
 
     it("should return the email of the merge commit author if the requestor for the latest merged review request does not have an email", async () => {
@@ -757,6 +767,7 @@ describe("SitesService", () => {
       expect(
         MockReviewRequestService.getLatestMergedReviewRequest
       ).toHaveBeenCalledWith(mockSite)
+      expect(SpySitesService.extractAuthorEmail).toHaveBeenCalled()
     })
   })
 

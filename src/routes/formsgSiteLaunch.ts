@@ -84,7 +84,7 @@ export class FormsgSiteLaunchRouter {
     if (!agencyEmail) {
       // Most errors are handled by sending an email to the requester, so we can't recover from this.
       await this.sendLaunchError(
-        [requesterEmail],
+        requesterEmail,
         repoName,
         submissionId,
         `Error: ${"Required 'Agency E-mail' input was not found"}`
@@ -96,20 +96,22 @@ export class FormsgSiteLaunchRouter {
       if (!primaryDomain) {
         const err = `A primary domain is required`
         await this.sendLaunchError(
-          [requesterEmail, agencyEmail],
+          requesterEmail,
           repoName,
           submissionId,
-          err
+          err,
+          agencyEmail
         )
         return res.sendStatus(200)
       }
       if (!repoName) {
         const err = `A repository name is required`
         await this.sendLaunchError(
-          [requesterEmail, agencyEmail],
+          requesterEmail,
           repoName,
           submissionId,
-          err
+          err,
+          agencyEmail
         )
         return res.sendStatus(200)
       }
@@ -120,10 +122,11 @@ export class FormsgSiteLaunchRouter {
       if (!agencyUser) {
         const err = `Form submitter ${agencyEmail} is not an Isomer user. Register an account for this user and try again.`
         await this.sendLaunchError(
-          [requesterEmail, agencyEmail],
+          requesterEmail,
           repoName,
           submissionId,
-          err
+          err,
+          agencyEmail
         )
         return res.sendStatus(200)
       }
@@ -131,10 +134,11 @@ export class FormsgSiteLaunchRouter {
       if (!requesterUser) {
         const err = `Form submitter ${requesterUser} is not an Isomer user. Register an account for this user and try again.`
         await this.sendLaunchError(
-          [requesterEmail, agencyEmail],
+          requesterEmail,
           repoName,
           submissionId,
-          err
+          err,
+          agencyEmail
         )
         return res.sendStatus(200)
       }
@@ -157,7 +161,8 @@ export class FormsgSiteLaunchRouter {
         })
         .catch(async (err) => {
           await this.sendLaunchError(
-            [requesterEmail, agencyEmail],
+            requesterEmail,
+            agencyEmail,
             repoName,
             submissionId,
             `Error: ${err}`
@@ -165,10 +170,11 @@ export class FormsgSiteLaunchRouter {
         })
     } catch (err) {
       await this.sendLaunchError(
-        [requesterEmail, agencyEmail],
+        requesterEmail,
         repoName,
         submissionId,
-        `Error: ${err}`
+        `Error: ${err}`,
+        agencyEmail
       )
       logger.error(err)
     }
@@ -177,17 +183,19 @@ export class FormsgSiteLaunchRouter {
   }
 
   sendLaunchError = async (
-    email: string[],
+    isomerEmail: string,
     repoName: string | undefined,
     submissionId: string,
-    error: string
+    errorMessage: string,
+    agencyEmail?: string
   ) => {
     const displayedRepoName = repoName || "<missing repo name>"
     const subject = `[Isomer] Launch site ${displayedRepoName} FAILURE`
-    const html = `<p>Isomer site ${displayedRepoName} was <b>not</b> launched successfully. (Form submission id [${submissionId}])</p>
-<p>${error}</p>
+    let html = `<p>Isomer site ${displayedRepoName} was <b>not</b> launched successfully. (Form submission id [${submissionId}])</p> 
 <p>This email was sent from the Isomer CMS backend.</p>`
-    await mailer.sendMail(email[0], subject, html)
+    if (agencyEmail) await mailer.sendMail(agencyEmail, subject, html)
+    html += `<p>${errorMessage}</p>`
+    await mailer.sendMail(isomerEmail, subject, html)
   }
 
   sendLaunchSuccess = async (

@@ -1,4 +1,5 @@
 import { DomainAssociation, SubDomainSetting } from "@aws-sdk/client-amplify"
+import { err, ok } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
@@ -83,7 +84,7 @@ export class LaunchesService {
     if (!siteId) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
       logger.error(error)
-      throw error
+      return err(error)
     }
 
     const deploy = await this.deploymentRepository.findOne({
@@ -96,9 +97,9 @@ export class LaunchesService {
         `Failed to find hosting ID for deployment '${deploy}' on Isomer`
       )
       logger.error(error)
-      throw error
+      return err(error)
     }
-    return hostingID
+    return ok(hostingID)
   }
 
   getSiteId = async (repoName: string) => {
@@ -110,9 +111,9 @@ export class LaunchesService {
     if (!siteId) {
       const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
       logger.error(error)
-      throw error
+      return err(error)
     }
-    return siteId
+    return ok(siteId)
   }
 
   configureDomainInAmplify = async (
@@ -121,11 +122,18 @@ export class LaunchesService {
     subDomainSettings: SubDomainSetting[]
   ) => {
     // Get appId, which is stored as hostingID in database table.
-    const appId = await this.getAppId(repoName)
-    const siteId = await this.getSiteId(repoName)
+    const appIdResult = await this.getAppId(repoName)
+    if (appIdResult.isErr()) {
+      throw appIdResult.error
+    }
+
+    const siteIdResult = await this.getSiteId(repoName)
+    if (siteIdResult.isErr()) {
+      throw siteIdResult.error
+    }
 
     const launchAppOptions = this.launchClient.createDomainAssociationCommandInput(
-      appId,
+      appIdResult.value,
       domainName,
       subDomainSettings
     )
@@ -146,8 +154,8 @@ export class LaunchesService {
     const redirectionDomainObject: DomainAssociationMeta = {
       repoName,
       domainAssociationResult,
-      appId,
-      siteId,
+      appId: appIdResult.value,
+      siteId: siteIdResult.value,
     }
     return redirectionDomainObject
   }

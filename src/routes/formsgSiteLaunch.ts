@@ -83,6 +83,12 @@ export class FormsgSiteLaunchRouter {
 
     if (!agencyEmail) {
       // Most errors are handled by sending an email to the requester, so we can't recover from this.
+      await this.sendLaunchError(
+        [requesterEmail],
+        repoName,
+        submissionId,
+        `Error: ${"Required 'Agency E-mail' input was not found"}`
+      )
       throw new BadRequestError("Required 'Agency E-mail' input was not found")
     }
 

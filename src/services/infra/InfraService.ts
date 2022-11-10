@@ -121,8 +121,6 @@ export default class InfraService {
   }
 
   launchSite = async (
-    submissionId: string,
-    requestor: User,
     agency: User,
     repoName: string,
     primaryDomain: string,

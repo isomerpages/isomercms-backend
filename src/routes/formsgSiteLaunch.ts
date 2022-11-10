@@ -4,7 +4,6 @@ import express, { RequestHandler } from "express"
 
 import logger from "@logger/logger"
 
-import { BadRequestError } from "@errors/BadRequestError"
 import InitializationError from "@errors/InitializationError"
 
 import { getField } from "@utils/formsg-utils"
@@ -147,8 +146,6 @@ export class FormsgSiteLaunchRouter {
     // 3. Use service to Launch site
     // note: this function is not be async due to the timeout for http requests.
     const launchSite = this.infraService.launchSite(
-      submissionId,
-      requesterUser,
       agencyUser,
       repoName,
       primaryDomain,

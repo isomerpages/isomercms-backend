@@ -147,9 +147,9 @@ export class LaunchesService {
     if (!siteId) {
       const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
       logger.error(error)
-      throw error
+      return err(error)
     }
-    return siteId
+    return ok(siteId)
   }
 
   configureDomainInAmplify = async (

@@ -92,92 +92,81 @@ export class FormsgSiteLaunchRouter {
       throw new BadRequestError("Required 'Agency E-mail' input was not found")
     }
 
-    try {
-      if (!primaryDomain) {
-        const err = `A primary domain is required`
-        await this.sendLaunchError(
-          requesterEmail,
-          repoName,
-          submissionId,
-          err,
-          agencyEmail
-        )
-        return res.sendStatus(200)
-      }
-      if (!repoName) {
-        const err = `A repository name is required`
-        await this.sendLaunchError(
-          requesterEmail,
-          repoName,
-          submissionId,
-          err,
-          agencyEmail
-        )
-        return res.sendStatus(200)
-      }
-
-      const agencyUser = await this.usersService.findByEmail(agencyEmail)
-      const requesterUser = await this.usersService.findByEmail(requesterEmail)
-
-      if (!agencyUser) {
-        const err = `Form submitter ${agencyEmail} is not an Isomer user. Register an account for this user and try again.`
-        await this.sendLaunchError(
-          requesterEmail,
-          repoName,
-          submissionId,
-          err,
-          agencyEmail
-        )
-        return res.sendStatus(200)
-      }
-
-      if (!requesterUser) {
-        const err = `Form submitter ${requesterUser} is not an Isomer user. Register an account for this user and try again.`
-        await this.sendLaunchError(
-          requesterEmail,
-          repoName,
-          submissionId,
-          err,
-          agencyEmail
-        )
-        return res.sendStatus(200)
-      }
-
-      // 3. Use service to Launch site
-      // note: this function is not be async due to the timeout for http requests.
-      const launchSite = this.infraService.launchSite(
-        submissionId,
-        requesterUser,
-        agencyUser,
-        repoName,
-        primaryDomain,
-        subDomainSettings
-      )
-
-      // only send success message after promise has been resolved
-      launchSite
-        .then(async () => {
-          await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
-        })
-        .catch(async (err) => {
-          await this.sendLaunchError(
-            requesterEmail,
-            agencyEmail,
-            repoName,
-            submissionId,
-            `Error: ${err}`
-          )
-        })
-    } catch (err) {
+    if (!primaryDomain) {
+      const err = `A primary domain is required`
       await this.sendLaunchError(
         requesterEmail,
         repoName,
         submissionId,
-        `Error: ${err}`,
+        err,
         agencyEmail
       )
-      logger.error(err)
+      return res.sendStatus(200)
     }
+    if (!repoName) {
+      const err = `A repository name is required`
+      await this.sendLaunchError(
+        requesterEmail,
+        repoName,
+        submissionId,
+        err,
+        agencyEmail
+      )
+      return res.sendStatus(200)
+    }
+
+    const agencyUser = await this.usersService.findByEmail(agencyEmail)
+    const requesterUser = await this.usersService.findByEmail(requesterEmail)
+
+    if (!agencyUser) {
+      const err = `Form submitter ${agencyEmail} is not an Isomer user. Register an account for this user and try again.`
+      await this.sendLaunchError(
+        requesterEmail,
+        repoName,
+        submissionId,
+        err,
+        agencyEmail
+      )
+      return res.sendStatus(200)
+    }
+
+    if (!requesterUser) {
+      const err = `Form submitter ${requesterUser} is not an Isomer user. Register an account for this user and try again.`
+      await this.sendLaunchError(
+        requesterEmail,
+        repoName,
+        submissionId,
+        err,
+        agencyEmail
+      )
+      return res.sendStatus(200)
+    }
+
+    // 3. Use service to Launch site
+    // note: this function is not be async due to the timeout for http requests.
+    const launchSite = this.infraService.launchSite(
+      submissionId,
+      requesterUser,
+      agencyUser,
+      repoName,
+      primaryDomain,
+      subDomainSettings
+    )
+
+    // only send success message after promise has been resolved
+    launchSite
+      .then(async () => {
+        await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
+      })
+      .catch(async (err) => {
+        await this.sendLaunchError(
+          requesterEmail,
+          agencyEmail,
+          repoName,
+          submissionId,
+          `Error: ${err}`
+        )
+      })
 
     return res.sendStatus(200)
   }

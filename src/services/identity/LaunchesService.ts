@@ -9,7 +9,7 @@ import { Redirections } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
-type siteLaunchCreateParamsType = {
+type siteLaunchCreateParams = {
   userId: number
   siteId: number
   primaryDomainSource: string
@@ -20,21 +20,6 @@ type siteLaunchCreateParamsType = {
   redirectionDomainTarget?: string
 }
 
-type launchesCreateParamsType = Pick<
-  Launches,
-  | "userId"
-  | "siteId"
-  | "primaryDomainSource"
-  | "primaryDomainTarget"
-  | "domainValidationSource"
-  | "domainValidationTarget"
->
-
-type redirectionsCreateParamsType = Pick<
-  Redirections,
-  "launchId" | "type" | "source" | "target"
->
-
 interface LaunchesServiceProps {
   launchesRepository: ModelStatic<Launches>
   deploymentRepository: ModelStatic<Deployment>
@@ -44,7 +29,7 @@ interface LaunchesServiceProps {
   launchClient: LaunchClient
 }
 
-export interface DomainAssociationInterface {
+export interface DomainAssociationMeta {
   domainAssociationResult: DomainAssociation
   appId: string
   repoName: string
@@ -69,22 +54,19 @@ export class LaunchesService {
     launchClient,
   }: LaunchesServiceProps) {
     this.deploymentRepository = deploymentRepository
-    this.launchClient = launchClient ?? new LaunchClient()
+    this.launchClient = launchClient
     this.launchesRepository = launchesRepository
     this.repoRepository = repoRepository
     this.redirectionsRepository = redirectionsRepository
   }
 
-  create = async (
-    createParams: siteLaunchCreateParamsType
-  ): Promise<Launches> => {
-    const launchParams: launchesCreateParamsType = { ...createParams }
-    const createLaunch = await this.launchesRepository.create(launchParams)
+  create = async (createParams: siteLaunchCreateParams): Promise<Launches> => {
+    const createLaunch = await this.launchesRepository.create(createParams)
     if (createParams.redirectionDomainSource) {
       logger.info(
         `creating redirection record for ${createParams.redirectionDomainSource}`
       )
-      const createRedirectionParams: redirectionsCreateParamsType = {
+      const createRedirectionParams = {
         launchId: createLaunch.id,
         type: RedirectionTypes.CNAME,
         source: createParams.redirectionDomainSource,
@@ -95,10 +77,6 @@ export class LaunchesService {
 
     return createLaunch
   }
-
-  createRedirection = async (
-    createParams: redirectionsCreateParamsType
-  ): Promise<Redirections> => this.redirectionsRepository.create(createParams)
 
   getAppId = async (repoName: string) => {
     const siteId = await this.getSiteId(repoName)
@@ -165,7 +143,7 @@ export class LaunchesService {
         logger.info(`Successfully published '${domainAssociation}'`)
         return domainAssociation
       })
-    const redirectionDomainObject: DomainAssociationInterface = {
+    const redirectionDomainObject: DomainAssociationMeta = {
       repoName,
       domainAssociationResult,
       appId,

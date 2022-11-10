@@ -4,8 +4,6 @@ import {
   CreateDomainAssociationCommandInput,
   GetDomainAssociationCommand,
   GetDomainAssociationCommandInput,
-  ListAppsCommand,
-  ListAppsCommandInput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
 

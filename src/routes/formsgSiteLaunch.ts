@@ -38,7 +38,7 @@ export class FormsgSiteLaunchRouter {
     autoBind(this)
   }
 
-  formsgLaunchSite: RequestHandler<
+  launchSiteUsingForm: RequestHandler<
     never,
     Record<string, never>,
     { data: { submissionId: string } },
@@ -203,7 +203,7 @@ export class FormsgSiteLaunchRouter {
     router.post(
       "/launch-site",
       attachFormSGHandler(SITE_LAUNCH_FORM_KEY || ""),
-      this.formsgLaunchSite
+      this.launchSiteUsingForm
     )
 
     return router

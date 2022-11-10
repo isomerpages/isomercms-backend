@@ -43,13 +43,6 @@ class LaunchClient {
 
   sendGetDomainAssociationCommand = (input: GetDomainAssociationCommandInput) =>
     this.amplifyClient.send(new GetDomainAssociationCommand(input))
-
-  createListAppsCommandInput = (): ListAppsCommandInput => ({})
-
-  getAllAppsCommand = () => {
-    const input: ListAppsCommandInput = {}
-    this.amplifyClient.send(new ListAppsCommand(input))
-  }
 }
 
 export default LaunchClient

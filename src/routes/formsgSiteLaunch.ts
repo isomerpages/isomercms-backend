@@ -151,14 +151,18 @@ export class FormsgSiteLaunchRouter {
       )
 
       // only send success message after promise has been resolved
-      launchSite.then(async () => {
-        await this.sendLaunchSuccess(
-          // fields below are guarenteed to be a string due to prior checks
-          <string>requesterEmail,
-          <string>repoName,
-          submissionId
-        )
-      })
+      launchSite
+        .then(async () => {
+          await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
+        })
+        .catch(async (err) => {
+          await this.sendLaunchError(
+            [requesterEmail, agencyEmail],
+            repoName,
+            submissionId,
+            `Error: ${err}`
+          )
+        })
     } catch (err) {
       await this.sendLaunchError(
         [requesterEmail, agencyEmail],

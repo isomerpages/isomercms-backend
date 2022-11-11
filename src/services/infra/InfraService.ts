@@ -1,4 +1,5 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
+import { err, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
@@ -129,14 +130,19 @@ export default class InfraService {
     // call amplify to trigger site launch process
     try {
       // Set up domain association using LaunchesService
-      const {
-        appId,
-        siteId,
-      } = await this.launchesService.configureDomainInAmplify(
+
+      const redirectionDomainResult = await this.launchesService.configureDomainInAmplify(
         repoName,
         primaryDomain,
         subDomainSettings
       )
+
+      if (redirectionDomainResult.isErr()) {
+        return err(redirectionDomainResult.error)
+      }
+
+      const { appId, siteId } = redirectionDomainResult.value
+
       logger.info(
         `Created Domain association for ${repoName} to ${primaryDomain}`
       )
@@ -165,7 +171,7 @@ export default class InfraService {
         dnsInfo.domainAssociation?.certificateVerificationDNSRecord
       )
       if (!certificationRecord) {
-        throw new Error(`error while parsing ${dnsInfo}`)
+        return err(`error while parsing ${dnsInfo}`)
       }
 
       const {
@@ -175,13 +181,13 @@ export default class InfraService {
 
       const subDomainList = dnsInfo.domainAssociation?.subDomains
       if (!subDomainList || !subDomainList[0].dnsRecord) {
-        throw Error("subdomain list not created yet")
+        return err("subdomain list not created yet")
       }
 
       const primaryDomainInfo = this.parseDNSRecords(subDomainList[0].dnsRecord)
 
       if (!primaryDomainInfo) {
-        throw Error("primary domain info not created yet")
+        return err("primary domain info not created yet")
       }
 
       /**
@@ -244,9 +250,9 @@ export default class InfraService {
       this.queueService.sendMessage(message)
     } catch (error) {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
-      throw error
+      return err(error)
     }
-    return null
+    return ok(null)
   }
 
   siteUpdate = async () => {

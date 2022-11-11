@@ -144,10 +144,12 @@ export class LaunchesService {
     )
 
     if (!domainAssociationResult.domainAssociation) {
-      throw new AmplifyError(
-        `Call to CreateApp on Amplify returned malformed output for ${repoName}`,
-        repoName,
-        appIdResult.value
+      return err(
+        new AmplifyError(
+          `Call to CreateApp on Amplify returned malformed output for ${repoName}`,
+          repoName,
+          appIdResult.value
+        )
       )
     }
 
@@ -158,7 +160,7 @@ export class LaunchesService {
       appId: appIdResult.value,
       siteId: siteIdResult.value,
     }
-    return redirectionDomainObject
+    return ok(redirectionDomainObject)
   }
 
   getDomainAssociationRecord = async (domainName: string, appId: string) => {

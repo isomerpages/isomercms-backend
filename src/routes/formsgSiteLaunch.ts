@@ -153,25 +153,24 @@ export class FormsgSiteLaunchRouter {
     )
 
     // only send success message after promise has been resolved
-    launchSite
-      .then(async () => {
+    launchSite.then(async (result) => {
+      if (result.isOk()) {
         await this.sendLaunchSuccess(
           requesterEmail,
           agencyEmail,
           repoName,
           submissionId
         )
-      })
-      .catch(async (err) => {
+      } else {
         await this.sendLaunchError(
           requesterEmail,
           agencyEmail,
           repoName,
           submissionId,
-          `Error: ${err}`
+          `Error: ${result.error}`
         )
-      })
-
+      }
+    })
     return res.sendStatus(200)
   }
 

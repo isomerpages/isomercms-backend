@@ -20,13 +20,14 @@ export default class QueueClient {
   }
 
   sendMessage = async (MessageBody: string) => {
-    const queueResestParams: SQS.Types.SendMessageRequest = {
+    const queueRequestParams: SQS.Types.SendMessageRequest = {
       QueueUrl: this.outgoingQueueUrl,
       MessageBody,
     }
-    this.sqs.sendMessage(queueResestParams, (err, data) => {
+    this.sqs.sendMessage(queueRequestParams, (err, data) => {
       if (err) {
         logger.error(err)
+        throw err
       } else {
         logger.info(data)
       }
@@ -34,7 +35,6 @@ export default class QueueClient {
   }
 
   receiveMessage = async () => {
-    logger.info(`checking queue`)
     const params: SQS.ReceiveMessageRequest = {
       QueueUrl: this.incomingQueueUrl,
       AttributeNames: ["All"],
@@ -69,19 +69,19 @@ export default class QueueClient {
       (message) => message.ReceiptHandle
     )
     if (receiptHandles) {
-      receiptHandles?.forEach((receiptHandle) => {
+      const filteredReceiptHandles = receiptHandles.filter(
+        (x): x is string => x !== null
+      )
+      filteredReceiptHandles.forEach((receiptHandle) => {
         try {
-          if (receiptHandle) {
-            this.sqs.deleteMessage(
-              this.createDeleteMessageParams(receiptHandle),
-              (err) => {
-                if (err) {
-                  logger.error(err)
-                  throw err
-                }
+          this.sqs.deleteMessage(
+            this.createDeleteMessageParams(receiptHandle),
+            (err) => {
+              if (err) {
+                logger.error(err)
               }
-            )
-          }
+            }
+          )
         } catch (err) {
           logger.error(`error trying to delete message handle ${receiptHandle}`)
         }

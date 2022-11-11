@@ -32,15 +32,28 @@ export default class QueueService {
   pollMessages = async () => {
     const messageBodies: MessageBody[] = []
     const messages = await this.queueClient.receiveMessage()
-    try {
-      messages?.forEach((message) => {
-        if (message.Body) {
-          messageBodies.push(JSON.parse(message.Body))
+
+    messages?.forEach((message) => {
+      if (message.Body) {
+        const parsedMessage = this.parseMessageBody(message.Body)
+        if (parsedMessage) {
+          messageBodies.push(parsedMessage)
         }
-      })
-    } catch (error) {
-      logger.error(`error while parsing: ${messages}`)
-    }
+      }
+    })
+
     return messageBodies
+  }
+
+  private parseMessageBody(message: string): MessageBody | null {
+    let parsedMessage = null
+    try {
+      if (message) {
+        parsedMessage = JSON.parse(message)
+      }
+    } catch (error) {
+      logger.error(`error while parsing: ${message}`)
+    }
+    return parsedMessage
   }
 }

@@ -1,4 +1,8 @@
+import { Jsonify } from "type-fest"
+
 import { CollaboratorRoles } from "@constants/constants"
+
+import { User } from "@root/database/models"
 
 export type ReviewRequestStatus = "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
 
@@ -13,7 +17,7 @@ export interface EditedItemDto {
   lastEditedTime: number
 }
 
-export interface UserDto {
+export interface UserDto extends Jsonify<User> {
   email: string
   role: CollaboratorRoles
 }

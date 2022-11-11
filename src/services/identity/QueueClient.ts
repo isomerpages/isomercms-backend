@@ -105,19 +105,19 @@ export default class QueueClient {
       (message) => message.ReceiptHandle
     )
     if (receiptHandles) {
-      receiptHandles?.forEach((receiptHandle) => {
+      const filteredReceiptHandles = receiptHandles.filter(
+        (x): x is string => x !== null
+      )
+      filteredReceiptHandles.forEach((receiptHandle) => {
         try {
-          if (receiptHandle) {
-            this.sqs.deleteMessage(
-              this.createDeleteMessageParams(receiptHandle),
-              (err) => {
-                if (err) {
-                  logger.error(err)
-                  throw err
-                }
+          this.sqs.deleteMessage(
+            this.createDeleteMessageParams(receiptHandle),
+            (err) => {
+              if (err) {
+                logger.error(err)
               }
-            )
-          }
+            }
+          )
         } catch (err) {
           logger.error(`error trying to delete message handle ${receiptHandle}`)
         }

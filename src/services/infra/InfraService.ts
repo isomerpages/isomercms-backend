@@ -257,25 +257,20 @@ export default class InfraService {
   }
 
   siteUpdate = async () => {
-    try {
-      const messages = await this.queueService.pollMessages()
-
-      await Promise.all(
-        messages.map(async (message) => {
-          const site = await this.sitesService.getBySiteName(message.repoName)
-          if (site) {
-            const updateSuccessSiteLaunchParams = {
-              id: site.id,
-              siteStatus: SiteStatus.Launched,
-              jobStatus: JobStatus.Running,
-            }
-            await this.sitesService.update(updateSuccessSiteLaunchParams)
+    const messages = await this.queueService.pollMessages()
+    await Promise.all(
+      messages.map(async (message) => {
+        const site = await this.sitesService.getBySiteName(message.repoName)
+        if (site) {
+          const updateSuccessSiteLaunchParams = {
+            id: site.id,
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
           }
-        })
-      )
-    } catch (error) {
-      logger.error(error)
-    }
+          await this.sitesService.update(updateSuccessSiteLaunchParams)
+        }
+      })
+    )
   }
 
   pollQueue = async () => {

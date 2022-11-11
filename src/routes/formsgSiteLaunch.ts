@@ -46,6 +46,8 @@ export class FormsgSiteLaunchRouter {
       agencyEmail,
     } = formResponses
 
+    res.sendStatus(200) // we have received the form and obtained relevant fields
+
     const subDomainSettings = [
       {
         branchName: "master",

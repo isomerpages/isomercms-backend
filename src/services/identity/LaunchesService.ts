@@ -221,13 +221,17 @@ export class LaunchesService {
     )
   }
 
-  async updateLaunchTable(updateParams: Partial<Launches>) {
+  async updateLaunchTable(
+    updateParams: Partial<Launches> & Pick<Launches, "id">
+  ) {
     return this.launchesRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
-  async updateRedirectionTable(updateParams: Partial<Redirections>) {
+  async updateRedirectionTable(
+    updateParams: Partial<Redirections> & Pick<Redirections, "id">
+  ) {
     return this.redirectionsRepository.update(updateParams, {
       where: { id: updateParams.id },
     })

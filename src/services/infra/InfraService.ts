@@ -259,8 +259,9 @@ export default class InfraService {
   siteUpdate = async () => {
     try {
       const messages = await this.queueService.pollMessages()
-      if (messages) {
-        messages.forEach(async (message) => {
+
+      await Promise.all(
+        messages.map(async (message) => {
           const site = await this.sitesService.getBySiteName(message.repoName)
           if (site) {
             const updateSuccessSiteLaunchParams = {
@@ -271,7 +272,7 @@ export default class InfraService {
             await this.sitesService.update(updateSuccessSiteLaunchParams)
           }
         })
-      }
+      )
     } catch (error) {
       logger.error(error)
     }

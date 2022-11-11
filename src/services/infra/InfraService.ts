@@ -354,11 +354,10 @@ export default class InfraService {
             }
             await this.sitesService.update(updateSuccessSiteLaunchParams)
           }
-        })
-      )
-    } catch (error) {
-      logger.error(error)
-    }
+          await this.sitesService.update(updateSuccessSiteLaunchParams)
+        }
+      })
+    )
   }
 
   pollQueue = async () => {

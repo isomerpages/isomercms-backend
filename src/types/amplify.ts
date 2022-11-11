@@ -8,8 +8,8 @@ export class AmplifyError extends Error {
   public constructor(
     msg: string,
     appName?: string,
-    appArn?: string,
-    appId?: string
+    appId?: string,
+    appArn?: string
   ) {
     super(msg)
     this.appName = appName

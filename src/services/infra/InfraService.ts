@@ -5,6 +5,7 @@ import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import { SiteStatus, JobStatus } from "@root/constants"
 import logger from "@root/logger/logger"
+import { AmplifyError } from "@root/types/amplify"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import LaunchesService from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
@@ -171,7 +172,7 @@ export default class InfraService {
         dnsInfo.domainAssociation?.certificateVerificationDNSRecord
       )
       if (!certificationRecord) {
-        return err(`error while parsing ${dnsInfo}`)
+        return err(new AmplifyError(`error while parsing ${dnsInfo}`))
       }
 
       const {

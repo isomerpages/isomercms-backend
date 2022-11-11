@@ -25,6 +25,7 @@ export interface FormsgRouterProps {
   infraService: InfraService
 }
 
+const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"
 export class FormsgSiteLaunchRouter {
   private readonly usersService: FormsgRouterProps["usersService"]
 
@@ -54,6 +55,8 @@ export class FormsgSiteLaunchRouter {
     const redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
     const agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
 
+    res.sendStatus(200) // we have received the form and obtained relevant fields
+
     const subDomainSettings = [
       {
         branchName: "master",
@@ -75,9 +78,13 @@ export class FormsgSiteLaunchRouter {
     // 2. Check arguments
     if (!requesterEmail) {
       // Most errors are handled by sending an email to the requester, so we can't recover from this.
-      return res
-        .status(400)
-        .send(`Required 'Government E-mail' input was not found`)
+      await this.sendLaunchError(
+        ISOMER_ADMIN_EMAIL,
+        repoName,
+        submissionId,
+        `Error: ${"Required 'Agency E-mail' input was not found"}`
+      )
+      return
     }
 
     if (!agencyEmail) {
@@ -88,9 +95,7 @@ export class FormsgSiteLaunchRouter {
         submissionId,
         `Error: ${"Required 'Agency E-mail' input was not found"}`
       )
-      return res
-        .status(400)
-        .send(`Required 'Agency E-mail' input was not found`)
+      return
     }
 
     if (!primaryDomain) {
@@ -102,7 +107,7 @@ export class FormsgSiteLaunchRouter {
         err,
         agencyEmail
       )
-      return res.sendStatus(200)
+      return
     }
     if (!repoName) {
       const err = `A repository name is required`
@@ -113,7 +118,7 @@ export class FormsgSiteLaunchRouter {
         err,
         agencyEmail
       )
-      return res.sendStatus(200)
+      return
     }
 
     const agencyUser = await this.usersService.findByEmail(agencyEmail)
@@ -128,7 +133,7 @@ export class FormsgSiteLaunchRouter {
         err,
         agencyEmail
       )
-      return res.sendStatus(200)
+      return
     }
 
     if (!requesterUser) {
@@ -140,7 +145,7 @@ export class FormsgSiteLaunchRouter {
         err,
         agencyEmail
       )
-      return res.sendStatus(200)
+      return
     }
 
     // 3. Use service to Launch site
@@ -171,7 +176,6 @@ export class FormsgSiteLaunchRouter {
         )
       }
     })
-    return res.sendStatus(200)
   }
 
   sendLaunchError = async (

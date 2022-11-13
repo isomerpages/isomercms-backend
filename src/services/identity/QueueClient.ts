@@ -19,10 +19,10 @@ export default class QueueClient {
     this.outgoingQueueUrl = OUTGOING_QUEUE_URL
   }
 
-  sendMessage = async (MessageBody: string) => {
+  sendMessage = (messageBody: string) => {
     const queueRequestParams: SQS.Types.SendMessageRequest = {
       QueueUrl: this.outgoingQueueUrl,
-      MessageBody,
+      MessageBody: messageBody,
     }
     this.sqs.sendMessage(queueRequestParams, (err, data) => {
       if (err) {

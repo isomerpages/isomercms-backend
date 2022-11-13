@@ -4,13 +4,13 @@ import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launches, Repo, User } from "@database/models"
+import { Deployment, Launch, Repo, User } from "@database/models"
 import { RedirectionTypes } from "@root/constants/constants"
-import { Redirections } from "@root/database/models/Redirections"
+import { Redirection } from "@root/database/models/Redirections"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
-type siteLaunchCreateParams = {
+type SiteLaunchCreateParams = {
   userId: number
   siteId: number
   primaryDomainSource: string
@@ -22,9 +22,9 @@ type siteLaunchCreateParams = {
 }
 
 interface LaunchesServiceProps {
-  launchesRepository: ModelStatic<Launches>
+  launchesRepository: ModelStatic<Launch>
   deploymentRepository: ModelStatic<Deployment>
-  redirectionsRepository: ModelStatic<Redirections>
+  redirectionsRepository: ModelStatic<Redirection>
   repoRepository: ModelStatic<Repo>
   userRepository: ModelStatic<User>
   launchClient: LaunchClient
@@ -61,7 +61,7 @@ export class LaunchesService {
     this.redirectionsRepository = redirectionsRepository
   }
 
-  create = async (createParams: siteLaunchCreateParams): Promise<Launches> => {
+  create = async (createParams: SiteLaunchCreateParams): Promise<Launch> => {
     const createLaunch = await this.launchesRepository.create(createParams)
     if (createParams.redirectionDomainSource) {
       logger.info(
@@ -173,16 +173,14 @@ export class LaunchesService {
     )
   }
 
-  async updateLaunchTable(
-    updateParams: Partial<Launches> & Pick<Launches, "id">
-  ) {
+  async updateLaunchTable(updateParams: Partial<Launch> & Pick<Launch, "id">) {
     return this.launchesRepository.update(updateParams, {
       where: { id: updateParams.id },
     })
   }
 
   async updateRedirectionTable(
-    updateParams: Partial<Redirections> & Pick<Redirections, "id">
+    updateParams: Partial<Redirection> & Pick<Redirection, "id">
   ) {
     return this.redirectionsRepository.update(updateParams, {
       where: { id: updateParams.id },

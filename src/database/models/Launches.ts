@@ -7,8 +7,10 @@ import {
   UpdatedAt,
   ForeignKey,
   BelongsTo,
+  HasMany,
 } from "sequelize-typescript"
 
+import { Redirection } from "@database/models/Redirections"
 import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
 
@@ -41,6 +43,9 @@ export class Launch extends Model {
     onDelete: "CASCADE",
   })
   site!: Site
+
+  @HasMany(() => Redirection)
+  redirections?: Redirection[]
 
   @Column({
     allowNull: false,

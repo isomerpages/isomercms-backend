@@ -7,12 +7,11 @@ import {
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
 
-const { AWS_REGION } = process.env
-
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>
 
   constructor() {
+    const AWS_REGION = "ap-southeast-1"
     this.amplifyClient = new AmplifyClient({
       region: AWS_REGION,
     })

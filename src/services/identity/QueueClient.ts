@@ -42,9 +42,11 @@ export default class QueueClient {
     }
 
     /**
-     * Note: using `.promise` might be an issue. See more: https://github.com/aws/aws-sdk-js/issues/1453
-     * Through some internal testing, this issue "seems" to have disappeared (it is an undeterministic bug), assumed to
-     * be a safe operation for now.
+     * Note: using `.promise` might be an issue.
+     * See more: https://github.com/aws/aws-sdk-js/issues/1453
+     * This occured when there were mutliple concurrent writes,
+     * and doesnt *seem* to occur now with single writes
+     * (it is an undeterministic bug), assumed to be a safe operation for now.
      */
     const response = await this.sqs.receiveMessage(params).promise()
     if (response.$response.error) {

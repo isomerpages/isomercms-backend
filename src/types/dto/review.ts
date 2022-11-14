@@ -16,6 +16,8 @@ export interface EditedItemDto {
 export interface UserDto {
   email: string
   role: CollaboratorRoles
+  id: string
+  lastLoggedIn: string
 }
 
 export type DashboardReviewRequestDto = {

@@ -23,9 +23,9 @@ import {
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { notificationsService } from "@services/identity"
 
-const mockSite = "mockSite"
-const mockSiteId = "1"
-const mockSiteMemberId = "1"
+const MOCK_SITE = "mockSite"
+const MOCK_SITE_ID = "1"
+const MOCK_SITE_MEMBER_ID = "1"
 
 const notificationsRouter = new _NotificationsRouter({ notificationsService })
 const notificationsSubrouter = notificationsRouter.getRouter()
@@ -47,10 +47,10 @@ subrouter.use(notificationsSubrouter)
 const app = generateRouter(subrouter)
 
 describe("Notifications Router", () => {
-  const mockAdditionalUserId = "2"
-  const mockAdditionalSiteId = "2"
-  const mockAdditionalSiteMemberId = "2"
-  const mockAnotherSiteMemberId = "3"
+  const MOCK_ADDITIONAL_USER_ID = "2"
+  const MOCK_ADDITIONAL_SITE_ID = "2"
+  const MOCK_ADDITIONAL_SITE_MEMBER_ID = "2"
+  const MOCK_ANOTHER_SITE_MEMBER_ID = "3"
 
   beforeAll(async () => {
     // Set up User and Site table entries
@@ -58,11 +58,11 @@ describe("Notifications Router", () => {
       id: mockIsomerUserId,
     })
     await User.create({
-      id: mockAdditionalUserId,
+      id: MOCK_ADDITIONAL_USER_ID,
     })
     await Site.create({
-      id: mockSiteId,
-      name: mockSite,
+      id: MOCK_SITE_ID,
+      name: MOCK_SITE,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -70,24 +70,24 @@ describe("Notifications Router", () => {
     })
     await SiteMember.create({
       userId: mockIsomerUserId,
-      siteId: mockSiteId,
+      siteId: MOCK_SITE_ID,
       role: "ADMIN",
-      id: mockSiteMemberId,
+      id: MOCK_SITE_MEMBER_ID,
     })
     await Repo.create({
       name: mockSiteName,
       url: "url",
-      siteId: mockSiteId,
+      siteId: MOCK_SITE_ID,
     })
     await SiteMember.create({
-      userId: mockAdditionalUserId,
-      siteId: mockSiteId,
+      userId: MOCK_ADDITIONAL_USER_ID,
+      siteId: MOCK_SITE_ID,
       role: "ADMIN",
-      id: mockAdditionalSiteMemberId,
+      id: MOCK_ADDITIONAL_SITE_MEMBER_ID,
     })
     await Site.create({
-      id: mockAdditionalSiteId,
-      name: mockSite,
+      id: MOCK_ADDITIONAL_SITE_ID,
+      name: MOCK_SITE,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -95,14 +95,14 @@ describe("Notifications Router", () => {
     })
     await SiteMember.create({
       userId: mockIsomerUserId,
-      siteId: mockAdditionalSiteId,
+      siteId: MOCK_ADDITIONAL_SITE_ID,
       role: "ADMIN",
-      id: mockAnotherSiteMemberId,
+      id: MOCK_ANOTHER_SITE_MEMBER_ID,
     })
     await Repo.create({
       name: `${mockSiteName}2`,
       url: "url",
-      siteId: mockAdditionalSiteId,
+      siteId: MOCK_ADDITIONAL_SITE_ID,
     })
   })
   describe("GET /", () => {
@@ -117,56 +117,56 @@ describe("Notifications Router", () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
-        userId: mockAdditionalUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockAdditionalSiteMemberId,
+        userId: MOCK_ADDITIONAL_USER_ID,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_ADDITIONAL_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockAdditionalSiteId,
-        siteMemberId: mockAnotherSiteMemberId,
+        siteId: MOCK_ADDITIONAL_SITE_ID,
+        siteMemberId: MOCK_ANOTHER_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       const expected = [
@@ -189,74 +189,74 @@ describe("Notifications Router", () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...highPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...highPriorityUnreadNotification,
       })
       await Notification.create({
-        userId: mockAdditionalUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockAdditionalSiteMemberId,
+        userId: MOCK_ADDITIONAL_USER_ID,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_ADDITIONAL_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockAdditionalSiteId,
-        siteMemberId: mockAnotherSiteMemberId,
+        siteId: MOCK_ADDITIONAL_SITE_ID,
+        siteMemberId: MOCK_ANOTHER_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       const expected = [
@@ -288,56 +288,56 @@ describe("Notifications Router", () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...highPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
-        userId: mockAdditionalUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockAdditionalSiteMemberId,
+        userId: MOCK_ADDITIONAL_USER_ID,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_ADDITIONAL_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockAdditionalSiteId,
-        siteMemberId: mockAnotherSiteMemberId,
+        siteId: MOCK_ADDITIONAL_SITE_ID,
+        siteMemberId: MOCK_ANOTHER_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       const expected = [
@@ -370,50 +370,50 @@ describe("Notifications Router", () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockSiteMemberId,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_SITE_MEMBER_ID,
         ...highPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityOldReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...highPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityReadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockSiteId,
+        siteId: MOCK_SITE_ID,
         siteMemberId: 1,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
-        userId: mockAdditionalUserId,
-        siteId: mockSiteId,
-        siteMemberId: mockAdditionalSiteMemberId,
+        userId: MOCK_ADDITIONAL_USER_ID,
+        siteId: MOCK_SITE_ID,
+        siteMemberId: MOCK_ADDITIONAL_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       await Notification.create({
         userId: mockIsomerUserId,
-        siteId: mockAdditionalSiteId,
-        siteMemberId: mockAnotherSiteMemberId,
+        siteId: MOCK_ADDITIONAL_SITE_ID,
+        siteMemberId: MOCK_ANOTHER_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
       const expected = 200

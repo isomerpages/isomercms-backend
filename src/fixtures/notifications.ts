@@ -1,6 +1,6 @@
-const createdTime = new Date()
-const readTime = new Date()
-const oldReadTime = new Date("1995-12-17T03:24:00")
+const CREATED_TIME = new Date()
+const READ_TIME = new Date()
+const OLD_READ_TIME = new Date("1995-12-17T03:24:00")
 
 export const normalPriorityUnreadNotification = {
   message: "low priority unread notification",
@@ -9,13 +9,13 @@ export const normalPriorityUnreadNotification = {
   type: "sent_request",
   firstReadTime: null,
   priority: 2,
-  createdAt: createdTime,
+  createdAt: CREATED_TIME,
 }
 
 export const normalPriorityReadNotification = {
   ...normalPriorityUnreadNotification,
   message: "low priority read notification",
-  firstReadTime: readTime,
+  firstReadTime: READ_TIME,
 }
 
 export const highPriorityUnreadNotification = {
@@ -33,18 +33,18 @@ export const highPriorityReadNotification = {
 export const normalPriorityOldReadNotification = {
   ...normalPriorityReadNotification,
   message: "low priority old notification",
-  firstReadTime: oldReadTime,
+  firstReadTime: OLD_READ_TIME,
 }
 
 export const highPriorityOldReadNotification = {
   ...highPriorityReadNotification,
   message: "high priority old notification",
-  firstReadTime: oldReadTime,
+  firstReadTime: OLD_READ_TIME,
 }
 
 export const formatNotification = (notification: any) => ({
   message: notification.message,
-  createdAt: createdTime.toISOString(),
+  createdAt: CREATED_TIME.toISOString(),
   link: notification.link,
   isRead: !!notification.firstReadTime,
   sourceUsername: notification.sourceUsername,

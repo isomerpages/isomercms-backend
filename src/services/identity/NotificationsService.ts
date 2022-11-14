@@ -211,6 +211,10 @@ class NotificationsService {
         {
           firstReadTime: null,
           createdAt: new Date(),
+          message: getNotificationMessage(
+            notificationType,
+            notificationSourceUsername
+          ),
         },
         { raw: true }
       )

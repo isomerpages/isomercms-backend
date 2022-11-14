@@ -366,7 +366,7 @@ describe("Notifications Router", () => {
         where: {},
       })
     })
-    it("should return sorted list of all notifications", async () => {
+    it("should mark all notifications from the user as read", async () => {
       // Arrange
       await Notification.create({
         userId: mockIsomerUserId,

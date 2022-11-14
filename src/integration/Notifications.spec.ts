@@ -169,6 +169,7 @@ describe("Notifications Router", () => {
         siteMemberId: MOCK_ANOTHER_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
+      // Notifications with different user or site are not returned
       const expected = [
         highPriorityReadNotification,
         normalPriorityReadNotification,
@@ -340,6 +341,7 @@ describe("Notifications Router", () => {
         siteMemberId: MOCK_ANOTHER_SITE_MEMBER_ID,
         ...normalPriorityUnreadNotification,
       })
+      // Notifications with different user or site are not returned
       const expected = [
         highPriorityUnreadNotification,
         normalPriorityUnreadNotification,

@@ -147,6 +147,15 @@ describe("Sites Router", () => {
         where: { userId: mockIsomerUserId },
       })
     })
+
+    afterAll(async () => {
+      await IsomerAdmin.sync({ force: true })
+      await SiteMember.sync({ force: true })
+      await Site.sync({ force: true })
+      await User.sync({ force: true })
+      await Repo.sync({ force: true })
+    })
+
     it("should return list of only sites available to email user", async () => {
       // Arrange
       const expected = {

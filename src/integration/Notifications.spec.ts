@@ -105,13 +105,20 @@ describe("Notifications Router", () => {
       siteId: MOCK_ADDITIONAL_SITE_ID,
     })
   })
+
+  afterAll(async () => {
+    await Notification.sync({ force: true })
+    await SiteMember.sync({ force: true })
+    await Site.sync({ force: true })
+    await User.sync({ force: true })
+    await Repo.sync({ force: true })
+  })
+
   describe("GET /", () => {
     afterEach(async () => {
       // Clean up so that different tests using
       // the same notifications don't interfere with each other
-      await Notification.destroy({
-        where: {},
-      })
+      await Notification.sync({ force: true })
     })
     it("should return sorted list of most recent notifications if there are no unread", async () => {
       // Arrange
@@ -281,9 +288,7 @@ describe("Notifications Router", () => {
     afterEach(async () => {
       // Clean up so that different tests using
       // the same notifications don't interfere with each other
-      await Notification.destroy({
-        where: {},
-      })
+      await Notification.sync({ force: true })
     })
     it("should return sorted list of all notifications", async () => {
       // Arrange
@@ -364,9 +369,7 @@ describe("Notifications Router", () => {
     afterEach(async () => {
       // Clean up so that different tests using
       // the same notifications don't interfere with each other
-      await Notification.destroy({
-        where: {},
-      })
+      await Notification.sync({ force: true })
     })
     it("should mark all notifications from the user as read", async () => {
       // Arrange

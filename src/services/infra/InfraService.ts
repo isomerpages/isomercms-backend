@@ -110,16 +110,16 @@ export default class InfraService {
 
   parseDNSRecords = (record?: string) => {
     if (!record) {
-      return undefined
+      return err(undefined)
     }
 
     // Note: the records would have the shape of 'blah.gov.sg CNAME blah.validaations.aws'
     const recordsInfo = record.split(" ")
-    return {
+    return ok({
       source: recordsInfo[0],
       target: recordsInfo[2],
       type: recordsInfo[1],
-    }
+    })
   }
 
   launchSite = async (
@@ -171,24 +171,38 @@ export default class InfraService {
       const certificationRecord = this.parseDNSRecords(
         dnsInfo.domainAssociation?.certificateVerificationDNSRecord
       )
-      if (!certificationRecord) {
-        return err(new AmplifyError(`error while parsing ${dnsInfo}`))
+      if (certificationRecord.isErr()) {
+        return err(
+          new AmplifyError(
+            `Missing certificate, error while parsing ${dnsInfo}`,
+            repoName,
+            appId
+          )
+        )
       }
 
       const {
         source: domainValidationSource,
         target: domainValidationTarget,
-      } = certificationRecord
+      } = certificationRecord.value
 
       const subDomainList = dnsInfo.domainAssociation?.subDomains
       if (!subDomainList || !subDomainList[0].dnsRecord) {
-        return err("subdomain list not created yet")
+        return err(
+          new AmplifyError(
+            "Missing subdomain subdomain list not created yet",
+            repoName,
+            appId
+          )
+        )
       }
 
       const primaryDomainInfo = this.parseDNSRecords(subDomainList[0].dnsRecord)
 
-      if (!primaryDomainInfo) {
-        return err("primary domain info not created yet")
+      if (primaryDomainInfo.isErr()) {
+        return err(
+          new AmplifyError("Missing primary domain info", repoName, appId)
+        )
       }
 
       /**
@@ -202,7 +216,7 @@ export default class InfraService {
        * }
        */
 
-      const primaryDomainTarget = primaryDomainInfo.target
+      const primaryDomainTarget = primaryDomainInfo.value.target
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )

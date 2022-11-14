@@ -43,7 +43,7 @@ describe("Notifications Router", () => {
   })
 
   describe("getRecentNotifications", () => {
-    it("should retrieve the recent notifications for a user and site", async () => {
+    it("should call the underlying service when there is a GET request", async () => {
       // Arrange
       const mockNotificationsValue: never[] = []
       mockNotificationsService.listRecent.mockResolvedValueOnce(
@@ -65,7 +65,7 @@ describe("Notifications Router", () => {
   })
 
   describe("getAllNotifications", () => {
-    it("should retrieve the recent notifications for a user and site", async () => {
+    it("should call the underlying service when there is a GET request", async () => {
       // Arrange
       const mockNotificationsValue: never[] = []
       mockNotificationsService.listAll.mockResolvedValueOnce(
@@ -87,7 +87,7 @@ describe("Notifications Router", () => {
   })
 
   describe("markNotificationsAsRead", () => {
-    it("should mark notifications as read", async () => {
+    it("should call the underlying service when there is a POST request", async () => {
       // Arrange
       const mockRequestBody = {}
 

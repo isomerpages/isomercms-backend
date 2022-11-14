@@ -1,14 +1,12 @@
 import autoBind from "auto-bind"
 import express from "express"
 import _ from "lodash"
-import { Jsonify } from "type-fest"
 
 import { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-import { SiteMember, User } from "@root/database/models"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
 import { RequestHandler } from "@root/types"
@@ -88,7 +86,7 @@ export class CollaboratorsRouter {
       userWithSiteSessionData.isomerUserId
     )
     const collaborators: UserDto[] = rawCollaborators.map((collaborator) => ({
-      ..._.omit(collaborator.toJSON(), "SiteMember"),
+      ..._.omit(collaborator.toJSON<UserDto>(), "SiteMember"),
       email: collaborator.email || "",
       role: collaborator.SiteMember.role,
     }))

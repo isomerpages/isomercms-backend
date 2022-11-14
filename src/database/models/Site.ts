@@ -15,7 +15,7 @@ import {
 import { SiteStatus, JobStatus } from "@constants/index"
 
 import { Deployment } from "@database/models/Deployment"
-import { Launch } from "@database/models/Launches"
+import { Launch } from "@database/models/Launch"
 import { Repo } from "@database/models/Repo"
 import { SiteMember } from "@database/models/SiteMember"
 import { User } from "@database/models/User"

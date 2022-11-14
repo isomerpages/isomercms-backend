@@ -10,7 +10,7 @@ import {
   HasMany,
 } from "sequelize-typescript"
 
-import { Launch } from "@database/models/Launches"
+import { Launch } from "@database/models/Launch"
 import { Site } from "@database/models/Site"
 import { SiteMember } from "@database/models/SiteMember"
 

@@ -10,9 +10,9 @@ import {
   HasMany,
 } from "sequelize-typescript"
 
-import { Redirection } from "@database/models/Redirections"
 import { Site } from "@database/models/Site"
 import { User } from "@database/models/User"
+import { Redirection } from "@root/database/models/Redirection"
 
 @Table({ tableName: "launches", paranoid: true })
 export class Launch extends Model {

@@ -9,7 +9,7 @@ import {
   BelongsTo,
 } from "sequelize-typescript"
 
-import { Launch } from "@database/models/Launches"
+import { Launch } from "@root/database/models/Launch"
 
 @Table({ tableName: "redirections", paranoid: true })
 export class Redirection extends Model {

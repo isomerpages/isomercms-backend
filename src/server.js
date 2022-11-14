@@ -12,6 +12,8 @@ import {
   AccessToken,
   Repo,
   Deployment,
+  Launch,
+  Redirection,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import { getAuthMiddleware } from "@root/middleware"
@@ -40,6 +42,8 @@ const sequelize = initSequelize([
   AccessToken,
   Repo,
   Deployment,
+  Launch,
+  Redirection,
 ])
 const usersService = getUsersService(sequelize)
 

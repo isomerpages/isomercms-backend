@@ -79,10 +79,10 @@ const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
 const launchesService = new LaunchesService({
-  launchesRepository: Launches,
+  launchesRepository: Launch,
   repoRepository: Repo,
   deploymentRepository: Deployment,
-  redirectionsRepository: Redirections,
+  redirectionsRepository: Redirection,
 })
 const queueService = new QueueService()
 const infraService = new InfraService({

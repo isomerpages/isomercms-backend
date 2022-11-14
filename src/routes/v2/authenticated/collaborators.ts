@@ -1,5 +1,6 @@
 import autoBind from "auto-bind"
 import express from "express"
+import _ from "lodash"
 
 import { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
@@ -84,8 +85,8 @@ export class CollaboratorsRouter {
       siteName,
       userWithSiteSessionData.isomerUserId
     )
-    const collaborators = rawCollaborators.map((collaborator) => ({
-      ...collaborator.toJSON(),
+    const collaborators: UserDto[] = rawCollaborators.map((collaborator) => ({
+      ..._.omit(collaborator.toJSON<UserDto>(), "SiteMember"),
       email: collaborator.email || "",
       role: collaborator.SiteMember.role,
     }))

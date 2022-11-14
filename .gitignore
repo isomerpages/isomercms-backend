@@ -6,3 +6,5 @@ build/
 .env*
 .idea/
 .DS_Store
+.step-functions-local/
+.serverless/

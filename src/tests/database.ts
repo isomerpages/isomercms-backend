@@ -9,6 +9,8 @@ import {
   AccessToken,
   Repo,
   Deployment,
+  Launch,
+  Redirection,
 } from "@database/models"
 
 const sequelize = new Sequelize({
@@ -23,6 +25,8 @@ sequelize.addModels([
   AccessToken,
   Repo,
   Deployment,
+  Launch,
+  Redirection,
 ])
 
 // eslint-disable-next-line import/prefer-default-export

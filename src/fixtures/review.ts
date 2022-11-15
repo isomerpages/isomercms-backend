@@ -8,7 +8,6 @@ import {
   mockCollaboratorAdmin1,
   mockCollaboratorAdmin2,
   mockCollaboratorContributor1,
-  mockSiteId,
   MOCK_COMMIT_FILEPATH_TWO,
   MOCK_COMMIT_MESSAGE_OBJECT_ONE,
   MOCK_COMMIT_MESSAGE_OBJECT_TWO,

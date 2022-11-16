@@ -563,7 +563,7 @@ describe("ReviewRequestService", () => {
       expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
     })
 
-    it("should return an array of basic review request objects with one new comment", async () => {
+    it("should return an array of basic review request objects with a mix of read and unread comments", async () => {
       // Arrange
       const expected = [
         {

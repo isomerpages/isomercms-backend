@@ -27,7 +27,6 @@ export type DashboardReviewRequestDto = {
   author: string
   status: ReviewRequestStatus
   changedFiles: number
-  // TODO!
   newComments: number
   firstView: boolean
   createdAt: number // Unix timestamp

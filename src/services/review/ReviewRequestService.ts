@@ -251,8 +251,8 @@ export default class ReviewRequestService {
         const countNewComments = await Promise.all(
           allComments.map(async (value) => value.isRead)
         ).then((arr) => {
-          const readComments = arr.filter((isRead) => !!isRead)
-          return readComments.length
+          const unreadComments = arr.filter((isRead) => !isRead)
+          return unreadComments.length
         })
 
         return {

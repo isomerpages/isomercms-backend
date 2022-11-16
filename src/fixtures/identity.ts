@@ -1,6 +1,7 @@
 import { Attributes } from "sequelize/types"
 
 import { User, SiteMember } from "@database/models"
+import { Author } from "@root/types/github"
 
 import { mockIsomerUserId } from "./sessionData"
 
@@ -18,6 +19,7 @@ export const mockHeaders = {
 }
 export const mockSiteName = "hello world"
 export const mockUserId = "some user id"
+export const mockSiteId = "16"
 
 export const mockBearerTokenHeaders = {
   headers: {
@@ -25,11 +27,16 @@ export const mockBearerTokenHeaders = {
   },
 }
 
-const mockCollaboratorContributor1: Attributes<User> & {
+export const MOCK_IDENTITY_EMAIL_ONE = "test1@test.gov.sg"
+export const MOCK_IDENTITY_EMAIL_TWO = "test2@test.gov.sg"
+export const MOCK_IDENTITY_EMAIL_THREE = "test3@test.gov.sg"
+export const MOCK_IDENTITY_EMAIL_FOUR = "test4@test.gov.sg"
+
+export const mockCollaboratorContributor1: Attributes<User> & {
   SiteMember: Attributes<SiteMember>
 } = {
   id: 1,
-  email: "test1@test.gov.sg",
+  email: MOCK_IDENTITY_EMAIL_ONE,
   githubId: "test1",
   contactNumber: "12331231",
   lastLoggedIn: new Date("2022-07-30T07:41:09.661Z"),
@@ -38,7 +45,7 @@ const mockCollaboratorContributor1: Attributes<User> & {
   deletedAt: undefined,
   SiteMember: {
     userId: 1,
-    siteId: "16",
+    siteId: mockSiteId,
     role: "CONTRIBUTOR",
     createdAt: new Date("2022-07-29T03:50:49.145Z"),
     updatedAt: new Date("2022-07-29T03:50:49.145Z"),
@@ -46,11 +53,11 @@ const mockCollaboratorContributor1: Attributes<User> & {
   sites: [],
 }
 
-const mockCollaboratorAdmin1: Attributes<User> & {
+export const mockCollaboratorAdmin1: Attributes<User> & {
   SiteMember: Attributes<SiteMember>
 } = {
   id: 2,
-  email: "test2@test.gov.sg",
+  email: MOCK_IDENTITY_EMAIL_TWO,
   githubId: "test2",
   contactNumber: "12331232",
   lastLoggedIn: new Date("2022-07-30T07:41:09.661Z"),
@@ -59,18 +66,18 @@ const mockCollaboratorAdmin1: Attributes<User> & {
   deletedAt: undefined,
   SiteMember: {
     userId: 2,
-    siteId: "16",
+    siteId: mockSiteId,
     role: "ADMIN",
     createdAt: new Date("2022-07-29T03:50:49.145Z"),
     updatedAt: new Date("2022-07-29T03:50:49.145Z"),
   },
   sites: [],
 }
-const mockCollaboratorAdmin2: Attributes<User> & {
+export const mockCollaboratorAdmin2: Attributes<User> & {
   SiteMember: Attributes<SiteMember>
 } = {
   id: 3,
-  email: "test3@test.gov.sg",
+  email: MOCK_IDENTITY_EMAIL_THREE,
   githubId: "test3",
   contactNumber: "12331233",
   lastLoggedIn: new Date("2022-06-30T07:41:09.661Z"),
@@ -79,18 +86,18 @@ const mockCollaboratorAdmin2: Attributes<User> & {
   deletedAt: undefined,
   SiteMember: {
     userId: 3,
-    siteId: "16",
+    siteId: mockSiteId,
     role: "ADMIN",
     createdAt: new Date("2022-07-29T03:50:49.145Z"),
     updatedAt: new Date("2022-07-29T03:50:49.145Z"),
   },
   sites: [],
 }
-const mockCollaboratorContributor2: Attributes<User> & {
+export const mockCollaboratorContributor2: Attributes<User> & {
   SiteMember: Attributes<SiteMember>
 } = {
   id: 4,
-  email: "test4@test.gov.sg",
+  email: MOCK_IDENTITY_EMAIL_FOUR,
   githubId: "test4",
   contactNumber: "12331234",
   lastLoggedIn: new Date("2022-07-30T07:41:09.661Z"),
@@ -99,7 +106,7 @@ const mockCollaboratorContributor2: Attributes<User> & {
   deletedAt: undefined,
   SiteMember: {
     userId: 4,
-    siteId: "16",
+    siteId: mockSiteId,
     role: "CONTRIBUTOR",
     createdAt: new Date("2022-07-29T03:50:49.145Z"),
     updatedAt: new Date("2022-07-29T03:50:49.145Z"),
@@ -143,6 +150,7 @@ export const mockSiteOrmResponseWithNoCollaborators = {
 
 export const MOCK_COMMIT_MESSAGE_ONE = "Update file: Example.md"
 export const MOCK_COMMIT_FILENAME_ONE = "Example.md"
+export const MOCK_COMMIT_FILEPATH_ONE = "test/path/one/"
 export const MOCK_GITHUB_NAME_ONE = "testuser"
 export const MOCK_GITHUB_EMAIL_ADDRESS_ONE = "test@example.com"
 export const MOCK_GITHUB_DATE_ONE = "2022-09-22T04:07:53Z"
@@ -154,6 +162,7 @@ export const MOCK_COMMIT_MESSAGE_OBJECT_ONE = {
 
 export const MOCK_COMMIT_MESSAGE_TWO = "Update file: Test.md"
 export const MOCK_COMMIT_FILENAME_TWO = "Test.md"
+export const MOCK_COMMIT_FILEPATH_TWO = "test/path/two/"
 export const MOCK_GITHUB_NAME_TWO = "testuser2"
 export const MOCK_GITHUB_EMAIL_ADDRESS_TWO = "test2@example.com"
 export const MOCK_GITHUB_DATE_TWO = "2022-09-28T06:25:14Z"
@@ -161,6 +170,32 @@ export const MOCK_COMMIT_MESSAGE_OBJECT_TWO = {
   message: MOCK_COMMIT_MESSAGE_TWO,
   fileName: MOCK_COMMIT_FILENAME_TWO,
   userId: mockIsomerUserId,
+}
+
+export const MOCK_GITHUB_COMMIT_AUTHOR_ONE: Author = {
+  name: MOCK_GITHUB_NAME_ONE,
+  email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+  date: MOCK_GITHUB_DATE_ONE,
+}
+
+export const MOCK_GITHUB_COMMIT_AUTHOR_TWO: Author = {
+  name: MOCK_GITHUB_NAME_TWO,
+  email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+  date: MOCK_GITHUB_DATE_TWO,
+}
+
+export const MOCK_GITHUB_COMMENT_ONE = "test comment 1"
+export const MOCK_GITHUB_COMMENT_DATA_ONE = {
+  userId: mockIsomerUserId,
+  message: MOCK_GITHUB_COMMENT_ONE,
+  createdAt: MOCK_GITHUB_DATE_ONE,
+}
+
+export const MOCK_GITHUB_COMMENT_TWO = "test comment 2"
+export const MOCK_GITHUB_COMMENT_DATA_TWO = {
+  userId: mockIsomerUserId,
+  message: MOCK_GITHUB_COMMENT_TWO,
+  createdAt: MOCK_GITHUB_DATE_TWO,
 }
 
 export const MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME = "isomergithub1"

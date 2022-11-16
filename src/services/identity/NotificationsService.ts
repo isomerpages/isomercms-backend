@@ -37,14 +37,16 @@ class NotificationsService {
   }
 
   formatNotifications(notifications: Notification[]) {
-    return notifications.map((notification) => ({
-      message: notification.message,
-      createdAt: notification.createdAt,
-      link: notification.link,
-      isRead: !!notification.firstReadTime,
-      sourceUsername: notification.sourceUsername,
-      type: notification.type,
-    }))
+    return notifications.map(
+      (notification): NotificationResponse => ({
+        message: notification.message,
+        createdAt: notification.createdAt,
+        link: notification.link,
+        isRead: !!notification.firstReadTime,
+        sourceUsername: notification.sourceUsername,
+        type: notification.type,
+      })
+    )
   }
 
   async findAll({

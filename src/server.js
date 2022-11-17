@@ -33,6 +33,7 @@ import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 
 const path = require("path")
@@ -78,11 +79,13 @@ const { AuthService } = require("@services/utilServices/AuthService")
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
+const launchClient = new LaunchClient()
 const launchesService = new LaunchesService({
   launchesRepository: Launch,
   repoRepository: Repo,
   deploymentRepository: Deployment,
   redirectionsRepository: Redirection,
+  launchClient,
 })
 const queueService = new QueueService()
 const infraService = new InfraService({

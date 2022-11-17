@@ -26,36 +26,25 @@ export interface FormsgRouterProps {
 }
 
 const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"
+
+interface FormResponsesProps {
+  submissionId: string
+  requesterEmail?: string
+  repoName?: string
+  primaryDomain?: string
+  redirectionDomain?: string
+  agencyEmail?: string
+}
 export class FormsgSiteLaunchRouter {
-  private readonly usersService: FormsgRouterProps["usersService"]
-
-  private readonly infraService: FormsgRouterProps["infraService"]
-
-  constructor({ usersService, infraService }: FormsgRouterProps) {
-    this.usersService = usersService
-    this.infraService = infraService
-    // We need to bind all methods because we don't invoke them from the class directly
-    autoBind(this)
-  }
-
-  launchSiteUsingForm: RequestHandler<
-    never,
-    string,
-    { data: { submissionId: string } },
-    never,
-    { submission: DecryptedContent }
-  > = async (req, res) => {
-    // 1. Extract arguments
-    const { submissionId } = req.body.data
-    const { responses } = res.locals.submission
-
-    const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
-    const repoName = getField(responses, REPO_NAME_FIELD)
-    const primaryDomain = getField(responses, PRIMARY_DOMAIN)
-    const redirectionDomain = getField(responses, REDIRECTION_DOMAIN)
-    const agencyEmail = getField(responses, AGENCY_EMAIL_FIELD)
-
-    res.sendStatus(200) // we have received the form and obtained relevant fields
+  siteLaunch = async (formResponses: FormResponsesProps) => {
+    const {
+      submissionId,
+      requesterEmail,
+      repoName,
+      primaryDomain,
+      redirectionDomain,
+      agencyEmail,
+    } = formResponses
 
     const subDomainSettings = [
       {
@@ -100,24 +89,12 @@ export class FormsgSiteLaunchRouter {
 
     if (!primaryDomain) {
       const err = `A primary domain is required`
-      await this.sendLaunchError(
-        requesterEmail,
-        repoName,
-        submissionId,
-        err,
-        agencyEmail
-      )
+      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
       return
     }
     if (!repoName) {
       const err = `A repository name is required`
-      await this.sendLaunchError(
-        requesterEmail,
-        repoName,
-        submissionId,
-        err,
-        agencyEmail
-      )
+      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
       return
     }
 
@@ -126,77 +103,87 @@ export class FormsgSiteLaunchRouter {
 
     if (!agencyUser) {
       const err = `Form submitter ${agencyEmail} is not an Isomer user. Register an account for this user and try again.`
-      await this.sendLaunchError(
-        requesterEmail,
-        repoName,
-        submissionId,
-        err,
-        agencyEmail
-      )
+      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
       return
     }
 
     if (!requesterUser) {
       const err = `Form submitter ${requesterUser} is not an Isomer user. Register an account for this user and try again.`
-      await this.sendLaunchError(
-        requesterEmail,
-        repoName,
-        submissionId,
-        err,
-        agencyEmail
-      )
+      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
       return
     }
 
     // 3. Use service to Launch site
     // note: this function is not be async due to the timeout for http requests.
-    const launchSite = this.infraService.launchSite(
+    const launchSite = await this.infraService.launchSite(
       agencyUser,
       repoName,
       primaryDomain,
       subDomainSettings
     )
 
-    // only send success message after promise has been resolved
-    launchSite.then(async (result) => {
-      if (result.isOk()) {
-        await this.sendLaunchSuccess(
-          requesterEmail,
-          agencyEmail,
-          repoName,
-          submissionId
-        )
-      } else {
-        await this.sendLaunchError(
-          requesterEmail,
-          agencyEmail,
-          repoName,
-          submissionId,
-          `Error: ${result.error}`
-        )
-      }
-    })
+    if (launchSite.isOk()) {
+      await this.sendLaunchSuccess(requesterEmail, repoName, submissionId)
+    } else {
+      await this.sendLaunchError(
+        requesterEmail,
+        repoName,
+        submissionId,
+        `Error: ${launchSite.error}`
+      )
+    }
+  }
+
+  private readonly usersService: FormsgRouterProps["usersService"]
+
+  private readonly infraService: FormsgRouterProps["infraService"]
+
+  constructor({ usersService, infraService }: FormsgRouterProps) {
+    this.usersService = usersService
+    this.infraService = infraService
+    // We need to bind all methods because we don't invoke them from the class directly
+    autoBind(this)
+  }
+
+  launchSiteUsingForm: RequestHandler<
+    never,
+    string,
+    { data: { submissionId: string } },
+    never,
+    { submission: DecryptedContent }
+  > = async (req, res) => {
+    // 1. Extract arguments
+    const { submissionId } = req.body.data
+    const { responses } = res.locals.submission
+    const formResponses: FormResponsesProps = {
+      submissionId,
+      requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
+      repoName: getField(responses, REPO_NAME_FIELD),
+      primaryDomain: getField(responses, PRIMARY_DOMAIN),
+      redirectionDomain: getField(responses, REDIRECTION_DOMAIN),
+      agencyEmail: getField(responses, AGENCY_EMAIL_FIELD),
+    }
+    res.sendStatus(200) // we have received the form and obtained relevant field
+    this.siteLaunch(formResponses)
   }
 
   sendLaunchError = async (
     isomerEmail: string,
     repoName: string | undefined,
     submissionId: string,
-    errorMessage: string,
-    agencyEmail?: string
+    errorMessage: string
   ) => {
     const displayedRepoName = repoName || "<missing repo name>"
     const subject = `[Isomer] Launch site ${displayedRepoName} FAILURE`
-    let html = `<p>Isomer site ${displayedRepoName} was <b>not</b> launched successfully. (Form submission id [${submissionId}])</p> 
+    const html = `<p>Isomer site ${displayedRepoName} was <b>not</b> launched successfully. (Form submission id [${submissionId}])</p> 
+<p>${errorMessage}</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
-    if (agencyEmail) await mailer.sendMail(agencyEmail, subject, html)
-    html += `<p>${errorMessage}</p>`
+
     await mailer.sendMail(isomerEmail, subject, html)
   }
 
   sendLaunchSuccess = async (
     requestorEmail: string,
-    agencyEmail: string,
     repoName: string,
     submissionId: string
   ) => {
@@ -205,7 +192,6 @@ export class FormsgSiteLaunchRouter {
 <p>You may now visit your live website. <a href="${PRIMARY_DOMAIN}">${PRIMARY_DOMAIN}</a> should be accessible within a few minutes.</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
     await mailer.sendMail(requestorEmail, subject, html)
-    await mailer.sendMail(agencyEmail, subject, html)
   }
 
   getRouter() {

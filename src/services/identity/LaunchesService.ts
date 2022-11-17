@@ -6,7 +6,7 @@ import logger from "@logger/logger"
 
 import { Deployment, Launch, Repo, User } from "@database/models"
 import { RedirectionTypes } from "@root/constants/constants"
-import { Redirection } from "@root/database/models/Redirections"
+import { Redirection } from "@root/database/models/Redirection"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
@@ -81,14 +81,14 @@ export class LaunchesService {
 
   getAppId = async (repoName: string) => {
     const siteId = await this.getSiteId(repoName)
-    if (!siteId) {
+    if (siteId.isErr()) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
       logger.error(error)
       return err(error)
     }
 
     const deploy = await this.deploymentRepository.findOne({
-      where: { site_id: siteId },
+      where: { site_id: siteId.value },
     })
     const hostingID = deploy?.hostingId
 
@@ -126,7 +126,6 @@ export class LaunchesService {
     if (appIdResult.isErr()) {
       throw appIdResult.error
     }
-
     const siteIdResult = await this.getSiteId(repoName)
     if (siteIdResult.isErr()) {
       throw siteIdResult.error

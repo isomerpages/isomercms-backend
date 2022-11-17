@@ -129,3 +129,16 @@ export const createComment = async (
     { body: stringifiedMessage }
   )
 }
+
+export const getBlob = async (
+  repo: string,
+  path: string,
+  ref: string
+): Promise<string> =>
+  axiosInstance
+    .get<string>(`${repo}/contents/${path}?ref=${ref}`, {
+      headers: {
+        Accept: "application/vnd.github.VERSION.raw",
+      },
+    })
+    .then(({ data }) => data)

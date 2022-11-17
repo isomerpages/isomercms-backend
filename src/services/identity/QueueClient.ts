@@ -1,4 +1,5 @@
 import AWS, { SQS } from "aws-sdk"
+import { Json } from "sequelize/types/utils"
 
 import logger from "@root/logger/logger"
 
@@ -26,10 +27,11 @@ export default class QueueClient {
     }
     this.sqs.sendMessage(queueRequestParams, (err, data) => {
       if (err) {
-        logger.error(err)
+        logger.error(`Error (${err}) occured while trying to put message into queue. 
+        Message: ${JSON.stringify(messageBody)}`)
         throw err
       } else {
-        logger.info(data)
+        logger.info(`Successfully put message into queue.\n${data}`)
       }
     })
   }

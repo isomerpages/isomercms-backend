@@ -1,9 +1,10 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
+import Joi from "joi"
 import { err, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import { SiteStatus, JobStatus } from "@root/constants"
+import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
 import DeploymentsService from "@services/identity/DeploymentsService"
@@ -21,6 +22,11 @@ interface InfraServiceProps {
   queueService: QueueService
 }
 
+interface dnsRecordDto {
+  source: string
+  target: string
+  type: RedirectionTypes
+}
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 
@@ -108,18 +114,58 @@ export default class InfraService {
     }
   }
 
+  removeTrailingDot = (url: string) => {
+    if (url.endsWith(".")) {
+      return url.slice(0, -1)
+    }
+    return url
+  }
+
   parseDNSRecords = (record?: string) => {
     if (!record) {
-      return err(undefined)
+      return err(`Record was not defined`)
     }
 
-    // Note: the records would have the shape of 'blah.gov.sg CNAME blah.validaations.aws'
+    // Note: the records would have the shape of 'blah.gov.sg. CNAME blah.validations.aws.'
     const recordsInfo = record.split(" ")
-    return ok({
-      source: recordsInfo[0],
-      target: recordsInfo[2],
-      type: recordsInfo[1],
-    })
+
+    // type checking
+    const schema = Joi.string().domain()
+    const sourceUrl = this.removeTrailingDot(recordsInfo[0])
+    if (
+      schema.validate(sourceUrl).error &&
+      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
+      // therefore check if after removing it, it reports as a valid url
+      schema.validate(sourceUrl.substring(1))
+    ) {
+      return err(`Source url: "${sourceUrl}" was not a valid url`)
+    }
+
+    const targetUrl = this.removeTrailingDot(recordsInfo[2])
+    if (
+      schema.validate(targetUrl).error &&
+      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
+      // therefore check if after removing it, it reports as a valid url
+      schema.validate(sourceUrl.substring(1))
+    ) {
+      return err(`Target url "${targetUrl}" was not a valid url`)
+    }
+
+    let recordType
+    if (recordsInfo[1] === "A") {
+      recordType = RedirectionTypes.A
+    } else if (recordsInfo[1] === "CNAME") {
+      recordType = RedirectionTypes.CNAME
+    } else {
+      return err(`Unknown DNS record type: ${recordsInfo[1]}`)
+    }
+
+    const dnsRecord: dnsRecordDto = {
+      source: sourceUrl,
+      target: targetUrl,
+      type: recordType,
+    }
+    return ok(dnsRecord)
   }
 
   launchSite = async (
@@ -131,7 +177,6 @@ export default class InfraService {
     // call amplify to trigger site launch process
     try {
       // Set up domain association using LaunchesService
-
       const redirectionDomainResult = await this.launchesService.configureDomainInAmplify(
         repoName,
         primaryDomain,
@@ -174,7 +219,8 @@ export default class InfraService {
       if (certificationRecord.isErr()) {
         return err(
           new AmplifyError(
-            `Missing certificate, error while parsing ${dnsInfo}`,
+            `Missing certificate, error while parsing ${JSON.stringify(dnsInfo)}
+            ${certificationRecord.error}`,
             repoName,
             appId
           )

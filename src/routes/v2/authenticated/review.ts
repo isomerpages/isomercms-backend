@@ -24,6 +24,7 @@ import {
   EditedItemDto,
   UpdateReviewRequestDto,
   ReviewRequestDto,
+  BlobDiffDto,
 } from "@root/types/dto/review"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
@@ -947,7 +948,8 @@ export class ReviewsRouter {
 
     if (!isReviewer) {
       logger.error({
-        message: "",
+        message:
+          "User with insufficient permissions attempted to delete approval",
         method: "deleteReviewRequestApproval",
         meta: {
           userId: userWithSiteSessionData.isomerUserId,
@@ -965,6 +967,98 @@ export class ReviewsRouter {
       possibleReviewRequest
     )
     return res.status(200).send()
+  }
+
+  getBlob: RequestHandler<
+    { siteName: string; requestId: number },
+    BlobDiffDto | ResponseErrorBody,
+    unknown,
+    { path: string },
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    // Step 1: Check that the site exists
+    const { siteName, requestId } = req.params
+    const { path } = req.query
+    const { userWithSiteSessionData } = res.locals
+    const site = await this.sitesService.getBySiteName(siteName)
+
+    if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "getBlob",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "getBlob",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+          file: path,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 3: Check if the user is a contributor of the site
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
+    )
+
+    if (!role) {
+      logger.error({
+        message:
+          "User with insufficient permissions attempted to retrieve blob diff",
+        method: "getBlob",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    const prodPromise = await this.reviewRequestService.getBlob(
+      siteName,
+      path,
+      "master"
+    )
+    const stagingPromise = await this.reviewRequestService.getBlob(
+      siteName,
+      path,
+      "staging"
+    )
+
+    const data = await Promise.all([prodPromise, stagingPromise])
+
+    return res.status(200).json({
+      old: data[0],
+      new: data[1],
+    })
   }
 
   getRouter() {
@@ -1020,7 +1114,7 @@ export class ReviewsRouter {
       "/:requestId",
       attachReadRouteHandlerWrapper(this.closeReviewRequest)
     )
-
+    router.get("/:requestId/blob", attachReadRouteHandlerWrapper(this.getBlob))
     return router
   }
 }

@@ -129,6 +129,7 @@ export class CollaboratorsRouter {
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
+    router.use(this.authorizationMiddleware.verifyIsEmailUser)
     router.get(
       "/role",
       attachSiteHandler,

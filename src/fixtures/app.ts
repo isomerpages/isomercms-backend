@@ -14,7 +14,6 @@ import {
   mockUserSessionData,
   mockUserWithSiteSessionData,
   mockGithubSessionData,
-  removeSiteFromSessionData,
 } from "./sessionData"
 
 /**
@@ -50,8 +49,9 @@ const attachUserSessionData: (
   next()
 }
 
-const attachUserWithSiteSessionData: (
-  userWithSiteSessionData: UserWithSiteSessionData
+const attachUserSessionDataWithSite: (
+  userSessionData: UserSessionData,
+  siteName: string
 ) => RequestHandler<
   unknown,
   unknown,
@@ -61,8 +61,12 @@ const attachUserWithSiteSessionData: (
     userSessionData: UserSessionData
     userWithSiteSessionData: UserWithSiteSessionData
   }
-> = (userWithSiteSessionData) => (req, res, next) => {
-  const userSessionData = removeSiteFromSessionData(userWithSiteSessionData)
+> = (userSessionData, siteName) => (req, res, next) => {
+  const userWithSiteSessionData = new UserWithSiteSessionData({
+    isomerUserId: userSessionData.isomerUserId,
+    email: userSessionData.email,
+    siteName,
+  })
   res.locals.userSessionData = userSessionData
   res.locals.userWithSiteSessionData = userWithSiteSessionData
   next()
@@ -96,14 +100,19 @@ export const generateRouterForUser = (
   router: Express,
   userSessionData: UserSessionData
 ) => {
-  router.use(attachUserSessionData(userSessionData))
-  return generateFinalRouter(router)
+  const app = express()
+  app.use(attachUserSessionData(userSessionData))
+  app.use(router)
+  return generateFinalRouter(app)
 }
 
 export const generateRouterForUserWithSite = (
   router: Express,
-  userWithSiteSessionData: UserWithSiteSessionData
+  userSessionData: UserSessionData,
+  siteName: string
 ) => {
-  router.use(attachUserWithSiteSessionData(userWithSiteSessionData))
-  return generateFinalRouter(router)
+  const app = express()
+  app.use(attachUserSessionDataWithSite(userSessionData, siteName))
+  app.use(router)
+  return generateFinalRouter(app)
 }

@@ -2,24 +2,6 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 
-export const attachSiteToSessionData = (
-  userSessionData: UserSessionData,
-  siteName: string
-) =>
-  new UserWithSiteSessionData({
-    isomerUserId: userSessionData.isomerUserId,
-    email: userSessionData.email,
-    siteName,
-  })
-
-export const removeSiteFromSessionData = (
-  userWithSiteSessionData: UserWithSiteSessionData
-) =>
-  new UserSessionData({
-    isomerUserId: userWithSiteSessionData.isomerUserId,
-    email: userWithSiteSessionData.email,
-  })
-
 export const mockAccessToken = "mockAccessToken"
 export const mockGithubId = "mockGithubId"
 export const mockIsomerUserId = "1"

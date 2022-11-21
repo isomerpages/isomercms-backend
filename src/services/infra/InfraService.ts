@@ -293,7 +293,7 @@ export default class InfraService {
       }
 
       if (redirectionDomainList?.length) {
-        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
+        newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
       }
 
       if (redirectionDomainList?.length) {

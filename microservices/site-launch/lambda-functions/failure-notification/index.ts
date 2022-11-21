@@ -1,6 +1,8 @@
 import type { APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
+import logger from "../../shared/logger"
+
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 
 export const failureNotification = async (event: {
@@ -9,10 +11,14 @@ export const failureNotification = async (event: {
 }): Promise<APIGatewayProxyResult> => {
   const { Cause } = event
 
-  // const sqs = new SQS()
   const sqs = new SQS({ region: AWS_REGION })
+  if (!INCOMING_QUEUE_URL) {
+    const errMessage = "Incoming queue URL is not set"
+    logger.error(errMessage)
+    throw new Error(errMessage)
+  }
   const messageParams = {
-    QueueUrl: INCOMING_QUEUE_URL || "",
+    QueueUrl: INCOMING_QUEUE_URL,
     MessageBody: Cause,
   }
 

@@ -1,8 +1,9 @@
 /* eslint-disable import/prefer-default-export */ // todo remove this and use prefer-default-export
 
+import { MessageBody } from "@root/services/identity/QueueService"
 import AWS, { Lambda } from "aws-sdk"
 
-import { MessageBody } from "@root/services/identity/QueueService"
+import logger from "../../shared/logger"
 
 export const stepFunctionsTrigger = async (event: MessageBody) => {
   const { AWS_REGION, AWS_ACCOUNT_NUMBER, NODE_ENV } = process.env
@@ -19,7 +20,7 @@ export const stepFunctionsTrigger = async (event: MessageBody) => {
     }
 
     stepFunctions.startExecution(params, (res, err) => {
-      console.log(`Your state machine ${stateMachineArn} executed successfully`)
+      logger.info(`Your state machine ${stateMachineArn} executed successfully`)
       if (err) {
         throw err
       }
@@ -38,7 +39,8 @@ export const stepFunctionsTrigger = async (event: MessageBody) => {
       Payload: JSON.stringify(event),
     }
     lambda.invoke(params, (res, error) => {
-      console.log(res, error)
+      if (res) logger.info(res)
+      else logger.error(error)
     })
   }
 }

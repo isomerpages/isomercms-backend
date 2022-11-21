@@ -1,12 +1,14 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
+import logger from "../../shared/logger"
+
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 
 export const successNotification = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  console.log(event)
+  logger.log(JSON.stringify(event))
 
   const sqs = new SQS({ region: AWS_REGION })
   const messageParams = {
@@ -16,9 +18,9 @@ export const successNotification = async (
 
   sqs.sendMessage(messageParams, (err, data) => {
     if (err) {
-      console.log("Error", err)
+      logger.log("Error", err)
     } else {
-      console.log("Success", data.MessageId)
+      logger.log("Success", data.MessageId)
     }
   })
 

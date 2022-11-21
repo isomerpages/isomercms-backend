@@ -24,9 +24,9 @@ export const failureNotification = async (event: {
 
   sqs.sendMessage(messageParams, (err, data) => {
     if (err) {
-      console.log("Error", err)
+      logger.error("Error", err)
     } else {
-      console.log("Success", data.MessageId)
+      logger.log("Success", data.MessageId)
     }
   })
 

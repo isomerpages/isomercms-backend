@@ -49,9 +49,3 @@ stepFunctions:
   stateMachines:
     siteLaunch:
       definition: ${file(./microservices/site-launch/step-function-workflows/site-launch.asl.yaml)}
-# resources:
-#   Resources:
-#     outgoingQueue:
-#       Type: "AWS::SQS::Queue"
-#       Properties:
-#         QueueName: "outgoingQueueStaging"

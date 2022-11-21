@@ -8,7 +8,10 @@ import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
 import DeploymentsService from "@services/identity/DeploymentsService"
-import { SiteLaunchCreateParams, LaunchesService } from "@services/identity/LaunchesService"
+import {
+  SiteLaunchCreateParams,
+  LaunchesService,
+} from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
@@ -288,7 +291,7 @@ export default class InfraService {
       }
 
       if (redirectionDomainList?.length) {
-        newLaunchParams.redirectionDomainSource = `${redirectionDomainList[0].subDomainSetting?.prefix}.${primaryDomain}`
+        newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
       }
 
       // Create launches records table

@@ -1,8 +1,9 @@
 /* eslint-disable import/prefer-default-export */ // todo fix default export
 
 import { Octokit } from "@octokit/rest"
-
 import { MessageBody } from "@root/services/identity/QueueService"
+
+import logger from "../../shared/logger"
 
 export const redirectionDomainValidation = async (
   event: Pick<
@@ -56,7 +57,7 @@ export const redirectionDomainValidation = async (
       branch: "test/redirectionLambdaTest",
     }
   )
-  console.log(
+  logger.info(
     `status of redirecion commit for ${primaryDomainSource}:\n ${response}`
   )
 }

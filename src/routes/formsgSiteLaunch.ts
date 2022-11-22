@@ -125,13 +125,16 @@ export class FormsgSiteLaunchRouter {
       subDomainSettings
     )
 
-    
     if (launchSite.isOk()) {
-      await this.sendVerificationDetails(requesterEmail, repoName, submissionId, 
+      await this.sendVerificationDetails(
+        requesterEmail,
+        repoName,
+        submissionId,
         launchSite.value.domainValidationSource,
-        launchSite.value.domainValidationTarget, 
+        launchSite.value.domainValidationTarget,
         launchSite.value.primaryDomainTarget,
-        launchSite.value.domainValidationSource)
+        launchSite.value.domainValidationSource
+      )
     } else {
       await this.sendLaunchError(
         requesterEmail,

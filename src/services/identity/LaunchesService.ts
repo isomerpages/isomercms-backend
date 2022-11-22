@@ -74,15 +74,13 @@ export class LaunchesService {
     const outDatedRedirections = await this.redirectionsRepository.findAll({
       where: { launchId: launch.id },
     })
-    outDatedRedirections.forEach(async (outDatedRedirection) => {
-      if (outDatedRedirection) {
-        const updatedRedirection = outDatedRedirection
-        updatedRedirection.deletedAt = new Date()
+    await Promise.all(
+      outDatedRedirections.map(async (outDatedRedirection) => {
         await this.redirectionsRepository.destroy({
-          where: { id: updatedRedirection.id },
+          where: { id: outDatedRedirection.id },
         })
-      }
-    })
+      })
+    )
 
     if (createParams.redirectionDomainSource) {
       logger.info(

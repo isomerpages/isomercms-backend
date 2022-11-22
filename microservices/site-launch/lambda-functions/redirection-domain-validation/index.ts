@@ -46,7 +46,7 @@ export const redirectionDomainValidation = async (
 
   // see if domain commit in github first. If exists, don't create commit.
   try {
-    await octokit.request(
+    let response = await octokit.request(
       `GET /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
       {
         owner: "isomerpages",
@@ -55,26 +55,36 @@ export const redirectionDomainValidation = async (
         ref: DEFAULT_BRANCH,
       }
     )
-  } catch (fileFoundError) {
-    return
-  }
+    if (response.status === 200) return // file already exist
 
-  const response = await octokit.request(
-    `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
-    {
-      owner: "isomerpages",
-      repo: "isomer-redirection",
-      path: "letsencrypt/.",
-      message: `Create ${primaryDomainSource}.conf`,
-      committer: {
-        name: "isomeradmin",
-        email: "isomeradmin@open.gov.sg",
-      },
-      content: Buffer.from(template, "binary").toString("base64"),
-      branch: DEFAULT_BRANCH,
+    if (response.status !== 404) {
+      const error = `Unexpected error occurred for redirection for ${primaryDomainSource} : 
+      ${typeof response === "string" ? JSON.stringify(response) : response}`
+
+      logger.error(error)
+      throw new Error(error)
     }
-  )
-  logger.info(
-    `status of redirection commit for ${primaryDomainSource}:\n ${response}`
-  )
+
+    response = await octokit.request(
+      `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
+      {
+        owner: "isomerpages",
+        repo: "isomer-redirection",
+        path: "letsencrypt/.",
+        message: `Create ${primaryDomainSource}.conf`,
+        committer: {
+          name: "isomeradmin",
+          email: "isomeradmin@open.gov.sg",
+        },
+        content: Buffer.from(template, "binary").toString("base64"),
+        branch: DEFAULT_BRANCH,
+      }
+    )
+    logger.info(
+      `status of redirection commit for ${primaryDomainSource}:\n ${response}`
+    )
+  } catch (err) {
+    logger.error(err)
+    throw err
+  }
 }

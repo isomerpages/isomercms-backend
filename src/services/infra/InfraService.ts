@@ -351,17 +351,45 @@ export default class InfraService {
       messages.map(async (message) => {
         const site = await this.sitesService.getBySiteName(message.repoName)
         if (site) {
-          const updateSuccessSiteLaunchParams = {
+          let updateSuccessSiteLaunchParams = {
             id: site.id,
             siteStatus: SiteStatus.Launched,
             jobStatus: JobStatus.Running,
           }
+
+          const successEmailDetails = {
+            subject: `Launch site ${message.repoName} SUCCESS`,
+            body: `<p>Isomer site ${message.repoName} was launched successfully.</p>
+            <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
+            <p>This email was sent from the Isomer CMS backend.</p>`,
+          }
+
+          const failureEmailDetails = {
+            subject: `Launch site ${message.repoName} FAILURE`,
+            body: `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+            <p>Error: ${message.siteLaunchError}</p>
+            <p>This email was sent from the Isomer CMS backend.</p>
+            `,
+          }
+
+          let emailDetails
+          if (message.success) {
+            emailDetails = successEmailDetails
+          } else {
+            updateSuccessSiteLaunchParams = {
+              id: site.id,
+              siteStatus: SiteStatus.Initialized,
+              jobStatus: JobStatus.Failed,
+            }
+            emailDetails = failureEmailDetails
+          }
           await this.sitesService.update(updateSuccessSiteLaunchParams)
+          await mailer.sendMail(
+            message.requestorEmail,
+            emailDetails.subject,
+            emailDetails.body
+          )
         
-        const emailDetails: { subject: string; body: string } = {
-          subject: "",
-          body: "",
-        }
         let params
         if (message.success) {
           params = {
@@ -381,7 +409,6 @@ export default class InfraService {
           <p>This email was sent from the Isomer CMS backend.</p>
           `
         }
-        await this.sitesService.update(params)
         await mailer.sendMail(
           message.agencyEmail,
           emailDetails.subject,
@@ -392,11 +419,11 @@ export default class InfraService {
           emailDetails.subject,
           emailDetails.body
         )
+        
         await this.sitesService.update(updateSuccessSiteLaunchParams)
-        } 
-      })
+        }
+      }) 
     )
-    
   }
 
   pollQueue = async () => {

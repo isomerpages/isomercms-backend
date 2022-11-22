@@ -372,7 +372,7 @@ export default class InfraService {
             `,
           }
 
-          let emailDetails
+          let emailDetails: { subject: string; body: string }
           if (message.success) {
             emailDetails = successEmailDetails
           } else {

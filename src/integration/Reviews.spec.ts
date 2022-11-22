@@ -27,11 +27,10 @@ import {
   MOCK_REPO_DBENTRY_ONE,
   MOCK_SITEMEMBER_DBENTRY_ONE,
   MOCK_SITEMEMBER_DBENTRY_TWO,
-  MOCK_SITE_DATE_ONE,
   MOCK_SITE_DBENTRY_ONE,
   MOCK_SITE_ID_ONE,
-  MOCK_SITE_NAME_ONE,
-  MOCK_SITE_NAME_TWO,
+  MOCK_REPO_NAME_ONE,
+  MOCK_REPO_NAME_TWO,
 } from "@fixtures/sites"
 import {
   MOCK_USER_DBENTRY_ONE,
@@ -171,7 +170,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
       mockGenericAxios.get.mockResolvedValueOnce({
         data: {
@@ -199,7 +198,7 @@ describe("Review Requests Router", () => {
           {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
-            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/"),
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
             url: "www.google.com",
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
@@ -208,7 +207,7 @@ describe("Review Requests Router", () => {
       }
 
       // Act
-      const actual = await request(app).get(`/${MOCK_SITE_NAME_ONE}/compare`)
+      const actual = await request(app).get(`/${MOCK_REPO_NAME_ONE}/compare`)
 
       // Assert
       expect(actual.statusCode).toEqual(200)
@@ -220,11 +219,11 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_THREE,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
 
       // Act
-      const actual = await request(app).get(`/${MOCK_SITE_NAME_ONE}/compare`)
+      const actual = await request(app).get(`/${MOCK_REPO_NAME_ONE}/compare`)
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -249,7 +248,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
       const mockPullRequest = {
         reviewers: [MOCK_USER_EMAIL_ONE],
@@ -267,7 +266,7 @@ describe("Review Requests Router", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_SITE_NAME_ONE}/request`)
+        .post(`/${MOCK_REPO_NAME_ONE}/request`)
         .send(mockPullRequest)
 
       // Assert
@@ -300,7 +299,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_SITE_NAME_TWO
+        MOCK_REPO_NAME_TWO
       )
       const mockPullRequest = {
         reviewers: [MOCK_USER_EMAIL_TWO],
@@ -310,7 +309,7 @@ describe("Review Requests Router", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_SITE_NAME_TWO}/request`)
+        .post(`/${MOCK_REPO_NAME_TWO}/request`)
         .send(mockPullRequest)
 
       // Assert
@@ -322,7 +321,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_THREE,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
       const mockPullRequest = {
         reviewers: [MOCK_USER_EMAIL_TWO],
@@ -332,7 +331,7 @@ describe("Review Requests Router", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_SITE_NAME_ONE}/request`)
+        .post(`/${MOCK_REPO_NAME_ONE}/request`)
         .send(mockPullRequest)
 
       // Assert
@@ -344,7 +343,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
       const mockPullRequest = {
         reviewers: [],
@@ -354,7 +353,7 @@ describe("Review Requests Router", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_SITE_NAME_ONE}/request`)
+        .post(`/${MOCK_REPO_NAME_ONE}/request`)
         .send(mockPullRequest)
 
       // Assert
@@ -366,7 +365,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
       const mockPullRequest = {
         reviewers: [MOCK_USER_EMAIL_TWO],
@@ -376,7 +375,7 @@ describe("Review Requests Router", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_SITE_NAME_ONE}/request`)
+        .post(`/${MOCK_REPO_NAME_ONE}/request`)
         .send(mockPullRequest)
 
       // Assert
@@ -403,7 +402,7 @@ describe("Review Requests Router", () => {
       await ReviewMeta.create({
         reviewId: reviewRequest?.id,
         pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
-        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_SITE_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
       })
     })
 
@@ -424,7 +423,7 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
       mockGenericAxios.get.mockResolvedValueOnce({
         data: MOCK_PULL_REQUEST_ONE,
@@ -449,7 +448,7 @@ describe("Review Requests Router", () => {
       }
 
       // Act
-      const actual = await request(app).get(`/${MOCK_SITE_NAME_ONE}/summary`)
+      const actual = await request(app).get(`/${MOCK_REPO_NAME_ONE}/summary`)
 
       // Assert
       expect(actual.statusCode).toEqual(200)
@@ -461,11 +460,11 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_SITE_NAME_TWO
+        MOCK_REPO_NAME_TWO
       )
 
       // Act
-      const actual = await request(app).get(`/${MOCK_SITE_NAME_TWO}/summary`)
+      const actual = await request(app).get(`/${MOCK_REPO_NAME_TWO}/summary`)
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -476,11 +475,11 @@ describe("Review Requests Router", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_THREE,
-        MOCK_SITE_NAME_ONE
+        MOCK_REPO_NAME_ONE
       )
 
       // Act
-      const actual = await request(app).get(`/${MOCK_SITE_NAME_ONE}/summary`)
+      const actual = await request(app).get(`/${MOCK_REPO_NAME_ONE}/summary`)
 
       // Assert
       expect(actual.statusCode).toEqual(404)

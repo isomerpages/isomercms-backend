@@ -13,11 +13,14 @@ import {
 export const MOCK_SITE_ID_ONE = 1
 export const MOCK_SITE_ID_TWO = 2
 
-export const MOCK_SITE_NAME_ONE = "test-site-one"
-export const MOCK_SITE_NAME_TWO = "test-site-two"
+export const MOCK_SITE_NAME_ONE = "Human readable site name one"
+export const MOCK_SITE_NAME_TWO = "Human readable site name two"
 
 export const MOCK_SITE_DATE_ONE = new Date("2022-09-23T00:00:00Z")
 export const MOCK_SITE_DATE_TWO = new Date("2022-09-25T00:00:00Z")
+
+export const MOCK_REPO_NAME_ONE = "repo-name-test-one"
+export const MOCK_REPO_NAME_TWO = "repo-name-test-two"
 
 export const MOCK_REPO_URL_ONE = "https://github.com/example/repo-one"
 export const MOCK_REPO_URL_TWO = "https://github.com/example/repo-two"
@@ -34,7 +37,7 @@ export const MOCK_DEPLOYMENT_STAGING_URL_TWO =
 
 export const MOCK_SITE_DBENTRY_ONE: Attributes<Site> = {
   id: MOCK_SITE_ID_ONE,
-  name: MOCK_SITE_NAME_ONE,
+  name: MOCK_REPO_NAME_ONE,
   apiTokenName: "unused",
   siteStatus: SiteStatus.Launched,
   jobStatus: JobStatus.Ready,
@@ -45,7 +48,7 @@ export const MOCK_SITE_DBENTRY_ONE: Attributes<Site> = {
 
 export const MOCK_SITE_DBENTRY_TWO: Attributes<Site> = {
   id: MOCK_SITE_ID_TWO,
-  name: MOCK_SITE_NAME_TWO,
+  name: MOCK_REPO_NAME_TWO,
   apiTokenName: "unused",
   siteStatus: SiteStatus.Launched,
   jobStatus: JobStatus.Ready,
@@ -56,7 +59,7 @@ export const MOCK_SITE_DBENTRY_TWO: Attributes<Site> = {
 
 export const MOCK_REPO_DBENTRY_ONE: Attributes<Repo> = {
   id: 1,
-  name: MOCK_SITE_NAME_ONE,
+  name: MOCK_REPO_NAME_ONE,
   url: MOCK_REPO_URL_ONE,
   siteId: MOCK_SITE_ID_ONE,
   createdAt: MOCK_SITE_DATE_ONE,
@@ -65,7 +68,7 @@ export const MOCK_REPO_DBENTRY_ONE: Attributes<Repo> = {
 
 export const MOCK_REPO_DBENTRY_TWO: Attributes<Repo> = {
   id: 2,
-  name: MOCK_SITE_NAME_TWO,
+  name: MOCK_REPO_NAME_TWO,
   url: MOCK_REPO_URL_TWO,
   siteId: MOCK_SITE_ID_TWO,
   createdAt: MOCK_SITE_DATE_TWO,

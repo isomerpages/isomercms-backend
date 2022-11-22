@@ -16,7 +16,7 @@ import {
   mockGithubSessionData,
   MOCK_USER_SESSION_DATA_ONE,
 } from "./sessionData"
-import { MOCK_SITE_NAME_ONE } from "./sites"
+import { MOCK_REPO_NAME_ONE } from "./sites"
 
 /**
  * @deprecated
@@ -93,7 +93,7 @@ const attachDefaultUserSessionDataWithSite: RequestHandler<
   }
 > = attachUserSessionDataWithSite(
   MOCK_USER_SESSION_DATA_ONE,
-  MOCK_SITE_NAME_ONE
+  MOCK_REPO_NAME_ONE
 )
 
 /**

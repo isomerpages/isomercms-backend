@@ -13,7 +13,7 @@ import {
   User,
   Whitelist,
 } from "@database/models"
-import { generateRouter } from "@fixtures/app"
+import { generateRouterForUserWithSite } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import {
   mockEmail,
@@ -71,17 +71,6 @@ const notificationsHandler = new NotificationOnEditHandler({
 
 // Set up express with defaults and use the router under test
 const subrouter = express()
-// As we set certain properties on res.locals when the user signs in using github
-// In order to do integration testing, we must expose a middleware
-// that allows us to set this properties also
-subrouter.use((req, res, next) => {
-  const userSessionData = new UserSessionData({
-    isomerUserId: mockIsomerUserId,
-    email: mockEmail,
-  })
-  res.locals.userSessionData = userSessionData
-  next()
-})
 const subSubrouter = express()
 subSubrouter.get("/:siteName/test", async (req, res, next) =>
   // Dummy subrouter
@@ -96,7 +85,15 @@ subrouter.use(async (req, res, next) => {
   await notificationsHandler.createNotification(req as any, res as any, next)
   res.status(200).send(200)
 })
-const app = generateRouter(subrouter)
+const userSessionData = new UserSessionData({
+  isomerUserId: mockIsomerUserId,
+  email: mockEmail,
+})
+const app = generateRouterForUserWithSite(
+  subrouter,
+  userSessionData,
+  mockSiteName
+)
 
 describe("Notifications Router", () => {
   const mockAdditionalUserId = "2"
@@ -164,6 +161,14 @@ describe("Notifications Router", () => {
       siteId: mockAdditionalSiteId,
     })
   })
+
+  afterAll(async () => {
+    await SiteMember.sync({ force: true })
+    await Site.sync({ force: true })
+    await User.sync({ force: true })
+    await Repo.sync({ force: true })
+  })
+
   describe("createNotification handler", () => {
     afterEach(async () => {
       // Clean up so that different tests using

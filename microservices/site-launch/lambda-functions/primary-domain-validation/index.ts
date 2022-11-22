@@ -18,12 +18,6 @@ import {
   SITE_LAUNCH_LAMBDA_TYPE,
 } from "../../shared/types"
 
-interface PrimaryDomainValidationLambdaParams {
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-}
-
 interface PrimaryDomainValidationLambdaResponse {
   lambdaType: SITE_LAUNCH_LAMBDA_TYPE
   status: SITE_LAUNCH_LAMBDA_STATUS

@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
+import type { APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
 import logger from "../../shared/logger"

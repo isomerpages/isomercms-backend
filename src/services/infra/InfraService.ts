@@ -186,7 +186,7 @@ export default class InfraService {
     subDomainSettings: SubDomainSettings
   ): Promise<Err<never, unknown> | Ok<SiteLaunchCreateParams, never>> => {
     // call amplify to trigger site launch process
-    let newLaunchParams : SiteLaunchCreateParams
+    let newLaunchParams: SiteLaunchCreateParams
     try {
       // Set up domain association using LaunchesService
       const redirectionDomainResult = await this.launchesService.configureDomainInAmplify(
@@ -278,7 +278,6 @@ export default class InfraService {
       const redirectionDomainList = dnsInfo.domainAssociation?.subDomains?.filter(
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
-      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
 
       /**
        * Amplify only stores the prefix.
@@ -356,7 +355,6 @@ export default class InfraService {
             id: site.id,
             siteStatus: SiteStatus.Launched,
             jobStatus: JobStatus.Running,
-            
           }
           await this.sitesService.update(updateSuccessSiteLaunchParams)
         
@@ -409,49 +407,5 @@ export default class InfraService {
 
   pollQueue = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
-  }
-
-  private async sendStatusEmail(message: MessageBody, site: Site) {
-    const emailDetails: { subject: string; body: string } = {
-      subject: "",
-      body: "",
-    }
-    let params
-    if (message.success) {
-      params = {
-        id: site.id,
-        siteStatus: SiteStatus.Launched,
-        jobStatus: JobStatus.Running,
-      }
-      emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
-      emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
-              <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
-              <p>This email was sent from the Isomer CMS backend.</p>`
-    } else {
-      params = { id: site.id, jobStatus: JobStatus.Failed }
-      emailDetails.subject = `Launch site ${message.repoName} FAILURE`
-      emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-              <p>Isomer team will be reaching out to you to assist you soon.<p>
-              <p>This email was sent from the Isomer CMS backend.</p>
-              `
-    }
-    await this.sitesService.update(params)
-    if (!this.isMOEEmail(message.agencyEmail)) {
-      await mailer.sendMail(
-        message.agencyEmail,
-        emailDetails.subject,
-        emailDetails.body
-      )
-    }
-
-    // only admins should receive vebose infomation about failure
-    if (!message.success) {
-      emailDetails.body += `<p>Error: ${message.siteLaunchError}</p>`
-    }
-    await mailer.sendMail(
-      message.requestorEmail,
-      emailDetails.subject,
-      emailDetails.body
-    )
   }
 }

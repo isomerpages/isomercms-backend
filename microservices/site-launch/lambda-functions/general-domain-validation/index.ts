@@ -15,7 +15,6 @@ import {
   SITE_LAUNCH_LAMBDA_TYPE,
 } from "../../shared/types"
 
-
 interface GeneralDomainValidationLambdaResponse {
   lambdaType: SITE_LAUNCH_LAMBDA_TYPE
   status: SITE_LAUNCH_LAMBDA_STATUS

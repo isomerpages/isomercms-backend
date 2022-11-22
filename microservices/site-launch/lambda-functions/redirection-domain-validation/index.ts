@@ -11,7 +11,7 @@ export const redirectionDomainValidation = async (
     "redirectionDomain" | "primaryDomainTarget" | "primaryDomainSource"
   >
 ) => {
-  const DEFAULT_BRANCH = "test/redirectionLambdaTest" // todo change to master in the future.
+  const DEFAULT_BRANCH = "master"
 
   // Validation check
   const { primaryDomainSource, redirectionDomain } = event

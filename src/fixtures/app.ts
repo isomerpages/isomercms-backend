@@ -14,7 +14,9 @@ import {
   mockUserSessionData,
   mockUserWithSiteSessionData,
   mockGithubSessionData,
+  MOCK_USER_SESSION_DATA_ONE,
 } from "./sessionData"
+import { MOCK_SITE_NAME_ONE } from "./sites"
 
 /**
  * @deprecated
@@ -71,6 +73,28 @@ const attachUserSessionDataWithSite: (
   res.locals.userWithSiteSessionData = userWithSiteSessionData
   next()
 }
+
+const attachDefaultUserSessionData: RequestHandler<
+  unknown,
+  unknown,
+  unknown,
+  unknown,
+  { userSessionData: UserSessionData }
+> = attachUserSessionData(MOCK_USER_SESSION_DATA_ONE)
+
+const attachDefaultUserSessionDataWithSite: RequestHandler<
+  unknown,
+  unknown,
+  unknown,
+  unknown,
+  {
+    userSessionData: UserSessionData
+    userWithSiteSessionData: UserWithSiteSessionData
+  }
+> = attachUserSessionDataWithSite(
+  MOCK_USER_SESSION_DATA_ONE,
+  MOCK_SITE_NAME_ONE
+)
 
 /**
  * @deprecated

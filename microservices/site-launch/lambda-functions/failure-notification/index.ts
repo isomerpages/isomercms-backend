@@ -5,7 +5,6 @@ import { SQS } from "aws-sdk"
 import logger from "../../shared/logger"
 import { MessageBody } from "../../shared/types"
 
-
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 
 export const failureNotification = async (event: {
@@ -24,8 +23,6 @@ export const failureNotification = async (event: {
     QueueUrl: INCOMING_QUEUE_URL,
     MessageBody: Cause,
   }
-
-  console.log("Message params:", JSON.stringify(messageParams))
 
   sqs.sendMessage(messageParams, (err, data) => {
     if (err) {

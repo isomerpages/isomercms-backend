@@ -13,8 +13,9 @@ import {
   User,
   Whitelist,
 } from "@database/models"
-import { generateRouter } from "@fixtures/app"
+import { generateRouter, generateRouterForUserWithSite } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
   formatNotification,
   highPriorityOldReadNotification,
@@ -93,19 +94,13 @@ const notificationsSubrouter = notificationsRouter.getRouter()
 
 // Set up express with defaults and use the router under test
 const subrouter = express()
-// As we set certain properties on res.locals when the user signs in using github
-// In order to do integration testing, we must expose a middleware
-// that allows us to set this properties also
-subrouter.use((req, res, next) => {
-  const userSessionData = new UserSessionData({
-    isomerUserId: mockIsomerUserId,
-    email: mockEmail,
-  })
-  res.locals.userSessionData = userSessionData
-  next()
-})
+
 subrouter.use("/:siteName", notificationsSubrouter)
-const app = generateRouter(subrouter)
+const userSessionData = new UserSessionData({
+  isomerUserId: mockIsomerUserId,
+  email: mockEmail,
+})
+const app = generateRouterForUserWithSite(subrouter, userSessionData, MOCK_SITE)
 
 describe("Notifications Router", () => {
   const MOCK_ADDITIONAL_USER_ID = "2"
@@ -123,7 +118,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: MOCK_SITE_ID,
-      name: MOCK_SITE,
+      name: mockSiteName,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -136,7 +131,7 @@ describe("Notifications Router", () => {
       id: MOCK_SITE_MEMBER_ID,
     })
     await Repo.create({
-      name: mockSiteName,
+      name: MOCK_SITE,
       url: "url",
       siteId: MOCK_SITE_ID,
     })
@@ -148,7 +143,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: MOCK_ADDITIONAL_SITE_ID,
-      name: MOCK_SITE,
+      name: `${mockSiteName}2`,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -161,7 +156,7 @@ describe("Notifications Router", () => {
       id: MOCK_ANOTHER_SITE_MEMBER_ID,
     })
     await Repo.create({
-      name: `${mockSiteName}2`,
+      name: `${MOCK_SITE}2`,
       url: "url",
       siteId: MOCK_ADDITIONAL_SITE_ID,
     })
@@ -248,7 +243,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get(`/${mockSiteName}`)
+      const actual = await request(app).get(`/${MOCK_SITE}`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -338,7 +333,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get(`/${mockSiteName}`)
+      const actual = await request(app).get(`/${MOCK_SITE}`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -419,7 +414,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get(`/${mockSiteName}/allNotifications`)
+      const actual = await request(app).get(`/${MOCK_SITE}/allNotifications`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -485,7 +480,7 @@ describe("Notifications Router", () => {
       const expected = 200
 
       // Act
-      const actual = await request(app).post(`/${mockSiteName}`).send({})
+      const actual = await request(app).post(`/${MOCK_SITE}`).send({})
 
       // Assert
       expect(actual.statusCode).toBe(expected)

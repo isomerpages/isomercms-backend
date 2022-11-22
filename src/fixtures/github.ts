@@ -1,9 +1,4 @@
-import {
-  Commit,
-  RawComment,
-  RawFileChangeInfo,
-  RawPullRequest,
-} from "@root/types/github"
+import { Commit, RawComment, RawFileChangeInfo } from "@root/types/github"
 
 import { MOCK_USER_ID_ONE, MOCK_USER_ID_TWO } from "./users"
 
@@ -25,8 +20,14 @@ export const MOCK_GITHUB_COMMIT_DATE_TWO = "2022-10-13T05:39:43Z"
 export const MOCK_GITHUB_COMMIT_DATE_THREE = "2022-11-07T16:32:08Z"
 export const MOCK_GITHUB_FILENAME_ALPHA_ONE = "index.md"
 export const MOCK_GITHUB_FILEPATH_ALPHA_ONE = ""
+export const MOCK_GITHUB_FULL_FILEPATH_ALPHA_ONE = encodeURIComponent(
+  MOCK_GITHUB_FILENAME_ALPHA_ONE
+)
 export const MOCK_GITHUB_FILENAME_ALPHA_TWO = "Example Title 22.md"
 export const MOCK_GITHUB_FILEPATH_ALPHA_TWO = "pages/"
+export const MOCK_GITHUB_FULL_FILEPATH_ALPHA_TWO = encodeURIComponent(
+  MOCK_GITHUB_FILEPATH_ALPHA_TWO + MOCK_GITHUB_FILENAME_ALPHA_TWO
+)
 export const MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE = `Update file: ${MOCK_GITHUB_FILENAME_ALPHA_ONE}`
 export const MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_TWO = `Update file: ${MOCK_GITHUB_FILENAME_ALPHA_TWO}`
 export const MOCK_GITHUB_COMMIT_MESSAGE_OBJECT_ALPHA_ONE = {
@@ -52,20 +53,20 @@ export const MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE: RawFileChangeInfo = {
   additions: 1,
   deletions: 2,
   changes: 3,
-  blob_url: `https://github.com/isomerpages/a-test-v4/blob/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/index.md`,
-  raw_url: `https://github.com/isomerpages/a-test-v4/raw/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/index.md`,
-  contents_url: `https://api.github.com/repos/isomerpages/a-test-v4/contents/index.md?ref=${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}`,
+  blob_url: `https://github.com/isomerpages/a-test-v4/blob/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/${MOCK_GITHUB_FULL_FILEPATH_ALPHA_ONE}`,
+  raw_url: `https://github.com/isomerpages/a-test-v4/raw/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/${MOCK_GITHUB_FULL_FILEPATH_ALPHA_ONE}`,
+  contents_url: `https://api.github.com/repos/isomerpages/a-test-v4/contents/${MOCK_GITHUB_FULL_FILEPATH_ALPHA_ONE}?ref=${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}`,
 }
 export const MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO: RawFileChangeInfo = {
   sha: "f04f18eaa8d31fffc9f8cf5020b1f6a765ac225f",
-  filename: `${MOCK_GITHUB_FILEPATH_ALPHA_TWO}/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
+  filename: `${MOCK_GITHUB_FILEPATH_ALPHA_TWO}${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
   status: "modified",
   additions: 13,
   deletions: 2,
   changes: 15,
-  blob_url: `https://github.com/isomerpages/a-test-v4/blob/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/pages%2FExample%20Title%2022.md`,
-  raw_url: `https://github.com/isomerpages/a-test-v4/raw/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/pages%2FExample%20Title%2022.md`,
-  contents_url: `https://api.github.com/repos/isomerpages/a-test-v4/contents/pages%2FExample%20Title%2022.md?ref=${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}`,
+  blob_url: `https://github.com/isomerpages/a-test-v4/blob/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/${MOCK_GITHUB_FULL_FILEPATH_ALPHA_TWO}`,
+  raw_url: `https://github.com/isomerpages/a-test-v4/raw/${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}/${MOCK_GITHUB_FULL_FILEPATH_ALPHA_TWO}`,
+  contents_url: `https://api.github.com/repos/isomerpages/a-test-v4/contents/${MOCK_GITHUB_FULL_FILEPATH_ALPHA_TWO}?ref=${MOCK_GITHUB_COMMIT_SHA_LATEST_ALPHA}`,
 }
 
 export const MOCK_GITHUB_COMMIT_ALPHA_ONE: Commit = {

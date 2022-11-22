@@ -64,7 +64,7 @@ export class ReviewsRouter {
     const { siteName } = req.params
 
     // Check if they have access to site
-    const possibleSiteMember = this.identityUsersService.getSiteMember(
+    const possibleSiteMember = await this.identityUsersService.getSiteMember(
       userWithSiteSessionData.isomerUserId,
       siteName
     )

@@ -8,7 +8,7 @@ import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launch, Repo, User, Redirection} from "@database/models"
+import { Deployment, Launch, Repo, User, Redirection } from "@database/models"
 import { RedirectionTypes } from "@root/constants/constants"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
@@ -67,30 +67,22 @@ export class LaunchesService {
   createOrUpdate = async (
     createParams: SiteLaunchCreateParams
   ): Promise<Launch> => {
-    // check if prior launch exists for an app
-    let launch = await this.launchesRepository.findOne({
-      where: { site_id: createParams.siteId },
-    })
-    if (launch) {
-      await this.updateLaunchTable({ ...createParams, id: launch.id })
+    const [launch] = await this.launchesRepository.upsert(createParams)
 
-      // delete all redirections related to previous launch
-      const outDatedRedirections =
-        (await this.redirectionsRepository.findAll({
-          where: { launchId: launch.id },
-        })) || []
-      outDatedRedirections.forEach(async (outDatedRedirection) => {
-        if (outDatedRedirection) {
-          const updatedRedirection = outDatedRedirection
-          updatedRedirection.deletedAt = new Date()
-          await this.redirectionsRepository.destroy({
-            where: { id: updatedRedirection.id },
-          })
-        }
-      })
-    } else {
-      launch = await this.launchesRepository.create(createParams)
-    }
+    // In the case that this is a re-launch,
+    // need to delete previous records in redirection table
+    const outDatedRedirections = await this.redirectionsRepository.findAll({
+      where: { launchId: launch.id },
+    })
+    outDatedRedirections.forEach(async (outDatedRedirection) => {
+      if (outDatedRedirection) {
+        const updatedRedirection = outDatedRedirection
+        updatedRedirection.deletedAt = new Date()
+        await this.redirectionsRepository.destroy({
+          where: { id: updatedRedirection.id },
+        })
+      }
+    })
 
     if (createParams.redirectionDomainSource) {
       logger.info(
@@ -185,7 +177,7 @@ export class LaunchesService {
       )
     }
 
-    logger.info(`Successfully created domain assocation for ${repoName}`)
+    logger.info(`Successfully created domain association for ${repoName}`)
     const redirectionDomainObject: DomainAssociationMeta = {
       repoName,
       domainAssociation: domainAssociationResult.domainAssociation,
@@ -206,12 +198,6 @@ export class LaunchesService {
     return this.launchClient.sendGetDomainAssociationCommand(
       getDomainAssociationOptions
     )
-  }
-
-  async updateLaunchTable(updateParams: Partial<Launch> & Pick<Launch, "id">) {
-    return this.launchesRepository.update(updateParams, {
-      where: { id: updateParams.id },
-    })
   }
 
   async updateRedirectionTable(

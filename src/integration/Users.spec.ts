@@ -55,6 +55,11 @@ const extractMobileOtp = (mobileBody: string): string =>
   mobileBody.slice(12, 12 + 6)
 
 describe("Users Router", () => {
+  beforeAll(async () => {
+    await User.sync({ force: true })
+    await Whitelist.sync({ force: true })
+  })
+
   afterEach(() => {
     jest.resetAllMocks()
     mockAxios.reset()

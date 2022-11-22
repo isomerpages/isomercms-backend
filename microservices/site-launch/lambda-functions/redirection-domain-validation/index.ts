@@ -27,7 +27,7 @@ export const redirectionDomainValidation = async (
    * Note : This only supports one specific
    * redirection of blah.gov.sg -> www.blah.gov.sg
    * The params of `MessageBody` is designed to handle more complicated
-   * redirections for future extensions.
+   * redirects for future extensions.
    * */
 
   const githubRedirect = githubRedirects[0] // only handling blah.gov.sg -> www.blah.gov.sg
@@ -44,8 +44,7 @@ export const redirectionDomainValidation = async (
     auth: process.env.SYSTEM_GITHUB_TOKEN,
   })
 
-  let fileExists = true
-  // see if domain commit in github first. If exists, dont create commit.
+  // see if domain commit in github first. If exists, don't create commit.
   try {
     await octokit.request(
       `GET /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
@@ -57,9 +56,8 @@ export const redirectionDomainValidation = async (
       }
     )
   } catch (fileFoundError) {
-    fileExists = false
+    return
   }
-  if (fileExists) return
 
   const response = await octokit.request(
     `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
@@ -77,6 +75,6 @@ export const redirectionDomainValidation = async (
     }
   )
   logger.info(
-    `status of redirecion commit for ${primaryDomainSource}:\n ${response}`
+    `status of redirection commit for ${primaryDomainSource}:\n ${response}`
   )
 }

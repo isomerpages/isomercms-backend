@@ -2,7 +2,7 @@ import { Attributes } from "sequelize/types"
 
 import { ReviewRequestStatus } from "@root/constants"
 import { ReviewRequest, ReviewRequestView } from "@root/database/models"
-import { Commit } from "@root/types/github"
+import { Commit, RawPullRequest } from "@root/types/github"
 
 import {
   mockCollaboratorAdmin1,
@@ -56,10 +56,14 @@ export const MOCK_PULL_REQUEST_COMMIT_TWO: Commit = {
   },
 }
 
-export const MOCK_PULL_REQUEST_ONE = {
-  title: "Pull Request 1",
-  body: "Pull Request 1 Description",
-  changed_files: 3,
+export const MOCK_PULL_REQUEST_TITLE_ONE = "Pull Request 1"
+export const MOCK_PULL_REQUEST_BODY_ONE = "Pull Request 1 Description"
+export const MOCK_PULL_REQUEST_CHANGED_FILES_ONE = 3
+
+export const MOCK_PULL_REQUEST_ONE: RawPullRequest = {
+  title: MOCK_PULL_REQUEST_TITLE_ONE,
+  body: MOCK_PULL_REQUEST_BODY_ONE,
+  changed_files: MOCK_PULL_REQUEST_CHANGED_FILES_ONE,
   created_at: MOCK_GITHUB_DATE_ONE,
 }
 

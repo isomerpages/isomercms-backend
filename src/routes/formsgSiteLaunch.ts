@@ -36,7 +36,7 @@ interface FormResponsesProps {
   agencyEmail?: string
 }
 export class FormsgSiteLaunchRouter {
-  siteLaunch = async (formResponses: FormResponsesProps) => {
+  siteLaunch = async (formResponses: FormResponsesProps): Promise<void> => {
     const {
       submissionId,
       requesterEmail,
@@ -186,7 +186,7 @@ export class FormsgSiteLaunchRouter {
     requestorEmail: string,
     repoName: string,
     submissionId: string
-  ) => {
+  ): Promise<void> => {
     const subject = `[Isomer] Launch site ${repoName} SUCCESS`
     const html = `<p>Isomer site ${repoName} was launched successfully. (Form submission id [${submissionId}])</p>
 <p>You may now visit your live website. <a href="${PRIMARY_DOMAIN}">${PRIMARY_DOMAIN}</a> should be accessible within a few minutes.</p>

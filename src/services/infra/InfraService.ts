@@ -1,6 +1,6 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
-import { err, ok } from "neverthrow"
+import { Err, err, Ok, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
@@ -121,7 +121,9 @@ export default class InfraService {
     return url
   }
 
-  parseDNSRecords = (record?: string) => {
+  parseDNSRecords = (
+    record?: string
+  ): Err<never, string> | Ok<dnsRecordDto, never> => {
     if (!record) {
       return err(`Record was not defined`)
     }
@@ -173,7 +175,7 @@ export default class InfraService {
     repoName: string,
     primaryDomain: string,
     subDomainSettings: SubDomainSettings
-  ) => {
+  ): Promise<Err<never, unknown> | Ok<null, never>> => {
     // call amplify to trigger site launch process
     try {
       // Set up domain association using LaunchesService

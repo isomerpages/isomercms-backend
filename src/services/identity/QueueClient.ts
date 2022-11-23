@@ -20,7 +20,7 @@ export default class QueueClient {
     this.outgoingQueueUrl = OUTGOING_QUEUE_URL
   }
 
-  sendMessage = (messageBody: string) => {
+  sendMessage = (messageBody: string): void => {
     const queueRequestParams: SQS.Types.SendMessageRequest = {
       QueueUrl: this.outgoingQueueUrl,
       MessageBody: messageBody,
@@ -36,7 +36,7 @@ export default class QueueClient {
     })
   }
 
-  receiveMessage = async () => {
+  receiveMessage = async (): Promise<SQS.MessageList> => {
     const params: SQS.ReceiveMessageRequest = {
       QueueUrl: this.incomingQueueUrl,
       AttributeNames: ["All"],
@@ -46,9 +46,9 @@ export default class QueueClient {
     /**
      * Note: using `.promise` might be an issue.
      * See more: https://github.com/aws/aws-sdk-js/issues/1453
-     * This occured when there were mutliple concurrent writes,
-     * and doesnt *seem* to occur now with single writes
-     * (it is an undeterministic bug), assumed to be a safe operation for now.
+     * This occurred when there were multiple concurrent writes,
+     * and doesn't *seem* to occur now with single writes
+     * (it is an nondeterministic bug), assumed to be a safe operation for now.
      */
     const response = await this.sqs.receiveMessage(params).promise()
     if (response.$response.error) {
@@ -57,7 +57,7 @@ export default class QueueClient {
     if (response.Messages) {
       this.deleteMessage(response)
     }
-    return response.Messages
+    return response.Messages || []
   }
 
   createDeleteMessageParams = (
@@ -67,8 +67,7 @@ export default class QueueClient {
     ReceiptHandle: receiptHandle,
   })
 
-  deleteMessage = async (data: SQS.ReceiveMessageResult) => {
-    logger.info(`deleting message ${data}`)
+  deleteMessage = async (data: SQS.ReceiveMessageResult): Promise<void> => {
     const receiptHandles = data?.Messages?.map(
       (message) => message.ReceiptHandle
     )

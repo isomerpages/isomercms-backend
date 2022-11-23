@@ -2,8 +2,10 @@ import {
   AmplifyClient,
   CreateDomainAssociationCommand,
   CreateDomainAssociationCommandInput,
+  CreateDomainAssociationCommandOutput,
   GetDomainAssociationCommand,
   GetDomainAssociationCommandInput,
+  GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
 
@@ -27,7 +29,9 @@ class LaunchClient {
     subDomainSettings,
   })
 
-  sendCreateDomainAssociation = (input: CreateDomainAssociationCommandInput) =>
+  sendCreateDomainAssociation = (
+    input: CreateDomainAssociationCommandInput
+  ): Promise<CreateDomainAssociationCommandOutput> =>
     this.amplifyClient.send(new CreateDomainAssociationCommand(input))
 
   createGetDomainAssociationCommandInput = (
@@ -38,7 +42,9 @@ class LaunchClient {
     domainName,
   })
 
-  sendGetDomainAssociationCommand = (input: GetDomainAssociationCommandInput) =>
+  sendGetDomainAssociationCommand = (
+    input: GetDomainAssociationCommandInput
+  ): Promise<GetDomainAssociationCommandOutput> =>
     this.amplifyClient.send(new GetDomainAssociationCommand(input))
 }
 

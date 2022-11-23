@@ -1,5 +1,9 @@
-import { DomainAssociation, SubDomainSetting } from "@aws-sdk/client-amplify"
-import { err, ok } from "neverthrow"
+import {
+  DomainAssociation,
+  GetDomainAssociationCommandOutput,
+  SubDomainSetting,
+} from "@aws-sdk/client-amplify"
+import { Err, err, Ok, ok } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
@@ -79,7 +83,9 @@ export class LaunchesService {
     return createLaunch
   }
 
-  getAppId = async (repoName: string) => {
+  getAppId = async (
+    repoName: string
+  ): Promise<Err<never, Error> | Ok<string, never>> => {
     const siteId = await this.getSiteId(repoName)
     if (siteId.isErr()) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
@@ -102,7 +108,9 @@ export class LaunchesService {
     return ok(hostingID)
   }
 
-  getSiteId = async (repoName: string) => {
+  getSiteId = async (
+    repoName: string
+  ): Promise<Err<never, Error> | Ok<number, never>> => {
     const site = await this.repoRepository.findOne({
       where: { name: repoName },
     })
@@ -120,7 +128,7 @@ export class LaunchesService {
     repoName: string,
     domainName: string,
     subDomainSettings: SubDomainSetting[]
-  ) => {
+  ): Promise<Err<never, AmplifyError> | Ok<DomainAssociationMeta, never>> => {
     // Get appId, which is stored as hostingID in database table.
     const appIdResult = await this.getAppId(repoName)
     if (appIdResult.isErr()) {
@@ -162,7 +170,10 @@ export class LaunchesService {
     return ok(redirectionDomainObject)
   }
 
-  getDomainAssociationRecord = async (domainName: string, appId: string) => {
+  getDomainAssociationRecord = async (
+    domainName: string,
+    appId: string
+  ): Promise<GetDomainAssociationCommandOutput> => {
     const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
       appId,
       domainName

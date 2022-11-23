@@ -53,33 +53,28 @@ export const generalDomainValidation = async (
   }
   const getDomainAssociationCommand = new GetDomainAssociationCommand(params)
 
-  try {
-    const data: GetDomainAssociationCommandOutput = await amplifyClient.send(
-      getDomainAssociationCommand
+  const data: GetDomainAssociationCommandOutput = await amplifyClient.send(
+    getDomainAssociationCommand
+  )
+  const domainAssociationStatus = data.domainAssociation?.domainStatus
+  if (
+    !domainAssociationStatus ||
+    !SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES.includes(
+      (domainAssociationStatus as unknown) as DomainStatus
     )
-    const domainAssociationStatus = data.domainAssociation?.domainStatus
-    if (
-      !domainAssociationStatus ||
-      !SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES.includes(
-        (domainAssociationStatus as unknown) as DomainStatus
-      )
-    ) {
-      throw new Error(
-        `Amplify app with id ${appId} and domain ${primaryDomain} has not completed general domain validation step. Current status: ${domainAssociationStatus}`
-      )
-    }
-    logger.info(
-      `Amplify app with id ${appId} and domain ${primaryDomain} successfully completed general domain validation step with status ${domainAssociationStatus}`
+  ) {
+    throw new Error(
+      `Amplify app with id ${appId} and domain ${primaryDomain} has not completed general domain validation step. Current status: ${domainAssociationStatus}`
     )
+  }
+  logger.info(
+    `Amplify app with id ${appId} and domain ${primaryDomain} successfully completed general domain validation step with status ${domainAssociationStatus}`
+  )
 
-    return {
-      lambdaType: SITE_LAUNCH_LAMBDA_TYPE.GENERAL_DOMAIN_VALIDATION,
-      status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
-      appId,
-      primaryDomain,
-    }
-  } catch (error) {
-    logger.error(error)
-    throw error
+  return {
+    lambdaType: SITE_LAUNCH_LAMBDA_TYPE.GENERAL_DOMAIN_VALIDATION,
+    status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
+    appId,
+    primaryDomain,
   }
 }

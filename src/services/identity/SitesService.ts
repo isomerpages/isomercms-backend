@@ -1,7 +1,7 @@
 import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
-import { Deployment, Site } from "@database/models"
+import { Deployment, Site, Repo } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
@@ -156,7 +156,15 @@ class SitesService {
 
   async getBySiteName(siteName: string): Promise<Site | null> {
     const site = await this.siteRepository.findOne({
-      where: { name: siteName },
+      include: [
+        {
+          model: Repo,
+          required: true,
+          where: {
+            name: siteName,
+          },
+        },
+      ],
     })
 
     return site
@@ -246,11 +254,19 @@ class SitesService {
     const { siteName } = sessionData
 
     const site = await this.siteRepository.findOne({
-      where: { name: siteName },
-      include: {
-        model: Deployment,
-        as: "deployment",
-      },
+      include: [
+        {
+          model: Deployment,
+          as: "deployment",
+        },
+        {
+          model: Repo,
+          required: true,
+          where: {
+            name: siteName,
+          },
+        },
+      ],
     })
 
     // Note: site may be null if the site does not exist

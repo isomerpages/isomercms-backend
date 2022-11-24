@@ -10,6 +10,7 @@ import { ReviewRequestStatus } from "@root/constants"
 import { ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
   CommentItem,
@@ -23,6 +24,9 @@ import { isIsomerError } from "@root/types/error"
 import { Commit, fromGithubCommitMessage } from "@root/types/github"
 import { RequestChangeInfo } from "@root/types/review"
 import * as ReviewApi from "@services/db/review"
+
+import { UnlinkedPageService } from "../fileServices/MdPageServices/UnlinkedPageService"
+import SitesService from "../identity/SitesService"
 
 /**
  * NOTE: This class does not belong as a subset of GitHub service.
@@ -47,13 +51,19 @@ export default class ReviewRequestService {
 
   private readonly reviewRequestView: ModelStatic<ReviewRequestView>
 
+  private readonly pageService: UnlinkedPageService
+
+  private readonly sitesService: SitesService
+
   constructor(
     apiService: typeof ReviewApi,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,
     reviewMeta: ModelStatic<ReviewMeta>,
-    reviewRequestView: ModelStatic<ReviewRequestView>
+    reviewRequestView: ModelStatic<ReviewRequestView>,
+    pageService: UnlinkedPageService,
+    sitesService: SitesService
   ) {
     this.apiService = apiService
     this.users = users
@@ -61,6 +71,8 @@ export default class ReviewRequestService {
     this.reviewers = reviewers
     this.reviewMeta = reviewMeta
     this.reviewRequestView = reviewRequestView
+    this.pageService = pageService
+    this.sitesService = sitesService
   }
 
   compareDiff = async (
@@ -75,35 +87,61 @@ export default class ReviewRequestService {
     const { files, commits } = await this.apiService.getCommitDiff(siteName)
 
     const mappings = await this.computeShaMappings(commits)
+    const possibleSiteUrl = await this.sitesService.getStagingUrl(sessionData)
 
-    return files.map(({ filename, contents_url }) => {
-      const fullPath = filename.split("/")
-      const items = contents_url.split("?ref=")
-      // NOTE: We have to compute sha this way rather than
-      // taking the file sha.
-      // This is because the sha present on the file is
-      // a checksum of the files contents.
-      // And the actual commit sha is given by the ref param
-      const sha = items[items.length - 1]
+    return Promise.all(
+      files.map(async ({ filename, contents_url }) => {
+        const fullPath = filename.split("/")
+        const items = contents_url.split("?ref=")
+        // NOTE: We have to compute sha this way rather than
+        // taking the file sha.
+        // This is because the sha present on the file is
+        // a checksum of the files contents.
+        // And the actual commit sha is given by the ref param
+        const sha = items[items.length - 1]
+        const possibleFileUrl =
+          possibleSiteUrl instanceof NotFoundError
+            ? ""
+            : await this.computeFileUrl(sessionData, filename, possibleSiteUrl)
+        const url = possibleFileUrl || ""
 
-      return {
-        type: this.computeFileType(filename),
-        // NOTE: The string is guaranteed to be non-empty
-        // and hence this should exist.
-        name: fullPath.pop() || "",
-        // NOTE: pop alters in place
-        path: fullPath,
-        url: this.computeFileUrl(filename, siteName),
-        lastEditedBy: mappings[sha]?.author || "Unknown user",
-        lastEditedTime: mappings[sha]?.unixTime || 0,
-      }
-    })
+        return {
+          type: this.computeFileType(filename),
+          // NOTE: The string is guaranteed to be non-empty
+          // and hence this should exist.
+          name: fullPath.pop() || "",
+          // NOTE: pop alters in place
+          path: fullPath,
+          url,
+          lastEditedBy: mappings[sha]?.author || "Unknown user",
+          lastEditedTime: mappings[sha]?.unixTime || 0,
+        }
+      })
+    )
   }
 
   // TODO
   computeFileType = (filename: string): FileType[] => ["page"]
 
-  computeFileUrl = (filename: string, siteName: string) => "www.google.com"
+  computeFileUrl = async (
+    sessionData: UserWithSiteSessionData,
+    fileName: string,
+    baseUrl: string
+  ): Promise<string | undefined> => {
+    // NOTE: frontMatter is typed as `any` but its actual type is string
+    const {
+      content: { frontMatter: _frontMatter },
+    } = await this.pageService.read(sessionData, {
+      fileName,
+    })
+    const frontMatter = _frontMatter as string
+    const permalink = frontMatter
+      .split("\n")
+      .find((s) => s.startsWith("permalink"))
+      ?.split(" ")
+      .at(1)
+    return permalink && `${baseUrl}/${permalink}`
+  }
 
   computeShaMappings = async (
     commits: Commit[]

@@ -17,7 +17,8 @@ module.exports = {
       },
       type: {
         allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.ENUM,
+        values: ["CNAME", "A"],
       },
       source: {
         allowNull: false,
@@ -37,9 +38,14 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn("NOW"),
       },
+      deleted_at: {
+        allowNull: true,
+        type: Sequelize.DATE,
+      },
     })
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("redirects")
+    await queryInterface.dropTable("redirections")
+    await queryInterface.sequelize.query('DROP TYPE "enum_redirections_type";')
   },
 }

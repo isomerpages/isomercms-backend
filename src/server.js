@@ -27,10 +27,14 @@ import DeploymentsService from "@services/identity/DeploymentsService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
+import QueueService from "../build/src/services/identity/QueueService"
+
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import LaunchClient from "./services/identity/LaunchClient"
+import LaunchesService from "./services/identity/LaunchesService"
 
 const path = require("path")
 
@@ -63,6 +67,7 @@ const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
 
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
+const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { GitHubService } = require("@services/db/GitHubService")
@@ -74,11 +79,25 @@ const { AuthService } = require("@services/utilServices/AuthService")
 const authService = new AuthService({ usersService })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
+const launchClient = new LaunchClient()
+const launchesService = new LaunchesService({
+  launchesRepository: Launch,
+  repoRepository: Repo,
+  deploymentRepository: Deployment,
+  redirectionsRepository: Redirection,
+  launchClient,
+})
+const queueService = new QueueService()
 const infraService = new InfraService({
   sitesService,
   reposService,
   deploymentsService,
+  launchesService,
+  queueService,
 })
+
+// poller for incoming queue
+infraService.pollQueue()
 
 const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
@@ -111,6 +130,10 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
 })
 const authV2Router = new AuthRouter({ authMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
+const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
+  usersService,
+  infraService,
+})
 
 const app = express()
 app.use(helmet())
@@ -148,6 +171,7 @@ app.use("/v2", authenticatedSubrouterV2)
 
 // FormSG Backend handler routes
 app.use("/formsg", formsgRouter.getRouter())
+app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

@@ -7,6 +7,7 @@ import {
   UpdatedAt,
   ForeignKey,
   BelongsTo,
+  DeletedAt,
 } from "sequelize-typescript"
 
 import { Launch } from "@root/database/models/Launch"
@@ -54,4 +55,7 @@ export class Redirection extends Model {
 
   @UpdatedAt
   updatedAt!: Date
+
+  @DeletedAt
+  deletedAt!: Date
 }

@@ -8,7 +8,7 @@
     "dev:services": "docker compose up -d",
     "dev": "concurrently -k -p \"[{name}]\" -n \"API,Serverless\" -c \"green.bold,yellow.bold\" \"npm run dev:api\" \"npm run dev:serverless\"",
     "dev:api": "source .env && ts-node-dev --respawn src/server.js",
-    "dev:serverless": "serverless offline start -s dev",
+    "dev:serverless": "source .env && serverless offline start -s dev",
     "test": "source .env.test && jest",
     "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",

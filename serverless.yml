@@ -17,6 +17,7 @@ provider:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     AWS_REGION: ${env:AWS_REGION}
+    NODE_ENV: ${env:NODE_DEV}
 
 custom:
   stepFunctionsLocal:
@@ -37,6 +38,8 @@ functions:
     handler: handler.successNotification
   failureNotification:
     handler: handler.failureNotification
+  stepFunctionsTrigger:
+    handler: handler.stepFunctionsTrigger
 
 stepFunctions:
   stateMachines:

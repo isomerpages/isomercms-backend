@@ -282,7 +282,7 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      return res.status(400).send({
+      return res.status(404).send({
         message: "User is not a collaborator of this site!",
       })
     }
@@ -325,7 +325,7 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      return res.status(400).send({
+      return res.status(404).send({
         message: "User is not a collaborator of this site!",
       })
     }
@@ -783,7 +783,7 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      return res.status(400).send({
+      return res.status(404).send({
         message: "User is not a collaborator of this site!",
       })
     }

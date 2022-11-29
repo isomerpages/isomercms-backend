@@ -725,7 +725,53 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 2: Retrieve comments
+    // Step 2: Check that user exists.
+    // Having session data is proof that this user exists
+    // as otherwise, they would be rejected by our middleware
+    // Check if they are a collaborator
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
+    )
+
+    if (!role) {
+      logger.error({
+        message: "Insufficient permissions to retrieve review request comments",
+        method: "getComments",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).send({
+        message:
+          "Only collaborators of a site can view review request comments!",
+      })
+    }
+
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "getComments",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Retrieve comments
     const comments = await this.reviewRequestService.getComments(
       userWithSiteSessionData,
       site,
@@ -737,21 +783,86 @@ export class ReviewsRouter {
 
   createComment: RequestHandler<
     { siteName: string; requestId: number },
-    string,
+    ResponseErrorBody,
     { message: string },
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
-    const { requestId } = req.params
+    const { siteName, requestId } = req.params
     const { message } = req.body
     const { userWithSiteSessionData } = res.locals
+
+    // Step 1: Check that the site exists
+    const site = await this.sitesService.getBySiteName(siteName)
+    if (!site) {
+      logger.error({
+        message: "Invalid site requested",
+        method: "createComment",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(404).send({
+        message: "Please ensure that the site exists!",
+      })
+    }
+
+    // Step 2: Check that user exists.
+    // Having session data is proof that this user exists
+    // as otherwise, they would be rejected by our middleware
+    // Check if they are a collaborator
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
+    )
+
+    if (!role) {
+      logger.error({
+        message: "Insufficient permissions to retrieve review request comments",
+        method: "createComment",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).send({
+        message:
+          "Only collaborators of a site can view review request comments!",
+      })
+    }
+
+    // Step 3: Retrieve review request
+    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
+      site,
+      requestId
+    )
+
+    if (isIsomerError(possibleReviewRequest)) {
+      logger.error({
+        message: "Invalid review request requested",
+        method: "createComment",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+          requestId,
+        },
+      })
+      return res.status(404).json({ message: possibleReviewRequest.message })
+    }
+
+    // Step 4: Create comment
     await this.reviewRequestService.createComment(
       userWithSiteSessionData,
       requestId,
       message
     )
 
-    return res.status(200).send("OK")
+    return res.status(200).send()
   }
 
   markReviewRequestCommentsAsViewed: RequestHandler<

@@ -1,5 +1,5 @@
 service: isomercms
-
+useDotenv: true # to allow reading of .env file
 frameworkVersion: "3"
 
 plugins:
@@ -13,34 +13,38 @@ plugins:
 provider:
   name: aws
   runtime: nodejs14.x
+  region: ${env:AWS_REGION}
   environment:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     AWS_REGION: ${env:AWS_REGION}
-    NODE_ENV: ${env:NODE_DEV}
+    NODE_ENV: ${env:NODE_ENV}
 
 custom:
   stepFunctionsLocal:
-    accountId: 101010101010
-    region: us-east-1
+    accountId: ${env:AWS_ACCOUNT_NUMBER}
+    region: ${env:AWS_REGION}
     lambdaEndpoint: http://localhost:3002
     eventBridgeEvents:
       enabled: true
       endpoint: http://localhost:4010
-  sqsUrl: http://localhost:4566/000000000000/outgoing-queue-dev
+    sqsUrl: ${env:INCOMING_QUEUE_URL}
 
 functions:
   generalDomainValidation:
     handler: handler.generalDomainValidation
   primaryDomainValidation:
     handler: handler.primaryDomainValidation
+  redirectionDomainValidation:
+    handler: handler.redirectionDomainValidation
   successNotification:
     handler: handler.successNotification
   failureNotification:
     handler: handler.failureNotification
   stepFunctionsTrigger:
     handler: handler.stepFunctionsTrigger
-
+    events:
+      - sqs: arn:aws:sqs:${aws:region}:{aws:accountId}:outgoingQueueStaging
 stepFunctions:
   stateMachines:
     siteLaunch:

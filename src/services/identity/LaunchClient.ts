@@ -18,6 +18,8 @@ import logger from "@root/logger/logger"
 
 import logger from "@root/logger/logger"
 
+import logger from "@root/logger/logger"
+
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>
 

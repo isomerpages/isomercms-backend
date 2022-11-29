@@ -14,7 +14,7 @@ import { Redirection } from "@root/database/models/Redirection"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
-type SiteLaunchCreateParams = {
+export type SiteLaunchCreateParams = {
   userId: number
   siteId: number
   primaryDomainSource: string
@@ -73,7 +73,7 @@ export class LaunchesService {
       )
       const createRedirectionParams = {
         launchId: createLaunch.id,
-        type: RedirectionTypes.CNAME,
+        type: RedirectionTypes.A,
         source: createParams.redirectionDomainSource,
         target: createParams.primaryDomainTarget,
       }

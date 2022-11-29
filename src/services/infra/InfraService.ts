@@ -8,7 +8,10 @@ import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
 import DeploymentsService from "@services/identity/DeploymentsService"
-import LaunchesService from "@services/identity/LaunchesService"
+import {
+  SiteLaunchCreateParams,
+  LaunchesService,
+} from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 
@@ -277,17 +280,18 @@ export default class InfraService {
        * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
-      const redirectionDomainSource = `${redirectionDomainList?.[0].subDomainSetting?.prefix}.${primaryDomain}`
-
       const userId = agency.id
-      const newLaunchParams = {
+      const newLaunchParams: SiteLaunchCreateParams = {
         userId,
         siteId,
         primaryDomainSource: primaryDomain,
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
-        redirectionDomainSource,
+      }
+
+      if (redirectionDomainList?.length) {
+        newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
       }
 
       // Create launches records table
@@ -303,11 +307,12 @@ export default class InfraService {
         domainValidationTarget,
       }
 
-      if (redirectionDomainSource) {
+      if (newLaunchParams.redirectionDomainSource) {
         message.redirectionDomain = [
           {
-            source: redirectionDomainSource,
+            source: newLaunchParams.redirectionDomainSource,
             target: primaryDomainTarget,
+            type: RedirectionTypes.A,
           },
         ]
       }

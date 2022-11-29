@@ -1,6 +1,6 @@
 import { ModelStatic } from "sequelize"
 
-import { Deployment, Site, User } from "@database/models"
+import { Deployment, Site, User, Repo } from "@database/models"
 import {
   MOCK_COMMIT_MESSAGE_OBJECT_ONE,
   MOCK_COMMIT_MESSAGE_OBJECT_TWO,
@@ -536,9 +536,14 @@ describe("SitesService", () => {
       // Assert
       expect(actual).toBe(expected)
       expect(MockRepository.findOne).toBeCalledWith({
-        where: {
-          name: mockSiteName,
-        },
+        include: [
+          {
+            model: Repo,
+            where: {
+              name: mockSiteName,
+            },
+          },
+        ],
       })
     })
   })

@@ -11,7 +11,7 @@ import {
   INACTIVE_USER_THRESHOLD_DAYS,
 } from "@constants/constants"
 
-import { Whitelist, User, Site, SiteMember } from "@database/models"
+import { Whitelist, User, Site, SiteMember, Repo } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { ConflictError } from "@root/errors/ConflictError"
 import logger from "@root/logger/logger"
@@ -86,11 +86,16 @@ class CollaboratorsService {
     // However, the converse is possible, i.e. we can query the Sites table and retrieve joined
     // records from the Users table, along with the SiteMember records.
     const site = await this.siteRepository.findOne({
-      where: { name: siteName },
       include: [
         {
           model: User,
           as: "site_members",
+        },
+        {
+          model: Repo,
+          where: {
+            name: siteName,
+          },
         },
       ],
     })
@@ -179,11 +184,16 @@ class CollaboratorsService {
 
   delete = async (siteName: string, userId: string) => {
     const site = await this.siteRepository.findOne({
-      where: { name: siteName },
       include: [
         {
           model: User,
           as: "site_members",
+        },
+        {
+          model: Repo,
+          where: {
+            name: siteName,
+          },
         },
       ],
     })
@@ -216,13 +226,18 @@ class CollaboratorsService {
     userId: string
   ): Promise<CollaboratorRoles | null> => {
     const site = await this.siteRepository.findOne({
-      where: { name: siteName },
       include: [
         {
           model: User,
           as: "site_members",
           where: {
             id: userId,
+          },
+        },
+        {
+          model: Repo,
+          where: {
+            name: siteName,
           },
         },
       ],
@@ -237,11 +252,16 @@ class CollaboratorsService {
       inactiveLimit.getDate() - INACTIVE_USER_THRESHOLD_DAYS
     )
     const site = await this.siteRepository.findOne({
-      where: { name: siteName },
       include: [
         {
           model: User,
           as: "site_members",
+        },
+        {
+          model: Repo,
+          where: {
+            name: siteName,
+          },
         },
       ],
     })

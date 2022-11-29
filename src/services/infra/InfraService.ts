@@ -4,6 +4,7 @@ import { Err, err, Ok, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
+import { mailer } from "@root/../build/src/services/utilServices/MailClient"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
@@ -176,12 +177,14 @@ export default class InfraService {
   }
 
   launchSite = async (
+    requestor: User,
     agency: User,
     repoName: string,
     primaryDomain: string,
     subDomainSettings: SubDomainSettings
-  ): Promise<Err<never, unknown> | Ok<null, never>> => {
+  ): Promise<Err<never, unknown> | Ok<SiteLaunchCreateParams, never>> => {
     // call amplify to trigger site launch process
+    let newLaunchParams: SiteLaunchCreateParams
     try {
       // Set up domain association using LaunchesService
       const redirectionDomainResult = await this.launchesService.configureDomainInAmplify(
@@ -281,7 +284,7 @@ export default class InfraService {
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
       const userId = agency.id
-      const newLaunchParams: SiteLaunchCreateParams = {
+      newLaunchParams = {
         userId,
         siteId,
         primaryDomainSource: primaryDomain,
@@ -305,6 +308,9 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        requestorEmail: requestor.email ? requestor.email : "",
+        agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
+        success: true,
       }
 
       if (newLaunchParams.redirectionDomainSource) {
@@ -322,7 +328,7 @@ export default class InfraService {
       logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
       return err(error)
     }
-    return ok(null)
+    return ok(newLaunchParams)
   }
 
   siteUpdate = async () => {

@@ -9,6 +9,8 @@ export interface MessageBody {
   primaryDomainTarget: string
   domainValidationSource: string
   domainValidationTarget: string
+  requestorEmail: string
+  agencyEmail: string
   githubRedirectionUrl?: string
   redirectionDomain?: [
     {
@@ -18,6 +20,7 @@ export interface MessageBody {
     }
   ]
   success?: boolean
+  siteLaunchError?: string
 }
 
 export default class QueueService {

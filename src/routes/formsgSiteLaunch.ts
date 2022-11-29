@@ -46,8 +46,6 @@ export class FormsgSiteLaunchRouter {
       agencyEmail,
     } = formResponses
 
-    res.sendStatus(200) // we have received the form and obtained relevant fields
-
     const subDomainSettings = [
       {
         branchName: "master",
@@ -126,8 +124,13 @@ export class FormsgSiteLaunchRouter {
     )
 
     if (launchSite.isOk()) {
-      await this.sendVerificationDetails(requesterEmail, repoName, submissionId, 
-        primaryDomain, launchSite.value.primaryDomainTarget)
+      await this.sendVerificationDetails(
+        requesterEmail,
+        repoName,
+        submissionId,
+        primaryDomain,
+        launchSite.value.primaryDomainTarget
+      )
     } else {
       await this.sendLaunchError(
         requesterEmail,
@@ -189,11 +192,15 @@ export class FormsgSiteLaunchRouter {
   sendVerificationDetails = async (
     requestorEmail: string,
     repoName: string,
-    submissionId: string
+    submissionId: string,
+    domainValidationSource: string,
+    domainValidationTarget: string
   ): Promise<void> => {
-    const subject = `[Isomer] Launch site ${repoName} SUCCESS`
-    const html = `<p>Isomer site ${repoName} was launched successfully. (Form submission id [${submissionId}])</p>
-<p>You may now visit your live website. <a href="${PRIMARY_DOMAIN}">${PRIMARY_DOMAIN}</a> should be accessible within a few minutes.</p>
+    const subject = `[Isomer] Launch site ${repoName} domain validation`
+    const html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
+<p>Please set the following CNAME record:</p>
+<p>Source: ${domainValidationSource}</p>
+<p>Target: ${domainValidationTarget}</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
     await mailer.sendMail(requestorEmail, subject, html)
   }

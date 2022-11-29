@@ -9,17 +9,6 @@ import {
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
 
-
-import logger from "@root/logger/logger"
-
-import logger from "@root/logger/logger"
-
-import logger from "@root/logger/logger"
-
-import logger from "@root/logger/logger"
-
-import logger from "@root/logger/logger"
-
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>
 

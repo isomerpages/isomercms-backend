@@ -31,21 +31,26 @@ import {
   MOCK_SITE_ID_ONE,
   MOCK_REPO_NAME_ONE,
   MOCK_REPO_NAME_TWO,
+  MOCK_SITE_ID_TWO,
 } from "@fixtures/sites"
 import {
   MOCK_USER_DBENTRY_ONE,
   MOCK_USER_DBENTRY_THREE,
   MOCK_USER_DBENTRY_TWO,
   MOCK_USER_EMAIL_ONE,
+  MOCK_USER_EMAIL_THREE,
   MOCK_USER_EMAIL_TWO,
   MOCK_USER_ID_ONE,
   MOCK_USER_ID_TWO,
 } from "@fixtures/users"
 import { ReviewRequestStatus } from "@root/constants"
 import {
+  MOCK_GITHUB_COMMENT_BODY_ONE,
+  MOCK_GITHUB_COMMENT_BODY_TWO,
   MOCK_GITHUB_COMMIT_ALPHA_ONE,
   MOCK_GITHUB_COMMIT_ALPHA_THREE,
   MOCK_GITHUB_COMMIT_ALPHA_TWO,
+  MOCK_GITHUB_COMMIT_DATE_ONE,
   MOCK_GITHUB_COMMIT_DATE_THREE,
   MOCK_GITHUB_FILENAME_ALPHA_ONE,
   MOCK_GITHUB_FILENAME_ALPHA_TWO,
@@ -63,6 +68,7 @@ import {
   MOCK_PULL_REQUEST_ONE,
   MOCK_PULL_REQUEST_TITLE_ONE,
 } from "@root/fixtures/review"
+import { ReviewRequestDto } from "@root/types/dto/review"
 import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService } from "@services/identity"
@@ -486,17 +492,1380 @@ describe("Review Requests Router", () => {
     })
   })
 
-  describe("/viewed", () => {})
+  describe("/viewed", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_TWO,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_TWO,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
 
-  describe("/:requestId", () => {})
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await ReviewRequestView.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
 
-  describe("/:requestId/viewed", () => {})
+    it("should mark all existing review requests as viewed for the user", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
 
-  describe("/:requestId/merge", () => {})
+      // Pre-requisite checks
+      const countViews = await ReviewRequestView.count({
+        where: {
+          userId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(countViews).toEqual(0)
+      const countAnotherUserViews = await ReviewRequestView.count({
+        where: {
+          userId: MOCK_USER_ID_TWO,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(countAnotherUserViews).toEqual(0)
 
-  describe("/:requestId/approve", () => {})
+      // Act
+      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/viewed`)
 
-  describe("/:requestId/comments", () => {})
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const countViewsAfter = await ReviewRequestView.count({
+        where: {
+          userId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(countViewsAfter).toEqual(2)
+      const countAnotherUserViewsAfter = await ReviewRequestView.count({
+        where: {
+          userId: MOCK_USER_ID_TWO,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(countAnotherUserViewsAfter).toEqual(0)
+      const countTotalViewsAfter = await ReviewRequestView.count({
+        where: {},
+      })
+      expect(countTotalViewsAfter).toEqual(2)
+    })
 
-  describe("/:requestId/comments/viewedComments", () => {})
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(`/${MOCK_REPO_NAME_TWO}/viewed`)
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/viewed`)
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId GET", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await Reviewer.create({
+        requestId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should return the full details of a review request", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.get.mockResolvedValueOnce({
+        data: MOCK_PULL_REQUEST_ONE,
+      })
+      mockGenericAxios.get.mockResolvedValueOnce({
+        data: {
+          files: [
+            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
+            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
+          ],
+          commits: [
+            MOCK_GITHUB_COMMIT_ALPHA_ONE,
+            MOCK_GITHUB_COMMIT_ALPHA_TWO,
+            MOCK_GITHUB_COMMIT_ALPHA_THREE,
+          ],
+        },
+      })
+      const expected: ReviewRequestDto = {
+        reviewUrl: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+        title: MOCK_PULL_REQUEST_TITLE_ONE,
+        status: ReviewRequestStatus.Open,
+        requestor: MOCK_USER_EMAIL_ONE,
+        reviewers: [MOCK_USER_EMAIL_TWO],
+        reviewRequestedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
+        changedItems: [
+          {
+            type: ["page"],
+            name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
+            path: [],
+            url: "www.google.com",
+            lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          },
+          {
+            type: ["page"],
+            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
+            url: "www.google.com",
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          },
+        ],
+      }
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      expect(actual.body).toEqual({ reviewRequest: expected })
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).get(`/${MOCK_REPO_NAME_ONE}/123456`)
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId POST", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_TWO,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_TWO,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should update the review request successfully", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Pre-requisite checks
+      const reviewerCount = await Reviewer.count({
+        where: {},
+      })
+      expect(reviewerCount).toEqual(0)
+
+      // Act
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_ONE],
+        })
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const reviewerCountAfter = await Reviewer.count({
+        where: {},
+      })
+      expect(reviewerCountAfter).toEqual(1)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if the review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/123456`)
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 403 if user is not the original requestor", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(403)
+    })
+
+    it("should return 400 if provided reviewers are not admins of the site", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
+
+      // Assert
+      expect(actual.statusCode).toEqual(400)
+    })
+  })
+
+  describe("/:requestId DELETE", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await Reviewer.create({
+        requestId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+      })
+      await ReviewRequestView.create({
+        reviewRequestId: reviewRequest?.id,
+        userId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequestView.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should close the review request successfully", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.patch.mockResolvedValueOnce(null)
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if the review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/123456`)
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 403 if user is not the original requestor", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(403)
+    })
+
+    it("should return 403 if the user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(403)
+    })
+  })
+
+  describe("/:requestId/viewed", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_TWO,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_TWO,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await ReviewRequestView.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should mark the review request as viewed for the user", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Pre-requisite checks
+      const countViews = await ReviewRequestView.count({
+        where: {},
+      })
+      expect(countViews).toEqual(0)
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/viewed`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const countViewsAfter = await ReviewRequestView.count({
+        where: {
+          userId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(countViewsAfter).toEqual(1)
+      const countAnotherUserViewsAfter = await ReviewRequestView.count({
+        where: {
+          userId: MOCK_USER_ID_TWO,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(countAnotherUserViewsAfter).toEqual(0)
+      const countTotalViewsAfter = await ReviewRequestView.count({
+        where: {},
+      })
+      expect(countTotalViewsAfter).toEqual(1)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/viewed`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/viewed`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/123456/viewed`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId/merge", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await Reviewer.create({
+        requestId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+      await ReviewRequestView.create({
+        reviewRequestId: reviewRequest?.id,
+        siteId: MOCK_SITE_ID_ONE,
+        userId: MOCK_USER_ID_ONE,
+      })
+      await ReviewRequestView.create({
+        reviewRequestId: reviewRequest?.id,
+        siteId: MOCK_SITE_ID_ONE,
+        userId: MOCK_USER_ID_TWO,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should merge the pull request successfully", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.post.mockResolvedValueOnce(null)
+      mockGenericAxios.put.mockResolvedValueOnce(null)
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/merge`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(reviewRequest?.reviewStatus).toEqual(ReviewRequestStatus.Merged)
+      const countViews = await ReviewRequestView.count({
+        where: {},
+      })
+      expect(countViews).toEqual(0)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/merge`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/merge`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/123456/merge`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId/approve POST", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await Reviewer.create({
+        requestId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should allow the reviewer to approve the pull request", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(reviewRequest?.reviewStatus).toEqual(ReviewRequestStatus.Approved)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/123456/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 403 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(403)
+    })
+
+    it("should return 403 if site member is not a reviewer", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(403)
+    })
+  })
+
+  describe("/:requestId/approve DELETE", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+        reviewStatus: ReviewRequestStatus.Approved,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await Reviewer.create({
+        requestId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should allow the reviewer to unapprove the pull request", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(reviewRequest?.reviewStatus).toEqual(ReviewRequestStatus.Open)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/123456/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if the user is not a reviewer of the RR", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if the user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId/comments GET", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await Reviewer.create({
+        requestId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should retrieve the comments for the review request", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.get.mockResolvedValueOnce({
+        data: [MOCK_GITHUB_RAWCOMMENT_ONE, MOCK_GITHUB_RAWCOMMENT_TWO],
+      })
+      const expected = [
+        {
+          user: MOCK_USER_EMAIL_ONE,
+          message: MOCK_GITHUB_COMMENT_BODY_ONE,
+          createdAt: new Date(MOCK_GITHUB_COMMIT_DATE_ONE).getTime(),
+          isRead: false,
+        },
+        {
+          user: MOCK_USER_EMAIL_TWO,
+          message: MOCK_GITHUB_COMMENT_BODY_TWO,
+          createdAt: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          isRead: false,
+        },
+      ]
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      expect(actual.body).toEqual(expected)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_ONE}/123456/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId/comments POST", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+    })
+
+    it("should create a new comment for a review request", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.post.mockResolvedValueOnce(null)
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/123456/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
+
+  describe("/:requestId/comments/viewedComments", () => {
+    beforeAll(async () => {
+      await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_ONE,
+      })
+      const reviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      await ReviewMeta.create({
+        reviewId: reviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+
+      // Avoid race conditions when checking between expected and actual date values
+      jest.useFakeTimers("modern")
+      jest.setSystemTime(new Date(MOCK_GITHUB_COMMIT_DATE_ONE).getTime())
+    })
+
+    afterAll(async () => {
+      await ReviewMeta.destroy({
+        where: {},
+      })
+      await ReviewRequestView.destroy({
+        where: {},
+      })
+      await ReviewRequest.destroy({
+        where: {},
+      })
+      jest.useRealTimers()
+    })
+
+    it("should update last viewed timestamp when the user views the review request", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Pre-requisite checks
+      const countViews = await ReviewRequestView.count({
+        where: {},
+      })
+      expect(countViews).toEqual(0)
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments/viewedComments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      const reviewRequestView = await ReviewRequestView.findOne({
+        where: {
+          userId: MOCK_USER_ID_TWO,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      expect(reviewRequestView?.lastViewedAt).toEqual(
+        new Date(MOCK_GITHUB_COMMIT_DATE_ONE)
+      )
+    })
+
+    it("should return 404 if site is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments/viewedComments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if user is not a valid site member", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_THREE,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments/viewedComments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
+    it("should return 404 if review request is not found", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_ONE}/123456/comments/viewedComments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+  })
 })

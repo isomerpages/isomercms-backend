@@ -93,7 +93,6 @@ class CollaboratorsService {
         },
         {
           model: Repo,
-          required: true,
           where: {
             name: siteName,
           },
@@ -192,7 +191,6 @@ class CollaboratorsService {
         },
         {
           model: Repo,
-          required: true,
           where: {
             name: siteName,
           },
@@ -238,7 +236,6 @@ class CollaboratorsService {
         },
         {
           model: Repo,
-          required: true,
           where: {
             name: siteName,
           },
@@ -262,7 +259,6 @@ class CollaboratorsService {
         },
         {
           model: Repo,
-          required: true,
           where: {
             name: siteName,
           },

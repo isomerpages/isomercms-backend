@@ -539,7 +539,6 @@ describe("SitesService", () => {
         include: [
           {
             model: Repo,
-            required: true,
             where: {
               name: mockSiteName,
             },

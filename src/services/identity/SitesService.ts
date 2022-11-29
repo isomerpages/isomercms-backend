@@ -159,7 +159,6 @@ class SitesService {
       include: [
         {
           model: Repo,
-          required: true,
           where: {
             name: siteName,
           },
@@ -261,7 +260,6 @@ class SitesService {
         },
         {
           model: Repo,
-          required: true,
           where: {
             name: siteName,
           },

@@ -140,3 +140,17 @@ export const generateRouterForUserWithSite = (
   app.use(router)
   return generateFinalRouter(app)
 }
+
+export const generateRouterForDefaultUser = (router: Express) => {
+  const app = express()
+  app.use(attachDefaultUserSessionData)
+  app.use(router)
+  return generateFinalRouter(app)
+}
+
+export const generateRouterForDefaultUserWithSite = (router: Express) => {
+  const app = express()
+  app.use(attachDefaultUserSessionDataWithSite)
+  app.use(router)
+  return generateFinalRouter(app)
+}

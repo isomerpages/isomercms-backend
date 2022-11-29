@@ -32,8 +32,12 @@ functions:
     handler: handler.hello
   hithere:
     handler: handler.hithere
+  generalDomainValidation:
+    handler: handler.generalDomainValidation
+  primaryDomainValidation:
+    handler: handler.primaryDomainValidation
 
 stepFunctions:
   stateMachines:
-    foo:
-      definition: ${file(./src/serverlessfns/step-functions/first-step-function.asl.yaml)}
+    siteLaunchB:
+      definition: ${file(./microservices/site-launch/step-function-workflows/site-launch.asl.yaml)}

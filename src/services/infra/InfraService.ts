@@ -338,4 +338,29 @@ export default class InfraService {
   pollQueue = async () => {
     setInterval(this.siteUpdate, 30000)
   }
+
+  siteUpdate = async () => {
+    try {
+      const messages = await this.queueService.pollMessages()
+
+      await Promise.all(
+        messages.map(async (message) => {
+          const site = await this.sitesService.getBySiteName(message.repoName)
+          if (site) {
+            const updateSuccessSiteLaunchParams = {
+              id: site.id,
+              siteStatus: SiteStatus.Launched,
+              jobStatus: JobStatus.Running,
+            }
+            await this.sitesService.update(updateSuccessSiteLaunchParams)
+          }
+          await this.sitesService.update(updateSuccessSiteLaunchParams)
+        }
+      })
+    )
+  }
+
+  pollQueue = async () => {
+    setInterval(this.siteUpdate, 30000)
+  }
 }

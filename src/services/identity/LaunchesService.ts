@@ -124,6 +124,20 @@ export class LaunchesService {
     return ok(siteId)
   }
 
+  getSiteId = async (repoName: string) => {
+    const site = await this.repoRepository.findOne({
+      where: { name: repoName },
+    })
+    const siteId = site?.siteId
+
+    if (!siteId) {
+      const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
+      logger.error(error)
+      return err(error)
+    }
+    return ok(siteId)
+  }
+
   configureDomainInAmplify = async (
     repoName: string,
     domainName: string,
@@ -174,6 +188,30 @@ export class LaunchesService {
     domainName: string,
     appId: string
   ): Promise<GetDomainAssociationCommandOutput> => {
+    const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
+      appId,
+      domainName
+    )
+    return this.launchClient.sendGetDomainAssociationCommand(
+      getDomainAssociationOptions
+    )
+  }
+
+  async updateLaunchTable(updateParams: Partial<Launch> & Pick<Launch, "id">) {
+    return this.launchesRepository.update(updateParams, {
+      where: { id: updateParams.id },
+    })
+  }
+
+  async updateRedirectionTable(
+    updateParams: Partial<Redirection> & Pick<Redirection, "id">
+  ) {
+    return this.redirectionsRepository.update(updateParams, {
+      where: { id: updateParams.id },
+    })
+  }
+
+  getDomainAssociationRecord = async (domainName: string, appId: string) => {
     const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
       appId,
       domainName

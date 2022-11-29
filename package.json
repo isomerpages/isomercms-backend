@@ -8,7 +8,7 @@
     "dev:services": "docker compose up -d",
     "dev:server": "source .env && ts-node-dev --respawn src/server.js",
     "dev": "npm run dev:services && npm run dev:server",
-    "test": "source .env.test && jest",
+    "test": "source .env.test && jest --runInBand",
     "release": "npm version $npm_config_isomer_update && git push --tags",
     "lint": "npx eslint .",
     "lint-fix": "eslint --ignore-path .gitignore . --fix",

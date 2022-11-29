@@ -67,38 +67,6 @@ export default class QueueClient {
     ReceiptHandle: receiptHandle,
   })
 
-  deleteMessage = async (data: SQS.ReceiveMessageResult): Promise<void> => {
-    const receiptHandles = data?.Messages?.map(
-      (message) => message.ReceiptHandle
-    )
-    if (receiptHandles) {
-      const filteredReceiptHandles = receiptHandles.filter(
-        (x): x is string => x !== null
-      )
-      filteredReceiptHandles.forEach((receiptHandle) => {
-        try {
-          this.sqs.deleteMessage(
-            this.createDeleteMessageParams(receiptHandle),
-            (err) => {
-              if (err) {
-                logger.error(err)
-              }
-            }
-          )
-        } catch (err) {
-          logger.error(`error trying to delete message handle ${receiptHandle}`)
-        }
-      })
-    }
-  }
-
-  createDeleteMessageParams = (
-    receiptHandle: string
-  ): SQS.DeleteMessageRequest => ({
-    QueueUrl: this.incomingQueueUrl,
-    ReceiptHandle: receiptHandle,
-  })
-
   deleteMessage = async (data: SQS.ReceiveMessageResult) => {
     logger.info(`deleting message ${data}`)
     const receiptHandles = data?.Messages?.map(

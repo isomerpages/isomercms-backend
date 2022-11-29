@@ -14,6 +14,8 @@ import SitesService from "@services/identity/SitesService"
 
 import QueueService, { MessageBody } from "../identity/QueueService"
 
+const SITE_LAUNCH_UPDATE_INTERVAL = 30000
+
 interface InfraServiceProps {
   sitesService: SitesService
   reposService: ReposService
@@ -319,30 +321,8 @@ export default class InfraService {
   }
 
   siteUpdate = async () => {
-    const messages = await this.queueService.pollMessages()
-    await Promise.all(
-      messages.map(async (message) => {
-        const site = await this.sitesService.getBySiteName(message.repoName)
-        if (site) {
-          const updateSuccessSiteLaunchParams = {
-            id: site.id,
-            siteStatus: SiteStatus.Launched,
-            jobStatus: JobStatus.Running,
-          }
-          await this.sitesService.update(updateSuccessSiteLaunchParams)
-        }
-      })
-    )
-  }
-
-  pollQueue = async () => {
-    setInterval(this.siteUpdate, 30000)
-  }
-
-  siteUpdate = async () => {
     try {
       const messages = await this.queueService.pollMessages()
-
       await Promise.all(
         messages.map(async (message) => {
           const site = await this.sitesService.getBySiteName(message.repoName)
@@ -354,13 +334,14 @@ export default class InfraService {
             }
             await this.sitesService.update(updateSuccessSiteLaunchParams)
           }
-          await this.sitesService.update(updateSuccessSiteLaunchParams)
-        }
-      })
-    )
+        })
+      )
+    } catch (e) {
+      logger.error(e)
+    }
   }
 
   pollQueue = async () => {
-    setInterval(this.siteUpdate, 30000)
+    setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
   }
 }

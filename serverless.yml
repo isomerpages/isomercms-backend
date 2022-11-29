@@ -13,31 +13,32 @@ plugins:
 provider:
   name: aws
   runtime: nodejs14.x
+  environment:
+    INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
+    OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
+    AWS_REGION: ${env:AWS_REGION}
 
 custom:
   stepFunctionsLocal:
     accountId: 101010101010
     region: us-east-1
     lambdaEndpoint: http://localhost:3002
-    TaskResourceMapping:
-      Hello: arn:aws:lambda:us-east-1:101010101010:function:hello
-      Hithere: arn:aws:lambda:us-east-1:101010101010:function:hithere
     eventBridgeEvents:
       enabled: true
       endpoint: http://localhost:4010
   sqsUrl: http://localhost:4566/000000000000/outgoing-queue-dev
 
 functions:
-  hello:
-    handler: handler.hello
-  hithere:
-    handler: handler.hithere
   generalDomainValidation:
     handler: handler.generalDomainValidation
   primaryDomainValidation:
     handler: handler.primaryDomainValidation
+  successNotification:
+    handler: handler.successNotification
+  failureNotification:
+    handler: handler.failureNotification
 
 stepFunctions:
   stateMachines:
-    siteLaunchB:
+    siteLaunch:
       definition: ${file(./microservices/site-launch/step-function-workflows/site-launch.asl.yaml)}

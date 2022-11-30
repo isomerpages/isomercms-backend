@@ -20,6 +20,19 @@ export class AuthorizationMiddleware {
     autoBind(this)
   }
 
+  // Check whether a user is using email login or github login
+  verifyIsEmailUser: RequestHandler<
+    never,
+    unknown,
+    unknown,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res, next) => {
+    const { userWithSiteSessionData } = res.locals
+    if (!userWithSiteSessionData.isEmailUser()) return next("router")
+    return next()
+  }
+
   // Check whether a user is a site admin
   verifySiteAdmin: RequestHandler<
     never,

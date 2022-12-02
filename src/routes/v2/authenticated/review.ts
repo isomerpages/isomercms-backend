@@ -141,7 +141,7 @@ export class ReviewsRouter {
     // Step 3: Check if reviewers are admins of repo
     // Check if number of requested reviewers > 0
     if (reviewers.length === 0) {
-      res.status(400).json({
+      return res.status(400).json({
         message: "Please ensure that you have selected at least 1 reviewer!",
       })
     }

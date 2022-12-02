@@ -19,6 +19,30 @@ import {
 } from "@database/models"
 import { generateRouterForUserWithSite } from "@fixtures/app"
 import {
+  MOCK_GITHUB_COMMENT_BODY_ONE,
+  MOCK_GITHUB_COMMENT_BODY_TWO,
+  MOCK_GITHUB_COMMIT_ALPHA_ONE,
+  MOCK_GITHUB_COMMIT_ALPHA_THREE,
+  MOCK_GITHUB_COMMIT_ALPHA_TWO,
+  MOCK_GITHUB_COMMIT_DATE_ONE,
+  MOCK_GITHUB_COMMIT_DATE_THREE,
+  MOCK_GITHUB_FILENAME_ALPHA_ONE,
+  MOCK_GITHUB_FILENAME_ALPHA_TWO,
+  MOCK_GITHUB_FILEPATH_ALPHA_TWO,
+  MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
+  MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
+  MOCK_GITHUB_PULL_REQUEST_NUMBER,
+  MOCK_GITHUB_RAWCOMMENT_ONE,
+  MOCK_GITHUB_RAWCOMMENT_TWO,
+} from "@fixtures/github"
+import { MOCK_GITHUB_DATE_ONE } from "@fixtures/identity"
+import {
+  MOCK_PULL_REQUEST_BODY_ONE,
+  MOCK_PULL_REQUEST_CHANGED_FILES_ONE,
+  MOCK_PULL_REQUEST_ONE,
+  MOCK_PULL_REQUEST_TITLE_ONE,
+} from "@fixtures/review"
+import {
   MOCK_USER_SESSION_DATA_ONE,
   MOCK_USER_SESSION_DATA_THREE,
   MOCK_USER_SESSION_DATA_TWO,
@@ -44,30 +68,6 @@ import {
   MOCK_USER_ID_TWO,
 } from "@fixtures/users"
 import { ReviewRequestStatus } from "@root/constants"
-import {
-  MOCK_GITHUB_COMMENT_BODY_ONE,
-  MOCK_GITHUB_COMMENT_BODY_TWO,
-  MOCK_GITHUB_COMMIT_ALPHA_ONE,
-  MOCK_GITHUB_COMMIT_ALPHA_THREE,
-  MOCK_GITHUB_COMMIT_ALPHA_TWO,
-  MOCK_GITHUB_COMMIT_DATE_ONE,
-  MOCK_GITHUB_COMMIT_DATE_THREE,
-  MOCK_GITHUB_FILENAME_ALPHA_ONE,
-  MOCK_GITHUB_FILENAME_ALPHA_TWO,
-  MOCK_GITHUB_FILEPATH_ALPHA_TWO,
-  MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
-  MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
-  MOCK_GITHUB_PULL_REQUEST_NUMBER,
-  MOCK_GITHUB_RAWCOMMENT_ONE,
-  MOCK_GITHUB_RAWCOMMENT_TWO,
-} from "@root/fixtures/github"
-import { MOCK_GITHUB_DATE_ONE } from "@root/fixtures/identity"
-import {
-  MOCK_PULL_REQUEST_BODY_ONE,
-  MOCK_PULL_REQUEST_CHANGED_FILES_ONE,
-  MOCK_PULL_REQUEST_ONE,
-  MOCK_PULL_REQUEST_TITLE_ONE,
-} from "@root/fixtures/review"
 import { ReviewRequestDto } from "@root/types/dto/review"
 import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -118,7 +118,7 @@ subrouter.use("/:siteName", reviewsSubrouter)
 
 const mockGenericAxios = mockAxios.create()
 
-describe("Review Requests Router", () => {
+describe("Review Requests Integration Tests", () => {
   beforeAll(async () => {
     // NOTE: Because SitesService uses an axios instance,
     // we need to mock the axios instance using es5 named exports

@@ -1,12 +1,12 @@
 import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
-import express, { RequestHandler } from "express"
+import express, { RequestHandler, response } from "express"
 
 import logger from "@logger/logger"
 
 import InitializationError from "@errors/InitializationError"
 
-import { getField } from "@utils/formsg-utils"
+import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
@@ -21,6 +21,8 @@ const REPO_NAME_FIELD = "Repository Name"
 const PRIMARY_DOMAIN = "Primary Domain"
 const REDIRECTION_DOMAIN = "Redirection Domain"
 const AGENCY_EMAIL_FIELD = "Agency recipient"
+const SITE_LAUNCH_LIST =
+  "Site Launch Details (Root Domain (eg. blah.moe.edu.sg), Redirection domain, Repo name (eg. moe-standrewsjc), Agency Email)"
 
 export interface FormsgRouterProps {
   usersService: UsersService
@@ -36,6 +38,7 @@ interface FormResponsesProps {
   primaryDomain?: string
   redirectionDomain?: string
   agencyEmail?: string
+  siteLaunchDetails?: string[] | string[][]
 }
 export class FormsgSiteLaunchRouter {
   siteLaunch = async (formResponses: FormResponsesProps): Promise<void> => {
@@ -166,16 +169,26 @@ export class FormsgSiteLaunchRouter {
     // 1. Extract arguments
     const { submissionId } = req.body.data
     const { responses } = res.locals.submission
-    const formResponses: FormResponsesProps = {
-      submissionId,
-      requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
-      repoName: getField(responses, REPO_NAME_FIELD),
-      primaryDomain: getField(responses, PRIMARY_DOMAIN),
-      redirectionDomain: getField(responses, REDIRECTION_DOMAIN),
-      agencyEmail: getField(responses, AGENCY_EMAIL_FIELD),
-    }
+    const siteLaunchList = getFieldsFromTable(responses, SITE_LAUNCH_LIST)
+    const formResponses: FormResponsesProps[] = []
+    siteLaunchList?.forEach((element) => {
+      // todo some sort of input validation here for table values
+
+      const formResponse: FormResponsesProps = {
+        submissionId,
+        requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
+        repoName: element[2],
+        primaryDomain: element[0],
+        redirectionDomain: element[1] === "WWW" ? `www.${element[0]}` : "",
+        // if agency email not needed, use email from requester instead
+        agencyEmail: element[3]
+          ? element[3]
+          : getField(responses, REQUESTER_EMAIL_FIELD),
+      }
+      formResponses.push(formResponse)
+    })
     res.sendStatus(200) // we have received the form and obtained relevant field
-    this.siteLaunch(formResponses)
+    formResponses.forEach((formResponse) => this.siteLaunch(formResponse))
   }
 
   sendLaunchError = async (
@@ -203,7 +216,7 @@ export class FormsgSiteLaunchRouter {
     primaryDomainTarget: string,
     redirectionDomainSource?: string,
     redirectionDomainTarget?: string
-  ) : Promise<void> => {
+  ): Promise<void> => {
     const subject = `[Isomer] Launch site ${repoName} domain validation`
     let html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
 <p>Please set the following CNAME record:</p>

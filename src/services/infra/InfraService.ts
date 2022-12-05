@@ -5,7 +5,10 @@ import { Err, err, Ok, ok } from "neverthrow"
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import { mailer } from "@root/../build/src/services/utilServices/MailClient"
-import { MessageBody } from "@root/../microservices/site-launch/shared/types"
+import {
+  MessageBody,
+  SITE_LAUNCH_LAMBDA_STATUS,
+} from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
@@ -376,13 +379,13 @@ export default class InfraService {
           const failureEmailDetails = {
             subject: `Launch site ${message.repoName} FAILURE`,
             body: `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-            <p>Error: ${message.siteLaunchError}</p>
+            <p>Error: ${message.statusMetadata}</p>
             <p>This email was sent from the Isomer CMS backend.</p>
             `,
           }
 
           let emailDetails: { subject: string; body: string }
-          if (message.success) {
+          if (message.status) {
             emailDetails = successEmailDetails
           } else {
             updateSuccessSiteLaunchParams = {
@@ -400,7 +403,7 @@ export default class InfraService {
           )
 
           let params
-          if (message.success) {
+          if (message.status === SITE_LAUNCH_LAMBDA_STATUS.SUCCESS) {
             params = {
               id: site.id,
               siteStatus: SiteStatus.Launched,
@@ -414,7 +417,7 @@ export default class InfraService {
             params = { id: site.id, jobStatus: JobStatus.Failed }
             emailDetails.subject = `Launch site ${message.repoName} FAILURE`
             emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-          <p>Error: ${message.siteLaunchError}</p>
+          <p>Error: ${message.statusMetadata}</p>
           <p>This email was sent from the Isomer CMS backend.</p>
           `
           }

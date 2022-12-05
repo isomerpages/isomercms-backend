@@ -7,6 +7,7 @@ export enum SITE_LAUNCH_LAMBDA_TYPE {
 export enum SITE_LAUNCH_LAMBDA_STATUS {
   SUCCESS = "success",
   FAILURE = "failure",
+  PENDING = "pending",
 }
 
 export interface MessageBody {
@@ -26,6 +27,6 @@ export interface MessageBody {
       type: string
     }
   ]
-  success?: boolean
-  siteLaunchError?: string
+  status?: SITE_LAUNCH_LAMBDA_STATUS
+  statusMetadata?: string
 }

@@ -129,6 +129,19 @@ export default class InfraService {
     return url
   }
 
+  validateUrl(url: string): boolean {
+    const schema = Joi.string().domain()
+    if (
+      schema.validate(url).error &&
+      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
+      // therefore check if after removing it, it reports as a valid url
+      schema.validate(url.substring(1)).error
+    ) {
+      return false
+    }
+    return true
+  }
+
   parseDNSRecords = (
     record?: string
   ): Err<never, string> | Ok<dnsRecordDto, never> => {
@@ -140,24 +153,13 @@ export default class InfraService {
     const recordsInfo = record.split(" ")
 
     // type checking
-    const schema = Joi.string().domain()
     const sourceUrl = this.removeTrailingDot(recordsInfo[0])
-    if (
-      schema.validate(sourceUrl).error &&
-      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
-      // therefore check if after removing it, it reports as a valid url
-      schema.validate(sourceUrl.substring(1))
-    ) {
+    if (this.validateUrl(sourceUrl)) {
       return err(`Source url: "${sourceUrl}" was not a valid url`)
     }
 
     const targetUrl = this.removeTrailingDot(recordsInfo[2])
-    if (
-      schema.validate(targetUrl).error &&
-      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
-      // therefore check if after removing it, it reports as a valid url
-      schema.validate(sourceUrl.substring(1))
-    ) {
+    if (this.validateUrl(targetUrl)) {
       return err(`Target url "${targetUrl}" was not a valid url`)
     }
 
@@ -304,7 +306,6 @@ export default class InfraService {
         newLaunchParams
       )
       logger.info(`Created launch record in database:  ${launchesRecord}`)
-     
 
       const message: MessageBody = {
         repoName,
@@ -389,40 +390,40 @@ export default class InfraService {
             emailDetails.subject,
             emailDetails.body
           )
-        
-        let params
-        if (message.success) {
-          params = {
-            id: site.id,
-            siteStatus: SiteStatus.Launched,
-            jobStatus: JobStatus.Running,
-          }
-          emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
-          emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
+
+          let params
+          if (message.success) {
+            params = {
+              id: site.id,
+              siteStatus: SiteStatus.Launched,
+              jobStatus: JobStatus.Running,
+            }
+            emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
+            emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
           <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
           <p>This email was sent from the Isomer CMS backend.</p>`
-        } else {
-          params = { id: site.id, jobStatus: JobStatus.Failed }
-          emailDetails.subject = `Launch site ${message.repoName} FAILURE`
-          emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+          } else {
+            params = { id: site.id, jobStatus: JobStatus.Failed }
+            emailDetails.subject = `Launch site ${message.repoName} FAILURE`
+            emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
           <p>Error: ${message.siteLaunchError}</p>
           <p>This email was sent from the Isomer CMS backend.</p>
           `
+          }
+          await mailer.sendMail(
+            message.agencyEmail,
+            emailDetails.subject,
+            emailDetails.body
+          )
+          await mailer.sendMail(
+            message.requestorEmail,
+            emailDetails.subject,
+            emailDetails.body
+          )
+
+          await this.sitesService.update(updateSuccessSiteLaunchParams)
         }
-        await mailer.sendMail(
-          message.agencyEmail,
-          emailDetails.subject,
-          emailDetails.body
-        )
-        await mailer.sendMail(
-          message.requestorEmail,
-          emailDetails.subject,
-          emailDetails.body
-        )
-        
-        await this.sitesService.update(updateSuccessSiteLaunchParams)
-        }
-      }) 
+      })
     )
   }
 

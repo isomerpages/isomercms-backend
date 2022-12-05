@@ -129,7 +129,7 @@ export default class InfraService {
     return url
   }
 
-  validateUrl(url: string): boolean {
+  isValidUrl(url: string): boolean {
     const schema = Joi.string().domain()
     if (
       schema.validate(url).error &&
@@ -154,12 +154,16 @@ export default class InfraService {
 
     // type checking
     const sourceUrl = this.removeTrailingDot(recordsInfo[0])
-    if (this.validateUrl(sourceUrl)) {
+
+    // for the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net'.
+    // while this is not a valid URL, this is ok, as it is just an interim representation from Amplify.
+    const isSourceUrlEmpty = sourceUrl === ""
+    if (!isSourceUrlEmpty && !this.isValidUrl(sourceUrl)) {
       return err(`Source url: "${sourceUrl}" was not a valid url`)
     }
 
     const targetUrl = this.removeTrailingDot(recordsInfo[2])
-    if (this.validateUrl(targetUrl)) {
+    if (!this.isValidUrl(targetUrl)) {
       return err(`Target url "${targetUrl}" was not a valid url`)
     }
 
@@ -261,7 +265,11 @@ export default class InfraService {
 
       if (primaryDomainInfo.isErr()) {
         return err(
-          new AmplifyError("Missing primary domain info", repoName, appId)
+          new AmplifyError(
+            `Missing primary domain info${primaryDomainInfo.error}`,
+            repoName,
+            appId
+          )
         )
       }
 

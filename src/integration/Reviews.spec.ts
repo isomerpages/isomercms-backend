@@ -128,6 +128,10 @@ describe("Review Requests Integration Tests", () => {
       __esModule: true, // this property makes it work
       genericGitHubAxiosInstance: mockGenericAxios,
     }))
+
+    // We need to force the relevant tables to start from a clean slate
+    // Otherwise, some tests may fail due to the auto-incrementing IDs
+    // not starting from 1
     await User.sync({ force: true })
     await Site.sync({ force: true })
     await Repo.sync({ force: true })

@@ -56,6 +56,9 @@ const extractMobileOtp = (mobileBody: string): string =>
 
 describe("Users Router", () => {
   beforeAll(async () => {
+    // We need to force the relevant tables to start from a clean slate
+    // Otherwise, some tests may fail due to the auto-incrementing IDs
+    // not starting from 1
     await User.sync({ force: true })
     await Whitelist.sync({ force: true })
   })

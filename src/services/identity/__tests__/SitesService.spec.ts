@@ -129,10 +129,7 @@ describe("SitesService", () => {
         staging: MOCK_STAGING_URL_CONFIGYML,
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
       }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+
       const configYmlResponse = {
         content: {
           staging: MOCK_STAGING_URL_CONFIGYML,
@@ -144,7 +141,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.insertUrlsFromConfigYml(
-        initial,
+        {},
         mockSessionDataEmailUserWithSite
       )
 
@@ -160,7 +157,6 @@ describe("SitesService", () => {
         prod: MOCK_PRODUCTION_URL_DB,
       }
       const initial: SiteUrls = {
-        staging: "",
         prod: MOCK_PRODUCTION_URL_DB,
       }
       const configYmlResponse = {
@@ -191,7 +187,6 @@ describe("SitesService", () => {
       }
       const initial: SiteUrls = {
         staging: MOCK_STAGING_URL_DB,
-        prod: "",
       }
       const configYmlResponse = {
         content: {
@@ -238,13 +233,9 @@ describe("SitesService", () => {
     it("should not insert staging URL if it does not exist in config.yml", async () => {
       // Arrange
       const expected: SiteUrls = {
-        staging: "",
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
       }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+
       const configYmlResponse = {
         content: {
           prod: MOCK_PRODUCTION_URL_CONFIGYML,
@@ -255,7 +246,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.insertUrlsFromConfigYml(
-        initial,
+        {},
         mockSessionDataEmailUserWithSite
       )
 
@@ -268,11 +259,6 @@ describe("SitesService", () => {
       // Arrange
       const expected: SiteUrls = {
         staging: MOCK_STAGING_URL_CONFIGYML,
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
       }
       const configYmlResponse = {
         content: {
@@ -284,7 +270,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.insertUrlsFromConfigYml(
-        initial,
+        {},
         mockSessionDataEmailUserWithSite
       )
 
@@ -295,14 +281,8 @@ describe("SitesService", () => {
 
     it("should not insert URLs if config.yml does not contain both staging and production URLs", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const expected: SiteUrls = {}
+      const initial: SiteUrls = {}
       const configYmlResponse = {
         content: {},
         sha: "abc",
@@ -328,10 +308,7 @@ describe("SitesService", () => {
         staging: MOCK_STAGING_URL_GITHUB,
         prod: MOCK_PRODUCTION_URL_GITHUB,
       }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const initial: SiteUrls = {}
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
 
       // Act
@@ -352,7 +329,6 @@ describe("SitesService", () => {
         prod: MOCK_PRODUCTION_URL_DB,
       }
       const initial: SiteUrls = {
-        staging: "",
         prod: MOCK_PRODUCTION_URL_DB,
       }
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
@@ -376,7 +352,6 @@ describe("SitesService", () => {
       }
       const initial: SiteUrls = {
         staging: MOCK_STAGING_URL_DB,
-        prod: "",
       }
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
 
@@ -416,13 +391,9 @@ describe("SitesService", () => {
     it("should not insert staging URL if it does not exist in the description", async () => {
       // Arrange
       const expected: SiteUrls = {
-        staging: "",
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
       }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const initial: SiteUrls = {}
       const repoInfoWithoutStagingUrl = {
         description: `Production: ${MOCK_PRODUCTION_URL_CONFIGYML}`,
       }
@@ -445,12 +416,8 @@ describe("SitesService", () => {
       // Arrange
       const expected: SiteUrls = {
         staging: MOCK_STAGING_URL_CONFIGYML,
-        prod: "",
       }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const initial: SiteUrls = {}
       const repoInfoWithoutProductionUrl = {
         description: `Staging: ${MOCK_STAGING_URL_CONFIGYML}`,
       }
@@ -471,14 +438,8 @@ describe("SitesService", () => {
 
     it("should not insert URLs if description is empty", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const expected: SiteUrls = {}
+      const initial: SiteUrls = {}
       const repoInfoWithoutDescription = {
         description: "",
       }
@@ -499,14 +460,8 @@ describe("SitesService", () => {
 
     it("should not insert URLs if description is some gibberish", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const expected: SiteUrls = {}
+      const initial: SiteUrls = {}
       const repoInfoWithGibberishDescription = {
         description: "abcdefghijklmnopqrstuvwxyz-staging and-prod",
       }
@@ -783,18 +738,12 @@ describe("SitesService", () => {
       stagingUrl: MOCK_STAGING_URL_DB,
       productionUrl: MOCK_PRODUCTION_URL_DB,
     }
-    const emptyDeployment: Partial<Deployment> = {
-      stagingUrl: "",
-      productionUrl: "",
-    }
+    const emptyDeployment: Partial<Deployment> = {}
     const configYmlData: Partial<ConfigYmlData> = {
       staging: MOCK_STAGING_URL_CONFIGYML,
       prod: MOCK_PRODUCTION_URL_CONFIGYML,
     }
-    const emptyConfigYmlData: Partial<ConfigYmlData> = {
-      staging: "",
-      prod: "",
-    }
+    const emptyConfigYmlData: Partial<ConfigYmlData> = {}
     const gitHubUrls = {
       staging: MOCK_STAGING_URL_GITHUB,
       prod: MOCK_PRODUCTION_URL_GITHUB,

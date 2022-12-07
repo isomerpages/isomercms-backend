@@ -19,8 +19,20 @@ import UserSessionData from "@root/classes/UserSessionData"
 import { mockEmail, mockIsomerUserId } from "@root/fixtures/sessionData"
 import { getAuthorizationMiddleware } from "@root/middleware"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
+import { isomerRepoAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubService } from "@root/services/db/GitHubService"
+import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
+import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
+import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
+import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
+import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
+import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
+import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
+import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
+import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
@@ -35,18 +47,53 @@ const mockUpdatedAt = "now"
 const mockPermissions = { push: true }
 const mockPrivate = true
 
-const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
+const gitHubService = new GitHubService({
+  axiosInstance: isomerRepoAxiosInstance,
+})
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const identityAuthService = getIdentityAuthService(gitHubService)
+const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const collectionYmlService = new CollectionYmlService({ gitHubService })
+const homepageService = new HomepagePageService({ gitHubService })
+const footerYmlService = new FooterYmlService({ gitHubService })
+const collectionPageService = new CollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const subCollectionPageService = new SubcollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const contactUsService = new ContactUsPageService({
+  gitHubService,
+  footerYmlService,
+})
+const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const resourcePageService = new ResourcePageService({ gitHubService })
+const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
+  baseDirectoryService,
+  configYmlService,
+  gitHubService,
+})
+const pageService = new PageService({
+  contactUsService,
+  collectionPageService,
+  subCollectionPageService,
+  homepageService,
+  resourcePageService,
+  unlinkedPageService,
+  resourceRoomDirectoryService,
+})
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
   User,
   ReviewRequest,
   Reviewer,
   ReviewMeta,
-  ReviewRequestView
+  ReviewRequestView,
+  pageService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

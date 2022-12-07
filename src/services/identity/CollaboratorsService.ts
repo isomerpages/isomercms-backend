@@ -91,6 +91,10 @@ class CollaboratorsService {
         {
           model: User,
           as: "site_members",
+          attributes: {
+            // Hide PII such as contactNumber
+            exclude: ["contactNumber"],
+          },
         },
       ],
     })

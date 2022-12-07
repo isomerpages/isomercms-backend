@@ -321,6 +321,9 @@ export class PageService {
   ): ResultAsync<StagingPermalink, BaseIsomerError> => {
     const withPermalink = extractStagingPermalink(stagingLink)
     switch (pageName.kind) {
+      // NOTE: For both collections and subcollections,
+      // the service method will automatically append an `_`
+      // in front of the collection name (which is reflected in the raw name here).
       case "CollectionPage": {
         return withError(
           this.collectionPageService.read(sessionData, {

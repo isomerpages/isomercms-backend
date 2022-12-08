@@ -16,7 +16,7 @@ import {
   mockGithubSessionData,
   MOCK_USER_SESSION_DATA_ONE,
 } from "./sessionData"
-import { MOCK_SITE_NAME_ONE } from "./sites"
+import { MOCK_REPO_NAME_ONE } from "./sites"
 
 /**
  * @deprecated
@@ -93,7 +93,7 @@ const attachDefaultUserSessionDataWithSite: RequestHandler<
   }
 > = attachUserSessionDataWithSite(
   MOCK_USER_SESSION_DATA_ONE,
-  MOCK_SITE_NAME_ONE
+  MOCK_REPO_NAME_ONE
 )
 
 /**
@@ -137,6 +137,20 @@ export const generateRouterForUserWithSite = (
 ) => {
   const app = express()
   app.use(attachUserSessionDataWithSite(userSessionData, siteName))
+  app.use(router)
+  return generateFinalRouter(app)
+}
+
+export const generateRouterForDefaultUser = (router: Express) => {
+  const app = express()
+  app.use(attachDefaultUserSessionData)
+  app.use(router)
+  return generateFinalRouter(app)
+}
+
+export const generateRouterForDefaultUserWithSite = (router: Express) => {
+  const app = express()
+  app.use(attachDefaultUserSessionDataWithSite)
   app.use(router)
   return generateFinalRouter(app)
 }

@@ -109,6 +109,14 @@ describe("Sites Router", () => {
 
   describe("/", () => {
     beforeAll(async () => {
+      // We need to force the relevant tables to start from a clean slate
+      // Otherwise, some tests may fail due to the auto-incrementing IDs
+      // not starting from 1
+      await User.sync({ force: true })
+      await Site.sync({ force: true })
+      await Repo.sync({ force: true })
+      await SiteMember.sync({ force: true })
+
       // Set up User and Site table entries
       await User.create({
         id: mockIsomerUserId,

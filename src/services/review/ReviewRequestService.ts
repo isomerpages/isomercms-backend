@@ -529,7 +529,7 @@ export default class ReviewRequestService {
     { reviewers }: RequestChangeInfo
   ) => {
     // Update db state with new reviewers
-    reviewRequest.$set("reviewers", reviewers)
+    await reviewRequest.$set("reviewers", reviewers)
     await reviewRequest.save()
   }
 

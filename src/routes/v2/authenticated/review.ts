@@ -811,11 +811,6 @@ export class ReviewsRouter {
       })
     }
 
-    // Check state here to ensure it's open
-    if (possibleReviewRequest.reviewStatus !== ReviewRequestStatus.Open) {
-      // return 400
-    }
-
     // Step 4: Approve review request
     // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if

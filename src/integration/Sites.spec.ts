@@ -163,7 +163,6 @@ describe("Sites Router", () => {
       await Site.sync({ force: true })
       await Repo.sync({ force: true })
       await SiteMember.sync({ force: true })
-
       // Set up User and Site table entries
       await User.create({
         id: mockIsomerUserId,

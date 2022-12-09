@@ -386,7 +386,7 @@ export default class ReviewRequestService {
   deleteAllReviewRequestViews = async (
     site: Site,
     pullRequestNumber: number
-  ): Promise<void | RequestNotFoundError> => {
+  ): Promise<number | RequestNotFoundError> => {
     const possibleReviewRequest = await this.getReviewRequest(
       site,
       pullRequestNumber
@@ -398,7 +398,7 @@ export default class ReviewRequestService {
 
     const { id: reviewRequestId } = possibleReviewRequest
 
-    this.reviewRequestView.destroy({
+    return this.reviewRequestView.destroy({
       where: {
         reviewRequestId,
         siteId: site.id,

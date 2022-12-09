@@ -11,6 +11,7 @@ import {
   GH_MAX_REPO_COUNT,
   ISOMER_ADMIN_REPOS,
 } from "@root/constants"
+import DatabaseError from "@root/errors/DatabaseError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import MissingUserError from "@root/errors/MissingUserError"
@@ -253,62 +254,66 @@ class SitesService {
       .orElse(() => okAsync(this.extractAuthorEmail(commit)))
   }
 
+  // Tries to get the site urls in the following order:
+  // 1. From the deployments database table
+  // 2. From the config.yml file
+  // 3. From the GitHub repository description
+  // Otherwise, returns a NotFoundError
   getUrlsOfSite(
     sessionData: UserWithSiteSessionData
   ): ResultAsync<SiteUrls, NotFoundError> {
-    // Tries to get the site urls in the following order:
-    // 1. From the deployments database table
-    // 2. From the config.yml file
-    // 3. From the GitHub repository description
-    // Otherwise, returns a NotFoundError
-    const { siteName } = sessionData
-
-    return ResultAsync.fromPromise(
-      this.siteRepository.findOne({
-        include: [
-          {
-            model: Deployment,
-            as: "deployment",
-          },
-          {
-            model: Repo,
-            where: {
-              name: siteName,
+    return (
+      ResultAsync.fromPromise(
+        this.siteRepository.findOne({
+          include: [
+            {
+              model: Deployment,
+              as: "deployment",
             },
-          },
-        ],
-      }),
-      () => new MissingSiteError()
-    )
-      .andThen((site) =>
-        site ? okAsync(site) : errAsync(new MissingSiteError())
+            {
+              model: Repo,
+              where: {
+                name: sessionData.siteName,
+              },
+            },
+          ],
+        }),
+        () => new DatabaseError()
       )
-      .andThen(({ deployment }) =>
-        deployment
-          ? okAsync(deployment)
-          : okAsync({ stagingUrl: undefined, productionUrl: undefined })
-      )
-      .andThen(({ stagingUrl, productionUrl }) => {
-        const siteUrls = {
-          staging: stagingUrl,
-          prod: productionUrl,
-        }
+        .orElse(() => okAsync(null))
+        // NOTE: Even if the site does not exist, we still continue on with the flow.
+        // This is because only migrated sites will have a db entry
+        // and legacy sites using github login will not.
+        // Hence, for such sites, extract their URLs through
+        // the _config.yml or github description
+        .andThen((site) =>
+          site?.deployment
+            ? okAsync(site.deployment)
+            : okAsync({ stagingUrl: undefined, productionUrl: undefined })
+        )
+        .andThen(({ stagingUrl, productionUrl }) => {
+          const siteUrls = {
+            staging: stagingUrl,
+            prod: productionUrl,
+          }
 
-        return this.insertUrlsFromConfigYml(siteUrls, sessionData)
-          .map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
-          .orElse(() =>
-            this.insertUrlsFromGitHubDescription(
-              siteUrls,
-              sessionData
-            ).map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
-          )
-      })
-      .andThen((siteUrls) =>
-        this.insertUrlsFromGitHubDescription(
-          siteUrls,
-          sessionData
-        ).map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
-      )
+          return this.insertUrlsFromConfigYml(siteUrls, sessionData)
+            .map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
+            .orElse(() => okAsync(siteUrls))
+        })
+        .andThen((siteUrls) =>
+          this.insertUrlsFromGitHubDescription(
+            siteUrls,
+            sessionData
+          ).map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
+        )
+        .andThen(({ staging, prod }) => {
+          if (!staging && !prod) {
+            return errAsync(new MissingSiteError())
+          }
+          return okAsync({ staging, prod })
+        })
+    )
   }
 
   async getSites(sessionData: UserSessionData): Promise<RepositoryData[]> {
@@ -388,7 +393,7 @@ class SitesService {
 
   getStagingUrl(
     sessionData: UserWithSiteSessionData
-  ): ResultAsync<StagingPermalink, NotFoundError> {
+  ): ResultAsync<StagingPermalink, NotFoundError | MissingSiteError> {
     return this.getUrlsOfSite(sessionData).andThen(({ staging }) =>
       staging ? okAsync(staging) : errAsync(new NotFoundError())
     )
@@ -396,7 +401,7 @@ class SitesService {
 
   getSiteUrl(
     sessionData: UserWithSiteSessionData
-  ): ResultAsync<ProdPermalink, NotFoundError> {
+  ): ResultAsync<ProdPermalink, NotFoundError | MissingSiteError> {
     return this.getUrlsOfSite(sessionData).andThen(({ prod }) =>
       prod ? okAsync(prod) : errAsync(new NotFoundError())
     )
@@ -429,6 +434,7 @@ class SitesService {
       if (this.isGitHubCommitData(possibleCommit)) {
         return okAsync(possibleCommit)
       }
+      console.log("=======", possibleCommit)
       return errAsync(
         new UnprocessableError("Unable to retrieve GitHub commit info")
       )
@@ -479,6 +485,16 @@ class SitesService {
           siteUrl: urls.prod || "",
           ...partialSiteInfo,
         }))
+      )
+      .map((siteInfo) =>
+        _.pick(siteInfo, [
+          "savedAt",
+          "savedBy",
+          "publishedAt",
+          "publishedBy",
+          "siteUrl",
+          "stagingUrl",
+        ])
       )
   }
 }

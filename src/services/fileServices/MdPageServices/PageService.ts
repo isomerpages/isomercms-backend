@@ -1,7 +1,7 @@
-import _ from "lodash"
 import { ok, err, Result, ResultAsync, okAsync, errAsync } from "neverthrow"
 
 import UserSessionData from "@root/classes/UserSessionData"
+import { HOMEPAGE_NAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
@@ -167,7 +167,7 @@ export class PageService {
   ): Result<HomepageName, NotFoundError> =>
     this.extractPathInfo(pageName).andThen<HomepageName, NotFoundError>(
       ({ name, path }) => {
-        if (path.isErr() && name === "index.md") {
+        if (path.isErr() && name === HOMEPAGE_NAME) {
           return ok({ name: Brand.fromString(name), kind: "Homepage" })
         }
         return err(new NotFoundError())

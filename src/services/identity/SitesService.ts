@@ -434,7 +434,6 @@ class SitesService {
       if (this.isGitHubCommitData(possibleCommit)) {
         return okAsync(possibleCommit)
       }
-      console.log("=======", possibleCommit)
       return errAsync(
         new UnprocessableError("Unable to retrieve GitHub commit info")
       )

@@ -145,19 +145,22 @@ export class PageService {
           if (rawPath.length > 2) {
             return errAsync(new NotFoundError())
           }
-          if (rawPath.length === 1) {
+          if (rawPath.length === 1 && !!rawPath[0]) {
             return okAsync({
               name: Brand.fromString(name),
               collection: rawPath[0],
               kind: "CollectionPage",
             })
           }
-          return okAsync({
-            name: Brand.fromString(name),
-            collection: rawPath[0],
-            subCollection: rawPath[1],
-            kind: "SubcollectionPage",
-          })
+          if (rawPath.length === 2 && !!rawPath[0] && !!rawPath[1]) {
+            return okAsync({
+              name: Brand.fromString(name),
+              collection: rawPath[0],
+              subCollection: rawPath[1],
+              kind: "SubcollectionPage",
+            })
+          }
+          return errAsync(new NotFoundError())
         })
       )
       .mapErr(() => new NotFoundError())

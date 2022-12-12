@@ -17,7 +17,7 @@ export type ResourceRoomName = {
 export type SubcollectionPageName = {
   name: string & { __kind: "SubcollectionPage" }
   collection: string
-  subCollection: string
+  subcollection: string
   kind: "SubcollectionPage"
 }
 

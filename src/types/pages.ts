@@ -110,7 +110,7 @@ export type ProdPermalink = Brand<string, "prod">
 
 // NOTE: This is not `frontMatter.permalink` as this
 // also includes the respective base url in front.
-export type Permalink = StagingPermalink | ProdPermalink
+export type FullPermalink = StagingPermalink | ProdPermalink
 
 export type PathInfo = {
   name: string

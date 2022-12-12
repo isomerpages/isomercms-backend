@@ -38,7 +38,7 @@ import { UnlinkedPageService } from "./UnlinkedPageService"
 // this should return a sum type of the possible errors.
 // This is (at a glance), either a failure to read from github
 // or the parsing fails (we have a sentinel value of an empty string)
-const withError = (promise: Promise<PageInfo>) =>
+const withErrorHandler = (promise: Promise<PageInfo>) =>
   ResultAsync.fromPromise(promise, () => new BaseIsomerError()).andThen(
     (data) =>
       // NOTE: This is a fail-safe check as `yaml.parse`
@@ -325,7 +325,7 @@ export class PageService {
       // the service method will automatically append an `_`
       // in front of the collection name (which is reflected in the raw name here).
       case "CollectionPage": {
-        return withError(
+        return withErrorHandler(
           this.collectionPageService.read(sessionData, {
             fileName: pageName.name,
             collectionName: pageName.collection.slice(1),
@@ -333,7 +333,7 @@ export class PageService {
         ).map(withPermalink)
       }
       case "SubcollectionPage": {
-        return withError(
+        return withErrorHandler(
           this.subCollectionPageService.read(sessionData, {
             fileName: pageName.name,
             collectionName: pageName.collection.slice(1),
@@ -342,7 +342,7 @@ export class PageService {
         ).map(withPermalink)
       }
       case "ResourceCategoryPage": {
-        return withError(
+        return withErrorHandler(
           this.resourcePageService.read(sessionData, {
             fileName: pageName.name,
             resourceCategoryName: pageName.resourceCategory,
@@ -351,21 +351,21 @@ export class PageService {
         ).map(withPermalink)
       }
       case "Homepage": {
-        return withError(
+        return withErrorHandler(
           this.homepageService
             .read(sessionData)
             .then((homepage) => homepage as Homepage)
         ).map(withPermalink)
       }
       case "ContactUsPage": {
-        return withError(
+        return withErrorHandler(
           this.contactUsService
             .read(sessionData)
             .then((contactUsPage) => contactUsPage as ContactUsPage)
         ).map(withPermalink)
       }
       case "UnlinkedPage": {
-        return withError(
+        return withErrorHandler(
           this.unlinkedPageService.read(sessionData, {
             fileName: pageName.name,
           })

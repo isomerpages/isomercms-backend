@@ -1,7 +1,7 @@
 import { ok, err, Result, ResultAsync, okAsync, errAsync } from "neverthrow"
 
 import UserSessionData from "@root/classes/UserSessionData"
-import { HOMEPAGE_NAME } from "@root/constants"
+import { CONTACT_US_FILENAME, HOMEPAGE_NAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
@@ -187,7 +187,7 @@ export class PageService {
         if (
           path.isOk() &&
           path.value.pop() === "pages" &&
-          name === "contact-us.md"
+          name === CONTACT_US_FILENAME
         ) {
           return ok({ name: Brand.fromString(name), kind: "ContactUsPage" })
         }

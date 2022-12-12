@@ -156,7 +156,7 @@ export class PageService {
             return okAsync({
               name: Brand.fromString(name),
               collection: rawPath[0],
-              subCollection: rawPath[1],
+              subcollection: rawPath[1],
               kind: "SubcollectionPage",
             })
           }
@@ -346,7 +346,7 @@ export class PageService {
             .read(sessionData, {
               fileName: pageName.name,
               collectionName: pageName.collection.slice(1),
-              subcollectionName: pageName.subCollection,
+              subcollectionName: pageName.subcollection,
             })
             .then((subcollectionPage) => subcollectionPage as SubcollectionPage)
         ).map(withPermalink)

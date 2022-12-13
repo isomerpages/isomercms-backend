@@ -60,6 +60,6 @@ export interface GithubCommentData {
 }
 
 export interface BlobDiffDto {
-  old: string
-  new: string
+  oldValue: string
+  newValue: string
 }

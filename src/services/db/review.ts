@@ -138,7 +138,7 @@ export const getBlob = async (
   axiosInstance
     .get<string>(`${repo}/contents/${path}?ref=${ref}`, {
       headers: {
-        Accept: "application/vnd.github.VERSION.raw",
+        Accept: "application/vnd.github.raw",
       },
     })
     .then(({ data }) => data)

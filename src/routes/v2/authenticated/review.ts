@@ -1045,12 +1045,12 @@ export class ReviewsRouter {
     // NOTE: Currently, Isomer only allows comparisons between staging and production.
     // This might change in the future and in that case, the `getBlob` method call below
     // should have the corresponding ref (`master` or `staging`) changed.
-    const prodPromise = await this.reviewRequestService.getBlob(
+    const prodPromise = this.reviewRequestService.getBlob(
       siteName,
       path,
       "master"
     )
-    const stagingPromise = await this.reviewRequestService.getBlob(
+    const stagingPromise = this.reviewRequestService.getBlob(
       siteName,
       path,
       "staging"
@@ -1059,8 +1059,8 @@ export class ReviewsRouter {
     const data = await Promise.all([prodPromise, stagingPromise])
 
     return res.status(200).json({
-      old: data[0],
-      new: data[1],
+      oldValue: data[0],
+      newValue: data[1],
     })
   }
 

@@ -58,3 +58,8 @@ export interface GithubCommentData {
   message: string
   createdAt: string
 }
+
+export interface BlobDiffDto {
+  oldValue: string
+  newValue: string
+}

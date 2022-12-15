@@ -620,4 +620,7 @@ export default class ReviewRequestService {
 
     return this.computeCommentData(comments, viewedTime)
   }
+
+  getBlob = async (repo: string, path: string, ref: string): Promise<string> =>
+    this.apiService.getBlob(repo, path, ref)
 }

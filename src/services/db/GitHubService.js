@@ -30,6 +30,10 @@ class GitHubService {
     return ReviewApi.getPullRequest(siteName, pullRequestNumber)
   }
 
+  getBlob(repo, path, ref) {
+    return ReviewApi.getBlob(repo, path, ref)
+  }
+
   updatePullRequest(siteName, pullRequestNumber, title, description) {
     return ReviewApi.updatePullRequest(
       siteName,

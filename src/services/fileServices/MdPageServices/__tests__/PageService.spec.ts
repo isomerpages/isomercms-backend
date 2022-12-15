@@ -1,6 +1,6 @@
 import { err, ok } from "neverthrow"
 
-import { CONTACT_US_FILENAME, HOMEPAGE_NAME } from "@root/constants"
+import { CONTACT_US_FILENAME, HOMEPAGE_FILENAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
@@ -82,7 +82,7 @@ describe("PageService", () => {
     it("should only accept 'index.md' as the homepage name", async () => {
       // Arrange
       const expected = ok({
-        name: HOMEPAGE_NAME,
+        name: HOMEPAGE_FILENAME,
         kind: "Homepage",
       })
 
@@ -263,7 +263,7 @@ describe("PageService", () => {
       // Act
       const actual = await pageService.parsePageName(
         // NOTE: Extra front slash
-        `/${HOMEPAGE_NAME}`,
+        `/${HOMEPAGE_FILENAME}`,
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -599,13 +599,13 @@ describe("PageService", () => {
     it("should call the underlying service and return the `permalink` of the homepage when successful", async () => {
       // Arrange
       const MOCK_PAGE_NAME: HomepageName = {
-        name: Brand.fromString(HOMEPAGE_NAME),
+        name: Brand.fromString(HOMEPAGE_FILENAME),
         kind: "Homepage",
       }
       mockHomepageService.read.mockResolvedValueOnce(
-        createMockFrontMatter(HOMEPAGE_NAME)
+        createMockFrontMatter(HOMEPAGE_FILENAME)
       )
-      const expected = ok(createMockStagingPermalink(HOMEPAGE_NAME))
+      const expected = ok(createMockStagingPermalink(HOMEPAGE_FILENAME))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -624,7 +624,7 @@ describe("PageService", () => {
     it("should call the underlying service and return a `BaseIsomerError` when the homepage could not be fetched", async () => {
       // Arrange
       const MOCK_PAGE_NAME: HomepageName = {
-        name: Brand.fromString(HOMEPAGE_NAME),
+        name: Brand.fromString(HOMEPAGE_FILENAME),
         kind: "Homepage",
       }
       mockHomepageService.read.mockRejectedValueOnce({})
@@ -647,7 +647,7 @@ describe("PageService", () => {
     it("should call the underlying service and return a `BaseIsomerError` when the frontmatter of the homepage has no `permalink`", async () => {
       // Arrange
       const MOCK_PAGE_NAME: HomepageName = {
-        name: Brand.fromString(HOMEPAGE_NAME),
+        name: Brand.fromString(HOMEPAGE_FILENAME),
         kind: "Homepage",
       }
       mockHomepageService.read.mockRejectedValueOnce({})

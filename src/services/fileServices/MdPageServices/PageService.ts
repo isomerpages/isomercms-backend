@@ -1,7 +1,7 @@
 import { ok, err, Result, ResultAsync, okAsync, errAsync } from "neverthrow"
 
 import UserSessionData from "@root/classes/UserSessionData"
-import { CONTACT_US_FILENAME, HOMEPAGE_NAME } from "@root/constants"
+import { CONTACT_US_FILENAME, HOMEPAGE_FILENAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
@@ -170,7 +170,7 @@ export class PageService {
   ): Result<HomepageName, NotFoundError> =>
     this.extractPathInfo(pageName).andThen<HomepageName, NotFoundError>(
       ({ name, path }) => {
-        if (path.isErr() && name === HOMEPAGE_NAME) {
+        if (path.isErr() && name === HOMEPAGE_FILENAME) {
           return ok({ name: Brand.fromString(name), kind: "Homepage" })
         }
         return err(new NotFoundError())

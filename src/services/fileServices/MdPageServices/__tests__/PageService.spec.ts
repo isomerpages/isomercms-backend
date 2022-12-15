@@ -390,7 +390,7 @@ describe("PageService", () => {
   })
 
   describe("extractPathInfo", () => {
-    it("should return a `PathInfo` with a valid path when the string provided is a valid filepath", async () => {
+    it("should return a `PathInfo` with a valid path when the string provided is a valid filepath", () => {
       // Arrange
       const expected = ok({
         name: MOCK_UNLINKED_PAGE_NAME,

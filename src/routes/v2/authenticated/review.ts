@@ -12,7 +12,7 @@ import {
 import UserSessionData from "@classes/UserSessionData"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-import { CollaboratorRoles } from "@root/constants"
+import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import { SiteMember, User } from "@root/database/models"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import NotificationsService from "@root/services/identity/NotificationsService"
@@ -540,7 +540,9 @@ export class ReviewsRouter {
         // is an identity feature, we assume that **all** users calling this endpoint
         // will have a valid email (guaranteed by our modal)
         collaborator.email &&
-        !!collaboratorMappings[collaborator.email]
+        !!collaboratorMappings[collaborator.email] &&
+        // NOTE: Prevent the requestor from adding themselves as a reviewer
+        collaborator.email !== requestor.email
     )
 
     if (verifiedReviewers.length !== reviewers.length) {
@@ -676,7 +678,11 @@ export class ReviewsRouter {
       requestId
     )
 
-    if (isIsomerError(possibleReviewRequest)) {
+    if (
+      isIsomerError(possibleReviewRequest) ||
+      // NOTE: Only allow approving review requests that are currently open
+      possibleReviewRequest.reviewStatus !== ReviewRequestStatus.Open
+    ) {
       logger.error({
         message: "Invalid review request requested",
         method: "approveReviewRequest",
@@ -696,7 +702,11 @@ export class ReviewsRouter {
     const { reviewers } = possibleReviewRequest
     const isReviewer = _.some(
       reviewers,
-      (user) => user.email === userWithSiteSessionData.email
+      (user) =>
+        user.email === userWithSiteSessionData.email &&
+        // NOTE: Check that the reviewer's email is not the requestor's email
+        // in order to prevent self approvals
+        user.email !== possibleReviewRequest.requestor.email
     )
 
     if (!isReviewer) {

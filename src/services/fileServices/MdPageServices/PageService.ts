@@ -141,10 +141,6 @@ export class PageService {
           CollectionPageName | SubcollectionPageName,
           NotFoundError
         >((rawPath) => {
-          // NOTE: Only 2 levels of nesting
-          if (rawPath.length > 2) {
-            return errAsync(new NotFoundError())
-          }
           if (rawPath.length === 1 && !!rawPath[0]) {
             return okAsync({
               name: Brand.fromString(name),

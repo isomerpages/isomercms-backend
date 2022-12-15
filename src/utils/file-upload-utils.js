@@ -1,10 +1,6 @@
-const createDOMPurify = require("dompurify")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
-const { JSDOM } = require("jsdom")
-
-const { window } = new JSDOM("")
-const DOMPurify = createDOMPurify(window)
+const DOMPurify = require("isomorphic-dompurify")
 
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",

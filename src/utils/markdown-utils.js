@@ -15,7 +15,7 @@ const retrieveDataFromMarkdown = (fileContent) => {
     fileContent
   ).split("---")
   const frontMatter = sanitizedYamlParse(encodedFrontMatter)
-  return { frontMatter, pageContent: pageContent.join("---") }
+  return { frontMatter, pageContent: pageContent.join("---").trim() }
 }
 
 const convertDataToMarkdown = (originalFrontMatter, pageContent) => {

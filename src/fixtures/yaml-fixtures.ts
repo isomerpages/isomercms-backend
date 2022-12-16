@@ -1,5 +1,4 @@
-export const normalYamlString = `
-logo: /path-to/logo.png
+export const normalYamlString = `logo: /path-to/logo.png
 links:
   - title: TitleA
     url: /title-a
@@ -13,8 +12,7 @@ links:
       - title: sublink-2
         url: /sublink-2
 `
-export const maliciousYamlString = `
-logo: /path-to/logo.png <script>alert('Logo')</script>
+export const maliciousYamlString = `logo: /path-to/logo.png <script>alert('Logo')</script>
 links:
   - title: TitleA<script>alert('Title A')</script>
     url: /title-a

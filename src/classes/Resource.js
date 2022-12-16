@@ -1,6 +1,5 @@
 const Bluebird = require("bluebird")
 const _ = require("lodash")
-const yaml = require("yaml")
 
 // Import classes
 const { NotFoundError } = require("@errors/NotFoundError")
@@ -18,6 +17,10 @@ const {
   sendTree,
   deslugifyCollectionName,
 } = require("@utils/utils.js")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 // Constants
 const RESOURCE_INDEX_PATH = "index.html"
@@ -47,7 +50,7 @@ class Resource {
       layout: "resources-alt",
       title: deslugifyCollectionName(resourceName),
     }
-    const resourceFrontMatter = yaml.stringify(resourceObject)
+    const resourceFrontMatter = sanitizedYamlStringify(resourceObject)
     const resourceIndexContent = ["---\n", resourceFrontMatter, "---"].join("")
     return IsomerFile.create(
       `${RESOURCE_INDEX_PATH}`,
@@ -108,9 +111,11 @@ class Resource {
     IsomerFile.setFileType(resourceType)
     const { content, sha } = await IsomerFile.read(RESOURCE_INDEX_PATH)
     const decodedContent = Base64.decode(content)
-    const resourceFrontMatterObj = yaml.parse(decodedContent.split("---")[1])
+    const resourceFrontMatterObj = sanitizedYamlParse(
+      decodedContent.split("---")[1]
+    )
     resourceFrontMatterObj.title = deslugifyCollectionName(newResourceName)
-    const resourceFrontMatter = yaml.stringify(resourceFrontMatterObj)
+    const resourceFrontMatter = sanitizedYamlStringify(resourceFrontMatterObj)
     const resourceIndexContent = ["---\n", resourceFrontMatter, "---"].join("")
     await IsomerFile.update(
       RESOURCE_INDEX_PATH,

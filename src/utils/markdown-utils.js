@@ -1,6 +1,10 @@
 const DOMPurify = require("isomorphic-dompurify")
 const _ = require("lodash")
-const yaml = require("yaml")
+
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const getTrailingSlashWithPermalink = (permalink) =>
   permalink.endsWith("/") ? permalink : `${permalink}/`
@@ -10,7 +14,7 @@ const retrieveDataFromMarkdown = (fileContent) => {
   const [unused, encodedFrontMatter, ...pageContent] = DOMPurify.sanitize(
     fileContent
   ).split("---")
-  const frontMatter = yaml.parse(encodedFrontMatter)
+  const frontMatter = sanitizedYamlParse(encodedFrontMatter)
   return { frontMatter, pageContent: pageContent.join("---") }
 }
 
@@ -20,7 +24,7 @@ const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   if (permalink) {
     frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
   }
-  const newFrontMatter = yaml.stringify(frontMatter)
+  const newFrontMatter = sanitizedYamlStringify(frontMatter)
   const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")
 
   return DOMPurify.sanitize(newContent)

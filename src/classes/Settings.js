@@ -1,11 +1,15 @@
 const Bluebird = require("bluebird")
 const { Base64 } = require("js-base64")
 const _ = require("lodash")
-const yaml = require("yaml")
 
 // import classes
 const { Config } = require("@classes/Config.js")
 const { File, DataType, HomepageType } = require("@classes/File.js")
+
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 // Constants
 const FOOTER_PATH = "footer.yml"
@@ -49,7 +53,7 @@ const retrieveSettingsFiles = async (
       // homepage requires special extraction as the content is wrapped in front matter
       if (fileOpKey === "homepage") {
         const homepageContent = Base64.decode(content)
-        const homepageFrontMatterObj = yaml.parse(
+        const homepageFrontMatterObj = sanitizedYamlParse(
           homepageContent.split("---")[1]
         )
         return { type: fileOpKey, content: homepageFrontMatterObj, sha }
@@ -57,7 +61,7 @@ const retrieveSettingsFiles = async (
 
       return {
         type: fileOpKey,
-        content: yaml.parse(Base64.decode(content)),
+        content: sanitizedYamlParse(Base64.decode(content)),
         sha,
       }
     }
@@ -209,7 +213,9 @@ class Settings {
 
     // To-do: use Git Tree to speed up operations
     if (!_.isEmpty(configSettings)) {
-      const newConfigContent = Base64.encode(yaml.stringify(configSettingsObj))
+      const newConfigContent = Base64.encode(
+        sanitizedYamlStringify(configSettingsObj)
+      )
       await configResp.update(newConfigContent, config.sha)
 
       // Update title and description in homepage as well if it's changed
@@ -222,7 +228,7 @@ class Settings {
         if (hasTitleChanged) homepageContentObj.title = configSettings.title
         if (hasDescriptionChanged)
           homepageContentObj.description = configSettings.description
-        const homepageFrontMatter = yaml.stringify(homepageContentObj)
+        const homepageFrontMatter = sanitizedYamlStringify(homepageContentObj)
 
         const homepageContent = ["---\n", homepageFrontMatter, "---"].join("")
         const newHomepageContent = Base64.encode(homepageContent)
@@ -232,13 +238,15 @@ class Settings {
     }
 
     if (!_.isEmpty(footerSettings)) {
-      const newFooterContent = Base64.encode(yaml.stringify(footerSettingsObj))
+      const newFooterContent = Base64.encode(
+        sanitizedYamlStringify(footerSettingsObj)
+      )
       await FooterFile.update(FOOTER_PATH, newFooterContent, footer.sha)
     }
 
     if (!_.isEmpty(navigationSettings)) {
       const newNavigationContent = Base64.encode(
-        yaml.stringify(navigationSettingsObj)
+        sanitizedYamlStringify(navigationSettingsObj)
       )
       await NavigationFile.update(
         NAVIGATION_PATH,

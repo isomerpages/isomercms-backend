@@ -7,10 +7,6 @@ import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { MOCK_STAGING_URL_GITHUB } from "@root/fixtures/repoInfo"
 import { MOCK_USER_SESSION_DATA_ONE } from "@root/fixtures/sessionData"
-import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
-import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
-import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
-import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import {
   CollectionPageName,
   ContactUsPageName,
@@ -20,11 +16,15 @@ import {
   UnlinkedPageName,
 } from "@root/types/pages"
 import { Brand } from "@root/types/util"
+import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
 
+import { CollectionPageService } from "../CollectionPageService"
+import { ContactUsPageService } from "../ContactUsPageService"
 import { HomepagePageService } from "../HomepagePageService"
 import { PageService } from "../PageService"
 import { ResourcePageService } from "../ResourcePageService"
 import { SubcollectionPageService } from "../SubcollectionPageService"
+import { UnlinkedPageService } from "../UnlinkedPageService"
 
 const mockContactUsService = jest.mocked<ContactUsPageService>(({
   read: jest.fn(),

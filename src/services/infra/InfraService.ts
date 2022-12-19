@@ -344,7 +344,9 @@ export default class InfraService {
       return ok(newLaunchParams)
     } catch (error) {
       logger.error(`Failed to create '${repoName}' site on Isomer: ${error}`)
-      this.sendRetryToIsomerAdmin(<string>requestor.email, repoName) // email guarented by model
+      // requester email is guaranteed to exist as currently these are Isomer users
+      this.sendRetryToIsomerAdmin(requestor.email!, repoName)
+
       throw error
     }
   }

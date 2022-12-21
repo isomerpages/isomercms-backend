@@ -63,20 +63,37 @@ class UsersService {
     await this.repository.update(user, { where: { githubId } })
   }
 
-  async findOrCreate(githubId: string | undefined) {
-    const [user] = await this.repository.findOrCreate({
-      where: { githubId },
+  async findOrCreate(githubId: string | undefined): Promise<User> {
+    return this.sequelize.transaction<User>(async (transaction) => {
+      const existingUser = await this.repository.findOne({
+        where: { githubId },
+        transaction,
+      })
+
+      if (existingUser) return existingUser
+
+      return this.repository.create({
+        githubId,
+        transaction,
+      })
     })
-    return user
   }
 
   async login(githubId: string): Promise<User> {
     return this.sequelize.transaction<User>(async (transaction) => {
       // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
-      const [user] = await this.repository.findOrCreate({
+      let user = await this.repository.findOne({
         where: { githubId },
         transaction,
       })
+
+      if (!user) {
+        user = await this.repository.create({
+          githubId,
+          transaction,
+        })
+      }
+
       user.lastLoggedIn = new Date()
       return user.save({ transaction })
     })

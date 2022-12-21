@@ -134,13 +134,14 @@ export class PageService {
   // or within a sub-collection: a/sub/collection
   private parseCollectionPage = (
     pageName: string
-  ): ResultAsync<CollectionPageName | SubcollectionPageName, NotFoundError> =>
-    this.extractPathInfo(pageName)
-      .asyncAndThen(({ name, path }) =>
-        path.asyncAndThen<
-          CollectionPageName | SubcollectionPageName,
-          NotFoundError
-        >((rawPath) => {
+  ): ResultAsync<
+    CollectionPageName | SubcollectionPageName,
+    EmptyStringError | NotFoundError
+  > =>
+    this.extractPathInfo(pageName).asyncAndThen(({ name, path }) =>
+      path
+        .mapErr(() => new NotFoundError())
+        .asyncAndThen((rawPath) => {
           if (rawPath.length === 1 && !!rawPath[0]) {
             return okAsync({
               name: Brand.fromString(name),
@@ -156,10 +157,13 @@ export class PageService {
               kind: "SubcollectionPage",
             })
           }
-          return errAsync(new NotFoundError())
+          return errAsync(
+            new NotFoundError(
+              `Error when parsig path: ${rawPath}, please ensure that the file exists!`
+            )
+          )
         })
-      )
-      .mapErr(() => new NotFoundError())
+    )
 
   private parseHomepage = (
     pageName: string

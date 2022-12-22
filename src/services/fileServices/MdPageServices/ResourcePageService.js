@@ -130,7 +130,6 @@ class ResourcePageService {
       sha,
     }
   ) {
-    const { title } = this.retrieveResourceFileMetadata(newFileName)
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,

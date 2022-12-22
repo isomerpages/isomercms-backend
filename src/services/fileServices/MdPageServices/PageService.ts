@@ -159,7 +159,7 @@ export class PageService {
           }
           return errAsync(
             new NotFoundError(
-              `Error when parsig path: ${rawPath}, please ensure that the file exists!`
+              `Error when parsing path: ${rawPath}, please ensure that the file exists!`
             )
           )
         })

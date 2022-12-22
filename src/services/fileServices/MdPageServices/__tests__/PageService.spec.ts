@@ -182,7 +182,16 @@ describe("PageService", () => {
 
     it("should return `NotFoundError` if the `layout` of the resource item is not `post`", async () => {
       // Arrange
-      const expected = err(new NotFoundError())
+      const MOCK_RESOURCE_ITEM = `${MOCK_RESOURCE_ROOM_NAME}/${MOCK_RESOURCE_CATEGORY_NAME}/_posts/${MOCK_UNLINKED_PAGE_NAME}`
+      const expected = err(
+        new NotFoundError(
+          `Error when parsing path: 
+          ${MOCK_RESOURCE_ITEM.split("/").slice(
+            0,
+            -1
+          )}, please ensure that the file exists!`
+        )
+      )
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
@@ -199,7 +208,7 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        `${MOCK_RESOURCE_ROOM_NAME}/${MOCK_RESOURCE_CATEGORY_NAME}/_posts/${MOCK_UNLINKED_PAGE_NAME}`,
+        MOCK_RESOURCE_ITEM,
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -255,7 +264,11 @@ describe("PageService", () => {
 
     it("should parse two level filepaths including 'index.md' to `NotFoundError`", async () => {
       // Arrange
-      const expected = err(new NotFoundError())
+      const expected = err(
+        new NotFoundError(
+          `Error when parsing path: , please ensure that the file exists!`
+        )
+      )
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
@@ -272,9 +285,9 @@ describe("PageService", () => {
       expect(mockResourcePageService.read).toBeCalled()
     })
 
-    it("should parse empty strings into `NotFoundError`", async () => {
+    it("should parse empty strings into `EmptyStringError`", async () => {
       // Arrange
-      const expected = err(new NotFoundError())
+      const expected = err(new EmptyStringError())
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
@@ -292,7 +305,11 @@ describe("PageService", () => {
 
     it("should parse `/` into `NotFoundError`", async () => {
       // Arrange
-      const expected = err(new NotFoundError())
+      const expected = err(
+        new NotFoundError(
+          "Error when parsing path: , please ensure that the file exists!"
+        )
+      )
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )

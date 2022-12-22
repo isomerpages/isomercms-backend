@@ -6,7 +6,7 @@ const { JSDOM } = require("jsdom")
 const { window } = new JSDOM("")
 const DOMPurify = createDOMPurify(window)
 
-const ALLOWED_FILE_EXTENSIONS = [
+export const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
   "png",
   "jpg",

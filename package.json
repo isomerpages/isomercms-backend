@@ -50,7 +50,7 @@
     "joi": "^17.4.0",
     "js-base64": "^2.6.4",
     "jsdom": "^16.7.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.21",
     "module-alias": "^2.2.2",
     "moment-timezone": "^0.5.35",

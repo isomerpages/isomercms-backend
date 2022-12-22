@@ -89,46 +89,6 @@ describe("User Service", () => {
     })
   })
 
-  it("should return the result of calling the `findOne` method by githubId on the db model if the user exists", async () => {
-    // Arrange
-    const expected = "user1"
-    MockRepository.findOne.mockResolvedValue(expected)
-
-    // Act
-    const actual = await UsersService.findOrCreate(mockGithubId)
-
-    // Assert
-    expect(actual).toBe(expected)
-    expect(MockRepository.findOne).toBeCalledWith({
-      where: { githubId: mockGithubId },
-      transaction: "transaction",
-    })
-    expect(MockRepository.create).not.toBeCalled()
-    expect(MockSequelize.transaction).toBeCalled()
-  })
-
-  it("should call both `findOne` and `create` with githubId on the db model if the user does not exist", async () => {
-    // Arrange
-    const expected = "user1"
-    MockRepository.findOne.mockResolvedValue(null)
-    MockRepository.create.mockResolvedValue(expected)
-
-    // Act
-    const actual = await UsersService.findOrCreate(mockGithubId)
-
-    // Assert
-    expect(actual).toBe(expected)
-    expect(MockRepository.findOne).toBeCalledWith({
-      where: { githubId: mockGithubId },
-      transaction: "transaction",
-    })
-    expect(MockRepository.create).toBeCalledWith({
-      githubId: mockGithubId,
-      transaction: "transaction",
-    })
-    expect(MockSequelize.transaction).toBeCalled()
-  })
-
   it("should return the result of calling the underlying `findOne` method on the db model when the user exists and set the lastLoggedIn", async () => {
     // Arrange
     const mockDbUser = {

@@ -6,7 +6,7 @@ const { JSDOM } = require("jsdom")
 const { window } = new JSDOM("")
 const DOMPurify = createDOMPurify(window)
 
-export const ALLOWED_FILE_EXTENSIONS = [
+const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
   "png",
   "jpg",
@@ -35,4 +35,4 @@ const validateAndSanitizeFileUpload = async (data) => {
   return undefined
 }
 
-module.exports = { validateAndSanitizeFileUpload }
+module.exports = { validateAndSanitizeFileUpload, ALLOWED_FILE_EXTENSIONS }

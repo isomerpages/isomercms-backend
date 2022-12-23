@@ -1,8 +1,6 @@
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")
 
-const { getFileExt } = require("@root/utils/files")
-
 const { GITHUB_ORG_NAME } = process.env
 
 const {
@@ -11,6 +9,8 @@ const {
 } = require("@utils/file-upload-utils")
 
 const { isMediaPathValid } = require("@validators/validators")
+
+const { getFileExt } = require("@root/utils/files")
 
 class MediaFileService {
   constructor({ gitHubService }) {

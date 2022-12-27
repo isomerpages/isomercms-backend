@@ -387,7 +387,7 @@ export default class InfraService {
           }
 
           let emailDetails: { subject: string; body: string }
-          if (message.status) {
+          if (message.status === SITE_LAUNCH_LAMBDA_STATUS.SUCCESS) {
             emailDetails = successEmailDetails
           } else {
             updateSuccessSiteLaunchParams = {
@@ -404,19 +404,12 @@ export default class InfraService {
             emailDetails.body
           )
 
-          let params
           if (message.status === SITE_LAUNCH_LAMBDA_STATUS.SUCCESS) {
-            params = {
-              id: site.id,
-              siteStatus: SiteStatus.Launched,
-              jobStatus: JobStatus.Running,
-            }
             emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
             emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
           <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
           <p>This email was sent from the Isomer CMS backend.</p>`
           } else {
-            params = { id: site.id, jobStatus: JobStatus.Failed }
             emailDetails.subject = `Launch site ${message.repoName} FAILURE`
             emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
           <p>Error: ${message.statusMetadata}</p>

@@ -11,13 +11,13 @@ import type {
 import logger from "../../shared/logger"
 import {
   MessageBody,
-  SITE_LAUNCH_LAMBDA_STATUS,
-  SITE_LAUNCH_LAMBDA_TYPE,
+  SiteLaunchLambdaStatus,
+  SiteLaunchLambdaType,
 } from "../../shared/types"
 
 interface GeneralDomainValidationLambdaResponse {
-  lambdaType: SITE_LAUNCH_LAMBDA_TYPE
-  status: SITE_LAUNCH_LAMBDA_STATUS
+  lambdaType: SiteLaunchLambdaType
+  status: SiteLaunchLambdaStatus
   appId: string
   primaryDomain: string
   message: MessageBody
@@ -69,10 +69,10 @@ export const generalDomainValidation = async (
   )
 
   return {
-    lambdaType: SITE_LAUNCH_LAMBDA_TYPE.GENERAL_DOMAIN_VALIDATION,
-    status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
+    lambdaType: SiteLaunchLambdaType.GENERAL_DOMAIN_VALIDATION,
+    status: SiteLaunchLambdaStatus.SUCCESS,
     appId,
     primaryDomain,
-    message: event
+    message: event,
   }
 }

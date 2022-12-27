@@ -5,19 +5,19 @@ import { SQS } from "aws-sdk"
 import logger from "../../shared/logger"
 import {
   MessageBody,
-  SITE_LAUNCH_LAMBDA_STATUS,
-  SITE_LAUNCH_LAMBDA_TYPE,
+  SiteLaunchLambdaStatus,
+  SiteLaunchLambdaType,
 } from "../../shared/types"
 
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
-export interface inputParams {
-  lambdaType: SITE_LAUNCH_LAMBDA_TYPE
-  status: SITE_LAUNCH_LAMBDA_STATUS
+export interface InputParams {
+  lambdaType: SiteLaunchLambdaType
+  status: SiteLaunchLambdaStatus
   message: MessageBody
 }
 
 export const successNotification = async (
-  event: inputParams[]
+  event: InputParams[]
 ): Promise<APIGatewayProxyResult> => {
   logger.info(JSON.stringify(event))
 

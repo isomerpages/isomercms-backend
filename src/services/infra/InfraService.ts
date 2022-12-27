@@ -1,13 +1,13 @@
+import { mailer } from "@root/../build/src/services/utilServices/MailClient"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
 import { Err, err, Ok, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import { mailer } from "@root/../build/src/services/utilServices/MailClient"
 import {
   MessageBody,
-  SITE_LAUNCH_LAMBDA_STATUS,
+  SiteLaunchLambdaStatus,
 } from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
@@ -387,7 +387,7 @@ export default class InfraService {
           }
 
           let emailDetails: { subject: string; body: string }
-          if (message.status === SITE_LAUNCH_LAMBDA_STATUS.SUCCESS) {
+          if (message.status === SiteLaunchLambdaStatus.SUCCESS) {
             emailDetails = successEmailDetails
           } else {
             updateSuccessSiteLaunchParams = {
@@ -404,7 +404,7 @@ export default class InfraService {
             emailDetails.body
           )
 
-          if (message.status === SITE_LAUNCH_LAMBDA_STATUS.SUCCESS) {
+          if (message.status === SiteLaunchLambdaStatus.SUCCESS) {
             emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
             emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
           <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>

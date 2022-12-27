@@ -14,13 +14,13 @@ import type {
 import logger from "../../shared/logger"
 import {
   MessageBody,
-  SITE_LAUNCH_LAMBDA_STATUS,
-  SITE_LAUNCH_LAMBDA_TYPE,
+  SiteLaunchLambdaStatus,
+  SiteLaunchLambdaType,
 } from "../../shared/types"
 
 interface PrimaryDomainValidationLambdaResponse {
-  lambdaType: SITE_LAUNCH_LAMBDA_TYPE
-  status: SITE_LAUNCH_LAMBDA_STATUS
+  lambdaType: SiteLaunchLambdaType
+  status: SiteLaunchLambdaStatus
   message: MessageBody
 }
 
@@ -77,8 +77,8 @@ export const primaryDomainValidation = async (
       `Website administrator has successfully set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
     )
     return {
-      lambdaType: SITE_LAUNCH_LAMBDA_TYPE.PRIMARY_DOMAIN_VALIDATION,
-      status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
+      lambdaType: SiteLaunchLambdaType.PRIMARY_DOMAIN_VALIDATION,
+      status: SiteLaunchLambdaStatus.SUCCESS,
       message: event,
     }
   } catch (error) {

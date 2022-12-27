@@ -186,23 +186,37 @@ export class FormsgSiteLaunchRouter {
     const { submissionId } = req.body.data
     const { responses } = res.locals.submission
     const siteLaunchList = getFieldsFromTable(responses, SITE_LAUNCH_LIST)
-    const formResponses: FormResponsesProps[] = []
-    siteLaunchList?.forEach((element) => {
-      // todo some sort of input validation here for table values
+    const formResponses: FormResponsesProps[] =
+      siteLaunchList?.map((element) =>
+        // todo some sort of input validation here for table values
 
-      const formResponse: FormResponsesProps = {
-        submissionId,
-        requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
-        repoName: element[2],
-        primaryDomain: element[0],
-        redirectionDomain: element[1] === "WWW" ? `www.${element[0]}` : "",
-        // if agency email not needed, use email from requester instead
-        agencyEmail: element[3]
-          ? element[3]
-          : getField(responses, REQUESTER_EMAIL_FIELD),
-      }
-      formResponses.push(formResponse)
-    })
+        /**
+         *
+         * For a submission from formSG in the table of
+         * root domain | redirection | repo name | agency email
+         * blah.gov.sg |    www      | ogp-blah  | blah@gov.sg
+         * blah2.gov.sg|    www      | ogp-blah2 | blah2@gov.sg
+         *
+         * will yield us the results of
+         * [
+         *  [blah.gov.sg, www, ogp-blah, blah@gov.sg],
+         *  [blah2.gov.sg, www, ogp-blah, blah2@gov.sg]
+         * ]
+         */
+
+        ({
+          submissionId,
+          requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
+          repoName: element[2],
+          primaryDomain: element[0],
+          redirectionDomain: element[1] === "WWW" ? `www.${element[0]}` : "",
+          // if agency email not needed, use email from requester instead
+          agencyEmail: element[3]
+            ? element[3]
+            : getField(responses, REQUESTER_EMAIL_FIELD),
+        })
+      ) || []
+
     res.sendStatus(200) // we have received the form and obtained relevant field
     formResponses.forEach((formResponse) => this.siteLaunch(formResponse))
   }

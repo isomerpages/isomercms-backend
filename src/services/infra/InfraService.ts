@@ -1,4 +1,3 @@
-import { mailer } from "@root/../build/src/services/utilServices/MailClient"
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
 import { Err, err, Ok, ok } from "neverthrow"
@@ -19,6 +18,7 @@ import {
 } from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
+import { mailer } from "@services/utilServices/MailClient"
 
 import QueueService from "../identity/QueueService"
 

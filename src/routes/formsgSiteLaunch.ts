@@ -38,6 +38,22 @@ interface FormResponsesProps {
   primaryDomain?: string
   redirectionDomain?: string
   agencyEmail?: string
+  /**
+   * The reason why this is a 2-d array is because of using a table in
+   * formSG. eg.
+   * For a submission from formSG in the table of
+   * root domain | redirection | repo name
+   * blah.gov.sg |    www      | ogp-blah
+   * blah2.gov.sg|    www      | ogp-blah2
+   *
+   * will yield us the results of
+   * [
+   *  [blah.gov.sg, www, ogp-blah],
+   *  [blah2.gov.sg, www, ogp-blah]
+   * ]
+   *
+   */
+
   siteLaunchDetails?: string[] | string[][]
 }
 export class FormsgSiteLaunchRouter {

@@ -1,5 +1,4 @@
 import AWS, { SQS } from "aws-sdk"
-import { Json } from "sequelize/types/utils"
 
 import logger from "@root/logger/logger"
 
@@ -92,5 +91,4 @@ export default class QueueClient {
       })
     }
   }
-
 }

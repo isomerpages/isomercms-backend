@@ -134,15 +134,11 @@ export default class InfraService {
 
   isValidUrl(url: string): boolean {
     const schema = Joi.string().domain()
-    if (
-      schema.validate(url).error &&
-      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
-      // therefore check if after removing it, it reports as a valid url
-      schema.validate(url.substring(1)).error
-    ) {
-      return false
-    }
-    return true
+    // joi reports initial "_" for certificates as as an invalid url WRONGLY,
+    // therefore check if after removing it, it reports as a valid url
+    const extractedUrl = url.startsWith("_") ? url.substring(1) : url
+    const { error } = schema.validate(extractedUrl)
+    return !error
   }
 
   parseDNSRecords = (

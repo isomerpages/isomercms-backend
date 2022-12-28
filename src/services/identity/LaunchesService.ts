@@ -67,20 +67,25 @@ export class LaunchesService {
   createOrUpdate = async (
     createParams: SiteLaunchCreateParams
   ): Promise<Launch> => {
-    const [launch] = await this.launchesRepository.upsert(createParams)
-
-    // In the case that this is a re-launch,
-    // need to delete previous records in redirection table
-    const outDatedRedirections = await this.redirectionsRepository.findAll({
-      where: { launchId: launch.id },
-    })
-    await Promise.all(
-      outDatedRedirections.map(async (outDatedRedirection) => {
-        await this.redirectionsRepository.destroy({
-          where: { id: outDatedRedirection.id },
-        })
-      })
+    const [launch, isNewLaunch] = await this.launchesRepository.upsert(
+      createParams
     )
+
+    if (!isNewLaunch) {
+      // In the case that this is a re-launch,
+      // need to delete previous records in redirection table
+      const outDatedRedirections = await this.redirectionsRepository.findAll({
+        where: { launchId: launch.id },
+      })
+
+      await Promise.all(
+        outDatedRedirections.map(async (outDatedRedirection) => {
+          await this.redirectionsRepository.destroy({
+            where: { id: outDatedRedirection.id },
+          })
+        })
+      )
+    }
 
     if (createParams.redirectionDomainSource) {
       logger.info(
@@ -138,7 +143,7 @@ export class LaunchesService {
     }
     return ok(siteId)
   }
-  
+
   configureDomainInAmplify = async (
     repoName: string,
     domainName: string,

@@ -60,8 +60,6 @@ export const redirectionDomainValidation = async (
     if (response.status !== 404) {
       const error = `Unexpected error occurred for redirection for ${primaryDomainSource} : 
       ${JSON.stringify(response)}`
-
-      logger.error(error)
       throw new Error(error)
     }
 

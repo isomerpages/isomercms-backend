@@ -397,30 +397,7 @@ export default class InfraService {
           }
           emailDetails = failureEmailDetails
         }
-        await this.sitesService.update(updateSuccessSiteLaunchParams)
-        await mailer.sendMail(
-          message.requestorEmail,
-          emailDetails.subject,
-          emailDetails.body
-        )
 
-        if (message.status === SiteLaunchLambdaStatus.SUCCESS) {
-          emailDetails.subject = `Launch site ${message.repoName} SUCCESS`
-          emailDetails.body = `<p>Isomer site ${message.repoName} was launched successfully.</p>
-        <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
-        <p>This email was sent from the Isomer CMS backend.</p>`
-        } else {
-          emailDetails.subject = `Launch site ${message.repoName} FAILURE`
-          emailDetails.body = `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-        <p>Error: ${message.statusMetadata}</p>
-        <p>This email was sent from the Isomer CMS backend.</p>
-        `
-        }
-        await mailer.sendMail(
-          message.agencyEmail,
-          emailDetails.subject,
-          emailDetails.body
-        )
         await mailer.sendMail(
           message.requestorEmail,
           emailDetails.subject,

@@ -56,6 +56,12 @@ interface FormResponsesProps {
 
   siteLaunchDetails?: string[] | string[][]
 }
+
+interface RedirectionDomainObject {
+  source: string
+  target: string
+}
+
 export class FormsgSiteLaunchRouter {
   siteLaunch = async (formResponses: FormResponsesProps): Promise<void> => {
     const {
@@ -244,8 +250,7 @@ export class FormsgSiteLaunchRouter {
     domainValidationTarget: string,
     primaryDomainSource: string,
     primaryDomainTarget: string,
-    redirectionDomainSource?: string,
-    redirectionDomainTarget?: string
+    redirectionDomain?: RedirectionDomainObject
   ): Promise<void> => {
     const subject = `[Isomer] Launch site ${repoName} domain validation`
     let html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
@@ -254,8 +259,8 @@ export class FormsgSiteLaunchRouter {
 <p>Target: ${domainValidationTarget}</p>
 <p>Source: ${primaryDomainSource}</p>
 <p>Target: ${primaryDomainTarget}</p>`
-    if (redirectionDomainSource) {
-      html += `<p>Source: ${redirectionDomainSource}</p>\n<p>Target: ${redirectionDomainTarget}</p>\n`
+    if (redirectionDomain) {
+      html += `<p>Source: ${redirectionDomain.source}</p>\n<p>Target: ${redirectionDomain.target}</p>\n`
     }
 
     html += `<p>This email was sent from the Isomer CMS backend.</p>`

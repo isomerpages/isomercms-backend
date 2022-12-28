@@ -159,9 +159,10 @@ export default class InfraService {
     const sourceUrl = this.removeTrailingDot(recordsInfo[0])
 
     // for the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net'.
-    // while this is not a valid URL, this is ok, as it is just an interim representation from Amplify.
-    const isSourceUrlEmpty = sourceUrl === ""
-    if (!isSourceUrlEmpty && !this.isValidUrl(sourceUrl)) {
+    // in this case, sourceUrl will be an empty string, and while this is not a valid URL,
+    // this is ok, as it is just an interim representation from Amplify.
+    const isSourceUrlValid = !sourceUrl || this.isValidUrl(sourceUrl)
+    if (!isSourceUrlValid) {
       return err(`Source url: "${sourceUrl}" was not a valid url`)
     }
 

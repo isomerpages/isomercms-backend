@@ -364,52 +364,62 @@ export default class InfraService {
         if (!site) {
           return
         }
+        const isSuccess = message.status === SiteLaunchLambdaStatus.SUCCESS
 
-        let updateSuccessSiteLaunchParams = {
-          id: site.id,
-          siteStatus: SiteStatus.Launched,
-          jobStatus: JobStatus.Running,
-        }
+        let updateSiteLaunchParams
 
-        const successEmailDetails = {
-          subject: `Launch site ${message.repoName} SUCCESS`,
-          body: `<p>Isomer site ${message.repoName} was launched successfully.</p>
-          <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
-          <p>This email was sent from the Isomer CMS backend.</p>`,
-        }
-
-        const failureEmailDetails = {
-          subject: `Launch site ${message.repoName} FAILURE`,
-          body: `<p>Isomer site ${message.repoName} was not launched successfully.</p>
-          <p>Error: ${message.statusMetadata}</p>
-          <p>This email was sent from the Isomer CMS backend.</p>
-          `,
-        }
-
-        let emailDetails: { subject: string; body: string }
-        if (message.status === SiteLaunchLambdaStatus.SUCCESS) {
-          emailDetails = successEmailDetails
+        if (isSuccess) {
+          updateSiteLaunchParams = {
+            id: site.id,
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
+          }
         } else {
-          updateSuccessSiteLaunchParams = {
+          updateSiteLaunchParams = {
             id: site.id,
             siteStatus: SiteStatus.Initialized,
             jobStatus: JobStatus.Failed,
           }
-          emailDetails = failureEmailDetails
         }
 
-        await mailer.sendMail(
-          message.requestorEmail,
-          emailDetails.subject,
-          emailDetails.body
-        )
+        await this.sitesService.update(updateSiteLaunchParams)
 
-        await this.sitesService.update(updateSuccessSiteLaunchParams)
+        await this.sendEmailUpdate(message, isSuccess)
       })
     )
   }
 
   pollQueue = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
+  }
+
+  sendEmailUpdate = async (message: MessageBody, isSuccess: boolean) => {
+    const successEmailDetails = {
+      subject: `Launch site ${message.repoName} SUCCESS`,
+      body: `<p>Isomer site ${message.repoName} was launched successfully.</p>
+          <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
+          <p>This email was sent from the Isomer CMS backend.</p>`,
+    }
+
+    const failureEmailDetails = {
+      subject: `Launch site ${message.repoName} FAILURE`,
+      body: `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+          <p>Error: ${message.statusMetadata}</p>
+          <p>This email was sent from the Isomer CMS backend.</p>
+          `,
+    }
+
+    let emailDetails: { subject: string; body: string }
+    if (isSuccess) {
+      emailDetails = successEmailDetails
+    } else {
+      emailDetails = failureEmailDetails
+    }
+
+    await mailer.sendMail(
+      message.requestorEmail,
+      emailDetails.subject,
+      emailDetails.body
+    )
   }
 }

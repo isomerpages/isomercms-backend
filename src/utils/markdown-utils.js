@@ -11,11 +11,20 @@ const retrieveDataFromMarkdown = (fileContent) => {
   return { frontMatter, pageContent: pageContent.join("---") }
 }
 
+const isResourceFileOrLink = (frontMatter) => {
+  const { layout } = frontMatter
+  return layout === "file" || layout === "link"
+}
+
 const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   const frontMatter = _.clone(originalFrontMatter)
   const { permalink } = frontMatter
   if (permalink) {
-    frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
+    if (isResourceFileOrLink(frontMatter)) {
+      delete frontMatter.permalink
+    } else {
+      frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
+    }
   }
   const newFrontMatter = yaml.stringify(frontMatter)
   const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")

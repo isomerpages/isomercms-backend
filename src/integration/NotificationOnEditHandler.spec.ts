@@ -27,6 +27,7 @@ import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import * as ReviewApi from "@services/db/review"
 import { getUsersService, notificationsService } from "@services/identity"
 import { sequelize } from "@tests/database"
 
@@ -39,7 +40,7 @@ const mockGithubService = {
 }
 const usersService = getUsersService(sequelize)
 const reviewRequestService = new ReviewRequestService(
-  (mockGithubService as unknown) as GitHubService,
+  (mockGithubService as unknown) as typeof ReviewApi,
   User,
   ReviewRequest,
   Reviewer,
@@ -143,7 +144,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: mockAdditionalSiteId,
-      name: mockSiteName,
+      name: "mockSite2",
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",

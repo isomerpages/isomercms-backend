@@ -39,6 +39,7 @@ import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/Co
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import * as ReviewApi from "@services/db/review"
 import {
   getIdentityAuthService,
   getUsersService,
@@ -58,7 +59,7 @@ const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const reviewRequestService = new ReviewRequestService(
-  gitHubService,
+  (gitHubService as unknown) as typeof ReviewApi,
   User,
   ReviewRequest,
   Reviewer,

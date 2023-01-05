@@ -7,6 +7,7 @@ import { SitesRouter as _SitesRouter } from "@routes/v2/authenticated/sites"
 
 import {
   IsomerAdmin,
+  Notification,
   Repo,
   Reviewer,
   ReviewMeta,
@@ -70,8 +71,9 @@ import {
 import { ReviewRequestStatus } from "@root/constants"
 import { ReviewRequestDto } from "@root/types/dto/review"
 import { GitHubService } from "@services/db/GitHubService"
+import * as ReviewApi from "@services/db/review"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
-import { getUsersService } from "@services/identity"
+import { getUsersService, notificationsService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
@@ -83,7 +85,7 @@ const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const reviewRequestService = new ReviewRequestService(
-  gitHubService,
+  (gitHubService as unknown) as typeof ReviewApi,
   User,
   ReviewRequest,
   Reviewer,
@@ -110,7 +112,8 @@ const ReviewsRouter = new _ReviewsRouter(
   reviewRequestService,
   usersService,
   sitesService,
-  collaboratorsService
+  collaboratorsService,
+  notificationsService
 )
 const reviewsSubrouter = ReviewsRouter.getRouter()
 const subrouter = express()

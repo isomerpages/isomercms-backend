@@ -139,6 +139,8 @@ describe("Review Requests Integration Tests", () => {
     await Site.sync({ force: true })
     await Repo.sync({ force: true })
     await SiteMember.sync({ force: true })
+    await Notification.sync({ force: true })
+    await ReviewMeta.sync({ force: true })
 
     await User.create(MOCK_USER_DBENTRY_ONE)
     await User.create(MOCK_USER_DBENTRY_TWO)

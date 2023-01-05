@@ -1,6 +1,10 @@
 import express from "express"
 import request from "supertest"
 
+import { NotificationOnEditHandler } from "@middleware/notificationOnEditHandler"
+
+import UserSessionData from "@classes/UserSessionData"
+
 import {
   Notification,
   Repo,
@@ -14,21 +18,19 @@ import {
   Whitelist,
 } from "@database/models"
 import { generateRouterForUserWithSite } from "@fixtures/app"
-import UserSessionData from "@root/classes/UserSessionData"
 import {
   mockEmail,
   mockIsomerUserId,
   mockSiteName,
-} from "@root/fixtures/sessionData"
-import { NotificationOnEditHandler } from "@root/middleware/notificationOnEditHandler"
-import { GitHubService } from "@root/services/db/GitHubService"
-import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
-import CollaboratorsService from "@root/services/identity/CollaboratorsService"
-import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
-import SitesService from "@root/services/identity/SitesService"
-import ReviewRequestService from "@root/services/review/ReviewRequestService"
+} from "@fixtures/sessionData"
+import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
+import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
+import CollaboratorsService from "@services/identity/CollaboratorsService"
+import IsomerAdminsService from "@services/identity/IsomerAdminsService"
+import SitesService from "@services/identity/SitesService"
+import ReviewRequestService from "@services/review/ReviewRequestService"
 import { sequelize } from "@tests/database"
 
 const mockSiteId = "1"

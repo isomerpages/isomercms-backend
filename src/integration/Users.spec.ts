@@ -68,6 +68,11 @@ describe("Users Router", () => {
     mockAxios.reset()
   })
 
+  afterAll(async () => {
+    await User.sync({ force: true })
+    await Whitelist.sync({ force: true })
+  })
+
   describe("/email/otp", () => {
     afterEach(async () => {
       // Clean up so that different tests using

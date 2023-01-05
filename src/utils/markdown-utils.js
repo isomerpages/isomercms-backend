@@ -18,13 +18,12 @@ const isResourceFileOrLink = (frontMatter) => {
 
 const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   const frontMatter = _.clone(originalFrontMatter)
+  if (isResourceFileOrLink(frontMatter)) {
+    delete frontMatter.permalink
+  }
   const { permalink } = frontMatter
   if (permalink) {
-    if (isResourceFileOrLink(frontMatter)) {
-      delete frontMatter.permalink
-    } else {
-      frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
-    }
+    frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
   }
   const newFrontMatter = yaml.stringify(frontMatter)
   const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")

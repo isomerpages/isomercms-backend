@@ -81,7 +81,7 @@ subSubrouter.get("/:siteName/test", async (req, res, next) =>
 )
 subrouter.use(subSubrouter)
 
-// We handle the test slightly diferently - jest interprets the end of the test as when the response is sent,
+// We handle the test slightly differently - jest interprets the end of the test as when the response is sent,
 // but we normally create a notification after this response, due to the position of the middleware
 // the solution to get tests working is to send a response only after the notification middleware
 subrouter.use(async (req, res, next) => {

@@ -22,7 +22,7 @@ const MockSmsClient = {
 const MockRepository = {
   findOne: jest.fn(),
   update: jest.fn(),
-  findOrCreate: jest.fn(),
+  create: jest.fn(),
 }
 const MockSequelize = {
   transaction: jest.fn((closure) => closure("transaction")),
@@ -89,28 +89,13 @@ describe("User Service", () => {
     })
   })
 
-  it("should return the result of calling the findOrCreate method by githubId on the db model", async () => {
-    // Arrange
-    const expected = "user1"
-    MockRepository.findOrCreate.mockResolvedValue([expected])
-
-    // Act
-    const actual = await UsersService.findOrCreate(mockGithubId)
-
-    // Assert
-    expect(actual).toBe(expected)
-    expect(MockRepository.findOrCreate).toBeCalledWith({
-      where: { githubId: mockGithubId },
-    })
-  })
-
-  it("should return the result of calling the underlying findOrCreate method on the db model and set the lastLoggedIn", async () => {
+  it("should return the result of calling the underlying `findOne` method on the db model when the user exists and set the lastLoggedIn", async () => {
     // Arrange
     const mockDbUser = {
       save: jest.fn().mockReturnThis(),
       githubId: mockGithubId,
     }
-    MockRepository.findOrCreate.mockResolvedValue([mockDbUser])
+    MockRepository.findOne.mockResolvedValue(mockDbUser)
 
     // Act
     const actual = await UsersService.login(mockGithubId)
@@ -118,6 +103,38 @@ describe("User Service", () => {
     // Assert
     expect(actual.lastLoggedIn).toBeDefined()
     expect(actual.githubId).toBe(mockGithubId)
+    expect(MockRepository.create).not.toBeCalled()
+    expect(MockRepository.findOne).toBeCalledWith({
+      where: { githubId: mockGithubId },
+      transaction: "transaction",
+    })
+    expect(MockSequelize.transaction).toBeCalled()
+  })
+
+  it("should call both `findOne` and `create` on the db model when the user does not exist and set the lastLoggedIn", async () => {
+    // Arrange
+    const mockDbUser = {
+      save: jest.fn().mockReturnThis(),
+      githubId: mockGithubId,
+    }
+    MockRepository.findOne.mockResolvedValue(null)
+    MockRepository.create.mockResolvedValue(mockDbUser)
+
+    // Act
+    const actual = await UsersService.login(mockGithubId)
+
+    // Assert
+    expect(actual.lastLoggedIn).toBeDefined()
+    expect(actual.githubId).toBe(mockGithubId)
+    expect(MockRepository.create).toBeCalledWith({
+      githubId: mockGithubId,
+      transaction: "transaction",
+    })
+    expect(MockRepository.findOne).toBeCalledWith({
+      where: { githubId: mockGithubId },
+      transaction: "transaction",
+    })
+    expect(MockSequelize.transaction).toBeCalled()
   })
 
   it("should allow whitelisted emails", async () => {

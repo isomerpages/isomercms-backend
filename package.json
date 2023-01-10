@@ -1,6 +1,6 @@
 {
   "name": "isomercms",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -32,7 +32,7 @@
     "axios": "^0.21.3",
     "base-64": "^0.1.0",
     "bluebird": "^3.7.2",
-    "body-parser": "^1.19.0",
+    "body-parser": "^1.19.2",
     "cookie-parser": "~1.4.5",
     "cors": "^2.8.5",
     "crypto-js": "^4.1.1",
@@ -41,7 +41,7 @@
     "dompurify": "^2.3.1",
     "dotenv": "^16.0.1",
     "exponential-backoff": "^3.1.0",
-    "express": "~4.16.1",
+    "express": "~4.17.3",
     "file-type": "^16.5.4",
     "helmet": "^4.6.0",
     "http-errors": "~1.8.0",

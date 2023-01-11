@@ -73,18 +73,20 @@ const notificationsHandler = new NotificationOnEditHandler({
 })
 
 // Set up express with defaults and use the router under test
-const subrouter = express()
-const subSubrouter = express()
-subSubrouter.get("/:siteName/test", async (req, res, next) =>
+const router = express()
+const dummySubrouter = express()
+dummySubrouter.get("/:siteName/test", async (req, res, next) =>
   // Dummy subrouter
   next()
 )
-subrouter.use(subSubrouter)
+router.use(dummySubrouter)
 
 // We handle the test slightly differently - jest interprets the end of the test as when the response is sent,
 // but we normally create a notification after this response, due to the position of the middleware
 // the solution to get tests working is to send a response only after the notification middleware
-subrouter.use(async (req, res, next) => {
+router.use(async (req, res, next) => {
+  // Inserts notification handler after all other subrouters
+  // Needs to be awaited so jest doesn't exit prematurely upon receiving response status
   await notificationsHandler.createNotification(req as any, res as any, next)
   res.status(200).send(200)
 })
@@ -92,11 +94,7 @@ const userSessionData = new UserSessionData({
   isomerUserId: mockIsomerUserId,
   email: mockEmail,
 })
-const app = generateRouterForUserWithSite(
-  subrouter,
-  userSessionData,
-  mockSiteName
-)
+const app = generateRouterForUserWithSite(router, userSessionData, mockSiteName)
 
 describe("Notifications Router", () => {
   const mockAdditionalUserId = "2"

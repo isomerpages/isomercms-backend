@@ -1,7 +1,9 @@
+/* eslint-disable import/prefer-default-export */
 import type { APIGatewayProxyResult } from "aws-lambda"
 import { SQS } from "aws-sdk"
 
 import logger from "../../shared/logger"
+import { MessageBody } from "../../shared/types"
 
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 

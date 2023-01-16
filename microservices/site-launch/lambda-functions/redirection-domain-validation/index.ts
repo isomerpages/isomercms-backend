@@ -1,9 +1,9 @@
 /* eslint-disable import/prefer-default-export */ // todo fix default export
 
 import { Octokit } from "@octokit/rest"
-import { MessageBody } from "@root/services/identity/QueueService"
 
 import logger from "../../shared/logger"
+import { MessageBody } from "../../shared/types"
 
 export const redirectionDomainValidation = async (
   event: Pick<
@@ -11,6 +11,8 @@ export const redirectionDomainValidation = async (
     "redirectionDomain" | "primaryDomainTarget" | "primaryDomainSource"
   >
 ) => {
+  const DEFAULT_BRANCH = "master"
+
   // Validation check
   const { primaryDomainSource, redirectionDomain } = event
 
@@ -25,7 +27,7 @@ export const redirectionDomainValidation = async (
    * Note : This only supports one specific
    * redirection of blah.gov.sg -> www.blah.gov.sg
    * The params of `MessageBody` is designed to handle more complicated
-   * redirections for future extensions.
+   * redirects for future extensions.
    * */
 
   const githubRedirect = githubRedirects[0] // only handling blah.gov.sg -> www.blah.gov.sg
@@ -42,22 +44,45 @@ export const redirectionDomainValidation = async (
     auth: process.env.SYSTEM_GITHUB_TOKEN,
   })
 
-  const response = await octokit.request(
-    `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
-    {
-      owner: "isomerpages",
-      repo: "isomer-redirection",
-      path: "letsencrypt/.",
-      message: `Create ${primaryDomainSource}.conf`,
-      committer: {
-        name: "isomeradmin",
-        email: "isomeradmin@open.gov.sg",
-      },
-      content: Buffer.from(template, "binary").toString("base64"),
-      branch: "test/redirectionLambdaTest",
+  // see if domain commit in github first. If exists, don't create commit.
+  try {
+    let response = await octokit.request(
+      `GET /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
+      {
+        owner: "isomerpages",
+        repo: "isomer-redirection",
+        path: "letsencrypt/.",
+        ref: DEFAULT_BRANCH,
+      }
+    )
+    if (response.status === 200) return // file already exist
+
+    if (response.status !== 404) {
+      const error = `Unexpected error occurred for redirection for ${primaryDomainSource} : 
+      ${JSON.stringify(response)}`
+      throw new Error(error)
     }
-  )
-  logger.info(
-    `status of redirecion commit for ${primaryDomainSource}:\n ${response}`
-  )
+
+    response = await octokit.request(
+      `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
+      {
+        owner: "isomerpages",
+        repo: "isomer-redirection",
+        path: "letsencrypt/.",
+        message: `Create ${primaryDomainSource}.conf`,
+        committer: {
+          name: "isomeradmin",
+          email: "isomeradmin@open.gov.sg",
+        },
+        content: Buffer.from(template, "binary").toString("base64"),
+        branch: DEFAULT_BRANCH,
+      }
+    )
+    logger.info(
+      `status of redirection commit for ${primaryDomainSource}:\n ${response}`
+    )
+  } catch (err) {
+    logger.error(err)
+    throw err
+  }
 }

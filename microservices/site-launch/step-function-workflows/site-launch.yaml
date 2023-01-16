@@ -1,2 +1,2 @@
 name: SiteLaunch${self:service}${opt:stage, 'dev'}
-definition: ${file(./microservices/site-launch/step-function-workflows/site-launch.asl.yaml)}
+definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}

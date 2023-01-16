@@ -24,10 +24,9 @@ import {
   sitesService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
+import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
-
-import QueueService from "../build/src/services/identity/QueueService"
 
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"

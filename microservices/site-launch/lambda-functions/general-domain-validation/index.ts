@@ -10,21 +10,17 @@ import type {
 
 import logger from "../../shared/logger"
 import {
-  SITE_LAUNCH_LAMBDA_TYPE,
-  SITE_LAUNCH_LAMBDA_STATUS,
-} from "../../shared/types" // TODO: Change to aliased imports
-
-interface GeneralDomainValidationLambdaParams {
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-}
+  MessageBody,
+  SiteLaunchLambdaStatus,
+  SiteLaunchLambdaType,
+} from "../../shared/types"
 
 interface GeneralDomainValidationLambdaResponse {
-  lambdaType: SITE_LAUNCH_LAMBDA_TYPE
-  status: SITE_LAUNCH_LAMBDA_STATUS
+  lambdaType: SiteLaunchLambdaType
+  status: SiteLaunchLambdaStatus
   appId: string
   primaryDomain: string
+  message: MessageBody
 }
 
 const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
@@ -33,7 +29,7 @@ const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
 ]
 
 export const generalDomainValidation = async (
-  event: GeneralDomainValidationLambdaParams
+  event: MessageBody
 ): Promise<GeneralDomainValidationLambdaResponse> => {
   logger.info(event)
 
@@ -44,9 +40,6 @@ export const generalDomainValidation = async (
 
   // Validation check
   const { appId, primaryDomainSource: primaryDomain } = event
-
-  if (!appId) throw new Error(`appId was undefined`)
-  if (!primaryDomain) throw new Error(`primaryDomain was undefined`)
 
   if (!appId) throw new Error(`appId was undefined`)
   if (!primaryDomain) throw new Error(`primaryDomain was undefined`)
@@ -76,9 +69,10 @@ export const generalDomainValidation = async (
   )
 
   return {
-    lambdaType: SITE_LAUNCH_LAMBDA_TYPE.GENERAL_DOMAIN_VALIDATION,
-    status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
+    lambdaType: SiteLaunchLambdaType.GENERAL_DOMAIN_VALIDATION,
+    status: SiteLaunchLambdaStatus.SUCCESS,
     appId,
     primaryDomain,
+    message: event,
   }
 }

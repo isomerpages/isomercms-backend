@@ -22,6 +22,7 @@ module.exports = {
         },
         type: Sequelize.INTEGER,
         allowNull: false,
+        unique: true,
       },
       primary_domain_source: {
         allowNull: false,
@@ -48,30 +49,6 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn("NOW"),
-      },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE,
-      },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE,
-      },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE,
-      },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE,
-      },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE,
-      },
-      deleted_at: {
-        allowNull: true,
-        type: Sequelize.DATE,
       },
       deleted_at: {
         allowNull: true,

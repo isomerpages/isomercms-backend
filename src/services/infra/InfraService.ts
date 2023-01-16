@@ -4,7 +4,10 @@ import { Err, err, Ok, ok } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import { mailer } from "@root/../build/src/services/utilServices/MailClient"
+import {
+  MessageBody,
+  SiteLaunchLambdaStatus,
+} from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
@@ -15,10 +18,12 @@ import {
 } from "@services/identity/LaunchesService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
+import { mailer } from "@services/utilServices/MailClient"
 
-import QueueService, { MessageBody } from "../identity/QueueService"
+import QueueService from "../identity/QueueService"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
+export const REDIRECTION_SERVER_IP = "18.136.36.203"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -127,6 +132,15 @@ export default class InfraService {
     return url
   }
 
+  isValidUrl(url: string): boolean {
+    const schema = Joi.string().domain()
+    // joi reports initial "_" for certificates as as an invalid url WRONGLY,
+    // therefore check if after removing it, it reports as a valid url
+    const extractedUrl = url.startsWith("_") ? url.substring(1) : url
+    const { error } = schema.validate(extractedUrl)
+    return !error
+  }
+
   parseDNSRecords = (
     record?: string
   ): Err<never, string> | Ok<dnsRecordDto, never> => {
@@ -138,24 +152,18 @@ export default class InfraService {
     const recordsInfo = record.split(" ")
 
     // type checking
-    const schema = Joi.string().domain()
     const sourceUrl = this.removeTrailingDot(recordsInfo[0])
-    if (
-      schema.validate(sourceUrl).error &&
-      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
-      // therefore check if after removing it, it reports as a valid url
-      schema.validate(sourceUrl.substring(1))
-    ) {
+
+    // for the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net'.
+    // in this case, sourceUrl will be an empty string, and while this is not a valid URL,
+    // this is ok, as it is just an interim representation from Amplify.
+    const isSourceUrlValid = !sourceUrl || this.isValidUrl(sourceUrl)
+    if (!isSourceUrlValid) {
       return err(`Source url: "${sourceUrl}" was not a valid url`)
     }
 
     const targetUrl = this.removeTrailingDot(recordsInfo[2])
-    if (
-      schema.validate(targetUrl).error &&
-      // joi reports initial "_" for certificates as as an invalid url WRONGLY,
-      // therefore check if after removing it, it reports as a valid url
-      schema.validate(sourceUrl.substring(1))
-    ) {
+    if (!this.isValidUrl(targetUrl)) {
       return err(`Target url "${targetUrl}" was not a valid url`)
     }
 
@@ -257,7 +265,11 @@ export default class InfraService {
 
       if (primaryDomainInfo.isErr()) {
         return err(
-          new AmplifyError("Missing primary domain info", repoName, appId)
+          new AmplifyError(
+            `Missing primary domain info${primaryDomainInfo.error}`,
+            repoName,
+            appId
+          )
         )
       }
 
@@ -298,7 +310,9 @@ export default class InfraService {
       }
 
       // Create launches records table
-      const launchesRecord = await this.launchesService.create(newLaunchParams)
+      const launchesRecord = await this.launchesService.createOrUpdate(
+        newLaunchParams
+      )
       logger.info(`Created launch record in database:  ${launchesRecord}`)
 
       const message: MessageBody = {
@@ -310,7 +324,6 @@ export default class InfraService {
         domainValidationTarget,
         requestorEmail: requestor.email ? requestor.email : "",
         agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
-        success: true,
       }
 
       if (newLaunchParams.redirectionDomainSource) {
@@ -324,35 +337,89 @@ export default class InfraService {
       }
 
       this.queueService.sendMessage(message)
+
+      return ok(newLaunchParams)
     } catch (error) {
-      logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
-      return err(error)
+      logger.error(`Failed to create '${repoName}' site on Isomer: ${error}`)
+      // requester email is guaranteed to exist as currently these are Isomer users
+      this.sendRetryToIsomerAdmin(requestor.email!, repoName)
+
+      throw error
     }
-    return ok(newLaunchParams)
+  }
+
+  sendRetryToIsomerAdmin = async (email: string, repoName: string) => {
+    const subject = `[Isomer] Failure to create domain association for ${repoName}`
+    const body = `<p>Unable to trigger create domain association for ${repoName}.</P
+    <p>If domain association was already created, please log into the amplify console and trigger a retry. </p>
+    <p>Else, resubmit the form and try again.</p>`
+    await mailer.sendMail(email, subject, body)
   }
 
   siteUpdate = async () => {
-    try {
-      const messages = await this.queueService.pollMessages()
-      await Promise.all(
-        messages.map(async (message) => {
-          const site = await this.sitesService.getBySiteName(message.repoName)
-          if (site) {
-            const updateSuccessSiteLaunchParams = {
-              id: site.id,
-              siteStatus: SiteStatus.Launched,
-              jobStatus: JobStatus.Running,
-            }
-            await this.sitesService.update(updateSuccessSiteLaunchParams)
+    const messages = await this.queueService.pollMessages()
+    await Promise.all(
+      messages.map(async (message) => {
+        const site = await this.sitesService.getBySiteName(message.repoName)
+        if (!site) {
+          return
+        }
+        const isSuccess = message.status === SiteLaunchLambdaStatus.SUCCESS
+
+        let updateSiteLaunchParams
+
+        if (isSuccess) {
+          updateSiteLaunchParams = {
+            id: site.id,
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
           }
-        })
-      )
-    } catch (e) {
-      logger.error(e)
-    }
+        } else {
+          updateSiteLaunchParams = {
+            id: site.id,
+            siteStatus: SiteStatus.Initialized,
+            jobStatus: JobStatus.Failed,
+          }
+        }
+
+        await this.sitesService.update(updateSiteLaunchParams)
+
+        await this.sendEmailUpdate(message, isSuccess)
+      })
+    )
   }
 
   pollQueue = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
+  }
+
+  sendEmailUpdate = async (message: MessageBody, isSuccess: boolean) => {
+    const successEmailDetails = {
+      subject: `Launch site ${message.repoName} SUCCESS`,
+      body: `<p>Isomer site ${message.repoName} was launched successfully.</p>
+          <p>You may now visit your live website. <a href="${message.primaryDomainSource}">${message.primaryDomainSource}</a> should be accessible within a few minutes.</p>
+          <p>This email was sent from the Isomer CMS backend.</p>`,
+    }
+
+    const failureEmailDetails = {
+      subject: `Launch site ${message.repoName} FAILURE`,
+      body: `<p>Isomer site ${message.repoName} was not launched successfully.</p>
+          <p>Error: ${message.statusMetadata}</p>
+          <p>This email was sent from the Isomer CMS backend.</p>
+          `,
+    }
+
+    let emailDetails: { subject: string; body: string }
+    if (isSuccess) {
+      emailDetails = successEmailDetails
+    } else {
+      emailDetails = failureEmailDetails
+    }
+
+    await mailer.sendMail(
+      message.requestorEmail,
+      emailDetails.subject,
+      emailDetails.body
+    )
   }
 }

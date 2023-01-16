@@ -36,7 +36,9 @@ export class Launch extends Model {
   user!: User
 
   @ForeignKey(() => Site)
-  @Column
+  @Column({
+    unique: true,
+  })
   siteId!: number
 
   @BelongsTo(() => Site, {

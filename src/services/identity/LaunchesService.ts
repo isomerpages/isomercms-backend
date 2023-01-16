@@ -8,9 +8,8 @@ import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launch, Repo, User } from "@database/models"
+import { Deployment, Launch, Repo, User, Redirection } from "@database/models"
 import { RedirectionTypes } from "@root/constants/constants"
-import { Redirection } from "@root/database/models/Redirection"
 import { AmplifyError } from "@root/types/index"
 import LaunchClient from "@services/identity/LaunchClient"
 
@@ -65,14 +64,35 @@ export class LaunchesService {
     this.redirectionsRepository = redirectionsRepository
   }
 
-  create = async (createParams: SiteLaunchCreateParams): Promise<Launch> => {
-    const createLaunch = await this.launchesRepository.create(createParams)
+  createOrUpdate = async (
+    createParams: SiteLaunchCreateParams
+  ): Promise<Launch> => {
+    const [launch, isNewLaunch] = await this.launchesRepository.upsert(
+      createParams
+    )
+
+    if (!isNewLaunch) {
+      // In the case that this is a re-launch,
+      // need to delete previous records in redirection table
+      const outDatedRedirections = await this.redirectionsRepository.findAll({
+        where: { launchId: launch.id },
+      })
+
+      await Promise.all(
+        outDatedRedirections.map(async (outDatedRedirection) => {
+          await this.redirectionsRepository.destroy({
+            where: { id: outDatedRedirection.id },
+          })
+        })
+      )
+    }
+
     if (createParams.redirectionDomainSource) {
       logger.info(
         `creating redirection record for ${createParams.redirectionDomainSource}`
       )
       const createRedirectionParams = {
-        launchId: createLaunch.id,
+        launchId: launch.id,
         type: RedirectionTypes.A,
         source: createParams.redirectionDomainSource,
         target: createParams.primaryDomainTarget,
@@ -80,7 +100,7 @@ export class LaunchesService {
       await this.redirectionsRepository.create(createRedirectionParams)
     }
 
-    return createLaunch
+    return launch
   }
 
   getAppId = async (
@@ -160,7 +180,7 @@ export class LaunchesService {
       )
     }
 
-    logger.info(`Successfully created domain assocation for ${repoName}`)
+    logger.info(`Successfully created domain association for ${repoName}`)
     const redirectionDomainObject: DomainAssociationMeta = {
       repoName,
       domainAssociation: domainAssociationResult.domainAssociation,
@@ -181,12 +201,6 @@ export class LaunchesService {
     return this.launchClient.sendGetDomainAssociationCommand(
       getDomainAssociationOptions
     )
-  }
-
-  async updateLaunchTable(updateParams: Partial<Launch> & Pick<Launch, "id">) {
-    return this.launchesRepository.update(updateParams, {
-      where: { id: updateParams.id },
-    })
   }
 
   async updateRedirectionTable(

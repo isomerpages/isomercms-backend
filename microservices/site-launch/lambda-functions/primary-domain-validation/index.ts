@@ -1,4 +1,5 @@
-import dns from "dns"
+/* eslint-disable import/prefer-default-export */
+import { promises } from "dns"
 
 import {
   AmplifyClient,
@@ -12,25 +13,19 @@ import type {
 
 import logger from "../../shared/logger"
 import {
-  SITE_LAUNCH_LAMBDA_TYPE,
-  SITE_LAUNCH_LAMBDA_STATUS,
-} from "../../shared/types" // TODO: Change to aliased imports
-
-interface PrimaryDomainValidationLambdaParams {
-  appId: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-}
+  MessageBody,
+  SiteLaunchLambdaStatus,
+  SiteLaunchLambdaType,
+} from "../../shared/types"
 
 interface PrimaryDomainValidationLambdaResponse {
-  lambdaType: SITE_LAUNCH_LAMBDA_TYPE
-  status: SITE_LAUNCH_LAMBDA_STATUS
-  appId: string
-  primaryDomain: string
+  lambdaType: SiteLaunchLambdaType
+  status: SiteLaunchLambdaStatus
+  message: MessageBody
 }
 
 export const primaryDomainValidation = async (
-  event: PrimaryDomainValidationLambdaParams
+  event: MessageBody
 ): Promise<PrimaryDomainValidationLambdaResponse> => {
   logger.info(event)
 
@@ -64,27 +59,27 @@ export const primaryDomainValidation = async (
         `Amplify app with id ${appId} and domain ${primaryDomainSource} has not completed primary domain validation step.  Current status: ${domainAssociationStatus}`
       )
     }
-    console.log(
+    logger.info(
       `Amplify app with id ${appId} and domain ${primaryDomainSource} successfully completed primary domain validation step with status ${domainAssociationStatus}`
     )
 
     // Check if the primary DNS record was set correctly. This is necessary because Amplify doesn't actually check if the
     // primary domain record has been pointed correctly.
-    const cnameRecords = await dns.promises.resolveCname(primaryDomainSource)
+    const cnameRecords = await promises.resolveCname(primaryDomainSource)
+    logger.info(cnameRecords)
     if (!cnameRecords.includes(cloudfrontDomain)) {
       throw new Error(
         `Website administrator has not set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
       )
     }
 
-    console.log(
+    logger.info(
       `Website administrator has successfully set up the primary domain ${primaryDomainSource} to point to the correct Cloudfront domain name`
     )
     return {
-      lambdaType: SITE_LAUNCH_LAMBDA_TYPE.PRIMARY_DOMAIN_VALIDATION,
-      status: SITE_LAUNCH_LAMBDA_STATUS.SUCCESS,
-      appId,
-      primaryDomain: primaryDomainSource,
+      lambdaType: SiteLaunchLambdaType.PRIMARY_DOMAIN_VALIDATION,
+      status: SiteLaunchLambdaStatus.SUCCESS,
+      message: event,
     }
   } catch (error) {
     logger.error(error)

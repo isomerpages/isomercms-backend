@@ -1,4 +1,5 @@
 const express = require("express")
+const rateLimit = require("express-rate-limit")
 const session = require("express-session")
 const request = require("supertest")
 
@@ -13,6 +14,7 @@ const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 const { FRONTEND_URL } = process.env
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
+const MOCK_USER_ID = "userId"
 
 describe("Unlinked Pages Router", () => {
   jest.mock("@logger/logger", {
@@ -26,9 +28,13 @@ describe("Unlinked Pages Router", () => {
     sendOtp: jest.fn(),
     verifyOtp: jest.fn(),
   }
+  const mockAuthenticationMiddleware = {
+    verifyJwt: jest.fn().mockImplementation((req, res, next) => next()),
+  }
 
   const router = new AuthRouter({
     authService: mockAuthService,
+    authenticationMiddleware: mockAuthenticationMiddleware,
     rateLimiter,
   })
 
@@ -143,10 +149,9 @@ describe("Unlinked Pages Router", () => {
   })
 
   describe("whoami", () => {
-    const userId = "userId"
     it("returns user info if found", async () => {
       const expectedResponse = {
-        userId,
+        userId: MOCK_USER_ID,
       }
       mockAuthService.getUserInfo.mockResolvedValueOnce(expectedResponse)
 
@@ -170,15 +175,30 @@ describe("Unlinked Pages Router", () => {
   })
 
   describe("rate limiting", () => {
-    it("should allow the request through when only 99 requests are made", async () => {
-      // Arrange
-      // Act
-      // Assert
+    // NOTE: There is a need to initialise another rate limiter
+    // as the rate limit library uses an in-memory store for each instance.
+    // This means that the previous tests requests would also impact the rate limit.
+    const mockRateLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 1,
     })
+    const rateLimitedRouter = express()
+    rateLimitedRouter.use(mockRateLimiter)
+    rateLimitedRouter.get("/test", (req, res) => {
+      res.status(200).send()
+    })
+
+    it("should allow all the requests through when the number of requests made is below the limit of 1", async () => {
+      // Act + assert
+      await request(rateLimitedRouter).get("/test").expect(200)
+    })
+
     it("should disallow the 101th request made within the 15 minute window", async () => {
-      // Arrange
       // Act
+      const resp = await request(rateLimitedRouter).get(`/test`).expect(429)
+
       // Assert
+      expect(resp.text).toBe("Too many requests, please try again later.")
     })
   })
 })

@@ -7,6 +7,8 @@ import {
 } from "@middleware/routeHandler"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { attachSiteHandler } from "@root/middleware"
+import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { RequestHandler } from "@root/types"
 import NotificationsService, {
   NotificationResponse,
@@ -14,14 +16,21 @@ import NotificationsService, {
 
 interface NotificationsRouterProps {
   notificationsService: NotificationsService
+  authorizationMiddleware: AuthorizationMiddleware
 }
 
 // eslint-disable-next-line import/prefer-default-export
 export class NotificationsRouter {
   private readonly notificationsService
 
-  constructor({ notificationsService }: NotificationsRouterProps) {
+  private readonly authorizationMiddleware
+
+  constructor({
+    notificationsService,
+    authorizationMiddleware,
+  }: NotificationsRouterProps) {
     this.notificationsService = notificationsService
+    this.authorizationMiddleware = authorizationMiddleware
     autoBind(this)
   }
 
@@ -78,6 +87,8 @@ export class NotificationsRouter {
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
+    router.use(attachSiteHandler)
+    router.use(this.authorizationMiddleware.verifySiteMember)
 
     router.get("/", attachReadRouteHandlerWrapper(this.getRecentNotifications))
     router.get(

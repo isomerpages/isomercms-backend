@@ -1,15 +1,18 @@
 import express from "express"
 import request from "supertest"
 
+import RequestNotFoundError from "@errors/RequestNotFoundError"
+
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import { ReviewsRouter as _ReviewsRouter } from "@routes/v2/authenticated/review"
 
 import { generateRouterForDefaultUserWithSite } from "@fixtures/app"
+import { mockUserId } from "@fixtures/identity"
+import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@fixtures/users"
 import { CollaboratorRoles } from "@root/constants"
-import RequestNotFoundError from "@root/errors/RequestNotFoundError"
-import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@root/fixtures/users"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
+import NotificationsService from "@services/identity/NotificationsService"
 import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
@@ -48,11 +51,16 @@ describe("Review Requests Router", () => {
     list: jest.fn(),
   }
 
+  const mockNotificationsService = {
+    create: jest.fn(),
+  }
+
   const ReviewsRouter = new _ReviewsRouter(
     (mockReviewRequestService as unknown) as ReviewRequestService,
     (mockIdentityUsersService as unknown) as UsersService,
     (mockSitesService as unknown) as SitesService,
-    (mockCollaboratorsService as unknown) as CollaboratorsService
+    (mockCollaboratorsService as unknown) as CollaboratorsService,
+    (mockNotificationsService as unknown) as NotificationsService
   )
 
   const subrouter = express()
@@ -169,11 +177,13 @@ describe("Review Requests Router", () => {
           SiteMember: {
             role: CollaboratorRoles.Admin,
           },
+          id: mockUserId,
         },
       ])
       mockReviewRequestService.createReviewRequest.mockResolvedValueOnce(
         mockPullRequestNumber
       )
+      mockNotificationsService.create.mockResolvedValueOnce([])
 
       // Act
       const response = await request(app)
@@ -196,6 +206,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.createReviewRequest
       ).toHaveBeenCalledTimes(1)
+      expect(mockNotificationsService.create).toHaveBeenCalledTimes(1)
     })
 
     it("should return 404 if the site does not exist", async () => {
@@ -216,6 +227,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.createReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 404 if user is not a site collaborator", async () => {
@@ -237,6 +249,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.createReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 400 if no reviewers are provided", async () => {
@@ -263,6 +276,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.createReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 400 if provided reviewer is not an admin", async () => {
@@ -291,6 +305,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.createReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
   })
 
@@ -570,6 +585,7 @@ describe("Review Requests Router", () => {
           SiteMember: {
             role: CollaboratorRoles.Admin,
           },
+          id: mockUserId,
         },
       ])
       mockReviewRequestService.updateReviewRequest.mockResolvedValueOnce(
@@ -773,6 +789,7 @@ describe("Review Requests Router", () => {
     it("should return 200 with the review request successfully marked as approved", async () => {
       // Arrange
       const mockReviewRequest = { reviewers: [{ email: MOCK_USER_EMAIL_ONE }] }
+      const mockReviewer = "reviewer@test.gov.sg"
       mockSitesService.getBySiteName.mockResolvedValueOnce("site")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
@@ -780,6 +797,15 @@ describe("Review Requests Router", () => {
       mockReviewRequestService.approveReviewRequest.mockResolvedValueOnce(
         undefined
       )
+      mockCollaboratorsService.list.mockResolvedValueOnce([
+        {
+          email: mockReviewer,
+          SiteMember: {
+            role: CollaboratorRoles.Admin,
+          },
+          id: mockUserId,
+        },
+      ])
 
       // Act
       const response = await request(app).post(`/mockSite/review/12345/approve`)
@@ -791,6 +817,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.approveReviewRequest
       ).toHaveBeenCalledTimes(1)
+      expect(mockNotificationsService.create).toHaveBeenCalledTimes(1)
     })
 
     it("should return 404 if the site does not exist", async () => {
@@ -807,6 +834,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.approveReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 404 if the review request does not exist", async () => {
@@ -826,6 +854,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.approveReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 403 if the user is not a reviewer", async () => {
@@ -846,6 +875,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.approveReviewRequest
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
   })
 
@@ -1097,6 +1127,7 @@ describe("Review Requests Router", () => {
     it("should return 200 with the review request closed successfully", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: MOCK_USER_EMAIL_ONE } }
+      const mockReviewer = "reviewer@test.gov.sg"
       mockSitesService.getBySiteName.mockResolvedValueOnce("site")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
@@ -1107,6 +1138,15 @@ describe("Review Requests Router", () => {
       mockReviewRequestService.deleteAllReviewRequestViews.mockResolvedValueOnce(
         undefined
       )
+      mockCollaboratorsService.list.mockResolvedValueOnce([
+        {
+          email: mockReviewer,
+          SiteMember: {
+            role: CollaboratorRoles.Admin,
+          },
+          id: mockUserId,
+        },
+      ])
 
       // Act
       const response = await request(app).delete(`/mockSite/review/12345`)
@@ -1121,6 +1161,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.deleteAllReviewRequestViews
       ).toHaveBeenCalledTimes(1)
+      expect(mockNotificationsService.create).toHaveBeenCalledTimes(1)
     })
 
     it("should return 404 if the site does not exist", async () => {
@@ -1138,6 +1179,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.deleteAllReviewRequestViews
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 404 if the review request does not exist", async () => {
@@ -1158,6 +1200,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.deleteAllReviewRequestViews
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
     it("should return 404 if the user is not the requestor of the review request", async () => {
@@ -1179,6 +1222,7 @@ describe("Review Requests Router", () => {
       expect(
         mockReviewRequestService.deleteAllReviewRequestViews
       ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
   })
 

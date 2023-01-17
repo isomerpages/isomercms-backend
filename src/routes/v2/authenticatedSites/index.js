@@ -1,7 +1,5 @@
 import { attachSiteHandler } from "@root/middleware"
 
-import { NotificationsRouter } from "./notifications"
-
 const express = require("express")
 
 const {
@@ -92,6 +90,7 @@ const getAuthenticatedSitesSubrouter = ({
   configYmlService,
   apiLogger,
   notificationsService,
+  notificationOnEditHandler,
 }) => {
   const collectionYmlService = new CollectionYmlService({ gitHubService })
   const homepagePageService = new HomepagePageService({ gitHubService })
@@ -188,7 +187,6 @@ const getAuthenticatedSitesSubrouter = ({
   const navigationV2Router = new NavigationRouter({
     navigationYmlService: navYmlService,
   })
-  const notificationsRouter = new NotificationsRouter({ notificationsService })
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
@@ -229,10 +227,7 @@ const getAuthenticatedSitesSubrouter = ({
   authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
   authenticatedSitesSubrouter.use("/homepage", homepageV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
-  authenticatedSitesSubrouter.use(
-    "/notifications",
-    notificationsRouter.getRouter()
-  )
+  authenticatedSitesSubrouter.use(notificationOnEditHandler.createNotification)
 
   return authenticatedSitesSubrouter
 }

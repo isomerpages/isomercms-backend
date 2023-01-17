@@ -30,7 +30,7 @@ class NavigationRouter {
   }
 
   // Update navigation index file
-  async updateNavigation(req, res) {
+  async updateNavigation(req, res, next) {
     const { error } = UpdateNavigationRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
 
@@ -44,7 +44,8 @@ class NavigationRouter {
       { fileContent, sha }
     )
 
-    return res.status(200).json(updatedNavigationPage)
+    res.status(200).json(updatedNavigationPage)
+    return next()
   }
 
   getRouter() {

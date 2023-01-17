@@ -1,11 +1,21 @@
 import express from "express"
 import request from "supertest"
 
-import { NotificationsRouter as _NotificationsRouter } from "@routes/v2/authenticatedSites/notifications"
-
-import { Notification, Repo, Site, SiteMember, User } from "@database/models"
-import { generateRouter } from "@fixtures/app"
+import {
+  Notification,
+  Repo,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequest,
+  ReviewRequestView,
+  Site,
+  SiteMember,
+  User,
+  Whitelist,
+} from "@database/models"
+import { generateRouter, generateRouterForUserWithSite } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
   formatNotification,
   highPriorityOldReadNotification,
@@ -20,31 +30,78 @@ import {
   mockIsomerUserId,
   mockSiteName,
 } from "@root/fixtures/sessionData"
+import { getAuthorizationMiddleware } from "@root/middleware"
+import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
-import { notificationsService } from "@services/identity"
+import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
+import { GitHubService } from "@root/services/db/GitHubService"
+import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
+import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import SitesService from "@root/services/identity/SitesService"
+import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import * as ReviewApi from "@services/db/review"
+import {
+  getIdentityAuthService,
+  getUsersService,
+  isomerAdminsService,
+  notificationsService,
+} from "@services/identity"
+import { sequelize } from "@tests/database"
 
 const MOCK_SITE = "mockSite"
 const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
-const notificationsRouter = new _NotificationsRouter({ notificationsService })
+const gitHubService = new GitHubService({
+  axiosInstance: genericGitHubAxiosInstance,
+})
+const identityAuthService = getIdentityAuthService(gitHubService)
+const usersService = getUsersService(sequelize)
+const configYmlService = new ConfigYmlService({ gitHubService })
+const reviewRequestService = new ReviewRequestService(
+  (gitHubService as unknown) as typeof ReviewApi,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequestView
+)
+const sitesService = new SitesService({
+  siteRepository: Site,
+  gitHubService,
+  configYmlService,
+  usersService,
+  isomerAdminsService,
+  reviewRequestService,
+})
+const collaboratorsService = new CollaboratorsService({
+  siteRepository: Site,
+  siteMemberRepository: SiteMember,
+  sitesService,
+  usersService,
+  whitelist: Whitelist,
+})
+const authorizationMiddleware = getAuthorizationMiddleware({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+  collaboratorsService,
+})
+const notificationsRouter = new _NotificationsRouter({
+  notificationsService,
+  authorizationMiddleware,
+})
 const notificationsSubrouter = notificationsRouter.getRouter()
 
 // Set up express with defaults and use the router under test
 const subrouter = express()
-// As we set certain properties on res.locals when the user signs in using github
-// In order to do integration testing, we must expose a middleware
-// that allows us to set this properties also
-subrouter.use((req, res, next) => {
-  const userSessionData = new UserSessionData({
-    isomerUserId: mockIsomerUserId,
-    email: mockEmail,
-  })
-  res.locals.userSessionData = userSessionData
-  next()
+
+subrouter.use("/:siteName", notificationsSubrouter)
+const userSessionData = new UserSessionData({
+  isomerUserId: mockIsomerUserId,
+  email: mockEmail,
 })
-subrouter.use(notificationsSubrouter)
-const app = generateRouter(subrouter)
+const app = generateRouterForUserWithSite(subrouter, userSessionData, MOCK_SITE)
 
 describe("Notifications Router", () => {
   const MOCK_ADDITIONAL_USER_ID = "2"
@@ -53,6 +110,15 @@ describe("Notifications Router", () => {
   const MOCK_ANOTHER_SITE_MEMBER_ID = "3"
 
   beforeAll(async () => {
+    // We need to force the relevant tables to start from a clean slate
+    // Otherwise, some tests may fail due to the auto-incrementing IDs
+    // not starting from 1
+    await User.sync({ force: true })
+    await Site.sync({ force: true })
+    await Repo.sync({ force: true })
+    await SiteMember.sync({ force: true })
+    await Notification.sync({ force: true })
+
     // Set up User and Site table entries
     await User.create({
       id: mockIsomerUserId,
@@ -62,7 +128,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: MOCK_SITE_ID,
-      name: MOCK_SITE,
+      name: mockSiteName,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -75,7 +141,7 @@ describe("Notifications Router", () => {
       id: MOCK_SITE_MEMBER_ID,
     })
     await Repo.create({
-      name: mockSiteName,
+      name: MOCK_SITE,
       url: "url",
       siteId: MOCK_SITE_ID,
     })
@@ -87,7 +153,7 @@ describe("Notifications Router", () => {
     })
     await Site.create({
       id: MOCK_ADDITIONAL_SITE_ID,
-      name: MOCK_SITE,
+      name: `${mockSiteName}2`,
       apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
@@ -100,7 +166,7 @@ describe("Notifications Router", () => {
       id: MOCK_ANOTHER_SITE_MEMBER_ID,
     })
     await Repo.create({
-      name: `${mockSiteName}2`,
+      name: `${MOCK_SITE}2`,
       url: "url",
       siteId: MOCK_ADDITIONAL_SITE_ID,
     })
@@ -187,7 +253,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get("/")
+      const actual = await request(app).get(`/${MOCK_SITE}`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -277,7 +343,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get("/")
+      const actual = await request(app).get(`/${MOCK_SITE}`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -358,7 +424,7 @@ describe("Notifications Router", () => {
       ].map((notification) => formatNotification(notification))
 
       // Act
-      const actual = await request(app).get("/allNotifications")
+      const actual = await request(app).get(`/${MOCK_SITE}/allNotifications`)
 
       // Assert
       expect(actual.body).toMatchObject(expected)
@@ -424,7 +490,7 @@ describe("Notifications Router", () => {
       const expected = 200
 
       // Act
-      const actual = await request(app).post("/").send({})
+      const actual = await request(app).post(`/${MOCK_SITE}`).send({})
 
       // Assert
       expect(actual.statusCode).toBe(expected)

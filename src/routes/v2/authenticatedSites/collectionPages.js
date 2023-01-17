@@ -24,7 +24,7 @@ class CollectionPagesRouter {
   }
 
   // Create new page in collection
-  async createCollectionPage(req, res) {
+  async createCollectionPage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { collectionName, subcollectionName } = req.params
@@ -58,7 +58,8 @@ class CollectionPagesRouter {
       )
     }
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Read page in collection
@@ -90,7 +91,7 @@ class CollectionPagesRouter {
   }
 
   // Update page in collection
-  async updateCollectionPage(req, res) {
+  async updateCollectionPage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { pageName, collectionName, subcollectionName } = req.params
@@ -156,12 +157,12 @@ class CollectionPagesRouter {
         )
       }
     }
-    /* eslint-enable no-lonely-if */
-    return res.status(200).json(updateResp)
+    res.status(200).json(updateResp)
+    return next()
   }
 
   // Delete page in collection
-  async deleteCollectionPage(req, res) {
+  async deleteCollectionPage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { pageName, collectionName, subcollectionName } = req.params
@@ -183,7 +184,8 @@ class CollectionPagesRouter {
       })
     }
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

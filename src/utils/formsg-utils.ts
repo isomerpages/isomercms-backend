@@ -9,3 +9,11 @@ export function getField(
 
   return response?.answer
 }
+
+export function getFieldsFromTable(
+  responses: FormField[],
+  name: string
+): string[] | string[][] | undefined {
+  const response = responses.find(({ question }) => question === name)
+  return response?.answerArray
+}

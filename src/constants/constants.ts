@@ -9,3 +9,8 @@ export enum SiteStatus {
   Initialized = "INITIALIZED",
   Launched = "LAUNCHED",
 }
+
+export enum RedirectionTypes {
+  CNAME = "CNAME",
+  A = "A",
+}

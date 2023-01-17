@@ -8,7 +8,7 @@ import {
   CreateBranchCommandOutput,
   Stage,
 } from "@aws-sdk/client-amplify"
-import { errAsync, ResultAsync } from "neverthrow"
+import { ResultAsync } from "neverthrow"
 
 import { AmplifyError } from "@root/types/index"
 

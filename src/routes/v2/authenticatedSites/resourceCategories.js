@@ -35,7 +35,7 @@ class ResourceCategoriesRouter {
   }
 
   // Create new resource category
-  async createResourceDirectory(req, res) {
+  async createResourceDirectory(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
     const { resourceRoomName } = req.params
@@ -50,11 +50,12 @@ class ResourceCategoriesRouter {
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Rename resource category
-  async renameResourceDirectory(req, res) {
+  async renameResourceDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
@@ -71,11 +72,12 @@ class ResourceCategoriesRouter {
       }
     )
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Delete resource category
-  async deleteResourceDirectory(req, res) {
+  async deleteResourceDirectory(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
@@ -87,11 +89,12 @@ class ResourceCategoriesRouter {
         resourceCategoryName,
       }
     )
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Move resource category
-  async moveResourceDirectoryPages(req, res) {
+  async moveResourceDirectoryPages(req, res, next) {
     const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName, resourceCategoryName } = req.params
@@ -111,7 +114,8 @@ class ResourceCategoriesRouter {
         objArray: items,
       }
     )
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

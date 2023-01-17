@@ -1,5 +1,7 @@
 import { attachSiteHandler } from "@root/middleware"
 
+import { NotificationsRouter } from "./notifications"
+
 const express = require("express")
 
 const {
@@ -18,6 +20,7 @@ const getAuthenticatedSubrouter = ({
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
+  notificationsService,
 }) => {
   const netlifyTomlService = new NetlifyTomlService()
 
@@ -31,6 +34,10 @@ const getAuthenticatedSubrouter = ({
   })
   const usersRouter = new UsersRouter({ usersService })
   const netlifyTomlV2Router = new NetlifyTomlRouter({ netlifyTomlService })
+  const notificationsRouter = new NotificationsRouter({
+    authorizationMiddleware,
+    notificationsService,
+  })
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
@@ -47,6 +54,10 @@ const getAuthenticatedSubrouter = ({
     reviewRouter.getRouter()
   )
   authenticatedSubrouter.use("/sites", sitesRouterWithReviewRequest)
+  authenticatedSubrouter.use(
+    "/sites/:siteName/notifications",
+    notificationsRouter.getRouter()
+  )
   authenticatedSubrouter.use("/user", usersRouter.getRouter())
   authenticatedSubrouter.use("/netlify-toml", netlifyTomlV2Router.getRouter())
 

@@ -37,6 +37,7 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
+import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -130,12 +131,19 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   isomerAdminsService,
   collaboratorsService,
 })
+const notificationOnEditHandler = new NotificationOnEditHandler({
+  reviewRequestService,
+  sitesService,
+  collaboratorsService,
+  notificationsService,
+})
 
 const reviewRouter = new ReviewsRouter(
   reviewRequestService,
   usersService,
   sitesService,
-  collaboratorsService
+  collaboratorsService,
+  notificationsService
 )
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
@@ -153,6 +161,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
+  notificationsService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
@@ -160,7 +169,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authenticationMiddleware,
   gitHubService,
   configYmlService,
-  notificationsService,
+  notificationOnEditHandler,
 })
 const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
@@ -196,7 +205,7 @@ app.use("/v1", authenticatedSubrouterV1)
 app.use("/v2/auth", authV2Router.getRouter())
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
-// Endpoints which have siteName, used to inject site access token
+// Endpoints which modify the github repo, used to inject site access token
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 
 // FormSG Backend handler routes

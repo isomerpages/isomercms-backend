@@ -10,6 +10,7 @@ import {
   HasMany,
 } from "sequelize-typescript"
 
+import { Launch } from "@database/models/Launch"
 import { Site } from "@database/models/Site"
 import { SiteMember } from "@database/models/SiteMember"
 
@@ -70,4 +71,7 @@ export class User extends Model {
 
   @HasMany(() => Site)
   sitesCreated?: Site[]
+
+  @HasMany(() => Launch)
+  launches?: Launch[]
 }

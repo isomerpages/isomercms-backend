@@ -47,6 +47,7 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
+import { rateLimiter } from "./services/utilServices/RateLimiter"
 
 const path = require("path")
 
@@ -201,7 +202,11 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   configYmlService,
   notificationOnEditHandler,
 })
-const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
+const authV2Router = new AuthRouter({
+  authenticationMiddleware,
+  authService,
+  rateLimiter,
+})
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()

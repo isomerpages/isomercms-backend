@@ -6,6 +6,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { mockUserSessionData, mockEmail } = require("@fixtures/sessionData")
+const { rateLimiter } = require("@root/services/utilServices/RateLimiter")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
@@ -28,6 +29,7 @@ describe("Unlinked Pages Router", () => {
 
   const router = new AuthRouter({
     authService: mockAuthService,
+    rateLimiter,
   })
 
   const subrouter = express()
@@ -164,6 +166,19 @@ describe("Unlinked Pages Router", () => {
       expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(
         mockUserSessionData
       )
+    })
+  })
+
+  describe("rate limiting", () => {
+    it("should allow the request through when only 99 requests are made", async () => {
+      // Arrange
+      // Act
+      // Assert
+    })
+    it("should disallow the 101th request made within the 15 minute window", async () => {
+      // Arrange
+      // Act
+      // Assert
     })
   })
 })

@@ -264,7 +264,7 @@ describe("Resource Room Directory Service", () => {
         fileContent: mockMarkdownContent,
         sha,
         fileName: INDEX_FILE_NAME,
-        directoryName,
+        directoryName: newDirectoryName,
       })
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
         oldDirectoryName: directoryName,
@@ -313,7 +313,7 @@ describe("Resource Room Directory Service", () => {
         fileContent: mockMarkdownContent,
         sha,
         fileName: INDEX_FILE_NAME,
-        directoryName,
+        directoryName: slugifiedResourceRoom,
       })
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
         oldDirectoryName: directoryName,

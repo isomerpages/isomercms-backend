@@ -105,7 +105,7 @@ class ResourceRoomDirectoryService {
       fileContent: newContent,
       sha,
       fileName: INDEX_FILE_NAME,
-      directoryName: resourceRoomName,
+      directoryName: slugifiedNewResourceRoomName,
     })
 
     const {

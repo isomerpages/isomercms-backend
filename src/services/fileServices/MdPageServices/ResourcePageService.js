@@ -12,7 +12,7 @@ class ResourcePageService {
     this.gitHubService = gitHubService
   }
 
-  retrieveResourceFileMetadata(fileName) {
+  validateAndRetrieveResourceFileMetadata(fileName) {
     const fileNameArray = fileName.split(".md")[0]
     const tokenArray = fileNameArray.split("-")
     const date = tokenArray.slice(0, 3).join("-")
@@ -40,7 +40,7 @@ class ResourcePageService {
     reqDetails,
     { fileName, resourceRoomName, resourceCategoryName, content, frontMatter }
   ) {
-    const { title } = this.retrieveResourceFileMetadata(fileName)
+    this.validateAndRetrieveResourceFileMetadata(fileName)
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,
@@ -130,7 +130,7 @@ class ResourcePageService {
       sha,
     }
   ) {
-    const { title } = this.retrieveResourceFileMetadata(newFileName)
+    this.validateAndRetrieveResourceFileMetadata(newFileName)
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,

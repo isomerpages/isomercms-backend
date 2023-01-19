@@ -35,4 +35,4 @@ const validateAndSanitizeFileUpload = async (data) => {
   return undefined
 }
 
-module.exports = { validateAndSanitizeFileUpload }
+module.exports = { validateAndSanitizeFileUpload, ALLOWED_FILE_EXTENSIONS }

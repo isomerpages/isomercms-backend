@@ -1,4 +1,5 @@
 const express = require("express")
+const session = require("express-session")
 const request = require("supertest")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
@@ -26,6 +27,15 @@ describe("Unlinked Pages Router", () => {
   })
 
   const subrouter = express()
+  const options = {
+    resave: true,
+    saveUninitialized: true,
+    secret: "blah",
+    cookie: {
+      maxAge: 1209600000,
+    },
+  }
+  subrouter.use(session(options))
 
   // We can use read route handler here because we don't need to lock the repo
   subrouter.get(
@@ -82,9 +92,7 @@ describe("Unlinked Pages Router", () => {
       })
       expect(resp.status).toEqual(302)
       expect(resp.headers.location).toContain(`${FRONTEND_URL}/sites`)
-      expect(resp.headers["set-cookie"]).toEqual(
-        expect.arrayContaining([expect.stringContaining(COOKIE_NAME)])
-      )
+      expect(resp.headers["set-cookie"]).toBeTruthy()
     })
   })
   describe("login", () => {

@@ -98,7 +98,7 @@ class AuthRouter {
     const userInfo = await this.authService.getUserInfo(userSessionData)
     if (!userInfo) {
       this.clearIsomerCookies(res)
-      req.session.destroy(() => res.json({ message: "Logged out" }))
+      req.session.destroy()
       return res.sendStatus(401)
     }
     return res.status(200).json(userInfo)

@@ -12,7 +12,7 @@ const getAuthenticatedSubrouter = ({
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSubrouter.use(authenticationMiddleware.verifyJwt)
+  authenticatedSubrouter.use(authenticationMiddleware.verifyAccess)
 
   authenticatedSubrouter.use("/sites", sitesRouter)
   authenticatedSubrouter.use("/user", usersRouter.getRouter())

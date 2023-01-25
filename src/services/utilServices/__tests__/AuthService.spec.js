@@ -69,7 +69,7 @@ describe("Auth Service", () => {
     })
   })
 
-  describe("getGithubAuthToken", () => {
+  describe("getUserInfoFromGithubAuth", () => {
     it("Retrieves the Github auth token", async () => {
       const params = {
         code: "code",
@@ -91,7 +91,7 @@ describe("Auth Service", () => {
       }))
 
       await expect(
-        service.getGithubAuthToken({ csrfState, code: "code", state })
+        service.getUserInfoFromGithubAuth({ csrfState, code: "code", state })
       ).resolves.toEqual(signedToken)
 
       expect(axios.post).toHaveBeenCalledWith(

@@ -15,7 +15,7 @@ const cookieToken = "cookieToken"
 describe("Unlinked Pages Router", () => {
   const mockAuthService = {
     getAuthRedirectDetails: jest.fn(),
-    getGithubAuthToken: jest.fn(),
+    getUserInfoFromGithubAuth: jest.fn(),
     getUserInfo: jest.fn(),
     sendOtp: jest.fn(),
     verifyOtp: jest.fn(),
@@ -67,7 +67,7 @@ describe("Unlinked Pages Router", () => {
     const state = "state"
     const token = "token"
     it("retrieves the token and redirects back to the correct page after github auth", async () => {
-      mockAuthService.getGithubAuthToken.mockResolvedValueOnce({
+      mockAuthService.getUserInfoFromGithubAuth.mockResolvedValueOnce({
         token,
       })
 
@@ -75,7 +75,7 @@ describe("Unlinked Pages Router", () => {
         .get(`/?code=${code}&state=${state}`)
         .set("Cookie", `${CSRF_COOKIE_NAME}=${csrfState};`)
 
-      expect(mockAuthService.getGithubAuthToken).toHaveBeenCalledWith({
+      expect(mockAuthService.getUserInfoFromGithubAuth).toHaveBeenCalledWith({
         csrfState,
         code,
         state,

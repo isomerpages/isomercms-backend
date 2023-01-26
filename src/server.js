@@ -97,7 +97,7 @@ const sessionMiddleware = session({
     maxAge: AUTH_TOKEN_EXPIRY_MS,
   },
   secret: process.env.SESSION_SECRET,
-  name: "checkfirst",
+  name: "isomer",
 })
 
 // Env vars

@@ -1,4 +1,6 @@
 // Import logger
+import _ from "lodash"
+
 import logger from "@logger/logger"
 
 // Import errors
@@ -60,7 +62,7 @@ export default class AuthenticationMiddlewareService {
       return { accessToken, githubId, isomerUserId, email }
     }
     try {
-      if (!userInfo) {
+      if (_.isEmpty(userInfo)) {
         const notLoggedInError = new Error("User not logged in with email")
         notLoggedInError.name = "NotLoggedInError"
         throw notLoggedInError

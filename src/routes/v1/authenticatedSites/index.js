@@ -16,11 +16,14 @@ const resourceRoomRouter = require("@routes/v1/authenticatedSites/resourceRoom")
 const resourcesRouter = require("@routes/v1/authenticatedSites/resources")
 const settingsRouter = require("@routes/v1/authenticatedSites/settings")
 
-const getAuthenticatedSitesSubrouter = ({ authMiddleware }) => {
+const getAuthenticatedSitesSubrouter = ({ authMiddleware, apiLogger }) => {
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
   authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
+  // which is only available after verifying that the jwt is valid
+  authenticatedSitesSubrouter.use(apiLogger)
 
   authenticatedSitesSubrouter.use("/pages", pagesRouter)
   authenticatedSitesSubrouter.use("/collections", collectionsRouter)

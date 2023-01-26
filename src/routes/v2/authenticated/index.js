@@ -1,5 +1,3 @@
-import InfraService from "@services/infra/InfraService"
-
 const express = require("express")
 
 const {
@@ -16,6 +14,7 @@ const getAuthenticatedSubrouter = ({
   gitHubService,
   configYmlService,
   usersService,
+  apiLogger,
 }) => {
   const sitesService = new SitesService({ gitHubService, configYmlService })
   const netlifyTomlService = new NetlifyTomlService()
@@ -27,6 +26,9 @@ const getAuthenticatedSubrouter = ({
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
   authenticatedSubrouter.use(authMiddleware.verifyJwt)
+  // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
+  // which is only available after verifying that the jwt is valid
+  authenticatedSubrouter.use(apiLogger)
 
   authenticatedSubrouter.use("/sites", sitesV2Router.getRouter())
   authenticatedSubrouter.use("/user", usersRouter.getRouter())

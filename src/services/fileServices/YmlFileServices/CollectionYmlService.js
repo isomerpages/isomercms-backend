@@ -1,5 +1,9 @@
 const _ = require("lodash")
-const yaml = require("yaml")
+
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const COLLECTION_FILE_NAME = "collection.yml"
 
@@ -16,12 +20,12 @@ class CollectionYmlService {
         directoryName: `_${collectionName}`,
       }
     )
-    const content = yaml.parse(unparsedContent)
+    const content = sanitizedYamlParse(unparsedContent)
     return { content, sha }
   }
 
   async update(sessionData, { collectionName, fileContent, sha }) {
-    const stringifiedContent = yaml.stringify(fileContent)
+    const stringifiedContent = sanitizedYamlStringify(fileContent)
     const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: stringifiedContent,
       sha,
@@ -40,7 +44,7 @@ class CollectionYmlService {
         },
       },
     }
-    const stringifiedContent = yaml.stringify(contentObject)
+    const stringifiedContent = sanitizedYamlStringify(contentObject)
     return this.gitHubService.create(sessionData, {
       content: stringifiedContent,
       fileName: COLLECTION_FILE_NAME,
@@ -176,7 +180,7 @@ class CollectionYmlService {
         },
       },
     }
-    const stringifiedContent = yaml.stringify(contentObject)
+    const stringifiedContent = sanitizedYamlStringify(contentObject)
     return this.gitHubService.update(sessionData, {
       directoryName: `_${collectionName}`,
       fileContent: stringifiedContent,

@@ -1,6 +1,5 @@
 const Bluebird = require("bluebird")
 const express = require("express")
-const yaml = require("yaml")
 
 const {
   attachReadRouteHandlerWrapper,
@@ -13,6 +12,10 @@ const { CollectionConfig } = require("@classes/Config")
 const { File, CollectionPageType } = require("@classes/File")
 
 const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
@@ -113,7 +116,7 @@ async function renameSubfolder(req, res) {
 
     const decodedContent = Base64.decode(content)
     const results = decodedContent.split("---")
-    const frontMatter = yaml.parse(results[1]) // get the front matter as an object
+    const frontMatter = sanitizedYamlParse(results[1]) // get the front matter as an object
     const mdBody = results.slice(2).join("---")
 
     // Modify `third_nav_title` and save as new file in newSubfolderName
@@ -124,7 +127,7 @@ async function renameSubfolder(req, res) {
 
     const newContent = [
       "---\n",
-      yaml.stringify(newFrontMatter),
+      sanitizedYamlStringify(newFrontMatter),
       "---\n",
       mdBody,
     ].join("")

@@ -12,7 +12,8 @@ const {
 const NAV_FILE_NAME = "navigation.yml"
 const NAV_FILE_DIR = "_data"
 
-const yaml = require("yaml")
+const { sanitizedYamlStringify } = require("@utils/yaml-utils")
+
 const _ = require("lodash")
 
 describe("Nav Yml Service", () => {
@@ -142,7 +143,7 @@ describe("Nav Yml Service", () => {
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
-        fileContent: yaml.stringify(updatedMockParsedContent),
+        fileContent: sanitizedYamlStringify(updatedMockParsedContent),
         sha: mockNavigationSha,
       })
     })
@@ -182,7 +183,7 @@ describe("Nav Yml Service", () => {
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
-        fileContent: yaml.stringify(updatedMockParsedContent),
+        fileContent: sanitizedYamlStringify(updatedMockParsedContent),
         sha: mockNavigationSha,
       })
     })
@@ -214,7 +215,7 @@ describe("Nav Yml Service", () => {
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
         fileName,
         directoryName,
-        fileContent: yaml.stringify(updatedMockParsedContent),
+        fileContent: sanitizedYamlStringify(updatedMockParsedContent),
         sha: mockNavigationSha,
       })
     })

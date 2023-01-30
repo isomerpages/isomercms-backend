@@ -1,4 +1,7 @@
-const yaml = require("yaml")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const CONFIG_FILE_NAME = "_config.yml"
 
@@ -14,12 +17,12 @@ class ConfigYmlService {
         fileName: CONFIG_FILE_NAME,
       }
     )
-    const content = yaml.parse(unparsedContent)
+    const content = sanitizedYamlParse(unparsedContent)
     return { content, sha }
   }
 
   async update(reqDetails, { fileContent, sha }) {
-    const stringifiedContent = yaml.stringify(fileContent)
+    const stringifiedContent = sanitizedYamlStringify(fileContent)
     const { newSha } = await this.gitHubService.update(reqDetails, {
       fileContent: stringifiedContent,
       sha,

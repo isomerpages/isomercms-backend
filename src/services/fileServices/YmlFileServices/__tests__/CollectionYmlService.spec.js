@@ -3,7 +3,8 @@ const {
 } = require("@services/fileServices/YmlFileServices/CollectionYmlService")
 
 const COLLECTION_FILE_NAME = "collection.yml"
-const yaml = require("yaml")
+const { sanitizedYamlStringify } = require("@utils/yaml-utils")
+
 const _ = require("lodash")
 
 describe("Collection Yml Service", () => {
@@ -33,7 +34,7 @@ describe("Collection Yml Service", () => {
       },
     },
   }
-  const mockRawContent = yaml.stringify(mockParsedContent)
+  const mockRawContent = sanitizedYamlStringify(mockParsedContent)
 
   const mockGithubService = {
     create: jest.fn(),
@@ -92,7 +93,7 @@ describe("Collection Yml Service", () => {
       mockGithubService.create.mockResolvedValueOnce({ sha })
     })
     it("Creating a collection.yml file with no specified files works correctly", async () => {
-      const content = yaml.stringify({
+      const content = sanitizedYamlStringify({
         collections: {
           [collectionName]: {
             output: true,
@@ -114,7 +115,7 @@ describe("Collection Yml Service", () => {
       })
     })
     it("Creating a collection.yml file with specified files works correctly", async () => {
-      const content = yaml.stringify({
+      const content = sanitizedYamlStringify({
         collections: {
           [collectionName]: {
             output: true,
@@ -167,7 +168,7 @@ describe("Collection Yml Service", () => {
       const expectedArray = [newFileName, ...orderArray]
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.addItemToOrder(reqDetails, {
           collectionName,
@@ -189,7 +190,7 @@ describe("Collection Yml Service", () => {
       const expectedArray = [newFileName, ...orderArray]
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.addItemToOrder(reqDetails, {
           collectionName,
@@ -212,7 +213,7 @@ describe("Collection Yml Service", () => {
       expectedArray.splice(1, 0, newFileName)
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.addItemToOrder(reqDetails, {
           collectionName,
@@ -236,7 +237,7 @@ describe("Collection Yml Service", () => {
       expectedArray.splice(addedIndex, 0, newFileName)
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.addItemToOrder(reqDetails, {
           collectionName,
@@ -261,7 +262,7 @@ describe("Collection Yml Service", () => {
       expectedArray.splice(addedIndex, 0, newFileName)
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.addItemToOrder(reqDetails, {
           collectionName,
@@ -296,7 +297,7 @@ describe("Collection Yml Service", () => {
       )
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.deleteItemFromOrder(reqDetails, {
           collectionName,
@@ -318,7 +319,7 @@ describe("Collection Yml Service", () => {
       const expectedArray = orderArray.filter((item) => item !== itemName)
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.deleteItemFromOrder(reqDetails, {
           collectionName,
@@ -366,7 +367,7 @@ describe("Collection Yml Service", () => {
       expectedArray.splice(index, 0, renamedItem)
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.updateItemInOrder(reqDetails, {
           collectionName,
@@ -400,7 +401,7 @@ describe("Collection Yml Service", () => {
           [renamedCollection]: mockParsedContent.collections[collectionName],
         },
       }
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.renameCollectionInOrder(reqDetails, {
           oldCollectionName: collectionName,
@@ -432,7 +433,7 @@ describe("Collection Yml Service", () => {
       )
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.deleteSubfolderFromOrder(reqDetails, {
           collectionName,
@@ -465,7 +466,7 @@ describe("Collection Yml Service", () => {
       )
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = expectedArray
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.renameSubfolderInOrder(reqDetails, {
           collectionName,
@@ -502,7 +503,7 @@ describe("Collection Yml Service", () => {
       ]
       const modifiedParsedContent = _.cloneDeep(mockParsedContent)
       modifiedParsedContent.collections[collectionName].order = newOrder
-      const modifiedRawContent = yaml.stringify(modifiedParsedContent)
+      const modifiedRawContent = sanitizedYamlStringify(modifiedParsedContent)
       await expect(
         service.updateOrder(reqDetails, {
           collectionName,

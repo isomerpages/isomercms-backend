@@ -1,7 +1,6 @@
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
-const yaml = require("yaml")
 
 // Import errors
 const { NotFoundError } = require("@errors/NotFoundError")
@@ -20,6 +19,7 @@ const { File, CollectionPageType } = require("@classes/File")
 
 // Import utils
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
+const { sanitizedYamlParse } = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
@@ -65,7 +65,9 @@ async function listCollectionPagesDetails(req, res) {
         collectionName,
         page.fileName
       )
-      const frontMatter = yaml.parse(Base64.decode(content).split("---")[1])
+      const frontMatter = sanitizedYamlParse(
+        Base64.decode(content).split("---")[1]
+      )
       return {
         fileName: page.fileName,
         title: frontMatter.title,

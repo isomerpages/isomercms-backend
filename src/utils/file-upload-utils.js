@@ -14,6 +14,7 @@ const ALLOWED_FILE_EXTENSIONS = [
   "tif",
   "bmp",
   "ico",
+  "webp",
 ]
 
 const validateAndSanitizeFileUpload = async (data) => {

@@ -3,6 +3,8 @@ const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
+const logger = require("@logger/logger")
+
 // Import error
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
@@ -117,11 +119,14 @@ async function githubAuth(req, res) {
     isomerUserId: user.id,
   }
   Object.assign(req.session, { userInfo })
+  logger.info(`User ${userInfo.email} successfully logged in`)
   return res.redirect(`${FRONTEND_URL}/sites`)
 }
 
 async function logout(req, res) {
   clearAllCookies(res)
+  req.session.destroy()
+  logger.info(`User ${userInfo.email} successfully logged out`)
   return res.sendStatus(200)
 }
 

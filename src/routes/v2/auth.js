@@ -1,6 +1,8 @@
 const autoBind = require("auto-bind")
 const express = require("express")
 
+const logger = require("@logger/logger")
+
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
@@ -60,6 +62,7 @@ class AuthRouter {
       code,
       state,
     })
+    logger.info(`User ${userInfo.email} successfully logged in`)
     Object.assign(req.session, { userInfo })
     return res.redirect(`${FRONTEND_URL}/sites`)
   }
@@ -83,12 +86,14 @@ class AuthRouter {
     const email = rawEmail.toLowerCase()
     const userInfo = await this.authService.verifyOtp({ email, otp })
     Object.assign(req.session, { userInfo })
+    logger.info(`User ${userInfo.email} successfully logged in`)
     return res.sendStatus(200)
   }
 
   async logout(req, res) {
     this.clearIsomerCookies(res)
     req.session.destroy()
+    logger.info(`User ${userInfo.email} successfully logged out`)
     return res.sendStatus(200)
   }
 

@@ -93,7 +93,6 @@ class AuthRouter {
   async logout(req, res) {
     this.clearIsomerCookies(res)
     req.session.destroy()
-    logger.info(`User ${userInfo.email} successfully logged out`)
     return res.sendStatus(200)
   }
 

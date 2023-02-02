@@ -14,6 +14,10 @@ const csrfState = "csrfState"
 const cookieToken = "cookieToken"
 
 describe("Unlinked Pages Router", () => {
+  jest.mock("@logger/logger", {
+    info: jest.fn(),
+  })
+
   const mockAuthService = {
     getAuthRedirectDetails: jest.fn(),
     getUserInfoFromGithubAuth: jest.fn(),
@@ -105,6 +109,9 @@ describe("Unlinked Pages Router", () => {
   })
   describe("verify", () => {
     const mockOtp = "123456"
+    mockAuthService.verifyOtp.mockImplementationOnce(() => ({
+      email: mockEmail,
+    }))
     it("adds the cookie on login", async () => {
       mockAuthService.getAuthRedirectDetails.mockResolvedValueOnce(cookieToken)
       await request(app)

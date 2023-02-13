@@ -185,8 +185,7 @@ describe("PageService", () => {
       const MOCK_RESOURCE_ITEM = `${MOCK_RESOURCE_ROOM_NAME}/${MOCK_RESOURCE_CATEGORY_NAME}/_posts/${MOCK_UNLINKED_PAGE_NAME}`
       const expected = err(
         new NotFoundError(
-          `Error when parsing path: 
-          ${MOCK_RESOURCE_ITEM.split("/").slice(
+          `Error when parsing path: ${MOCK_RESOURCE_ITEM.split("/").slice(
             0,
             -1
           )}, please ensure that the file exists!`

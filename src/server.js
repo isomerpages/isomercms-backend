@@ -40,6 +40,7 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
+import { NUM_PROXIES } from "./constants/infra"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
@@ -210,6 +211,11 @@ const authV2Router = new AuthRouter({
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()
+app.set("trust proxy", NUM_PROXIES)
+// NOTE: Test endpoint exposed to verify that the public facing IP matches up
+// with the rate limiter's received IP.
+// TODO: Remove once our `NUM_PROXIES` is verified to be correct
+app.get("/ip", (request, response) => response.send(request.ip))
 app.use(helmet())
 
 app.use(

@@ -131,7 +131,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   configYmlService,
   apiLogger,
 })
-const authV2Router = new AuthRouter({ authMiddleware, authService })
+const authV2Router = new AuthRouter({ authMiddleware, authService, apiLogger })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,

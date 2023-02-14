@@ -6,19 +6,20 @@ import logger from "@logger/logger"
 
 import initSequelize from "@database/index"
 import {
+  AccessToken,
+  Deployment,
+  IsomerAdmin,
+  Notification,
+  Otp,
+  Repo,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequest,
+  ReviewRequestView,
   Site,
   SiteMember,
   User,
   Whitelist,
-  AccessToken,
-  Repo,
-  Deployment,
-  IsomerAdmin,
-  Notification,
-  ReviewRequest,
-  ReviewMeta,
-  Reviewer,
-  ReviewRequestView,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import {
@@ -54,6 +55,7 @@ const sequelize = initSequelize([
   User,
   Whitelist,
   AccessToken,
+  Otp,
   Repo,
   Deployment,
   IsomerAdmin,

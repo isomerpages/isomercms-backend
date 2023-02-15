@@ -81,7 +81,7 @@ class AuthRouter {
       await this.authService.sendOtp(email)
     } catch (err) {
       // Log, but don't return so responses are indistinguishable
-      logger.log(
+      logger.error(
         `Error occurred when attempting to login user ${email}: ${err}`
       )
     }

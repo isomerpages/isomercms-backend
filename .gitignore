@@ -5,6 +5,7 @@ build/
 .build/
 *.pem
 .env*
+.env.*
 .idea/
 .DS_Store
 .step-functions-local/

@@ -20,7 +20,7 @@ class MediaFileService {
   }
 
   async create(sessionData, { fileName, directoryName, content }) {
-    // this.mediaNameChecks({ directoryName, fileName })
+    this.mediaNameChecks({ directoryName, fileName })
 
     const [schema, fileContent] = content.split(",")
     const fileBuffer = Buffer.from(fileContent, "base64")
@@ -109,7 +109,7 @@ class MediaFileService {
   }
 
   async delete(sessionData, { fileName, directoryName, sha }) {
-    // this.mediaNameChecks({ directoryName, fileName })
+    this.mediaNameChecks({ directoryName, fileName })
     return this.gitHubService.delete(sessionData, {
       sha,
       fileName,

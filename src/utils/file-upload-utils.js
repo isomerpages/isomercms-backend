@@ -1,9 +1,10 @@
 import logger from "@logger/logger"
+
 const { CM_API_KEY } = process.env
+const CloudmersiveVirusApiClient = require('cloudmersive-virus-api-client')
 const FileType = require("file-type")
 const isSvg = require("is-svg")
 const DOMPurify = require("isomorphic-dompurify")
-const CloudmersiveVirusApiClient = require('cloudmersive-virus-api-client')
 
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
@@ -17,14 +18,13 @@ const ALLOWED_FILE_EXTENSIONS = [
 const defaultClient = CloudmersiveVirusApiClient.ApiClient.instance;
 
 // Configure API key authorization: Apikey
-var Apikey = defaultClient.authentications['Apikey']
-Apikey.apiKey = CM_API_KEY
+const apikey = defaultClient.authentications.Apikey
+apikey.apiKey = CM_API_KEY
 
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
-const scanFileForVirus = (fileBuffer) => {
-  return new Promise((success, failure) => {
-    apiInstance.scanFile(fileBuffer, function(error, data, response) {
+const scanFileForVirus = (fileBuffer) => new Promise((success, failure) => {
+    apiInstance.scanFile(fileBuffer, (error, data, response) => {
       if (error) {
         logger.error('Error when calling cloudmersive API')
         failure(error)
@@ -33,7 +33,7 @@ const scanFileForVirus = (fileBuffer) => {
         success(data)
       }
     })
-})}
+})
 
 const validateAndSanitizeFileUpload = async (content, fileBuffer) => {
   const detectedFileType = await FileType.fromBuffer(fileBuffer)

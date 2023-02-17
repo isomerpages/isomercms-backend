@@ -20,18 +20,18 @@ class MediaFileService {
   }
 
   async create(sessionData, { fileName, directoryName, content }) {
-    this.mediaNameChecks({ directoryName, fileName })
+    // this.mediaNameChecks({ directoryName, fileName })
 
     const [schema, fileContent] = content.split(",")
     const fileBuffer = Buffer.from(fileContent, "base64")
 
-    //Scan file for virus - cloudmersive API
+    // Scan file for virus - cloudmersive API
     const virusScanRes = await scanFileForVirus(fileBuffer)
     if(!virusScanRes || !virusScanRes.CleanResult){
       throw new BadRequestError("File did not pass virus scan")
     }
     
-    //Sanitize and validate file 
+    // Sanitize and validate file 
     const sanitizedContent = await validateAndSanitizeFileUpload(fileContent, fileBuffer)
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
@@ -109,7 +109,7 @@ class MediaFileService {
   }
 
   async delete(sessionData, { fileName, directoryName, sha }) {
-    this.mediaNameChecks({ directoryName, fileName })
+    // this.mediaNameChecks({ directoryName, fileName })
     return this.gitHubService.delete(sessionData, {
       sha,
       fileName,

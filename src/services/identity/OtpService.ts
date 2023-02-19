@@ -19,8 +19,10 @@ class OtpService {
     return { otp, hashedOtp }
   }
 
-  verifyOtp = async (otp: string, hashedOtp: string): Promise<boolean> =>
-    bcrypt.compare(otp, hashedOtp)
+  verifyOtp = async (otp: string, hashedOtp: string): Promise<boolean> => {
+    if (!otp || !hashedOtp) return false
+    return bcrypt.compare(otp, hashedOtp)
+  }
 }
 
 export default OtpService

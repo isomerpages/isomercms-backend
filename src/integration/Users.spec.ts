@@ -2,7 +2,7 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
-import { User, Whitelist } from "@database/models"
+import { User, Whitelist, Otp } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockIsomerUserId } from "@root/fixtures/sessionData"
@@ -143,6 +143,9 @@ describe("Users Router", () => {
       await Whitelist.destroy({
         where: { email: mockWhitelistedDomain },
       })
+      await Otp.destroy({
+        where: { email: mockValidEmail },
+      })
     })
 
     it("should return 200 when the otp is correct", async () => {
@@ -153,8 +156,10 @@ describe("Users Router", () => {
         otp = extractEmailOtp(email.body)
         return email
       })
+
       await User.create({ id: mockIsomerUserId })
       await Whitelist.create({ email: mockWhitelistedDomain })
+
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })
@@ -179,7 +184,7 @@ describe("Users Router", () => {
     it("should return 400 when the otp is wrong", async () => {
       // Arrange
       const expected = 400
-      const wrongOtp = 123456
+      const wrongOtp = "123456"
       mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
@@ -332,7 +337,7 @@ describe("Users Router", () => {
     it("should return 400 when the otp is wrong", async () => {
       // Arrange
       const expected = 400
-      const wrongOtp = 123456
+      const wrongOtp = "123456"
       mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/mobile/otp").send({

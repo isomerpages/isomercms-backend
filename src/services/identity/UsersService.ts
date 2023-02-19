@@ -264,10 +264,14 @@ class UsersService {
     }
 
     if (!otpEntry?.hashedOtp) {
-      throw new Error("Hashed OTP not found")
+      // TODO: Change to use AuthError after FE fix
+      throw new BadRequestError("Hashed OTP not found")
     }
 
-    if (otpEntry.attempts && otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
+    if (
+      otpEntry.attempts !== null &&
+      otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS
+    ) {
       // TODO: Change to use AuthError after FE fix
       throw new BadRequestError("Max number of attempts reached")
     }
@@ -276,7 +280,6 @@ class UsersService {
     await otpEntry.update({ attempts: otpEntry.attempts + 1 })
 
     const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
-    // return isValidOtp
     if (!isValidOtp) {
       // TODO: Change to use AuthError after FE fix
       throw new BadRequestError("OTP is not valid")

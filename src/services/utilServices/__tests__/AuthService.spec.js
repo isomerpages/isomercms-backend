@@ -22,6 +22,7 @@ const {
   mockGithubId: mockUserId,
   mockSessionDataEmailUser,
 } = require("@fixtures/sessionData")
+const { OtpType } = require("@root/services/identity/UsersService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
@@ -144,6 +145,7 @@ describe("Auth Service", () => {
       ).resolves.toEqual(signedToken)
       expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
         mockEmail,
+        OtpType.Email,
         mockOtp
       )
       expect(mockUsersService.loginWithEmail).toHaveBeenCalledWith(mockEmail)
@@ -157,6 +159,7 @@ describe("Auth Service", () => {
       ).rejects.toThrow(BadRequestError)
       expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
         mockEmail,
+        OtpType.Email,
         mockOtp
       )
     })

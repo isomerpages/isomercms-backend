@@ -1,43 +1,53 @@
 import { Sequelize } from "sequelize-typescript"
 import { ModelStatic } from "sequelize/types"
 
-import { User, Whitelist } from "@root/database/models"
+import { Otp, User, Whitelist } from "@root/database/models"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
 
+import OtpService from "../OtpService"
 import _UsersService from "../UsersService"
 
-const MockOtp = {
-  generate: jest.fn(),
-  getExpiryMinutes: jest.fn(),
-  verify: jest.fn(),
+const MockOtpService = {
+  generateLoginOtpWithHash: jest.fn(),
+  verifyOtp: jest.fn(),
 }
+
 const MockMailer = ({
   sendMail: jest.fn(),
 } as unknown) as MailClient
+
 const MockSmsClient = {
   sendSms: jest.fn(),
 }
+
 const MockRepository = {
   findOne: jest.fn(),
   update: jest.fn(),
   findOrCreate: jest.fn(),
 }
+
 const MockSequelize = {
   transaction: jest.fn((closure) => closure("transaction")),
 }
+
 const MockWhitelist = {
   findAll: jest.fn(),
 }
 
+const MockOtp = {
+  findOne: jest.fn(),
+}
+
 const UsersService = new _UsersService({
-  otp: (MockOtp as unknown) as TotpGenerator,
   mailer: (MockMailer as unknown) as MailClient,
   smsClient: (MockSmsClient as unknown) as SmsClient,
   repository: (MockRepository as unknown) as ModelStatic<User>,
   sequelize: (MockSequelize as unknown) as Sequelize,
   whitelist: (MockWhitelist as unknown) as ModelStatic<Whitelist>,
+  otpService: (MockOtpService as unknown) as OtpService,
+  otpRepository: (MockOtp as unknown) as ModelStatic<Otp>,
 })
 
 const mockEmail = "someone@tech.gov.sg"

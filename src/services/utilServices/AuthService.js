@@ -18,6 +18,8 @@ const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
 const { isError } = require("@root/types")
 
+const { OtpType } = require("../identity/UsersService")
+
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
 class AuthService {
@@ -120,7 +122,13 @@ class AuthService {
   }
 
   async verifyOtp({ email, otp }) {
-    if (!this.usersService.verifyOtp(email, otp)) {
+    const isOtpValid = await this.usersService.verifyOtp(
+      email,
+      OtpType.Email,
+      otp
+    )
+
+    if (!isOtpValid) {
       throw new BadRequestError("You have entered an invalid OTP.")
     }
     // Create user if does not exists. Set last logged in to current time.

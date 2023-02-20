@@ -24,7 +24,7 @@ class MediaFileService {
   async create(sessionData, { fileName, directoryName, content }) {
     this.mediaNameChecks({ directoryName, fileName })
 
-    const [schema, fileContent] = content.split(",")
+    const [, fileContent] = content.split(",")
     const fileBuffer = Buffer.from(fileContent, "base64")
 
     // Scan file for virus - cloudmersive API

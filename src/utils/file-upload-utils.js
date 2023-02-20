@@ -26,10 +26,10 @@ const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 const scanFileForVirus = (fileBuffer) => new Promise((success, failure) => {
     apiInstance.scanFile(fileBuffer, (error, data, response) => {
       if (error) {
-        logger.error('Error when calling cloudmersive API')
+        logger.error(`Error when calling Cloudmersive Virus Scan API: ${error.message}`)
         failure(error)
       } else {
-        logger.info('Virus Scan API called successfully')
+        logger.info('Cloudmersive Virus Scan API called successfully')
         success(data)
       }
     })

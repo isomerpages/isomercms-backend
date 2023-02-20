@@ -1,3 +1,5 @@
+import logger from "@logger/logger"
+
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")
 
@@ -27,6 +29,7 @@ class MediaFileService {
 
     // Scan file for virus - cloudmersive API
     const virusScanRes = await scanFileForVirus(fileBuffer)
+    logger.info(`File scan result: ${virusScanRes.CleanResult}`)
     if(!virusScanRes || !virusScanRes.CleanResult){
       throw new BadRequestError("File did not pass virus scan")
     }

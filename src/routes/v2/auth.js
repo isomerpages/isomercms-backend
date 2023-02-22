@@ -7,6 +7,8 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const { FRONTEND_URL } = process.env
 const { isSecure } = require("@utils/auth-utils")
 
+const logger = require("@root/logger/logger")
+
 const AUTH_TOKEN_EXPIRY_MS = parseInt(
   process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
   10
@@ -75,7 +77,14 @@ class AuthRouter {
   async login(req, res) {
     const { email: rawEmail } = req.body
     const email = rawEmail.toLowerCase()
-    await this.authService.sendOtp(email)
+    try {
+      await this.authService.sendOtp(email)
+    } catch (err) {
+      // Log, but don't return so responses are indistinguishable
+      logger.error(
+        `Error occurred when attempting to login user ${email}: ${err}`
+      )
+    }
     return res.sendStatus(200)
   }
 

@@ -274,7 +274,7 @@ class UsersService {
     const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
     if (!isValidOtp) {
       // TODO: Change to use AuthError after FE fix
-      return new BadRequestError("OTP is not valid")
+      throw new BadRequestError("OTP is not valid")
     }
 
     return true

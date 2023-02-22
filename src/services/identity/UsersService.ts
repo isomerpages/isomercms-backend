@@ -263,10 +263,7 @@ class UsersService {
       throw new BadRequestError("Hashed OTP not found")
     }
 
-    if (
-      otpEntry.attempts !== null &&
-      otpEntry.attempts >= PARSED_MAX_NUM_OTP_ATTEMPTS
-    ) {
+    if (otpEntry.attempts >= PARSED_MAX_NUM_OTP_ATTEMPTS) {
       // TODO: Change to use AuthError after FE fix
       throw new BadRequestError("Max number of attempts reached")
     }

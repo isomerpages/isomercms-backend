@@ -289,7 +289,6 @@ class UsersService {
   }
 
   private getOtpExpiry() {
-    console.log("NEW DATE", new Date(Date.now() + PARSED_EXPIRY))
     return new Date(Date.now() + PARSED_EXPIRY)
   }
 

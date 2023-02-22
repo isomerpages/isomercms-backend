@@ -11,12 +11,12 @@ import MailClient from "@services/utilServices/MailClient"
 
 import OtpService from "./OtpService"
 
-const { OTP_EXPIRY } = process.env
+const { OTP_EXPIRY, MAX_NUM_OTP_ATTEMPTS } = process.env
 
-const PARSED_EXPIRY = parseInt(OTP_EXPIRY!, 10) ?? undefined
+const PARSED_EXPIRY = parseInt(OTP_EXPIRY || "", 10) ?? undefined
 
-const MAX_NUM_OTP_ATTEMPTS =
-  parseInt(process.env.MAX_NUM_OTP_ATTEMPTS!, 10) ?? 5
+const PARSED_MAX_NUM_OTP_ATTEMPTS =
+  parseInt(MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
 
 export enum OtpType {
   Email = "EMAIL",
@@ -270,7 +270,7 @@ class UsersService {
 
     if (
       otpEntry.attempts !== null &&
-      otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS
+      otpEntry.attempts >= PARSED_MAX_NUM_OTP_ATTEMPTS
     ) {
       // TODO: Change to use AuthError after FE fix
       throw new BadRequestError("Max number of attempts reached")
@@ -282,7 +282,7 @@ class UsersService {
     const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
     if (!isValidOtp) {
       // TODO: Change to use AuthError after FE fix
-      throw new BadRequestError("OTP is not valid")
+      return new BadRequestError("OTP is not valid")
     }
 
     return true

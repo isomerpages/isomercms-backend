@@ -5,7 +5,10 @@ const { MediaTypeError } = require("@errors/MediaTypeError")
 
 const { GITHUB_ORG_NAME } = process.env
 
-const { validateAndSanitizeFileUpload, scanFileForVirus } = require("@utils/file-upload-utils")
+const {
+  validateAndSanitizeFileUpload,
+  scanFileForVirus,
+} = require("@utils/file-upload-utils")
 
 const { isMediaPathValid } = require("@validators/validators")
 
@@ -30,12 +33,15 @@ class MediaFileService {
     // Scan file for virus - cloudmersive API
     const virusScanRes = await scanFileForVirus(fileBuffer)
     logger.info(`File scan result: ${virusScanRes.CleanResult}`)
-    if(!virusScanRes || !virusScanRes.CleanResult){
+    if (!virusScanRes || !virusScanRes.CleanResult) {
       throw new BadRequestError("File did not pass virus scan")
     }
-    
-    // Sanitize and validate file 
-    const sanitizedContent = await validateAndSanitizeFileUpload(fileContent, fileBuffer)
+
+    // Sanitize and validate file
+    const sanitizedContent = await validateAndSanitizeFileUpload(
+      fileContent,
+      fileBuffer
+    )
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }

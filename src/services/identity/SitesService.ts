@@ -1,7 +1,7 @@
 import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
-import { Deployment, Site, Repo } from "@database/models"
+import { Deployment, Repo, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {

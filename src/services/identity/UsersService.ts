@@ -254,14 +254,9 @@ class UsersService {
   }
 
   async verifyOtp(key: string, keyType: OtpType, otp: string) {
-    let otpEntry
-    if (keyType === OtpType.Email) {
-      otpEntry = await this.otpRepository.findOne({ where: { email: key } })
-    } else {
-      otpEntry = await this.otpRepository.findOne({
-        where: { mobileNumber: key },
-      })
-    }
+    const otpFindParams =
+      keyType === OtpType.Email ? { email: key } : { mobileNumber: key }
+    const otpEntry = await this.otpRepository.findOne({ where: otpFindParams })
 
     if (!otpEntry?.hashedOtp) {
       // TODO: Change to use AuthError after FE fix

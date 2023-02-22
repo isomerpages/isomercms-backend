@@ -36,7 +36,7 @@ class SmsClient {
     try {
       await this.axiosClient.post(endpoint, sms)
     } catch (err) {
-      logger.error(err)
+      logger.error(`Failed to send SMS to ${recipient}: ${err}`)
       throw new Error("Failed to send SMS.")
     }
   }

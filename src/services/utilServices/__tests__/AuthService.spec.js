@@ -47,7 +47,7 @@ describe("Auth Service", () => {
       .mockImplementation(() => ({ contactNumber: mockContactNumber })),
     canSendEmailOtp: jest.fn(),
     sendEmailOtp: jest.fn(),
-    verifyOtp: jest.fn(),
+    verifyEmailOtp: jest.fn(),
     loginWithEmail: jest
       .fn()
       .mockImplementation(() => ({ id: mockIsomerUserId, email: mockEmail })),
@@ -137,29 +137,27 @@ describe("Auth Service", () => {
   describe("verifyOtp", () => {
     const mockOtp = "123456"
     it("should be able to verify otp, login, and return token if correct", async () => {
-      mockUsersService.verifyOtp.mockImplementationOnce(() => true)
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => true)
       jwtUtils.signToken.mockImplementationOnce(() => signedToken)
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })
       ).resolves.toEqual(signedToken)
-      expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
+      expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
-        OtpType.Email,
         mockOtp
       )
       expect(mockUsersService.loginWithEmail).toHaveBeenCalledWith(mockEmail)
     })
 
     it("should throw an error if otp is incorrect", async () => {
-      mockUsersService.verifyOtp.mockImplementationOnce(() => false)
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => false)
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })
       ).rejects.toThrow(BadRequestError)
-      expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
+      expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
-        OtpType.Email,
         mockOtp
       )
     })

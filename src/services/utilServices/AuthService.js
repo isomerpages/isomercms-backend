@@ -122,11 +122,7 @@ class AuthService {
   }
 
   async verifyOtp({ email, otp }) {
-    const isOtpValid = await this.usersService.verifyOtp(
-      email,
-      OtpType.Email,
-      otp
-    )
+    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
 
     if (!isOtpValid) {
       throw new BadRequestError("You have entered an invalid OTP.")

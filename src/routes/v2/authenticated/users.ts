@@ -11,7 +11,7 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 import UserSessionData from "@classes/UserSessionData"
 
 import { isError, RequestHandler } from "@root/types"
-import UsersService, { OtpType } from "@services/identity/UsersService"
+import UsersService from "@services/identity/UsersService"
 
 interface UsersRouterProps {
   usersService: UsersService
@@ -69,11 +69,7 @@ export class UsersRouter {
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
 
-    const isOtpValid = await this.usersService.verifyOtp(
-      email,
-      OtpType.Email,
-      otp
-    )
+    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
     if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }
@@ -107,11 +103,7 @@ export class UsersRouter {
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
 
-    const isOtpValid = await this.usersService.verifyOtp(
-      mobile,
-      OtpType.Mobile,
-      otp
-    )
+    const isOtpValid = await this.usersService.verifyMobileOtp(mobile, otp)
     if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }

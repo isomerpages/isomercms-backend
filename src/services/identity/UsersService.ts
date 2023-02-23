@@ -18,7 +18,7 @@ const PARSED_EXPIRY = parseInt(OTP_EXPIRY || "", 10) ?? undefined
 const PARSED_MAX_NUM_OTP_ATTEMPTS =
   parseInt(MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
 
-export enum OtpType {
+enum OtpType {
   Email = "EMAIL",
   Mobile = "MOBILE",
 }
@@ -253,19 +253,23 @@ class UsersService {
     await this.smsClient.sendSms(mobileNumber, message)
   }
 
-  async verifyOtp(key: string, keyType: OtpType, otp: string) {
-    const otpFindParams =
-      keyType === OtpType.Email ? { email: key } : { mobileNumber: key }
-    const otpEntry = await this.otpRepository.findOne({ where: otpFindParams })
+  private async verifyOtp(otpEntry: Otp | null, otp: string) {
+    // TODO: Change all the following to use AuthError after FE fix
+    if (!otp || otp === "") {
+      throw new BadRequestError("Empty OTP provided")
+    }
 
-    if (!otpEntry?.hashedOtp) {
-      // TODO: Change to use AuthError after FE fix
-      throw new BadRequestError("Hashed OTP not found")
+    if (!otpEntry) {
+      throw new BadRequestError("OTP not found")
     }
 
     if (otpEntry.attempts >= PARSED_MAX_NUM_OTP_ATTEMPTS) {
-      // TODO: Change to use AuthError after FE fix
       throw new BadRequestError("Max number of attempts reached")
+    }
+
+    if (!otpEntry?.hashedOtp) {
+      await otpEntry.destroy()
+      throw new BadRequestError("Hashed OTP not found")
     }
 
     // increment attempts
@@ -273,11 +277,29 @@ class UsersService {
 
     const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
     if (!isValidOtp) {
-      // TODO: Change to use AuthError after FE fix
       throw new BadRequestError("OTP is not valid")
     }
 
+    if (isValidOtp && otpEntry.expiresAt < new Date()) {
+      await otpEntry.destroy()
+      throw new BadRequestError("OTP has expired")
+    }
+
+    // destroy otp before returning true since otp has been "used"
+    await otpEntry.destroy()
     return true
+  }
+
+  async verifyEmailOtp(email: string, otp: string) {
+    const otpEntry = await this.otpRepository.findOne({ where: { email } })
+    return this.verifyOtp(otpEntry, otp)
+  }
+
+  async verifyMobileOtp(mobileNumber: string, otp: string) {
+    const otpEntry = await this.otpRepository.findOne({
+      where: { mobileNumber },
+    })
+    return this.verifyOtp(otpEntry, otp)
   }
 
   private getOtpExpiry() {

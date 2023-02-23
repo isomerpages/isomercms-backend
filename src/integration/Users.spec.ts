@@ -22,6 +22,9 @@ const mockWhitelistedDomain = ".gov.sg"
 const mockGithubId = "i m a git"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
+const maxNumOfOtpAttempts =
+  parseInt(process.env.MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
+const mockInvalidOtp = "000000"
 
 const UsersService = getUsersService(sequelize)
 
@@ -393,6 +396,78 @@ describe("Users Router", () => {
 
       // Assert
       expect(actual.statusCode).toBe(expected)
+    })
+
+    it("should return 400 when max number of otp attempts is reached with correct error message", async () => {
+      // Arrange
+      const expected = 400
+      mockAxios.post.mockResolvedValueOnce(200)
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      const numOfAttempts = 10 // arbitrary number > maxNumOfAttempts
+      for (let i = 1; i <= numOfAttempts; i++) {
+        const actual = await request(app).post("/mobile/verifyOtp").send({
+          mobile: mockValidNumber,
+          otp: mockInvalidOtp,
+          userId: mockIsomerUserId,
+        })
+        const otpEntry = await Otp.findOne({
+          where: { mobileNumber: mockValidNumber },
+        })
+
+        // Assert
+        expect(actual.statusCode).toBe(expected)
+
+        if (i <= maxNumOfOtpAttempts) {
+          expect(otpEntry?.attempts).toBe(i)
+          expect(actual.body.error.message).toBe("OTP is not valid")
+        } else {
+          expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
+          expect(actual.body.error.message).toBe(
+            "Max number of attempts reached"
+          )
+        }
+      }
+    })
+
+    it("should reset otp attempts when new otp is requested", async () => {
+      // Arrange
+      mockAxios.post.mockResolvedValue(200)
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      const numOfAttempts = 10 // arbitrary number > maxNumOfAttempts
+      for (let i = 1; i <= numOfAttempts; i++) {
+        await request(app).post("/mobile/verifyOtp").send({
+          mobile: mockValidNumber,
+          otp: mockInvalidOtp,
+          userId: mockIsomerUserId,
+          resetOtpAttempts: true,
+        })
+      }
+
+      let otpEntry = await Otp.findOne({
+        where: { mobileNumber: mockValidNumber },
+      })
+
+      // Assert
+      expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
+
+      // Request for new otp and ensure attempts are reset
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+      otpEntry = await Otp.findOne({
+        where: { mobileNumber: mockValidNumber },
+      })
+
+      // Assert
+      expect(otpEntry?.attempts).toBe(0)
     })
   })
 })

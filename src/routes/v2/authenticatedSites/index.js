@@ -85,6 +85,7 @@ const getAuthenticatedSitesSubrouter = ({
   authMiddleware,
   gitHubService,
   configYmlService,
+  apiLogger,
 }) => {
   const collectionYmlService = new CollectionYmlService({ gitHubService })
   const homepagePageService = new HomepagePageService({ gitHubService })
@@ -186,6 +187,9 @@ const getAuthenticatedSitesSubrouter = ({
 
   authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
   authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
+  // which is only available after verifying that the jwt is valid
+  authenticatedSitesSubrouter.use(apiLogger)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",

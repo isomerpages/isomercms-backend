@@ -28,6 +28,7 @@ import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import InfraService from "@services/infra/InfraService"
 
+import { apiLogger } from "./middleware/apiLogger"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -62,7 +63,6 @@ const { FRONTEND_URL } = process.env
 // Import middleware
 
 // Import routes
-const { apiLogger } = require("@middleware/apiLogger")
 const { errorHandler } = require("@middleware/errorHandler")
 
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
@@ -109,9 +109,11 @@ const authMiddleware = getAuthMiddleware({ identityAuthService })
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authMiddleware,
   usersService,
+  apiLogger,
 })
 const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
   authMiddleware,
+  apiLogger,
 })
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
@@ -121,13 +123,15 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   usersService,
   reposService,
   deploymentsService,
+  apiLogger,
 })
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   authMiddleware,
   gitHubService,
   configYmlService,
+  apiLogger,
 })
-const authV2Router = new AuthRouter({ authMiddleware, authService })
+const authV2Router = new AuthRouter({ authMiddleware, authService, apiLogger })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
@@ -147,9 +151,6 @@ app.use(express.json({ limit: "7mb" }))
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
-
-// Log api requests
-app.use(apiLogger)
 
 // Health endpoint
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))

@@ -1,6 +1,12 @@
+import logger from "@logger/logger"
+
+const { CLOUDMERSIVE_API_KEY } = process.env
+const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
 const DOMPurify = require("isomorphic-dompurify")
+
+const { BaseIsomerError } = require("@errors/BaseError")
 
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
@@ -11,10 +17,36 @@ const ALLOWED_FILE_EXTENSIONS = [
   "bmp",
   "ico",
 ]
+const defaultCloudmersiveClient = CloudmersiveVirusApiClient.ApiClient.instance
 
-const validateAndSanitizeFileUpload = async (data) => {
-  const [schema, content] = data.split(",")
-  const fileBuffer = Buffer.from(content, "base64")
+// Configure API key authorization: Apikey
+const apikey = defaultCloudmersiveClient.authentications.Apikey
+apikey.apiKey = CLOUDMERSIVE_API_KEY
+
+const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
+
+const scanFileForVirus = (fileBuffer) =>
+  new Promise((success, failure) => {
+    // check if the api key is missing in the env
+    if (!CLOUDMERSIVE_API_KEY) {
+      logger.error("Cloudmersive API Key is missing in env")
+      throw new BaseIsomerError(500, "Internal Server Error")
+    }
+
+    apiInstance.scanFile(fileBuffer, (error, data, response) => {
+      if (error) {
+        logger.error(
+          `Error when calling Cloudmersive Virus Scan API: ${error.message}`
+        )
+        failure(error)
+      } else {
+        logger.info("Cloudmersive Virus Scan API called successfully")
+        success(data)
+      }
+    })
+  })
+
+const validateAndSanitizeFileUpload = async (content, fileBuffer) => {
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
 
   if (isSvg(fileBuffer)) {
@@ -31,4 +63,4 @@ const validateAndSanitizeFileUpload = async (data) => {
   return undefined
 }
 
-module.exports = { validateAndSanitizeFileUpload }
+module.exports = { validateAndSanitizeFileUpload, scanFileForVirus }

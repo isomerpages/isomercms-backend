@@ -1,8 +1,14 @@
 import autoBind from "auto-bind"
 import { NextFunction, Request, Response } from "express"
+import { Session } from "express-session"
 
 import UserSessionData from "@root/classes/UserSessionData"
 import AuthenticationMiddlewareService from "@root/services/middlewareServices/AuthenticationMiddlewareService"
+import { SessionData } from "@root/types/express/session"
+
+interface RequestWithSession extends Request {
+  session: Session & SessionData
+}
 
 export class AuthenticationMiddleware {
   private readonly authenticationMiddlewareService: AuthenticationMiddlewareService
@@ -17,16 +23,17 @@ export class AuthenticationMiddleware {
     autoBind(this)
   }
 
-  verifyJwt(req: Request, res: Response, next: NextFunction) {
-    const { cookies, originalUrl: url } = req
+  verifyAccess(req: RequestWithSession, res: Response, next: NextFunction) {
+    const { cookies, originalUrl: url, session } = req
     const {
       accessToken,
       githubId,
       isomerUserId,
       email,
-    } = this.authenticationMiddlewareService.verifyJwt({
+    } = this.authenticationMiddlewareService.verifyAccess({
       cookies,
       url,
+      userInfo: session.userInfo,
     })
     const userSessionData = new UserSessionData({
       accessToken,

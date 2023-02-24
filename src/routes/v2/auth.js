@@ -1,6 +1,8 @@
 const autoBind = require("auto-bind")
 const express = require("express")
 
+const logger = require("@logger/logger")
+
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
@@ -53,52 +55,42 @@ class AuthRouter {
     const csrfState = req.cookies[CSRF_COOKIE_NAME]
     const { code, state } = req.query
 
-    const token = await this.authService.getGithubAuthToken({
+    const userInfo = await this.authService.getUserInfoFromGithubAuth({
       csrfState,
       code,
       state,
     })
-    const authTokenExpiry = new Date()
-    // getTime allows this to work across timezones
-    authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
-    const cookieSettings = {
-      path: "/",
-      expires: authTokenExpiry,
-      httpOnly: true,
-      sameSite: true,
-      secure: isSecure(),
-    }
-    res.cookie(COOKIE_NAME, token, cookieSettings)
+    logger.info(`User ${userInfo.email} successfully logged in`)
+    Object.assign(req.session, { userInfo })
     return res.redirect(`${FRONTEND_URL}/sites`)
   }
 
   async login(req, res) {
     const { email: rawEmail } = req.body
     const email = rawEmail.toLowerCase()
-    await this.authService.sendOtp(email)
+    try {
+      await this.authService.sendOtp(email)
+    } catch (err) {
+      // Log, but don't return so responses are indistinguishable
+      logger.error(
+        `Error occurred when attempting to login user ${email}: ${err}`
+      )
+    }
     return res.sendStatus(200)
   }
 
   async verify(req, res) {
     const { email: rawEmail, otp } = req.body
     const email = rawEmail.toLowerCase()
-    const token = await this.authService.verifyOtp({ email, otp })
-    const authTokenExpiry = new Date()
-    // getTime allows this to work across timezones
-    authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
-    const cookieSettings = {
-      path: "/",
-      expires: authTokenExpiry,
-      httpOnly: true,
-      sameSite: true,
-      secure: isSecure(),
-    }
-    res.cookie(COOKIE_NAME, token, cookieSettings)
+    const userInfo = await this.authService.verifyOtp({ email, otp })
+    Object.assign(req.session, { userInfo })
+    logger.info(`User ${userInfo.email} successfully logged in`)
     return res.sendStatus(200)
   }
 
   async logout(req, res) {
     this.clearIsomerCookies(res)
+    req.session.destroy()
     return res.sendStatus(200)
   }
 
@@ -108,6 +100,7 @@ class AuthRouter {
     const userInfo = await this.authService.getUserInfo(userSessionData)
     if (!userInfo) {
       this.clearIsomerCookies(res)
+      req.session.destroy()
       return res.sendStatus(401)
     }
     return res.status(200).json(userInfo)
@@ -126,7 +119,7 @@ class AuthRouter {
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
-      this.authenticationMiddleware.verifyJwt,
+      this.authenticationMiddleware.verifyAccess,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

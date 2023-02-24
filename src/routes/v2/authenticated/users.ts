@@ -68,7 +68,9 @@ export class UsersRouter {
     const { email, otp } = req.body
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
-    if (!this.usersService.verifyOtp(email, otp)) {
+
+    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
+    if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }
 
@@ -100,7 +102,9 @@ export class UsersRouter {
     const { mobile, otp } = req.body
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
-    if (!this.usersService.verifyOtp(mobile, otp)) {
+
+    const isOtpValid = await this.usersService.verifyMobileOtp(mobile, otp)
+    if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }
 

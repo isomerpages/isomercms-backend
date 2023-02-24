@@ -2,7 +2,7 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
-import { User, Whitelist } from "@database/models"
+import { User, Whitelist, Otp } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockIsomerUserId } from "@root/fixtures/sessionData"
@@ -22,6 +22,9 @@ const mockWhitelistedDomain = ".gov.sg"
 const mockGithubId = "i m a git"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
+const maxNumOfOtpAttempts =
+  parseInt(process.env.MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
+const mockInvalidOtp = "000000"
 
 const UsersService = getUsersService(sequelize)
 
@@ -156,6 +159,9 @@ describe("Users Router", () => {
       await Whitelist.destroy({
         where: { email: mockWhitelistedDomain },
       })
+      await Otp.destroy({
+        where: { email: mockValidEmail },
+      })
     })
 
     it("should return 200 when the otp is correct", async () => {
@@ -166,8 +172,10 @@ describe("Users Router", () => {
         otp = extractEmailOtp(email.body)
         return email
       })
+
       await User.create({ id: mockIsomerUserId })
       await Whitelist.create({ email: mockWhitelistedDomain })
+
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
       })
@@ -192,8 +200,9 @@ describe("Users Router", () => {
     it("should return 400 when the otp is wrong", async () => {
       // Arrange
       const expected = 400
-      const wrongOtp = 123456
+      const wrongOtp = "123456"
       mockAxios.post.mockResolvedValueOnce(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -214,6 +223,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       mockAxios.post.mockResolvedValueOnce(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -234,6 +244,7 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       mockAxios.post.mockResolvedValueOnce(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
         email: mockValidEmail,
@@ -248,6 +259,121 @@ describe("Users Router", () => {
 
       // Assert
       expect(actual.statusCode).toBe(expected)
+    })
+
+    it("should only ensure the latest email otp is valid", async () => {
+      // Arrange
+      const expected = 200
+      let otp
+      mockAxios.post.mockImplementation((_: any, email: any) => {
+        otp = extractEmailOtp(email.body)
+        return email
+      })
+      await Whitelist.create({ email: mockWhitelistedDomain })
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/email/otp").send({
+        email: mockValidEmail,
+      })
+
+      // Act
+      const actual = await request(app).post("/email/verifyOtp").send({
+        email: mockValidEmail,
+        otp,
+        userId: mockIsomerUserId,
+      })
+      const oldOtp = otp
+
+      // Assert
+      expect(actual.statusCode).toBe(expected)
+
+      // Arrange
+      const newExpected = 400
+      await request(app).post("/email/otp").send({
+        email: mockValidEmail,
+      })
+
+      const newActual = await request(app).post("/email/verifyOtp").send({
+        email: mockValidEmail,
+        otp: oldOtp,
+        userId: mockIsomerUserId,
+      })
+
+      // Assert
+      expect(oldOtp).not.toBe(otp)
+      expect(newActual.statusCode).toBe(newExpected)
+    })
+
+    it("should return 400 when max number of email otp attempts is reached with correct error message", async () => {
+      // Arrange
+      const expected = 400
+      mockAxios.post.mockResolvedValue(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/email/otp").send({
+        email: mockValidEmail,
+      })
+
+      const numOfAttempts = 10 // arbitrary number > maxNumOfAttempts
+      for (let i = 1; i <= numOfAttempts; i++) {
+        const actual = await request(app).post("/email/verifyOtp").send({
+          email: mockValidEmail,
+          otp: mockInvalidOtp,
+          userId: mockIsomerUserId,
+        })
+        const otpEntry = await Otp.findOne({
+          where: { email: mockValidEmail },
+        })
+
+        // Assert
+        expect(actual.statusCode).toBe(expected)
+
+        if (i <= maxNumOfOtpAttempts) {
+          expect(otpEntry?.attempts).toBe(i)
+          expect(actual.body.error.message).toBe("OTP is not valid")
+        } else {
+          expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
+          expect(actual.body.error.message).toBe(
+            "Max number of attempts reached"
+          )
+        }
+      }
+    })
+
+    it("should reset otp attempts when new email otp is requested", async () => {
+      // Arrange
+      mockAxios.post.mockResolvedValue(200)
+      await Whitelist.create({ email: mockWhitelistedDomain })
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/email/otp").send({
+        email: mockValidEmail,
+      })
+
+      const numOfAttempts = 10 // arbitrary number > maxNumOfAttempts
+      for (let i = 1; i <= numOfAttempts; i++) {
+        await request(app).post("/email/verifyOtp").send({
+          email: mockValidEmail,
+          otp: mockInvalidOtp,
+          userId: mockIsomerUserId,
+        })
+      }
+
+      let otpEntry = await Otp.findOne({
+        where: { email: mockValidEmail },
+      })
+
+      // Assert
+      expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
+
+      // Request for new otp and ensure attempts are reset
+      await request(app).post("/email/otp").send({
+        email: mockValidEmail,
+      })
+      otpEntry = await Otp.findOne({
+        where: { email: mockValidEmail },
+      })
+
+      // Assert
+      expect(otpEntry?.attempts).toBe(0)
     })
   })
 
@@ -345,7 +471,7 @@ describe("Users Router", () => {
     it("should return 400 when the otp is wrong", async () => {
       // Arrange
       const expected = 400
-      const wrongOtp = 123456
+      const wrongOtp = "123456"
       mockAxios.post.mockResolvedValueOnce(200)
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/mobile/otp").send({
@@ -401,6 +527,119 @@ describe("Users Router", () => {
 
       // Assert
       expect(actual.statusCode).toBe(expected)
+    })
+
+    it("should only ensure the latest mobile otp is valid", async () => {
+      // Arrange
+      const expected = 200
+      let otp
+      mockAxios.post.mockImplementation((_: any, sms: any) => {
+        otp = extractMobileOtp(sms.body)
+        return sms
+      })
+      await Whitelist.create({ email: mockWhitelistedDomain })
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      // Act
+      const actual = await request(app).post("/mobile/verifyOtp").send({
+        mobile: mockValidNumber,
+        otp,
+        userId: mockIsomerUserId,
+      })
+      const oldOtp = otp
+
+      // Assert
+      expect(actual.statusCode).toBe(expected)
+
+      // Arrange
+      const newExpected = 400
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      const newActual = await request(app).post("/mobile/verifyOtp").send({
+        mobile: mockValidNumber,
+        otp: oldOtp,
+        userId: mockIsomerUserId,
+      })
+
+      // Assert
+      expect(oldOtp).not.toBe(otp)
+      expect(newActual.statusCode).toBe(newExpected)
+    })
+
+    it("should return 400 when max number of mobile otp attempts is reached with correct error message", async () => {
+      // Arrange
+      const expected = 400
+      mockAxios.post.mockResolvedValueOnce(200)
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      const numOfAttempts = 10 // arbitrary number > maxNumOfAttempts
+      for (let i = 1; i <= numOfAttempts; i++) {
+        const actual = await request(app).post("/mobile/verifyOtp").send({
+          mobile: mockValidNumber,
+          otp: mockInvalidOtp,
+          userId: mockIsomerUserId,
+        })
+        const otpEntry = await Otp.findOne({
+          where: { mobileNumber: mockValidNumber },
+        })
+
+        // Assert
+        expect(actual.statusCode).toBe(expected)
+
+        if (i <= maxNumOfOtpAttempts) {
+          expect(otpEntry?.attempts).toBe(i)
+          expect(actual.body.error.message).toBe("OTP is not valid")
+        } else {
+          expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
+          expect(actual.body.error.message).toBe(
+            "Max number of attempts reached"
+          )
+        }
+      }
+    })
+
+    it("should reset otp attempts when new mobile otp is requested", async () => {
+      // Arrange
+      mockAxios.post.mockResolvedValue(200)
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      const numOfAttempts = 10 // arbitrary number > maxNumOfAttempts
+      for (let i = 1; i <= numOfAttempts; i++) {
+        await request(app).post("/mobile/verifyOtp").send({
+          mobile: mockValidNumber,
+          otp: mockInvalidOtp,
+          userId: mockIsomerUserId,
+        })
+      }
+
+      let otpEntry = await Otp.findOne({
+        where: { mobileNumber: mockValidNumber },
+      })
+
+      // Assert
+      expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
+
+      // Request for new otp and ensure attempts are reset
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+      otpEntry = await Otp.findOne({
+        where: { mobileNumber: mockValidNumber },
+      })
+
+      // Assert
+      expect(otpEntry?.attempts).toBe(0)
     })
   })
 })

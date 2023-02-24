@@ -1,5 +1,4 @@
 const express = require("express")
-const rateLimit = require("express-rate-limit")
 const session = require("express-session")
 const request = require("supertest")
 

@@ -8,6 +8,7 @@ import {
   IsomerAdmin,
   Notification,
   SiteMember,
+  Otp,
 } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 import SmsClient from "@services/identity/SmsClient"
@@ -17,6 +18,7 @@ import { mailer } from "@services/utilServices/MailClient"
 import AuthService from "./AuthService"
 import IsomerAdminsService from "./IsomerAdminsService"
 import NotificationsService from "./NotificationsService"
+import OtpService from "./OtpService"
 import UsersService from "./UsersService"
 
 const { OTP_EXPIRY, OTP_SECRET, NODE_ENV } = process.env
@@ -40,16 +42,19 @@ const smsClient = IS_LOCAL_DEV
     } as SmsClient)
   : new SmsClient()
 
+export const otpService = new OtpService()
+
 // NOTE: This is because the usersService requires an instance of sequelize
 // as it requires a transaction for certain methods
 export const getUsersService = (sequelize: Sequelize) =>
   new UsersService({
     repository: User,
-    otp: totpGenerator,
     mailer,
     smsClient,
     sequelize,
     whitelist: Whitelist,
+    otpService,
+    otpRepository: Otp,
   })
 
 // NOTE: This is because the identity auth service has an

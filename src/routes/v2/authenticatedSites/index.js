@@ -188,7 +188,7 @@ const getAuthenticatedSitesSubrouter = ({
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyJwt)
+  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyAccess)
   authenticatedSitesSubrouter.use(attachSiteHandler)
   authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteMember)
 

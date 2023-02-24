@@ -34,7 +34,7 @@ class AuthService {
     return { redirectUrl: githubAuthUrl, cookieToken: token }
   }
 
-  async getGithubAuthToken({ csrfState, code, state }) {
+  async getUserInfoFromGithubAuth({ csrfState, code, state }) {
     try {
       const decoded = jwtUtils.verifyToken(csrfState)
       if (decoded.state !== state) {
@@ -87,14 +87,14 @@ class AuthService {
     const user = await this.usersService.login(githubId)
     if (!user) throw Error("Failed to create user")
 
-    const token = jwtUtils.signToken({
-      access_token: jwtUtils.encryptToken(accessToken),
-      user_id: githubId,
-      isomer_user_id: user.id,
+    const userInfo = {
+      accessToken: jwtUtils.encryptToken(accessToken),
+      githubId,
+      isomerUserId: user.id,
       email: user.email,
-    })
+    }
 
-    return token
+    return userInfo
   }
 
   async sendOtp(email) {
@@ -125,11 +125,11 @@ class AuthService {
     }
     // Create user if does not exists. Set last logged in to current time.
     const user = await this.usersService.loginWithEmail(email)
-    const token = jwtUtils.signToken({
-      isomer_user_id: user.id,
+    const userInfo = {
+      isomerUserId: user.id,
       email: user.email,
-    })
-    return token
+    }
+    return userInfo
   }
 
   async getUserInfo(sessionData) {

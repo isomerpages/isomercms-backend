@@ -1,4 +1,6 @@
 // Import logger
+import _ from "lodash"
+
 import logger from "@logger/logger"
 
 // Import errors
@@ -8,6 +10,7 @@ import jwtUtils from "@utils/jwt-utils"
 
 import { E2E_TEST_EMAIL, E2E_ISOMER_ID } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
+import { SessionData } from "@root/types/express/session"
 
 const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
 const E2E_TEST_USER = "e2e-test"
@@ -18,7 +21,7 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/auth/whoami",
 ]
 
-interface VerifyJwtProps {
+type VerifyAccessProps = SessionData & {
   cookies: {
     isomercms: string
     isomercmsE2E?: string
@@ -27,7 +30,7 @@ interface VerifyJwtProps {
 }
 
 export default class AuthenticationMiddlewareService {
-  verifyE2E({ cookies, url }: VerifyJwtProps) {
+  verifyE2E({ cookies, url }: Omit<VerifyAccessProps, "userInfo">) {
     const { isomercmsE2E } = cookies
     const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
 
@@ -48,8 +51,7 @@ export default class AuthenticationMiddlewareService {
     return true
   }
 
-  verifyJwt({ cookies, url }: VerifyJwtProps) {
-    const { isomercms } = cookies
+  verifyAccess({ cookies, url, userInfo }: VerifyAccessProps) {
     const isValidE2E = this.verifyE2E({ cookies, url })
 
     if (isValidE2E) {
@@ -59,22 +61,18 @@ export default class AuthenticationMiddlewareService {
       const email = E2E_TEST_EMAIL
       return { accessToken, githubId, isomerUserId, email }
     }
-    if (!isomercms) {
-      logger.error(`Authentication error: JWT token expired. Url: ${url}`)
-      throw new AuthError(`JWT token has expired`)
-    }
     try {
-      const {
-        access_token: retrievedToken,
-        user_id: githubId,
-        isomer_user_id: isomerUserId,
-        email,
-      } = jwtUtils.verifyToken(isomercms)
-      if (!isomerUserId) {
+      if (_.isEmpty(userInfo)) {
         const notLoggedInError = new Error("User not logged in with email")
         notLoggedInError.name = "NotLoggedInError"
         throw notLoggedInError
       }
+      const {
+        accessToken: retrievedToken,
+        githubId,
+        isomerUserId,
+        email,
+      } = userInfo
       const accessToken = retrievedToken
         ? jwtUtils.decryptToken(retrievedToken)
         : ""

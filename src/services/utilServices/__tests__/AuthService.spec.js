@@ -31,7 +31,14 @@ describe("Auth Service", () => {
 
   const state = "state"
   const token = "token"
-  const signedToken = "signedToken"
+  const signedGithubToken = {
+    accessToken: token,
+    githubId: mockGithubId,
+  }
+  const signedEmailToken = {
+    email: mockEmail,
+    isomerUserId: mockIsomerUserId,
+  }
   const csrfState = "csrfState"
   const mockContactNumber = "12345678"
 
@@ -69,7 +76,7 @@ describe("Auth Service", () => {
     })
   })
 
-  describe("getGithubAuthToken", () => {
+  describe("getUserInfoFromGithubAuth", () => {
     it("Retrieves the Github auth token", async () => {
       const params = {
         code: "code",
@@ -80,7 +87,6 @@ describe("Auth Service", () => {
       uuid.mockImplementation(() => state)
       jwtUtils.verifyToken.mockImplementation(() => ({ state }))
       jwtUtils.encryptToken.mockImplementation(() => token)
-      jwtUtils.signToken.mockImplementation(() => signedToken)
       axios.post.mockImplementation(() => ({
         data: `access_token=${accessToken}`,
       }))
@@ -91,8 +97,8 @@ describe("Auth Service", () => {
       }))
 
       await expect(
-        service.getGithubAuthToken({ csrfState, code: "code", state })
-      ).resolves.toEqual(signedToken)
+        service.getUserInfoFromGithubAuth({ csrfState, code: "code", state })
+      ).resolves.toEqual(signedGithubToken)
 
       expect(axios.post).toHaveBeenCalledWith(
         "https://github.com/login/oauth/access_token",
@@ -137,11 +143,10 @@ describe("Auth Service", () => {
     const mockOtp = "123456"
     it("should be able to verify otp, login, and return token if correct", async () => {
       mockUsersService.verifyOtp.mockImplementationOnce(() => true)
-      jwtUtils.signToken.mockImplementationOnce(() => signedToken)
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })
-      ).resolves.toEqual(signedToken)
+      ).resolves.toEqual(signedEmailToken)
       expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
         mockEmail,
         mockOtp

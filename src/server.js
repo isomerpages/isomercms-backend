@@ -1,5 +1,7 @@
 import "dd-trace/init"
 import "module-alias/register"
+import SequelizeStoreFactory from "connect-session-sequelize"
+import session from "express-session"
 import nocache from "nocache"
 
 import logger from "@logger/logger"
@@ -48,6 +50,11 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 
 const path = require("path")
 
+const AUTH_TOKEN_EXPIRY_MS = parseInt(
+  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
+  10
+)
+
 const sequelize = initSequelize([
   Site,
   SiteMember,
@@ -70,6 +77,28 @@ const cors = require("cors")
 const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
+
+const SequelizeStore = SequelizeStoreFactory(session.Store)
+const sessionMiddleware = session({
+  store: new SequelizeStore({
+    db: sequelize,
+    tableName: "sessions",
+    checkExpirationInterval: 15 * 60 * 1000, // Checks expired sessions every 15 minutes
+  }),
+  resave: false, // can set to false since touch is implemented by our store
+  saveUninitialized: false, // do not save new sessions that have not been modified
+  cookie: {
+    httpOnly: true,
+    sameSite: "strict",
+    secure:
+      process.env.NODE_ENV !== "DEV" &&
+      process.env.NODE_ENV !== "LOCAL_DEV" &&
+      process.env.NODE_ENV !== "test",
+    maxAge: AUTH_TOKEN_EXPIRY_MS,
+  },
+  secret: process.env.SESSION_SECRET,
+  name: "isomer",
+})
 
 // Env vars
 const { FRONTEND_URL } = process.env
@@ -189,6 +218,8 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
 app.use(nocache())
+
+app.use(sessionMiddleware)
 
 // Log api requests
 app.use(apiLogger)

@@ -80,6 +80,10 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
+const secure =
+  process.env.NODE_ENV !== "DEV" &&
+  process.env.NODE_ENV !== "LOCAL_DEV" &&
+  process.env.NODE_ENV !== "test"
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({
   store: new SequelizeStore({
@@ -92,10 +96,7 @@ const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     sameSite: "strict",
-    secure:
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test",
+    secure,
     maxAge: AUTH_TOKEN_EXPIRY_MS,
   },
   secret: process.env.SESSION_SECRET,
@@ -207,6 +208,9 @@ const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()
+if (secure) {
+  app.set("trust proxy", 1)
+}
 app.use(helmet())
 
 app.use(

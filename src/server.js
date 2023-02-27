@@ -40,7 +40,6 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
-import { NUM_PROXIES } from "./constants/infra"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"

@@ -212,10 +212,6 @@ const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()
 app.set("trust proxy", NUM_PROXIES)
-// NOTE: Test endpoint exposed to verify that the public facing IP matches up
-// with the rate limiter's received IP.
-// TODO: Remove once our `NUM_PROXIES` is verified to be correct
-app.get("/ip", (request, response) => response.send(request.ip))
 app.use(helmet())
 
 app.use(

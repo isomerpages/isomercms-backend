@@ -18,6 +18,7 @@ brew install gitguardian/tap/ggshield
 2. Add the API Key to your shell startup env (e.g. in `.zshrc`)
 
 ```
+# Service API key from GitGuardian account
 export GITGUARDIAN_API_KEY=abc123
 ```
 

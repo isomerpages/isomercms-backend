@@ -98,7 +98,6 @@ describe("SitesService", () => {
 
       // Assert
       expect(actual).toBe(expected)
-      //
       expect(MockRepository.findOne).toBeCalledWith({
         include: [
           {

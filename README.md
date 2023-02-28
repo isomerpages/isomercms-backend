@@ -4,7 +4,7 @@
 2. Ensure node 14 is installed. Install and use nvm to manage multiple node versions.
 3. Run `npm i` to install required packages
 4. Ensure [Docker](https://www.docker.com/products/docker-desktop/) is installed
-5. Run `npm run dev:servies` to bring up the docker containers
+5. Run `npm run dev:services` to bring up the docker containers
 6. Run `npm run dev` to start the server
 
 ## Setting Up Git Guardian
@@ -15,7 +15,7 @@
 brew install gitguardian/tap/ggshield
 ```
 
-2. Add the API Key to your shell startup env (e.g. in `.zshrc`)
+2. Add the API Key to your `.env` file
 
 ```
 # Service API key from GitGuardian account

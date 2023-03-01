@@ -215,7 +215,7 @@ const app = express()
 if (isSecure) {
   // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
   // This is trusted because our security groups block all other access to the server
-  app.set("trust proxy", 1)
+  app.set("trust proxy", true)
 }
 app.use(helmet())
 

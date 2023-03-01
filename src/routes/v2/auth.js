@@ -18,9 +18,10 @@ const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
 class AuthRouter {
-  constructor({ authService, authenticationMiddleware }) {
+  constructor({ authService, authenticationMiddleware, rateLimiter }) {
     this.authService = authService
     this.authenticationMiddleware = authenticationMiddleware
+    this.rateLimiter = rateLimiter
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -108,7 +109,7 @@ class AuthRouter {
 
   getRouter() {
     const router = express.Router()
-
+    router.use(this.rateLimiter)
     router.get(
       "/github-redirect",
       attachReadRouteHandlerWrapper(this.authRedirect)

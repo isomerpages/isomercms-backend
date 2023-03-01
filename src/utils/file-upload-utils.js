@@ -33,7 +33,7 @@ const scanFileForVirus = (fileBuffer) =>
       throw new BaseIsomerError(500, "Internal Server Error")
     }
 
-    apiInstance.scanFile(fileBuffer, (error, data, response) => {
+    apiInstance.scanFile(fileBuffer, (error, data) => {
       if (error) {
         logger.error(
           `Error when calling Cloudmersive Virus Scan API: ${error.message}`
@@ -46,7 +46,9 @@ const scanFileForVirus = (fileBuffer) =>
     })
   })
 
-const validateAndSanitizeFileUpload = async (content, fileBuffer) => {
+const validateAndSanitizeFileUpload = async (data) => {
+  const [, content] = data.split(",")
+  const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
 
   if (isSvg(fileBuffer)) {

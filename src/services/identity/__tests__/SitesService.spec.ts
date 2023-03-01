@@ -1,6 +1,6 @@
 import { ModelStatic } from "sequelize"
 
-import { Deployment, Site, User, Repo } from "@database/models"
+import { Deployment, Repo, Site, User } from "@database/models"
 import {
   MOCK_COMMIT_MESSAGE_OBJECT_ONE,
   MOCK_COMMIT_MESSAGE_OBJECT_TWO,

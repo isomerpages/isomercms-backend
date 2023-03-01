@@ -48,6 +48,7 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
+import { rateLimiter } from "./services/utilServices/RateLimiter"
 
 const path = require("path")
 
@@ -80,6 +81,11 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
+const isSecure =
+  process.env.NODE_ENV !== "DEV" &&
+  process.env.NODE_ENV !== "LOCAL_DEV" &&
+  process.env.NODE_ENV !== "test"
+
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({
   store: new SequelizeStore({
@@ -92,10 +98,7 @@ const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     sameSite: "strict",
-    secure:
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test",
+    secure: isSecure,
     maxAge: AUTH_TOKEN_EXPIRY_MS,
   },
   secret: process.env.SESSION_SECRET,
@@ -203,10 +206,19 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   configYmlService,
   notificationOnEditHandler,
 })
-const authV2Router = new AuthRouter({ authenticationMiddleware, authService })
+const authV2Router = new AuthRouter({
+  authenticationMiddleware,
+  authService,
+  rateLimiter,
+})
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()
+if (isSecure) {
+  // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
+  // This is trusted because our security groups block all other access to the server
+  app.set("trust proxy", true)
+}
 app.use(helmet())
 
 app.use(

@@ -6,12 +6,14 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { mockUserSessionData, mockEmail } = require("@fixtures/sessionData")
+const { rateLimiter } = require("@root/services/utilServices/RateLimiter")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
 const { FRONTEND_URL } = process.env
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
+const MOCK_USER_ID = "userId"
 
 describe("Unlinked Pages Router", () => {
   jest.mock("@logger/logger", {
@@ -25,9 +27,14 @@ describe("Unlinked Pages Router", () => {
     sendOtp: jest.fn(),
     verifyOtp: jest.fn(),
   }
+  const mockAuthenticationMiddleware = {
+    verifyJwt: jest.fn().mockImplementation((req, res, next) => next()),
+  }
 
   const router = new AuthRouter({
     authService: mockAuthService,
+    authenticationMiddleware: mockAuthenticationMiddleware,
+    rateLimiter,
   })
 
   const subrouter = express()
@@ -141,10 +148,9 @@ describe("Unlinked Pages Router", () => {
   })
 
   describe("whoami", () => {
-    const userId = "userId"
     it("returns user info if found", async () => {
       const expectedResponse = {
-        userId,
+        userId: MOCK_USER_ID,
       }
       mockAuthService.getUserInfo.mockResolvedValueOnce(expectedResponse)
 

@@ -332,10 +332,5 @@ const config = convict({
 // Perform validation
 config.validate({ allowed: "strict" })
 
-// console.log("env", config.get("env"))
-// console.log("github build org", config.get("github.buildOrgName"))
-// console.log("GG", process.env["GITGUARDIAN_API_KEY"])
-// console.log(config.get("gitGuardian"))
-
 module.exports = config
 export { config }

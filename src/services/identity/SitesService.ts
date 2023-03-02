@@ -67,9 +67,9 @@ class SitesService {
     this.reviewRequestService = reviewRequestService
   }
 
-  isGitHubCommitData(commit: any): commit is GitHubCommitData {
+  isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
     return (
-      commit &&
+      !!commit &&
       (commit as GitHubCommitData).author !== undefined &&
       (commit as GitHubCommitData).author.name !== undefined &&
       (commit as GitHubCommitData).author.date !== undefined &&

@@ -1,4 +1,4 @@
-import logger from "@logger/logger"
+const logger = require("@logger/logger")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")
@@ -38,10 +38,7 @@ class MediaFileService {
     }
 
     // Sanitize and validate file
-    const sanitizedContent = await validateAndSanitizeFileUpload(
-      fileContent,
-      fileBuffer
-    )
+    const sanitizedContent = await validateAndSanitizeFileUpload(content)
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }

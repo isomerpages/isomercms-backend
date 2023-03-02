@@ -1,3 +1,5 @@
+const config = require("@config/config")
+
 const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
@@ -13,8 +15,8 @@ const {
 
 // Import error
 
-const { GITHUB_ORG_NAME } = process.env
-const { BRANCH_REF } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
+const BRANCH_REF = config.get("github.branchRef")
 
 class File {
   constructor(accessToken, siteName) {

@@ -57,12 +57,11 @@ import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 
+const config = require("@config/config")
+
 const path = require("path")
 
-const AUTH_TOKEN_EXPIRY_MS = parseInt(
-  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
-  10
-)
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
 
 const sequelize = initSequelize([
   Site,
@@ -90,11 +89,9 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
+const nodeEnv = config.get("env")
 const isSecure =
-  process.env.NODE_ENV !== "DEV" &&
-  process.env.NODE_ENV !== "LOCAL_DEV" &&
-  process.env.NODE_ENV !== "test"
-
+  nodeEnv !== "DEV" && nodeEnv !== "LOCAL_DEV" && nodeEnv !== "test"
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({
   store: new SequelizeStore({
@@ -110,12 +107,12 @@ const sessionMiddleware = session({
     secure: isSecure,
     maxAge: AUTH_TOKEN_EXPIRY_MS,
   },
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET, // TODO: This is missing in env example
   name: "isomer",
 })
 
 // Env vars
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
 // Import middleware
 
 // Import routes

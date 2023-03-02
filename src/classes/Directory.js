@@ -1,5 +1,7 @@
 const _ = require("lodash")
 
+const config = require("@config/config")
+
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
@@ -9,8 +11,8 @@ const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
 
-const { GITHUB_ORG_NAME } = process.env
-const { BRANCH_REF } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
+const BRANCH_REF = config.get("github.branchRef")
 
 class RootType {
   constructor() {

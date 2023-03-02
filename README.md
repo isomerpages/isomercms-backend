@@ -1,3 +1,34 @@
+## Setup
+
+1. Ensure pre-commit hooks are setup for safe commits. See below section on "Setting up Git Guardian"
+2. Ensure node 14 is installed. Install and use nvm to manage multiple node versions.
+3. Run `npm i` to install required packages
+4. Ensure [Docker](https://www.docker.com/products/docker-desktop/) is installed
+5. Run `npm run dev:services` to bring up the docker containers
+6. Run `npm run dev` to start the server
+
+## Setting Up Git Guardian
+
+1. Install GitGuardian
+
+```
+brew install gitguardian/tap/ggshield
+```
+
+2. Add the API Key to your `.env` file
+
+```
+# Service API key from GitGuardian account
+export GITGUARDIAN_API_KEY=abc123
+```
+
+Notes:
+
+Only if necessary,
+
+- To skip all pre-commit hooks, use `$ git commit -m "commit message" -n`
+- To skip only GitGuardian’s hook, use `$ SKIP=ggshield git commit -m "commit message"`
+
 ## E2E Tests
 
 To run the E2E tests successfully, you will need to define the following environment variables:

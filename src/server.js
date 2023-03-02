@@ -214,6 +214,7 @@ const authV2Router = new AuthRouter({
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 
 const app = express()
+
 if (isSecure) {
   // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
   // This is trusted because our security groups block all other access to the server

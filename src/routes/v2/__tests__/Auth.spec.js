@@ -1,3 +1,5 @@
+import config from "@config/config"
+
 const express = require("express")
 const session = require("express-session")
 const request = require("supertest")
@@ -10,7 +12,7 @@ const { rateLimiter } = require("@root/services/utilServices/RateLimiter")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
 const MOCK_USER_ID = "userId"

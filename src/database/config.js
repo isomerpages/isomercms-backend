@@ -1,10 +1,14 @@
+import config from "@config/config"
+
 const { parse } = require("pg-connection-string")
 
 // TODO: This came from a past project - I don't remember why I wrote this but let's explore later.
 // We have to manually parse database URL because sequelize-typescript requires explicit
 // connection parameters.
 
-const { DB_URI, DB_MIN_POOL, DB_MAX_POOL } = process.env
+const DB_URI = config.get("database.dbUri")
+const DB_MIN_POOL = config.get("database.dbMinPool")
+const DB_MAX_POOL = config.get("database.dbMaxPool")
 
 if (!DB_URI) throw new Error("DB_URI is not defined")
 const parsed = parse(DB_URI)

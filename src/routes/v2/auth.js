@@ -1,3 +1,5 @@
+import config from "@config/config"
+
 const autoBind = require("auto-bind")
 const express = require("express")
 
@@ -6,13 +8,10 @@ const logger = require("@logger/logger")
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
 const { isSecure } = require("@utils/auth-utils")
 
-const AUTH_TOKEN_EXPIRY_MS = parseInt(
-  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
-  10
-)
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"

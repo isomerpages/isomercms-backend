@@ -1,3 +1,5 @@
+import config from "@config/config"
+
 const axios = require("axios")
 const express = require("express")
 const queryString = require("query-string")
@@ -21,15 +23,13 @@ const identityServices = require("@services/identity")
 
 const router = express.Router()
 
-const { CLIENT_ID } = process.env
-const { CLIENT_SECRET } = process.env
-const { REDIRECT_URI } = process.env
-const AUTH_TOKEN_EXPIRY_MS = parseInt(
-  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
-  10
-)
+const CLIENT_ID = config.get("github.clientId")
+const CLIENT_SECRET = config.get("github.clientSecret")
+const REDIRECT_URI = config.get("github.redirectUri")
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
 const CSRF_TOKEN_EXPIRY_MS = 600000
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
+const NODE_ENV = config.get("env")
 
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
@@ -54,9 +54,7 @@ async function authRedirect(req, res) {
     expires: csrfTokenExpiry,
     httpOnly: true,
     secure:
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test",
+      NODE_ENV !== "DEV" && NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "test",
   }
 
   const token = jwtUtils.signToken({ state })

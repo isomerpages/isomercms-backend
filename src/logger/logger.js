@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 // Imports
+import config from "@config/config"
+
 const AWS = require("aws-sdk")
 const Bluebird = require("bluebird")
 const moment = require("moment-timezone")
@@ -8,7 +10,7 @@ const winston = require("winston")
 const WinstonCloudwatch = require("winston-cloudwatch")
 
 // Env vars
-const { NODE_ENV } = process.env
+const NODE_ENV = config.get("env")
 
 // AWS
 const AWS_REGION_NAME = "ap-southeast-1"
@@ -19,6 +21,7 @@ const metadataRequest = Bluebird.promisify(
 )
 
 // Constants
+// TODO: Check this env var as it is not in example
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
 const IS_PROD_ENV =
   NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV" && NODE_ENV !== "test"

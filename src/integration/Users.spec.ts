@@ -2,6 +2,8 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
+import config from "@config/config"
+
 import { User, Whitelist, Otp } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
@@ -22,8 +24,7 @@ const mockWhitelistedDomain = ".gov.sg"
 const mockGithubId = "i m a git"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
-const maxNumOfOtpAttempts =
-  parseInt(process.env.MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
+const maxNumOfOtpAttempts = config.get("auth.maxNumOtpAttempts")
 const mockInvalidOtp = "000000"
 
 const UsersService = getUsersService(sequelize)

@@ -51,6 +51,13 @@ const config = convict({
     format: "required-string",
     default: null,
   },
+  cloudmersiveKey: {
+    doc: "API Key for Cloudmersive scanning",
+    env: "CLOUDMERSIVE_API_KEY",
+    sensitive: true,
+    format: "required-string",
+    default: null,
+  },
   app: {
     frontendUrl: {
       doc: "URL of the frontend application",

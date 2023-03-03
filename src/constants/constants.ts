@@ -1,3 +1,5 @@
+import config from "@config/config"
+
 export enum JobStatus {
   Ready = "READY", // Ready to run jobs
   Running = "RUNNING", // A job is running
@@ -32,11 +34,8 @@ export const E2E_TEST_EMAIL = "test@e2e"
 export const E2E_TEST_CONTACT = "12345678"
 
 export const GH_MAX_REPO_COUNT = 100
-export const ISOMERPAGES_REPO_PAGE_COUNT =
-  (process.env.ISOMERPAGES_REPO_PAGE_COUNT &&
-    parseInt(process.env.ISOMERPAGES_REPO_PAGE_COUNT, 10)) ||
-  3
-export const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+export const ISOMERPAGES_REPO_PAGE_COUNT = config.get("sites.pageCount")
+export const ISOMER_GITHUB_ORG_NAME = config.get("github.orgName")
 export const ISOMER_ADMIN_REPOS = [
   "isomercms-backend",
   "isomercms-frontend",

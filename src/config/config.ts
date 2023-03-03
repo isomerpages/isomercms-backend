@@ -1,6 +1,7 @@
 import convict from "convict"
+import * as dotenv from "dotenv"
 
-require("dotenv").config()
+dotenv.config()
 
 convict.addFormat({
   name: "required-string",
@@ -333,4 +334,5 @@ const config = convict({
 config.validate({ allowed: "strict" })
 
 module.exports = config
+export default config
 export { config }

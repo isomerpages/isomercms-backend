@@ -4,6 +4,8 @@ import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
 import nocache from "nocache"
 
+import config from "@config/config"
+
 import logger from "@logger/logger"
 
 import initSequelize from "@database/index"
@@ -56,8 +58,6 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
-
-const config = require("@config/config")
 
 const path = require("path")
 

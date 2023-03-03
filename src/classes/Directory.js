@@ -1,6 +1,6 @@
-const _ = require("lodash")
+import config from "@config/config"
 
-const config = require("@config/config")
+const _ = require("lodash")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")

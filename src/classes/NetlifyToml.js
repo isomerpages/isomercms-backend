@@ -1,4 +1,4 @@
-const config = require("@config/config")
+import config from "@config/config"
 
 const { NotFoundError } = require("@errors/NotFoundError")
 

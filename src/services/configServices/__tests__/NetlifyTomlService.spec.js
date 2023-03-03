@@ -1,6 +1,6 @@
-const { Base64 } = require("js-base64")
+import config from "@config/config"
 
-const config = require("@config/config")
+const { Base64 } = require("js-base64")
 
 const validateStatus = require("@utils/axios-utils")
 

@@ -80,7 +80,7 @@ const createListener = (
 }
 
 const bootstrapServer = (app: Express) => {
-  const port = normalizePort(process.env.PORT || "8081")
+  const port = normalizePort(process.env.PORT || "8081") // TODO: PORT is not in env example
   app.set("port", port)
 
   // Create HTTP server

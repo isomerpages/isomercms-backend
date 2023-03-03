@@ -2,21 +2,18 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
+import config from "@config/config"
+
 import { Otp, Repo, Site, User, Whitelist, SiteMember } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { milliSecondsToMinutes } from "@root/utils/time-utils"
 import SmsClient from "@services/identity/SmsClient"
-import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
 
 import OtpService from "./OtpService"
 
-const { OTP_EXPIRY, MAX_NUM_OTP_ATTEMPTS } = process.env
-
-const PARSED_EXPIRY = parseInt(OTP_EXPIRY || "", 10) ?? undefined
-
-const PARSED_MAX_NUM_OTP_ATTEMPTS =
-  parseInt(MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
+const OTP_EXPIRY = config.get("auth.otpExpiry")
+const MAX_NUM_OTP_ATTEMPTS = config.get("auth.maxNumOtpAttempts")
 
 enum OtpType {
   Email = "EMAIL",
@@ -235,7 +232,7 @@ class UsersService {
 
     const subject = "One-Time Password (OTP) for IsomerCMS"
     const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${milliSecondsToMinutes(
-      PARSED_EXPIRY
+      OTP_EXPIRY
     )} minutes. Please use this to verify your email address.</p>
     <p>If your OTP does not work, please request for a new OTP.</p>
     <p>IsomerCMS Support Team</p>`
@@ -256,7 +253,7 @@ class UsersService {
     }
 
     const message = `Your OTP is ${otp}. It will expire in ${milliSecondsToMinutes(
-      PARSED_EXPIRY
+      OTP_EXPIRY
     )} minutes. Please use this to verify your mobile number`
     await this.smsClient.sendSms(mobileNumber, message)
   }
@@ -271,7 +268,7 @@ class UsersService {
       throw new BadRequestError("OTP not found")
     }
 
-    if (otpEntry.attempts >= PARSED_MAX_NUM_OTP_ATTEMPTS) {
+    if (otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
       throw new BadRequestError("Max number of attempts reached")
     }
 
@@ -311,7 +308,7 @@ class UsersService {
   }
 
   private getOtpExpiry() {
-    return new Date(Date.now() + PARSED_EXPIRY)
+    return new Date(Date.now() + OTP_EXPIRY)
   }
 
   private async createOtpEntry(

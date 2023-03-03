@@ -1,6 +1,8 @@
+import config from "@config/config"
+
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const { GITHUB_ORG_NAME } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 

@@ -1,5 +1,7 @@
 import _ from "lodash"
 
+import config from "@config/config"
+
 import {
   RawFileChangeInfo,
   Commit,
@@ -10,7 +12,7 @@ import {
 
 import { isomerRepoAxiosInstance as axiosInstance } from "../api/AxiosInstance"
 
-const { E2E_TEST_GH_TOKEN } = process.env
+const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
 
 export const getCommitDiff = async (
   siteName: string,

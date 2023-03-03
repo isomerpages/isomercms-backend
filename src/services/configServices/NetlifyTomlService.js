@@ -1,3 +1,5 @@
+import config from "@config/config"
+
 const toml = require("toml")
 
 // Import error types
@@ -9,7 +11,8 @@ const {
   genericGitHubAxiosInstance,
 } = require("@root/services/api/AxiosInstance")
 
-const { GITHUB_BUILD_ORG_NAME, GITHUB_BUILD_REPO_NAME } = process.env
+const GITHUB_BUILD_ORG_NAME = config.get("github.buildOrgName")
+const GITHUB_BUILD_REPO_NAME = config.get("github.buildRepo")
 
 class NetlifyTomlService {
   async read(sessionData) {

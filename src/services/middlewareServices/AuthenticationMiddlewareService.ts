@@ -1,6 +1,8 @@
 // Import logger
 import _ from "lodash"
 
+import config from "@config/config"
+
 import logger from "@logger/logger"
 
 // Import errors
@@ -12,7 +14,9 @@ import { E2E_TEST_EMAIL, E2E_ISOMER_ID } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { SessionData } from "@root/types/express/session"
 
-const { E2E_TEST_REPO, E2E_TEST_SECRET, E2E_TEST_GH_TOKEN } = process.env
+const E2E_TEST_REPO = config.get("cypress.e2eTestRepo")
+const E2E_TEST_SECRET = config.get("cypress.e2eTestSecret")
+const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
 const E2E_TEST_USER = "e2e-test"
 const GENERAL_ACCESS_PATHS = [
   "/v1/sites",

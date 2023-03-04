@@ -2,6 +2,8 @@ const axios = require("axios")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
+const config = require("@config/config")
+
 // Import error types
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
@@ -18,9 +20,9 @@ const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
 const { isError } = require("@root/types")
 
-const { OtpType } = require("../identity/UsersService")
-
-const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
+const CLIENT_ID = config.get("github.clientId")
+const CLIENT_SECRET = config.get("github.clientSecret")
+const REDIRECT_URI = config.get("github.redirectUri")
 
 class AuthService {
   constructor({ usersService }) {

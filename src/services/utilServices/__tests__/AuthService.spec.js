@@ -8,6 +8,8 @@ jest.mock("@utils/jwt-utils")
 const axios = require("axios")
 const uuid = require("uuid/v4")
 
+const config = require("@config/config")
+
 const { AuthError } = require("@errors/AuthError")
 const { BadRequestError } = require("@errors/BadRequestError")
 
@@ -26,7 +28,9 @@ const { OtpType } = require("@root/services/identity/UsersService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
-  const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
+  const CLIENT_ID = config.get("github.clientId")
+  const CLIENT_SECRET = config.get("github.clientSecret")
+  const REDIRECT_URI = config.get("github.redirectUri")
 
   const accessToken = "test-token"
 

@@ -1,5 +1,7 @@
 import mockAxios from "jest-mock-axios"
 
+import config from "@config/config"
+
 import {
   mockRecipient,
   mockSubject,
@@ -10,7 +12,7 @@ import _MailClient from "@services/utilServices/MailClient"
 
 const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
 
-const MailClient = new _MailClient(process.env.POSTMAN_API_KEY!)
+const MailClient = new _MailClient(config.get("postman.apiKey"))
 
 const generateEmail = (recipient: string, subject: string, body: string) => ({
   subject,

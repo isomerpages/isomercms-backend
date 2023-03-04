@@ -1,4 +1,4 @@
-import config from "@config/config"
+const config = require("@config/config")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 

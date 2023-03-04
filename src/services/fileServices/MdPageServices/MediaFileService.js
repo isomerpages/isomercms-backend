@@ -1,6 +1,6 @@
-import config from "@config/config"
+const config = require("@config/config")
 
-import logger from "@logger/logger"
+const logger = require("@logger/logger")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")

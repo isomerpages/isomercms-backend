@@ -1,7 +1,7 @@
-import config from "@config/config"
-
 const autoBind = require("auto-bind")
 const express = require("express")
+
+const config = require("@config/config")
 
 const logger = require("@logger/logger")
 

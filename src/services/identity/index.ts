@@ -31,8 +31,8 @@ const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
 
 // TODO: To remove TOTP
 const totpGenerator = new TotpGenerator({
-  secret: OTP_SECRET!,
-  expiry: parseInt(OTP_EXPIRY!, 10) ?? undefined,
+  secret: OTP_SECRET,
+  expiry: OTP_EXPIRY,
 })
 
 const smsClient = IS_LOCAL_DEV

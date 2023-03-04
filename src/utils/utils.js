@@ -1,8 +1,10 @@
 const slugify = require("slugify")
 
+const config = require("@config/config")
+
 const { genericGitHubAxiosInstance } = require("@services/api/AxiosInstance")
 
-const { GITHUB_ORG_NAME } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
   const headers = {

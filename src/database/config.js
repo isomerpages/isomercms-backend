@@ -1,6 +1,6 @@
-import config from "@config/config"
-
 const { parse } = require("pg-connection-string")
+
+const config = require("@config/config")
 
 // TODO: This came from a past project - I don't remember why I wrote this but let's explore later.
 // We have to manually parse database URL because sequelize-typescript requires explicit
@@ -36,7 +36,7 @@ module.exports = {
     updatedAt: "updated_at",
   },
   pool: {
-    min: DB_MIN_POOL ? parseInt(DB_MIN_POOL, 10) : 1,
-    max: DB_MAX_POOL ? parseInt(DB_MAX_POOL, 10) : 10,
+    min: DB_MIN_POOL,
+    max: DB_MAX_POOL,
   },
 }

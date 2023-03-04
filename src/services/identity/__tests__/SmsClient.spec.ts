@@ -1,5 +1,7 @@
 import mockAxios from "jest-mock-axios"
 
+import config from "@config/config"
+
 import { mockBody, mockRecipient } from "@fixtures/identity"
 import _SmsClient from "@services/identity/SmsClient"
 
@@ -7,7 +9,7 @@ const mockEndpoint = "/transactional/sms/send"
 
 const SmsClient = new _SmsClient()
 
-const { POSTMAN_SMS_CRED_NAME } = process.env
+const POSTMAN_SMS_CRED_NAME = config.get("postman.smsCredName")
 
 const generateSms = (recipient: string, body: string) => ({
   recipient,
@@ -32,8 +34,8 @@ describe("Sms Client", () => {
   it("should throw an error on initialization when there is no api key", () => {
     // Arrange
     // Store the API key and set it later so that other tests are not affected
-    const curApiKey = process.env.POSTMAN_API_KEY
-    process.env.POSTMAN_API_KEY = ""
+    const curApiKey = config.get("postman.apiKey")
+    config.set("postman.apiKey", "")
 
     // Act
     // NOTE: We require a new instance because the old one would already have the API key bound
@@ -41,8 +43,9 @@ describe("Sms Client", () => {
 
     // Assert
     expect(actual).toThrowError("Postman.gov.sg API key cannot be empty")
-    process.env.POSTMAN_API_KEY = curApiKey
-    expect(process.env.POSTMAN_API_KEY).toBe(curApiKey)
+    config.set("postman.apiKey", curApiKey)
+
+    expect(config.get("postman.apiKey")).toBe(curApiKey)
   })
 
   it("should return an error when a network error occurs", async () => {

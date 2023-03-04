@@ -1,6 +1,6 @@
-import config from "@config/config"
-
 const toml = require("toml")
+
+const config = require("@config/config")
 
 // Import error types
 const { NotFoundError } = require("@errors/NotFoundError")

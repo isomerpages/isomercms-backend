@@ -89,9 +89,11 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
-const nodeEnv = config.get("env")
+const NODE_ENV = config.get("env")
+
 const isSecure =
-  nodeEnv !== "DEV" && nodeEnv !== "LOCAL_DEV" && nodeEnv !== "test"
+  NODE_ENV !== "DEV" && NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "test"
+
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({
   store: new SequelizeStore({
@@ -107,7 +109,7 @@ const sessionMiddleware = session({
     secure: isSecure,
     maxAge: AUTH_TOKEN_EXPIRY_MS,
   },
-  secret: process.env.SESSION_SECRET, // TODO: This is missing in env example
+  secret: config.get("auth.sessionSecret"),
   name: "isomer",
 })
 

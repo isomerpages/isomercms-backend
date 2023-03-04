@@ -16,6 +16,9 @@ class SmsClient {
   constructor() {
     const POSTMAN_API_KEY = config.get("postman.apiKey")
 
+    if (!POSTMAN_API_KEY)
+      throw new Error("Postman.gov.sg API key cannot be empty.")
+
     this.axiosClient = axios.create({
       baseURL: POSTMAN_API_URL,
       headers: {

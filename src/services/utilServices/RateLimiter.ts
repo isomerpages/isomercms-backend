@@ -1,5 +1,7 @@
 import rateLimit from "express-rate-limit"
 
+import config from "@config/config"
+
 const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 
 // NOTE: Refer here for more information regarding the implementation:
@@ -11,13 +13,7 @@ const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 // but not on the other, leading to inconsistent behaviour.
 // eslint-disable-next-line import/prefer-default-export
 export const rateLimiter = rateLimit({
-  windowMs:
-    parseInt(
-      process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS ||
-        DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS.toString(),
-      10
-    ) /
-    (1000 * 60),
+  windowMs: config.get("auth.tokenExpiry") / (1000 * 60),
   max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers

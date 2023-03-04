@@ -44,6 +44,12 @@ const config = convict({
     format: "required-string",
     default: "LOCAL_DEV",
   },
+  port: {
+    doc: "The port to bind.",
+    env: "PORT",
+    format: "required-number",
+    default: 8081,
+  },
   gitGuardian: {
     doc: "API Key for GitGuardian pre-commit hooks",
     env: "GITGUARDIAN_API_KEY",
@@ -71,7 +77,7 @@ const config = convict({
       doc: "Number of pages of repos to retrieve from GitHub API",
       env: "ISOMERPAGES_REPO_PAGE_COUNT",
       format: "required-number",
-      default: "10",
+      default: 10,
     },
     localSiteAccessToken: {
       doc: "Access token for local site",
@@ -125,13 +131,20 @@ const config = convict({
       env: "OTP_SECRET",
       sensitive: true,
       format: "required-string",
-      default: null,
+      default: "",
     },
     domainWhitelist: {
       doc: "List of domains that are allowed to access the API",
       env: "DOMAIN_WHITELIST",
       format: "required-string",
       default: null,
+    },
+    sessionSecret: {
+      doc: "Secret used for sessions",
+      env: "SESSION_SECRET",
+      sensitive: true,
+      format: "required-string",
+      default: "",
     },
   },
   aws: {
@@ -273,13 +286,13 @@ const config = convict({
       env: "POSTMAN_API_KEY",
       sensitive: true,
       format: "required-string",
-      default: null,
+      default: "",
     },
     smsCredName: {
       doc: "Postman SMS credential name",
       env: "POSTMAN_SMS_CRED_NAME",
       format: "required-string",
-      default: null,
+      default: "",
     },
   },
   cypress: {
@@ -314,25 +327,22 @@ const config = convict({
       default: null,
     },
     dbMinPool: {
-      // TODO: Using string here as .env has it as a string
       doc: "Minimum number of connections in the pool",
       env: "DB_MIN_POOL",
-      format: "required-string",
-      default: "1",
+      format: "required-number",
+      default: 1,
     },
-    // TODO: Using string here as .env has it as a string
     dbMaxPool: {
       doc: "Maximum number of connections in the pool",
       env: "DB_MAX_POOL",
-      format: "required-string",
-      default: "10",
+      format: "required-number",
+      default: 10,
     },
-    // TODO: confirm this
     dbEnableLogging: {
       doc: "Enable database logging",
       env: "DB_ENABLE_LOGGING",
       format: "required-boolean",
-      default: "false",
+      default: false,
     },
   },
 })

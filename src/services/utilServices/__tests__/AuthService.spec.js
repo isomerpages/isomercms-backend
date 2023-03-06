@@ -144,11 +144,11 @@ describe("Auth Service", () => {
     const mockOtp = "123456"
     it("should be able to verify otp, login, and return token if correct", async () => {
       mockUsersService.verifyEmailOtp.mockImplementationOnce(() => true)
-      jwtUtils.signToken.mockImplementationOnce(() => signedToken)
+      jwtUtils.signToken.mockImplementationOnce(() => signedEmailToken)
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })
-      ).resolves.toEqual(signedToken)
+      ).resolves.toEqual(signedEmailToken)
       expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
         mockOtp

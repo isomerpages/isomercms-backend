@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 // Imports
-import config from "@config/config"
 
 const AWS = require("aws-sdk")
 const Bluebird = require("bluebird")
@@ -8,6 +7,8 @@ const moment = require("moment-timezone")
 // Logging tools
 const winston = require("winston")
 const WinstonCloudwatch = require("winston-cloudwatch")
+
+const config = require("@config/config")
 
 // Env vars
 const NODE_ENV = config.get("env")

@@ -72,6 +72,12 @@ const config = convict({
       default: null,
     },
   },
+  mutexTableName: {
+    doc: "Name of the DynamoDB table used for mutexes",
+    env: "MUTEX_TABLE_NAME",
+    format: "required-string",
+    default: "isomer-mutexes",
+  },
   sites: {
     pageCount: {
       doc: "Number of pages of repos to retrieve from GitHub API",
@@ -251,7 +257,6 @@ const config = convict({
     },
   },
   dataDog: {
-    // TODO: To confirm
     env: {
       doc: "The DataDog environment",
       format: ["production", "development", "local"],

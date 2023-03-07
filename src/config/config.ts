@@ -9,7 +9,7 @@ convict.addFormat({
 })
 
 convict.addFormat({
-  name: "required-number",
+  name: "required-positive-number",
   validate: (val: any) => {
     if (!val) throw new Error("value cannot be empty, null or undefined")
     if (typeof val !== "number") throw new Error("value must be a number")
@@ -38,13 +38,13 @@ const config = convict({
   env: {
     doc: "The application environment.",
     env: "NODE_ENV",
-    format: "required-string",
+    format: ["LOCAL_DEV", "DEV", "test", "prod"],
     default: "LOCAL_DEV",
   },
   port: {
     doc: "The port to bind.",
     env: "PORT",
-    format: "required-number",
+    format: "required-positive-number",
     default: 8081,
   },
   gitGuardian: {
@@ -79,7 +79,7 @@ const config = convict({
     pageCount: {
       doc: "Number of pages of repos to retrieve from GitHub API",
       env: "ISOMERPAGES_REPO_PAGE_COUNT",
-      format: "required-number",
+      format: "required-positive-number",
       default: 10,
     },
     localSiteAccessToken: {
@@ -100,7 +100,7 @@ const config = convict({
     tokenExpiry: {
       doc: "Expiry duration for auth token in milliseconds",
       env: "AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS",
-      format: "required-number",
+      format: "required-positive-number",
       default: 3600000, // 1 hour
     },
     jwtSecret: {
@@ -120,13 +120,13 @@ const config = convict({
     maxNumOtpAttempts: {
       doc: "Maximum number of OTP attempts allowed",
       env: "MAX_NUM_OTP_ATTEMPTS",
-      format: "required-number",
+      format: "required-positive-number",
       default: 5,
     },
     otpExpiry: {
       doc: "Expiry duration for OTP in milliseconds",
       env: "OTP_EXPIRY",
-      format: "required-number",
+      format: "required-positive-number",
       default: 900000,
     },
     otpSecret: {
@@ -302,7 +302,7 @@ const config = convict({
       doc: "Name of the e2e test GitHub repository",
       env: "E2E_TEST_REPO",
       format: "required-string",
-      default: null,
+      default: "e2e-test-repo",
     },
     e2eTestSecret: {
       doc: "Secret for e2e tests",
@@ -326,18 +326,18 @@ const config = convict({
       env: "DB_URI",
       sensitive: true,
       format: "required-string",
-      default: null,
+      default: "postgres://isomer:password@localhost:54321/isomercms_test",
     },
     dbMinPool: {
       doc: "Minimum number of connections in the pool",
       env: "DB_MIN_POOL",
-      format: "required-number",
+      format: "required-positive-number",
       default: 1,
     },
     dbMaxPool: {
       doc: "Maximum number of connections in the pool",
       env: "DB_MAX_POOL",
-      format: "required-number",
+      format: "required-positive-number",
       default: 10,
     },
     dbEnableLogging: {

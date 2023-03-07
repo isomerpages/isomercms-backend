@@ -139,11 +139,6 @@ export class FormsgRouter {
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
-    if (!SITE_CREATE_FORM_KEY) {
-      throw new InitializationError(
-        "Required SITE_CREATE_FORM_KEY environment variable is empty."
-      )
-    }
     router.post(
       "/create-site",
       attachFormSGHandler(SITE_CREATE_FORM_KEY || ""),

@@ -30,12 +30,6 @@ const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
 const scanFileForVirus = (fileBuffer) =>
   new Promise((success, failure) => {
-    // check if the api key is missing in the env
-    if (!CLOUDMERSIVE_API_KEY) {
-      logger.error("Cloudmersive API Key is missing in env")
-      throw new BaseIsomerError(500, "Internal Server Error")
-    }
-
     apiInstance.scanFile(fileBuffer, (error, data) => {
       if (error) {
         logger.error(

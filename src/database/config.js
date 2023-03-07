@@ -10,7 +10,6 @@ const DB_URI = config.get("database.dbUri")
 const DB_MIN_POOL = config.get("database.dbMinPool")
 const DB_MAX_POOL = config.get("database.dbMaxPool")
 
-if (!DB_URI) throw new Error("DB_URI is not defined")
 const parsed = parse(DB_URI)
 const port = parsed.port ? parseInt(parsed.port, 10) : 5432
 

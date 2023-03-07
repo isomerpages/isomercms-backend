@@ -31,23 +31,6 @@ describe("Sms Client", () => {
     expect(mockAxios.post).toHaveBeenCalledWith(mockEndpoint, generatedSms)
   })
 
-  it("should throw an error on initialization when there is no api key", () => {
-    // Arrange
-    // Store the API key and set it later so that other tests are not affected
-    const curApiKey = config.get("postman.apiKey")
-    config.set("postman.apiKey", "")
-
-    // Act
-    // NOTE: We require a new instance because the old one would already have the API key bound
-    const actual = () => new _SmsClient()
-
-    // Assert
-    expect(actual).toThrowError("Postman.gov.sg API key cannot be empty")
-    config.set("postman.apiKey", curApiKey)
-
-    expect(config.get("postman.apiKey")).toBe(curApiKey)
-  })
-
   it("should return an error when a network error occurs", async () => {
     // Arrange
     const generatedSms = generateSms(mockRecipient, mockBody)

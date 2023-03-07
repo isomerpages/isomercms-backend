@@ -46,12 +46,6 @@ const POSTMAN_API_KEY = config.get("postman.apiKey")
 
 const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
 
-if (!POSTMAN_API_KEY && !IS_LOCAL_DEV) {
-  throw new Error(
-    "Please ensure that you have set POSTMAN_API_KEY in your env vars and that you have sourced them!"
-  )
-}
-
 const mockMailer = {
   sendMail: (email: string, subject: string, html: string) =>
     logger.info(`Mock email sent to <${email}>, subject: ${subject}\n${html}`),

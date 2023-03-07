@@ -89,10 +89,10 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
-const NODE_ENV = config.get("env")
-
 const isSecure =
-  NODE_ENV !== "DEV" && NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "test"
+  process.env.NODE_ENV !== "DEV" &&
+  process.env.NODE_ENV !== "LOCAL_DEV" &&
+  process.env.NODE_ENV !== "test"
 
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({
@@ -109,12 +109,12 @@ const sessionMiddleware = session({
     secure: isSecure,
     maxAge: AUTH_TOKEN_EXPIRY_MS,
   },
-  secret: config.get("auth.sessionSecret"),
+  secret: process.env.SESSION_SECRET,
   name: "isomer",
 })
 
 // Env vars
-const FRONTEND_URL = config.get("app.frontendUrl")
+const { FRONTEND_URL } = process.env
 // Import middleware
 
 // Import routes

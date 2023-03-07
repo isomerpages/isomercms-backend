@@ -3,28 +3,12 @@ import http from "http"
 import createDebug from "debug"
 import { Express } from "express"
 
+import config from "@config/config"
+
 import logger from "@logger/logger"
 
 const debug = createDebug("isomercms:server")
-
-/**
- * Normalize a port into a number, string, or false.
- */
-const normalizePort = (val: string) => {
-  const port = parseInt(val, 10)
-
-  if (Number.isNaN(port)) {
-    // named pipe
-    return val
-  }
-
-  if (port >= 0) {
-    // port number
-    return port
-  }
-
-  return false
-}
+const PORT = config.get("port")
 
 /**
  * Create an event listener for HTTP server "error" event.
@@ -80,18 +64,17 @@ const createListener = (
 }
 
 const bootstrapServer = (app: Express) => {
-  const port = normalizePort(process.env.PORT || "8081")
-  app.set("port", port)
+  app.set("port", PORT)
 
   // Create HTTP server
   const server = http.createServer(app)
 
   // create event listeners
-  const onError = createErrorListener(port)
-  const onListening = createListener(port, server)
+  const onError = createErrorListener(PORT)
+  const onListening = createListener(PORT, server)
 
   // Listen on provided port, on all network interfaces.
-  server.listen(port)
+  server.listen(PORT)
   server.on("error", onError)
   server.on("listening", onListening)
 }

@@ -94,7 +94,7 @@ const config = convict({
     cookieDomain: {
       doc: "Domain to set for auth cookie",
       env: "COOKIE_DOMAIN",
-      format: "required-string",
+      format: ["localhost", "cms.isomer.gov.sg", "isomer.gov.sg"],
       default: "localhost",
     },
     tokenExpiry: {

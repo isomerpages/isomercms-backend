@@ -1,3 +1,5 @@
+const logger = require("@logger/logger")
+
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")
 
@@ -6,6 +8,7 @@ const { GITHUB_ORG_NAME } = process.env
 const {
   validateAndSanitizeFileUpload,
   ALLOWED_FILE_EXTENSIONS,
+  scanFileForVirus,
 } = require("@utils/file-upload-utils")
 
 const { isMediaPathValid } = require("@validators/validators")
@@ -26,6 +29,18 @@ class MediaFileService {
 
   async create(sessionData, { fileName, directoryName, content }) {
     this.mediaNameChecks({ directoryName, fileName })
+
+    const [, fileContent] = content.split(",")
+    const fileBuffer = Buffer.from(fileContent, "base64")
+
+    // Scan file for virus - cloudmersive API
+    const virusScanRes = await scanFileForVirus(fileBuffer)
+    logger.info(`File scan result: ${virusScanRes.CleanResult}`)
+    if (!virusScanRes || !virusScanRes.CleanResult) {
+      throw new BadRequestError("File did not pass virus scan")
+    }
+
+    // Sanitize and validate file
     const sanitizedContent = await validateAndSanitizeFileUpload(content)
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)

@@ -1,5 +1,4 @@
 const express = require("express")
-const yaml = require("yaml")
 
 // Import middleware
 const {
@@ -15,6 +14,10 @@ const { File, PageType, CollectionPageType } = require("@classes/File")
 const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
@@ -197,9 +200,9 @@ async function moveUnlinkedPages(req, res) {
       const [unused, encodedFrontMatter, pageContent] = Base64.decode(
         content
       ).split("---")
-      const frontMatter = yaml.parse(encodedFrontMatter)
+      const frontMatter = sanitizedYamlParse(encodedFrontMatter)
       frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
-      const newFrontMatter = yaml.stringify(frontMatter)
+      const newFrontMatter = sanitizedYamlStringify(frontMatter)
       const newContent = ["---\n", newFrontMatter, "---", pageContent].join("")
       const newEncodedContent = Base64.encode(newContent)
       await newIsomerFile.create(fileName, newEncodedContent)

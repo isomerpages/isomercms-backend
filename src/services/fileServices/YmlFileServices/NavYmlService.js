@@ -1,6 +1,8 @@
-const yaml = require("yaml")
-
 const { deslugifyCollectionName } = require("@utils/utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const NAV_FILE_NAME = "navigation.yml"
 const NAV_FILE_DIR = "_data"
@@ -18,12 +20,12 @@ class NavYmlService {
         directoryName: NAV_FILE_DIR,
       }
     )
-    const content = yaml.parse(unparsedContent)
+    const content = sanitizedYamlParse(unparsedContent)
     return { content, sha }
   }
 
   async update(sessionData, { fileContent, sha }) {
-    const stringifiedContent = yaml.stringify(fileContent)
+    const stringifiedContent = sanitizedYamlStringify(fileContent)
     const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: stringifiedContent,
       sha,

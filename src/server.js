@@ -1,5 +1,8 @@
 import "dd-trace/init"
 import "module-alias/register"
+import SequelizeStoreFactory from "connect-session-sequelize"
+import session from "express-session"
+import nocache from "nocache"
 
 import logger from "@logger/logger"
 
@@ -11,6 +14,7 @@ import {
   Whitelist,
   AccessToken,
   Repo,
+  Otp,
   Deployment,
   Launch,
   Redirection,
@@ -51,8 +55,14 @@ import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
+import { rateLimiter } from "./services/utilServices/RateLimiter"
 
 const path = require("path")
+
+const AUTH_TOKEN_EXPIRY_MS = parseInt(
+  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
+  10
+)
 
 const sequelize = initSequelize([
   Site,
@@ -60,6 +70,7 @@ const sequelize = initSequelize([
   User,
   Whitelist,
   AccessToken,
+  Otp,
   Repo,
   Deployment,
   Launch,
@@ -78,6 +89,30 @@ const cors = require("cors")
 const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
+
+const isSecure =
+  process.env.NODE_ENV !== "DEV" &&
+  process.env.NODE_ENV !== "LOCAL_DEV" &&
+  process.env.NODE_ENV !== "test"
+
+const SequelizeStore = SequelizeStoreFactory(session.Store)
+const sessionMiddleware = session({
+  store: new SequelizeStore({
+    db: sequelize,
+    tableName: "sessions",
+    checkExpirationInterval: 15 * 60 * 1000, // Checks expired sessions every 15 minutes
+  }),
+  resave: false, // can set to false since touch is implemented by our store
+  saveUninitialized: false, // do not save new sessions that have not been modified
+  cookie: {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: isSecure,
+    maxAge: AUTH_TOKEN_EXPIRY_MS,
+  },
+  secret: process.env.SESSION_SECRET,
+  name: "isomer",
+})
 
 // Env vars
 const { FRONTEND_URL } = process.env
@@ -205,7 +240,12 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   notificationsService,
   notificationOnEditHandler,
 })
-const authV2Router = new AuthRouter({ authenticationMiddleware, authService, apiLogger })
+const authV2Router = new AuthRouter({
+  authenticationMiddleware,
+  authService,
+  apiLogger,
+  rateLimiter,
+})
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
@@ -213,6 +253,12 @@ const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
 })
 
 const app = express()
+
+if (isSecure) {
+  // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
+  // This is trusted because our security groups block all other access to the server
+  app.set("trust proxy", true)
+}
 app.use(helmet())
 
 app.use(
@@ -225,6 +271,9 @@ app.use(express.json({ limit: "7mb" }))
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
+app.use(nocache())
+
+app.use(sessionMiddleware)
 
 // Health endpoint
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))

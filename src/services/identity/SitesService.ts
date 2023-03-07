@@ -1,7 +1,7 @@
 import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
-import { Deployment, Site, Repo } from "@database/models"
+import { Deployment, Repo, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
@@ -68,9 +68,9 @@ class SitesService {
     this.reviewRequestService = reviewRequestService
   }
 
-  isGitHubCommitData(commit: any): commit is GitHubCommitData {
+  isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
     return (
-      commit &&
+      !!commit &&
       (commit as GitHubCommitData).author !== undefined &&
       (commit as GitHubCommitData).author.name !== undefined &&
       (commit as GitHubCommitData).author.date !== undefined &&

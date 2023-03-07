@@ -8,7 +8,7 @@ describe("Media File Service", () => {
   const imageName = "test image.png"
   const fileName = "test file.pdf"
   const directoryName = "images/subfolder"
-  const mockContent = "test"
+  const mockContent = "schema, test"
   const mockSanitizedContent = "sanitized-test"
   const sha = "12345"
   const mockGithubSessionData = "githubData"
@@ -33,6 +33,7 @@ describe("Media File Service", () => {
       .fn()
       .mockReturnValue(mockSanitizedContent),
     ALLOWED_FILE_EXTENSIONS: ["pdf"],
+    scanFileForVirus: jest.fn().mockReturnValue({ CleanResult: true }),
   }))
 
   const {

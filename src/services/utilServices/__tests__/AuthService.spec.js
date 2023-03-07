@@ -22,6 +22,7 @@ const {
   mockGithubId: mockUserId,
   mockSessionDataEmailUser,
 } = require("@fixtures/sessionData")
+const { OtpType } = require("@root/services/identity/UsersService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
@@ -31,7 +32,14 @@ describe("Auth Service", () => {
 
   const state = "state"
   const token = "token"
-  const signedToken = "signedToken"
+  const signedGithubToken = {
+    accessToken: token,
+    githubId: mockGithubId,
+  }
+  const signedEmailToken = {
+    email: mockEmail,
+    isomerUserId: mockIsomerUserId,
+  }
   const csrfState = "csrfState"
   const mockContactNumber = "12345678"
 
@@ -46,7 +54,7 @@ describe("Auth Service", () => {
       .mockImplementation(() => ({ contactNumber: mockContactNumber })),
     canSendEmailOtp: jest.fn(),
     sendEmailOtp: jest.fn(),
-    verifyOtp: jest.fn(),
+    verifyEmailOtp: jest.fn(),
     loginWithEmail: jest
       .fn()
       .mockImplementation(() => ({ id: mockIsomerUserId, email: mockEmail })),
@@ -69,7 +77,7 @@ describe("Auth Service", () => {
     })
   })
 
-  describe("getGithubAuthToken", () => {
+  describe("getUserInfoFromGithubAuth", () => {
     it("Retrieves the Github auth token", async () => {
       const params = {
         code: "code",
@@ -80,7 +88,6 @@ describe("Auth Service", () => {
       uuid.mockImplementation(() => state)
       jwtUtils.verifyToken.mockImplementation(() => ({ state }))
       jwtUtils.encryptToken.mockImplementation(() => token)
-      jwtUtils.signToken.mockImplementation(() => signedToken)
       axios.post.mockImplementation(() => ({
         data: `access_token=${accessToken}`,
       }))
@@ -91,8 +98,8 @@ describe("Auth Service", () => {
       }))
 
       await expect(
-        service.getGithubAuthToken({ csrfState, code: "code", state })
-      ).resolves.toEqual(signedToken)
+        service.getUserInfoFromGithubAuth({ csrfState, code: "code", state })
+      ).resolves.toEqual(signedGithubToken)
 
       expect(axios.post).toHaveBeenCalledWith(
         "https://github.com/login/oauth/access_token",
@@ -136,13 +143,13 @@ describe("Auth Service", () => {
   describe("verifyOtp", () => {
     const mockOtp = "123456"
     it("should be able to verify otp, login, and return token if correct", async () => {
-      mockUsersService.verifyOtp.mockImplementationOnce(() => true)
-      jwtUtils.signToken.mockImplementationOnce(() => signedToken)
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => true)
+      jwtUtils.signToken.mockImplementationOnce(() => signedEmailToken)
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })
-      ).resolves.toEqual(signedToken)
-      expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
+      ).resolves.toEqual(signedEmailToken)
+      expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
         mockOtp
       )
@@ -150,12 +157,12 @@ describe("Auth Service", () => {
     })
 
     it("should throw an error if otp is incorrect", async () => {
-      mockUsersService.verifyOtp.mockImplementationOnce(() => false)
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => false)
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })
       ).rejects.toThrow(BadRequestError)
-      expect(mockUsersService.verifyOtp).toHaveBeenCalledWith(
+      expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
         mockOtp
       )

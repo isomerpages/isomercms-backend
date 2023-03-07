@@ -32,7 +32,7 @@ class MailClient {
         },
       })
     } catch (err) {
-      logger.error(err)
+      logger.error(`Error occurred when sending email to ${recipient}: ${err}`)
       throw new Error("Failed to send email.")
     }
   }

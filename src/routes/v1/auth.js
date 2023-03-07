@@ -3,6 +3,8 @@ const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
+const logger = require("@logger/logger")
+
 // Import error
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
@@ -111,32 +113,20 @@ async function githubAuth(req, res) {
   const user = await identityServices.usersService.login(githubId)
   if (!user) throw Error("Failed to create user")
 
-  const authTokenExpiry = new Date()
-  authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
-
-  const cookieSettings = {
-    path: "/",
-    expires: authTokenExpiry,
-    httpOnly: true,
-    sameSite: true,
-    secure:
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test",
+  const userInfo = {
+    accessToken: jwtUtils.encryptToken(accessToken),
+    githubId,
+    isomerUserId: user.id,
   }
-
-  const token = jwtUtils.signToken({
-    access_token: jwtUtils.encryptToken(accessToken),
-    user_id: githubId,
-    isomer_user_id: user.id,
-  })
-
-  res.cookie(COOKIE_NAME, token, cookieSettings)
+  Object.assign(req.session, { userInfo })
+  logger.info(`User ${userInfo.email} successfully logged in`)
   return res.redirect(`${FRONTEND_URL}/sites`)
 }
 
 async function logout(req, res) {
   clearAllCookies(res)
+  req.session.destroy()
+  logger.info(`User ${userInfo.email} successfully logged out`)
   return res.sendStatus(200)
 }
 
@@ -173,7 +163,7 @@ router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
-  authenticationMiddleware.verifyJwt,
+  authenticationMiddleware.verifyAccess,
   attachReadRouteHandlerWrapper(whoami)
 )
 

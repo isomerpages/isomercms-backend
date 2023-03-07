@@ -18,6 +18,8 @@ const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
 const { isError } = require("@root/types")
 
+const { OtpType } = require("../identity/UsersService")
+
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
 
 class AuthService {
@@ -34,7 +36,7 @@ class AuthService {
     return { redirectUrl: githubAuthUrl, cookieToken: token }
   }
 
-  async getGithubAuthToken({ csrfState, code, state }) {
+  async getUserInfoFromGithubAuth({ csrfState, code, state }) {
     try {
       const decoded = jwtUtils.verifyToken(csrfState)
       if (decoded.state !== state) {
@@ -87,14 +89,14 @@ class AuthService {
     const user = await this.usersService.login(githubId)
     if (!user) throw Error("Failed to create user")
 
-    const token = jwtUtils.signToken({
-      access_token: jwtUtils.encryptToken(accessToken),
-      user_id: githubId,
-      isomer_user_id: user.id,
+    const userInfo = {
+      accessToken: jwtUtils.encryptToken(accessToken),
+      githubId,
+      isomerUserId: user.id,
       email: user.email,
-    })
+    }
 
-    return token
+    return userInfo
   }
 
   async sendOtp(email) {
@@ -120,16 +122,18 @@ class AuthService {
   }
 
   async verifyOtp({ email, otp }) {
-    if (!this.usersService.verifyOtp(email, otp)) {
+    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
+
+    if (!isOtpValid) {
       throw new BadRequestError("You have entered an invalid OTP.")
     }
     // Create user if does not exists. Set last logged in to current time.
     const user = await this.usersService.loginWithEmail(email)
-    const token = jwtUtils.signToken({
-      isomer_user_id: user.id,
+    const userInfo = {
+      isomerUserId: user.id,
       email: user.email,
-    })
-    return token
+    }
+    return userInfo
   }
 
   async getUserInfo(sessionData) {

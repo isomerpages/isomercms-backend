@@ -43,7 +43,7 @@ const getAuthenticatedSubrouter = ({
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSubrouter.use(authenticationMiddleware.verifyJwt)
+  authenticatedSubrouter.use(authenticationMiddleware.verifyAccess)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
   // which is only available after verifying that the jwt is valid
   authenticatedSubrouter.use(apiLogger)

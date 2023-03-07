@@ -2,24 +2,40 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import { Repo, Site, User, Whitelist, SiteMember } from "@database/models"
+import { Otp, Repo, Site, User, Whitelist, SiteMember } from "@database/models"
+import { BadRequestError } from "@root/errors/BadRequestError"
+import { milliSecondsToMinutes } from "@root/utils/time-utils"
 import SmsClient from "@services/identity/SmsClient"
 import TotpGenerator from "@services/identity/TotpGenerator"
 import MailClient from "@services/utilServices/MailClient"
 
+import OtpService from "./OtpService"
+
+const { OTP_EXPIRY, MAX_NUM_OTP_ATTEMPTS } = process.env
+
+const PARSED_EXPIRY = parseInt(OTP_EXPIRY || "", 10) ?? undefined
+
+const PARSED_MAX_NUM_OTP_ATTEMPTS =
+  parseInt(MAX_NUM_OTP_ATTEMPTS || "", 10) ?? 5
+
+enum OtpType {
+  Email = "EMAIL",
+  Mobile = "MOBILE",
+}
+
 interface UsersServiceProps {
-  otp: TotpGenerator
   mailer: MailClient
   smsClient: SmsClient
   repository: ModelStatic<User>
   sequelize: Sequelize
   whitelist: ModelStatic<Whitelist>
+  otpService: OtpService
+  otpRepository: ModelStatic<Otp>
 }
 
 class UsersService {
   // NOTE: Explicitly specifying using keyed properties to ensure
   // that the types are synced.
-  private readonly otp: UsersServiceProps["otp"]
 
   private readonly mailer: UsersServiceProps["mailer"]
 
@@ -31,20 +47,26 @@ class UsersService {
 
   private readonly whitelist: UsersServiceProps["whitelist"]
 
+  private readonly otpService: UsersServiceProps["otpService"]
+
+  private readonly otpRepository: UsersServiceProps["otpRepository"]
+
   constructor({
-    otp,
     mailer,
     smsClient,
     repository,
     sequelize,
     whitelist,
+    otpService,
+    otpRepository,
   }: UsersServiceProps) {
-    this.otp = otp
     this.mailer = mailer
     this.smsClient = smsClient
     this.repository = repository
     this.sequelize = sequelize
     this.whitelist = whitelist
+    this.otpService = otpService
+    this.otpRepository = otpRepository
   }
 
   async findById(id: string) {
@@ -196,26 +218,120 @@ class UsersService {
   }
 
   async sendEmailOtp(email: string) {
-    const otp = this.otp.generate(email)
-    const expiry = this.otp.getExpiryMinutes()
+    const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
+
+    // Reset attempts to login
+    const otpEntry = await this.otpRepository.findOne({ where: { email } })
+    if (!otpEntry) {
+      // create new entry
+      await this.createOtpEntry(email, OtpType.Email, hashedOtp)
+    } else {
+      await otpEntry?.update({
+        hashedOtp,
+        attempts: 0,
+        expiresAt: this.getOtpExpiry(),
+      })
+    }
 
     const subject = "One-Time Password (OTP) for IsomerCMS"
-    const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${expiry} minutes. Please use this to verify your email address.</p>
+    const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${milliSecondsToMinutes(
+      PARSED_EXPIRY
+    )} minutes. Please use this to verify your email address.</p>
     <p>If your OTP does not work, please request for a new OTP.</p>
     <p>IsomerCMS Support Team</p>`
     await this.mailer.sendMail(email, subject, html)
   }
 
   async sendSmsOtp(mobileNumber: string) {
-    const otp = this.otp.generate(mobileNumber)
-    const expiry = this.otp.getExpiryMinutes()
+    const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
 
-    const message = `Your OTP is ${otp}. It will expire in ${expiry} minutes. Please use this to verify your mobile number`
+    // Reset attempts to login
+    const otpEntry = await this.otpRepository.findOne({
+      where: { mobileNumber },
+    })
+    if (!otpEntry) {
+      await this.createOtpEntry(mobileNumber, OtpType.Mobile, hashedOtp)
+    } else {
+      await otpEntry?.update({ hashedOtp, attempts: 0 })
+    }
+
+    const message = `Your OTP is ${otp}. It will expire in ${milliSecondsToMinutes(
+      PARSED_EXPIRY
+    )} minutes. Please use this to verify your mobile number`
     await this.smsClient.sendSms(mobileNumber, message)
   }
 
-  verifyOtp(value: string, otp: string) {
-    return this.otp.verify(value, otp)
+  private async verifyOtp(otpEntry: Otp | null, otp: string) {
+    // TODO: Change all the following to use AuthError after FE fix
+    if (!otp || otp === "") {
+      throw new BadRequestError("Empty OTP provided")
+    }
+
+    if (!otpEntry) {
+      throw new BadRequestError("OTP not found")
+    }
+
+    if (otpEntry.attempts >= PARSED_MAX_NUM_OTP_ATTEMPTS) {
+      throw new BadRequestError("Max number of attempts reached")
+    }
+
+    if (!otpEntry?.hashedOtp) {
+      await otpEntry.destroy()
+      throw new BadRequestError("Hashed OTP not found")
+    }
+
+    // increment attempts
+    await otpEntry.update({ attempts: otpEntry.attempts + 1 })
+
+    const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
+    if (!isValidOtp) {
+      throw new BadRequestError("OTP is not valid")
+    }
+
+    if (isValidOtp && otpEntry.expiresAt < new Date()) {
+      await otpEntry.destroy()
+      throw new BadRequestError("OTP has expired")
+    }
+
+    // destroy otp before returning true since otp has been "used"
+    await otpEntry.destroy()
+    return true
+  }
+
+  async verifyEmailOtp(email: string, otp: string) {
+    const otpEntry = await this.otpRepository.findOne({ where: { email } })
+    return this.verifyOtp(otpEntry, otp)
+  }
+
+  async verifyMobileOtp(mobileNumber: string, otp: string) {
+    const otpEntry = await this.otpRepository.findOne({
+      where: { mobileNumber },
+    })
+    return this.verifyOtp(otpEntry, otp)
+  }
+
+  private getOtpExpiry() {
+    return new Date(Date.now() + PARSED_EXPIRY)
+  }
+
+  private async createOtpEntry(
+    key: string,
+    keyType: OtpType,
+    hashedOtp: string
+  ) {
+    if (keyType === OtpType.Email) {
+      await this.otpRepository.create({
+        email: key,
+        hashedOtp,
+        expiresAt: this.getOtpExpiry(),
+      })
+    } else {
+      await this.otpRepository.create({
+        mobileNumber: key,
+        hashedOtp,
+        expiresAt: this.getOtpExpiry(),
+      })
+    }
   }
 }
 

@@ -69,7 +69,7 @@ class DeploymentClient {
     environmentVariables: {
       JEKYLL_ENV: "development",
     },
-    customRules: [{ source: "/<*>", target: "/404.html", status: "404-200" }],
+    customRules: [{ source: "/<*>", target: "/404.html", status: "404" }],
   })
 
   generateCreateBranchInput = (

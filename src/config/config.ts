@@ -136,12 +136,6 @@ const config = convict({
       format: "required-string",
       default: "",
     },
-    domainWhitelist: {
-      doc: "List of domains that are allowed to access the API",
-      env: "DOMAIN_WHITELIST",
-      format: "required-string",
-      default: null,
-    },
     sessionSecret: {
       doc: "Secret used for sessions",
       env: "SESSION_SECRET",

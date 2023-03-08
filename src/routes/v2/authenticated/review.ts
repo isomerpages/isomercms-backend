@@ -695,7 +695,7 @@ export class ReviewsRouter {
         },
       })
       return res.status(404).send({
-        message: "Please ensure that the site exists!",
+        message: "Please ensure that the review request exists!",
       })
     }
 

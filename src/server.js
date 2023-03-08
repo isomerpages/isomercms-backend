@@ -132,6 +132,26 @@ const {
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const authService = new AuthService({ usersService })
+const gitHubService = new GitHubService({
+  axiosInstance: isomerRepoAxiosInstance,
+})
+const configYmlService = new ConfigYmlService({ gitHubService })
+const reviewRequestService = new ReviewRequestService(
+  gitHubService,
+  User,
+  ReviewRequest,
+  Reviewer,
+  ReviewMeta,
+  ReviewRequestView
+)
+const sitesService = new SitesService({
+  siteRepository: Site,
+  gitHubService,
+  configYmlService,
+  usersService,
+  isomerAdminsService,
+  reviewRequestService,
+})
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({ repository: Deployment })
 const launchClient = new LaunchClient()
@@ -154,29 +174,7 @@ const infraService = new InfraService({
 // poller for incoming queue
 infraService.pollQueue()
 
-const gitHubService = new GitHubService({
-  axiosInstance: isomerRepoAxiosInstance,
-})
 const identityAuthService = getIdentityAuthService(gitHubService)
-
-const configYmlService = new ConfigYmlService({ gitHubService })
-
-const reviewRequestService = new ReviewRequestService(
-  gitHubService,
-  User,
-  ReviewRequest,
-  Reviewer,
-  ReviewMeta,
-  ReviewRequestView
-)
-const sitesService = new SitesService({
-  siteRepository: Site,
-  gitHubService,
-  configYmlService,
-  usersService,
-  isomerAdminsService,
-  reviewRequestService,
-})
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,

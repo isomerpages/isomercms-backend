@@ -10,7 +10,7 @@ import { ReviewsRouter as _ReviewsRouter } from "@routes/v2/authenticated/review
 import { generateRouterForDefaultUserWithSite } from "@fixtures/app"
 import { mockUserId } from "@fixtures/identity"
 import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@fixtures/users"
-import { CollaboratorRoles } from "@root/constants"
+import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import NotificationsService from "@services/identity/NotificationsService"
 import SitesService from "@services/identity/SitesService"
@@ -788,7 +788,11 @@ describe("Review Requests Router", () => {
   describe("approveReviewRequest", () => {
     it("should return 200 with the review request successfully marked as approved", async () => {
       // Arrange
-      const mockReviewRequest = { reviewers: [{ email: MOCK_USER_EMAIL_ONE }] }
+      const mockReviewRequest = {
+        reviewers: [{ email: MOCK_USER_EMAIL_ONE }],
+        reviewStatus: ReviewRequestStatus.Open,
+        requestor: MOCK_USER_EMAIL_TWO,
+      }
       const mockReviewer = "reviewer@test.gov.sg"
       mockSitesService.getBySiteName.mockResolvedValueOnce("site")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
@@ -859,7 +863,11 @@ describe("Review Requests Router", () => {
 
     it("should return 403 if the user is not a reviewer", async () => {
       // Arrange
-      const mockReviewRequest = { reviewers: [{ email: "other@test.gov.sg" }] }
+      const mockReviewRequest = {
+        reviewers: [{ email: "other@test.gov.sg" }],
+        reviewStatus: ReviewRequestStatus.Open,
+        requestor: MOCK_USER_EMAIL_TWO,
+      }
       mockSitesService.getBySiteName.mockResolvedValueOnce("site")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest

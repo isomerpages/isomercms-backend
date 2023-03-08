@@ -1282,7 +1282,7 @@ describe("Review Requests Integration Tests", () => {
   })
 
   describe("/:requestId/approve POST", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
       await ReviewRequest.create({
         requestorId: MOCK_USER_ID_ONE,
         siteId: MOCK_SITE_ID_ONE,
@@ -1304,7 +1304,7 @@ describe("Review Requests Integration Tests", () => {
       })
     })
 
-    afterAll(async () => {
+    afterEach(async () => {
       await ReviewMeta.destroy({
         where: {},
       })
@@ -1386,6 +1386,7 @@ describe("Review Requests Integration Tests", () => {
       const actual = await request(app).post(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
       )
+      console.log(actual.error)
 
       // Assert
       expect(actual.statusCode).toEqual(403)
@@ -1403,6 +1404,7 @@ describe("Review Requests Integration Tests", () => {
       const actual = await request(app).post(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
       )
+      console.log(actual.error)
 
       // Assert
       expect(actual.statusCode).toEqual(403)

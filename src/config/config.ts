@@ -51,8 +51,8 @@ const config = convict({
     doc: "API Key for GitGuardian pre-commit hooks",
     env: "GITGUARDIAN_API_KEY",
     sensitive: true,
-    format: "required-string",
-    default: null,
+    format: String,
+    default: "",
   },
   cloudmersiveKey: {
     doc: "API Key for Cloudmersive scanning",

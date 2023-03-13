@@ -113,7 +113,7 @@
     "regenerator-runtime": "^0.13.9",
     "serverless-step-functions": "^3.10.0",
     "serverless-step-functions-local": "^0.4.0",
-    "sqlite3": "^5.0.8",
+    "sqlite3": "^5.1.5",
     "ts-jest": "^27.1.3",
     "ts-node-dev": "^1.1.8",
     "typescript": "^4.6.2"

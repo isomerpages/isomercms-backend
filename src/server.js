@@ -33,6 +33,7 @@ import {
   getAuthorizationMiddleware,
 } from "@root/middleware"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import {
   getIdentityAuthService,
   getUsersService,
@@ -53,16 +54,6 @@ import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
-import { BaseDirectoryService } from "./services/directoryServices/BaseDirectoryService"
-import { ResourceRoomDirectoryService } from "./services/directoryServices/ResourceRoomDirectoryService"
-import { CollectionPageService } from "./services/fileServices/MdPageServices/CollectionPageService"
-import { ContactUsPageService } from "./services/fileServices/MdPageServices/ContactUsPageService"
-import { HomepagePageService } from "./services/fileServices/MdPageServices/HomepagePageService"
-import { PageService } from "./services/fileServices/MdPageServices/PageService"
-import { ResourcePageService } from "./services/fileServices/MdPageServices/ResourcePageService"
-import { SubcollectionPageService } from "./services/fileServices/MdPageServices/SubcollectionPageService"
-import { CollectionYmlService } from "./services/fileServices/YmlFileServices/CollectionYmlService"
-import { FooterYmlService } from "./services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
@@ -132,12 +123,6 @@ const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { GitHubService } = require("@services/db/GitHubService")
-const {
-  UnlinkedPageService,
-} = require("@services/fileServices/MdPageServices/UnlinkedPageService")
-const {
-  ConfigYmlService,
-} = require("@services/fileServices/YmlFileServices/ConfigYmlService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const authService = new AuthService({ usersService })
@@ -145,45 +130,13 @@ const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
-const collectionYmlService = new CollectionYmlService({ gitHubService })
-const homepageService = new HomepagePageService({ gitHubService })
-const footerYmlService = new FooterYmlService({ gitHubService })
-const collectionPageService = new CollectionPageService({
-  gitHubService,
-  collectionYmlService,
-})
-const subCollectionPageService = new SubcollectionPageService({
-  gitHubService,
-  collectionYmlService,
-})
-const contactUsService = new ContactUsPageService({
-  gitHubService,
-  footerYmlService,
-})
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
-const resourcePageService = new ResourcePageService({ gitHubService })
-const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
-  baseDirectoryService,
-  configYmlService,
-  gitHubService,
-})
-const pageService = new PageService({
-  contactUsService,
-  collectionPageService,
-  subCollectionPageService,
-  homepageService,
-  resourcePageService,
-  unlinkedPageService,
-  resourceRoomDirectoryService,
-})
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
   User,
   ReviewRequest,
   Reviewer,
   ReviewMeta,
-  ReviewRequestView,
-  pageService
+  ReviewRequestView
 )
 const sitesService = new SitesService({
   siteRepository: Site,

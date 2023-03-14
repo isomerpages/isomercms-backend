@@ -108,7 +108,7 @@ export class ReviewsRouter {
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
@@ -284,7 +284,7 @@ export class ReviewsRouter {
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
@@ -467,7 +467,7 @@ export class ReviewsRouter {
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
@@ -857,7 +857,7 @@ export class ReviewsRouter {
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
@@ -1269,7 +1269,7 @@ export class ReviewsRouter {
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 

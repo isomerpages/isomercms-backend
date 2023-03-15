@@ -32,7 +32,17 @@ import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
 } from "@root/middleware"
+import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
+import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
+import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
+import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
+import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
+import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
+import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import {
   getIdentityAuthService,
@@ -54,6 +64,7 @@ import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
@@ -130,13 +141,47 @@ const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
+const footerYmlService = new FooterYmlService({ gitHubService })
+const collectionYmlService = new CollectionYmlService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+
+const contactUsService = new ContactUsPageService({
+  gitHubService,
+  footerYmlService,
+})
+const collectionPageService = new CollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const subCollectionPageService = new SubcollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const homepageService = new HomepagePageService({ gitHubService })
+const resourcePageService = new ResourcePageService({ gitHubService })
+const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
+  baseDirectoryService,
+  configYmlService,
+  gitHubService,
+})
+const pageService = new PageService({
+  collectionPageService,
+  contactUsService,
+  subCollectionPageService,
+  homepageService,
+  resourcePageService,
+  unlinkedPageService,
+  resourceRoomDirectoryService,
+})
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
   User,
   ReviewRequest,
   Reviewer,
   ReviewMeta,
-  ReviewRequestView
+  ReviewRequestView,
+  pageService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

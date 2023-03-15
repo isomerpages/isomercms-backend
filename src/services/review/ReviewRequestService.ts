@@ -1,3 +1,4 @@
+import { AxiosResponse } from "axios"
 import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
@@ -406,7 +407,10 @@ export default class ReviewRequestService {
     })
   }
 
-  getReviewRequest = async (site: Site, pullRequestNumber: number) => {
+  getReviewRequest = async (
+    site: Site,
+    pullRequestNumber: number
+  ): Promise<ReviewRequest | RequestNotFoundError> => {
     const possibleReviewRequest = await this.repository.findOne({
       where: {
         siteId: site.id,
@@ -564,7 +568,7 @@ export default class ReviewRequestService {
   updateReviewRequest = async (
     reviewRequest: ReviewRequest,
     { reviewers }: RequestChangeInfo
-  ) => {
+  ): Promise<void> => {
     // Update db state with new reviewers
     await reviewRequest.$set("reviewers", reviewers)
     await reviewRequest.save()
@@ -572,17 +576,21 @@ export default class ReviewRequestService {
 
   // NOTE: The semantics of our reviewing system is slightly different from github.
   // The approval is tied to the request, rather than the user.
-  approveReviewRequest = async (reviewRequest: ReviewRequest) => {
+  approveReviewRequest = async (
+    reviewRequest: ReviewRequest
+  ): Promise<void> => {
     reviewRequest.reviewStatus = ReviewRequestStatus.Approved
     await reviewRequest.save()
   }
 
-  deleteReviewRequestApproval = async (reviewRequest: ReviewRequest) => {
+  deleteReviewRequestApproval = async (
+    reviewRequest: ReviewRequest
+  ): Promise<void> => {
     reviewRequest.reviewStatus = ReviewRequestStatus.Open
     await reviewRequest.save()
   }
 
-  closeReviewRequest = async (reviewRequest: ReviewRequest) => {
+  closeReviewRequest = async (reviewRequest: ReviewRequest): Promise<void> => {
     const siteName = reviewRequest.site.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
     await this.apiService.closeReviewRequest(siteName, pullRequestNumber)
@@ -608,7 +616,7 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     pullRequestNumber: number,
     message: string
-  ) => {
+  ): Promise<AxiosResponse<void>> => {
     const { siteName, isomerUserId } = sessionData
 
     return this.apiService.createComment(

@@ -21,7 +21,10 @@ import {
   Homepage,
   PageInfo,
   ContactUsPage,
-  ResourcePageInfo,
+  CollectionPage,
+  SubcollectionPage,
+  ResourceCategoryPage,
+  UnlinkedPage,
 } from "@root/types/pages"
 import { Brand } from "@root/types/util"
 
@@ -251,7 +254,7 @@ export class PageService {
               }),
               () => new NotFoundError()
             ).andThen<ResourceCategoryPageName, NotFoundError>(
-              ({ content }: ResourcePageInfo) => {
+              ({ content }) => {
                 if (content.frontMatter.layout !== "post")
                   return errAsync(new NotFoundError())
                 return okAsync({
@@ -326,28 +329,37 @@ export class PageService {
       // in front of the collection name (which is reflected in the raw name here).
       case "CollectionPage": {
         return withErrorHandler(
-          this.collectionPageService.read(sessionData, {
-            fileName: pageName.name,
-            collectionName: pageName.collection.slice(1),
-          })
+          this.collectionPageService
+            .read(sessionData, {
+              fileName: pageName.name,
+              collectionName: pageName.collection.slice(1),
+            })
+            .then((collectionPage) => collectionPage as CollectionPage)
         ).map(withPermalink)
       }
       case "SubcollectionPage": {
         return withErrorHandler(
-          this.subCollectionPageService.read(sessionData, {
-            fileName: pageName.name,
-            collectionName: pageName.collection.slice(1),
-            subcollectionName: pageName.subCollection,
-          })
+          this.subCollectionPageService
+            .read(sessionData, {
+              fileName: pageName.name,
+              collectionName: pageName.collection.slice(1),
+              subcollectionName: pageName.subCollection,
+            })
+            .then((subcollectionPage) => subcollectionPage as SubcollectionPage)
         ).map(withPermalink)
       }
       case "ResourceCategoryPage": {
         return withErrorHandler(
-          this.resourcePageService.read(sessionData, {
-            fileName: pageName.name,
-            resourceCategoryName: pageName.resourceCategory,
-            resourceRoomName: pageName.resourceRoom,
-          })
+          this.resourcePageService
+            .read(sessionData, {
+              fileName: pageName.name,
+              resourceCategoryName: pageName.resourceCategory,
+              resourceRoomName: pageName.resourceRoom,
+            })
+            .then(
+              (resourceCategoryPage) =>
+                resourceCategoryPage as ResourceCategoryPage
+            )
         ).map(withPermalink)
       }
       case "Homepage": {
@@ -366,9 +378,11 @@ export class PageService {
       }
       case "UnlinkedPage": {
         return withErrorHandler(
-          this.unlinkedPageService.read(sessionData, {
-            fileName: pageName.name,
-          })
+          this.unlinkedPageService
+            .read(sessionData, {
+              fileName: pageName.name,
+            })
+            .then((unlinkedPage) => unlinkedPage as UnlinkedPage)
         ).map(withPermalink)
       }
       default: {

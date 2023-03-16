@@ -749,7 +749,7 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
-            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -757,7 +757,7 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
             path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
-            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },

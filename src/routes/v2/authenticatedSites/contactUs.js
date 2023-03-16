@@ -22,7 +22,6 @@ class ContactUsRouter {
   async readContactUs(req, res) {
     const { siteName } = req.params
     const { accessToken } = res.locals
-    console.log(accessToken)
 
     const readResp = await this.contactUsPageService.read({
       siteName,

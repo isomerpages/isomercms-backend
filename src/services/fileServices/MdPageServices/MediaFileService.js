@@ -3,9 +3,14 @@ const { MediaTypeError } = require("@errors/MediaTypeError")
 
 const { GITHUB_ORG_NAME } = process.env
 
-const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
+const {
+  validateAndSanitizeFileUpload,
+  ALLOWED_FILE_EXTENSIONS,
+} = require("@utils/file-upload-utils")
 
 const { isMediaPathValid } = require("@validators/validators")
+
+const { getFileExt } = require("@root/utils/files")
 
 class MediaFileService {
   constructor({ gitHubService }) {
@@ -109,6 +114,20 @@ class MediaFileService {
   async rename(reqDetails, { oldFileName, newFileName, directoryName, sha }) {
     this.mediaNameChecks({ directoryName, fileName: oldFileName })
     this.mediaNameChecks({ directoryName, fileName: newFileName })
+    const oldExt = getFileExt(oldFileName)
+    const newExt = getFileExt(newFileName)
+
+    if (oldExt !== newExt) {
+      throw new BadRequestError(
+        "Please ensure that the file extension stays the same when renaming!"
+      )
+    }
+
+    if (!ALLOWED_FILE_EXTENSIONS.includes(oldExt)) {
+      throw new BadRequestError(
+        "Please ensure that the file extension chosen is valid!"
+      )
+    }
 
     const gitTree = await this.gitHubService.getTree(reqDetails, {
       isRecursive: true,

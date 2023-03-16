@@ -78,7 +78,7 @@ jobs:
     name: Determine if Build & Deploy is needed
     outputs:
       proceed: ${{ steps.determine_proceed.outputs.proceed }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
       - shell: python
@@ -95,7 +95,7 @@ jobs:
 
   deploy:
     name: Build and deploy to EB
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: [gatekeep]
     if: needs.gatekeep.outputs.proceed == 'true'
     steps:

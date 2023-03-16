@@ -31,10 +31,13 @@ describe("Media File Service", () => {
     validateAndSanitizeFileUpload: jest
       .fn()
       .mockReturnValue(mockSanitizedContent),
+    ALLOWED_FILE_EXTENSIONS: ["pdf"],
   }))
+
   const {
     MediaFileService,
   } = require("@services/fileServices/MdPageServices/MediaFileService")
+
   const service = new MediaFileService({
     gitHubService: mockGithubService,
   })

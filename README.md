@@ -1,3 +1,10 @@
+## Running dev environment
+
+1. grab a copy of the environment variables from the 1PW Isomer vault
+2. ensure that you have your `AWS_ACCESS_KEY_ID` together with `AWS_SECRET_ACCESS_KEY`. These can be generated from the IAM console, under security credentials. (see [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for more details)
+3. next, run `npm i` to ensure that you have all the required packages
+4. run `npm run dev`
+
 ## E2E Tests
 
 To run the E2E tests successfully, you will need to define the following environment variables:

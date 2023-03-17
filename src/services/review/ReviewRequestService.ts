@@ -87,6 +87,9 @@ export default class ReviewRequestService {
 
     const mappings = await this.computeShaMappings(commits)
 
+    // first we check the filetype
+    // then we parse
+
     return Promise.all(
       files.map(async ({ filename, contents_url }) => {
         const fullPath = filename.split("/")
@@ -118,7 +121,7 @@ export default class ReviewRequestService {
           .unwrapOr("")
 
         return {
-          type: this.computeFileType(filename),
+          type: "page",
           // NOTE: The string is guaranteed to be non-empty
           // and hence this should exist.
           name: fullPath.pop()!,
@@ -134,7 +137,7 @@ export default class ReviewRequestService {
   }
 
   // TODO
-  computeFileType = (filename: string): FileType[] => ["page"]
+  computeFileType = (filename: string): FileType => "page"
 
   computeShaMappings = async (
     commits: Commit[]

@@ -25,7 +25,7 @@ import { ResponseErrorBody } from "@root/types/dto/error"
 import {
   CommentItem,
   DashboardReviewRequestDto,
-  EditedItemDto,
+  EditedPageDto,
   UpdateReviewRequestDto,
   ReviewRequestDto,
   BlobDiffDto,
@@ -86,7 +86,7 @@ export class ReviewsRouter {
 
   compareDiff: RequestHandler<
     { siteName: string },
-    { items: EditedItemDto[] } | ResponseErrorBody,
+    { items: EditedPageDto[] } | ResponseErrorBody,
     unknown,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }

@@ -3,7 +3,6 @@ import { ok, err, Result, ResultAsync, okAsync, errAsync } from "neverthrow"
 import UserSessionData from "@root/classes/UserSessionData"
 import { CONTACT_US_FILENAME, HOMEPAGE_FILENAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
-import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
@@ -18,7 +17,6 @@ import {
   StagingPermalink,
   SubcollectionPageName,
   UnlinkedPageName,
-  PathInfo,
   Homepage,
   PageInfo,
   ContactUsPage,
@@ -28,6 +26,7 @@ import {
   UnlinkedPage,
 } from "@root/types/pages"
 import { Brand } from "@root/types/util"
+import { extractPathInfo } from "@root/utils/files"
 
 import { CollectionPageService } from "./CollectionPageService"
 import { ContactUsPageService } from "./ContactUsPageService"
@@ -143,14 +142,18 @@ export class PageService {
   // or within a sub-collection: a/sub/collection
   private parseCollectionPage = (
     pageName: string
-  ): ResultAsync<
-    CollectionPageName | SubcollectionPageName,
-    EmptyStringError | NotFoundError
-  > =>
-    this.extractPathInfo(pageName).asyncAndThen(({ name, path }) =>
+  ): ResultAsync<CollectionPageName | SubcollectionPageName, NotFoundError> =>
+    extractPathInfo(pageName).asyncAndThen(({ name, path }) =>
       path
         .mapErr(() => new NotFoundError())
-        .asyncAndThen((rawPath) => {
+        .asyncAndThen<
+          CollectionPageName | SubcollectionPageName,
+          NotFoundError
+        >((rawPath) => {
+          // NOTE: Only 2 levels of nesting
+          if (rawPath.length > 2) {
+            return errAsync(new NotFoundError())
+          }
           if (rawPath.length === 1 && !!rawPath[0]) {
             return okAsync({
               name: Brand.fromString(name),
@@ -177,7 +180,7 @@ export class PageService {
   private parseHomepage = (
     pageName: string
   ): Result<HomepageName, NotFoundError> =>
-    this.extractPathInfo(pageName).andThen<HomepageName, NotFoundError>(
+    extractPathInfo(pageName).andThen<HomepageName, NotFoundError>(
       ({ name, path }) => {
         if (path.isErr() && name === HOMEPAGE_FILENAME) {
           return ok({ name: Brand.fromString(name), kind: "Homepage" })
@@ -191,7 +194,7 @@ export class PageService {
   private parseContactUsPage = (
     pageName: string
   ): Result<ContactUsPageName, NotFoundError> =>
-    this.extractPathInfo(pageName).andThen<ContactUsPageName, NotFoundError>(
+    extractPathInfo(pageName).andThen<ContactUsPageName, NotFoundError>(
       ({ name, path }) => {
         if (
           path.isOk() &&
@@ -207,7 +210,7 @@ export class PageService {
   private parseUnlinkedPages = (
     pageName: string
   ): Result<UnlinkedPageName, NotFoundError> =>
-    this.extractPathInfo(pageName)
+    extractPathInfo(pageName)
       .andThen(({ path, name }) =>
         path
           .map((rawPath) => rawPath.length === 1 && rawPath[0] === "pages")
@@ -239,7 +242,7 @@ export class PageService {
     pageName: string,
     sessionData: UserSessionData
   ): ResultAsync<ResourceCategoryPageName, NotFoundError> =>
-    this.extractPathInfo(pageName)
+    extractPathInfo(pageName)
       .asyncAndThen(({ name, path }) =>
         path.asyncAndThen<ResourceCategoryPageName, NotFoundError>(
           (rawPath) => {
@@ -304,30 +307,6 @@ export class PageService {
             })
           : err(new MissingResourceRoomError())
     )
-
-  extractPathInfo = (pageName: string): Result<PathInfo, EmptyStringError> => {
-    if (!pageName) {
-      return err(new EmptyStringError())
-    }
-
-    const fullPath = pageName.split("/")
-    // NOTE: Name is guaranteed to exist
-    // as this method only accepts a string
-    // and we've validated that the string is not empty
-    const name = fullPath.pop()!
-
-    if (fullPath.length === 0) {
-      return ok({
-        name,
-        path: err([]),
-      })
-    }
-
-    return ok({
-      name,
-      path: ok(fullPath),
-    })
-  }
 
   retrieveCmsPermalink = (
     pageName: PageName,

@@ -50,7 +50,7 @@ import {
 } from "@root/fixtures/review"
 import { mockUserWithSiteSessionData } from "@root/fixtures/sessionData"
 import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
-import { EditedItemDto, GithubCommentData } from "@root/types/dto/review"
+import { EditedPageDto, GithubCommentData } from "@root/types/dto/review"
 import { Commit } from "@root/types/github"
 import * as ReviewApi from "@services/db/review"
 import _ReviewRequestService from "@services/review/ReviewRequestService"
@@ -58,7 +58,7 @@ import _ReviewRequestService from "@services/review/ReviewRequestService"
 const MockPageService: {
   [K in keyof PageService]: ReturnType<typeof jest.fn>
 } = {
-  extractPathInfo: jest.fn(),
+  isMarkdownPage: jest.fn(),
   extractResourceRoomName: jest.fn(),
   parsePageName: jest.fn(),
   retrieveStagingPermalink: jest.fn(),
@@ -188,7 +188,7 @@ describe("ReviewRequestService", () => {
         files: [],
         commits: [],
       }
-      const expected: EditedItemDto[] = []
+      const expected: EditedPageDto[] = []
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
 
       // Act
@@ -210,7 +210,7 @@ describe("ReviewRequestService", () => {
         files: [],
         commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
       }
-      const expected: EditedItemDto[] = []
+      const expected: EditedPageDto[] = []
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
 
       // Act

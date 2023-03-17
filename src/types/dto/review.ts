@@ -4,8 +4,8 @@ export type ReviewRequestStatus = "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
 
 export type FileType = "page" | "nav" | "setting" | "file" | "image"
 
-export interface EditedItemDto {
-  type: FileType[]
+export interface EditedPageDto {
+  type: "page"
   name: string
   path: string[]
   stagingUrl: string
@@ -13,6 +13,12 @@ export interface EditedItemDto {
   lastEditedBy: string
   lastEditedTime: number
 }
+
+export interface EditedConfigDto {
+  type: "nav" | "setting"
+}
+
+export type EditedItemDto = EditedPageDto | EditedConfigDto
 
 export interface UserDto {
   email: string

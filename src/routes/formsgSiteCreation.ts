@@ -141,7 +141,7 @@ export class FormsgRouter {
 
     router.post(
       "/create-site",
-      attachFormSGHandler(SITE_CREATE_FORM_KEY || ""),
+      attachFormSGHandler(SITE_CREATE_FORM_KEY),
       this.formsgCreateSite
     )
 

@@ -273,7 +273,7 @@ const config = convict({
       env: "SITE_CREATE_FORM_KEY",
       sensitive: true,
       format: "required-string",
-      default: null,
+      default: "",
     },
   },
   postman: {

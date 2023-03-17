@@ -6,6 +6,7 @@ import { BaseIsomerError } from "@root/errors/BaseError"
 import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import PageParseError from "@root/errors/PageParseError"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import {
   CollectionPageName,
@@ -119,7 +120,8 @@ export class PageService {
     pageName: string,
     sessionData: UserSessionData
   ): ResultAsync<PageName, NotFoundError | MissingResourceRoomError> =>
-    this.parseHomepage(pageName)
+    this.isMarkdownPage(pageName)
+      .andThen(this.parseHomepage)
       // NOTE: Order is important as `contact-us` and unlinked pages
       // are both rooted at `/pages`
       .orElse(() => this.parseContactUsPage(pageName))
@@ -131,6 +133,11 @@ export class PageService {
       // this assumption will hold true.
       .orElse(() => this.parseResourceRoomPage(pageName, sessionData))
       .orElse(() => this.parseCollectionPage(pageName))
+
+  isMarkdownPage = (pageName: string): Result<string, PageParseError> => {
+    if (pageName.endsWith(".md")) return ok(pageName)
+    return err(new PageParseError(pageName))
+  }
 
   // NOTE: Collection pages can be nested in either a collection: a/collection
   // or within a sub-collection: a/sub/collection

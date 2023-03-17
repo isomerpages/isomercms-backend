@@ -1,6 +1,6 @@
 import { Attributes } from "sequelize/types"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import { User, SiteMember } from "@database/models"
 import { Author } from "@root/types/github"

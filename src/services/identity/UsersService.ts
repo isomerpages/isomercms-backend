@@ -2,7 +2,7 @@ import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import { Otp, Repo, Site, User, Whitelist, SiteMember } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"

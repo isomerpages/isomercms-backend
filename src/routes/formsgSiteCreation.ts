@@ -2,7 +2,7 @@ import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
 import express, { RequestHandler } from "express"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 

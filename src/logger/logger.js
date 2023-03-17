@@ -8,7 +8,7 @@ const moment = require("moment-timezone")
 const winston = require("winston")
 const WinstonCloudwatch = require("winston-cloudwatch")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 // Env vars
 const NODE_ENV = config.get("env")

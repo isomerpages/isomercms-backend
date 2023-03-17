@@ -1,4 +1,4 @@
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const NODE_ENV = config.get("env")
 

@@ -1,6 +1,6 @@
 import mockAxios from "jest-mock-axios"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import {
   mockRecipient,

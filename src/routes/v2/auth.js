@@ -1,7 +1,7 @@
 const autoBind = require("auto-bind")
 const express = require("express")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const logger = require("@logger/logger")
 

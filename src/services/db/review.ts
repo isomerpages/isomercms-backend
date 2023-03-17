@@ -1,6 +1,6 @@
 import _ from "lodash"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import {
   RawFileChangeInfo,

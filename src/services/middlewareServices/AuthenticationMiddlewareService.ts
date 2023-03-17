@@ -1,7 +1,7 @@
 // Import logger
 import _ from "lodash"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 

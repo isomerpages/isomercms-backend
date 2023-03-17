@@ -1,4 +1,4 @@
-import config from "@config/config"
+import { config } from "@config/config"
 
 const axios = require("axios")
 const express = require("express")

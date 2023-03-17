@@ -1,6 +1,6 @@
 import { ModelStatic } from "sequelize"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import { Deployment, Repo, Site, User } from "@database/models"
 import {

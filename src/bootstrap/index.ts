@@ -3,7 +3,7 @@ import http from "http"
 import createDebug from "debug"
 import { Express } from "express"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 

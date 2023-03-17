@@ -2,7 +2,7 @@ const express = require("express")
 const session = require("express-session")
 const request = require("supertest")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 

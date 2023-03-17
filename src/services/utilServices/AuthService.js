@@ -2,7 +2,7 @@ const axios = require("axios")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 // Import error types
 const { AuthError } = require("@errors/AuthError")

@@ -7,7 +7,7 @@ import git from "isomorphic-git"
 import http from "isomorphic-git/http/node"
 import { ModelStatic } from "sequelize"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import { UnprocessableError } from "@errors/UnprocessableError"
 

@@ -10,7 +10,7 @@ import {
 } from "@aws-sdk/client-amplify"
 import { ResultAsync } from "neverthrow"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import { AmplifyError } from "@root/types/index"
 

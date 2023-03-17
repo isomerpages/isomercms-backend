@@ -1,4 +1,4 @@
-import config from "@config/config"
+import { config } from "@config/config"
 
 export enum JobStatus {
   Ready = "READY", // Ready to run jobs

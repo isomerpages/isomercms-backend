@@ -8,7 +8,7 @@ jest.mock("@utils/jwt-utils")
 const axios = require("axios")
 const uuid = require("uuid/v4")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const { AuthError } = require("@errors/AuthError")
 const { BadRequestError } = require("@errors/BadRequestError")

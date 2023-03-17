@@ -1,6 +1,6 @@
 const { parse } = require("pg-connection-string")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 // TODO: This came from a past project - I don't remember why I wrote this but let's explore later.
 // We have to manually parse database URL because sequelize-typescript requires explicit

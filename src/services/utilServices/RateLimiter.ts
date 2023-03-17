@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 

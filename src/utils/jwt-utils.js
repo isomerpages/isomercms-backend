@@ -3,7 +3,7 @@ const AES = require("crypto-js/aes")
 const jwt = require("jsonwebtoken")
 const _ = require("lodash")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const JWT_SECRET = config.get("auth.jwtSecret")
 const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")

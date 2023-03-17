@@ -2,7 +2,7 @@ import express from "express"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import { User, Whitelist, Otp } from "@database/models"
 import { generateRouter } from "@fixtures/app"

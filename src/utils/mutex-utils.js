@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk")
 const { serializeError } = require("serialize-error")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const logger = require("@logger/logger")
 

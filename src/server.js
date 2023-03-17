@@ -4,7 +4,7 @@ import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
 import nocache from "nocache"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 

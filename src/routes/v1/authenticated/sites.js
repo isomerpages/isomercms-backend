@@ -1,4 +1,4 @@
-import config from "@config/config"
+import { config } from "@config/config"
 
 const Bluebird = require("bluebird")
 const express = require("express")

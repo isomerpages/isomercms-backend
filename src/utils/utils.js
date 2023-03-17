@@ -1,6 +1,6 @@
 const slugify = require("slugify")
 
-const config = require("@config/config")
+const { config } = require("@config/config")
 
 const { genericGitHubAxiosInstance } = require("@services/api/AxiosInstance")
 

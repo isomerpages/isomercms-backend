@@ -52,4 +52,4 @@ const mockMailer = {
 } as MailClient
 export const mailer = IS_LOCAL_DEV
   ? mockMailer
-  : new MailClient(POSTMAN_API_KEY!)
+  : new MailClient(POSTMAN_API_KEY)

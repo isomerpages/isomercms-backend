@@ -2,6 +2,8 @@ import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
 import express, { RequestHandler } from "express"
 
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
@@ -14,7 +16,7 @@ import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 import { mailer } from "@services/utilServices/MailClient"
 
-const { SITE_CREATE_FORM_KEY } = process.env
+const SITE_CREATE_FORM_KEY = config.get("formSg.siteCreateFormKey")
 const REQUESTER_EMAIL_FIELD = "Government E-mail"
 const SITE_NAME_FIELD = "Site Name"
 const REPO_NAME_FIELD = "Repository Name"
@@ -137,14 +139,9 @@ export class FormsgRouter {
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
-    if (!SITE_CREATE_FORM_KEY) {
-      throw new InitializationError(
-        "Required SITE_CREATE_FORM_KEY environment variable is empty."
-      )
-    }
     router.post(
       "/create-site",
-      attachFormSGHandler(SITE_CREATE_FORM_KEY || ""),
+      attachFormSGHandler(SITE_CREATE_FORM_KEY),
       this.formsgCreateSite
     )
 

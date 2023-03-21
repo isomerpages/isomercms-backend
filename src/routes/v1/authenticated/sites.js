@@ -1,3 +1,5 @@
+import { config } from "@config/config"
+
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
@@ -14,8 +16,8 @@ const {
 const router = express.Router()
 
 const GH_MAX_REPO_COUNT = 100
-const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
-const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const ISOMERPAGES_REPO_PAGE_COUNT = config.get("sites.pageCount")
+const ISOMER_GITHUB_ORG_NAME = config.get("github.orgName")
 const ISOMER_ADMIN_REPOS = [
   "isomercms-backend",
   "isomercms-frontend",

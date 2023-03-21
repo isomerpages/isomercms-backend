@@ -1,5 +1,7 @@
 import axios from "axios"
 
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
 const POSTMAN_API_URL = "https://api.postman.gov.sg/v1"
@@ -39,15 +41,10 @@ class MailClient {
 }
 export default MailClient
 
-const { NODE_ENV, POSTMAN_API_KEY } = process.env
+const NODE_ENV = config.get("env")
+const POSTMAN_API_KEY = config.get("postman.apiKey")
 
 const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
-
-if (!POSTMAN_API_KEY && !IS_LOCAL_DEV) {
-  throw new Error(
-    "Please ensure that you have set POSTMAN_API_KEY in your env vars and that you have sourced them!"
-  )
-}
 
 const mockMailer = {
   sendMail: (email: string, subject: string, html: string) =>
@@ -55,4 +52,4 @@ const mockMailer = {
 } as MailClient
 export const mailer = IS_LOCAL_DEV
   ? mockMailer
-  : new MailClient(POSTMAN_API_KEY!)
+  : new MailClient(POSTMAN_API_KEY)

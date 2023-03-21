@@ -1,5 +1,7 @@
 import { Sequelize } from "sequelize-typescript"
 
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
 import {
@@ -21,19 +23,16 @@ import NotificationsService from "./NotificationsService"
 import OtpService from "./OtpService"
 import UsersService from "./UsersService"
 
-const { OTP_EXPIRY, OTP_SECRET, NODE_ENV } = process.env
+const NODE_ENV = config.get("env")
+const OTP_SECRET = config.get("auth.otpSecret")
+const OTP_EXPIRY = config.get("auth.otpExpiry")
 
 const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
 
-if (!OTP_SECRET) {
-  throw new Error(
-    "Please ensure that you have set OTP_SECRET in your env vars and that you have sourced them!"
-  )
-}
-
+// TODO: To remove TOTP
 const totpGenerator = new TotpGenerator({
-  secret: OTP_SECRET!,
-  expiry: parseInt(OTP_EXPIRY!, 10) ?? undefined,
+  secret: OTP_SECRET,
+  expiry: OTP_EXPIRY,
 })
 
 const smsClient = IS_LOCAL_DEV

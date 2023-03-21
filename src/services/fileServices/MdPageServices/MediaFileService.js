@@ -1,9 +1,11 @@
+const { config } = require("@config/config")
+
 const logger = require("@logger/logger")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")
 
-const { GITHUB_ORG_NAME } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 const {
   validateAndSanitizeFileUpload,

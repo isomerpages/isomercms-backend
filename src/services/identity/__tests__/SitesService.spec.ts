@@ -1,5 +1,7 @@
 import { ModelStatic } from "sequelize"
 
+import { config } from "@config/config"
+
 import { Deployment, Repo, Site, User } from "@database/models"
 import {
   MOCK_COMMIT_MESSAGE_OBJECT_ONE,
@@ -924,8 +926,8 @@ describe("SitesService", () => {
   describe("getSites", () => {
     it("Filters accessible sites for github user correctly", async () => {
       // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = "3"
+      const currRepoCount = config.get("sites.pageCount")
+      config.set("sites.pageCount", 3)
 
       const expectedResp = [
         {
@@ -953,14 +955,14 @@ describe("SitesService", () => {
       ).resolves.toMatchObject(expectedResp)
 
       expect(mockAxios.get).toHaveBeenCalledTimes(3)
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
-      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+      config.set("sites.pageCount", currRepoCount)
+      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
 
     it("Filters accessible sites for email user correctly", async () => {
       // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = "3"
+      const currRepoCount = config.get("sites.pageCount")
+      config.set("sites.pageCount", 3)
 
       const expectedResp: RepositoryData[] = [
         {
@@ -988,14 +990,14 @@ describe("SitesService", () => {
         mockIsomerUserId
       )
       expect(mockAxios.get).toHaveBeenCalledTimes(3)
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
-      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+      config.set("sites.pageCount", currRepoCount)
+      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
 
     it("Filters accessible sites for email user with no sites correctly", async () => {
       // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = "3"
+      const currRepoCount = config.get("sites.pageCount")
+      config.set("sites.pageCount", 3)
 
       const expectedResp: RepositoryData[] = []
       MockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
@@ -1017,14 +1019,14 @@ describe("SitesService", () => {
         mockIsomerUserId
       )
       expect(mockAxios.get).toHaveBeenCalledTimes(3)
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
-      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+      config.set("sites.pageCount", currRepoCount)
+      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
 
     it("Returns all accessible sites for admin user correctly", async () => {
       // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = process.env.ISOMERPAGES_REPO_PAGE_COUNT
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = "3"
+      const currRepoCount = config.get("sites.pageCount")
+      config.set("sites.pageCount", 3)
 
       const expectedResp = [
         {
@@ -1059,8 +1061,8 @@ describe("SitesService", () => {
         mockIsomerUserId
       )
       expect(mockAxios.get).toHaveBeenCalledTimes(3)
-      process.env.ISOMERPAGES_REPO_PAGE_COUNT = currRepoCount
-      expect(process.env.ISOMERPAGES_REPO_PAGE_COUNT).toBe(currRepoCount)
+      config.set("sites.pageCount", currRepoCount)
+      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
   })
 

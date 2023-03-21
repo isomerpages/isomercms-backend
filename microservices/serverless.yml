@@ -3,12 +3,8 @@ useDotenv: true # to allow reading of .env file
 frameworkVersion: "3"
 
 plugins:
-  # serverless-plugin-typescript needs to precede serverless-offline
   - serverless-plugin-typescript
   - serverless-step-functions
-  - serverless-step-functions-local
-  - serverless-offline-lambda
-  - serverless-offline
 
 provider:
   name: aws
@@ -18,16 +14,6 @@ provider:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     NODE_ENV: ${env:NODE_ENV}
-
-custom:
-  stepFunctionsLocal:
-    accountId: ${env:AWS_ACCOUNT_NUMBER}
-    region: ${env:AWS_REGION}
-    lambdaEndpoint: http://localhost:3002
-    eventBridgeEvents:
-      enabled: true
-      endpoint: http://localhost:4010
-    sqsUrl: ${env:INCOMING_QUEUE_URL}
 
 functions:
   generalDomainValidation:
@@ -44,7 +30,11 @@ functions:
     handler: handler.stepFunctionsTrigger
     events:
       - sqs: arn:aws:sqs:${aws:region}:${aws:accountId}:outgoingQueueStaging
+
+custom:
+  stateMachineName: SiteLaunchStepFunctions-${opt:stage, 'dev'}
 stepFunctions:
   stateMachines:
     siteLaunch:
+      name: ${self:custom.stateMachineName}
       definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}

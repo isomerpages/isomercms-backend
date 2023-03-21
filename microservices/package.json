@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy:dev": "source ../.env && sls deploy",
+    "deploy:staging": "source ../.env && sls deploy --stage staging",
+    "deploy:prod": "source ../.env && sls deploy --stage prod",
+    "destroy:dev": "source ../.env && sls remove"
   },
   "author": "",
   "license": "ISC",
@@ -14,12 +17,15 @@
     "@octokit/rest": "^19.0.5",
     "aws-sdk": "^2.1241.0",
     "octokit": "^2.0.10",
+    "velocity": "^0.7.3",
     "winston": "^3.8.2",
     "winston-cloudwatch": "^6.1.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.108",
     "aws-lambda": "^1.0.7",
-    "serverless": "^3.23.0"
+    "serverless": "^3.23.0",
+    "serverless-plugin-typescript": "^2.1.4",
+    "serverless-step-functions": "^3.13.0"
   }
 }

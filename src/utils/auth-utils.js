@@ -1,9 +1,9 @@
+const { config } = require("@config/config")
+
+const NODE_ENV = config.get("env")
+
 function isSecure() {
-  return (
-    process.env.NODE_ENV !== "DEV" &&
-    process.env.NODE_ENV !== "LOCAL_DEV" &&
-    process.env.NODE_ENV !== "test"
-  )
+  return NODE_ENV !== "DEV" && NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "test"
 }
 
 module.exports = {

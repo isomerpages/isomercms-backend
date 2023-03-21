@@ -7,11 +7,13 @@ import git from "isomorphic-git"
 import http from "isomorphic-git/http/node"
 import { ModelStatic } from "sequelize"
 
+import { config } from "@config/config"
+
 import { UnprocessableError } from "@errors/UnprocessableError"
 
 import { Repo, Site } from "@database/models"
 
-const { SYSTEM_GITHUB_TOKEN } = process.env
+const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 const octokit = new Octokit({ auth: SYSTEM_GITHUB_TOKEN })
 
 // Constants

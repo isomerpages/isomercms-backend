@@ -1,5 +1,7 @@
 import { Attributes } from "sequelize/types"
 
+import { config } from "@config/config"
+
 import { User, SiteMember } from "@database/models"
 import { Author } from "@root/types/github"
 
@@ -23,7 +25,7 @@ export const mockSiteId = "16"
 
 export const mockBearerTokenHeaders = {
   headers: {
-    Authorization: `Bearer ${process.env.POSTMAN_API_KEY}`,
+    Authorization: `Bearer ${config.get("postman.apiKey")}`,
   },
 }
 

@@ -1,12 +1,15 @@
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
-const { CLOUDMERSIVE_API_KEY } = process.env
 const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
 const DOMPurify = require("isomorphic-dompurify")
 
 const { BaseIsomerError } = require("@errors/BaseError")
+
+const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
@@ -27,12 +30,6 @@ const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
 const scanFileForVirus = (fileBuffer) =>
   new Promise((success, failure) => {
-    // check if the api key is missing in the env
-    if (!CLOUDMERSIVE_API_KEY) {
-      logger.error("Cloudmersive API Key is missing in env")
-      throw new BaseIsomerError(500, "Internal Server Error")
-    }
-
     apiInstance.scanFile(fileBuffer, (error, data) => {
       if (error) {
         logger.error(

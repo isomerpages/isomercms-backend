@@ -3,9 +3,11 @@ const AES = require("crypto-js/aes")
 const jwt = require("jsonwebtoken")
 const _ = require("lodash")
 
-const { JWT_SECRET } = process.env
-const { ENCRYPTION_SECRET } = process.env
-const AUTH_TOKEN_EXPIRY_MS = process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS.toString()
+const { config } = require("@config/config")
+
+const JWT_SECRET = config.get("auth.jwtSecret")
+const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry").toString()
 
 const jwtUtil = {
   decodeToken: _.wrap(jwt.decode, (decode, token) => decode(token)),

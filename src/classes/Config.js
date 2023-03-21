@@ -1,3 +1,5 @@
+import { config } from "@config/config"
+
 const _ = require("lodash")
 
 const {
@@ -18,8 +20,8 @@ const {
 
 // Import error
 
-const { GITHUB_ORG_NAME } = process.env
-const { BRANCH_REF } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
+const BRANCH_REF = config.get("github.branchRef")
 
 class Config {
   constructor(accessToken, siteName) {

@@ -1,11 +1,13 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
 import { getAccessToken } from "@utils/token-retrieval-utils"
 
 // Env vars
-const { GITHUB_ORG_NAME } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 const requestFormatter = async (config: AxiosRequestConfig) => {
   logger.info("Making GitHub API call")

@@ -70,6 +70,7 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
+import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
@@ -187,7 +188,8 @@ const reviewRequestService = new ReviewRequestService(
   Reviewer,
   ReviewMeta,
   ReviewRequestView,
-  pageService
+  pageService,
+  new ConfigService()
 )
 const sitesService = new SitesService({
   siteRepository: Site,

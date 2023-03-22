@@ -29,6 +29,8 @@ import {
   UpdateReviewRequestDto,
   ReviewRequestDto,
   BlobDiffDto,
+  EditedItemDto,
+  BaseEditedItemDto,
 } from "@root/types/dto/review"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
@@ -86,7 +88,7 @@ export class ReviewsRouter {
 
   compareDiff: RequestHandler<
     { siteName: string },
-    { items: EditedPageDto[] } | ResponseErrorBody,
+    { items: (EditedItemDto | BaseEditedItemDto)[] } | ResponseErrorBody,
     unknown,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -125,11 +127,9 @@ export class ReviewsRouter {
     return this.sitesService
       .getStagingUrl(userWithSiteSessionData)
       .andThen((stagingLink) =>
-        ResultAsync.fromSafePromise(
-          this.reviewRequestService.compareDiff(
-            userWithSiteSessionData,
-            stagingLink
-          )
+        this.reviewRequestService.compareDiff(
+          userWithSiteSessionData,
+          stagingLink
         )
       )
       .map((items) => res.status(200).json({ items }))

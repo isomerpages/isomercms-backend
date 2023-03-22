@@ -104,6 +104,39 @@ export default class ReviewRequestService {
   }
 
   compareDiff = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ) =>
+    ResultAsync.fromPromise(
+      this.apiService.getCommitDiff(userWithSiteSessionData.siteName),
+      // TODO: Write a handler for github errors to our own internal errors
+      () => new NetworkError()
+    )
+      .andThen(({ files, commits }) =>
+        ResultAsync.fromPromise(
+          this.computeShaMappings(commits),
+          () => new DatabaseError()
+        ).map((mappings) => ({ mappings, files }))
+      )
+      .andThen(({ mappings, files }) =>
+        combine(
+          this.compareDiffWithMappings(
+            userWithSiteSessionData,
+            stagingLink,
+            files,
+            mappings
+          ).map((res) =>
+            res
+              // NOTE: Need to type-hint so that we can recover
+              .andThen<BaseEditedItemDto | EditedItemDto, BaseEditedItemDto>(
+                _.identity
+              )
+              .orElse((baseItem) => okAsync(baseItem))
+          )
+        )
+      )
+
+  private compareDiffWithMappings = (
     sessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink,
     files: RawFileChangeInfo[],
@@ -669,39 +702,12 @@ export default class ReviewRequestService {
         // Step 2: Get the list of changed files using Github's API
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
-        ResultAsync.fromPromise(
-          this.apiService.getCommitDiff(siteName),
-          // TODO: Write a handler for github errors to our own internal errors
-          () => new NetworkError()
-        )
-          .andThen(({ files, commits }) =>
-            ResultAsync.fromPromise(
-              this.computeShaMappings(commits),
-              () => new DatabaseError()
-            ).map((mappings) => ({ mappings, files }))
-          )
-          .andThen(({ mappings, files }) =>
-            combine(
-              this.compareDiff(
-                userWithSiteSessionData,
-                stagingLink,
-                files,
-                mappings
-              ).map((res) =>
-                res
-                  // NOTE: Need to type-hint so that we can recover
-                  .andThen<
-                    BaseEditedItemDto | EditedItemDto,
-                    BaseEditedItemDto
-                  >(_.identity)
-                  .orElse((baseItem) => okAsync(baseItem))
-              )
-            )
-          )
-          .map((changedItems) => ({
+        this.compareDiff(userWithSiteSessionData, stagingLink).map(
+          (changedItems) => ({
             ...rest,
             changedItems,
-          }))
+          })
+        )
       )
   }
 

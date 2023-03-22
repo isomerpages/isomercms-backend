@@ -361,7 +361,7 @@ export class PageService {
       default: {
         const unimplErr: never = pageName
         return errAsync(
-          new BaseIsomerError(500, `Unimplemented pagetype: ${unimplErr}`)
+          new BaseIsomerError(500, `Unimplemented page type: ${unimplErr}`)
         )
       }
     }

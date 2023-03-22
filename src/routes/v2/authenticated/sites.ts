@@ -11,6 +11,10 @@ import type UserSessionData from "@root/classes/UserSessionData"
 import { attachSiteHandler } from "@root/middleware"
 import { StatsMiddleware } from "@root/middleware/stats"
 import type { RequestHandler } from "@root/types"
+import { ResponseErrorBody } from "@root/types/dto/error"
+import { ProdPermalink, StagingPermalink } from "@root/types/pages"
+import { RepositoryData } from "@root/types/repoInfo"
+import { SiteInfo } from "@root/types/siteInfo"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
@@ -41,7 +45,7 @@ export class SitesRouter {
 
   getSites: RequestHandler<
     never,
-    unknown,
+    { siteNames: RepositoryData[] },
     never,
     never,
     { userSessionData: UserSessionData }
@@ -53,7 +57,7 @@ export class SitesRouter {
 
   getLastUpdated: RequestHandler<
     { siteName: string },
-    unknown,
+    { lastUpdated: string },
     never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -67,26 +71,21 @@ export class SitesRouter {
 
   getStagingUrl: RequestHandler<
     { siteName: string },
-    unknown,
+    { stagingUrl: StagingPermalink } | ResponseErrorBody,
     never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-    const possibleStagingUrl = await this.sitesService.getStagingUrl(
-      userWithSiteSessionData
-    )
-
-    // Check for error and throw
-    if (possibleStagingUrl.isErr()) {
-      return res.status(404).json({ message: possibleStagingUrl.error.message })
-    }
-    return res.status(200).json({ stagingUrl: possibleStagingUrl.value })
+    return this.sitesService
+      .getStagingUrl(userWithSiteSessionData)
+      .map((stagingUrl) => res.status(200).json({ stagingUrl }))
+      .mapErr(({ message }) => res.status(400).json({ message }))
   }
 
   getSiteUrl: RequestHandler<
     { siteName: string },
-    unknown,
+    { siteUrl: ProdPermalink } | ResponseErrorBody,
     never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -100,22 +99,17 @@ export class SitesRouter {
 
   getSiteInfo: RequestHandler<
     { siteName: string },
-    unknown,
+    SiteInfo | ResponseErrorBody,
     never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
 
-    const possibleSiteInfo = await this.sitesService.getSiteInfo(
-      userWithSiteSessionData
-    )
-
-    // Check for error and throw
-    if (possibleSiteInfo.isErr()) {
-      return res.status(400).json({ message: possibleSiteInfo.error.message })
-    }
-    return res.status(200).json(possibleSiteInfo.value)
+    return this.sitesService
+      .getSiteInfo(userWithSiteSessionData)
+      .map((siteInfo) => res.status(200).json(siteInfo))
+      .mapErr(({ message }) => res.status(400).json({ message }))
   }
 
   getRouter() {

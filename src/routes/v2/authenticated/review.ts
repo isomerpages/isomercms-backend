@@ -25,7 +25,6 @@ import { ResponseErrorBody } from "@root/types/dto/error"
 import {
   CommentItem,
   DashboardReviewRequestDto,
-  EditedPageDto,
   UpdateReviewRequestDto,
   ReviewRequestDto,
   BlobDiffDto,

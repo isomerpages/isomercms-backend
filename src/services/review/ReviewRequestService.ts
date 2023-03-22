@@ -128,10 +128,7 @@ export default class ReviewRequestService {
           ).map((res) =>
             res
               // NOTE: Need to type-hint so that we can recover
-              .andThen<
-                BaseEditedItemDto | WithEditMeta<EditedItemDto>,
-                BaseEditedItemDto
-              >(_.identity)
+              .map<BaseEditedItemDto | WithEditMeta<EditedItemDto>>(_.identity)
               .orElse((baseItem) => okAsync(baseItem))
           )
         )

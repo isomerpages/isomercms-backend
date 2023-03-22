@@ -1,9 +1,19 @@
 import { AxiosResponse } from "axios"
 import _ from "lodash"
-import { errAsync, okAsync, ResultAsync } from "neverthrow"
-import { ModelStatic, Op } from "sequelize"
+import {
+  err,
+  errAsync,
+  ok,
+  okAsync,
+  Result,
+  ResultAsync,
+  combine,
+} from "neverthrow"
+import { Op, ModelStatic } from "sequelize"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
+
+import { ALLOWED_FILE_EXTENSIONS } from "@utils/file-upload-utils"
 
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
@@ -12,23 +22,39 @@ import { ReviewRequestStatus } from "@root/constants"
 import { Repo, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
+import { BaseIsomerError } from "@root/errors/BaseError"
+import ConfigParseError from "@root/errors/ConfigParseError"
+import DatabaseError from "@root/errors/DatabaseError"
+import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
+import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import PageParseError from "@root/errors/PageParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
+  BaseEditedItemDto,
   CommentItem,
   DashboardReviewRequestDto,
+  EditedConfigDto,
   EditedItemDto,
-  FileType,
+  EditedMediaDto,
+  EditedPageDto,
   GithubCommentData,
   ReviewRequestDto,
+  WithEditMeta,
 } from "@root/types/dto/review"
 import { isIsomerError } from "@root/types/error"
-import { Commit, fromGithubCommitMessage } from "@root/types/github"
-import { StagingPermalink } from "@root/types/pages"
+import {
+  Commit,
+  fromGithubCommitMessage,
+  RawFileChangeInfo,
+} from "@root/types/github"
+import { PathInfo, StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
+import { extractPathInfo, getFileExt } from "@root/utils/files"
 import * as ReviewApi from "@services/db/review"
 
 import { PageService } from "../fileServices/MdPageServices/PageService"
+import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
 
 /**
  * NOTE: This class does not belong as a subset of GitHub service.
@@ -55,6 +81,8 @@ export default class ReviewRequestService {
 
   private readonly pageService: PageService
 
+  private readonly configService: ConfigService
+
   constructor(
     apiService: typeof ReviewApi,
     users: ModelStatic<User>,
@@ -62,7 +90,8 @@ export default class ReviewRequestService {
     reviewers: ModelStatic<Reviewer>,
     reviewMeta: ModelStatic<ReviewMeta>,
     reviewRequestView: ModelStatic<ReviewRequestView>,
-    pageService: PageService
+    pageService: PageService,
+    configService: ConfigService
   ) {
     this.apiService = apiService
     this.users = users
@@ -71,73 +100,128 @@ export default class ReviewRequestService {
     this.reviewMeta = reviewMeta
     this.reviewRequestView = reviewRequestView
     this.pageService = pageService
+    this.configService = configService
   }
 
-  compareDiff = async (
+  compareDiff = (
     sessionData: UserWithSiteSessionData,
-    stagingLink: StagingPermalink
-  ): Promise<EditedItemDto[]> => {
+    stagingLink: StagingPermalink,
+    files: RawFileChangeInfo[],
+    mappings: Record<
+      string,
+      {
+        author: string
+        unixTime: number
+      }
+    >
+  ): ResultAsync<WithEditMeta<EditedItemDto>, BaseEditedItemDto>[] => {
     // Step 1: Get the site name
     const { siteName } = sessionData
 
-    // Step 2: Get the list of changed files using Github's API
-    // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
-    // Note that we need a triple dot (...) between base and head refs
-    const { files, commits } = await this.apiService.getCommitDiff(siteName)
+    return files.map(({ filename, contents_url: contents }) => {
+      const extractedPathResult = extractPathInfo(filename)
+      if (extractedPathResult.isErr()) {
+        return errAsync({
+          name: "",
+          path: [],
+          type: "file",
+        })
+      }
 
-    const mappings = await this.computeShaMappings(commits)
+      const pathInfo = extractedPathResult.value
 
-    // first we check the filetype
-    // then we parse
-
-    return Promise.all(
-      files.map(async ({ filename, contents_url }) => {
-        const fullPath = filename.split("/")
-        const items = contents_url.split("?ref=")
-        // NOTE: We have to compute sha this way rather than
-        // taking the file sha.
-        // This is because the sha present on the file is
-        // a checksum of the files contents.
-        // And the actual commit sha is given by the ref param
-        const sha = items[items.length - 1]
-        const pageNameRes = this.pageService.parsePageName(
-          filename,
-          sessionData
+      return this.extractConfigInfo(pathInfo)
+        .orElse(() => this.extractMediaInfo(pathInfo))
+        .asyncMap<EditedItemDto>(_.identity)
+        .orElse(() =>
+          this.extractPageInfo(pathInfo, sessionData, stagingLink, siteName)
         )
-        const stagingUrl = await pageNameRes
-          .andThen((pageName) =>
-            this.pageService.retrieveStagingPermalink(
-              sessionData,
-              stagingLink,
-              pageName
-            )
-          )
-          // NOTE: We ignore the errors and use a placeholder
-          .unwrapOr("")
-        const fileUrl = await pageNameRes
-          .andThen((pageName) =>
-            this.pageService.retrieveCmsPermalink(pageName, siteName)
-          )
-          .unwrapOr("")
+        .map<WithEditMeta<EditedItemDto>>((item) => {
+          const items = contents.split("?ref=")
+          // NOTE: We have to compute sha this way rather than
+          // taking the file sha.
+          // This is because the sha present on the file is
+          // a checksum of the files contents.
+          // And the actual commit sha is given by the ref param
+          const hash = items[items.length - 1]
+          return {
+            ...item,
+            lastEditedBy: mappings[hash]?.author || "Unknown user",
+            lastEditedTime: mappings[hash]?.unixTime || 0,
+          }
+        })
 
-        return {
-          type: "page",
-          // NOTE: The string is guaranteed to be non-empty
-          // and hence this should exist.
-          name: fullPath.pop()!,
-          // NOTE: pop alters in place
-          path: fullPath,
-          stagingUrl,
-          fileUrl,
-          lastEditedBy: mappings[sha]?.author || "Unknown user",
-          lastEditedTime: mappings[sha]?.unixTime || 0,
-        }
-      })
-    )
+        .orElse<BaseEditedItemDto>(() => {
+          const { path, name } = pathInfo
+          return errAsync({
+            name,
+            path: path.unwrapOr([]),
+            type: "page",
+          })
+        })
+    })
   }
 
-  // TODO
-  computeFileType = (filename: string): FileType => "page"
+  extractPageInfo = (
+    pathInfo: PathInfo,
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink,
+    siteName: string
+  ): ResultAsync<
+    EditedPageDto,
+    BaseIsomerError | NotFoundError | MissingResourceRoomError
+  > => {
+    const { name, path } = pathInfo
+    return this.pageService
+      .parsePageName(pathInfo, sessionData)
+      .andThen((pageName) =>
+        combine([
+          this.pageService.retrieveCmsPermalink(pageName, siteName),
+          this.pageService.retrieveStagingPermalink(
+            sessionData,
+            stagingLink,
+            pageName
+          ),
+        ])
+      )
+      .map(([fileUrl, stagingUrl]) => ({
+        type: "page",
+        // NOTE: The string is guaranteed to be non-empty
+        // and hence this should exist.
+        name,
+        path: path.unwrapOr([""]),
+        stagingUrl,
+        fileUrl,
+      }))
+  }
+
+  extractMediaInfo = ({
+    name,
+    path,
+  }: PathInfo): Result<EditedMediaDto, PageParseError> => {
+    const fileExt = getFileExt(name)
+    if (ALLOWED_FILE_EXTENSIONS.includes(fileExt)) {
+      return ok({
+        name,
+        path: path.unwrapOr([""]),
+        type: fileExt === "pdf" ? "file" : "image",
+      })
+    }
+
+    return err(new PageParseError(name))
+  }
+
+  extractConfigInfo = (
+    pathInfo: PathInfo
+  ): Result<EditedConfigDto, ConfigParseError> =>
+    this.configService.isConfigFile(pathInfo).map(({ name, path }) => {
+      const isNav = true
+      return {
+        name,
+        path: path.unwrapOr([""]),
+        type: isNav ? "nav" : "setting",
+      }
+    })
 
   computeShaMappings = async (
     commits: Commit[]
@@ -582,13 +666,42 @@ export default class ReviewRequestService {
           }))
       )
       .andThen((rest) =>
+        // Step 2: Get the list of changed files using Github's API
+        // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
+        // Note that we need a triple dot (...) between base and head refs
         ResultAsync.fromPromise(
-          this.compareDiff(userWithSiteSessionData, stagingLink),
-          () => new NotFoundError()
-        ).map((changedItems) => ({
-          ...rest,
-          changedItems,
-        }))
+          this.apiService.getCommitDiff(siteName),
+          // TODO: Write a handler for github errors to our own internal errors
+          () => new NetworkError()
+        )
+          .andThen(({ files, commits }) =>
+            ResultAsync.fromPromise(
+              this.computeShaMappings(commits),
+              () => new DatabaseError()
+            ).map((mappings) => ({ mappings, files }))
+          )
+          .andThen(({ mappings, files }) =>
+            combine(
+              this.compareDiff(
+                userWithSiteSessionData,
+                stagingLink,
+                files,
+                mappings
+              ).map((res) =>
+                res
+                  // NOTE: Need to type-hint so that we can recover
+                  .andThen<
+                    BaseEditedItemDto | EditedItemDto,
+                    BaseEditedItemDto
+                  >(_.identity)
+                  .orElse((baseItem) => okAsync(baseItem))
+              )
+            )
+          )
+          .map((changedItems) => ({
+            ...rest,
+            changedItems,
+          }))
       )
   }
 

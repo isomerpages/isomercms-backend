@@ -8,11 +8,11 @@ const logger = require("@logger/logger")
 const { ConflictError } = require("@errors/ConflictError")
 
 // Env vars
-const NODE_ENV = config.get("env")
+const NODE_ENV = config.get("env").toLowerCase()
 const MUTEX_TABLE_NAME = config.get("mutexTableName")
 
 const IS_LOCAL_DEV =
-  NODE_ENV === "LOCAL_DEV" || NODE_ENV === "test" || NODE_ENV === "vapt"
+  NODE_ENV === "dev" || NODE_ENV === "test" || NODE_ENV === "vapt"
 const mockMutexObj = {}
 
 // Dynamodb constants

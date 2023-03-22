@@ -23,11 +23,11 @@ import NotificationsService from "./NotificationsService"
 import OtpService from "./OtpService"
 import UsersService from "./UsersService"
 
-const NODE_ENV = config.get("env")
+const NODE_ENV = config.get("env").toLowerCase()
 const OTP_SECRET = config.get("auth.otpSecret")
 const OTP_EXPIRY = config.get("auth.otpExpiry")
 
-const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
+const IS_LOCAL_DEV = NODE_ENV === "dev"
 
 // TODO: To remove TOTP
 const totpGenerator = new TotpGenerator({

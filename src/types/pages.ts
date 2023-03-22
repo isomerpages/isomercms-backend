@@ -87,7 +87,12 @@ export type ProdPermalink = Brand<string, "prod">
 // also includes the respective base url in front.
 export type FullPermalink = StagingPermalink | ProdPermalink
 
-export type PathInfo = {
-  name: string
-  path: Result<string[], never[]>
-}
+// NOTE: We brand this to prevent ad-hoc creation
+// so that it has to come from the method
+export type PathInfo = Brand<
+  {
+    name: string
+    path: Result<string[], never[]>
+  },
+  "PathInfo"
+>

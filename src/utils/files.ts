@@ -24,11 +24,13 @@ export const extractPathInfo = (
     return ok({
       name,
       path: err([]),
+      __kind: "PathInfo",
     })
   }
 
   return ok({
     name,
     path: ok(fullPath),
+    __kind: "PathInfo",
   })
 }

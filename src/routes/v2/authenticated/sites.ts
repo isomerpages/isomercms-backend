@@ -19,6 +19,7 @@ type SitesRouterProps = {
   statsMiddleware: StatsMiddleware
 }
 
+// eslint-disable-next-line import/prefer-default-export
 export class SitesRouter {
   private readonly sitesService
 

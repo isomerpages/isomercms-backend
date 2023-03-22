@@ -163,7 +163,7 @@ export default class ReviewRequestService {
 
       return this.extractConfigInfo(pathInfo)
         .orElse(() => this.extractMediaInfo(pathInfo))
-        .asyncMap<EditedItemDto>(_.identity)
+        .asyncMap<EditedItemDto>(async (item) => item)
         .orElse(() =>
           this.extractPageInfo(pathInfo, sessionData, stagingLink, siteName)
         )
@@ -246,7 +246,11 @@ export default class ReviewRequestService {
     pathInfo: PathInfo
   ): Result<EditedConfigDto, ConfigParseError> =>
     this.configService.isConfigFile(pathInfo).map(({ name, path }) => {
-      const isNav = true
+      const isNav =
+        name === "navigation.yml" &&
+        path.isOk() &&
+        path.value.length === 1 &&
+        path.value.at(0) === "_data"
       return {
         name,
         path: path.unwrapOr([""]),

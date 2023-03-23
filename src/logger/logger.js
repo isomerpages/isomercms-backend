@@ -11,7 +11,7 @@ const WinstonCloudwatch = require("winston-cloudwatch")
 const { config } = require("@config/config")
 
 // Env vars
-const NODE_ENV = config.get("env").toLowerCase()
+const NODE_ENV = config.get("env")
 
 // AWS
 const AWS_REGION_NAME = "ap-southeast-1"

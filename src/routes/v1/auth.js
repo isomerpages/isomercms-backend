@@ -28,7 +28,7 @@ const CLIENT_SECRET = config.get("github.clientSecret")
 const REDIRECT_URI = config.get("github.redirectUri")
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const FRONTEND_URL = config.get("app.frontendUrl")
-const NODE_ENV = config.get("env").toLowerCase()
+const NODE_ENV = config.get("env")
 
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"

@@ -8,7 +8,7 @@ const logger = require("@logger/logger")
 const { ConflictError } = require("@errors/ConflictError")
 
 // Env vars
-const NODE_ENV = config.get("env").toLowerCase()
+const NODE_ENV = config.get("env")
 const MUTEX_TABLE_NAME = config.get("mutexTableName")
 
 const IS_LOCAL_DEV =

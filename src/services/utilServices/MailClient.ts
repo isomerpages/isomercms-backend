@@ -41,7 +41,7 @@ class MailClient {
 }
 export default MailClient
 
-const NODE_ENV = config.get("env").toLowerCase()
+const NODE_ENV = config.get("env")
 const POSTMAN_API_KEY = config.get("postman.apiKey")
 
 const IS_LOCAL_DEV = NODE_ENV === "dev"

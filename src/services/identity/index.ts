@@ -23,7 +23,7 @@ import NotificationsService from "./NotificationsService"
 import OtpService from "./OtpService"
 import UsersService from "./UsersService"
 
-const NODE_ENV = config.get("env").toLowerCase()
+const NODE_ENV = config.get("env")
 const OTP_SECRET = config.get("auth.otpSecret")
 const OTP_EXPIRY = config.get("auth.otpExpiry")
 

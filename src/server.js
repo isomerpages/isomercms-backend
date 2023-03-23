@@ -88,7 +88,7 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
-const NODE_ENV = config.get("env").toLowerCase()
+const NODE_ENV = config.get("env")
 const SESSION_SECRET = config.get("auth.sessionSecret")
 
 const isSecure = NODE_ENV !== "dev" && NODE_ENV !== "test"

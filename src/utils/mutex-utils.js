@@ -11,8 +11,7 @@ const { ConflictError } = require("@errors/ConflictError")
 const NODE_ENV = config.get("env")
 const MUTEX_TABLE_NAME = config.get("mutexTableName")
 
-const IS_LOCAL_DEV =
-  NODE_ENV === "dev" || NODE_ENV === "test" || NODE_ENV === "vapt"
+const IS_DEV = NODE_ENV === "dev" || NODE_ENV === "test" || NODE_ENV === "vapt"
 const mockMutexObj = {}
 
 // Dynamodb constants
@@ -34,7 +33,7 @@ const lock = async (siteName) => {
     const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME =
       Math.floor(new Date().valueOf() / 1000) + 60
 
-    if (!IS_LOCAL_DEV) {
+    if (!IS_DEV) {
       const params = {
         TableName: MUTEX_TABLE_NAME,
         Item: {
@@ -60,7 +59,7 @@ const lock = async (siteName) => {
 }
 
 const unlock = async (siteName) => {
-  if (IS_LOCAL_DEV) return mockUnlock(siteName)
+  if (IS_DEV) return mockUnlock(siteName)
 
   try {
     const params = {

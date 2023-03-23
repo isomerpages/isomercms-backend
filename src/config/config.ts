@@ -38,8 +38,8 @@ const config = convict({
   env: {
     doc: "The application environment.",
     env: "NODE_ENV",
-    format: ["LOCAL_DEV", "DEV", "test", "prod", "staging"],
-    default: "LOCAL_DEV",
+    format: ["dev", "test", "prod", "staging"],
+    default: "dev",
   },
   port: {
     doc: "The port to bind.",
@@ -81,13 +81,6 @@ const config = convict({
       env: "ISOMERPAGES_REPO_PAGE_COUNT",
       format: "required-positive-number",
       default: 10,
-    },
-    localSiteAccessToken: {
-      doc: "Access token for local site",
-      env: "LOCAL_SITE_ACCESS_TOKEN",
-      sensitive: true,
-      format: "required-string",
-      default: "",
     },
   },
   auth: {
@@ -153,24 +146,24 @@ const config = convict({
         default: "ap-southeast-1",
       },
       accountNumber: {
-        doc: "AWS account number",
+        doc: "AWS account number (microservices)",
         env: "AWS_ACCOUNT_NUMBER",
         sensitive: true,
-        format: "required-string",
+        format: String,
         default: "",
       },
       accessKeyId: {
-        doc: "AWS access key ID",
+        doc: "AWS access key ID (microservices)",
         env: "AWS_ACCESS_KEY_ID",
         sensitive: true,
-        format: "required-string",
+        format: String,
         default: "",
       },
       secretAccessKey: {
-        doc: "AWS secret access key",
+        doc: "AWS secret access key (microservices)",
         env: "AWS_SECRET_ACCESS_KEY",
         sensitive: true,
-        format: "required-string",
+        format: String,
         default: "",
       },
     },
@@ -184,12 +177,6 @@ const config = convict({
       outgoingQueueUrl: {
         doc: "URL of the outgoing SQS queue",
         env: "OUTGOING_QUEUE_URL",
-        format: "required-string",
-        default: "",
-      },
-      siteLaunchQueueUrl: {
-        doc: "URL of the site launch SQS queue",
-        env: "SITE_LAUNCH_QUEUE_URL",
         format: "required-string",
         default: "",
       },
@@ -250,7 +237,7 @@ const config = convict({
   dataDog: {
     env: {
       doc: "The DataDog environment",
-      format: ["production", "development", "local"],
+      format: ["development", "local", "staging", "production"],
       env: "DD_ENV",
       default: "local",
     },

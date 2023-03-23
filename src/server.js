@@ -57,6 +57,7 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
+import { isSecure } from "./utils/auth-utils"
 
 const path = require("path")
 
@@ -88,10 +89,7 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
-const NODE_ENV = config.get("env")
 const SESSION_SECRET = config.get("auth.sessionSecret")
-
-const isSecure = NODE_ENV !== "dev" && NODE_ENV !== "test"
 
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({

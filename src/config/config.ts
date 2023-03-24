@@ -9,7 +9,7 @@ convict.addFormat({
 })
 
 convict.addFormat({
-  name: "required-positive-number",
+  name: "required-whole-number",
   validate: (val: any) => {
     if (val === null || val === undefined || val === "")
       throw new Error("value cannot be empty, null or undefined")
@@ -19,7 +19,7 @@ convict.addFormat({
     const coercedVal = Number(val)
     if (isNaN(coercedVal)) {
       throw new Error(
-        "value provided is not a number. please provide a valid number"
+        "value provided is not a whole number. please provide a valid whole number"
       )
     }
     if (coercedVal < 0) {
@@ -50,7 +50,7 @@ const config = convict({
   port: {
     doc: "The port to bind.",
     env: "PORT",
-    format: "required-positive-number",
+    format: "required-whole-number",
     default: 8081,
   },
   gitGuardian: {
@@ -85,7 +85,7 @@ const config = convict({
     pageCount: {
       doc: "Number of pages of repos to retrieve from GitHub API",
       env: "ISOMERPAGES_REPO_PAGE_COUNT",
-      format: "required-positive-number",
+      format: "required-whole-number",
       default: 10,
     },
   },
@@ -99,7 +99,7 @@ const config = convict({
     tokenExpiry: {
       doc: "Expiry duration for auth token in milliseconds",
       env: "AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS",
-      format: "required-positive-number",
+      format: "required-whole-number",
       default: 3600000, // 1 hour
     },
     jwtSecret: {
@@ -119,13 +119,13 @@ const config = convict({
     maxNumOtpAttempts: {
       doc: "Maximum number of OTP attempts allowed",
       env: "MAX_NUM_OTP_ATTEMPTS",
-      format: "required-positive-number",
+      format: "required-whole-number",
       default: 5,
     },
     otpExpiry: {
       doc: "Expiry duration for OTP in milliseconds",
       env: "OTP_EXPIRY",
-      format: "required-positive-number",
+      format: "required-whole-number",
       default: 900000,
     },
     otpSecret: {
@@ -318,13 +318,13 @@ const config = convict({
     dbMinPool: {
       doc: "Minimum number of connections in the pool",
       env: "DB_MIN_POOL",
-      format: "required-positive-number",
+      format: "required-whole-number",
       default: 1,
     },
     dbMaxPool: {
       doc: "Maximum number of connections in the pool",
       env: "DB_MAX_POOL",
-      format: "required-positive-number",
+      format: "required-whole-number",
       default: 10,
     },
     dbEnableLogging: {
@@ -341,7 +341,7 @@ const config = convict({
 try {
   config.validate({ allowed: "strict" })
 } catch (e) {
-  console.error(e)
+  console.log(e)
 }
 
 export default config

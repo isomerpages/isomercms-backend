@@ -11,13 +11,19 @@ convict.addFormat({
 convict.addFormat({
   name: "required-positive-number",
   validate: (val: any) => {
-    if (!val) throw new Error("value cannot be empty, null or undefined")
+    if (val === null || val === undefined || val === "")
+      throw new Error("value cannot be empty, null or undefined")
     if (typeof val !== "number") throw new Error("value must be a number")
   },
   coerce: (val: string) => {
     const coercedVal = Number(val)
+    if (isNaN(coercedVal)) {
+      throw new Error(
+        "value provided is not a number. please provide a valid number"
+      )
+    }
     if (coercedVal < 0) {
-      throw new Error("value must be a positive number")
+      throw new Error("value must be more than or equal to zero")
     }
     return coercedVal
   },

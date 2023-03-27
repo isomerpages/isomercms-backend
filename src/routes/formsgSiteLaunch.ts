@@ -1,6 +1,7 @@
 import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
-import express, { RequestHandler, response } from "express"
+import express, { RequestHandler } from "express"
+import { err, ok } from "neverthrow"
 
 import logger from "@logger/logger"
 
@@ -11,16 +12,10 @@ import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import UsersService from "@services/identity/UsersService"
-import InfraService, {
-  REDIRECTION_SERVER_IP,
-} from "@services/infra/InfraService"
+import InfraService from "@services/infra/InfraService"
 
 const { SITE_LAUNCH_FORM_KEY } = process.env
 const REQUESTER_EMAIL_FIELD = "Government Email"
-const REPO_NAME_FIELD = "Repository Name"
-const PRIMARY_DOMAIN = "Primary Domain"
-const REDIRECTION_DOMAIN = "Redirection Domain"
-const AGENCY_EMAIL_FIELD = "Agency recipient"
 const SITE_LAUNCH_LIST =
   "Site Launch Details (Root Domain (eg. blah.moe.edu.sg), Redirection domain, Repo name (eg. moe-standrewsjc), Agency Email)"
 
@@ -62,8 +57,25 @@ interface RedirectionDomainObject {
   target: string
 }
 
+interface LaunchFailureEmailProps {
+  requesterEmail?: string
+  repoName?: string
+  primaryDomain?: string
+  error: string
+}
+
+interface DnsRecordsEmailProps {
+  requesterEmail: string
+  repoName: string
+  domainValidationSource: string
+  domainValidationTarget: string
+  primaryDomainSource: string
+  primaryDomainTarget: string
+  redirectionDomain?: RedirectionDomainObject
+}
+
 export class FormsgSiteLaunchRouter {
-  siteLaunch = async (formResponses: FormResponsesProps): Promise<void> => {
+  siteLaunch = async (formResponses: FormResponsesProps) => {
     const {
       submissionId,
       requesterEmail,
@@ -93,81 +105,56 @@ export class FormsgSiteLaunchRouter {
 
     // 2. Check arguments
     if (!requesterEmail) {
-      // Most errors are handled by sending an email to the requester, so we can't recover from this.
-      await this.sendLaunchError(
-        ISOMER_ADMIN_EMAIL,
-        repoName,
-        submissionId,
-        `Error: ${"Required 'Agency E-mail' input was not found"}`
-      )
-      return
+      return err({
+        ...formResponses,
+        error: "Required 'Requester E-mail' input was not found",
+      })
     }
 
     if (!agencyEmail) {
-      // Most errors are handled by sending an email to the requester, so we can't recover from this.
-      await this.sendLaunchError(
-        requesterEmail,
-        repoName,
-        submissionId,
-        `Error: ${"Required 'Agency E-mail' input was not found"}`
-      )
-      return
+      return err({
+        ...formResponses,
+        error: "Required 'Agency E-mail' input was not found",
+      })
     }
 
     if (!primaryDomain) {
-      const err = `A primary domain is required`
-      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
-      return
+      const error = `A primary domain is required`
+      return err({ error, ...formResponses })
     }
     if (!repoName) {
-      const err = `A repository name is required`
-      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
-      return
+      const error = `A repository name is required`
+      return err({ error, ...formResponses })
     }
 
     const agencyUser = await this.usersService.findByEmail(agencyEmail)
     const requesterUser = await this.usersService.findByEmail(requesterEmail)
 
     if (!agencyUser) {
-      const err = `Form submitter ${agencyEmail} is not an Isomer user. Register an account for this user and try again.`
-      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
-      return
+      const error = `Form submitter ${agencyEmail} is not an Isomer user. Register an account for this user and try again.`
+      return err({ error, ...formResponses })
     }
 
     if (!requesterUser) {
-      const err = `Form submitter ${requesterUser} is not an Isomer user. Register an account for this user and try again.`
-      await this.sendLaunchError(requesterEmail, repoName, submissionId, err)
-      return
+      const error = `Form submitter ${requesterUser} is not an Isomer user. Register an account for this user and try again.`
+      return err({ error, ...formResponses })
     }
 
     // 3. Use service to Launch site
-    // note: this function is not be async due to the timeout for http requests.
-    const launchSite = await this.infraService.launchSite(
+    const launchSiteResult = await this.infraService.launchSite(
       requesterUser,
       agencyUser,
       repoName,
       primaryDomain,
       subDomainSettings
     )
-
-    if (launchSite.isOk()) {
-      await this.sendVerificationDetails(
-        requesterEmail,
-        repoName,
-        submissionId,
-        launchSite.value.domainValidationSource,
-        launchSite.value.domainValidationTarget,
-        launchSite.value.primaryDomainTarget,
-        launchSite.value.domainValidationSource
-      )
-    } else {
-      await this.sendLaunchError(
-        requesterEmail,
-        repoName,
-        submissionId,
-        `Error: ${launchSite.error}`
-      )
+    if (launchSiteResult.isErr()) {
+      return err({
+        ...formResponses,
+        error: launchSiteResult.error,
+      })
     }
+    return ok({ ...launchSiteResult.value, repoName, requesterEmail })
   }
 
   private readonly usersService: FormsgRouterProps["usersService"]
@@ -224,52 +211,118 @@ export class FormsgSiteLaunchRouter {
       ) || []
 
     res.sendStatus(200) // we have received the form and obtained relevant field
-    formResponses.forEach((formResponse) => this.siteLaunch(formResponse))
+    await this.siteLaunchHandler(formResponses, submissionId)
   }
 
   sendLaunchError = async (
-    isomerEmail: string,
-    repoName: string | undefined,
     submissionId: string,
-    errorMessage: string
+    failureResults: LaunchFailureEmailProps[]
   ) => {
-    const displayedRepoName = repoName || "<missing repo name>"
-    const subject = `[Isomer] Launch site ${displayedRepoName} FAILURE`
-    const html = `<p>Isomer site ${displayedRepoName} was <b>not</b> launched successfully. (Form submission id [${submissionId}])</p> 
-<p>${errorMessage}</p>
-<p>This email was sent from the Isomer CMS backend.</p>`
+    if (failureResults.length === 0) return
+    const { requesterEmail } = failureResults[0]
+    const email = requesterEmail || ISOMER_ADMIN_EMAIL
+    const subject = `[Isomer] Launch site FAILURE`
+    let html = `<p>The following sites were NOT launched successfully. (Form submission id [${submissionId}])</p>
+    <table><thread><tr><th>Repo Name</th><th>Error</th></tr></thread><tbody>`
 
-    await mailer.sendMail(isomerEmail, subject, html)
+    failureResults.forEach((failureResult) => {
+      const displayedRepoName = failureResult.repoName || "<missing repo name>"
+      html += `
+      <tr>
+        <td>${displayedRepoName}</td>
+        <td>${failureResult.error}</td>
+      </tr>`
+    })
+    html += `
+    </tbody></table>
+    <p>This email was sent from the Isomer CMS backend.</p>`
+
+    await mailer.sendMail(email, subject, html)
   }
 
-  sendVerificationDetails = async (
-    requestorEmail: string,
-    repoName: string,
+  sendDNSRecords = async (
     submissionId: string,
-    domainValidationSource: string,
-    domainValidationTarget: string,
-    primaryDomainSource: string,
-    primaryDomainTarget: string,
-    redirectionDomain?: RedirectionDomainObject
+    dnsRecordsEmailProps: DnsRecordsEmailProps[]
   ): Promise<void> => {
-    const subject = `[Isomer] Launch site ${repoName} domain validation`
-    let html = `<p>Isomer site ${repoName} is in the process of launching. (Form submission id [${submissionId}])</p>
-<p>Please set the following CNAME record:</p>
-<p>Source: ${domainValidationSource}</p>
-<p>Target: ${domainValidationTarget}</p>
-<p>Source: ${primaryDomainSource}</p>
-<p>Target: ${primaryDomainTarget}</p>`
-    if (redirectionDomain) {
-      html += `<p>Source: ${redirectionDomain.source}</p>\n<p>Target: ${redirectionDomain.target}</p>\n`
-    }
+    if (dnsRecordsEmailProps.length === 0) return
+    const { requesterEmail } = dnsRecordsEmailProps[0]
+    const subject = `[Isomer] DNS records for launching websites`
 
-    html += `<p>This email was sent from the Isomer CMS backend.</p>`
-    await mailer.sendMail(requestorEmail, subject, html)
+    let html = `<p>Isomer sites are in the process of launching. (Form submission id [${submissionId}])</p>
+    <table>
+    <thead>
+      <tr>
+        <th>Repo Name</th>
+        <th>Source</th>
+        <th>Target</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>`
+    dnsRecordsEmailProps.forEach((dnsRecords) => {
+      // check if dnsRecords.redirectionDomain is undefined
+      const isRedirection = !!dnsRecords.redirectionDomain
+      html += `
+    <tr>
+      <td>${dnsRecords.repoName}</td>
+      <td>${dnsRecords.domainValidationSource}</td>
+      <td>${dnsRecords.domainValidationTarget}</td>
+      <td>CNAME</td>
+    </tr>
+    <tr>
+      <td>${dnsRecords.repoName}</td>
+      <td>${
+        isRedirection
+          ? // if redirection, website will be hosted in the 'www' subdomain
+            `www.${dnsRecords.primaryDomainSource}`
+          : dnsRecords.primaryDomainSource
+      }</td>
+      <td>${dnsRecords.primaryDomainTarget}</td>
+      <td>CNAME</td>
+    </tr>`
+
+      if (isRedirection) {
+        html += `
+      <tr>
+        <td>${dnsRecords.repoName}</td>
+        <td>${dnsRecords.redirectionDomain?.source}</td>
+        <td>${dnsRecords.redirectionDomain?.target}</td>
+        <td>A Record</td>
+      </tr>`
+      }
+    })
+    html += `</tbody></table>
+    <p>This email was sent from the Isomer CMS backend.</p>`
+    await mailer.sendMail(requesterEmail, subject, html)
+  }
+
+  private async siteLaunchHandler(
+    formResponses: FormResponsesProps[],
+    submissionId: string
+  ) {
+    const launchResults = await Promise.all(formResponses.map(this.siteLaunch))
+    const successResults: DnsRecordsEmailProps[] = []
+    launchResults.forEach((launchResult) => {
+      if (launchResult.isOk()) {
+        successResults.push(launchResult.value)
+      }
+    })
+
+    await this.sendDNSRecords(submissionId, successResults)
+
+    const failureResults: LaunchFailureEmailProps[] = []
+
+    launchResults.forEach((launchResult) => {
+      if (launchResult.isErr() && launchResult.error) {
+        failureResults.push(launchResult.error)
+      }
+    })
+
+    await this.sendLaunchError(submissionId, failureResults)
   }
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
-
     if (!SITE_LAUNCH_FORM_KEY) {
       throw new InitializationError(
         "Required SITE_LAUNCH_FORM_KEY environment variable is empty."

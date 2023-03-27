@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */ // todo fix default export
 
+import { RequestError } from "@octokit/request-error"
 import { Octokit } from "@octokit/rest"
 
 import logger from "../../shared/logger"
@@ -59,11 +60,8 @@ export const redirectionDomainValidation = async (
         ref: DEFAULT_BRANCH,
       }
     )
-  } catch (error) {
-    if (
-      Object.prototype.hasOwnProperty.call(error, "status") &&
-      error.status === 404
-    ) {
+  } catch (error: unknown) {
+    if (error instanceof RequestError && error.status && error.status === 404) {
       fileExists = false
     } else {
       throw Error(

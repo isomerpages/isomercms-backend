@@ -27,7 +27,7 @@ const NODE_ENV = config.get("env")
 const OTP_SECRET = config.get("auth.otpSecret")
 const OTP_EXPIRY = config.get("auth.otpExpiry")
 
-const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
+const IS_DEV = NODE_ENV === "dev"
 
 // TODO: To remove TOTP
 const totpGenerator = new TotpGenerator({
@@ -35,7 +35,7 @@ const totpGenerator = new TotpGenerator({
   expiry: OTP_EXPIRY,
 })
 
-const smsClient = IS_LOCAL_DEV
+const smsClient = IS_DEV
   ? ({
       sendSms: (_mobileNumber: string, message: string) => logger.info(message),
     } as SmsClient)

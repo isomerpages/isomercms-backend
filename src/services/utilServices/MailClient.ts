@@ -44,12 +44,10 @@ export default MailClient
 const NODE_ENV = config.get("env")
 const POSTMAN_API_KEY = config.get("postman.apiKey")
 
-const IS_LOCAL_DEV = NODE_ENV === "LOCAL_DEV"
+const IS_DEV = NODE_ENV === "dev"
 
 const mockMailer = {
   sendMail: (email: string, subject: string, html: string) =>
     logger.info(`Mock email sent to <${email}>, subject: ${subject}\n${html}`),
 } as MailClient
-export const mailer = IS_LOCAL_DEV
-  ? mockMailer
-  : new MailClient(POSTMAN_API_KEY)
+export const mailer = IS_DEV ? mockMailer : new MailClient(POSTMAN_API_KEY)

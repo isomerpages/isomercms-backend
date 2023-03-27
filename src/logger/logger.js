@@ -25,7 +25,7 @@ const metadataRequest = Bluebird.promisify(
 // TODO: Check this env var as it is not in example
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
 const IS_PROD_ENV =
-  NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "DEV" && NODE_ENV !== "test"
+  NODE_ENV !== "dev" && NODE_ENV !== "staging" && NODE_ENV !== "test"
 const IS_TEST_ENV = NODE_ENV === "test"
 
 function timestampGenerator() {

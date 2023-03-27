@@ -47,7 +47,6 @@ import InfraService from "@services/infra/InfraService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
-import { AuthorizationMiddleware } from "./middleware/authorization"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
@@ -58,6 +57,7 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
+import { isSecure } from "./utils/auth-utils"
 
 const path = require("path")
 
@@ -89,11 +89,7 @@ const express = require("express")
 const helmet = require("helmet")
 const createError = require("http-errors")
 
-const NODE_ENV = config.get("env")
 const SESSION_SECRET = config.get("auth.sessionSecret")
-
-const isSecure =
-  NODE_ENV !== "DEV" && NODE_ENV !== "LOCAL_DEV" && NODE_ENV !== "test"
 
 const SequelizeStore = SequelizeStoreFactory(session.Store)
 const sessionMiddleware = session({

@@ -163,13 +163,16 @@ export class FormsgSiteLaunchRouter {
 
   getPrimaryDomain = (url: string) => {
     let domain = url
-    // remove leading https:// and www.
     if (domain.startsWith("https://")) {
       domain = domain.replace("https://", "")
     }
     if (domain.startsWith("www.")) {
       domain = domain.replace("www.", "")
     }
+    if (domain.endsWith("/")) {
+      domain = domain.slice(0, -1)
+    }
+
     return domain
   }
 

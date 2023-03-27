@@ -112,7 +112,7 @@ export default class InfraService {
       logger.info(`Successfully created site on Isomer, site ID: ${site.id}`)
 
       return { site, repo, deployment }
-    } catch (err) {
+    } catch (error) {
       if (site !== undefined) {
         const updateFailSiteInitParams = {
           id: site.id,
@@ -120,8 +120,8 @@ export default class InfraService {
         }
         await this.sitesService.update(updateFailSiteInitParams)
       }
-      logger.error(`Failed to created '${repoName}' site on Isomer: ${err}`)
-      throw err
+      logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
+      throw error
     }
   }
 
@@ -190,7 +190,7 @@ export default class InfraService {
     repoName: string,
     primaryDomain: string,
     subDomainSettings: SubDomainSettings
-  ): Promise<Err<never, unknown> | Ok<SiteLaunchCreateParams, never>> => {
+  ): Promise<Err<never, AmplifyError> | Ok<SiteLaunchCreateParams, never>> => {
     // call amplify to trigger site launch process
     let newLaunchParams: SiteLaunchCreateParams
     try {
@@ -327,33 +327,26 @@ export default class InfraService {
       }
 
       if (newLaunchParams.redirectionDomainSource) {
-        message.redirectionDomain = [
-          {
-            source: newLaunchParams.redirectionDomainSource,
-            target: primaryDomainTarget,
-            type: RedirectionTypes.A,
-          },
-        ]
+        const redirectionDomainObject = {
+          source: newLaunchParams.primaryDomainSource,
+          target: REDIRECTION_SERVER_IP,
+          type: RedirectionTypes.A,
+        }
+        message.redirectionDomain = [redirectionDomainObject]
+        newLaunchParams.redirectionDomain = redirectionDomainObject
       }
 
       this.queueService.sendMessage(message)
 
       return ok(newLaunchParams)
     } catch (error) {
-      logger.error(`Failed to create '${repoName}' site on Isomer: ${error}`)
-      // requester email is guaranteed to exist as currently these are Isomer users
-      this.sendRetryToIsomerAdmin(requestor.email!, repoName)
-
-      throw error
+      return err(
+        new AmplifyError(
+          `Failed to create '${repoName}' site on Isomer: ${error}`,
+          repoName
+        )
+      )
     }
-  }
-
-  sendRetryToIsomerAdmin = async (email: string, repoName: string) => {
-    const subject = `[Isomer] Failure to create domain association for ${repoName}`
-    const body = `<p>Unable to trigger create domain association for ${repoName}.</P
-    <p>If domain association was already created, please log into the amplify console and trigger a retry. </p>
-    <p>Else, resubmit the form and try again.</p>`
-    await mailer.sendMail(email, subject, body)
   }
 
   siteUpdate = async () => {

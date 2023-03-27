@@ -8,8 +8,8 @@ const { parse } = require("pg-connection-string")
 // to support import of TS files inside JS. Note that validation of these envs will still be
 // performed by convict in src/config/config.ts.
 const { DB_URI } = process.env
-const DB_MIN_POOL = parseInt(process.env.DB_MIN_POOL)
-const DB_MAX_POOL = parseInt(process.env.DB_MAX_POOL)
+const DB_MIN_POOL = parseInt(process.env.DB_MIN_POOL, 10)
+const DB_MAX_POOL = parseInt(process.env.DB_MAX_POOL, 10)
 
 const parsed = parse(DB_URI)
 const port = parsed.port ? parseInt(parsed.port, 10) : 5432

@@ -17,7 +17,12 @@ const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
 
 class AuthRouter {
-  constructor({ authService, authenticationMiddleware, apiLogger, rateLimiter }) {
+  constructor({
+    authService,
+    authenticationMiddleware,
+    apiLogger,
+    rateLimiter,
+  }) {
     this.authService = authService
     this.authenticationMiddleware = authenticationMiddleware
     this.apiLogger = apiLogger
@@ -46,7 +51,7 @@ class AuthRouter {
     const cookieSettings = {
       expires: csrfTokenExpiry,
       httpOnly: true,
-      secure: isSecure(),
+      secure: isSecure,
     }
     res.cookie(CSRF_COOKIE_NAME, cookieToken, cookieSettings)
     return res.redirect(redirectUrl)

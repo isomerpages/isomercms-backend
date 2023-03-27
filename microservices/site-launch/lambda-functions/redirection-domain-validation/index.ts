@@ -70,7 +70,7 @@ export const redirectionDomainValidation = async (
     }
   }
   if (fileExists) return
-  const response = await octokit.request(
+  await octokit.request(
     `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
     {
       owner: "isomerpages",
@@ -85,7 +85,5 @@ export const redirectionDomainValidation = async (
       branch: DEFAULT_BRANCH,
     }
   )
-  logger.info(
-    `status of redirection commit for ${primaryDomainSource}:\n ${response}`
-  )
+  logger.info(`Redirection commit for ${primaryDomainSource} is successful`)
 }

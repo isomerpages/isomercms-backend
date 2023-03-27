@@ -215,14 +215,14 @@ export default class ReviewRequestService {
           ),
         ])
       )
-      .map(([fileUrl, stagingUrl]) => ({
+      .map(([cmsFileUrl, stagingUrl]) => ({
         type: "page",
         // NOTE: The string is guaranteed to be non-empty
         // and hence this should exist.
         name,
         path: path.unwrapOr([""]),
         stagingUrl,
-        fileUrl,
+        cmsFileUrl,
       }))
   }
 

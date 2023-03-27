@@ -88,16 +88,9 @@ export class FormsgSiteLaunchRouter {
     const subDomainSettings = [
       {
         branchName: "master",
-        prefix: "",
+        prefix: `${redirectionDomain ? "www" : ""}`,
       },
     ]
-
-    if (redirectionDomain) {
-      subDomainSettings.push({
-        branchName: "master",
-        prefix: "www",
-      })
-    }
 
     logger.info(
       `Launch site form submission [${submissionId}] (repoName '${repoName}', domain '${primaryDomain}') requested by <${requesterEmail}>`
@@ -168,6 +161,18 @@ export class FormsgSiteLaunchRouter {
     autoBind(this)
   }
 
+  getPrimaryDomain = (url: string) => {
+    let domain = url
+    // remove leading https:// and www.
+    if (domain.startsWith("https://")) {
+      domain = domain.replace("https://", "")
+    }
+    if (domain.startsWith("www.")) {
+      domain = domain.replace("www.", "")
+    }
+    return domain
+  }
+
   launchSiteUsingForm: RequestHandler<
     never,
     string,
@@ -201,8 +206,11 @@ export class FormsgSiteLaunchRouter {
           submissionId,
           requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
           repoName: element[2],
-          primaryDomain: element[0],
-          redirectionDomain: element[1] === "WWW" ? `www.${element[0]}` : "",
+          primaryDomain: this.getPrimaryDomain(element[0]),
+          redirectionDomain:
+            element[1] === "WWW"
+              ? `www.${this.getPrimaryDomain(element[0])}`
+              : "",
           // if agency email not needed, use email from requester instead
           agencyEmail: element[3]
             ? element[3]

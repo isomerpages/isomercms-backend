@@ -63,12 +63,7 @@ export default class InfraService {
     this.queueService = queueService
   }
 
-  createSite = async (
-    submissionId: string,
-    creator: User,
-    siteName: string,
-    repoName: string
-  ) => {
+  createSite = async (creator: User, siteName: string, repoName: string) => {
     let site: Site | undefined // For error handling
     try {
       // 1. Create a new site record in the Sites table
@@ -154,13 +149,11 @@ export default class InfraService {
     // type checking
     const sourceUrl = this.removeTrailingDot(recordsInfo[0])
 
-    // for the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net'.
-    // in this case, sourceUrl will be an empty string, and while this is not a valid URL,
-    // this is ok, as it is just an interim representation from Amplify.
-    const isSourceUrlValid = !sourceUrl || this.isValidUrl(sourceUrl)
-    if (!isSourceUrlValid) {
-      return err(`Source url: "${sourceUrl}" was not a valid url`)
-    }
+    // For the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net',
+    // sourceUrl is an empty string in this case.
+    // For the www record, Amplify records this as : 'www CNAME gibberish.cloudfront.net',
+    // sourceUrl is 'www' in this case.
+    // In both cases, the sourceUrl is not a valid url, so we skip the url validation.
 
     const targetUrl = this.removeTrailingDot(recordsInfo[2])
     if (!this.isValidUrl(targetUrl)) {
@@ -266,7 +259,7 @@ export default class InfraService {
       if (primaryDomainInfo.isErr()) {
         return err(
           new AmplifyError(
-            `Missing primary domain info${primaryDomainInfo.error}`,
+            `Missing primary domain info ${primaryDomainInfo.error}`,
             repoName,
             appId
           )

@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */ // todo remove this and use prefer-default-export
 
-import AWS, { Lambda, StepFunctions } from "aws-sdk"
+import { Lambda, StepFunctions } from "aws-sdk"
 
 import logger from "../../shared/logger"
 import { MessageBody } from "../../shared/types"

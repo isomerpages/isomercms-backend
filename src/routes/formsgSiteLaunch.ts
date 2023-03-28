@@ -53,6 +53,8 @@ interface FormResponsesProps {
 }
 
 interface LaunchFailureEmailProps {
+  // The fields here are optional since a misconfiguration in our
+  // formSG can cause some or even all fields to be missing
   requesterEmail?: string
   repoName?: string
   primaryDomain?: string

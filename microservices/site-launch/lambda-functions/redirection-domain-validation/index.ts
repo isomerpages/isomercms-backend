@@ -63,11 +63,11 @@ export const redirectionDomainValidation = async (
   } catch (error: unknown) {
     if (error instanceof RequestError && error.status && error.status === 404) {
       fileExists = false
-    } else {
-      throw Error(
-        `Unknown error when checking for file existence of ${primaryDomainSource}.conf: ${error}`
-      )
+      return
     }
+    throw Error(
+      `Unknown error when checking for file existence of ${primaryDomainSource}.conf: ${error}`
+    )
   }
   if (fileExists) return
   await octokit.request(

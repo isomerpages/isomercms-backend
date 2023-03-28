@@ -52,11 +52,6 @@ interface FormResponsesProps {
   siteLaunchDetails?: string[] | string[][]
 }
 
-interface RedirectionDomainObject {
-  source: string
-  target: string
-}
-
 interface LaunchFailureEmailProps {
   requesterEmail?: string
   repoName?: string
@@ -71,7 +66,8 @@ interface DnsRecordsEmailProps {
   domainValidationTarget: string
   primaryDomainSource: string
   primaryDomainTarget: string
-  redirectionDomain?: RedirectionDomainObject
+  redirectionDomainSource?: string
+  redirectionDomainTarget?: string
 }
 
 export class FormsgSiteLaunchRouter {
@@ -144,7 +140,7 @@ export class FormsgSiteLaunchRouter {
     if (launchSiteResult.isErr()) {
       return err({
         ...formResponses,
-        error: launchSiteResult.error,
+        error: launchSiteResult.error.message,
       })
     }
     return ok({ ...launchSiteResult.value, repoName, requesterEmail })
@@ -161,20 +157,8 @@ export class FormsgSiteLaunchRouter {
     autoBind(this)
   }
 
-  getPrimaryDomain = (url: string) => {
-    let domain = url
-    if (domain.startsWith("https://")) {
-      domain = domain.replace("https://", "")
-    }
-    if (domain.startsWith("www.")) {
-      domain = domain.replace("www.", "")
-    }
-    if (domain.endsWith("/")) {
-      domain = domain.slice(0, -1)
-    }
-
-    return domain
-  }
+  getPrimaryDomain = (url: string) =>
+    url.replace(/^(https?:\/\/)?(www\.)?/, "").replace(/\/$/, "")
 
   launchSiteUsingForm: RequestHandler<
     never,
@@ -272,7 +256,7 @@ export class FormsgSiteLaunchRouter {
     <tbody>`
     dnsRecordsEmailProps.forEach((dnsRecords) => {
       // check if dnsRecords.redirectionDomain is undefined
-      const isRedirection = !!dnsRecords.redirectionDomain
+      const hasRedirection = !!dnsRecords.redirectionDomainSource
       html += `
     <tr>
       <td>${dnsRecords.repoName}</td>
@@ -283,7 +267,7 @@ export class FormsgSiteLaunchRouter {
     <tr>
       <td>${dnsRecords.repoName}</td>
       <td>${
-        isRedirection
+        hasRedirection
           ? // if redirection, website will be hosted in the 'www' subdomain
             `www.${dnsRecords.primaryDomainSource}`
           : dnsRecords.primaryDomainSource
@@ -292,12 +276,16 @@ export class FormsgSiteLaunchRouter {
       <td>CNAME</td>
     </tr>`
 
-      if (isRedirection) {
+      if (hasRedirection) {
         html += `
       <tr>
         <td>${dnsRecords.repoName}</td>
-        <td>${dnsRecords.redirectionDomain?.source}</td>
-        <td>${dnsRecords.redirectionDomain?.target}</td>
+        <td>${
+          // note that the source here is the primary domain source
+          // since the non-www will be the one pointing to our redirection server
+          dnsRecords.primaryDomainSource
+        }</td>
+        <td>${dnsRecords.redirectionDomainTarget}</td>
         <td>A Record</td>
       </tr>`
       }

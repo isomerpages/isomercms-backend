@@ -284,7 +284,7 @@ export default class InfraService {
 
       /**
        * Amplify only stores the prefix.
-       * ie: if I wanted to have a www.blah.gov.sg -> giberish.cloudfront.net,
+       * ie: if I wanted to have a www.blah.gov.sg -> gibberish.cloudfront.net,
        * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
@@ -300,6 +300,7 @@ export default class InfraService {
 
       if (redirectionDomainList?.length) {
         newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
+        newLaunchParams.redirectionDomainTarget = REDIRECTION_SERVER_IP
       }
 
       // Create launches records table
@@ -326,7 +327,6 @@ export default class InfraService {
           type: RedirectionTypes.A,
         }
         message.redirectionDomain = [redirectionDomainObject]
-        newLaunchParams.redirectionDomain = redirectionDomainObject
       }
 
       this.queueService.sendMessage(message)

@@ -314,6 +314,12 @@ export class FormsgSiteLaunchRouter {
     launchResults.forEach((launchResult) => {
       if (launchResult.isErr() && launchResult.error) {
         failureResults.push(launchResult.error)
+        return
+      }
+      if (launchResult.isErr()) {
+        failureResults.push({
+          error: "Unknown error",
+        })
       }
     })
 

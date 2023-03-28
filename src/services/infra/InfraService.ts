@@ -1,6 +1,6 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
-import { Err, err, Ok, ok } from "neverthrow"
+import { Err, err, errAsync, Ok, ok, okAsync, Result } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
@@ -183,7 +183,7 @@ export default class InfraService {
     repoName: string,
     primaryDomain: string,
     subDomainSettings: SubDomainSettings
-  ): Promise<Err<never, AmplifyError> | Ok<SiteLaunchCreateParams, never>> => {
+  ): Promise<Result<SiteLaunchCreateParams, AmplifyError>> => {
     // call amplify to trigger site launch process
     let newLaunchParams: SiteLaunchCreateParams
     try {
@@ -195,7 +195,7 @@ export default class InfraService {
       )
 
       if (redirectionDomainResult.isErr()) {
-        return err(redirectionDomainResult.error)
+        return errAsync(redirectionDomainResult.error)
       }
 
       const { appId, siteId } = redirectionDomainResult.value
@@ -228,7 +228,7 @@ export default class InfraService {
         dnsInfo.domainAssociation?.certificateVerificationDNSRecord
       )
       if (certificationRecord.isErr()) {
-        return err(
+        return errAsync(
           new AmplifyError(
             `Missing certificate, error while parsing ${JSON.stringify(dnsInfo)}
             ${certificationRecord.error}`,
@@ -245,7 +245,7 @@ export default class InfraService {
 
       const subDomainList = dnsInfo.domainAssociation?.subDomains
       if (!subDomainList || !subDomainList[0].dnsRecord) {
-        return err(
+        return errAsync(
           new AmplifyError(
             "Missing subdomain subdomain list not created yet",
             repoName,
@@ -257,7 +257,7 @@ export default class InfraService {
       const primaryDomainInfo = this.parseDNSRecords(subDomainList[0].dnsRecord)
 
       if (primaryDomainInfo.isErr()) {
-        return err(
+        return errAsync(
           new AmplifyError(
             `Missing primary domain info ${primaryDomainInfo.error}`,
             repoName,
@@ -331,9 +331,9 @@ export default class InfraService {
 
       this.queueService.sendMessage(message)
 
-      return ok(newLaunchParams)
+      return okAsync(newLaunchParams)
     } catch (error) {
-      return err(
+      return errAsync(
         new AmplifyError(
           `Failed to create '${repoName}' site on Isomer: ${error}`,
           repoName

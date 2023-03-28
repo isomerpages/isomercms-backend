@@ -71,7 +71,7 @@ interface DnsRecordsEmailProps {
 }
 
 export class FormsgSiteLaunchRouter {
-  siteLaunch = async (formResponses: FormResponsesProps) => {
+  launchSiteFromForm = async (formResponses: FormResponsesProps) => {
     const {
       submissionId,
       requesterEmail,
@@ -160,7 +160,7 @@ export class FormsgSiteLaunchRouter {
   getPrimaryDomain = (url: string) =>
     url.replace(/^(https?:\/\/)?(www\.)?/, "").replace(/\/$/, "")
 
-  launchSiteUsingForm: RequestHandler<
+  handleSiteLaunchFormRequest: RequestHandler<
     never,
     string,
     { data: { submissionId: string } },
@@ -206,7 +206,7 @@ export class FormsgSiteLaunchRouter {
       ) || []
 
     res.sendStatus(200) // we have received the form and obtained relevant field
-    await this.siteLaunchHandler(formResponses, submissionId)
+    await this.handleSiteLaunchResults(formResponses, submissionId)
   }
 
   sendLaunchError = async (
@@ -295,11 +295,13 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(requesterEmail, subject, html)
   }
 
-  private async siteLaunchHandler(
+  private async handleSiteLaunchResults(
     formResponses: FormResponsesProps[],
     submissionId: string
   ) {
-    const launchResults = await Promise.all(formResponses.map(this.siteLaunch))
+    const launchResults = await Promise.all(
+      formResponses.map(this.launchSiteFromForm)
+    )
     const successResults: DnsRecordsEmailProps[] = []
     launchResults.forEach((launchResult) => {
       if (launchResult.isOk()) {
@@ -336,7 +338,7 @@ export class FormsgSiteLaunchRouter {
     router.post(
       "/launch-site",
       attachFormSGHandler(SITE_LAUNCH_FORM_KEY),
-      this.launchSiteUsingForm
+      this.handleSiteLaunchFormRequest
     )
 
     return router

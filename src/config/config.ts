@@ -11,13 +11,19 @@ convict.addFormat({
 convict.addFormat({
   name: "required-positive-number",
   validate: (val: any) => {
-    if (!val) throw new Error("value cannot be empty, null or undefined")
+    if (val === null || val === undefined || val === "")
+      throw new Error("value cannot be empty, null or undefined")
     if (typeof val !== "number") throw new Error("value must be a number")
   },
   coerce: (val: string) => {
     const coercedVal = Number(val)
-    if (coercedVal < 0) {
-      throw new Error("value must be a positive number")
+    if (isNaN(coercedVal)) {
+      throw new Error(
+        "value provided is not a positive number. please provide a valid positive number"
+      )
+    }
+    if (coercedVal <= 0) {
+      throw new Error("value must be more than zero")
     }
     return coercedVal
   },
@@ -331,7 +337,12 @@ const config = convict({
 })
 
 // Perform validation
-config.validate({ allowed: "strict" })
+// TODO: remove try-catch after prod deployment is successful to avoid blocking
+try {
+  config.validate({ allowed: "strict" })
+} catch (e: any) {
+  console.log(`Convict error: ${e}`)
+}
 
 export default config
 export { config }

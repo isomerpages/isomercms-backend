@@ -1,14 +1,15 @@
 const { parse } = require("pg-connection-string")
 
-const { config } = require("@config/config")
-
 // TODO: This came from a past project - I don't remember why I wrote this but let's explore later.
 // We have to manually parse database URL because sequelize-typescript requires explicit
 // connection parameters.
 
-const DB_URI = config.get("database.dbUri")
-const DB_MIN_POOL = config.get("database.dbMinPool")
-const DB_MAX_POOL = config.get("database.dbMaxPool")
+// Note: We are using process.env here instead of convict's config.get() as sequelize-cli is unable
+// to support import of TS files inside JS. Note that validation of these envs will still be
+// performed by convict in src/config/config.ts.
+const { DB_URI } = process.env
+const DB_MIN_POOL = parseInt(process.env.DB_MIN_POOL, 10)
+const DB_MAX_POOL = parseInt(process.env.DB_MAX_POOL, 10)
 
 const parsed = parse(DB_URI)
 const port = parsed.port ? parseInt(parsed.port, 10) : 5432

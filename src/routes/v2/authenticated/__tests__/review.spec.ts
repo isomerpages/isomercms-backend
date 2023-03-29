@@ -1,4 +1,5 @@
 import express from "express"
+import { err, errAsync, ok, okAsync } from "neverthrow"
 import request from "supertest"
 
 import RequestNotFoundError from "@errors/RequestNotFoundError"
@@ -11,6 +12,7 @@ import { generateRouterForDefaultUserWithSite } from "@fixtures/app"
 import { mockUserId } from "@fixtures/identity"
 import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@fixtures/users"
 import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
+import MissingSiteError from "@root/errors/MissingSiteError"
 import { GitHubService } from "@root/services/db/GitHubService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import NotificationsService from "@services/identity/NotificationsService"
@@ -47,7 +49,8 @@ describe("Review Requests Router", () => {
   }
 
   const mockSitesService = {
-    getBySiteName: jest.fn(),
+    getBySiteName: jest.fn().mockReturnValue(ok("site")),
+    getStagingUrl: jest.fn().mockReturnValue(okAsync("")),
   }
 
   const mockCollaboratorsService = {
@@ -179,7 +182,6 @@ describe("Review Requests Router", () => {
       // Arrange
       const mockPullRequestNumber = 1
       const mockReviewer = "reviewer@test.gov.sg"
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockIdentityUsersService.findByEmail.mockResolvedValueOnce("user")
       mockCollaboratorsService.list.mockResolvedValueOnce([
@@ -222,7 +224,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app)
@@ -243,7 +247,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a site collaborator", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -265,7 +269,7 @@ describe("Review Requests Router", () => {
 
     it("should return 400 if no reviewers are provided", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockIdentityUsersService.findByEmail.mockResolvedValueOnce("user")
 
@@ -293,7 +297,7 @@ describe("Review Requests Router", () => {
     it("should return 400 if provided reviewer is not an admin", async () => {
       // Arrange
       const mockReviewer = "reviewer@test.gov.sg"
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockIdentityUsersService.findByEmail.mockResolvedValueOnce("user")
       mockCollaboratorsService.list.mockResolvedValueOnce([])
@@ -329,7 +333,7 @@ describe("Review Requests Router", () => {
     it("should return 200 with the list of reviews", async () => {
       // Arrange
       const mockReviews = ["review1", "review2"]
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.listReviewRequest.mockResolvedValueOnce(
         mockReviews
@@ -350,9 +354,11 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
       mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
       mockIdentityUsersService.getSiteMember.mockResolvedValueOnce({})
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).get("/mockSite/review/summary")
@@ -366,7 +372,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a site collaborator", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -383,7 +389,7 @@ describe("Review Requests Router", () => {
   describe("markAllReviewRequestsAsViewed", () => {
     it("should return 200 and mark all review requests as viewed", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
 
       // Act
@@ -400,7 +406,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).post("/mockSite/review/viewed")
@@ -416,7 +424,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a site collaborator", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -435,7 +443,7 @@ describe("Review Requests Router", () => {
   describe("markReviewRequestAsViewed", () => {
     it("should return 200 and mark review request as viewed", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce({
         id: 12345,
@@ -456,7 +464,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).post(`/mockSite/review/12345/viewed`)
@@ -473,7 +483,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a site collaborator", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -491,7 +501,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
@@ -521,10 +531,10 @@ describe("Review Requests Router", () => {
     it("should return 200 with the full review request", async () => {
       // Arrange
       const mockReviewRequest = "review request"
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
-      mockReviewRequestService.getFullReviewRequest.mockResolvedValueOnce(
-        mockReviewRequest
+      mockReviewRequestService.getFullReviewRequest.mockReturnValueOnce(
+        okAsync(mockReviewRequest)
       )
 
       // Act
@@ -543,7 +553,9 @@ describe("Review Requests Router", () => {
     it("should return 404 if the site does not exist", async () => {
       // Arrange
       mockSitesService.getBySiteName.mockResolvedValueOnce(null)
-      mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        errAsync(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).get(`/mockSite/review/12345`)
@@ -559,7 +571,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a site collaborator", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -576,10 +588,10 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
-      mockReviewRequestService.getFullReviewRequest.mockResolvedValueOnce(
-        new RequestNotFoundError()
+      mockReviewRequestService.getFullReviewRequest.mockReturnValueOnce(
+        errAsync(new RequestNotFoundError())
       )
 
       // Act
@@ -600,7 +612,7 @@ describe("Review Requests Router", () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: MOCK_USER_EMAIL_ONE } }
       const mockReviewer = "reviewer@test.gov.sg"
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -636,7 +648,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).post(`/mockSite/review/12345`)
@@ -653,7 +667,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request is not found", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
       )
@@ -674,7 +688,7 @@ describe("Review Requests Router", () => {
     it("should return 403 if user is not the original requestor", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: "other@test.gov.sg" } }
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -695,7 +709,7 @@ describe("Review Requests Router", () => {
     it("should return 400 if the given reviewers are not admins of the site", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: MOCK_USER_EMAIL_ONE } }
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -722,7 +736,7 @@ describe("Review Requests Router", () => {
   describe("mergeReviewRequest", () => {
     it("should return 200 with the review request successfully merged", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         "review request"
@@ -752,7 +766,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).post(`/mockSite/review/12345/merge`)
@@ -770,7 +786,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a site member", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -789,7 +805,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
@@ -819,7 +835,7 @@ describe("Review Requests Router", () => {
         requestor: MOCK_USER_EMAIL_TWO,
       }
       const mockReviewer = "reviewer@test.gov.sg"
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -851,7 +867,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).post(`/mockSite/review/12345/approve`)
@@ -868,7 +886,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
       )
@@ -893,7 +911,7 @@ describe("Review Requests Router", () => {
         reviewStatus: ReviewRequestStatus.Open,
         requestor: MOCK_USER_EMAIL_TWO,
       }
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -921,7 +939,7 @@ describe("Review Requests Router", () => {
     it("should return 200 with the comments for a review request", async () => {
       // Arrange
       const mockComments = ["comment1", "comment2"]
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         "review request"
@@ -942,8 +960,10 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
       mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).get(`/mockSite/review/12345/comments`)
@@ -958,7 +978,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a valid site member", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -974,7 +994,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
@@ -995,7 +1015,7 @@ describe("Review Requests Router", () => {
   describe("createComment", () => {
     it("should return 200 with the comment created successfully", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         "review request"
@@ -1017,7 +1037,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app)
@@ -1034,7 +1056,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a valid site member", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -1052,7 +1074,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
@@ -1075,7 +1097,7 @@ describe("Review Requests Router", () => {
   describe("markReviewRequestCommentsAsViewed", () => {
     it("should return 200 with the lastViewedAt timestamp updated successfully", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         "review request"
@@ -1101,7 +1123,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).post(
@@ -1120,7 +1144,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if user is not a valid site member", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
 
       // Act
@@ -1140,7 +1164,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
@@ -1167,7 +1191,7 @@ describe("Review Requests Router", () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: MOCK_USER_EMAIL_ONE } }
       const mockReviewer = "reviewer@test.gov.sg"
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -1205,7 +1229,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).delete(`/mockSite/review/12345`)
@@ -1223,7 +1249,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
       )
@@ -1245,7 +1271,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if the user is not the requestor of the review request", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: "other@test.gov.sg" } }
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -1269,7 +1295,7 @@ describe("Review Requests Router", () => {
     it("should return 200 with the review request approval deleted successfully", async () => {
       // Arrange
       const mockReviewRequest = { reviewers: [{ email: MOCK_USER_EMAIL_ONE }] }
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )
@@ -1293,7 +1319,9 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockReturnValueOnce(
+        err(new MissingSiteError("site"))
+      )
 
       // Act
       const response = await request(app).delete(
@@ -1311,7 +1339,7 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the review request does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         new RequestNotFoundError()
       )
@@ -1333,7 +1361,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if the user is not a reviewer of the review request", async () => {
       // Arrange
       const mockReviewRequest = { reviewers: [{ email: "other@test.gov.sg" }] }
-      mockSitesService.getBySiteName.mockResolvedValueOnce("site")
+
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
       )

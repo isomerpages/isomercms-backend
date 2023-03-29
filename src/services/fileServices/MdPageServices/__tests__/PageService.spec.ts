@@ -72,7 +72,7 @@ const createMockFrontMatter = (mockPageName: string) => ({
     frontMatter: {
       permalink: `/${mockPageName}`,
     },
-    pageBody: {},
+    pageBody: "",
   },
   sha: "",
 })

@@ -137,3 +137,13 @@ export const MOCK_GITHUB_RAWCOMMENT_TWO: RawComment = {
   body: JSON.stringify(MOCK_GITHUB_COMMENT_OBJECT_TWO),
   created_at: MOCK_GITHUB_COMMIT_DATE_THREE,
 }
+
+export const MOCK_PAGE_PERMALINK = "/department/english"
+
+export const MOCK_GITHUB_FRONTMATTER = Buffer.from(
+  `---
+permalink: ${MOCK_PAGE_PERMALINK}
+---
+`,
+  "binary"
+).toString("base64")

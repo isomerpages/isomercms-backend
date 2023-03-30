@@ -1,6 +1,8 @@
+const { config } = require("@config/config")
+
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const { GITHUB_ORG_NAME } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
 
 describe("Media File Service", () => {
   const siteName = "test-site"
@@ -8,9 +10,10 @@ describe("Media File Service", () => {
   const imageName = "test image.png"
   const fileName = "test file.pdf"
   const directoryName = "images/subfolder"
-  const mockContent = "test"
+  const mockContent = "schema, test"
   const mockSanitizedContent = "sanitized-test"
   const sha = "12345"
+  const mockGithubSessionData = "githubData"
 
   const reqDetails = { siteName, accessToken }
 
@@ -32,6 +35,7 @@ describe("Media File Service", () => {
       .fn()
       .mockReturnValue(mockSanitizedContent),
     ALLOWED_FILE_EXTENSIONS: ["pdf"],
+    scanFileForVirus: jest.fn().mockReturnValue({ CleanResult: true }),
   }))
 
   const {
@@ -285,7 +289,7 @@ describe("Media File Service", () => {
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(reqDetails, mockGithubSessionData, {
           oldFileName,
           newFileName: "file/file.pdf",
           directoryName,
@@ -295,7 +299,7 @@ describe("Media File Service", () => {
     })
     it("Renaming pages works correctly", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(reqDetails, mockGithubSessionData, {
           oldFileName,
           newFileName: fileName,
           directoryName,
@@ -307,13 +311,21 @@ describe("Media File Service", () => {
         oldSha: sha,
         sha,
       })
-      expect(mockGithubService.getTree).toHaveBeenCalledWith(reqDetails, {
-        isRecursive: true,
-      })
-      expect(mockGithubService.updateTree).toHaveBeenCalledWith(reqDetails, {
-        gitTree: mockedMovedTree,
-        message: `Renamed ${oldFileName} to ${fileName}`,
-      })
+      expect(mockGithubService.getTree).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          isRecursive: true,
+        }
+      )
+      expect(mockGithubService.updateTree).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          gitTree: mockedMovedTree,
+          message: `Renamed ${oldFileName} to ${fileName}`,
+        }
+      )
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
         reqDetails,
         {

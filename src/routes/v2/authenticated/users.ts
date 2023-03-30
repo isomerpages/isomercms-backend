@@ -8,6 +8,8 @@ import { BadRequestError } from "@errors/BadRequestError"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
+import UserSessionData from "@classes/UserSessionData"
+
 import { isError, RequestHandler } from "@root/types"
 import UsersService from "@services/identity/UsersService"
 
@@ -61,15 +63,18 @@ export class UsersRouter {
     unknown,
     { email: string; otp: string },
     never,
-    { userId: string }
+    { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { email, otp } = req.body
-    const { userId } = res.locals
-    if (!this.usersService.verifyOtp(email, otp)) {
+    const { userSessionData } = res.locals
+    const userId = userSessionData.isomerUserId
+
+    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
+    if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByGitHubId(userId, { email })
+    await this.usersService.updateUserByIsomerId(userId, { email })
     return res.sendStatus(200)
   }
 
@@ -92,15 +97,18 @@ export class UsersRouter {
     unknown,
     { mobile: string; otp: string },
     never,
-    { userId: string }
+    { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { mobile, otp } = req.body
-    const { userId } = res.locals
-    if (!this.usersService.verifyOtp(mobile, otp)) {
+    const { userSessionData } = res.locals
+    const userId = userSessionData.isomerUserId
+
+    const isOtpValid = await this.usersService.verifyMobileOtp(mobile, otp)
+    if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByGitHubId(userId, {
+    await this.usersService.updateUserByIsomerId(userId, {
       contactNumber: mobile,
     })
     return res.sendStatus(200)

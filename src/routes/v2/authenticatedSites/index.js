@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const {
@@ -82,10 +84,13 @@ const {
 const { MoverService } = require("@services/moverServices/MoverService")
 
 const getAuthenticatedSitesSubrouter = ({
-  authMiddleware,
+  authenticationMiddleware,
+  authorizationMiddleware,
   gitHubService,
   configYmlService,
   apiLogger,
+  notificationsService,
+  notificationOnEditHandler,
 }) => {
   const collectionYmlService = new CollectionYmlService({ gitHubService })
   const homepagePageService = new HomepagePageService({ gitHubService })
@@ -185,11 +190,12 @@ const getAuthenticatedSitesSubrouter = ({
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
-  authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyAccess)
+  authenticatedSitesSubrouter.use(attachSiteHandler)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
   // which is only available after verifying that the jwt is valid
   authenticatedSitesSubrouter.use(apiLogger)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteMember)
 
   authenticatedSitesSubrouter.use(
     "/collections/:collectionName",
@@ -221,6 +227,7 @@ const getAuthenticatedSitesSubrouter = ({
   authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
   authenticatedSitesSubrouter.use("/homepage", homepageV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
+  authenticatedSitesSubrouter.use(notificationOnEditHandler.createNotification)
 
   return authenticatedSitesSubrouter
 }

@@ -85,8 +85,8 @@ class CollectionDirectoryService {
     return fileOrder
   }
 
-  async listAllCollections(reqDetails) {
-    const filesOrDirs = await this.baseDirectoryService.list(reqDetails, {
+  async listAllCollections(sessionData) {
+    const filesOrDirs = await this.baseDirectoryService.list(sessionData, {
       directoryName: "",
     })
     return filesOrDirs.reduce((acc, curr) => {
@@ -103,15 +103,15 @@ class CollectionDirectoryService {
     }, [])
   }
 
-  async listFiles(reqDetails, { collectionName }) {
-    const files = await this.collectionYmlService.listContents(reqDetails, {
+  async listFiles(sessionData, { collectionName }) {
+    const files = await this.collectionYmlService.listContents(sessionData, {
       collectionName,
     })
 
     return this.convertYmlToObjOrder(files)
   }
 
-  async createDirectory(reqDetails, { collectionName, objArray }) {
+  async createDirectory(sessionData, { collectionName, objArray }) {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
       throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
     if (/[^a-zA-Z0-9- ]/g.test(collectionName)) {
@@ -121,7 +121,7 @@ class CollectionDirectoryService {
       )
     }
     const slugifiedCollectionName = slugifyCollectionName(collectionName)
-    await this.collectionYmlService.create(reqDetails, {
+    await this.collectionYmlService.create(sessionData, {
       collectionName: slugifiedCollectionName,
     })
     if (objArray) {
@@ -129,7 +129,7 @@ class CollectionDirectoryService {
       // We can't perform these operations concurrently because of conflict issues
       /* eslint-disable no-await-in-loop, no-restricted-syntax */
       for (const fileName of orderArray) {
-        await this.moverService.movePage(reqDetails, {
+        await this.moverService.movePage(sessionData, {
           fileName,
           newFileCollection: slugifiedCollectionName,
         })
@@ -141,7 +141,11 @@ class CollectionDirectoryService {
     }
   }
 
-  async renameDirectory(reqDetails, { collectionName, newDirectoryName }) {
+  async renameDirectory(
+    sessionData,
+    githubSessionData,
+    { collectionName, newDirectoryName }
+  ) {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
       // Contains non-allowed characters
       throw new BadRequestError(
@@ -151,36 +155,36 @@ class CollectionDirectoryService {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newDirectoryName))
       throw new ConflictError(protectedFolderConflictErrorMsg(newDirectoryName))
     const slugifiedNewCollectionName = slugifyCollectionName(newDirectoryName)
-    await this.baseDirectoryService.rename(reqDetails, {
+    await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName: `_${collectionName}`,
       newDirectoryName: `_${slugifiedNewCollectionName}`,
       message: `Renaming collection ${collectionName} to ${slugifiedNewCollectionName}`,
     })
-    await this.collectionYmlService.renameCollectionInOrder(reqDetails, {
+    await this.collectionYmlService.renameCollectionInOrder(sessionData, {
       oldCollectionName: collectionName,
       newCollectionName: slugifiedNewCollectionName,
     })
-    await this.navYmlService.renameCollectionInNav(reqDetails, {
+    await this.navYmlService.renameCollectionInNav(sessionData, {
       oldCollectionName: collectionName,
       newCollectionName: slugifiedNewCollectionName,
     })
   }
 
-  async deleteDirectory(reqDetails, { collectionName }) {
+  async deleteDirectory(sessionData, githubSessionData, { collectionName }) {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
       throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
-    await this.baseDirectoryService.delete(reqDetails, {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: `_${collectionName}`,
       message: `Deleting collection ${collectionName}`,
     })
-    await this.navYmlService.deleteCollectionInNav(reqDetails, {
+    await this.navYmlService.deleteCollectionInNav(sessionData, {
       collectionName,
     })
   }
 
-  async reorderDirectory(reqDetails, { collectionName, objArray }) {
+  async reorderDirectory(sessionData, { collectionName, objArray }) {
     const fileOrder = this.convertObjToYmlOrder(objArray)
-    await this.collectionYmlService.updateOrder(reqDetails, {
+    await this.collectionYmlService.updateOrder(sessionData, {
       collectionName,
       newOrder: fileOrder,
     })
@@ -188,14 +192,14 @@ class CollectionDirectoryService {
   }
 
   async movePages(
-    reqDetails,
+    sessionData,
     { collectionName, targetCollectionName, targetSubcollectionName, objArray }
   ) {
     // We can't perform these operations concurrently because of conflict issues
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of objArray) {
       const fileName = file.name
-      await this.moverService.movePage(reqDetails, {
+      await this.moverService.movePage(sessionData, {
         fileName,
         oldFileCollection: collectionName,
         newFileCollection: targetCollectionName,

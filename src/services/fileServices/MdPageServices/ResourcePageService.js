@@ -37,7 +37,7 @@ class ResourcePageService {
   }
 
   async create(
-    reqDetails,
+    sessionData,
     { fileName, resourceRoomName, resourceCategoryName, content, frontMatter }
   ) {
     this.validateAndRetrieveResourceFileMetadata(fileName)
@@ -48,7 +48,7 @@ class ResourcePageService {
 
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha } = await this.gitHubService.create(reqDetails, {
+    const { sha } = await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName,
       directoryName: parsedDirectoryName,
@@ -56,13 +56,16 @@ class ResourcePageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async read(reqDetails, { fileName, resourceRoomName, resourceCategoryName }) {
+  async read(
+    sessionData,
+    { fileName, resourceRoomName, resourceCategoryName }
+  ) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,
     })
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName,
         directoryName: parsedDirectoryName,
@@ -73,7 +76,7 @@ class ResourcePageService {
   }
 
   async update(
-    reqDetails,
+    sessionData,
     {
       fileName,
       resourceRoomName,
@@ -88,7 +91,7 @@ class ResourcePageService {
       resourceCategoryName,
     })
     const newContent = convertDataToMarkdown(frontMatter, content)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName,
@@ -103,7 +106,7 @@ class ResourcePageService {
   }
 
   async delete(
-    reqDetails,
+    sessionData,
     { fileName, resourceRoomName, resourceCategoryName, sha }
   ) {
     const parsedDirectoryName = this.getResourceDirectoryPath({
@@ -111,7 +114,7 @@ class ResourcePageService {
       resourceCategoryName,
     })
 
-    return this.gitHubService.delete(reqDetails, {
+    return this.gitHubService.delete(sessionData, {
       sha,
       fileName,
       directoryName: parsedDirectoryName,
@@ -119,7 +122,7 @@ class ResourcePageService {
   }
 
   async rename(
-    reqDetails,
+    sessionData,
     {
       oldFileName,
       newFileName,
@@ -136,7 +139,7 @@ class ResourcePageService {
       resourceCategoryName,
     })
 
-    await this.gitHubService.delete(reqDetails, {
+    await this.gitHubService.delete(sessionData, {
       sha,
       fileName: oldFileName,
       directoryName: parsedDirectoryName,
@@ -144,7 +147,7 @@ class ResourcePageService {
 
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha: newSha } = await this.gitHubService.create(reqDetails, {
+    const { sha: newSha } = await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName: newFileName,
       directoryName: parsedDirectoryName,

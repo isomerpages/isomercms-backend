@@ -35,8 +35,9 @@ const extractDirectoryAndFileName = (documentName) => {
 
 // List documents
 async function listDocuments(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerFile = new File(accessToken, siteName)
   const documentType = new DocumentType()
@@ -48,7 +49,8 @@ async function listDocuments(req, res) {
 
 // Create new document
 async function createNewDocument(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName } = req.params
   const { documentName, documentDirectory, content } = req.body
@@ -65,8 +67,9 @@ async function createNewDocument(req, res) {
 
 // Read document
 async function readDocument(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName, documentName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   // get document directory
   const { documentDirectory, documentFileName } = extractDirectoryAndFileName(
@@ -85,7 +88,8 @@ async function readDocument(req, res) {
 
 // Update document
 async function updateDocument(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, documentName } = req.params
   const { content, sha } = req.body
@@ -103,7 +107,8 @@ async function updateDocument(req, res) {
 
 // Delete document
 async function deleteDocument(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, documentName } = req.params
   const { sha } = req.body
@@ -118,7 +123,8 @@ async function deleteDocument(req, res) {
 
 // Rename document
 async function renameDocument(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, documentName, newDocumentName } = req.params
 
@@ -148,7 +154,8 @@ async function renameDocument(req, res) {
 
 // Move document
 async function moveDocument(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, documentName, newDocumentName } = req.params
 

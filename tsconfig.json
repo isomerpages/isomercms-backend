@@ -24,6 +24,7 @@
       "@classes/*": ["./classes/*"],
       "@errors/*": ["./errors/*"],
       "@logger/*": ["./logger/*"],
+      "@config/*": ["./config/*"],
       "@middleware/*": ["./middleware/*"],
       "@routes/*": ["./routes/*"],
       "@utils/*": ["./utils/*"],

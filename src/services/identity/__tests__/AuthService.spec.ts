@@ -2,6 +2,7 @@ import { BadRequestError } from "@errors/BadRequestError"
 import { NotFoundError } from "@errors/NotFoundError"
 
 import { mockAccessToken, mockSiteName, mockUserId } from "@fixtures/identity"
+import { mockUserWithSiteSessionData } from "@fixtures/sessionData"
 import { GitHubService } from "@services/db/GitHubService"
 
 import _AuthService from "../AuthService"
@@ -25,16 +26,13 @@ describe("Auth Service", () => {
 
     // Act
     const actual = await AuthService.hasAccessToSite(
-      mockSiteName,
-      mockUserId,
-      mockAccessToken
+      mockUserWithSiteSessionData
     )
 
     // Assert
     expect(actual).toBe(expected)
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
-      mockReqDetails,
-      mockParams
+      mockUserWithSiteSessionData
     )
   })
 
@@ -47,16 +45,13 @@ describe("Auth Service", () => {
 
     // Act
     const actual = await AuthService.hasAccessToSite(
-      mockSiteName,
-      mockUserId,
-      mockAccessToken
+      mockUserWithSiteSessionData
     )
 
     // Assert
     expect(actual).toBe(expected)
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
-      mockReqDetails,
-      mockParams
+      mockUserWithSiteSessionData
     )
   })
 
@@ -70,17 +65,12 @@ describe("Auth Service", () => {
     )
 
     // Act
-    const actual = AuthService.hasAccessToSite(
-      mockSiteName,
-      mockUserId,
-      mockAccessToken
-    )
+    const actual = AuthService.hasAccessToSite(mockUserWithSiteSessionData)
 
     // Assert
     await expect(actual).rejects.toThrow(BadRequestError)
     expect(mockGitHubService.checkHasAccess).toHaveBeenCalledWith(
-      mockReqDetails,
-      mockParams
+      mockUserWithSiteSessionData
     )
   })
 })

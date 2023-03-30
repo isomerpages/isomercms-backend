@@ -26,42 +26,42 @@ class CollectionsRouter {
 
   // List all collections
   async listAllCollections(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName } = req.params
-    const listResp = await this.collectionDirectoryService.listAllCollections({
-      siteName,
-      accessToken,
-    })
+    const listResp = await this.collectionDirectoryService.listAllCollections(
+      userWithSiteSessionData
+    )
 
     return res.status(200).json(listResp)
   }
 
   // List files in a collection/subcollection
   async listCollectionDirectoryFiles(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, collectionName, subcollectionName } = req.params
+    const { collectionName, subcollectionName } = req.params
     let listResp
     if (subcollectionName) {
       listResp = await this.subcollectionDirectoryService.listFiles(
-        { siteName, accessToken },
+        userWithSiteSessionData,
         { collectionName, subcollectionName }
       )
     } else {
       listResp = await this.collectionDirectoryService.listFiles(
-        { siteName, accessToken },
-        { collectionName }
+        userWithSiteSessionData,
+        {
+          collectionName,
+        }
       )
     }
     return res.status(200).json(listResp)
   }
 
   // Create new collection/subcollection
-  async createCollectionDirectory(req, res) {
-    const { accessToken } = res.locals
+  async createCollectionDirectory(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, collectionName } = req.params
+    const { collectionName } = req.params
     const { error } = CreateDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName, items } = req.body
@@ -69,7 +69,7 @@ class CollectionsRouter {
     if (collectionName) {
       // Creating subcollection
       createResp = await this.subcollectionDirectoryService.createDirectory(
-        { siteName, accessToken },
+        userWithSiteSessionData,
         {
           collectionName,
           subcollectionName: newDirectoryName,
@@ -79,7 +79,7 @@ class CollectionsRouter {
     } else {
       // Creating collection
       createResp = await this.collectionDirectoryService.createDirectory(
-        { siteName, accessToken },
+        userWithSiteSessionData,
         {
           collectionName: newDirectoryName,
           objArray: items,
@@ -87,20 +87,22 @@ class CollectionsRouter {
       )
     }
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Rename collection/subcollection
-  async renameCollectionDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+  async renameCollectionDirectory(req, res, next) {
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
-    const { siteName, collectionName, subcollectionName } = req.params
+    const { collectionName, subcollectionName } = req.params
     const { error } = RenameDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
     if (subcollectionName) {
       await this.subcollectionDirectoryService.renameDirectory(
-        { siteName, accessToken, currentCommitSha, treeSha },
+        userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
           subcollectionName,
@@ -109,7 +111,8 @@ class CollectionsRouter {
       )
     } else {
       await this.collectionDirectoryService.renameDirectory(
-        { siteName, accessToken, currentCommitSha, treeSha },
+        userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
           newDirectoryName,
@@ -117,17 +120,19 @@ class CollectionsRouter {
       )
     }
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Delete collection/subcollection
-  async deleteCollectionDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+  async deleteCollectionDirectory(req, res, next) {
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
-    const { siteName, collectionName, subcollectionName } = req.params
+    const { collectionName, subcollectionName } = req.params
     if (subcollectionName) {
       await this.subcollectionDirectoryService.deleteDirectory(
-        { siteName, accessToken, currentCommitSha, treeSha },
+        userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
           subcollectionName,
@@ -135,27 +140,29 @@ class CollectionsRouter {
       )
     } else {
       await this.collectionDirectoryService.deleteDirectory(
-        { siteName, accessToken, currentCommitSha, treeSha },
+        userWithSiteSessionData,
+        githubSessionData,
         {
           collectionName,
         }
       )
     }
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Reorder collection/subcollection
-  async reorderCollectionDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+  async reorderCollectionDirectory(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, collectionName, subcollectionName } = req.params
+    const { collectionName, subcollectionName } = req.params
     const { error } = ReorderDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { items } = req.body
     let reorderResp
     if (subcollectionName) {
       reorderResp = await this.subcollectionDirectoryService.reorderDirectory(
-        { siteName, accessToken, currentCommitSha, treeSha },
+        userWithSiteSessionData,
         {
           collectionName,
           subcollectionName,
@@ -164,21 +171,22 @@ class CollectionsRouter {
       )
     } else {
       reorderResp = await this.collectionDirectoryService.reorderDirectory(
-        { siteName, accessToken, currentCommitSha, treeSha },
+        userWithSiteSessionData,
         {
           collectionName,
           objArray: items,
         }
       )
     }
-    return res.status(200).json(reorderResp)
+    res.status(200).json(reorderResp)
+    return next()
   }
 
   // Move collection/subcollection pages
-  async moveCollectionDirectoryPages(req, res) {
-    const { accessToken } = res.locals
+  async moveCollectionDirectoryPages(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, collectionName, subcollectionName } = req.params
+    const { collectionName, subcollectionName } = req.params
     const { error } = MoveDirectoryPagesRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -190,7 +198,7 @@ class CollectionsRouter {
     } = req.body
     if (subcollectionName) {
       await this.subcollectionDirectoryService.movePages(
-        { siteName, accessToken },
+        userWithSiteSessionData,
         {
           collectionName,
           subcollectionName,
@@ -200,17 +208,15 @@ class CollectionsRouter {
         }
       )
     } else {
-      await this.collectionDirectoryService.movePages(
-        { siteName, accessToken },
-        {
-          collectionName,
-          targetCollectionName,
-          targetSubcollectionName,
-          objArray: items,
-        }
-      )
+      await this.collectionDirectoryService.movePages(userWithSiteSessionData, {
+        collectionName,
+        targetCollectionName,
+        targetSubcollectionName,
+        objArray: items,
+      })
     }
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   getRouter() {

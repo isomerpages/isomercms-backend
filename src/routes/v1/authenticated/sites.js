@@ -1,3 +1,5 @@
+import { config } from "@config/config"
+
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
@@ -14,8 +16,8 @@ const {
 const router = express.Router()
 
 const GH_MAX_REPO_COUNT = 100
-const ISOMERPAGES_REPO_PAGE_COUNT = process.env.ISOMERPAGES_REPO_PAGE_COUNT || 3
-const ISOMER_GITHUB_ORG_NAME = process.env.GITHUB_ORG_NAME
+const ISOMERPAGES_REPO_PAGE_COUNT = config.get("sites.pageCount")
+const ISOMER_GITHUB_ORG_NAME = config.get("github.orgName")
 const ISOMER_ADMIN_REPOS = [
   "isomercms-backend",
   "isomercms-frontend",
@@ -53,7 +55,8 @@ const timeDiff = (lastUpdated) => {
 /* Returns a list of all sites (repos) that the user has access to on Isomer. */
 // TO-DO: Paginate properly
 async function getSites(req, res) {
-  const { accessToken } = res.locals
+  const { userSessionData } = res.locals
+  const { accessToken } = userSessionData
 
   const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
@@ -106,9 +109,11 @@ async function getSites(req, res) {
 
 /* Checks if a user has access to a repo. */
 async function checkHasAccess(req, res) {
-  const { accessToken } = res.locals
-  const { userId } = res.locals
+  const { userSessionData } = res.locals
   const { siteName } = req.params
+
+  const { accessToken } = userSessionData
+  const userId = userSessionData.githubId
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}/collaborators/${userId}`
 
   try {
@@ -130,9 +135,10 @@ async function checkHasAccess(req, res) {
 
 /* Gets the last updated time of the repo. */
 async function getLastUpdated(req, res) {
-  const { accessToken } = res.locals
+  const { userSessionData } = res.locals
   const { siteName } = req.params
 
+  const { accessToken } = userSessionData
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
   const resp = await axios.get(endpoint, {
     headers: {
@@ -147,9 +153,10 @@ async function getLastUpdated(req, res) {
 /* Gets the link to the staging site for a repo. */
 async function getStagingUrl(req, res) {
   // TODO: reconsider how we can retrieve url - we can store this in _config.yml or a dynamodb
-  const { accessToken } = res.locals
+  const { userSessionData } = res.locals
   const { siteName } = req.params
 
+  const { accessToken } = userSessionData
   const endpoint = `https://api.github.com/repos/${ISOMER_GITHUB_ORG_NAME}/${siteName}`
   const resp = await axios.get(endpoint, {
     headers: {

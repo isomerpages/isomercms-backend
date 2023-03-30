@@ -8,9 +8,16 @@ import {
   Whitelist,
   AccessToken,
   Repo,
+  Otp,
   Deployment,
   Launch,
   Redirection,
+  IsomerAdmin,
+  Notification,
+  ReviewRequest,
+  ReviewMeta,
+  Reviewer,
+  ReviewRequestView,
 } from "@database/models"
 
 const sequelize = new Sequelize({
@@ -24,9 +31,16 @@ sequelize.addModels([
   Whitelist,
   AccessToken,
   Repo,
+  Otp,
   Deployment,
   Launch,
   Redirection,
+  IsomerAdmin,
+  Notification,
+  ReviewRequest,
+  ReviewMeta,
+  Reviewer,
+  ReviewRequestView,
 ])
 
 // eslint-disable-next-line import/prefer-default-export

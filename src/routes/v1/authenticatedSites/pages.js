@@ -1,5 +1,4 @@
 const express = require("express")
-const yaml = require("yaml")
 
 // Import middleware
 const {
@@ -15,12 +14,17 @@ const { File, PageType, CollectionPageType } = require("@classes/File")
 const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
 async function listPages(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerFile = new File(accessToken, siteName)
   const pageType = new PageType()
@@ -31,7 +35,8 @@ async function listPages(req, res) {
 }
 
 async function createPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName } = req.params
   const { content: pageContent } = req.body
@@ -47,7 +52,8 @@ async function createPage(req, res) {
 
 // Read page
 async function readPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName } = req.params
   const pageName = decodeURIComponent(encodedPageName)
@@ -67,7 +73,8 @@ async function readPage(req, res) {
 
 // Update page
 async function updatePage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName } = req.params
   const { content: pageContent, sha } = req.body
@@ -90,7 +97,8 @@ async function updatePage(req, res) {
 
 // Delete page
 async function deletePage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName } = req.params
   const { sha } = req.body
@@ -106,7 +114,8 @@ async function deletePage(req, res) {
 
 // Rename page
 async function renamePage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const {
     siteName,
@@ -136,7 +145,8 @@ async function renamePage(req, res) {
 
 // Move unlinked pages
 async function moveUnlinkedPages(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
   const { siteName, newPagePath } = req.params
   const { files } = req.body
   const processedTargetPathTokens = decodeURIComponent(newPagePath).split("/")
@@ -190,9 +200,9 @@ async function moveUnlinkedPages(req, res) {
       const [unused, encodedFrontMatter, pageContent] = Base64.decode(
         content
       ).split("---")
-      const frontMatter = yaml.parse(encodedFrontMatter)
+      const frontMatter = sanitizedYamlParse(encodedFrontMatter)
       frontMatter.third_nav_title = deslugifyCollectionName(targetSubfolderName)
-      const newFrontMatter = yaml.stringify(frontMatter)
+      const newFrontMatter = sanitizedYamlStringify(frontMatter)
       const newContent = ["---\n", newFrontMatter, "---", pageContent].join("")
       const newEncodedContent = Base64.encode(newContent)
       await newIsomerFile.create(fileName, newEncodedContent)

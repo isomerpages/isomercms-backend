@@ -1,29 +1,54 @@
 const express = require("express")
+const session = require("express-session")
 const request = require("supertest")
+
+const { config } = require("@config/config")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockUserSessionData, mockEmail } = require("@fixtures/sessionData")
+const { rateLimiter } = require("@root/services/utilServices/RateLimiter")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
 const csrfState = "csrfState"
 const cookieToken = "cookieToken"
-const accessToken = undefined
+const MOCK_USER_ID = "userId"
 
 describe("Unlinked Pages Router", () => {
+  jest.mock("@logger/logger", {
+    info: jest.fn(),
+  })
+
   const mockAuthService = {
     getAuthRedirectDetails: jest.fn(),
-    getGithubAuthToken: jest.fn(),
+    getUserInfoFromGithubAuth: jest.fn(),
     getUserInfo: jest.fn(),
+    sendOtp: jest.fn(),
+    verifyOtp: jest.fn(),
+  }
+  const mockAuthenticationMiddleware = {
+    verifyJwt: jest.fn().mockImplementation((req, res, next) => next()),
   }
 
   const router = new AuthRouter({
     authService: mockAuthService,
+    authenticationMiddleware: mockAuthenticationMiddleware,
+    rateLimiter,
   })
 
   const subrouter = express()
+  const options = {
+    resave: true,
+    saveUninitialized: true,
+    secret: "blah",
+    cookie: {
+      maxAge: 1209600000,
+    },
+  }
+  subrouter.use(session(options))
 
   // We can use read route handler here because we don't need to lock the repo
   subrouter.get(
@@ -31,6 +56,8 @@ describe("Unlinked Pages Router", () => {
     attachReadRouteHandlerWrapper(router.authRedirect)
   )
   subrouter.get("/", attachReadRouteHandlerWrapper(router.githubAuth))
+  subrouter.post("/login", attachReadRouteHandlerWrapper(router.login))
+  subrouter.post("/verify", attachReadRouteHandlerWrapper(router.verify))
   subrouter.delete("/logout", attachReadRouteHandlerWrapper(router.logout))
   subrouter.get("/whoami", attachReadRouteHandlerWrapper(router.whoami))
   const app = generateRouter(subrouter)
@@ -63,7 +90,7 @@ describe("Unlinked Pages Router", () => {
     const state = "state"
     const token = "token"
     it("retrieves the token and redirects back to the correct page after github auth", async () => {
-      mockAuthService.getGithubAuthToken.mockResolvedValueOnce({
+      mockAuthService.getUserInfoFromGithubAuth.mockResolvedValueOnce({
         token,
       })
 
@@ -71,16 +98,36 @@ describe("Unlinked Pages Router", () => {
         .get(`/?code=${code}&state=${state}`)
         .set("Cookie", `${CSRF_COOKIE_NAME}=${csrfState};`)
 
-      expect(mockAuthService.getGithubAuthToken).toHaveBeenCalledWith({
+      expect(mockAuthService.getUserInfoFromGithubAuth).toHaveBeenCalledWith({
         csrfState,
         code,
         state,
       })
       expect(resp.status).toEqual(302)
       expect(resp.headers.location).toContain(`${FRONTEND_URL}/sites`)
-      expect(resp.headers["set-cookie"]).toEqual(
-        expect.arrayContaining([expect.stringContaining(COOKIE_NAME)])
+      expect(resp.headers["set-cookie"]).toBeTruthy()
+    })
+  })
+  describe("login", () => {
+    it("calls the service to send otp", async () => {
+      await request(app).post(`/login`).send({ email: mockEmail }).expect(200)
+      expect(mockAuthService.sendOtp).toHaveBeenCalledWith(
+        mockEmail.toLowerCase()
       )
+    })
+  })
+  describe("verify", () => {
+    const mockOtp = "123456"
+    mockAuthService.verifyOtp.mockImplementationOnce(() => ({
+      email: mockEmail,
+    }))
+    it("adds the cookie on login", async () => {
+      mockAuthService.getAuthRedirectDetails.mockResolvedValueOnce(cookieToken)
+      await request(app)
+        .post(`/verify`)
+        .send({ email: mockEmail, otp: mockOtp })
+        .set("Cookie", `${COOKIE_NAME}=${cookieToken}`)
+        .expect(200)
     })
   })
   describe("logout", () => {
@@ -103,17 +150,18 @@ describe("Unlinked Pages Router", () => {
   })
 
   describe("whoami", () => {
-    const userId = "userId"
     it("returns user info if found", async () => {
       const expectedResponse = {
-        userId,
+        userId: MOCK_USER_ID,
       }
       mockAuthService.getUserInfo.mockResolvedValueOnce(expectedResponse)
 
       const resp = await request(app).get(`/whoami`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
 
     it("sends a 401 if user not found", async () => {
@@ -121,7 +169,9 @@ describe("Unlinked Pages Router", () => {
 
       await request(app).get(`/whoami`).expect(401)
 
-      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith({ accessToken })
+      expect(mockAuthService.getUserInfo).toHaveBeenCalledWith(
+        mockUserSessionData
+      )
     })
   })
 })

@@ -1,7 +1,5 @@
 const { Base64 } = require("js-base64")
 
-const validateStatus = require("@utils/axios-utils")
-
 const BRANCH_REF = "staging"
 
 const {
@@ -9,10 +7,60 @@ const {
   inputNameConflictErrorMsg,
 } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
+const { UnprocessableError } = require("@errors/UnprocessableError")
+
+const validateStatus = require("@utils/axios-utils")
+
+const ReviewApi = require("./review")
 
 class GitHubService {
   constructor({ axiosInstance }) {
     this.axiosInstance = axiosInstance
+  }
+
+  getCommitDiff(siteName, base, head) {
+    return ReviewApi.getCommitDiff(siteName, base, head)
+  }
+
+  createPullRequest(siteName, title, description) {
+    return ReviewApi.createPullRequest(siteName, title, description)
+  }
+
+  getPullRequest(siteName, pullRequestNumber) {
+    return ReviewApi.getPullRequest(siteName, pullRequestNumber)
+  }
+
+  getBlob(repo, path, ref) {
+    return ReviewApi.getBlob(repo, path, ref)
+  }
+
+  updatePullRequest(siteName, pullRequestNumber, title, description) {
+    return ReviewApi.updatePullRequest(
+      siteName,
+      pullRequestNumber,
+      title,
+      description
+    )
+  }
+
+  closeReviewRequest(siteName, pullRequestNumber) {
+    return ReviewApi.closeReviewRequest(siteName, pullRequestNumber)
+  }
+
+  mergePullRequest(siteName, pullRequestNumber) {
+    return ReviewApi.mergePullRequest(siteName, pullRequestNumber)
+  }
+
+  approvePullRequest(siteName, pullRequestNumber) {
+    return ReviewApi.approvePullRequest(siteName, pullRequestNumber)
+  }
+
+  async getComments(siteName, pullRequestNumber) {
+    return ReviewApi.getComments(siteName, pullRequestNumber)
+  }
+
+  async createComment(siteName, pullRequestNumber, user, message) {
+    return ReviewApi.createComment(siteName, pullRequestNumber, user, message)
   }
 
   getFilePath({ siteName, fileName, directoryName }) {
@@ -40,16 +88,22 @@ class GitHubService {
   }
 
   async create(
-    { accessToken, siteName },
+    sessionData,
     { content, fileName, directoryName, isMedia = false }
   ) {
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       // Validation and sanitisation of media already done
       const encodedContent = isMedia ? content : Base64.encode(content)
 
-      const params = {
+      const message = JSON.stringify({
         message: `Create file: ${fileName}`,
+        fileName,
+        userId,
+      })
+      const params = {
+        message,
         content: encodedContent,
         branch: BRANCH_REF,
       }
@@ -69,7 +123,9 @@ class GitHubService {
     }
   }
 
-  async read({ accessToken, siteName }, { fileName, directoryName }) {
+  async read(sessionData, { fileName, directoryName }) {
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
@@ -91,12 +147,14 @@ class GitHubService {
     return { content, sha }
   }
 
-  async readMedia({ accessToken, siteName }, { fileSha }) {
+  async readMedia(sessionData, { fileSha }) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
      * via Github Blob API. The content can only be retrieved through
      * the `sha` of the file.
      */
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
     const params = {
       ref: BRANCH_REF,
     }
@@ -119,7 +177,9 @@ class GitHubService {
     return { content, sha }
   }
 
-  async readDirectory({ accessToken, siteName }, { directoryName }) {
+  async readDirectory(sessionData, { directoryName }) {
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
@@ -138,25 +198,28 @@ class GitHubService {
     return resp.data
   }
 
-  async update(
-    { accessToken, siteName },
-    { fileContent, sha, fileName, directoryName }
-  ) {
+  async update(sessionData, { fileContent, sha, fileName, directoryName }) {
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       const encodedNewContent = Base64.encode(fileContent)
 
       let fileSha = sha
       if (!sha) {
-        const { sha: retrievedSha } = await this.read(
-          { accessToken, siteName },
-          { fileName, directoryName }
-        )
+        const { sha: retrievedSha } = await this.read(sessionData, {
+          fileName,
+          directoryName,
+        })
         fileSha = retrievedSha
       }
 
-      const params = {
+      const message = JSON.stringify({
         message: `Update file: ${fileName}`,
+        fileName,
+        userId,
+      })
+      const params = {
+        message,
         content: encodedNewContent,
         branch: BRANCH_REF,
         sha: fileSha,
@@ -181,7 +244,8 @@ class GitHubService {
     }
   }
 
-  async delete({ accessToken, siteName }, { sha, fileName, directoryName }) {
+  async delete(sessionData, { sha, fileName, directoryName }) {
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
@@ -195,8 +259,13 @@ class GitHubService {
         fileSha = retrievedSha
       }
 
-      const params = {
+      const message = JSON.stringify({
         message: `Delete file: ${fileName}`,
+        fileName,
+        userId,
+      })
+      const params = {
+        message,
         branch: BRANCH_REF,
         sha: fileSha,
       }
@@ -218,7 +287,9 @@ class GitHubService {
     }
   }
 
-  async getRepoInfo({ accessToken, siteName }) {
+  async getRepoInfo(sessionData) {
+    const { siteName } = sessionData
+    const { accessToken } = sessionData
     const endpoint = `${siteName}`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -235,7 +306,9 @@ class GitHubService {
     return data
   }
 
-  async getRepoState({ accessToken, siteName }) {
+  async getRepoState(sessionData) {
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
     const endpoint = `${siteName}/commits`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -259,7 +332,31 @@ class GitHubService {
     return { treeSha, currentCommitSha }
   }
 
-  async getTree({ accessToken, siteName, treeSha }, { isRecursive }) {
+  async getLatestCommitOfBranch(sessionData, branch) {
+    const { accessToken, siteName } = sessionData
+    const endpoint = `${siteName}/commits/${branch}`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+    // Get the commits of the repo
+    try {
+      const { data: latestCommit } = await this.axiosInstance.get(endpoint, {
+        headers,
+      })
+      const { commit: latestCommitMeta } = latestCommit
+      return latestCommitMeta
+    } catch (err) {
+      const { status } = err.response
+      if (status === 422)
+        throw new UnprocessableError(`Branch ${branch} does not exist`)
+      throw err
+    }
+  }
+
+  async getTree(sessionData, githubSessionData, { isRecursive }) {
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
+    const { treeSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
@@ -278,10 +375,9 @@ class GitHubService {
     return gitTree
   }
 
-  async updateTree(
-    { accessToken, currentCommitSha, treeSha, siteName },
-    { gitTree, message }
-  ) {
+  async updateTree(sessionData, githubSessionData, { gitTree, message }) {
+    const { accessToken, siteName, isomerUserId: userId } = sessionData
+    const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees`
 
     const headers = {
@@ -303,10 +399,14 @@ class GitHubService {
 
     const commitEndpoint = `${siteName}/git/commits`
 
+    const stringifiedMessage = JSON.stringify({
+      message: message || `isomerCMS updated ${siteName} state`,
+      userId,
+    })
     const newCommitResp = await this.axiosInstance.post(
       commitEndpoint,
       {
-        message: message || `isomerCMS updated ${siteName} state`,
+        message: stringifiedMessage,
         tree: newTreeSha,
         parents: [currentCommitSha],
       },
@@ -318,7 +418,9 @@ class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState({ accessToken, siteName }, { commitSha }) {
+  async updateRepoState(sessionData, { commitSha }) {
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
     const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -331,7 +433,10 @@ class GitHubService {
     )
   }
 
-  async checkHasAccess({ accessToken, siteName }, { userId }) {
+  async checkHasAccess(sessionData) {
+    const { accessToken } = sessionData
+    const userId = sessionData.githubId
+    const { siteName } = sessionData
     const endpoint = `${siteName}/collaborators/${userId}`
 
     const headers = {

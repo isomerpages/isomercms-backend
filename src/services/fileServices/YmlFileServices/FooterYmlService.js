@@ -1,4 +1,7 @@
-const yaml = require("yaml")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const FOOTER_FILE_NAME = "footer.yml"
 const FOOTER_FILE_DIR = "_data"
@@ -8,21 +11,21 @@ class FooterYmlService {
     this.gitHubService = gitHubService
   }
 
-  async read(reqDetails) {
+  async read(sessionData) {
     const { content: unparsedContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName: FOOTER_FILE_NAME,
         directoryName: FOOTER_FILE_DIR,
       }
     )
-    const content = yaml.parse(unparsedContent)
+    const content = sanitizedYamlParse(unparsedContent)
     return { content, sha }
   }
 
-  async update(reqDetails, { fileContent, sha }) {
-    const stringifiedContent = yaml.stringify(fileContent)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+  async update(sessionData, { fileContent, sha }) {
+    const stringifiedContent = sanitizedYamlStringify(fileContent)
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: stringifiedContent,
       sha,
       fileName: FOOTER_FILE_NAME,

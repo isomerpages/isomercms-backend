@@ -1,118 +1,129 @@
 {
-    "env": {
-        "browser": true,
-        "commonjs": true,
-        "es2021": true,
-        "jest": true,
-        "jest/globals": true
-    },
-    "extends": [
-        "airbnb-base",
-        "prettier",
-        "plugin:import/typescript"
-    ],
-    "plugins": ["only-warn", "import", "jest"],
-    "parserOptions": {
-        "ecmaVersion": 12
-    },
-    "rules": {
-        "no-underscore-dangle": "off",
-        "class-methods-use-this": "off",
-        "import/no-unresolved": "error",
-        "import/extensions": ["warn", "never"],
-        "import/order": [
-            "error",
-            {
-                "alphabetize": {
-                    "order": "asc",
-                    "caseInsensitive": true
-                },
-                "newlines-between": "always",
-                "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object"],
-                "pathGroups": [{
-                        "pattern": "@logger/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                        "pattern": "@errors/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                        "pattern": "@middleware/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                        "pattern": "@classes/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                        "pattern": "@routes/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                        "pattern": "@utils/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                        "pattern": "@validators/**",
-                        "group": "internal",
-                        "position": "before"
-                    },
-                    {
-                      "pattern": "@constants/**",
-                      "group": "internal",
-                      "position": "before"
-                  }
-                ]
-            }
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es2021": true,
+    "jest": true,
+    "jest/globals": true
+  },
+  "extends": ["airbnb-base", "prettier", "plugin:import/typescript"],
+  "plugins": ["only-warn", "import", "jest"],
+  "parserOptions": {
+    "ecmaVersion": 12
+  },
+  "rules": {
+    "no-underscore-dangle": "off",
+    "class-methods-use-this": "off",
+    "import/no-unresolved": "error",
+    "import/extensions": ["warn", "never"],
+    "import/order": [
+      "error",
+      {
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
+        },
+        "newlines-between": "always",
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+          "object"
         ],
-        "jest/no-identical-title": "error"
-    },
-    "overrides": [
-        {
-          "files": ["*.ts", "*.tsx"],
-          "parser": "@typescript-eslint/parser",
-          "extends": ["plugin:@typescript-eslint/recommended"]
-        }
-      ],
-    "settings": {
-        "import/parsers": {
-            "@typescript-eslint/parser": [".ts", ".tsx"]
-          },      
-        "import/resolver": {
-            "typescript": {
-                // always try to resolve types under `<root>@types` directory even it doesn't contain any source code, like `@types/unist`
-                "alwaysTryTypes": true 
-            },        
-            "node": {
-                "paths": ["src"],
-                "extensions": [".js", ".jsx", ".ts", ".tsx"]
-            },
-            "alias": [
-                ["@root", "."],
-                ["@classes", "./classes"],
-                ["@errors", "./errors"],
-                ["@logger", "./logger"],
-                ["@middleware", "./middleware"],
-                ["@routes", "./routes"],
-                ["@utils", "./utils"],
-                ["@loaders", "./loaders"],
-                ["@database", "./database"],
-                ["@services", "./services"],
-                ["@validators", "./validators"],
-                ["@fixtures", "./fixtures"],
-                ["@database", "./database"],
-                ["@constants", "./constants"]
-            ]
-        }
-    },
-    "globals": {
-        "Base64": true
+        "pathGroups": [
+          {
+            "pattern": "@config/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@logger/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@errors/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@middleware/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@classes/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@routes/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@utils/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@validators/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "@constants/**",
+            "group": "internal",
+            "position": "before"
+          }
+        ]
+      }
+    ],
+    "jest/no-identical-title": "error"
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "parser": "@typescript-eslint/parser",
+      "extends": ["plugin:@typescript-eslint/recommended"]
     }
+  ],
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import/resolver": {
+      "typescript": {
+        // always try to resolve types under `<root>@types` directory even it doesn't contain any source code, like `@types/unist`
+        "alwaysTryTypes": true
+      },
+      "node": {
+        "paths": ["src"],
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      },
+      "alias": [
+        ["@root", "."],
+        ["@config", "./config"],
+        ["@classes", "./classes"],
+        ["@errors", "./errors"],
+        ["@logger", "./logger"],
+        ["@middleware", "./middleware"],
+        ["@routes", "./routes"],
+        ["@utils", "./utils"],
+        ["@loaders", "./loaders"],
+        ["@database", "./database"],
+        ["@services", "./services"],
+        ["@validators", "./validators"],
+        ["@fixtures", "./fixtures"],
+        ["@database", "./database"],
+        ["@constants", "./constants"]
+      ]
+    }
+  },
+  "globals": {
+    "Base64": true
+  }
 }

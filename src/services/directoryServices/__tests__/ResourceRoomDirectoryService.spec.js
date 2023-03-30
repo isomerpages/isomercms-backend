@@ -26,6 +26,7 @@ describe("Resource Room Directory Service", () => {
     resources_name: "resource",
   }
   const sha = "12345"
+  const mockGithubSessionData = "mockData"
 
   const reqDetails = { siteName, accessToken }
 
@@ -226,7 +227,7 @@ describe("Resource Room Directory Service", () => {
     const configSha = "23456"
     it("rejects resource room names with special characters", async () => {
       await expect(
-        service.renameResourceRoomDirectory(reqDetails, {
+        service.renameResourceRoomDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           newDirectoryName: "dir/dir",
         })
@@ -243,7 +244,7 @@ describe("Resource Room Directory Service", () => {
     })
     it("Renaming a resource room works correctly", async () => {
       await expect(
-        service.renameResourceRoomDirectory(reqDetails, {
+        service.renameResourceRoomDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           newDirectoryName,
         })
@@ -266,11 +267,15 @@ describe("Resource Room Directory Service", () => {
         fileName: INDEX_FILE_NAME,
         directoryName: newDirectoryName,
       })
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: directoryName,
-        newDirectoryName,
-        message: `Renaming resource room from ${resourceRoomName} to ${newDirectoryName}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: directoryName,
+          newDirectoryName,
+          message: `Renaming resource room from ${resourceRoomName} to ${newDirectoryName}`,
+        }
+      )
       expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
       expect(mockConfigYmlService.update).toHaveBeenCalledWith(reqDetails, {
         fileContent: {
@@ -292,7 +297,7 @@ describe("Resource Room Directory Service", () => {
       const originalResourceRoom = "Test Resource"
       const slugifiedResourceRoom = "test-resource"
       await expect(
-        service.renameResourceRoomDirectory(reqDetails, {
+        service.renameResourceRoomDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
           newDirectoryName: originalResourceRoom,
         })
@@ -315,11 +320,15 @@ describe("Resource Room Directory Service", () => {
         fileName: INDEX_FILE_NAME,
         directoryName: slugifiedResourceRoom,
       })
-      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(reqDetails, {
-        oldDirectoryName: directoryName,
-        newDirectoryName: slugifiedResourceRoom,
-        message: `Renaming resource room from ${resourceRoomName} to ${slugifiedResourceRoom}`,
-      })
+      expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          oldDirectoryName: directoryName,
+          newDirectoryName: slugifiedResourceRoom,
+          message: `Renaming resource room from ${resourceRoomName} to ${slugifiedResourceRoom}`,
+        }
+      )
       expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
       expect(mockConfigYmlService.update).toHaveBeenCalledWith(reqDetails, {
         fileContent: {
@@ -338,14 +347,18 @@ describe("Resource Room Directory Service", () => {
     })
     it("Deleting a resource room works correctly", async () => {
       await expect(
-        service.deleteResourceRoomDirectory(reqDetails, {
+        service.deleteResourceRoomDirectory(reqDetails, mockGithubSessionData, {
           resourceRoomName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-        message: `Deleting resource room ${resourceRoomName}`,
-      })
+      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          directoryName,
+          message: `Deleting resource room ${resourceRoomName}`,
+        }
+      )
       expect(mockConfigYmlService.read).toHaveBeenCalledWith(reqDetails)
       const newConfigContent = { ...mockConfigContent }
       delete newConfigContent.resources_name

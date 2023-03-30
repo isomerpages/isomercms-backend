@@ -4,6 +4,7 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { CollectionPagesRouter } = require("../collectionPages")
 
@@ -69,12 +70,9 @@ describe("Collection Pages Router", () => {
   const siteName = "test-site"
   const collectionName = "collection"
   const subcollectionName = "subcollection"
-  const accessToken = undefined // Can't set request fields - will always be undefined
   const fileName = "test-file"
   const mockSha = "12345"
   const mockContent = "mock-content"
-
-  const reqDetails = { siteName, accessToken }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -111,7 +109,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockCollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -131,7 +129,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -156,7 +154,7 @@ describe("Collection Pages Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockCollectionPageService.read).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedControllerInput
       )
     })
@@ -174,7 +172,7 @@ describe("Collection Pages Router", () => {
         .expect(200)
       expect(resp.body).toStrictEqual(expectedResponse)
       expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedControllerInput
       )
     })
@@ -217,7 +215,7 @@ describe("Collection Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockCollectionPageService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -236,7 +234,7 @@ describe("Collection Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockCollectionPageService.rename).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -257,7 +255,7 @@ describe("Collection Pages Router", () => {
         .send(updatePageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -279,7 +277,7 @@ describe("Collection Pages Router", () => {
         .send(renamePageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.rename).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -308,7 +306,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockCollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })
@@ -327,7 +325,7 @@ describe("Collection Pages Router", () => {
         .send(pageDetails)
         .expect(200)
       expect(mockSubcollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

@@ -10,9 +10,12 @@ import {
 } from "@aws-sdk/client-amplify"
 import { ResultAsync } from "neverthrow"
 
+import { config } from "@config/config"
+
 import { AmplifyError } from "@root/types/index"
 
-const { AWS_REGION, SYSTEM_GITHUB_TOKEN } = process.env
+const AWS_REGION = config.get("aws.amplify.region")
+const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 
 const AMPLIFY_BUILD_SPEC = `
 version: 1

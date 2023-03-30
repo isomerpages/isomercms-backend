@@ -6,6 +6,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { navigationContent, navigationSha } = require("@fixtures/navigation")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { NavigationRouter } = require("../navigation")
 
@@ -33,9 +34,6 @@ describe("Navigation Router", () => {
   const app = generateRouter(subrouter)
 
   const siteName = "test-site"
-  const accessToken = undefined // Can't set request fields - will always be undefined
-
-  const reqDetails = { siteName, accessToken }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -52,7 +50,9 @@ describe("Navigation Router", () => {
       const resp = await request(app).get(`/${siteName}/navigation`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockNavigationYmlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockNavigationYmlService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
   })
 
@@ -103,7 +103,7 @@ describe("Navigation Router", () => {
         .expect(200)
 
       expect(mockNavigationYmlService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

@@ -2,6 +2,8 @@ const axios = require("axios")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
+const { config } = require("@config/config")
+
 // Import error types
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
@@ -9,9 +11,18 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
+const {
+  E2E_ISOMER_ID,
+  E2E_TEST_CONTACT,
+  E2E_TEST_EMAIL,
+} = require("@root/constants")
+const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
+const { isError } = require("@root/types")
 
-const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
+const CLIENT_ID = config.get("github.clientId")
+const CLIENT_SECRET = config.get("github.clientSecret")
+const REDIRECT_URI = config.get("github.redirectUri")
 
 class AuthService {
   constructor({ usersService }) {
@@ -27,7 +38,7 @@ class AuthService {
     return { redirectUrl: githubAuthUrl, cookieToken: token }
   }
 
-  async getGithubAuthToken({ csrfState, code, state }) {
+  async getUserInfoFromGithubAuth({ csrfState, code, state }) {
     try {
       const decoded = jwtUtils.verifyToken(csrfState)
       if (decoded.state !== state) {
@@ -80,27 +91,64 @@ class AuthService {
     const user = await this.usersService.login(githubId)
     if (!user) throw Error("Failed to create user")
 
-    const token = jwtUtils.signToken({
-      access_token: jwtUtils.encryptToken(accessToken),
-      user_id: githubId,
-      isomer_user_id: user.id,
-    })
+    const userInfo = {
+      accessToken: jwtUtils.encryptToken(accessToken),
+      githubId,
+      isomerUserId: user.id,
+      email: user.email,
+    }
 
-    return token
+    return userInfo
   }
 
-  async getUserInfo({ accessToken }) {
-    // Make a call to github
-    const endpoint = "https://api.github.com/user"
-
+  async sendOtp(email) {
+    const isValidEmail = await this.usersService.canSendEmailOtp(email)
+    if (!isValidEmail)
+      throw new AuthError(
+        "Please sign in with a gov.sg or other whitelisted email."
+      )
     try {
-      const resp = await axios.get(endpoint, {
-        headers: {
-          Authorization: `token ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      })
-      const userId = resp.data.login
+      await this.usersService.sendEmailOtp(email)
+    } catch (err) {
+      if (isError(err)) {
+        logger.error(err.message)
+        throw new BadRequestError(err.message)
+      } else {
+        // If we encountered something that isn't an error but still ends up in the error branch,
+        // log this to cloudwatch with the relevant details
+        logger.error(
+          `Encountered unknown error type: ${err} when sendEmailOtp with email: ${email}`
+        )
+      }
+    }
+  }
+
+  async verifyOtp({ email, otp }) {
+    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
+
+    if (!isOtpValid) {
+      throw new BadRequestError("You have entered an invalid OTP.")
+    }
+    // Create user if does not exists. Set last logged in to current time.
+    const user = await this.usersService.loginWithEmail(email)
+    const userInfo = {
+      isomerUserId: user.id,
+      email: user.email,
+    }
+    return userInfo
+  }
+
+  async getUserInfo(sessionData) {
+    try {
+      if (sessionData.isomerUserId === E2E_ISOMER_ID) {
+        return { email: E2E_TEST_EMAIL, contactNumber: E2E_TEST_CONTACT }
+      }
+      if (sessionData.isEmailUser()) {
+        const { email } = sessionData
+        const { contactNumber } = await this.usersService.findByEmail(email)
+        return { email, contactNumber }
+      }
+      const { githubId: userId } = sessionData
 
       const { email, contactNumber } = await this.usersService.findByGitHubId(
         userId

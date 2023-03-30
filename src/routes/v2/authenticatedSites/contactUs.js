@@ -20,22 +20,19 @@ class ContactUsRouter {
 
   // Read contactUs file
   async readContactUs(req, res) {
-    const { siteName } = req.params
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const readResp = await this.contactUsPageService.read({
-      siteName,
-      accessToken,
-    })
+    const readResp = await this.contactUsPageService.read(
+      userWithSiteSessionData
+    )
 
     return res.status(200).json(readResp)
   }
 
   // Update contactUs index file
-  async updateContactUs(req, res) {
-    const { accessToken } = res.locals
+  async updateContactUs(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName } = req.params
     const { error } = UpdateContactUsSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
@@ -44,11 +41,12 @@ class ContactUsRouter {
     } = req.body
 
     const updatedContactUsPage = await this.contactUsPageService.update(
-      { siteName, accessToken },
+      userWithSiteSessionData,
       { content: pageBody, frontMatter, sha }
     )
 
-    return res.status(200).json(updatedContactUsPage)
+    res.status(200).json(updatedContactUsPage)
+    return next()
   }
 
   getRouter() {

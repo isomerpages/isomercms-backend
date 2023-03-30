@@ -1,6 +1,5 @@
 const Bluebird = require("bluebird")
 const express = require("express")
-const yaml = require("yaml")
 
 const {
   attachReadRouteHandlerWrapper,
@@ -13,13 +12,18 @@ const { CollectionConfig } = require("@classes/Config")
 const { File, CollectionPageType } = require("@classes/File")
 
 const { getTree, sendTree, deslugifyCollectionName } = require("@utils/utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
 // List pages and directories from all folders
 async function listAllFolderContent(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerCollection = new Collection(accessToken, siteName)
   const allFolders = IsomerCollection.list()
@@ -37,8 +41,10 @@ async function listAllFolderContent(req, res) {
 
 // Delete subfolder
 async function deleteSubfolder(req, res) {
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, folderName, subfolderName } = req.params
+  const { accessToken } = userWithSiteSessionData
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   // Delete subfolder
   const commitMessage = `Delete subfolder ${folderName}/${subfolderName}`
@@ -76,8 +82,9 @@ async function deleteSubfolder(req, res) {
 
 // Rename subfolder
 async function renameSubfolder(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName, folderName, subfolderName, newSubfolderName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   // Rename subfolder by:
   // 1. Creating new files in the newSubfolderName folder
@@ -109,7 +116,7 @@ async function renameSubfolder(req, res) {
 
     const decodedContent = Base64.decode(content)
     const results = decodedContent.split("---")
-    const frontMatter = yaml.parse(results[1]) // get the front matter as an object
+    const frontMatter = sanitizedYamlParse(results[1]) // get the front matter as an object
     const mdBody = results.slice(2).join("---")
 
     // Modify `third_nav_title` and save as new file in newSubfolderName
@@ -120,7 +127,7 @@ async function renameSubfolder(req, res) {
 
     const newContent = [
       "---\n",
-      yaml.stringify(newFrontMatter),
+      sanitizedYamlStringify(newFrontMatter),
       "---\n",
       mdBody,
     ].join("")

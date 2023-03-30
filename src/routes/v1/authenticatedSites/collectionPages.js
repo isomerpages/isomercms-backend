@@ -1,7 +1,6 @@
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
-const yaml = require("yaml")
 
 // Import errors
 const { NotFoundError } = require("@errors/NotFoundError")
@@ -20,13 +19,15 @@ const { File, CollectionPageType } = require("@classes/File")
 
 // Import utils
 const { readCollectionPageUtilFunc } = require("@utils/route-utils")
+const { sanitizedYamlParse } = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
 // List pages in collection
 async function listCollectionPages(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName, collectionName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   // TO-DO: Verify that collection exists
 
@@ -40,8 +41,9 @@ async function listCollectionPages(req, res) {
 
 // Get details on all pages in a collection
 async function listCollectionPagesDetails(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName, collectionName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   // Verify that collection exists
   const IsomerCollection = new Collection(accessToken, siteName)
@@ -63,7 +65,9 @@ async function listCollectionPagesDetails(req, res) {
         collectionName,
         page.fileName
       )
-      const frontMatter = yaml.parse(Base64.decode(content).split("---")[1])
+      const frontMatter = sanitizedYamlParse(
+        Base64.decode(content).split("---")[1]
+      )
       return {
         fileName: page.fileName,
         title: frontMatter.title,
@@ -115,7 +119,8 @@ async function listCollectionPagesDetails(req, res) {
 
 // // Create new page in collection
 async function createCollectionPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, collectionName, pageName: encodedPageName } = req.params
   const { content: pageContent } = req.body
@@ -134,7 +139,8 @@ async function createCollectionPage(req, res) {
 
 // Read page in collection
 async function readCollectionPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const pageName = decodeURIComponent(encodedPageName)
@@ -153,7 +159,8 @@ async function readCollectionPage(req, res) {
 
 // Update page in collection
 async function updateCollectionPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const { content: pageContent, sha } = req.body
@@ -178,7 +185,8 @@ async function updateCollectionPage(req, res) {
 
 // Delete page in collection
 async function deleteCollectionPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName, pageName: encodedPageName, collectionName } = req.params
   const { sha } = req.body
@@ -203,7 +211,8 @@ async function deleteCollectionPage(req, res) {
 
 // Rename page in collection
 async function renameCollectionPage(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const {
     siteName,

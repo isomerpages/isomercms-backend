@@ -1,5 +1,9 @@
 const express = require("express")
-const yaml = require("yaml")
+
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
@@ -15,7 +19,8 @@ const { File, DataType } = require("@classes/File")
 const NAVIGATION_PATH = "navigation.yml"
 
 async function getNavigation(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
 
   const { siteName } = req.params
 
@@ -26,13 +31,14 @@ async function getNavigation(req, res) {
 
   return res.status(200).json({
     sha,
-    content: yaml.parse(Base64.decode(content)),
+    content: sanitizedYamlParse(Base64.decode(content)),
   })
 }
 
 async function updateNavigation(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const { content, sha } = req.body
 
@@ -41,7 +47,7 @@ async function updateNavigation(req, res) {
   IsomerFile.setFileType(dataType)
   await IsomerFile.update(
     NAVIGATION_PATH,
-    Base64.encode(yaml.stringify(content)),
+    Base64.encode(sanitizedYamlStringify(content)),
     sha
   )
 

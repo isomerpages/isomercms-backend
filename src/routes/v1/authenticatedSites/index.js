@@ -1,3 +1,5 @@
+import { attachSiteHandler } from "@root/middleware"
+
 const express = require("express")
 
 const collectionPagesRouter = require("@routes/v1/authenticatedSites/collectionPages")
@@ -16,14 +18,19 @@ const resourceRoomRouter = require("@routes/v1/authenticatedSites/resourceRoom")
 const resourcesRouter = require("@routes/v1/authenticatedSites/resources")
 const settingsRouter = require("@routes/v1/authenticatedSites/settings")
 
-const getAuthenticatedSitesSubrouter = ({ authMiddleware, apiLogger }) => {
+const getAuthenticatedSitesSubrouter = ({
+  authenticationMiddleware,
+  authorizationMiddleware,
+  apiLogger
+}) => {
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(authMiddleware.verifyJwt)
-  authenticatedSitesSubrouter.use(authMiddleware.useSiteAccessTokenIfAvailable)
+  authenticatedSitesSubrouter.use(authenticationMiddleware.verifyAccess)
+  authenticatedSitesSubrouter.use(attachSiteHandler)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
   // which is only available after verifying that the jwt is valid
   authenticatedSitesSubrouter.use(apiLogger)
+  authenticatedSitesSubrouter.use(authorizationMiddleware.verifySiteMember)
 
   authenticatedSitesSubrouter.use("/pages", pagesRouter)
   authenticatedSitesSubrouter.use("/collections", collectionsRouter)

@@ -1,8 +1,19 @@
-const repoInfo = {
+import { GitHubRepositoryData } from "@root/types/repoInfo"
+
+export const MOCK_STAGING_URL_GITHUB = "https://repo-staging.netlify.app"
+export const MOCK_STAGING_URL_CONFIGYML =
+  "https://repo-staging-configyml.netlify.app"
+export const MOCK_STAGING_URL_DB = "https://repo-staging-db.netlify.app"
+
+export const MOCK_PRODUCTION_URL_GITHUB = "https://repo-prod.netlify.app"
+export const MOCK_PRODUCTION_URL_CONFIGYML =
+  "https://repo-prod-configyml.netlify.app"
+export const MOCK_PRODUCTION_URL_DB = "https://repo-prod-db.netlify.app"
+
+export const repoInfo: GitHubRepositoryData = {
   name: "repo",
   private: false,
-  description:
-    "Staging: https://repo-staging.netlify.app | Production: https://repo-prod.netlify.app",
+  description: `Staging: ${MOCK_STAGING_URL_GITHUB} | Production: ${MOCK_PRODUCTION_URL_GITHUB}`,
   pushed_at: "2021-09-09T02:41:37Z",
   permissions: {
     admin: true,
@@ -13,7 +24,7 @@ const repoInfo = {
   },
 }
 
-const repoInfo2 = {
+export const repoInfo2: GitHubRepositoryData = {
   name: "repo2",
   private: false,
   description:
@@ -28,7 +39,7 @@ const repoInfo2 = {
   },
 }
 
-const adminRepo = {
+export const adminRepo: GitHubRepositoryData = {
   name: "isomercms-backend",
   private: false,
   description:
@@ -43,7 +54,7 @@ const adminRepo = {
   },
 }
 
-const noAccessRepo = {
+export const noAccessRepo: GitHubRepositoryData = {
   name: "noaccess",
   private: false,
   description:
@@ -56,11 +67,4 @@ const noAccessRepo = {
     triage: false,
     pull: true,
   },
-}
-
-module.exports = {
-  repoInfo,
-  repoInfo2,
-  adminRepo,
-  noAccessRepo,
 }

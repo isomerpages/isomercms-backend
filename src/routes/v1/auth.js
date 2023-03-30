@@ -1,7 +1,13 @@
+import { config } from "@config/config"
+
+import { isSecure } from "@root/utils/auth-utils"
+
 const axios = require("axios")
 const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
+
+const logger = require("@logger/logger")
 
 // Import error
 const { AuthError } = require("@errors/AuthError")
@@ -13,21 +19,17 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const { authMiddleware } = require("@root/middleware")
+const { authenticationMiddleware } = require("@root/middleware")
 // Import services
 const identityServices = require("@services/identity")
 
 const router = express.Router()
 
-const { CLIENT_ID } = process.env
-const { CLIENT_SECRET } = process.env
-const { REDIRECT_URI } = process.env
-const AUTH_TOKEN_EXPIRY_MS = parseInt(
-  process.env.AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS,
-  10
-)
+const CLIENT_ID = config.get("github.clientId")
+const CLIENT_SECRET = config.get("github.clientSecret")
+const REDIRECT_URI = config.get("github.redirectUri")
 const CSRF_TOKEN_EXPIRY_MS = 600000
-const { FRONTEND_URL } = process.env
+const FRONTEND_URL = config.get("app.frontendUrl")
 
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
@@ -51,10 +53,7 @@ async function authRedirect(req, res) {
   const cookieSettings = {
     expires: csrfTokenExpiry,
     httpOnly: true,
-    secure:
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test",
+    secure: isSecure,
   }
 
   const token = jwtUtils.signToken({ state })
@@ -111,37 +110,26 @@ async function githubAuth(req, res) {
   const user = await identityServices.usersService.login(githubId)
   if (!user) throw Error("Failed to create user")
 
-  const authTokenExpiry = new Date()
-  authTokenExpiry.setTime(authTokenExpiry.getTime() + AUTH_TOKEN_EXPIRY_MS)
-
-  const cookieSettings = {
-    path: "/",
-    expires: authTokenExpiry,
-    httpOnly: true,
-    sameSite: true,
-    secure:
-      process.env.NODE_ENV !== "DEV" &&
-      process.env.NODE_ENV !== "LOCAL_DEV" &&
-      process.env.NODE_ENV !== "test",
+  const userInfo = {
+    accessToken: jwtUtils.encryptToken(accessToken),
+    githubId,
+    isomerUserId: user.id,
   }
-
-  const token = jwtUtils.signToken({
-    access_token: jwtUtils.encryptToken(accessToken),
-    user_id: githubId,
-    isomer_user_id: user.id,
-  })
-
-  res.cookie(COOKIE_NAME, token, cookieSettings)
+  Object.assign(req.session, { userInfo })
+  logger.info(`User ${userInfo.email} successfully logged in`)
   return res.redirect(`${FRONTEND_URL}/sites`)
 }
 
 async function logout(req, res) {
   clearAllCookies(res)
+  req.session.destroy()
+  logger.info(`User ${userInfo.email} successfully logged out`)
   return res.sendStatus(200)
 }
 
 async function whoami(req, res) {
-  const { accessToken } = res.locals
+  const { userSessionData } = res.locals
+  const { accessToken } = userSessionData
 
   // Make a call to github
   const endpoint = "https://api.github.com/user"
@@ -172,7 +160,7 @@ router.get("/", attachReadRouteHandlerWrapper(githubAuth))
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
-  authMiddleware.whoamiAuth,
+  authenticationMiddleware.verifyAccess,
   attachReadRouteHandlerWrapper(whoami)
 )
 

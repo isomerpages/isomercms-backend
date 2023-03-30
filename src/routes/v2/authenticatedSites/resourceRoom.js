@@ -23,11 +23,10 @@ class ResourceRoomRouter {
 
   // Get resource room name
   async getResourceRoomDirectoryName(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName } = req.params
     const getResp = await this.resourceRoomDirectoryService.getResourceRoomDirectoryName(
-      { siteName, accessToken }
+      userWithSiteSessionData
     )
 
     return res.status(200).json(getResp)
@@ -35,14 +34,11 @@ class ResourceRoomRouter {
 
   // List all resource categories
   async listAllResourceCategories(req, res) {
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, resourceRoomName } = req.params
+    const { resourceRoomName } = req.params
     const listResp = await this.resourceRoomDirectoryService.listAllResourceCategories(
-      {
-        siteName,
-        accessToken,
-      },
+      userWithSiteSessionData,
       {
         resourceRoomName,
       }
@@ -52,49 +48,50 @@ class ResourceRoomRouter {
   }
 
   // Create new resource room
-  async createResourceRoomDirectory(req, res) {
-    const { accessToken } = res.locals
+  async createResourceRoomDirectory(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName } = req.params
     const { error } = CreateResourceDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
     const createResp = await this.resourceRoomDirectoryService.createResourceRoomDirectory(
-      { siteName, accessToken },
+      userWithSiteSessionData,
       {
         resourceRoomName: newDirectoryName,
       }
     )
 
-    return res.status(200).json(createResp)
+    res.status(200).json(createResp)
+    return next()
   }
 
   // Rename resource room
-  async renameResourceRoomDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+  async renameResourceRoomDirectory(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, resourceRoomName } = req.params
+    const { resourceRoomName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const { newDirectoryName } = req.body
     await this.resourceRoomDirectoryService.renameResourceRoomDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
+      userWithSiteSessionData,
       {
         resourceRoomName,
         newDirectoryName,
       }
     )
 
-    return res.status(200).send("OK")
+    res.status(200).send("OK")
+    return next()
   }
 
   // Delete resource room
   async deleteResourceRoomDirectory(req, res) {
-    const { accessToken, currentCommitSha, treeSha } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const { siteName, resourceRoomName } = req.params
+    const { resourceRoomName } = req.params
     await this.resourceRoomDirectoryService.deleteResourceRoomDirectory(
-      { siteName, accessToken, currentCommitSha, treeSha },
+      userWithSiteSessionData,
       {
         resourceRoomName,
       }

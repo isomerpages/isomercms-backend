@@ -1,5 +1,6 @@
+import { config } from "@config/config"
+
 const _ = require("lodash")
-const yaml = require("yaml")
 
 const {
   ConflictError,
@@ -8,6 +9,10 @@ const {
 const { NotFoundError } = require("@errors/NotFoundError")
 
 const validateStatus = require("@utils/axios-utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const {
   genericGitHubAxiosInstance: axios,
@@ -15,8 +20,8 @@ const {
 
 // Import error
 
-const { GITHUB_ORG_NAME } = process.env
-const { BRANCH_REF } = process.env
+const GITHUB_ORG_NAME = config.get("github.orgName")
+const BRANCH_REF = config.get("github.branchRef")
 
 class Config {
   constructor(accessToken, siteName) {
@@ -121,7 +126,7 @@ class CollectionConfig extends Config {
 
   async read() {
     const { content, sha } = await super.read()
-    const contentObject = yaml.parse(Base64.decode(content))
+    const contentObject = sanitizedYamlParse(Base64.decode(content))
     return { content: contentObject, sha }
   }
 
@@ -144,7 +149,7 @@ class CollectionConfig extends Config {
       }
     }
     content.collections[collectionName].order.splice(newIndex, 0, item)
-    const newContent = Base64.encode(yaml.stringify(content))
+    const newContent = Base64.encode(sanitizedYamlStringify(content))
 
     await this.update(newContent, sha)
   }
@@ -154,7 +159,7 @@ class CollectionConfig extends Config {
     const { content, sha } = await this.read()
     const index = content.collections[collectionName].order.indexOf(item)
     content.collections[collectionName].order.splice(index, 1)
-    const newContent = Base64.encode(yaml.stringify(content))
+    const newContent = Base64.encode(sanitizedYamlStringify(content))
 
     await this.update(newContent, sha)
     return { index, item }
@@ -166,7 +171,7 @@ class CollectionConfig extends Config {
     const index = content.collections[collectionName].order.indexOf(oldItem)
     content.collections[collectionName].order.splice(index, 1)
     content.collections[collectionName].order.splice(index, 0, newItem)
-    const newContent = Base64.encode(yaml.stringify(content))
+    const newContent = Base64.encode(sanitizedYamlStringify(content))
 
     await this.update(newContent, sha)
   }
@@ -179,7 +184,7 @@ class CollectionConfig extends Config {
     )
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = filteredOrder
-    const newContent = Base64.encode(yaml.stringify(newContentObject))
+    const newContent = Base64.encode(sanitizedYamlStringify(newContentObject))
 
     await this.update(newContent, sha)
   }
@@ -196,7 +201,7 @@ class CollectionConfig extends Config {
     )
     const newContentObject = _.cloneDeep(content)
     newContentObject.collections[collectionName].order = renamedOrder
-    const newContent = Base64.encode(yaml.stringify(newContentObject))
+    const newContent = Base64.encode(sanitizedYamlStringify(newContentObject))
 
     await this.update(newContent, sha)
   }

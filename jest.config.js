@@ -7,6 +7,7 @@ module.exports = {
     "^@root/(.*)": "<rootDir>/$1",
     "^@classes/(.*)": "<rootDir>/classes/$1",
     "^@errors/(.*)": "<rootDir>/errors/$1",
+    "^@config/(.*)": "<rootDir>/config/$1",
     "^@logger/(.*)": "<rootDir>/logger/$1",
     "^@middleware/(.*)": "<rootDir>/middleware/$1",
     "^@routes/(.*)": "<rootDir>/routes/$1",

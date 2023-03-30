@@ -14,7 +14,10 @@ import { Launch } from "@database/models/Launch"
 import { Site } from "@database/models/Site"
 import { SiteMember } from "@database/models/SiteMember"
 
+import { ReviewRequest } from "./ReviewRequest"
+
 @Table({ tableName: "users", paranoid: true })
+// eslint-disable-next-line import/prefer-default-export
 export class User extends Model {
   @Column({
     autoIncrement: true,
@@ -32,7 +35,7 @@ export class User extends Model {
   email?: string | null
 
   @Column({
-    allowNull: false,
+    allowNull: true,
     unique: true,
     type: DataType.TEXT,
     validate: {
@@ -62,16 +65,22 @@ export class User extends Model {
   @DeletedAt
   deletedAt?: Date
 
-  @BelongsToMany(() => User, {
+  @BelongsToMany(() => Site, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
     through: () => SiteMember,
+    as: "site_members",
   })
-  sites!: Site[]
+  sites!: Array<Site & { SiteMember: SiteMember }>
 
-  @HasMany(() => Site)
+  @HasMany(() => Site, {
+    as: "sites_created",
+  })
   sitesCreated?: Site[]
 
   @HasMany(() => Launch)
   launches?: Launch[]
+
+  @HasMany(() => ReviewRequest)
+  reviewRequests?: ReviewRequest[]
 }

@@ -1,5 +1,4 @@
 const express = require("express")
-const yaml = require("yaml")
 
 // Import middleware
 const {
@@ -14,13 +13,18 @@ const { File, CollectionPageType, PageType } = require("@classes/File")
 const { Subfolder } = require("@classes/Subfolder")
 
 const { deslugifyCollectionName } = require("@utils/utils")
+const {
+  sanitizedYamlParse,
+  sanitizedYamlStringify,
+} = require("@utils/yaml-utils")
 
 const router = express.Router({ mergeParams: true })
 
 // List collections
 async function listCollections(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerCollection = new Collection(accessToken, siteName)
   const collections = await IsomerCollection.list()
@@ -30,9 +34,10 @@ async function listCollections(req, res) {
 
 // Create new collection
 async function createNewCollection(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
   const { collectionName } = req.body
+  const { accessToken } = userWithSiteSessionData
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.create(collectionName)
@@ -45,8 +50,10 @@ async function deleteCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, collectionName } = req.params
+  const { accessToken } = userWithSiteSessionData
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.delete(collectionName, currentCommitSha, treeSha)
@@ -59,8 +66,10 @@ async function renameCollection(req, res) {
   // TO-DO: Verify that collection exists
 
   // Remove collection from config file
-  const { accessToken, currentCommitSha, treeSha } = res.locals
+  const { userWithSiteSessionData, githubSessionData } = res.locals
   const { siteName, collectionName, newCollectionName } = req.params
+  const { accessToken } = userWithSiteSessionData
+  const { currentCommitSha, treeSha } = githubSessionData.getGithubState()
 
   const IsomerCollection = new Collection(accessToken, siteName)
   await IsomerCollection.rename(
@@ -75,7 +84,8 @@ async function renameCollection(req, res) {
 
 // Move files in collection
 async function moveFiles(req, res) {
-  const { accessToken } = res.locals
+  const { userWithSiteSessionData } = res.locals
+  const { accessToken } = userWithSiteSessionData
   const { siteName, collectionPath, targetPath } = req.params
   const { files } = req.body
   const processedCollectionPathTokens = decodeURIComponent(
@@ -141,13 +151,13 @@ async function moveFiles(req, res) {
       const [unused, encodedFrontMatter, pageContent] = Base64.decode(
         content
       ).split("---")
-      const frontMatter = yaml.parse(encodedFrontMatter)
+      const frontMatter = sanitizedYamlParse(encodedFrontMatter)
       if (targetSubfolderName)
         frontMatter.third_nav_title = deslugifyCollectionName(
           targetSubfolderName
         )
       else delete frontMatter.third_nav_title
-      const newFrontMatter = yaml.stringify(frontMatter)
+      const newFrontMatter = sanitizedYamlStringify(frontMatter)
       const newContent = ["---\n", newFrontMatter, "---", pageContent].join("")
       const newEncodedContent = Base64.encode(newContent)
       await newIsomerFile.create(fileName, newEncodedContent)

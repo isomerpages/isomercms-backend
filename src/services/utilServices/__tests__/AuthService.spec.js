@@ -8,25 +8,44 @@ jest.mock("@utils/jwt-utils")
 const axios = require("axios")
 const uuid = require("uuid/v4")
 
+const { config } = require("@config/config")
+
+const { AuthError } = require("@errors/AuthError")
+const { BadRequestError } = require("@errors/BadRequestError")
+
+const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
-const validateStatus = require("@root/utils/axios-utils")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubId,
+  mockEmail,
+  mockIsomerUserId,
+  mockGithubId: mockUserId,
+  mockSessionDataEmailUser,
+} = require("@fixtures/sessionData")
+const { OtpType } = require("@root/services/identity/UsersService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 describe("Auth Service", () => {
-  const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env
+  const CLIENT_ID = config.get("github.clientId")
+  const CLIENT_SECRET = config.get("github.clientSecret")
+  const REDIRECT_URI = config.get("github.redirectUri")
 
   const accessToken = "test-token"
 
   const state = "state"
   const token = "token"
-  const signedToken = "signedToken"
+  const signedGithubToken = {
+    accessToken: token,
+    githubId: mockGithubId,
+  }
+  const signedEmailToken = {
+    email: mockEmail,
+    isomerUserId: mockIsomerUserId,
+  }
   const csrfState = "csrfState"
-  const userId = "user"
-  const mockEmail = "email"
   const mockContactNumber = "12345678"
-  const mockIsomerUserId = "isomer-user"
-  const mockUserId = "user"
 
   const mockUsersService = {
     login: jest.fn().mockImplementation(() => mockIsomerUserId),
@@ -34,6 +53,15 @@ describe("Auth Service", () => {
       email: mockEmail,
       contactNumber: mockContactNumber,
     })),
+    findByEmail: jest
+      .fn()
+      .mockImplementation(() => ({ contactNumber: mockContactNumber })),
+    canSendEmailOtp: jest.fn(),
+    sendEmailOtp: jest.fn(),
+    verifyEmailOtp: jest.fn(),
+    loginWithEmail: jest
+      .fn()
+      .mockImplementation(() => ({ id: mockIsomerUserId, email: mockEmail })),
   }
   const service = new AuthService({ usersService: mockUsersService })
 
@@ -53,7 +81,7 @@ describe("Auth Service", () => {
     })
   })
 
-  describe("getGithubAuthToken", () => {
+  describe("getUserInfoFromGithubAuth", () => {
     it("Retrieves the Github auth token", async () => {
       const params = {
         code: "code",
@@ -64,7 +92,6 @@ describe("Auth Service", () => {
       uuid.mockImplementation(() => state)
       jwtUtils.verifyToken.mockImplementation(() => ({ state }))
       jwtUtils.encryptToken.mockImplementation(() => token)
-      jwtUtils.signToken.mockImplementation(() => signedToken)
       axios.post.mockImplementation(() => ({
         data: `access_token=${accessToken}`,
       }))
@@ -75,8 +102,8 @@ describe("Auth Service", () => {
       }))
 
       await expect(
-        service.getGithubAuthToken({ csrfState, code: "code", state })
-      ).resolves.toEqual(signedToken)
+        service.getUserInfoFromGithubAuth({ csrfState, code: "code", state })
+      ).resolves.toEqual(signedGithubToken)
 
       expect(axios.post).toHaveBeenCalledWith(
         "https://github.com/login/oauth/access_token",
@@ -100,19 +127,77 @@ describe("Auth Service", () => {
     })
   })
 
+  describe("sendOtp", () => {
+    it("should be able to send otp for whitelisted users", async () => {
+      mockUsersService.canSendEmailOtp.mockImplementationOnce(() => true)
+
+      await expect(service.sendOtp(mockEmail)).resolves.not.toThrow()
+      expect(mockUsersService.canSendEmailOtp).toHaveBeenCalledWith(mockEmail)
+      expect(mockUsersService.sendEmailOtp).toHaveBeenCalledWith(mockEmail)
+    })
+
+    it("should throw an error for non-whitelisted users", async () => {
+      mockUsersService.canSendEmailOtp.mockImplementationOnce(() => false)
+
+      await expect(service.sendOtp(mockEmail)).rejects.toThrow(AuthError)
+      expect(mockUsersService.canSendEmailOtp).toHaveBeenCalledWith(mockEmail)
+    })
+  })
+
+  describe("verifyOtp", () => {
+    const mockOtp = "123456"
+    it("should be able to verify otp, login, and return token if correct", async () => {
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => true)
+      jwtUtils.signToken.mockImplementationOnce(() => signedEmailToken)
+
+      await expect(
+        service.verifyOtp({ email: mockEmail, otp: mockOtp })
+      ).resolves.toEqual(signedEmailToken)
+      expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
+        mockEmail,
+        mockOtp
+      )
+      expect(mockUsersService.loginWithEmail).toHaveBeenCalledWith(mockEmail)
+    })
+
+    it("should throw an error if otp is incorrect", async () => {
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => false)
+
+      await expect(
+        service.verifyOtp({ email: mockEmail, otp: mockOtp })
+      ).rejects.toThrow(BadRequestError)
+      expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
+        mockEmail,
+        mockOtp
+      )
+    })
+  })
+
   describe("getUserInfo", () => {
-    it("should be able to retrieve user info", async () => {
+    it("should be able to retrieve user info for github users", async () => {
       axios.get.mockImplementation(() => ({
         data: {
-          login: userId,
+          login: mockGithubId,
         },
       }))
-      await expect(service.getUserInfo({ accessToken })).resolves.toEqual({
-        userId,
+      await expect(
+        service.getUserInfo(mockUserWithSiteSessionData)
+      ).resolves.toEqual({
+        userId: mockGithubId,
         email: mockEmail,
         contactNumber: mockContactNumber,
       })
-      expect(mockUsersService.findByGitHubId).toHaveBeenCalledWith(userId)
+      expect(mockUsersService.findByGitHubId).toHaveBeenCalledWith(mockGithubId)
+    })
+
+    it("should be able to retrieve user info for email users", async () => {
+      await expect(
+        service.getUserInfo(mockSessionDataEmailUser)
+      ).resolves.toEqual({
+        email: mockEmail,
+        contactNumber: mockContactNumber,
+      })
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith(mockEmail)
     })
   })
 })

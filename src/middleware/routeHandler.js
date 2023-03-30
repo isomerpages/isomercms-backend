@@ -1,5 +1,7 @@
 const { backOff } = require("exponential-backoff")
 
+const { default: GithubSessionData } = require("@classes/GithubSessionData")
+
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
@@ -22,7 +24,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
 ) => {
   const { siteName } = req.params
   await lock(siteName)
-  routeHandler(req, res).catch(async (err) => {
+  routeHandler(req, res, next).catch(async (err) => {
     await unlock(siteName)
     next(err)
   })
@@ -34,8 +36,10 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   res,
   next
 ) => {
-  const { accessToken } = res.locals
+  const { userSessionData } = res.locals
   const { siteName } = req.params
+
+  const { accessToken } = userSessionData
 
   await lock(siteName)
 
@@ -46,15 +50,18 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       accessToken
     )
 
-    res.locals.currentCommitSha = currentCommitSha
-    res.locals.treeSha = treeSha
+    const githubSessionData = new GithubSessionData({
+      currentCommitSha,
+      treeSha,
+    })
+    res.locals.githubSessionData = githubSessionData
 
     originalCommitSha = currentCommitSha
   } catch (err) {
     await unlock(siteName)
     next(err)
   }
-  routeHandler(req, res).catch(async (err) => {
+  routeHandler(req, res, next).catch(async (err) => {
     try {
       await backOff(() =>
         revertCommit(originalCommitSha, siteName, accessToken)

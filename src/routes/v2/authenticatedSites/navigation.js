@@ -20,34 +20,32 @@ class NavigationRouter {
 
   // Read navigation file
   async readNavigation(req, res) {
-    const { siteName } = req.params
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
-    const readResp = await this.navigationYmlService.read({
-      siteName,
-      accessToken,
-    })
+    const readResp = await this.navigationYmlService.read(
+      userWithSiteSessionData
+    )
 
     return res.status(200).json(readResp)
   }
 
   // Update navigation index file
-  async updateNavigation(req, res) {
+  async updateNavigation(req, res, next) {
     const { error } = UpdateNavigationRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
 
     const {
-      params: { siteName },
       body: { content: fileContent, sha },
     } = req
-    const { accessToken } = res.locals
+    const { userWithSiteSessionData } = res.locals
 
     const updatedNavigationPage = await this.navigationYmlService.update(
-      { siteName, accessToken },
+      userWithSiteSessionData,
       { fileContent, sha }
     )
 
-    return res.status(200).json(updatedNavigationPage)
+    res.status(200).json(updatedNavigationPage)
+    return next()
   }
 
   getRouter() {

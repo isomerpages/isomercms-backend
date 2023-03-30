@@ -14,7 +14,7 @@ class CollectionPageService {
   }
 
   async create(
-    reqDetails,
+    sessionData,
     { fileName, collectionName, content, frontMatter, shouldIgnoreCheck }
   ) {
     if (
@@ -24,7 +24,7 @@ class CollectionPageService {
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 
-    await this.collectionYmlService.addItemToOrder(reqDetails, {
+    await this.collectionYmlService.addItemToOrder(sessionData, {
       collectionName,
       item: fileName,
     })
@@ -33,7 +33,7 @@ class CollectionPageService {
     delete frontMatter.third_nav_title
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha } = await this.gitHubService.create(reqDetails, {
+    const { sha } = await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName,
       directoryName: parsedCollectionName,
@@ -41,10 +41,10 @@ class CollectionPageService {
     return { fileName, content: { frontMatter, pageBody: content }, sha }
   }
 
-  async read(reqDetails, { fileName, collectionName }) {
+  async read(sessionData, { fileName, collectionName }) {
     const parsedCollectionName = `_${collectionName}`
     const { content: rawContent, sha } = await this.gitHubService.read(
-      reqDetails,
+      sessionData,
       {
         fileName,
         directoryName: parsedCollectionName,
@@ -55,12 +55,12 @@ class CollectionPageService {
   }
 
   async update(
-    reqDetails,
+    sessionData,
     { fileName, collectionName, content, frontMatter, sha }
   ) {
     const parsedCollectionName = `_${collectionName}`
     const newContent = convertDataToMarkdown(frontMatter, content)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
       fileName,
@@ -74,15 +74,15 @@ class CollectionPageService {
     }
   }
 
-  async delete(reqDetails, { fileName, collectionName, sha }) {
+  async delete(sessionData, { fileName, collectionName, sha }) {
     const parsedCollectionName = `_${collectionName}`
 
     // Remove from collection.yml
-    await this.collectionYmlService.deleteItemFromOrder(reqDetails, {
+    await this.collectionYmlService.deleteItemFromOrder(sessionData, {
       collectionName,
       item: fileName,
     })
-    return this.gitHubService.delete(reqDetails, {
+    return this.gitHubService.delete(sessionData, {
       sha,
       fileName,
       directoryName: parsedCollectionName,
@@ -90,20 +90,20 @@ class CollectionPageService {
   }
 
   async rename(
-    reqDetails,
+    sessionData,
     { oldFileName, newFileName, collectionName, content, frontMatter, sha }
   ) {
     if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
       throw new BadRequestError("Special characters not allowed in file name")
     const parsedCollectionName = `_${collectionName}`
 
-    await this.collectionYmlService.updateItemInOrder(reqDetails, {
+    await this.collectionYmlService.updateItemInOrder(sessionData, {
       collectionName,
       oldItem: oldFileName,
       newItem: newFileName,
     })
 
-    await this.gitHubService.delete(reqDetails, {
+    await this.gitHubService.delete(sessionData, {
       sha,
       fileName: oldFileName,
       directoryName: parsedCollectionName,
@@ -113,7 +113,7 @@ class CollectionPageService {
     delete frontMatter.third_nav_title
     const newContent = convertDataToMarkdown(frontMatter, content)
 
-    const { sha: newSha } = await this.gitHubService.create(reqDetails, {
+    const { sha: newSha } = await this.gitHubService.create(sessionData, {
       content: newContent,
       fileName: newFileName,
       directoryName: parsedCollectionName,

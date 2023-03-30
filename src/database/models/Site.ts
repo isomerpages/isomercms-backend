@@ -33,6 +33,7 @@ export class Site extends Model {
   @Column({
     allowNull: false,
     type: DataType.TEXT,
+    unique: true,
   })
   name!: string
 
@@ -69,8 +70,9 @@ export class Site extends Model {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
     through: () => SiteMember,
+    as: "site_members",
   })
-  users!: User[]
+  site_members!: Array<User & { SiteMember: SiteMember }>
 
   @HasOne(() => Repo)
   repo?: Repo
@@ -81,7 +83,9 @@ export class Site extends Model {
   @ForeignKey(() => User)
   creatorId!: number
 
-  @BelongsTo(() => User)
+  @BelongsTo(() => User, {
+    as: "site_creator",
+  })
   creator!: User
 
   @HasOne(() => Launch)

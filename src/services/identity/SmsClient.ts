@@ -1,10 +1,12 @@
 import axios from "axios"
 
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
 import { AxiosClient } from "@root/types"
 
-const { POSTMAN_SMS_CRED_NAME } = process.env
+const POSTMAN_SMS_CRED_NAME = config.get("postman.smsCredName")
 
 const POSTMAN_API_URL = "https://api.postman.gov.sg/v1"
 
@@ -12,10 +14,7 @@ class SmsClient {
   private readonly axiosClient: AxiosClient
 
   constructor() {
-    const { POSTMAN_API_KEY } = process.env
-
-    if (!POSTMAN_API_KEY)
-      throw new Error("Postman.gov.sg API key cannot be empty.")
+    const POSTMAN_API_KEY = config.get("postman.apiKey")
 
     this.axiosClient = axios.create({
       baseURL: POSTMAN_API_URL,
@@ -36,7 +35,7 @@ class SmsClient {
     try {
       await this.axiosClient.post(endpoint, sms)
     } catch (err) {
-      logger.error(err)
+      logger.error(`Failed to send SMS to ${recipient}: ${err}`)
       throw new Error("Failed to send SMS.")
     }
   }

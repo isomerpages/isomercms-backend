@@ -1,24 +1,36 @@
 const { ConflictError } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
+const { UnprocessableError } = require("@errors/UnprocessableError")
 
 const validateStatus = require("@utils/axios-utils")
 
+const {
+  mockUserWithSiteSessionData,
+  mockSiteName,
+  mockAccessToken,
+  mockTreeSha,
+  mockGithubId,
+  mockCurrentCommitSha,
+  mockGithubSessionData,
+  mockIsomerUserId,
+} = require("@fixtures/sessionData")
 const { GitHubService } = require("@services/db/GitHubService")
 
 const BRANCH_REF = "staging"
 
 describe("Github Service", () => {
-  const siteName = "test-site"
-  const accessToken = "test-token"
+  const siteName = mockSiteName
+  const accessToken = mockAccessToken
   const fileName = "test-file"
   const collectionName = "collection"
   const subcollectionName = "subcollection"
   const directoryName = `_${collectionName}`
   const sha = "12345"
-  const treeSha = "98765"
+  const treeSha = mockTreeSha
   const content = "test-content"
+  const userId = mockIsomerUserId
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = mockUserWithSiteSessionData
 
   const authHeader = {
     headers: {
@@ -89,8 +101,13 @@ describe("Github Service", () => {
     const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
     const encodedContent = Base64.encode(content)
 
-    const params = {
+    const message = JSON.stringify({
       message: `Create file: ${fileName}`,
+      fileName,
+      userId,
+    })
+    const params = {
+      message,
       content: encodedContent,
       branch: BRANCH_REF,
     }
@@ -105,7 +122,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           content,
           fileName,
           directoryName,
@@ -130,7 +147,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           content,
           fileName,
           directoryName,
@@ -158,7 +175,7 @@ describe("Github Service", () => {
         throw err
       })
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           content,
           fileName,
           directoryName,
@@ -188,7 +205,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.read(reqDetails, {
+        service.read(sessionData, {
           fileName,
           directoryName,
         })
@@ -209,7 +226,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.read(reqDetails, {
+        service.read(sessionData, {
           fileName,
           directoryName,
         })
@@ -237,7 +254,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.readMedia(reqDetails, {
+        service.readMedia(sessionData, {
           fileSha: sha,
         })
       ).resolves.toMatchObject({
@@ -257,7 +274,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.readMedia(reqDetails, {
+        service.readMedia(sessionData, {
           fileSha: sha,
         })
       ).rejects.toThrowError(NotFoundError)
@@ -282,7 +299,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.readDirectory(reqDetails, {
+        service.readDirectory(sessionData, {
           fileName,
           directoryName,
         })
@@ -300,7 +317,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.readDirectory(reqDetails, {
+        service.readDirectory(sessionData, {
           fileName,
           directoryName,
         })
@@ -316,8 +333,13 @@ describe("Github Service", () => {
   describe("Update", () => {
     const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
     const encodedContent = Base64.encode(content)
-    const params = {
+    const message = JSON.stringify({
       message: `Update file: ${fileName}`,
+      fileName,
+      userId,
+    })
+    const params = {
+      message,
       content: encodedContent,
       branch: BRANCH_REF,
       sha,
@@ -333,7 +355,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           directoryName,
           fileContent: content,
@@ -358,7 +380,7 @@ describe("Github Service", () => {
         throw err
       })
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           directoryName,
           fileContent: content,
@@ -392,7 +414,7 @@ describe("Github Service", () => {
       mockAxiosInstance.get.mockResolvedValueOnce(getResp)
       mockAxiosInstance.put.mockResolvedValueOnce(putResp)
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           directoryName,
           fileContent: content,
@@ -421,7 +443,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           directoryName,
           fileContent: content,
@@ -437,14 +459,19 @@ describe("Github Service", () => {
 
   describe("Delete", () => {
     const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
-    const params = {
+    const message = JSON.stringify({
       message: `Delete file: ${fileName}`,
+      fileName,
+      userId,
+    })
+    const params = {
+      message,
       branch: BRANCH_REF,
       sha,
     }
 
     it("Deleting a file works correctly", async () => {
-      await service.delete(reqDetails, {
+      await service.delete(sessionData, {
         fileName,
         directoryName,
         sha,
@@ -464,7 +491,7 @@ describe("Github Service", () => {
         throw err
       })
       await expect(
-        service.delete(reqDetails, {
+        service.delete(sessionData, {
           fileName,
           directoryName,
           sha,
@@ -486,14 +513,14 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Getting a repo state works correctly", async () => {
+    it("Getting repo info works correctly", async () => {
       const resp = {
         data: {
           private: true,
         },
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
-      await service.getRepoInfo(reqDetails)
+      await service.getRepoInfo(sessionData)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
         params,
         headers,
@@ -523,7 +550,7 @@ describe("Github Service", () => {
         ],
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
-      await service.getRepoState(reqDetails)
+      await service.getRepoState(sessionData)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
         params,
         headers,
@@ -531,8 +558,69 @@ describe("Github Service", () => {
     })
   })
 
+  describe("getLatestCommitOfBranch", () => {
+    const endpoint = `${siteName}/commits/staging`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+
+    it("Getting the latest commit of branch works correctly", async () => {
+      const expected = {
+        author: {
+          name: "test",
+        },
+      }
+      const resp = {
+        data: {
+          commit: expected,
+        },
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      const actual = await service.getLatestCommitOfBranch(
+        sessionData,
+        "staging"
+      )
+      expect(actual).toEqual(expected)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        headers,
+      })
+    })
+
+    it("Getting an invalid branch should throw UnprocessableError", async () => {
+      mockAxiosInstance.get.mockImplementationOnce(() => {
+        const err = new Error()
+        err.response = {
+          status: 422,
+        }
+        throw err
+      })
+      await expect(
+        service.getLatestCommitOfBranch(sessionData, "staging")
+      ).rejects.toThrowError(UnprocessableError)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        headers,
+      })
+    })
+
+    it("Getting other kinds of errors should throw the original error", async () => {
+      mockAxiosInstance.get.mockImplementationOnce(() => {
+        const err = new Error()
+        err.response = {
+          status: 418,
+        }
+        throw err
+      })
+      await expect(
+        service.getLatestCommitOfBranch(sessionData, "staging")
+      ).rejects.toThrowError()
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        headers,
+      })
+    })
+  })
+
   describe("GetTree", () => {
-    const url = `${siteName}/git/trees/${sha}`
+    const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
       ref: BRANCH_REF,
@@ -544,7 +632,7 @@ describe("Github Service", () => {
 
     const tree = "test-tree"
 
-    it("Getting a repo state works correctly", async () => {
+    it("Getting a repo tree works correctly", async () => {
       const resp = {
         data: {
           tree,
@@ -552,7 +640,7 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.getTree({ accessToken, siteName, treeSha: sha }, {})
+        service.getTree(sessionData, mockGithubSessionData, {})
       ).resolves.toEqual(tree)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(url, {
         params,
@@ -568,10 +656,9 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.getTree(
-          { accessToken, siteName, treeSha: sha },
-          { isRecursive: true }
-        )
+        service.getTree(sessionData, mockGithubSessionData, {
+          isRecursive: true,
+        })
       ).resolves.toEqual(tree)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(url, {
         params: {
@@ -592,6 +679,10 @@ describe("Github Service", () => {
       const secondSha = "second-sha"
       const gitTree = "git-tree"
       const message = "message"
+      const finalExpectedMessage = JSON.stringify({
+        message,
+        userId,
+      })
       const firstResp = {
         data: {
           sha: firstSha,
@@ -607,10 +698,10 @@ describe("Github Service", () => {
         .mockResolvedValueOnce(firstResp)
         .mockResolvedValueOnce(secondResp)
       await expect(
-        service.updateTree(
-          { accessToken, siteName, currentCommitSha: sha, treeSha },
-          { gitTree, message }
-        )
+        service.updateTree(sessionData, mockGithubSessionData, {
+          gitTree,
+          message,
+        })
       ).resolves.toEqual(secondSha)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         url,
@@ -623,9 +714,9 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         commitEndpoint,
         {
-          message: message || `isomerCMS updated ${siteName} state`,
+          message: finalExpectedMessage,
           tree: firstSha,
-          parents: [sha],
+          parents: [mockCurrentCommitSha],
         },
         authHeader
       )
@@ -636,10 +727,7 @@ describe("Github Service", () => {
     const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
 
     it("Updating a repo state works correctly", async () => {
-      await service.updateRepoState(
-        { accessToken, siteName },
-        { commitSha: sha }
-      )
+      await service.updateRepoState(sessionData, { commitSha: sha })
       expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
         refEndpoint,
         { sha, force: true },
@@ -649,14 +737,13 @@ describe("Github Service", () => {
   })
 
   describe("checkHasAccess", () => {
-    const userId = "userId"
-    const refEndpoint = `${siteName}/collaborators/${userId}`
+    const refEndpoint = `${siteName}/collaborators/${mockGithubId}`
     const headers = {
       Authorization: `token ${accessToken}`,
       "Content-Type": "application/json",
     }
     it("Checks whether user has write access to site", async () => {
-      await service.checkHasAccess({ accessToken, siteName }, { userId })
+      await service.checkHasAccess(sessionData)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(refEndpoint, {
         headers,
       })

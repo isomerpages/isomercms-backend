@@ -1,10 +1,15 @@
-const createDOMPurify = require("dompurify")
+import { config } from "@config/config"
+
+import logger from "@logger/logger"
+
+const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
-const { JSDOM } = require("jsdom")
+const DOMPurify = require("isomorphic-dompurify")
 
-const { window } = new JSDOM("")
-const DOMPurify = createDOMPurify(window)
+const { BaseIsomerError } = require("@errors/BaseError")
+
+const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
@@ -15,9 +20,31 @@ const ALLOWED_FILE_EXTENSIONS = [
   "bmp",
   "ico",
 ]
+const defaultCloudmersiveClient = CloudmersiveVirusApiClient.ApiClient.instance
+
+// Configure API key authorization: Apikey
+const apikey = defaultCloudmersiveClient.authentications.Apikey
+apikey.apiKey = CLOUDMERSIVE_API_KEY
+
+const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
+
+const scanFileForVirus = (fileBuffer) =>
+  new Promise((success, failure) => {
+    apiInstance.scanFile(fileBuffer, (error, data) => {
+      if (error) {
+        logger.error(
+          `Error when calling Cloudmersive Virus Scan API: ${error.message}`
+        )
+        failure(error)
+      } else {
+        logger.info("Cloudmersive Virus Scan API called successfully")
+        success(data)
+      }
+    })
+  })
 
 const validateAndSanitizeFileUpload = async (data) => {
-  const [schema, content] = data.split(",")
+  const [, content] = data.split(",")
   const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
 
@@ -35,4 +62,4 @@ const validateAndSanitizeFileUpload = async (data) => {
   return undefined
 }
 
-module.exports = { validateAndSanitizeFileUpload, ALLOWED_FILE_EXTENSIONS }
+module.exports = { validateAndSanitizeFileUpload, scanFileForVirus, ALLOWED_FILE_EXTENSIONS }

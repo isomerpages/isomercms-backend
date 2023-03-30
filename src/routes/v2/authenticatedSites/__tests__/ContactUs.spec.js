@@ -6,6 +6,7 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { contactUsContent, contactUsSha } = require("@fixtures/contactUs")
+const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
 
 const { ContactUsRouter } = require("../contactUs")
 
@@ -32,9 +33,6 @@ describe("ContactUs Router", () => {
   const app = generateRouter(subrouter)
 
   const siteName = "test-site"
-  const accessToken = undefined // Can't set request fields - will always be undefined
-
-  const reqDetails = { siteName, accessToken }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -51,7 +49,9 @@ describe("ContactUs Router", () => {
       const resp = await request(app).get(`/${siteName}/contactUs`).expect(200)
 
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockContactUsPageService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockContactUsPageService.read).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData
+      )
     })
   })
 
@@ -96,7 +96,7 @@ describe("ContactUs Router", () => {
         .expect(200)
 
       expect(mockContactUsPageService.update).toHaveBeenCalledWith(
-        reqDetails,
+        mockUserWithSiteSessionData,
         expectedServiceInput
       )
     })

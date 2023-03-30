@@ -7,6 +7,7 @@ describe("Subcollection Directory Service", () => {
   const accessToken = "test-token"
   const collectionName = "collection"
   const subcollectionName = "Subcollection name"
+  const mockGithubSessionData = "mockData"
 
   const objArray = [
     {
@@ -329,15 +330,19 @@ describe("Subcollection Directory Service", () => {
   describe("DeleteDirectory", () => {
     it("Deleting a directory works correctly", async () => {
       await expect(
-        service.deleteDirectory(reqDetails, {
+        service.deleteDirectory(reqDetails, mockGithubSessionData, {
           collectionName,
           subcollectionName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(reqDetails, {
-        directoryName: `_${collectionName}/${subcollectionName}`,
-        message: `Deleting subcollection ${collectionName}/${subcollectionName}`,
-      })
+      expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
+        reqDetails,
+        mockGithubSessionData,
+        {
+          directoryName: `_${collectionName}/${subcollectionName}`,
+          message: `Deleting subcollection ${collectionName}/${subcollectionName}`,
+        }
+      )
       expect(
         mockCollectionYmlService.deleteSubfolderFromOrder
       ).toHaveBeenCalledWith(reqDetails, {

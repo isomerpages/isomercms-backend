@@ -113,13 +113,17 @@ const ReviewsRouter = new _ReviewsRouter(
   usersService,
   sitesService,
   collaboratorsService,
-  notificationsService
+  notificationsService,
+  gitHubService
 )
 const reviewsSubrouter = ReviewsRouter.getRouter()
 const subrouter = express()
 subrouter.use("/:siteName", reviewsSubrouter)
 
 const mockGenericAxios = mockAxios.create()
+const migrateSpy = jest
+  .spyOn(ReviewsRouter, "checkIfSiteIsUnmigrated")
+  .mockResolvedValue(true)
 
 describe("Review Requests Integration Tests", () => {
   beforeAll(async () => {
@@ -477,6 +481,7 @@ describe("Review Requests Integration Tests", () => {
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_TWO
       )
+      migrateSpy.mockResolvedValueOnce(false)
 
       // Act
       const actual = await request(app).get(`/${MOCK_REPO_NAME_TWO}/summary`)
@@ -722,6 +727,7 @@ describe("Review Requests Integration Tests", () => {
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_TWO
       )
+      migrateSpy.mockResolvedValueOnce(false)
 
       // Act
       const actual = await request(app).get(
@@ -1617,6 +1623,7 @@ describe("Review Requests Integration Tests", () => {
         MOCK_USER_SESSION_DATA_TWO,
         MOCK_REPO_NAME_TWO
       )
+      migrateSpy.mockResolvedValueOnce(false)
 
       // Act
       const actual = await request(app).get(

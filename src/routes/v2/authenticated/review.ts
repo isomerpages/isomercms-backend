@@ -14,6 +14,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import { SiteMember, User } from "@root/database/models"
+import { GitHubService } from "@root/services/db/GitHubService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import NotificationsService from "@root/services/identity/NotificationsService"
 import SitesService from "@root/services/identity/SitesService"
@@ -41,25 +42,50 @@ export class ReviewsRouter {
 
   private readonly notificationsService
 
+  private readonly githubService
+
   constructor(
     reviewRequestService: ReviewRequestService,
     identityUsersService: UsersService,
     sitesService: SitesService,
     collaboratorsService: CollaboratorsService,
-    notificationsService: NotificationsService
+    notificationsService: NotificationsService,
+    githubService: GitHubService
   ) {
     this.reviewRequestService = reviewRequestService
     this.identityUsersService = identityUsersService
     this.sitesService = sitesService
     this.collaboratorsService = collaboratorsService
     this.notificationsService = notificationsService
+    this.githubService = githubService
 
     autoBind(this)
   }
 
+  // NOTE: This is required because we want to distinguish
+  // between unmigrated sites that don't exist in our db
+  // vs sites that truly don't exist.
+  // This is to avoid flooding the frontend with 404s
+  // and triggering false alarms
+  // TODO (IS-58): Remove this function and related calls when
+  // all sites are migrated over to our db
+  checkIfSiteIsUnmigrated = async (
+    sessionData: UserWithSiteSessionData
+  ): Promise<boolean> => {
+    try {
+      // Site exists on github but isn't migrated
+      await this.githubService.getRepoInfo(sessionData)
+      return true
+    } catch {
+      // If there are any errors, we failed to fetch the site
+      // and the site is assumed to not exist.
+      return false
+    }
+  }
+
   compareDiff: RequestHandler<
     { siteName: string },
-    { items: EditedItemDto[] },
+    { items: EditedItemDto[] } | ResponseErrorBody,
     unknown,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -70,6 +96,21 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
     const { siteName } = req.params
 
+    const site = await this.sitesService.getBySiteName(siteName)
+    const doesUnmigratedSiteExist = await this.checkIfSiteIsUnmigrated(
+      userWithSiteSessionData
+    )
+
+    if (!site && doesUnmigratedSiteExist)
+      return res.status(200).json({ message: "Unmigrated site" })
+
+    const siteMembers = await this.collaboratorsService.list(siteName)
+    // NOTE: This is an initial migrated site but
+    // we haven't migrated the users.
+    if (siteMembers.length === 0 && site) {
+      return res.status(200).json({ message: "Unmigrated users" })
+    }
+
     // Check if they have access to site
     const possibleSiteMember = await this.identityUsersService.getSiteMember(
       userWithSiteSessionData.isomerUserId,
@@ -77,7 +118,7 @@ export class ReviewsRouter {
     )
 
     if (!possibleSiteMember) {
-      return res.status(404).send()
+      return res.status(404).json({ message: "No site members found" })
     }
 
     const files = await this.reviewRequestService.compareDiff(
@@ -226,6 +267,19 @@ export class ReviewsRouter {
     const { siteName } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
     const { userWithSiteSessionData } = res.locals
+    const doesUnmigratedSiteExist = await this.checkIfSiteIsUnmigrated(
+      userWithSiteSessionData
+    )
+
+    if (!site && doesUnmigratedSiteExist)
+      return res.status(200).json({ message: "Unmigrated site" })
+
+    const siteMembers = await this.collaboratorsService.list(siteName)
+    // NOTE: This is an initial migrated site but
+    // we haven't migrated the users.
+    if (siteMembers.length === 0 && site) {
+      return res.status(200).json({ message: "Unmigrated users" })
+    }
 
     if (!site) {
       logger.error({
@@ -395,6 +449,20 @@ export class ReviewsRouter {
     const { siteName, requestId } = req.params
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
+    const doesUnmigratedSiteExist = await this.checkIfSiteIsUnmigrated(
+      userWithSiteSessionData
+    )
+
+    if (!site && doesUnmigratedSiteExist) {
+      return res.status(200).json({ message: "Unmigrated site" })
+    }
+
+    const siteMembers = await this.collaboratorsService.list(siteName)
+    // NOTE: This is an initial migrated site but
+    // we haven't migrated the users.
+    if (siteMembers.length === 0 && site) {
+      return res.status(200).json({ message: "Unmigrated users" })
+    }
 
     if (!site) {
       logger.error({
@@ -760,6 +828,21 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
     // Step 1: Check that the site exists
     const site = await this.sitesService.getBySiteName(siteName)
+    const doesUnmigratedSiteExist = await this.checkIfSiteIsUnmigrated(
+      userWithSiteSessionData
+    )
+
+    if (!site && doesUnmigratedSiteExist) {
+      return res.status(200).json({ message: "Unmigrated site" })
+    }
+
+    const siteMembers = await this.collaboratorsService.list(siteName)
+    // NOTE: This is an initial migrated site but
+    // we haven't migrated the users.
+    if (siteMembers.length === 0 && site) {
+      return res.status(200).json({ message: "Unmigrated users" })
+    }
+
     if (!site) {
       logger.error({
         message: "Invalid site requested",
@@ -932,11 +1015,10 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 2: Check that user exists.
+    // Step 2. Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
     const { userWithSiteSessionData } = res.locals
-
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
@@ -1155,6 +1237,20 @@ export class ReviewsRouter {
     const { path } = req.query
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
+    const doesUnmigratedSiteExist = await this.checkIfSiteIsUnmigrated(
+      userWithSiteSessionData
+    )
+
+    if (!site && doesUnmigratedSiteExist) {
+      return res.status(200).json({ message: "Unmigrated site" })
+    }
+
+    const siteMembers = await this.collaboratorsService.list(siteName)
+    // NOTE: This is an initial migrated site but
+    // we haven't migrated the users.
+    if (siteMembers.length === 0 && site) {
+      return res.status(200).json({ message: "Unmigrated users" })
+    }
 
     if (!site) {
       logger.error({

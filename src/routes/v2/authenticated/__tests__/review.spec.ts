@@ -11,6 +11,7 @@ import { generateRouterForDefaultUserWithSite } from "@fixtures/app"
 import { mockUserId } from "@fixtures/identity"
 import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@fixtures/users"
 import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
+import { GitHubService } from "@root/services/db/GitHubService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import NotificationsService from "@services/identity/NotificationsService"
 import SitesService from "@services/identity/SitesService"
@@ -18,6 +19,9 @@ import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
 describe("Review Requests Router", () => {
+  const mockGithubService = {
+    getRepoInfo: jest.fn().mockResolvedValue(true),
+  }
   const mockReviewRequestService = {
     approveReviewRequest: jest.fn(),
     closeReviewRequest: jest.fn(),
@@ -60,7 +64,8 @@ describe("Review Requests Router", () => {
     (mockIdentityUsersService as unknown) as UsersService,
     (mockSitesService as unknown) as SitesService,
     (mockCollaboratorsService as unknown) as CollaboratorsService,
-    (mockNotificationsService as unknown) as NotificationsService
+    (mockNotificationsService as unknown) as NotificationsService,
+    (mockGithubService as unknown) as GitHubService
   )
 
   const subrouter = express()
@@ -138,6 +143,7 @@ describe("Review Requests Router", () => {
       mockReviewRequestService.compareDiff.mockResolvedValueOnce(
         mockFilesChanged
       )
+      mockSitesService.getBySiteName.mockResolvedValueOnce(true)
 
       // Act
       const response = await request(app).get("/mockSite/review/compare")
@@ -152,6 +158,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if user is not a site member", async () => {
       // Arrange
       mockIdentityUsersService.getSiteMember.mockResolvedValueOnce(null)
+      mockSitesService.getBySiteName.mockResolvedValueOnce(true)
 
       // Act
       const response = await request(app).get("/mockSite/review/compare")
@@ -335,6 +342,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if the site does not exist", async () => {
       // Arrange
       mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
 
       // Act
       const response = await request(app).get("/mockSite/review/summary")
@@ -519,6 +527,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if the site does not exist", async () => {
       // Arrange
       mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
 
       // Act
       const response = await request(app).get(`/mockSite/review/12345`)
@@ -913,6 +922,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if the site does not exist", async () => {
       // Arrange
       mockSitesService.getBySiteName.mockResolvedValueOnce(null)
+      mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
 
       // Act
       const response = await request(app).get(`/mockSite/review/12345/comments`)

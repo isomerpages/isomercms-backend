@@ -198,7 +198,8 @@ const reviewRouter = new ReviewsRouter(
   usersService,
   sitesService,
   collaboratorsService,
-  notificationsService
+  notificationsService,
+  gitHubService
 )
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,

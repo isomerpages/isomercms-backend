@@ -1,4 +1,3 @@
-const DOMPurify = require("isomorphic-dompurify")
 const _ = require("lodash")
 
 const {
@@ -6,14 +5,16 @@ const {
   sanitizedYamlStringify,
 } = require("@utils/yaml-utils")
 
+const { sanitizer } = require("@services/utilServices/Sanitizer")
+
 const getTrailingSlashWithPermalink = (permalink) =>
   permalink.endsWith("/") ? permalink : `${permalink}/`
 
 const retrieveDataFromMarkdown = (fileContent) => {
   // eslint-disable-next-line no-unused-vars
-  const [unused, encodedFrontMatter, ...pageContent] = DOMPurify.sanitize(
-    fileContent
-  ).split("---")
+  const [unused, encodedFrontMatter, ...pageContent] = sanitizer
+    .sanitize(fileContent)
+    .split("---")
   const frontMatter = sanitizedYamlParse(encodedFrontMatter)
   return { frontMatter, pageContent: pageContent.join("---").trim() }
 }
@@ -34,8 +35,7 @@ const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   }
   const newFrontMatter = sanitizedYamlStringify(frontMatter)
   const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")
-
-  return DOMPurify.sanitize(newContent)
+  return sanitizer.sanitize(newContent)
 }
 
 module.exports = {

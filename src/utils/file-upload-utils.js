@@ -5,9 +5,8 @@ import logger from "@logger/logger"
 const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
-const DOMPurify = require("isomorphic-dompurify")
 
-const { BaseIsomerError } = require("@errors/BaseError")
+const { sanitizer } = require("@services/utilServices/Sanitizer")
 
 const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
@@ -49,7 +48,7 @@ const validateAndSanitizeFileUpload = async (data) => {
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
 
   if (isSvg(fileBuffer)) {
-    const sanitizedBuffer = DOMPurify.sanitize(fileBuffer)
+    const sanitizedBuffer = sanitizer.sanitize(fileBuffer)
     return Buffer.from(sanitizedBuffer, "utf8").toString("base64")
   }
   if (
@@ -62,4 +61,8 @@ const validateAndSanitizeFileUpload = async (data) => {
   return undefined
 }
 
-module.exports = { validateAndSanitizeFileUpload, scanFileForVirus, ALLOWED_FILE_EXTENSIONS }
+module.exports = {
+  validateAndSanitizeFileUpload,
+  scanFileForVirus,
+  ALLOWED_FILE_EXTENSIONS,
+}

@@ -18,7 +18,7 @@ const getAuthenticatedSubrouter = ({
   sitesService,
   usersService,
   apiLogger,
-  isomerAdminsService,
+  statsService,
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
@@ -34,7 +34,7 @@ const getAuthenticatedSubrouter = ({
     collaboratorsService,
     authorizationMiddleware,
   })
-  const usersRouter = new UsersRouter({ usersService })
+  const usersRouter = new UsersRouter({ usersService, statsService })
   const netlifyTomlV2Router = new NetlifyTomlRouter({ netlifyTomlService })
   const notificationsRouter = new NotificationsRouter({
     authorizationMiddleware,

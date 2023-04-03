@@ -22,6 +22,7 @@ const jwtUtils = require("@utils/jwt-utils")
 const { authenticationMiddleware } = require("@root/middleware")
 // Import services
 const identityServices = require("@services/identity")
+const { statsService } = require("@services/infra/StatsService")
 
 const router = express.Router()
 
@@ -117,7 +118,8 @@ async function githubAuth(req, res) {
   }
   Object.assign(req.session, { userInfo })
   logger.info(`User ${userInfo.email} successfully logged in`)
-  return res.redirect(`${FRONTEND_URL}/sites`)
+  res.redirect(`${FRONTEND_URL}/sites`)
+  statsService.trackGithubLogins()
 }
 
 async function logout(req, res) {
@@ -147,10 +149,11 @@ async function whoami(req, res) {
       email,
       contactNumber,
     } = await identityServices.usersService.findByGitHubId(userId)
-    return res.status(200).json({ userId, email, contactNumber })
+    res.status(200).json({ userId, email, contactNumber })
+    return statsService.countDbUsers()
   } catch (err) {
     clearAllCookies(res)
-    // Return a 401 os that user will be redirected to logout
+    // Return a 401 so that user will be redirected to logout
     return res.sendStatus(401)
   }
 }

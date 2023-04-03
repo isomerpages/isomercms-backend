@@ -55,6 +55,7 @@ import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
+import { statsService } from "@services/infra/StatsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
@@ -249,6 +250,7 @@ const reviewRouter = new ReviewsRouter(
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
   statsMiddleware,
+  statsService,
   usersService,
   apiLogger,
 })
@@ -266,7 +268,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   reposService,
   deploymentsService,
   apiLogger,
-  isomerAdminsService,
+  statsService,
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
@@ -287,6 +289,7 @@ const authV2Router = new AuthRouter({
   authService,
   apiLogger,
   rateLimiter,
+  statsService,
 })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({

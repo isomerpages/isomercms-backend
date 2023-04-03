@@ -11,7 +11,6 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const FRONTEND_URL = config.get("app.frontendUrl")
 const { isSecure } = require("@utils/auth-utils")
 
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
@@ -20,11 +19,13 @@ class AuthRouter {
   constructor({
     authService,
     authenticationMiddleware,
+    statsService,
     apiLogger,
     rateLimiter,
   }) {
     this.authService = authService
     this.authenticationMiddleware = authenticationMiddleware
+    this.statsService = statsService
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
     // We need to bind all methods because we don't invoke them from the class directly
@@ -68,7 +69,8 @@ class AuthRouter {
     })
     logger.info(`User ${userInfo.email} successfully logged in`)
     Object.assign(req.session, { userInfo })
-    return res.redirect(`${FRONTEND_URL}/sites`)
+    res.redirect(`${FRONTEND_URL}/sites`)
+    this.statsService.trackGithubLogins()
   }
 
   async login(req, res) {
@@ -109,7 +111,8 @@ class AuthRouter {
       req.session.destroy()
       return res.sendStatus(401)
     }
-    return res.status(200).json(userInfo)
+    res.status(200).json(userInfo)
+    return this.statsService.countDbUsers()
   }
 
   getRouter() {

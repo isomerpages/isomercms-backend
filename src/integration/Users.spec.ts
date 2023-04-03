@@ -9,6 +9,7 @@ import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockIsomerUserId } from "@root/fixtures/sessionData"
 import { UsersRouter as _UsersRouter } from "@root/routes/v2/authenticated/users"
+import { StatsService } from "@root/services/infra/StatsService"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
 
@@ -27,8 +28,14 @@ const maxNumOfOtpAttempts = config.get("auth.maxNumOtpAttempts")
 const mockInvalidOtp = "000000"
 
 const UsersService = getUsersService(sequelize)
+const mockStatsService = {
+  trackEmailLogins: jest.fn(),
+}
 
-const UsersRouter = new _UsersRouter({ usersService: UsersService })
+const UsersRouter = new _UsersRouter({
+  usersService: UsersService,
+  statsService: (mockStatsService as unknown) as StatsService,
+})
 const usersSubrouter = UsersRouter.getRouter()
 
 // Set up express with defaults and use the router under test

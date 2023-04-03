@@ -20,7 +20,8 @@ export class AuthorizationMiddleware {
     autoBind(this)
   }
 
-  // Check whether a user is using email login or github login
+  // Allows access only to users using email login
+  // If using Github login, immediately returns 200 response instead
   verifyIsEmailUser: RequestHandler<
     never,
     unknown,
@@ -29,7 +30,8 @@ export class AuthorizationMiddleware {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res, next) => {
     const { userWithSiteSessionData } = res.locals
-    if (!userWithSiteSessionData.isEmailUser()) return next("router")
+    if (!userWithSiteSessionData.isEmailUser())
+      return res.status(200).send("OK")
     return next()
   }
 

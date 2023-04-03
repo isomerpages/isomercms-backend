@@ -59,6 +59,7 @@ import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
+import { statsMiddleware } from "./middleware/stats"
 import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
 import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -247,12 +248,14 @@ const reviewRouter = new ReviewsRouter(
 )
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
+  statsMiddleware,
   usersService,
   apiLogger,
 })
 const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
   authenticationMiddleware,
   authorizationMiddleware,
+  statsMiddleware,
   apiLogger,
 })
 

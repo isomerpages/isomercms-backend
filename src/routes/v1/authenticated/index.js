@@ -5,6 +5,7 @@ const { UsersRouter } = require("@routes/v2/authenticated/users")
 
 const getAuthenticatedSubrouter = ({
   authenticationMiddleware,
+  statsMiddleware,
   usersService,
   apiLogger,
 }) => {
@@ -13,6 +14,7 @@ const getAuthenticatedSubrouter = ({
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
+  authenticatedSubrouter.use(statsMiddleware.logV1Site)
   authenticatedSubrouter.use(authenticationMiddleware.verifyAccess)
   // NOTE: apiLogger needs to be after `verifyAccess` as it logs the github username
   // which is only available after verifying that the jwt is valid

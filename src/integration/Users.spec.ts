@@ -28,13 +28,9 @@ const maxNumOfOtpAttempts = config.get("auth.maxNumOtpAttempts")
 const mockInvalidOtp = "000000"
 
 const UsersService = getUsersService(sequelize)
-const mockStatsService = {
-  trackEmailLogins: jest.fn(),
-}
 
 const UsersRouter = new _UsersRouter({
   usersService: UsersService,
-  statsService: (mockStatsService as unknown) as StatsService,
 })
 const usersSubrouter = UsersRouter.getRouter()
 

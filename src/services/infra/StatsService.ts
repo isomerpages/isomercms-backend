@@ -37,6 +37,10 @@ export class StatsService {
     })
   }
 
+  countGithubSites = async () => {}
+
+  countMigratedSites = async () => {}
+
   trackGithubLogins = () => {
     this.statsD.increment("users.github.login", {
       version: "v1",

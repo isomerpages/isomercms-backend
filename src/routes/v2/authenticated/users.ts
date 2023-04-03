@@ -10,24 +10,19 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserSessionData from "@classes/UserSessionData"
 
-import { StatsService } from "@root/services/infra/StatsService"
 import { isError, RequestHandler } from "@root/types"
 import UsersService from "@services/identity/UsersService"
 
 interface UsersRouterProps {
   usersService: UsersService
-  statsService: StatsService
 }
 
 // eslint-disable-next-line import/prefer-default-export
 export class UsersRouter {
   private readonly usersService
 
-  private readonly statsService
-
-  constructor({ usersService, statsService }: UsersRouterProps) {
+  constructor({ usersService }: UsersRouterProps) {
     this.usersService = usersService
-    this.statsService = statsService
     autoBind(this)
   }
 
@@ -81,7 +76,6 @@ export class UsersRouter {
 
     await this.usersService.updateUserByIsomerId(userId, { email })
     res.sendStatus(200)
-    this.statsService.trackEmailLogins()
   }
 
   sendMobileNumberOtp: RequestHandler<

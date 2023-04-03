@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import autoBind from "auto-bind"
 import express from "express"
 
@@ -38,7 +39,7 @@ export class SitesRouter {
   > = async (req, res) => {
     const { userSessionData } = res.locals
     const siteNames = await this.sitesService.getSites(userSessionData)
-    return res.status(200).json({ siteNames })
+    res.status(200).json({ siteNames })
   }
 
   getLastUpdated: RequestHandler<

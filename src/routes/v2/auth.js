@@ -93,7 +93,8 @@ class AuthRouter {
     const userInfo = await this.authService.verifyOtp({ email, otp })
     Object.assign(req.session, { userInfo })
     logger.info(`User ${userInfo.email} successfully logged in`)
-    return res.sendStatus(200)
+    res.sendStatus(200)
+    this.statsService.trackEmailLogins()
   }
 
   async logout(req, res) {

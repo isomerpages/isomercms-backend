@@ -6,12 +6,11 @@ const { UsersRouter } = require("@routes/v2/authenticated/users")
 const getAuthenticatedSubrouter = ({
   authenticationMiddleware,
   statsMiddleware,
-  statsService,
   usersService,
   apiLogger,
 }) => {
   // Workaround - no v1 users router exists
-  const usersRouter = new UsersRouter({ usersService, statsService })
+  const usersRouter = new UsersRouter({ usersService })
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 

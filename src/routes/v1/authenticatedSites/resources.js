@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -121,18 +123,29 @@ async function moveResources(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listResources))
-router.post("/", attachRollbackRouteHandlerWrapper(createNewResource))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("listResources"),
+  attachReadRouteHandlerWrapper(listResources)
+)
+router.post(
+  "/",
+  statsMiddleware.logV1CallFor("createNewResource"),
+  attachRollbackRouteHandlerWrapper(createNewResource)
+)
 router.delete(
   "/:resourceName",
+  statsMiddleware.logV1CallFor("deleteResource"),
   attachRollbackRouteHandlerWrapper(deleteResource)
 )
 router.post(
   "/:resourceName/rename/:newResourceName",
+  statsMiddleware.logV1CallFor("renameResource"),
   attachRollbackRouteHandlerWrapper(renameResource)
 )
 router.post(
   "/:resourceName/move/:newResourceName",
+  statsMiddleware.logV1CallFor("moveResources"),
   attachRollbackRouteHandlerWrapper(moveResources)
 )
 

@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -65,12 +67,25 @@ async function deleteResourceRoom(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(getResourceRoomName))
-router.post("/", attachRollbackRouteHandlerWrapper(createResourceRoom))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("getResourceRoomName"),
+  attachReadRouteHandlerWrapper(getResourceRoomName)
+)
+router.post(
+  "/",
+  statsMiddleware.logV1CallFor("createResourceRoom"),
+  attachRollbackRouteHandlerWrapper(createResourceRoom)
+)
 router.post(
   "/:resourceRoom",
+  statsMiddleware.logV1CallFor("renameResourceRoom"),
   attachRollbackRouteHandlerWrapper(renameResourceRoom)
 )
-router.delete("/", attachRollbackRouteHandlerWrapper(deleteResourceRoom))
+router.delete(
+  "/",
+  statsMiddleware.logV1CallFor("deleteResourceRoom"),
+  attachRollbackRouteHandlerWrapper(deleteResourceRoom)
+)
 
 module.exports = router

@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -172,22 +174,34 @@ async function renameResourcePage(req, res) {
     .json({ resourceName, pageName: newPageName, pageContent, sha: newSha })
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listResourcePages))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("listResourcePages"),
+  attachReadRouteHandlerWrapper(listResourcePages)
+)
 router.post(
   "/pages/new/:pageName",
+  statsMiddleware.logV1CallFor("createNewResourcePage"),
   attachRollbackRouteHandlerWrapper(createNewResourcePage)
 )
-router.get("/pages/:pageName", attachReadRouteHandlerWrapper(readResourcePage))
+router.get(
+  "/pages/:pageName",
+  statsMiddleware.logV1CallFor("readResourcePage"),
+  attachReadRouteHandlerWrapper(readResourcePage)
+)
 router.post(
   "/pages/:pageName",
+  statsMiddleware.logV1CallFor("updateResourcePage"),
   attachWriteRouteHandlerWrapper(updateResourcePage)
 )
 router.delete(
   "/pages/:pageName",
+  statsMiddleware.logV1CallFor("deleteResourcePage"),
   attachRollbackRouteHandlerWrapper(deleteResourcePage)
 )
 router.post(
   "/pages/:pageName/rename/:newPageName",
+  statsMiddleware.logV1CallFor("renameResourcePage"),
   attachRollbackRouteHandlerWrapper(renameResourcePage)
 )
 

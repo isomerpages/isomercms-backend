@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -182,17 +184,39 @@ async function moveImage(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listImages))
-router.post("/", attachWriteRouteHandlerWrapper(createNewImage))
-router.get("/:imageName", attachReadRouteHandlerWrapper(readImage))
-router.post("/:imageName", attachWriteRouteHandlerWrapper(updateImage))
-router.delete("/:imageName", attachWriteRouteHandlerWrapper(deleteImage))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("listImages"),
+  attachReadRouteHandlerWrapper(listImages)
+)
+router.post(
+  "/",
+  statsMiddleware.logV1CallFor("createNewImage"),
+  attachWriteRouteHandlerWrapper(createNewImage)
+)
+router.get(
+  "/:imageName",
+  statsMiddleware.logV1CallFor("readImage"),
+  attachReadRouteHandlerWrapper(readImage)
+)
+router.post(
+  "/:imageName",
+  statsMiddleware.logV1CallFor("updateImage"),
+  attachWriteRouteHandlerWrapper(updateImage)
+)
+router.delete(
+  "/:imageName",
+  statsMiddleware.logV1CallFor("deleteImage"),
+  attachWriteRouteHandlerWrapper(deleteImage)
+)
 router.post(
   "/:imageName/rename/:newImageName",
+  statsMiddleware.logV1CallFor("renameImage"),
   attachRollbackRouteHandlerWrapper(renameImage)
 )
 router.post(
   "/:imageName/move/:newImageName",
+  statsMiddleware.logV1CallFor("moveImage"),
   attachRollbackRouteHandlerWrapper(moveImage)
 )
 

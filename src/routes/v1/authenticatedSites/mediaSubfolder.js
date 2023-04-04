@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -77,13 +79,19 @@ async function renameSubfolder(req, res) {
   return res.status(200).send("OK")
 }
 
-router.post("/:folderPath", attachWriteRouteHandlerWrapper(createSubfolder))
+router.post(
+  "/:folderPath",
+  statsMiddleware.logV1CallFor("createSubfolder"),
+  attachWriteRouteHandlerWrapper(createSubfolder)
+)
 router.delete(
   "/:folderPath",
+  statsMiddleware.logV1CallFor("deleteSubfolder"),
   attachRollbackRouteHandlerWrapper(deleteSubfolder)
 )
 router.post(
   "/:oldFolderPath/rename/:newFolderPath",
+  statsMiddleware.logV1CallFor("renameSubfolder"),
   attachRollbackRouteHandlerWrapper(renameSubfolder)
 )
 

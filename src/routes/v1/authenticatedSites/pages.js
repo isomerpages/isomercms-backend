@@ -19,6 +19,8 @@ const {
   sanitizedYamlStringify,
 } = require("@utils/yaml-utils")
 
+const { statsMiddleware } = require("@root/middleware/stats")
+
 const router = express.Router({ mergeParams: true })
 
 async function listPages(req, res) {
@@ -218,17 +220,39 @@ async function moveUnlinkedPages(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listPages))
-router.post("/new/:pageName", attachWriteRouteHandlerWrapper(createPage))
-router.get("/:pageName", attachReadRouteHandlerWrapper(readPage))
-router.post("/:pageName", attachWriteRouteHandlerWrapper(updatePage))
-router.delete("/:pageName", attachWriteRouteHandlerWrapper(deletePage))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("listPages"),
+  attachReadRouteHandlerWrapper(listPages)
+)
+router.post(
+  "/new/:pageName",
+  statsMiddleware.logV1CallFor("createPage"),
+  attachWriteRouteHandlerWrapper(createPage)
+)
+router.get(
+  "/:pageName",
+  statsMiddleware.logV1CallFor("readPage"),
+  attachReadRouteHandlerWrapper(readPage)
+)
+router.post(
+  "/:pageName",
+  statsMiddleware.logV1CallFor("updatePage"),
+  attachWriteRouteHandlerWrapper(updatePage)
+)
+router.delete(
+  "/:pageName",
+  statsMiddleware.logV1CallFor("deletePage"),
+  attachWriteRouteHandlerWrapper(deletePage)
+)
 router.post(
   "/:pageName/rename/:newPageName",
+  statsMiddleware.logV1CallFor("renamePage"),
   attachRollbackRouteHandlerWrapper(renamePage)
 )
 router.post(
   "/move/:newPagePath",
+  statsMiddleware.logV1CallFor("moveUnlinkedPages"),
   attachRollbackRouteHandlerWrapper(moveUnlinkedPages)
 )
 

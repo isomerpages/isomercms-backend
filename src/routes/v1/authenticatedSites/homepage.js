@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -58,7 +60,15 @@ async function updateHomepage(req, res) {
   return res.status(200).json({ content, sha: newSha })
 }
 
-router.get("/", attachReadRouteHandlerWrapper(readHomepage))
-router.post("/", attachWriteRouteHandlerWrapper(updateHomepage))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("readHomepage"),
+  attachReadRouteHandlerWrapper(readHomepage)
+)
+router.post(
+  "/",
+  statsMiddleware.logV1CallFor("updateHomepage"),
+  attachWriteRouteHandlerWrapper(updateHomepage)
+)
 
 module.exports = router

@@ -1,3 +1,5 @@
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -31,6 +33,10 @@ async function listDirectoryContent(req, res) {
   return res.status(200).json({ directoryContents })
 }
 
-router.get("/:path", attachReadRouteHandlerWrapper(listDirectoryContent))
+router.get(
+  "/:path",
+  statsMiddleware.logV1CallFor("listDirectoryContent"),
+  attachReadRouteHandlerWrapper(listDirectoryContent)
+)
 
 module.exports = router

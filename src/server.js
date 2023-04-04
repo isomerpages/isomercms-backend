@@ -32,6 +32,7 @@ import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
 } from "@root/middleware"
+import { statsMiddleware } from "@root/middleware/stats"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
@@ -248,7 +249,7 @@ const reviewRouter = new ReviewsRouter(
 )
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
-  statsService,
+  statsMiddleware,
   usersService,
   apiLogger,
 })

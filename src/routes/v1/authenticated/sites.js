@@ -194,12 +194,12 @@ router.get(
 )
 router.get(
   "/:siteName/lastUpdated",
-  statsMiddleware.logV1CallFor("getLastUpdatedForSite"),
+  statsMiddleware.logV1CallFor("getLastUpdated"),
   attachReadRouteHandlerWrapper(getLastUpdated)
 )
 router.get(
   "/:siteName/stagingUrl",
-  statsMiddleware.logV1CallFor("getStagingUrlForSite"),
+  statsMiddleware.logV1CallFor("getStagingUrl"),
   attachReadRouteHandlerWrapper(getStagingUrl)
 )
 

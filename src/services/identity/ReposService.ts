@@ -64,7 +64,6 @@ export default class ReposService {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
     await this.createRepoOnGithub(repoName)
-    await this.createTeamOnGitHub(repoName)
     await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
     return this.create({
       name: repoName,

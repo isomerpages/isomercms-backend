@@ -21,12 +21,10 @@ const settingsRouter = require("@routes/v1/authenticatedSites/settings")
 const getAuthenticatedSitesSubrouter = ({
   authenticationMiddleware,
   authorizationMiddleware,
-  statsMiddleware,
   apiLogger,
 }) => {
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
-  authenticatedSitesSubrouter.use(statsMiddleware.logV1Site)
   authenticatedSitesSubrouter.use(authenticationMiddleware.verifyAccess)
   authenticatedSitesSubrouter.use(attachSiteHandler)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username

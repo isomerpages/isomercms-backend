@@ -30,8 +30,7 @@ export class AuthorizationMiddleware {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res, next) => {
     const { userWithSiteSessionData } = res.locals
-    if (!userWithSiteSessionData.isEmailUser())
-      return res.status(200).send("OK")
+    if (!userWithSiteSessionData.isEmailUser()) return res.status(401).send()
     return next()
   }
 

@@ -1,28 +1,49 @@
 /* eslint-disable import/prefer-default-export */
 import StatsDClient, { StatsD } from "hot-shots"
+import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
 
-import { User } from "@root/database/models"
+import {
+  GH_MAX_REPO_COUNT,
+  GITHUB_ORG_REPOS_ENDPOINT,
+  ISOMERPAGES_REPO_PAGE_COUNT,
+} from "@root/constants"
+import { AccessToken, Site, User } from "@root/database/models"
+
+import { genericGitHubAxiosInstance } from "../api/AxiosInstance"
+
+type StatsHandler = () => void
 
 export class StatsService {
   private readonly statsD: StatsD
 
   private readonly usersRepo: ModelStatic<User>
 
-  constructor(statsDClient: StatsD, usersRepo: ModelStatic<User>) {
+  private readonly accessTokenRepo: ModelStatic<AccessToken>
+
+  private readonly sitesRepo: ModelStatic<Site>
+
+  constructor(
+    statsDClient: StatsD,
+    usersRepo: ModelStatic<User>,
+    accessTokenRepo: ModelStatic<AccessToken>,
+    sitesRepo: ModelStatic<Site>
+  ) {
     this.statsD = statsDClient
     this.usersRepo = usersRepo
+    this.accessTokenRepo = accessTokenRepo
+    this.sitesRepo = sitesRepo
   }
 
-  submitV1Count = () => {
+  submitV1Count: StatsHandler = () => {
     this.statsD.increment("versions.v1", {
       version: "v1",
     })
   }
 
-  countDbUsers = async () => {
+  countDbUsers: StatsHandler = async () => {
     // NOTE: Track only active users.
     const numUsers = await this.usersRepo.count({
       where: {
@@ -37,17 +58,47 @@ export class StatsService {
     })
   }
 
-  countGithubSites = async () => {}
+  countGithubSites: StatsHandler = async () => {
+    const accessToken = await this.accessTokenRepo.findOne()
+    // NOTE: Cannot submit metrics if we are unable to get said metric
+    if (!accessToken) return
 
-  countMigratedSites = async () => {}
+    const sitesArr = await Promise.all(
+      _.fill(Array(ISOMERPAGES_REPO_PAGE_COUNT), null)
+        .map((__, idx) => ({
+          per_page: GH_MAX_REPO_COUNT,
+          sort: "full_name",
+          page: idx + 1,
+        }))
+        .map((params) =>
+          genericGitHubAxiosInstance
+            .get<unknown[]>(GITHUB_ORG_REPOS_ENDPOINT, {
+              params,
+            })
+            .then(({ data }) => data)
+        )
+    )
 
-  trackGithubLogins = () => {
+    this.statsD.distribution("sites.github.all", sitesArr.flat().length, 1)
+  }
+
+  countMigratedSites: StatsHandler = async () => {
+    const numMigratedSites = await this.sitesRepo.count({
+      where: {
+        deletedAt: null,
+      },
+    })
+
+    this.statsD.distribution("sites.db.all", numMigratedSites, 1)
+  }
+
+  trackGithubLogins: StatsHandler = () => {
     this.statsD.increment("users.github.login", {
       version: "v1",
     })
   }
 
-  trackEmailLogins = () => {
+  trackEmailLogins: StatsHandler = () => {
     this.statsD.increment("users.email.login", {
       version: "v2",
     })
@@ -58,4 +109,9 @@ const statsDClient = new StatsDClient({
   globalTags: { env: config.get("env"), service: "isomer" },
   prefix: "isomer.",
 })
-export const statsService = new StatsService(statsDClient, User)
+export const statsService = new StatsService(
+  statsDClient,
+  User,
+  AccessToken,
+  Site
+)

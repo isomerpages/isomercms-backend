@@ -6,10 +6,10 @@ import { Deployment, Repo, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
-  ISOMER_GITHUB_ORG_NAME,
   ISOMERPAGES_REPO_PAGE_COUNT,
   GH_MAX_REPO_COUNT,
   ISOMER_ADMIN_REPOS,
+  GITHUB_ORG_REPOS_ENDPOINT,
 } from "@root/constants"
 import DatabaseError from "@root/errors/DatabaseError"
 import MissingSiteError from "@root/errors/MissingSiteError"
@@ -321,7 +321,6 @@ class SitesService {
     const { isomerUserId: userId } = sessionData
     const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
     const { accessToken } = sessionData
-    const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
 
     // Simultaneously retrieve all isomerpages repos
     const paramsArr = _.fill(Array(ISOMERPAGES_REPO_PAGE_COUNT), null).map(
@@ -338,7 +337,7 @@ class SitesService {
           data: respData,
         }: {
           data: GitHubRepositoryData[]
-        } = await genericGitHubAxiosInstance.get(endpoint, {
+        } = await genericGitHubAxiosInstance.get(GITHUB_ORG_REPOS_ENDPOINT, {
           headers: { Authorization: `token ${accessToken}` },
           params,
         })

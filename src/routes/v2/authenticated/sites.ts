@@ -10,12 +10,14 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import type UserSessionData from "@root/classes/UserSessionData"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
+import { StatsService } from "@root/services/infra/StatsService"
 import type { RequestHandler } from "@root/types"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
   sitesService: SitesService
   authorizationMiddleware: AuthorizationMiddleware
+  statsService: StatsService
 }
 
 export class SitesRouter {
@@ -23,9 +25,16 @@ export class SitesRouter {
 
   private readonly authorizationMiddleware
 
-  constructor({ sitesService, authorizationMiddleware }: SitesRouterProps) {
+  private readonly statsService
+
+  constructor({
+    sitesService,
+    authorizationMiddleware,
+    statsService,
+  }: SitesRouterProps) {
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
+    this.statsService = statsService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -40,6 +49,8 @@ export class SitesRouter {
     const { userSessionData } = res.locals
     const siteNames = await this.sitesService.getSites(userSessionData)
     res.status(200).json({ siteNames })
+    this.statsService.countGithubSites()
+    this.statsService.countMigratedSites()
   }
 
   getLastUpdated: RequestHandler<

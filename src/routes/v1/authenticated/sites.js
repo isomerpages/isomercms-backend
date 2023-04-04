@@ -1,5 +1,7 @@
 import { config } from "@config/config"
 
+import { GITHUB_ORG_REPOS_ENDPOINT } from "@root/constants"
+
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
@@ -58,8 +60,6 @@ async function getSites(req, res) {
   const { userSessionData } = res.locals
   const { accessToken } = userSessionData
 
-  const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
-
   // Simultaneously retrieve all isomerpages repos
   const paramsArr = []
   for (let i = 0; i < ISOMERPAGES_REPO_PAGE_COUNT; i += 1) {
@@ -71,7 +71,7 @@ async function getSites(req, res) {
   }
 
   const sites = await Bluebird.map(paramsArr, async (params) => {
-    const resp = await axios.get(endpoint, {
+    const resp = await axios.get(GITHUB_ORG_REPOS_ENDPOINT, {
       params,
       headers: {
         Authorization: `token ${accessToken}`,

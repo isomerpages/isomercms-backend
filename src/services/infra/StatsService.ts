@@ -14,8 +14,6 @@ import { AccessToken, Site, User } from "@root/database/models"
 
 import { genericGitHubAxiosInstance } from "../api/AxiosInstance"
 
-type StatsHandler = () => void
-
 export class StatsService {
   private readonly statsD: StatsD
 
@@ -37,13 +35,14 @@ export class StatsService {
     this.sitesRepo = sitesRepo
   }
 
-  submitV1Count: StatsHandler = () => {
+  submitV1Count = (path: string) => {
     this.statsD.increment("versions.v1", {
       version: "v1",
+      path,
     })
   }
 
-  countDbUsers: StatsHandler = async () => {
+  countDbUsers = async () => {
     // NOTE: Track only active users.
     const numUsers = await this.usersRepo.count({
       where: {
@@ -58,7 +57,7 @@ export class StatsService {
     })
   }
 
-  countGithubSites: StatsHandler = async () => {
+  countGithubSites = async () => {
     const accessToken = await this.accessTokenRepo.findOne()
     // NOTE: Cannot submit metrics if we are unable to get said metric
     if (!accessToken) return
@@ -82,7 +81,7 @@ export class StatsService {
     this.statsD.distribution("sites.github.all", sitesArr.flat().length, 1)
   }
 
-  countMigratedSites: StatsHandler = async () => {
+  countMigratedSites = async () => {
     const numMigratedSites = await this.sitesRepo.count({
       where: {
         deletedAt: null,
@@ -92,13 +91,13 @@ export class StatsService {
     this.statsD.distribution("sites.db.all", numMigratedSites, 1)
   }
 
-  trackGithubLogins: StatsHandler = () => {
+  trackGithubLogins = () => {
     this.statsD.increment("users.github.login", {
       version: "v1",
     })
   }
 
-  trackEmailLogins: StatsHandler = () => {
+  trackEmailLogins = () => {
     this.statsD.increment("users.email.login", {
       version: "v2",
     })

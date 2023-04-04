@@ -1,6 +1,7 @@
 import { config } from "@config/config"
 
 import { GITHUB_ORG_REPOS_ENDPOINT } from "@root/constants"
+import { statsMiddleware } from "@root/middleware/stats"
 
 const Bluebird = require("bluebird")
 const express = require("express")
@@ -181,14 +182,24 @@ async function getStagingUrl(req, res) {
   return res.status(200).json({ stagingUrl })
 }
 
-router.get("/", attachReadRouteHandlerWrapper(getSites))
-router.get("/:siteName", attachReadRouteHandlerWrapper(checkHasAccess))
+router.get(
+  "/",
+  statsMiddleware.logV1CallFor("getSites"),
+  attachReadRouteHandlerWrapper(getSites)
+)
+router.get(
+  "/:siteName",
+  statsMiddleware.logV1CallFor("getSite"),
+  attachReadRouteHandlerWrapper(checkHasAccess)
+)
 router.get(
   "/:siteName/lastUpdated",
+  statsMiddleware.logV1CallFor("getLastUpdatedForSite"),
   attachReadRouteHandlerWrapper(getLastUpdated)
 )
 router.get(
   "/:siteName/stagingUrl",
+  statsMiddleware.logV1CallFor("getStagingUrlForSite"),
   attachReadRouteHandlerWrapper(getStagingUrl)
 )
 

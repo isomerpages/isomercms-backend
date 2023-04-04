@@ -16,8 +16,8 @@ export class StatsMiddleware {
     autoBind(this)
   }
 
-  logV1Site: RequestHandler = (req) => {
-    this.statsService.submitV1Count()
+  logV1CallFor: (path: string) => RequestHandler = (path: string) => (req) => {
+    this.statsService.submitV1Count(path)
     req.next?.()
   }
 }

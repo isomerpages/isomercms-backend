@@ -20,6 +20,7 @@ const SITE_CREATE_FORM_KEY = config.get("formSg.siteCreateFormKey")
 const REQUESTER_EMAIL_FIELD = "Government E-mail"
 const SITE_NAME_FIELD = "Site Name"
 const REPO_NAME_FIELD = "Repository Name"
+const OWNER_NAME_FIELD = "Site Owner E-mail"
 
 export interface FormsgRouterProps {
   usersService: UsersService
@@ -51,6 +52,7 @@ export class FormsgRouter {
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const siteName = getField(responses, SITE_NAME_FIELD)
     const repoName = getField(responses, REPO_NAME_FIELD)
+    const ownerEmail = getField(responses, OWNER_NAME_FIELD)?.toLowerCase()
 
     logger.info(
       `Create site form submission [${submissionId}] (repoName '${repoName}', siteName '${siteName}') requested by <${requesterEmail}>`
@@ -75,16 +77,18 @@ export class FormsgRouter {
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return res.sendStatus(200)
       }
-      const foundUser = await this.usersService.findByEmail(requesterEmail)
-      if (!foundUser) {
+      const foundRequester = await this.usersService.findByEmail(requesterEmail)
+      if (!foundRequester) {
         const err = `Form submitter ${requesterEmail} is not an Isomer user. Register an account for this user and try again.`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return res.sendStatus(200)
       }
+      const foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
 
       // 3. Use service to create site
       const { deployment } = await this.infraService.createSite(
-        foundUser,
+        foundRequester,
+        foundOwner,
         siteName,
         repoName
       )

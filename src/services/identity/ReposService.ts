@@ -147,15 +147,6 @@ export default class ReposService {
       private: false,
     })
 
-  createTeamOnGitHub = (
-    repoName: string
-  ): Promise<octokitCreateTeamResponseType> =>
-    octokit.teams.create({
-      org: ISOMER_GITHUB_ORGANIZATION_NAME,
-      name: repoName,
-      privacy: "closed",
-    })
-
   setRepoAndTeamPermissions = async (repoName: string): Promise<void> => {
     await octokit.repos.updateBranchProtection({
       owner: ISOMER_GITHUB_ORGANIZATION_NAME,

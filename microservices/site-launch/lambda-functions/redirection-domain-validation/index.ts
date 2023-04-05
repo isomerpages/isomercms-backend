@@ -47,11 +47,9 @@ export const redirectionDomainValidation = async (
     auth: process.env.SYSTEM_GITHUB_TOKEN,
   })
 
-  let fileExists = true
   // see if domain commit in github first. If exists, don't create commit.
-
   try {
-    await octokit.request(
+    const res = await octokit.request(
       `GET /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
       {
         owner: "isomerpages",
@@ -60,16 +58,20 @@ export const redirectionDomainValidation = async (
         ref: DEFAULT_BRANCH,
       }
     )
-  } catch (error: unknown) {
-    if (error instanceof RequestError && error.status && error.status === 404) {
-      fileExists = false
+    if (res.status === 200) {
+      // we return here because the file already exists
+      logger.info(`The file ${primaryDomainSource}.conf already exists`)
       return
     }
-    throw Error(
-      `Unknown error when checking for file existence of ${primaryDomainSource}.conf: ${error}`
-    )
+  } catch (error: unknown) {
+    const expectedNotFoundError =
+      error instanceof RequestError && error.status && error.status === 404
+    if (!expectedNotFoundError) {
+      throw Error(
+        `Unknown error when checking for file existence of ${primaryDomainSource}.conf: ${error}`
+      )
+    }
   }
-  if (fileExists) return
   await octokit.request(
     `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
     {

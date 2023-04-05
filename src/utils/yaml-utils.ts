@@ -4,7 +4,7 @@ import yaml from "yaml"
 import { sanitizer } from "@services/utilServices/Sanitizer"
 
 type YamlRecord = {
-  [key: string]: YamlRecord | string | YamlRecord[]
+  [key: string]: YamlRecord | string | (YamlRecord | string)[]
 }
 
 const isArr = (t: unknown): t is Array<unknown> => !!(t as unknown[]).length
@@ -13,7 +13,10 @@ const sanitizeYamlRecord = (yamlRec: YamlRecord): YamlRecord =>
   _(yamlRec)
     .mapValues((val) => {
       if (typeof val === "string") return sanitizer.sanitize(val)
-      if (isArr(val)) return val.map(sanitizeYamlRecord)
+      if (isArr(val))
+        return val.map((v) =>
+          typeof v === "string" ? sanitizer.sanitize(v) : sanitizeYamlRecord(v)
+        )
       return sanitizeYamlRecord(val)
     })
     .value()

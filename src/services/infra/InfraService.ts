@@ -89,7 +89,7 @@ export default class InfraService {
       // 1. Create a new site record in the Sites table
       const newSiteParams = {
         name: siteName,
-        apiTokenName: "", // TODO: remove once DB has removed this param
+        apiTokenName: "", // TODO (IS-76): Remove once DB has removed this param
         creator,
         creatorId: creator.id,
       }

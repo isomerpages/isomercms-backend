@@ -3,7 +3,7 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const HOMEPAGE_FILE_NAME = "index.md"
+const { HOMEPAGE_NAME } = require("@root/constants")
 
 class HomepagePageService {
   constructor({ gitHubService }) {
@@ -14,7 +14,7 @@ class HomepagePageService {
     const { content: rawContent, sha } = await this.gitHubService.read(
       sessionData,
       {
-        fileName: HOMEPAGE_FILE_NAME,
+        fileName: HOMEPAGE_NAME,
       }
     )
     const { frontMatter, pageContent } = retrieveDataFromMarkdown(rawContent)
@@ -26,7 +26,7 @@ class HomepagePageService {
     const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
-      fileName: HOMEPAGE_FILE_NAME,
+      fileName: HOMEPAGE_NAME,
     })
     return {
       content: { frontMatter, pageBody: content },

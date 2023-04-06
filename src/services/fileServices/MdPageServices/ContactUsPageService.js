@@ -3,7 +3,8 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const CONTACT_US_FILE_NAME = "contact-us.md"
+const { CONTACT_US_FILENAME } = require("@root/constants/pages")
+
 const CONTACT_US_DIRECTORY_NAME = "pages"
 
 class ContactUsPageService {
@@ -18,7 +19,7 @@ class ContactUsPageService {
     const { content: rawContent, sha } = await this.gitHubService.read(
       sessionData,
       {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
       }
     )
@@ -37,7 +38,7 @@ class ContactUsPageService {
     const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
-      fileName: CONTACT_US_FILE_NAME,
+      fileName: CONTACT_US_FILENAME,
       directoryName: CONTACT_US_DIRECTORY_NAME,
     })
     const {

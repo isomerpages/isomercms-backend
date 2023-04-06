@@ -1,7 +1,7 @@
-import _ from "lodash"
 import { ok, err, Result, ResultAsync, okAsync, errAsync } from "neverthrow"
 
 import UserSessionData from "@root/classes/UserSessionData"
+import { CONTACT_US_FILENAME, HOMEPAGE_FILENAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
@@ -134,40 +134,43 @@ export class PageService {
   // or within a sub-collection: a/sub/collection
   private parseCollectionPage = (
     pageName: string
-  ): ResultAsync<CollectionPageName | SubcollectionPageName, NotFoundError> =>
-    this.extractPathInfo(pageName)
-      .asyncAndThen(({ name, path }) =>
-        path.asyncAndThen<
-          CollectionPageName | SubcollectionPageName,
-          NotFoundError
-        >((rawPath) => {
-          // NOTE: Only 2 levels of nesting
-          if (rawPath.length > 2) {
-            return errAsync(new NotFoundError())
-          }
-          if (rawPath.length === 1) {
+  ): ResultAsync<
+    CollectionPageName | SubcollectionPageName,
+    EmptyStringError | NotFoundError
+  > =>
+    this.extractPathInfo(pageName).asyncAndThen(({ name, path }) =>
+      path
+        .mapErr(() => new NotFoundError())
+        .asyncAndThen((rawPath) => {
+          if (rawPath.length === 1 && !!rawPath[0]) {
             return okAsync({
               name: Brand.fromString(name),
               collection: rawPath[0],
               kind: "CollectionPage",
             })
           }
-          return okAsync({
-            name: Brand.fromString(name),
-            collection: rawPath[0],
-            subCollection: rawPath[1],
-            kind: "SubcollectionPage",
-          })
+          if (rawPath.length === 2 && !!rawPath[0] && !!rawPath[1]) {
+            return okAsync({
+              name: Brand.fromString(name),
+              collection: rawPath[0],
+              subcollection: rawPath[1],
+              kind: "SubcollectionPage",
+            })
+          }
+          return errAsync(
+            new NotFoundError(
+              `Error when parsing path: ${rawPath}, please ensure that the file exists!`
+            )
+          )
         })
-      )
-      .mapErr(() => new NotFoundError())
+    )
 
   private parseHomepage = (
     pageName: string
   ): Result<HomepageName, NotFoundError> =>
     this.extractPathInfo(pageName).andThen<HomepageName, NotFoundError>(
       ({ name, path }) => {
-        if (path.isErr() && name === "index.md") {
+        if (path.isErr() && name === HOMEPAGE_FILENAME) {
           return ok({ name: Brand.fromString(name), kind: "Homepage" })
         }
         return err(new NotFoundError())
@@ -184,7 +187,7 @@ export class PageService {
         if (
           path.isOk() &&
           path.value.pop() === "pages" &&
-          name === "contact-us.md"
+          name === CONTACT_US_FILENAME
         ) {
           return ok({ name: Brand.fromString(name), kind: "ContactUsPage" })
         }
@@ -343,7 +346,7 @@ export class PageService {
             .read(sessionData, {
               fileName: pageName.name,
               collectionName: pageName.collection.slice(1),
-              subcollectionName: pageName.subCollection,
+              subcollectionName: pageName.subcollection,
             })
             .then((subcollectionPage) => subcollectionPage as SubcollectionPage)
         ).map(withPermalink)

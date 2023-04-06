@@ -14,7 +14,7 @@ const {
 // Constants
 const FOOTER_PATH = "footer.yml"
 const NAVIGATION_PATH = "navigation.yml"
-const HOMEPAGE_INDEX_PATH = "index.md" // Empty string
+const { HOMEPAGE_NAME } = require("@root/constants")
 
 const retrieveSettingsFiles = async (
   accessToken,
@@ -42,7 +42,7 @@ const retrieveSettingsFiles = async (
 
   // Retrieve homepage only if flag is set to true
   if (shouldRetrieveHomepage) {
-    fileRetrievalObj.homepage = HomepageFile.read(HOMEPAGE_INDEX_PATH)
+    fileRetrievalObj.homepage = HomepageFile.read(HOMEPAGE_NAME)
   }
 
   const fileContentsArr = await Bluebird.map(
@@ -233,7 +233,7 @@ class Settings {
         const homepageContent = ["---\n", homepageFrontMatter, "---"].join("")
         const newHomepageContent = Base64.encode(homepageContent)
 
-        await HomepageFile.update(HOMEPAGE_INDEX_PATH, newHomepageContent, sha)
+        await HomepageFile.update(HOMEPAGE_NAME, newHomepageContent, sha)
       }
     }
 

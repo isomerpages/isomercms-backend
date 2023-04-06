@@ -52,7 +52,9 @@ export class FormsgRouter {
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const siteName = getField(responses, SITE_NAME_FIELD)
     const repoName = getField(responses, REPO_NAME_FIELD)
-    const ownerEmail = getField(responses, OWNER_NAME_FIELD)?.toLowerCase()
+    const ownerEmail = getField(responses, OWNER_NAME_FIELD)
+      ?.toLowerCase()
+      .trim()
 
     logger.info(
       `Create site form submission [${submissionId}] (repoName '${repoName}', siteName '${siteName}') requested by <${requesterEmail}>`

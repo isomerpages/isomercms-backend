@@ -137,7 +137,8 @@ describe("Review Requests Router", () => {
 
   describe("compareDiff", () => {
     beforeEach(() => {
-      // NOTE: Skip preconditions check for unmigrated site
+      // TODO (IS-58): Skip preconditions check for unmigrated site
+      // Remove this when sites are fully migrated over to email login
       mockCollaboratorsService.list.mockResolvedValueOnce([{}])
     })
     it("should return 200 with the list of changed files", async () => {
@@ -321,7 +322,8 @@ describe("Review Requests Router", () => {
 
   describe("listReviews", () => {
     beforeEach(() => {
-      // NOTE: Skip preconditions check for unmigrated site
+      // TODO (IS-58): Skip preconditions check for unmigrated site
+      // Remove this when sites are fully migrated over to email login
       mockCollaboratorsService.list.mockResolvedValueOnce([{}])
     })
     it("should return 200 with the list of reviews", async () => {
@@ -511,7 +513,8 @@ describe("Review Requests Router", () => {
 
   describe("getReviewRequest", () => {
     beforeEach(() => {
-      // NOTE: Skip preconditions check for unmigrated site
+      // TODO (IS-58): Skip preconditions check for unmigrated site
+      // Remove this when sites are fully migrated over to email login
       mockCollaboratorsService.list.mockResolvedValueOnce([{}])
     })
 
@@ -911,7 +914,8 @@ describe("Review Requests Router", () => {
 
   describe("getComments", () => {
     beforeEach(() => {
-      // NOTE: Skip preconditions check for unmigrated site
+      // TODO (IS-58): Skip preconditions check for unmigrated site
+      // Remove this when sites are fully migrated over to email login
       mockCollaboratorsService.list.mockResolvedValueOnce([{}])
     })
     it("should return 200 with the comments for a review request", async () => {

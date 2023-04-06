@@ -83,7 +83,7 @@
     "validator": "^13.6.0",
     "winston": "^3.3.3",
     "winston-cloudwatch": "^6.1.1",
-    "yaml": "^1.10.2"
+    "yaml": "^2.2.1"
   },
   "devDependencies": {
     "@octokit/types": "^6.35.0",

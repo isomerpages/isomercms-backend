@@ -1,6 +1,12 @@
 // NOTE: Types here are with reference to:
 // https://docs.github.com/en/rest/commits/commits#compare-two-commits
 
+export type GithubEditInfo = {
+  author: string
+  unixTime: number
+}
+export type Sha = string
+export type ShaMappings = Record<Sha, GithubEditInfo>
 export type FileChangeStatus =
   | "added"
   | "removed"

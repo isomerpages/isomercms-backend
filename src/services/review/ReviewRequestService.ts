@@ -47,6 +47,7 @@ import {
   Commit,
   fromGithubCommitMessage,
   RawFileChangeInfo,
+  ShaMappings,
 } from "@root/types/github"
 import { PathInfo, StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
@@ -138,13 +139,7 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink,
     files: RawFileChangeInfo[],
-    mappings: Record<
-      string,
-      {
-        author: string
-        unixTime: number
-      }
-    >
+    mappings: ShaMappings
   ): ResultAsync<WithEditMeta<EditedItemDto>, BaseEditedItemDto>[] => {
     // Step 1: Get the site name
     const { siteName } = sessionData
@@ -258,10 +253,8 @@ export default class ReviewRequestService {
       }
     })
 
-  computeShaMappings = async (
-    commits: Commit[]
-  ): Promise<Record<string, { author: string; unixTime: number }>> => {
-    const mappings: Record<string, { author: string; unixTime: number }> = {}
+  computeShaMappings = async (commits: Commit[]): Promise<ShaMappings> => {
+    const mappings: ShaMappings = {}
 
     // NOTE: commits from github are capped at 300.
     // This implies that there might possibly be some files

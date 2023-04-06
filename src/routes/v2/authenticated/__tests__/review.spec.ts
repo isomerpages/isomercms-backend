@@ -136,6 +136,10 @@ describe("Review Requests Router", () => {
   })
 
   describe("compareDiff", () => {
+    beforeEach(() => {
+      // NOTE: Skip preconditions check for unmigrated site
+      mockCollaboratorsService.list.mockResolvedValueOnce([{}])
+    })
     it("should return 200 with the list of changed files", async () => {
       // Arrange
       const mockFilesChanged = ["file1", "file2"]
@@ -144,7 +148,6 @@ describe("Review Requests Router", () => {
         mockFilesChanged
       )
       mockSitesService.getBySiteName.mockResolvedValueOnce(true)
-
       // Act
       const response = await request(app).get("/mockSite/review/compare")
 
@@ -317,6 +320,10 @@ describe("Review Requests Router", () => {
   })
 
   describe("listReviews", () => {
+    beforeEach(() => {
+      // NOTE: Skip preconditions check for unmigrated site
+      mockCollaboratorsService.list.mockResolvedValueOnce([{}])
+    })
     it("should return 200 with the list of reviews", async () => {
       // Arrange
       const mockReviews = ["review1", "review2"]
@@ -343,6 +350,7 @@ describe("Review Requests Router", () => {
       // Arrange
       mockSitesService.getBySiteName.mockResolvedValueOnce(null)
       mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
+      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce({})
 
       // Act
       const response = await request(app).get("/mockSite/review/summary")
@@ -502,6 +510,11 @@ describe("Review Requests Router", () => {
   })
 
   describe("getReviewRequest", () => {
+    beforeEach(() => {
+      // NOTE: Skip preconditions check for unmigrated site
+      mockCollaboratorsService.list.mockResolvedValueOnce([{}])
+    })
+
     it("should return 200 with the full review request", async () => {
       // Arrange
       const mockReviewRequest = "review request"
@@ -897,6 +910,10 @@ describe("Review Requests Router", () => {
   })
 
   describe("getComments", () => {
+    beforeEach(() => {
+      // NOTE: Skip preconditions check for unmigrated site
+      mockCollaboratorsService.list.mockResolvedValueOnce([{}])
+    })
     it("should return 200 with the comments for a review request", async () => {
       // Arrange
       const mockComments = ["comment1", "comment2"]

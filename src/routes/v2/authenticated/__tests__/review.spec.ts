@@ -151,7 +151,8 @@ describe("Review Requests Router", () => {
       mockReviewRequestService.compareDiff.mockResolvedValueOnce(
         mockFilesChanged
       )
-      mockSitesService.getBySiteName.mockResolvedValueOnce(true)
+      mockSitesService.getBySiteName.mockResolvedValueOnce(ok(true))
+
       // Act
       const response = await request(app).get("/mockSite/review/compare")
 
@@ -165,7 +166,7 @@ describe("Review Requests Router", () => {
     it("should return 404 if user is not a site member", async () => {
       // Arrange
       mockIdentityUsersService.getSiteMember.mockResolvedValueOnce(null)
-      mockSitesService.getBySiteName.mockResolvedValueOnce(true)
+      mockSitesService.getBySiteName.mockResolvedValueOnce(ok(true))
 
       // Act
       const response = await request(app).get("/mockSite/review/compare")
@@ -531,7 +532,6 @@ describe("Review Requests Router", () => {
     it("should return 200 with the full review request", async () => {
       // Arrange
       const mockReviewRequest = "review request"
-
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockReviewRequestService.getFullReviewRequest.mockReturnValueOnce(
         okAsync(mockReviewRequest)
@@ -552,10 +552,10 @@ describe("Review Requests Router", () => {
 
     it("should return 404 if the site does not exist", async () => {
       // Arrange
-      mockSitesService.getBySiteName.mockResolvedValueOnce(null)
       mockSitesService.getBySiteName.mockReturnValueOnce(
         errAsync(new MissingSiteError("site"))
       )
+      mockGithubService.getRepoInfo.mockRejectedValueOnce(null)
 
       // Act
       const response = await request(app).get(`/mockSite/review/12345`)

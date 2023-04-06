@@ -77,8 +77,10 @@ export class FormsgRouter {
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return res.sendStatus(200)
       }
-      const foundRequester = await this.usersService.findByEmail(requesterEmail)
-      if (!foundRequester) {
+      const foundIsomerRequester = await this.usersService.findByEmail(
+        requesterEmail
+      )
+      if (!foundIsomerRequester) {
         const err = `Form submitter ${requesterEmail} is not an Isomer user. Register an account for this user and try again.`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return res.sendStatus(200)
@@ -87,7 +89,7 @@ export class FormsgRouter {
 
       // 3. Use service to create site
       const { deployment } = await this.infraService.createSite(
-        foundRequester,
+        foundIsomerRequester,
         foundOwner,
         siteName,
         repoName

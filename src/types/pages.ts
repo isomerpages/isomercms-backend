@@ -87,8 +87,21 @@ export type ProdPermalink = Brand<string, "prod">
 // also includes the respective base url in front.
 export type FullPermalink = StagingPermalink | ProdPermalink
 
-// NOTE: We brand this to prevent ad-hoc creation
-// so that it has to come from the method
+/**
+ * NOTE: We brand this to prevent ad-hoc creation
+ * so that it has to come from the method.
+ *
+ * The `path` represents the path prefix of a given page
+ * and the `name` is the page name itself.
+ *
+ * This means that, for example, our homepage would be
+ * `path: Err([])` as there is no actual path to speak of
+ * and the name is `name: index.md`
+ *
+ * For another page such as `contact-us`,
+ * the path would then be `/pages` and the
+ * name would be `contact-us.md`
+ */
 export type PathInfo = Brand<
   {
     name: string

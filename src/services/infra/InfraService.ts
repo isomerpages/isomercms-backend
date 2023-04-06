@@ -1,6 +1,6 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
-import { Err, err, Ok, ok } from "neverthrow"
+import { Err, err, errAsync, Ok, ok, okAsync, Result } from "neverthrow"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
@@ -107,7 +107,7 @@ export default class InfraService {
       logger.info(`Successfully created site on Isomer, site ID: ${site.id}`)
 
       return { site, repo, deployment }
-    } catch (err) {
+    } catch (error) {
       if (site !== undefined) {
         const updateFailSiteInitParams = {
           id: site.id,
@@ -115,8 +115,8 @@ export default class InfraService {
         }
         await this.sitesService.update(updateFailSiteInitParams)
       }
-      logger.error(`Failed to created '${repoName}' site on Isomer: ${err}`)
-      throw err
+      logger.error(`Failed to created '${repoName}' site on Isomer: ${error}`)
+      throw error
     }
   }
 
@@ -149,13 +149,11 @@ export default class InfraService {
     // type checking
     const sourceUrl = this.removeTrailingDot(recordsInfo[0])
 
-    // for the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net'.
-    // in this case, sourceUrl will be an empty string, and while this is not a valid URL,
-    // this is ok, as it is just an interim representation from Amplify.
-    const isSourceUrlValid = !sourceUrl || this.isValidUrl(sourceUrl)
-    if (!isSourceUrlValid) {
-      return err(`Source url: "${sourceUrl}" was not a valid url`)
-    }
+    // For the root domain record, Amplify records this as : ' CNAME gibberish.cloudfront.net',
+    // sourceUrl is an empty string in this case.
+    // For the www record, Amplify records this as : 'www CNAME gibberish.cloudfront.net',
+    // sourceUrl is 'www' in this case.
+    // In both cases, the sourceUrl is not a valid url, so we skip the url validation.
 
     const targetUrl = this.removeTrailingDot(recordsInfo[2])
     if (!this.isValidUrl(targetUrl)) {
@@ -185,7 +183,7 @@ export default class InfraService {
     repoName: string,
     primaryDomain: string,
     subDomainSettings: SubDomainSettings
-  ): Promise<Err<never, unknown> | Ok<SiteLaunchCreateParams, never>> => {
+  ): Promise<Result<SiteLaunchCreateParams, AmplifyError>> => {
     // call amplify to trigger site launch process
     let newLaunchParams: SiteLaunchCreateParams
     try {
@@ -197,7 +195,7 @@ export default class InfraService {
       )
 
       if (redirectionDomainResult.isErr()) {
-        return err(redirectionDomainResult.error)
+        return errAsync(redirectionDomainResult.error)
       }
 
       const { appId, siteId } = redirectionDomainResult.value
@@ -230,7 +228,7 @@ export default class InfraService {
         dnsInfo.domainAssociation?.certificateVerificationDNSRecord
       )
       if (certificationRecord.isErr()) {
-        return err(
+        return errAsync(
           new AmplifyError(
             `Missing certificate, error while parsing ${JSON.stringify(dnsInfo)}
             ${certificationRecord.error}`,
@@ -247,7 +245,7 @@ export default class InfraService {
 
       const subDomainList = dnsInfo.domainAssociation?.subDomains
       if (!subDomainList || !subDomainList[0].dnsRecord) {
-        return err(
+        return errAsync(
           new AmplifyError(
             "Missing subdomain subdomain list not created yet",
             repoName,
@@ -259,9 +257,9 @@ export default class InfraService {
       const primaryDomainInfo = this.parseDNSRecords(subDomainList[0].dnsRecord)
 
       if (primaryDomainInfo.isErr()) {
-        return err(
+        return errAsync(
           new AmplifyError(
-            `Missing primary domain info${primaryDomainInfo.error}`,
+            `Missing primary domain info ${primaryDomainInfo.error}`,
             repoName,
             appId
           )
@@ -286,7 +284,7 @@ export default class InfraService {
 
       /**
        * Amplify only stores the prefix.
-       * ie: if I wanted to have a www.blah.gov.sg -> giberish.cloudfront.net,
+       * ie: if I wanted to have a www.blah.gov.sg -> gibberish.cloudfront.net,
        * amplify will store the prefix as "www". To get the entire redirectionDomainSource,
        * I would have to add the prefix ("www") with the primary domain (blah.gov.sg)
        */
@@ -302,6 +300,7 @@ export default class InfraService {
 
       if (redirectionDomainList?.length) {
         newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
+        newLaunchParams.redirectionDomainTarget = REDIRECTION_SERVER_IP
       }
 
       // Create launches records table
@@ -322,33 +321,25 @@ export default class InfraService {
       }
 
       if (newLaunchParams.redirectionDomainSource) {
-        message.redirectionDomain = [
-          {
-            source: newLaunchParams.redirectionDomainSource,
-            target: primaryDomainTarget,
-            type: RedirectionTypes.A,
-          },
-        ]
+        const redirectionDomainObject = {
+          source: newLaunchParams.primaryDomainSource,
+          target: REDIRECTION_SERVER_IP,
+          type: RedirectionTypes.A,
+        }
+        message.redirectionDomain = [redirectionDomainObject]
       }
 
       this.queueService.sendMessage(message)
 
-      return ok(newLaunchParams)
+      return okAsync(newLaunchParams)
     } catch (error) {
-      logger.error(`Failed to create '${repoName}' site on Isomer: ${error}`)
-      // requester email is guaranteed to exist as currently these are Isomer users
-      this.sendRetryToIsomerAdmin(requestor.email!, repoName)
-
-      throw error
+      return errAsync(
+        new AmplifyError(
+          `Failed to create '${repoName}' site on Isomer: ${error}`,
+          repoName
+        )
+      )
     }
-  }
-
-  sendRetryToIsomerAdmin = async (email: string, repoName: string) => {
-    const subject = `[Isomer] Failure to create domain association for ${repoName}`
-    const body = `<p>Unable to trigger create domain association for ${repoName}.</P
-    <p>If domain association was already created, please log into the amplify console and trigger a retry. </p>
-    <p>Else, resubmit the form and try again.</p>`
-    await mailer.sendMail(email, subject, body)
   }
 
   siteUpdate = async () => {

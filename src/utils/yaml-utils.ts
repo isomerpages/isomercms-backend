@@ -6,7 +6,12 @@ import { sanitizer } from "@services/utilServices/Sanitizer"
 // else in the codebase.
 export const sanitizedYamlParse = (
   unparsedContent: string
-): Record<string, unknown> => yaml.parse(sanitizer.sanitize(unparsedContent))
+): Record<string, unknown> =>
+  yaml.parse(unparsedContent, (key, value) =>
+    typeof value === "string" ? sanitizer.sanitize(value) : value
+  )
 
 export const sanitizedYamlStringify = (prestringifiedContent: object): string =>
-  sanitizer.sanitize(yaml.stringify(prestringifiedContent))
+  yaml.stringify(prestringifiedContent, (key, value) =>
+    typeof value === "string" ? sanitizer.sanitize(value) : value
+  )

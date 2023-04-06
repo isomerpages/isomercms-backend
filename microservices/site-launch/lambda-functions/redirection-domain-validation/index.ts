@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */ // todo fix default export
 
+import { RequestError } from "@octokit/request-error"
 import { Octokit } from "@octokit/rest"
 
 import logger from "../../shared/logger"
@@ -11,8 +12,10 @@ export const redirectionDomainValidation = async (
     "redirectionDomain" | "primaryDomainTarget" | "primaryDomainSource"
   >
 ) => {
-  const DEFAULT_BRANCH = "master"
-
+  // we push to staging + do a manual PR to master since we want CICD to run and pass in staging
+  // rather than having directly committing to master.
+  const DEFAULT_BRANCH =
+    process.env.NODE_ENV === "prod" ? "staging" : "test/redirectionLambdaTest"
   // Validation check
   const { primaryDomainSource, redirectionDomain } = event
 
@@ -46,7 +49,7 @@ export const redirectionDomainValidation = async (
 
   // see if domain commit in github first. If exists, don't create commit.
   try {
-    let response = await octokit.request(
+    const res = await octokit.request(
       `GET /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
       {
         owner: "isomerpages",
@@ -55,34 +58,34 @@ export const redirectionDomainValidation = async (
         ref: DEFAULT_BRANCH,
       }
     )
-    if (response.status === 200) return // file already exist
-
-    if (response.status !== 404) {
-      const error = `Unexpected error occurred for redirection for ${primaryDomainSource} : 
-      ${JSON.stringify(response)}`
-      throw new Error(error)
+    if (res.status === 200) {
+      // we return here because the file already exists
+      logger.info(`The file ${primaryDomainSource}.conf already exists`)
+      return
     }
-
-    response = await octokit.request(
-      `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
-      {
-        owner: "isomerpages",
-        repo: "isomer-redirection",
-        path: "letsencrypt/.",
-        message: `Create ${primaryDomainSource}.conf`,
-        committer: {
-          name: "isomeradmin",
-          email: "isomeradmin@open.gov.sg",
-        },
-        content: Buffer.from(template, "binary").toString("base64"),
-        branch: DEFAULT_BRANCH,
-      }
-    )
-    logger.info(
-      `status of redirection commit for ${primaryDomainSource}:\n ${response}`
-    )
-  } catch (err) {
-    logger.error(err)
-    throw err
+  } catch (error: unknown) {
+    const expectedNotFoundError =
+      error instanceof RequestError && error.status && error.status === 404
+    if (!expectedNotFoundError) {
+      throw Error(
+        `Unknown error when checking for file existence of ${primaryDomainSource}.conf: ${error}`
+      )
+    }
   }
+  await octokit.request(
+    `PUT /repos/isomerpages/isomer-redirection/contents/letsencrypt/${primaryDomainSource}.conf`,
+    {
+      owner: "isomerpages",
+      repo: "isomer-redirection",
+      path: "letsencrypt/.",
+      message: `Create ${primaryDomainSource}.conf`,
+      committer: {
+        name: "isomeradmin",
+        email: "isomeradmin@open.gov.sg",
+      },
+      content: Buffer.from(template, "binary").toString("base64"),
+      branch: DEFAULT_BRANCH,
+    }
+  )
+  logger.info(`Redirection commit for ${primaryDomainSource} is successful`)
 }

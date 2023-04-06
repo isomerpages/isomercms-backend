@@ -14,6 +14,7 @@
   "dependencies": {
     "@aws-sdk/client-amplify": "^3.290.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.276.0",
+    "@octokit/request-error": "^3.0.3",
     "@octokit/rest": "^19.0.5",
     "aws-sdk": "^2.1241.0",
     "octokit": "^2.0.10",

@@ -14,6 +14,7 @@ provider:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     NODE_ENV: ${env:NODE_ENV}
+    SYSTEM_GITHUB_TOKEN: ${env:SYSTEM_GITHUB_TOKEN}
 
 functions:
   generalDomainValidation:

@@ -11,6 +11,7 @@ import {
 } from "sequelize-typescript"
 
 import { Site } from "@database/models/Site"
+import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 
 @Table({ tableName: "deployments", paranoid: true })
 export class Deployment extends Model {
@@ -26,13 +27,13 @@ export class Deployment extends Model {
     allowNull: false,
     type: DataType.TEXT,
   })
-  productionUrl!: string
+  productionUrl!: ProdPermalink
 
   @Column({
     allowNull: false,
     type: DataType.TEXT,
   })
-  stagingUrl!: string
+  stagingUrl!: StagingPermalink
 
   @CreatedAt
   createdAt!: Date

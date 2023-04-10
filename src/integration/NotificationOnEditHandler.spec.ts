@@ -23,6 +23,17 @@ import {
   mockIsomerUserId,
   mockSiteName,
 } from "@fixtures/sessionData"
+import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
+import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
+import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
+import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
+import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
+import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
+import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
+import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -41,13 +52,62 @@ const mockGithubService = {
   getComments: jest.fn(),
 }
 const usersService = getUsersService(sequelize)
+const footerYmlService = new FooterYmlService({
+  gitHubService: mockGithubService,
+})
+const collectionYmlService = new CollectionYmlService({
+  gitHubService: mockGithubService,
+})
+const baseDirectoryService = new BaseDirectoryService({
+  gitHubService: mockGithubService,
+})
+
+const contactUsService = new ContactUsPageService({
+  gitHubService: mockGithubService,
+  footerYmlService,
+})
+const collectionPageService = new CollectionPageService({
+  gitHubService: mockGithubService,
+  collectionYmlService,
+})
+const subCollectionPageService = new SubcollectionPageService({
+  gitHubService: mockGithubService,
+  collectionYmlService,
+})
+const homepageService = new HomepagePageService({
+  gitHubService: mockGithubService,
+})
+const resourcePageService = new ResourcePageService({
+  gitHubService: mockGithubService,
+})
+const unlinkedPageService = new UnlinkedPageService({
+  gitHubService: mockGithubService,
+})
+const configYmlService = new ConfigYmlService({
+  gitHubService: mockGithubService,
+})
+const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
+  baseDirectoryService,
+  configYmlService,
+  gitHubService: mockGithubService,
+})
+const pageService = new PageService({
+  collectionPageService,
+  contactUsService,
+  subCollectionPageService,
+  homepageService,
+  resourcePageService,
+  unlinkedPageService,
+  resourceRoomDirectoryService,
+})
 const reviewRequestService = new ReviewRequestService(
   (mockGithubService as unknown) as typeof ReviewApi,
   User,
   ReviewRequest,
   Reviewer,
   ReviewMeta,
-  ReviewRequestView
+  ReviewRequestView,
+  pageService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

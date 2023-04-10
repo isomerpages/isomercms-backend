@@ -8,6 +8,7 @@ import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { RequestHandler } from "@root/types"
 
+// eslint-disable-next-line import/prefer-default-export
 export class NotificationOnEditHandler {
   private readonly reviewRequestService: ReviewRequestService
 
@@ -53,10 +54,10 @@ export class NotificationOnEditHandler {
     const { siteName, isomerUserId: userId, email } = userWithSiteSessionData
     const site = await this.sitesService.getBySiteName(siteName)
     const users = await this.collaboratorsService.list(siteName, userId)
-    if (!site) throw new Error("Site should always exist")
+    if (site.isErr()) throw new Error("Site should always exist")
     const reviewRequests = await this.reviewRequestService.listReviewRequest(
       userWithSiteSessionData,
-      site
+      site.value
     )
     if (reviewRequests.length === 0) return
     // For now, we only have 1 active review request

@@ -6,6 +6,7 @@ import { ReviewsRouter as _ReviewsRouter } from "@routes/v2/authenticated/review
 import { SitesRouter as _SitesRouter } from "@routes/v2/authenticated/sites"
 
 import {
+  Deployment,
   IsomerAdmin,
   Notification,
   Repo,
@@ -35,6 +36,8 @@ import {
   MOCK_GITHUB_PULL_REQUEST_NUMBER,
   MOCK_GITHUB_RAWCOMMENT_ONE,
   MOCK_GITHUB_RAWCOMMENT_TWO,
+  MOCK_GITHUB_FRONTMATTER,
+  MOCK_PAGE_PERMALINK,
 } from "@fixtures/github"
 import { MOCK_GITHUB_DATE_ONE } from "@fixtures/identity"
 import {
@@ -57,6 +60,7 @@ import {
   MOCK_REPO_NAME_ONE,
   MOCK_REPO_NAME_TWO,
   MOCK_SITE_ID_TWO,
+  MOCK_DEPLOYMENT_DBENTRY_ONE,
 } from "@fixtures/sites"
 import {
   MOCK_USER_DBENTRY_ONE,
@@ -69,6 +73,17 @@ import {
   MOCK_USER_ID_TWO,
 } from "@fixtures/users"
 import { ReviewRequestStatus } from "@root/constants"
+import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
+import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
+import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
+import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
+import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
+import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
+import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
+import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { ReviewRequestDto } from "@root/types/dto/review"
 import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
@@ -84,13 +99,47 @@ const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
+const footerYmlService = new FooterYmlService({ gitHubService })
+const collectionYmlService = new CollectionYmlService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+
+const contactUsService = new ContactUsPageService({
+  gitHubService,
+  footerYmlService,
+})
+const collectionPageService = new CollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const subCollectionPageService = new SubcollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const homepageService = new HomepagePageService({ gitHubService })
+const resourcePageService = new ResourcePageService({ gitHubService })
+const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
+  baseDirectoryService,
+  configYmlService,
+  gitHubService,
+})
+const pageService = new PageService({
+  collectionPageService,
+  contactUsService,
+  subCollectionPageService,
+  homepageService,
+  resourcePageService,
+  unlinkedPageService,
+  resourceRoomDirectoryService,
+})
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as typeof ReviewApi,
   User,
   ReviewRequest,
   Reviewer,
   ReviewMeta,
-  ReviewRequestView
+  ReviewRequestView,
+  pageService
 )
 const sitesService = new SitesService({
   siteRepository: Site,
@@ -145,11 +194,13 @@ describe("Review Requests Integration Tests", () => {
     await SiteMember.sync({ force: true })
     await Notification.sync({ force: true })
     await ReviewMeta.sync({ force: true })
+    await Deployment.sync({ force: true })
 
     await User.create(MOCK_USER_DBENTRY_ONE)
     await User.create(MOCK_USER_DBENTRY_TWO)
     await User.create(MOCK_USER_DBENTRY_THREE)
     await Site.create(MOCK_SITE_DBENTRY_ONE)
+    await Deployment.create(MOCK_DEPLOYMENT_DBENTRY_ONE)
     await Repo.create(MOCK_REPO_DBENTRY_ONE)
     await SiteMember.create(MOCK_SITEMEMBER_DBENTRY_ONE)
     await SiteMember.create(MOCK_SITEMEMBER_DBENTRY_TWO)
@@ -191,6 +242,9 @@ describe("Review Requests Integration Tests", () => {
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_ONE
       )
+      mockAxios.get.mockResolvedValue({
+        data: { content: MOCK_GITHUB_FRONTMATTER },
+      })
       mockGenericAxios.get.mockResolvedValueOnce({
         data: {
           files: [
@@ -210,7 +264,7 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
-            url: "www.google.com",
+            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -218,7 +272,7 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
             path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
-            url: "www.google.com",
+            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -695,7 +749,7 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
-            url: "www.google.com",
+            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -703,7 +757,7 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
             path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
-            url: "www.google.com",
+            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },

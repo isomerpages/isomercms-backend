@@ -1,4 +1,6 @@
+import { ReturnValue } from "aws-sdk/clients/dynamodb"
 import _ from "lodash"
+import { err, ok, okAsync } from "neverthrow"
 import { Attributes, ModelStatic } from "sequelize"
 
 import {
@@ -35,6 +37,7 @@ import {
   MOCK_IDENTITY_EMAIL_THREE,
   MOCK_IDENTITY_EMAIL_TWO,
 } from "@root/fixtures/identity"
+import { MOCK_STAGING_URL_GITHUB } from "@root/fixtures/repoInfo"
 import {
   MOCK_PULL_REQUEST_COMMIT_ONE,
   MOCK_PULL_REQUEST_COMMIT_TWO,
@@ -47,11 +50,20 @@ import {
   MOCK_REVIEW_REQUEST_VIEW_ONE,
 } from "@root/fixtures/review"
 import { mockUserWithSiteSessionData } from "@root/fixtures/sessionData"
+import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
 import { EditedItemDto, GithubCommentData } from "@root/types/dto/review"
 import { Commit } from "@root/types/github"
 import * as ReviewApi from "@services/db/review"
 import _ReviewRequestService from "@services/review/ReviewRequestService"
 
+const MockPageService: {
+  [K in keyof PageService]: ReturnType<typeof jest.fn>
+} = {
+  extractPathInfo: jest.fn(),
+  extractResourceRoomName: jest.fn(),
+  parsePageName: jest.fn(),
+  retrieveStagingPermalink: jest.fn(),
+}
 const MockReviewApi = {
   approvePullRequest: jest.fn(),
   closeReviewRequest: jest.fn(),
@@ -102,13 +114,13 @@ const ReviewRequestService = new _ReviewRequestService(
   (MockReviewRequestRepository as unknown) as ModelStatic<ReviewRequest>,
   (MockReviewersRepository as unknown) as ModelStatic<Reviewer>,
   (MockReviewMetaRepository as unknown) as ModelStatic<ReviewMeta>,
-  (MockReviewRequestViewRepository as unknown) as ModelStatic<ReviewRequestView>
+  (MockReviewRequestViewRepository as unknown) as ModelStatic<ReviewRequestView>,
+  (MockPageService as unknown) as PageService
 )
 
 const SpyReviewRequestService = {
   computeCommentData: jest.spyOn(ReviewRequestService, "computeCommentData"),
   computeFileType: jest.spyOn(ReviewRequestService, "computeFileType"),
-  computeFileUrl: jest.spyOn(ReviewRequestService, "computeFileUrl"),
   computeShaMappings: jest.spyOn(ReviewRequestService, "computeShaMappings"),
   getComments: jest.spyOn(ReviewRequestService, "getComments"),
   getReviewRequest: jest.spyOn(ReviewRequestService, "getReviewRequest"),
@@ -147,17 +159,22 @@ describe("ReviewRequestService", () => {
         },
       ]
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
+      MockPageService.parsePageName.mockReturnValue(okAsync("mock page name"))
+      MockPageService.retrieveStagingPermalink.mockReturnValue(
+        okAsync("www.google.com")
+      )
 
       // Act
       const actual = await ReviewRequestService.compareDiff(
-        mockUserWithSiteSessionData
+        mockUserWithSiteSessionData,
+        MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
       expect(actual).toEqual(expected)
       expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
       expect(SpyReviewRequestService.computeFileType).toHaveBeenCalled()
-      expect(SpyReviewRequestService.computeFileUrl).toHaveBeenCalled()
+      expect(MockPageService.retrieveStagingPermalink).toHaveBeenCalled()
     })
 
     it("should return an empty array if there are no file changes or commits", async () => {
@@ -171,14 +188,15 @@ describe("ReviewRequestService", () => {
 
       // Act
       const actual = await ReviewRequestService.compareDiff(
-        mockUserWithSiteSessionData
+        mockUserWithSiteSessionData,
+        MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
       expect(actual).toEqual(expected)
       expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
       expect(SpyReviewRequestService.computeFileType).not.toHaveBeenCalled()
-      expect(SpyReviewRequestService.computeFileUrl).not.toHaveBeenCalled()
+      expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
     })
 
     it("should return an empty array if there are no file changes only", async () => {
@@ -192,14 +210,15 @@ describe("ReviewRequestService", () => {
 
       // Act
       const actual = await ReviewRequestService.compareDiff(
-        mockUserWithSiteSessionData
+        mockUserWithSiteSessionData,
+        MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
       expect(actual).toEqual(expected)
       expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
       expect(SpyReviewRequestService.computeFileType).not.toHaveBeenCalled()
-      expect(SpyReviewRequestService.computeFileUrl).not.toHaveBeenCalled()
+      expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
     })
   })
 
@@ -211,20 +230,6 @@ describe("ReviewRequestService", () => {
 
       // Act
       const actual = ReviewRequestService.computeFileType("filename")
-
-      // Assert
-      expect(actual).toEqual(expected)
-    })
-  })
-
-  describe("computeFileUrl", () => {
-    // TODO
-    it("should return the correct file URL", () => {
-      // Arrange
-      const expected = "www.google.com"
-
-      // Act
-      const actual = ReviewRequestService.computeFileUrl("filename", "siteName")
 
       // Assert
       expect(actual).toEqual(expected)
@@ -896,15 +901,13 @@ describe("ReviewRequestService", () => {
       )
 
       // Assert
-      expect(actual).toEqual(mockMergedReviewRequest)
+      expect(actual).toEqual(ok(mockMergedReviewRequest))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
     })
 
     it("should return an error if the review request is not found", async () => {
       // Arrange
-      MockReviewRequestRepository.findOne.mockResolvedValueOnce(
-        new RequestNotFoundError()
-      )
+      MockReviewRequestRepository.findOne.mockResolvedValueOnce(null)
 
       // Act
       const actual = await ReviewRequestService.getLatestMergedReviewRequest(
@@ -912,7 +915,7 @@ describe("ReviewRequestService", () => {
       )
 
       // Assert
-      expect(actual).toBeInstanceOf(RequestNotFoundError)
+      expect(actual).toEqual(err(new RequestNotFoundError()))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
     })
   })
@@ -945,11 +948,12 @@ describe("ReviewRequestService", () => {
       const actual = await ReviewRequestService.getFullReviewRequest(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
-        MOCK_REVIEW_REQUEST_ONE.id
+        MOCK_REVIEW_REQUEST_ONE.id,
+        MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
-      expect(actual).toEqual(expected)
+      expect(actual).toEqual(ok(expected))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalled()
       expect(MockReviewApi.getCommitDiff).toHaveBeenCalled()
@@ -963,11 +967,12 @@ describe("ReviewRequestService", () => {
       const actual = await ReviewRequestService.getFullReviewRequest(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
-        MOCK_REVIEW_REQUEST_ONE.id
+        MOCK_REVIEW_REQUEST_ONE.id,
+        MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
-      expect(actual).toBeInstanceOf(RequestNotFoundError)
+      expect(actual).toEqual(err(new RequestNotFoundError()))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).not.toHaveBeenCalled()
       expect(MockReviewApi.getCommitDiff).not.toHaveBeenCalled()

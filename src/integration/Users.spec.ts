@@ -21,7 +21,6 @@ const mockValidEmail = "open@up.gov.sg"
 const mockInvalidEmail = "stay@home.sg"
 const mockUnwhitelistedEmail = "blacklisted@sad.sg"
 const mockWhitelistedDomain = ".gov.sg"
-const mockGithubId = "i m a git"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
 const maxNumOfOtpAttempts = config.get("auth.maxNumOtpAttempts")

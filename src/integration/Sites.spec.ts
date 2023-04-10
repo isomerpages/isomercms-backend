@@ -1,8 +1,10 @@
 import express from "express"
+import StatsDClient from "hot-shots"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
 import {
+  AccessToken,
   IsomerAdmin,
   Repo,
   Reviewer,
@@ -35,6 +37,7 @@ import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/Co
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
+import { StatsService } from "@root/services/infra/StatsService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -118,7 +121,18 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   collaboratorsService,
 })
 
-const SitesRouter = new _SitesRouter({ sitesService, authorizationMiddleware })
+const statsService = new StatsService(
+  new StatsDClient(),
+  User,
+  AccessToken,
+  Site
+)
+
+const SitesRouter = new _SitesRouter({
+  sitesService,
+  authorizationMiddleware,
+  statsService,
+})
 const sitesSubrouter = SitesRouter.getRouter()
 
 // Set up express with defaults and use the router under test

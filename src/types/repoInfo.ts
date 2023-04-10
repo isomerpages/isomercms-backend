@@ -1,3 +1,5 @@
+import { Brand } from "./util"
+
 export type GitHubRepositoryData = {
   name: string
   private: boolean
@@ -20,4 +22,4 @@ export type RepositoryData = {
 }
 
 type SiteUrlTypes = "staging" | "prod"
-export type SiteUrls = { [key in SiteUrlTypes]: string }
+export type SiteUrls = Partial<{ [key in SiteUrlTypes]: Brand<string, key> }>

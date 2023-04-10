@@ -1,3 +1,4 @@
+import { err, errAsync, Ok, ok, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -36,6 +37,7 @@ import {
   mockSessionDataEmailUserWithSite,
 } from "@fixtures/sessionData"
 import mockAxios from "@mocks/axios"
+import MissingSiteError from "@root/errors/MissingSiteError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
@@ -125,14 +127,11 @@ describe("SitesService", () => {
   describe("insertUrlsFromConfigYml", () => {
     it("should insert URLs if both are not already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_CONFIGYML,
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      })
+
       const configYmlResponse = {
         content: {
           staging: MOCK_STAGING_URL_CONFIGYML,
@@ -144,7 +143,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.insertUrlsFromConfigYml(
-        initial,
+        {},
         mockSessionDataEmailUserWithSite
       )
 
@@ -155,12 +154,11 @@ describe("SitesService", () => {
 
     it("should only insert staging URL if it is not already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_CONFIGYML,
         prod: MOCK_PRODUCTION_URL_DB,
-      }
+      })
       const initial: SiteUrls = {
-        staging: "",
         prod: MOCK_PRODUCTION_URL_DB,
       }
       const configYmlResponse = {
@@ -185,13 +183,12 @@ describe("SitesService", () => {
 
     it("should only insert production URL if it is not already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_DB,
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
-      }
+      })
       const initial: SiteUrls = {
         staging: MOCK_STAGING_URL_DB,
-        prod: "",
       }
       const configYmlResponse = {
         content: {
@@ -215,10 +212,10 @@ describe("SitesService", () => {
 
     it("should not insert URLs if both are already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_DB,
         prod: MOCK_PRODUCTION_URL_DB,
-      }
+      })
       const initial: SiteUrls = {
         staging: MOCK_STAGING_URL_DB,
         prod: MOCK_PRODUCTION_URL_DB,
@@ -237,14 +234,10 @@ describe("SitesService", () => {
 
     it("should not insert staging URL if it does not exist in config.yml", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
+      const expected = ok({
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      })
+
       const configYmlResponse = {
         content: {
           prod: MOCK_PRODUCTION_URL_CONFIGYML,
@@ -255,7 +248,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.insertUrlsFromConfigYml(
-        initial,
+        {},
         mockSessionDataEmailUserWithSite
       )
 
@@ -266,14 +259,9 @@ describe("SitesService", () => {
 
     it("should not insert production URL if it does not exist in config.yml", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_CONFIGYML,
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      })
       const configYmlResponse = {
         content: {
           staging: MOCK_STAGING_URL_CONFIGYML,
@@ -284,7 +272,7 @@ describe("SitesService", () => {
 
       // Act
       const actual = await SitesService.insertUrlsFromConfigYml(
-        initial,
+        {},
         mockSessionDataEmailUserWithSite
       )
 
@@ -295,14 +283,8 @@ describe("SitesService", () => {
 
     it("should not insert URLs if config.yml does not contain both staging and production URLs", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const expected = ok({})
+      const initial: SiteUrls = {}
       const configYmlResponse = {
         content: {},
         sha: "abc",
@@ -324,14 +306,11 @@ describe("SitesService", () => {
   describe("insertUrlsFromGitHubDescription", () => {
     it("should insert URLs if both are not already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_GITHUB,
         prod: MOCK_PRODUCTION_URL_GITHUB,
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      })
+      const initial: SiteUrls = {}
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
 
       // Act
@@ -347,12 +326,11 @@ describe("SitesService", () => {
 
     it("should only insert staging URL if it is not already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_GITHUB,
         prod: MOCK_PRODUCTION_URL_DB,
-      }
+      })
       const initial: SiteUrls = {
-        staging: "",
         prod: MOCK_PRODUCTION_URL_DB,
       }
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
@@ -370,13 +348,12 @@ describe("SitesService", () => {
 
     it("should only insert production URL if it is not already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_DB,
         prod: MOCK_PRODUCTION_URL_GITHUB,
-      }
+      })
       const initial: SiteUrls = {
         staging: MOCK_STAGING_URL_DB,
-        prod: "",
       }
       MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
 
@@ -393,10 +370,10 @@ describe("SitesService", () => {
 
     it("should not insert URLs if both are already present", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_DB,
         prod: MOCK_PRODUCTION_URL_DB,
-      }
+      })
       const initial: SiteUrls = {
         staging: MOCK_STAGING_URL_DB,
         prod: MOCK_PRODUCTION_URL_DB,
@@ -415,14 +392,10 @@ describe("SitesService", () => {
 
     it("should not insert staging URL if it does not exist in the description", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
+      const expected = ok({
         prod: MOCK_PRODUCTION_URL_CONFIGYML,
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      })
+      const initial: SiteUrls = {}
       const repoInfoWithoutStagingUrl = {
         description: `Production: ${MOCK_PRODUCTION_URL_CONFIGYML}`,
       }
@@ -443,14 +416,10 @@ describe("SitesService", () => {
 
     it("should not insert production URL if it does not exist in the description", async () => {
       // Arrange
-      const expected: SiteUrls = {
+      const expected = ok({
         staging: MOCK_STAGING_URL_CONFIGYML,
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      })
+      const initial: SiteUrls = {}
       const repoInfoWithoutProductionUrl = {
         description: `Staging: ${MOCK_STAGING_URL_CONFIGYML}`,
       }
@@ -471,14 +440,8 @@ describe("SitesService", () => {
 
     it("should not insert URLs if description is empty", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const expected = ok({})
+      const initial: SiteUrls = {}
       const repoInfoWithoutDescription = {
         description: "",
       }
@@ -499,14 +462,8 @@ describe("SitesService", () => {
 
     it("should not insert URLs if description is some gibberish", async () => {
       // Arrange
-      const expected: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
-      const initial: SiteUrls = {
-        staging: "",
-        prod: "",
-      }
+      const expected = ok({})
+      const initial: SiteUrls = {}
       const repoInfoWithGibberishDescription = {
         description: "abcdefghijklmnopqrstuvwxyz-staging and-prod",
       }
@@ -529,14 +486,14 @@ describe("SitesService", () => {
   describe("getBySiteName", () => {
     it("should call the findOne method of the db model to get the siteName", async () => {
       // Arrange
-      const expected = mockSite
+      const expected = ok(mockSite)
       MockRepository.findOne.mockResolvedValueOnce(mockSite)
 
       // Act
       const actual = await SitesService.getBySiteName(mockSiteName)
 
       // Assert
-      expect(actual).toBe(expected)
+      expect(actual).toEqual(expected)
       expect(MockRepository.findOne).toBeCalledWith({
         include: [
           {
@@ -581,7 +538,7 @@ describe("SitesService", () => {
   describe("getCommitAuthorEmail", () => {
     it("should return the email of the commit author who is an email login user", async () => {
       // Arrange
-      const expected = mockEmail
+      const expected = ok(mockEmail)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_GITHUB_NAME_ONE,
@@ -596,14 +553,14 @@ describe("SitesService", () => {
       const actual = await SitesService.getCommitAuthorEmail(commit)
 
       // Assert
-      expect(actual).toBe(expected)
+      expect(actual).toEqual(expected)
       expect(MockUsersService.findById).toHaveBeenCalledWith(mockIsomerUserId)
       expect(SpySitesService.extractAuthorEmail).not.toHaveBeenCalled()
     })
 
     it("should return the email of the commit author who is a GitHub login user", async () => {
       // Arrange
-      const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
+      const expected = ok(MOCK_GITHUB_EMAIL_ADDRESS_ONE)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_GITHUB_NAME_ONE,
@@ -617,7 +574,7 @@ describe("SitesService", () => {
       const actual = await SitesService.getCommitAuthorEmail(commit)
 
       // Assert
-      expect(actual).toBe(expected)
+      expect(actual).toEqual(expected)
       expect(MockUsersService.findById).not.toHaveBeenCalled()
       expect(SpySitesService.extractAuthorEmail).toHaveBeenCalled()
     })
@@ -626,7 +583,7 @@ describe("SitesService", () => {
   describe("getMergeAuthorEmail", () => {
     it("should return the email of the merge commit author if it was not performed using the common access token", async () => {
       // Arrange
-      const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
+      const expected = ok(MOCK_GITHUB_EMAIL_ADDRESS_ONE)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_GITHUB_NAME_ONE,
@@ -652,7 +609,7 @@ describe("SitesService", () => {
 
     it("should return the email of the merge commit author if the site cannot be found", async () => {
       // Arrange
-      const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
+      const expected = ok(MOCK_GITHUB_EMAIL_ADDRESS_ONE)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME,
@@ -679,7 +636,7 @@ describe("SitesService", () => {
 
     it("should return the email of the merge commit author if there are no merged review requests", async () => {
       // Arrange
-      const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
+      const expected = ok(MOCK_GITHUB_EMAIL_ADDRESS_ONE)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME,
@@ -690,7 +647,7 @@ describe("SitesService", () => {
       }
       MockRepository.findOne.mockResolvedValueOnce(mockSite)
       MockReviewRequestService.getLatestMergedReviewRequest.mockResolvedValueOnce(
-        new RequestNotFoundError()
+        errAsync(new RequestNotFoundError())
       )
 
       // Act
@@ -709,7 +666,7 @@ describe("SitesService", () => {
 
     it("should return the email of the requestor for the latest merged review request", async () => {
       // Arrange
-      const expected = mockEmail
+      const expected = ok(mockEmail)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME,
@@ -725,7 +682,7 @@ describe("SitesService", () => {
       }
       MockRepository.findOne.mockResolvedValueOnce(mockSite)
       MockReviewRequestService.getLatestMergedReviewRequest.mockResolvedValueOnce(
-        mockReviewRequest
+        okAsync(mockReviewRequest)
       )
 
       // Act
@@ -744,7 +701,7 @@ describe("SitesService", () => {
 
     it("should return the email of the merge commit author if the requestor for the latest merged review request does not have an email", async () => {
       // Arrange
-      const expected = MOCK_GITHUB_EMAIL_ADDRESS_ONE
+      const expected = ok(MOCK_GITHUB_EMAIL_ADDRESS_ONE)
       const commit: GitHubCommitData = {
         author: {
           name: MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME,
@@ -760,7 +717,7 @@ describe("SitesService", () => {
       }
       MockRepository.findOne.mockResolvedValueOnce(mockSite)
       MockReviewRequestService.getLatestMergedReviewRequest.mockResolvedValueOnce(
-        mockReviewRequest
+        okAsync(mockReviewRequest)
       )
 
       // Act
@@ -783,18 +740,12 @@ describe("SitesService", () => {
       stagingUrl: MOCK_STAGING_URL_DB,
       productionUrl: MOCK_PRODUCTION_URL_DB,
     }
-    const emptyDeployment: Partial<Deployment> = {
-      stagingUrl: "",
-      productionUrl: "",
-    }
+    const emptyDeployment: Partial<Deployment> = {}
     const configYmlData: Partial<ConfigYmlData> = {
       staging: MOCK_STAGING_URL_CONFIGYML,
       prod: MOCK_PRODUCTION_URL_CONFIGYML,
     }
-    const emptyConfigYmlData: Partial<ConfigYmlData> = {
-      staging: "",
-      prod: "",
-    }
+    const emptyConfigYmlData: Partial<ConfigYmlData> = {}
     const gitHubUrls = {
       staging: MOCK_STAGING_URL_GITHUB,
       prod: MOCK_PRODUCTION_URL_GITHUB,
@@ -805,10 +756,10 @@ describe("SitesService", () => {
 
     it("should return the urls of the site from the deployments table", async () => {
       // Arrange
-      const expected = {
+      const expected = ok({
         staging: deployment.stagingUrl,
         prod: deployment.productionUrl,
-      }
+      })
       const mockSiteWithDeployment = {
         ...mockSite,
         deployment,
@@ -830,10 +781,10 @@ describe("SitesService", () => {
 
     it("should return the urls of the site from the _config.yml file", async () => {
       // Arrange
-      const expected = {
+      const expected = ok({
         staging: configYmlData.staging,
         prod: configYmlData.prod,
-      }
+      })
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
@@ -860,10 +811,10 @@ describe("SitesService", () => {
 
     it("should return the urls of the site from the GitHub repo description", async () => {
       // Arrange
-      const expected = {
+      const expected = ok({
         staging: gitHubUrls.staging,
         prod: gitHubUrls.prod,
-      }
+      })
       const mockSiteWithNullDeployment = {
         ...mockSite,
         deployment: {
@@ -891,7 +842,7 @@ describe("SitesService", () => {
       expect(MockGithubService.getRepoInfo).toHaveBeenCalled()
     })
 
-    it("should return a NotFoundError if all fails", async () => {
+    it("should return a MissingSiteError if all fails", async () => {
       // Arrange
       const mockSiteWithNullDeployment = {
         ...mockSite,
@@ -916,7 +867,7 @@ describe("SitesService", () => {
       )
 
       // Assert
-      expect(actual).toBeInstanceOf(NotFoundError)
+      expect(actual).toEqual(err(new MissingSiteError()))
       expect(MockRepository.findOne).toHaveBeenCalled()
       expect(MockConfigYmlService.read).toHaveBeenCalled()
       expect(MockGithubService.getRepoInfo).toHaveBeenCalled()
@@ -1111,11 +1062,11 @@ describe("SitesService", () => {
       )
 
       // Assert
-      expect(actual).toEqual(MOCK_STAGING_URL_DB)
+      expect(actual).toEqual(ok(MOCK_STAGING_URL_DB))
       expect(MockRepository.findOne).toHaveBeenCalled()
     })
 
-    it("should return an error when the staging url for a repo is not found", async () => {
+    it("should return MissingSiteError when the staging url for a repo is not found", async () => {
       // Arrange
       MockRepository.findOne.mockResolvedValueOnce(null)
       MockConfigYmlService.read.mockResolvedValueOnce({
@@ -1128,7 +1079,7 @@ describe("SitesService", () => {
       // Act
       await expect(
         SitesService.getStagingUrl(mockUserWithSiteSessionData)
-      ).resolves.toBeInstanceOf(NotFoundError)
+      ).resolves.toEqual(err(new MissingSiteError()))
 
       // Assert
       expect(MockRepository.findOne).toHaveBeenCalled()
@@ -1156,11 +1107,11 @@ describe("SitesService", () => {
       )
 
       // Assert
-      expect(actual).toEqual(MOCK_PRODUCTION_URL_DB)
+      expect(actual).toEqual(ok(MOCK_PRODUCTION_URL_DB))
       expect(MockRepository.findOne).toHaveBeenCalled()
     })
 
-    it("should return an error when the site url for a repo is not found", async () => {
+    it("should return  MissingSiteError when the site url for a repo is not found", async () => {
       // Arrange
       MockRepository.findOne.mockResolvedValueOnce(null)
       MockConfigYmlService.read.mockResolvedValueOnce({
@@ -1173,7 +1124,7 @@ describe("SitesService", () => {
       // Act
       await expect(
         SitesService.getSiteUrl(mockUserWithSiteSessionData)
-      ).resolves.toBeInstanceOf(NotFoundError)
+      ).resolves.toEqual(err(new MissingSiteError()))
 
       // Assert
       expect(MockRepository.findOne).toHaveBeenCalled()
@@ -1215,14 +1166,14 @@ describe("SitesService", () => {
       const mockProductionCommitAuthor: Partial<User> = {
         email: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
       }
-      const expected: SiteInfo = {
+      const expected: Ok<SiteInfo, never> = ok({
         savedAt: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
         savedBy: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
         publishedAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
         publishedBy: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
         stagingUrl: MOCK_STAGING_URL_DB,
         siteUrl: MOCK_PRODUCTION_URL_DB,
-      }
+      })
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
       MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(
@@ -1266,14 +1217,14 @@ describe("SitesService", () => {
         },
         message: MOCK_COMMIT_MESSAGE_TWO,
       }
-      const expected: SiteInfo = {
+      const expected: Ok<SiteInfo, never> = ok({
         savedAt: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
         savedBy: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
         publishedAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
         publishedBy: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
         stagingUrl: MOCK_STAGING_URL_DB,
         siteUrl: MOCK_PRODUCTION_URL_DB,
-      }
+      })
 
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
       MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(
@@ -1295,7 +1246,7 @@ describe("SitesService", () => {
       expect(MockUsersService.findById).not.toHaveBeenCalled()
     })
 
-    it("should return UnprocessableError when the site is not found", async () => {
+    it("should return MissingSiteError when the site is not found", async () => {
       // Arrange
       MockRepository.findOne.mockResolvedValueOnce(null)
       MockConfigYmlService.read.mockResolvedValueOnce({
@@ -1304,11 +1255,27 @@ describe("SitesService", () => {
       MockGithubService.getRepoInfo.mockResolvedValueOnce({
         description: "",
       })
+      MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce({
+        author: {
+          name: MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+          date: MOCK_GITHUB_DATE_ONE,
+        },
+        message: MOCK_COMMIT_MESSAGE_ONE,
+      })
+      MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce({
+        author: {
+          name: MOCK_COMMON_ACCESS_TOKEN_GITHUB_NAME,
+          email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
+          date: MOCK_GITHUB_DATE_ONE,
+        },
+        message: MOCK_COMMIT_MESSAGE_ONE,
+      })
 
       // Act
       await expect(
         SitesService.getSiteInfo(mockSessionDataEmailUserWithSite)
-      ).resolves.toBeInstanceOf(UnprocessableError)
+      ).resolves.toEqual(err(new MissingSiteError()))
 
       // Assert
       expect(MockRepository.findOne).toHaveBeenCalled()
@@ -1319,29 +1286,32 @@ describe("SitesService", () => {
       // Arrange
       MockRepository.findOne.mockResolvedValueOnce(mockSiteWithDeployment)
       MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(null)
-      MockGithubService.getLatestCommitOfBranch.mockResolvedValueOnce(null)
 
       // Act
       await expect(
         SitesService.getSiteInfo(mockSessionDataEmailUserWithSite)
-      ).resolves.toBeInstanceOf(UnprocessableError)
+      ).resolves.toEqual(
+        err(new UnprocessableError("Unable to retrieve GitHub commit info"))
+      )
 
       // Assert
-      expect(MockRepository.findOne).toHaveBeenCalled()
-      expect(MockGithubService.getLatestCommitOfBranch).toHaveBeenCalledTimes(2)
+      // After the first call to `staging`, if it returns `null`,
+      // it short-circuits by returning an error.
+      expect(MockRepository.findOne).not.toHaveBeenCalled()
+      expect(MockGithubService.getLatestCommitOfBranch).toHaveBeenCalledTimes(1)
       expect(MockUsersService.findById).not.toHaveBeenCalled()
     })
 
     it("should return with unknown author when the GitHub commit is empty", async () => {
       // Arrange
-      const expected: SiteInfo = {
+      const expected: Ok<SiteInfo, never> = ok({
         savedAt: 0,
         savedBy: "Unknown Author",
         publishedAt: 0,
         publishedBy: "Unknown Author",
         stagingUrl: MOCK_STAGING_URL_DB,
         siteUrl: MOCK_PRODUCTION_URL_DB,
-      }
+      })
 
       const mockEmptyCommit: GitHubCommitData = {
         author: {

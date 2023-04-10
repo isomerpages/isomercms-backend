@@ -146,7 +146,7 @@ class CollaboratorsService {
 
     // 2. Check if site exists
     const site = await this.sitesService.getBySiteName(siteName)
-    if (!site) {
+    if (site.isErr()) {
       // Error - site does not exist
       logger.error(`create collaborators error: site ${siteName} is not valid`)
       return new NotFoundError(`Site does not exist`)
@@ -165,7 +165,7 @@ class CollaboratorsService {
     // 4. Check if user is already a site member
     const existingSiteMember = await this.siteMemberRepository.findOne({
       where: {
-        siteId: site.id,
+        siteId: site.value.id,
         userId: user.id,
       },
     })
@@ -180,7 +180,7 @@ class CollaboratorsService {
 
     // 6. Create the SiteMembers record
     return this.siteMemberRepository.create({
-      siteId: site.id,
+      siteId: site.value.id,
       userId: user.id,
       role: derivedRole,
     })

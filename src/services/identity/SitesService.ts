@@ -1,4 +1,5 @@
 import _ from "lodash"
+import { errAsync, okAsync, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { Deployment, Repo, Site } from "@database/models"
@@ -10,18 +11,24 @@ import {
   GH_MAX_REPO_COUNT,
   ISOMER_ADMIN_REPOS,
 } from "@root/constants"
+import DatabaseError from "@root/errors/DatabaseError"
+import MissingSiteError from "@root/errors/MissingSiteError"
+import MissingUserEmailError from "@root/errors/MissingUserEmailError"
+import MissingUserError from "@root/errors/MissingUserError"
 import { NotFoundError } from "@root/errors/NotFoundError"
-import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
+import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import type {
   GitHubRepositoryData,
   RepositoryData,
   SiteUrls,
 } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
+import { Brand } from "@root/types/util"
+import { safeJsonParse } from "@root/utils/json"
 import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
@@ -86,90 +93,92 @@ class SitesService {
     return authorEmail
   }
 
-  async insertUrlsFromConfigYml(
+  insertUrlsFromConfigYml(
     siteUrls: SiteUrls,
     sessionData: UserWithSiteSessionData
-  ): Promise<SiteUrls> {
+  ): ResultAsync<SiteUrls, NotFoundError> {
     if (siteUrls.staging && siteUrls.prod) {
       // We call ConfigYmlService only when necessary
-      return siteUrls
+      return okAsync(siteUrls)
     }
 
-    const {
-      content: configYmlData,
-    }: { content: ConfigYmlData } = await this.configYmlService.read(
-      sessionData
+    return ResultAsync.fromPromise(
+      this.configYmlService.read(sessionData),
+      () => new NotFoundError()
+    ).map<SiteUrls>(
+      ({ content: configYmlData }: { content: ConfigYmlData }) => ({
+        staging:
+          configYmlData.staging && !siteUrls.staging
+            ? configYmlData.staging
+            : siteUrls.staging,
+        prod:
+          configYmlData.prod && !siteUrls.prod
+            ? configYmlData.prod
+            : siteUrls.prod,
+      })
     )
-
-    // Only replace the urls if they are not already present
-    const newSiteUrls: SiteUrls = {
-      staging:
-        configYmlData.staging && !siteUrls.staging
-          ? configYmlData.staging
-          : siteUrls.staging,
-      prod:
-        configYmlData.prod && !siteUrls.prod
-          ? configYmlData.prod
-          : siteUrls.prod,
-    }
-
-    return newSiteUrls
   }
 
-  async insertUrlsFromGitHubDescription(
+  insertUrlsFromGitHubDescription(
     siteUrls: SiteUrls,
     sessionData: UserWithSiteSessionData
-  ): Promise<SiteUrls> {
+  ): ResultAsync<SiteUrls, NotFoundError> {
     if (siteUrls.staging && siteUrls.prod) {
       // We call GitHubService only when necessary
-      return siteUrls
+      return okAsync(siteUrls)
     }
 
-    const {
-      description,
-    }: { description: string } = await this.gitHubService.getRepoInfo(
-      sessionData
-    )
+    return ResultAsync.fromPromise(
+      this.gitHubService.getRepoInfo(sessionData),
+      () => new NotFoundError()
+    ).map(({ description }: { description: string }) => {
+      // Retrieve the url from the description
+      // repo descriptions have varying formats, so we look for the first link
+      const repoDescTokens = description.replace("/;/g", " ").split(" ")
 
-    // Retrieve the url from the description
-    // repo descriptions have varying formats, so we look for the first link
-    const repoDescTokens = description.replace("/;/g", " ").split(" ")
+      const stagingUrlFromDesc = repoDescTokens.find(
+        (token) => token.includes("http") && token.includes("staging")
+      )
+      const prodUrlFromDesc = repoDescTokens.find(
+        (token) => token.includes("http") && token.includes("prod")
+      )
 
-    const stagingUrlFromDesc = repoDescTokens.find(
-      (token) => token.includes("http") && token.includes("staging")
-    )
-    const prodUrlFromDesc = repoDescTokens.find(
-      (token) => token.includes("http") && token.includes("prod")
-    )
-
-    // Only replace the urls if they are not already present
-    const newSiteUrls: SiteUrls = {
-      staging:
-        stagingUrlFromDesc && !siteUrls.staging
-          ? stagingUrlFromDesc
-          : siteUrls.staging,
-      prod: prodUrlFromDesc && !siteUrls.prod ? prodUrlFromDesc : siteUrls.prod,
-    }
-
-    return newSiteUrls
-  }
-
-  async getBySiteName(siteName: string): Promise<Site | null> {
-    const site = await this.siteRepository.findOne({
-      include: [
-        {
-          model: Repo,
-          where: {
-            name: siteName,
-          },
-        },
-      ],
+      // Only replace the urls if they are not already present
+      return {
+        staging:
+          stagingUrlFromDesc && !siteUrls.staging
+            ? Brand.fromString(stagingUrlFromDesc)
+            : siteUrls.staging,
+        prod:
+          prodUrlFromDesc && !siteUrls.prod
+            ? Brand.fromString(prodUrlFromDesc)
+            : siteUrls.prod,
+      }
     })
-
-    return site
   }
 
-  async getSitesForEmailUser(userId: string) {
+  getBySiteName(siteName: string): ResultAsync<Site, MissingSiteError> {
+    return ResultAsync.fromPromise(
+      this.siteRepository.findOne({
+        include: [
+          {
+            model: Repo,
+            where: {
+              name: siteName,
+            },
+          },
+        ],
+      }),
+      () => new MissingSiteError()
+    ).andThen((site) => {
+      if (!site) {
+        return errAsync(new MissingSiteError())
+      }
+      return okAsync(site)
+    })
+  }
+
+  async getSitesForEmailUser(userId: string): Promise<(string | undefined)[]> {
     const user = await this.usersService.findSitesByUserId(userId)
 
     if (!user) {
@@ -179,31 +188,50 @@ class SitesService {
     return user.site_members.map((site) => site.repo?.name)
   }
 
-  async getCommitAuthorEmail(commit: GitHubCommitData) {
+  getCommitAuthorEmail(
+    commit: GitHubCommitData
+  ): ResultAsync<
+    string,
+    UnprocessableError | MissingUserError | MissingUserEmailError
+  > {
     const { message } = commit
 
     // Commit message created as part of phase 2 identity
     if (message.startsWith("{") && message.endsWith("}")) {
-      try {
-        const { userId }: { userId: string } = JSON.parse(message)
-        const user = await this.usersService.findById(userId)
-
-        if (user && user.email) {
-          return user.email
-        }
-      } catch (e) {
-        // Do nothing
-      }
+      return safeJsonParse(message)
+        .map(
+          (obj) =>
+            // TODO: write a validator for this instead of cast as this is unsafe
+            obj as { userId: string }
+        )
+        .asyncAndThen(({ userId }) =>
+          ResultAsync.fromPromise(
+            this.usersService.findById(userId),
+            () => new MissingUserError()
+          )
+        )
+        .andThen((user) => {
+          if (!user) {
+            return errAsync(new MissingUserError())
+          }
+          return okAsync(user)
+        })
+        .andThen(({ email }) => {
+          if (!email) {
+            return errAsync(new MissingUserEmailError())
+          }
+          return okAsync(email)
+        })
     }
 
     // Legacy style of commits, or if the user is not found
-    return this.extractAuthorEmail(commit)
+    return okAsync(this.extractAuthorEmail(commit))
   }
 
-  async getMergeAuthorEmail(
+  getMergeAuthorEmail(
     commit: GitHubCommitData,
     sessionData: UserWithSiteSessionData
-  ) {
+  ): ResultAsync<string, never> {
     const {
       author: { name: authorName },
     } = commit
@@ -211,84 +239,81 @@ class SitesService {
 
     if (!authorName.startsWith("isomergithub")) {
       // Legacy style of commits, or if the user is not found
-      return this.extractAuthorEmail(commit)
+      return okAsync(this.extractAuthorEmail(commit))
     }
 
     // Commit was made by our common identity GitHub user
-    const site = await this.getBySiteName(siteName)
-    if (!site) {
-      return this.extractAuthorEmail(commit)
-    }
-
-    // Retrieve the latest merged review request for the site
-    const possibleReviewRequest = await this.reviewRequestService.getLatestMergedReviewRequest(
-      site
-    )
-    if (possibleReviewRequest instanceof RequestNotFoundError) {
-      // No review request found, fallback to the commit author email
-      return this.extractAuthorEmail(commit)
-    }
-
-    // Return the email address of the requestor who made the review request
-    const {
-      requestor: { email: requestorEmail },
-    } = possibleReviewRequest
-
-    if (requestorEmail) {
-      return requestorEmail
-    }
-
-    // No email address found, fallback to the commit author email
-    return this.extractAuthorEmail(commit)
+    return this.getBySiteName(siteName)
+      .andThen(this.reviewRequestService.getLatestMergedReviewRequest)
+      .andThen(({ requestor: { email: requestorEmail } }) => {
+        if (requestorEmail) {
+          return okAsync(requestorEmail)
+        }
+        return okAsync(this.extractAuthorEmail(commit))
+      })
+      .orElse(() => okAsync(this.extractAuthorEmail(commit)))
   }
 
-  async getUrlsOfSite(
+  // Tries to get the site urls in the following order:
+  // 1. From the deployments database table
+  // 2. From the config.yml file
+  // 3. From the GitHub repository description
+  // Otherwise, returns a NotFoundError
+  getUrlsOfSite(
     sessionData: UserWithSiteSessionData
-  ): Promise<SiteUrls | NotFoundError> {
-    // Tries to get the site urls in the following order:
-    // 1. From the deployments database table
-    // 2. From the config.yml file
-    // 3. From the GitHub repository description
-    // Otherwise, returns a NotFoundError
-    const { siteName } = sessionData
-
-    const site = await this.siteRepository.findOne({
-      include: [
-        {
-          model: Deployment,
-          as: "deployment",
-        },
-        {
-          model: Repo,
-          where: {
-            name: siteName,
-          },
-        },
-      ],
-    })
-
-    // Note: site may be null if the site does not exist
-    const siteUrls: SiteUrls = {
-      staging: site?.deployment?.stagingUrl ?? "",
-      prod: site?.deployment?.productionUrl ?? "",
-    }
-
-    _.assign(
-      siteUrls,
-      await this.insertUrlsFromConfigYml(siteUrls, sessionData)
-    )
-    _.assign(
-      siteUrls,
-      await this.insertUrlsFromGitHubDescription(siteUrls, sessionData)
-    )
-
-    if (!siteUrls.staging && !siteUrls.prod) {
-      return new NotFoundError(
-        `The site ${siteName} does not have a staging or production url`
+  ): ResultAsync<SiteUrls, NotFoundError> {
+    return (
+      ResultAsync.fromPromise(
+        this.siteRepository.findOne({
+          include: [
+            {
+              model: Deployment,
+              as: "deployment",
+            },
+            {
+              model: Repo,
+              where: {
+                name: sessionData.siteName,
+              },
+            },
+          ],
+        }),
+        () => new DatabaseError()
       )
-    }
+        .orElse(() => okAsync(null))
+        // NOTE: Even if the site does not exist, we still continue on with the flow.
+        // This is because only migrated sites will have a db entry
+        // and legacy sites using github login will not.
+        // Hence, for such sites, extract their URLs through
+        // the _config.yml or github description
+        .andThen((site) =>
+          site?.deployment
+            ? okAsync(site.deployment)
+            : okAsync({ stagingUrl: undefined, productionUrl: undefined })
+        )
+        .andThen(({ stagingUrl, productionUrl }) => {
+          const siteUrls = {
+            staging: stagingUrl,
+            prod: productionUrl,
+          }
 
-    return siteUrls
+          return this.insertUrlsFromConfigYml(siteUrls, sessionData)
+            .map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
+            .orElse(() => okAsync(siteUrls))
+        })
+        .andThen((siteUrls) =>
+          this.insertUrlsFromGitHubDescription(
+            siteUrls,
+            sessionData
+          ).map<SiteUrls>((newSiteUrls) => _.assign(siteUrls, newSiteUrls))
+        )
+        .andThen(({ staging, prod }) => {
+          if (!staging && !prod) {
+            return errAsync(new MissingSiteError())
+          }
+          return okAsync({ staging, prod })
+        })
+    )
   }
 
   async getSites(sessionData: UserSessionData): Promise<RepositoryData[]> {
@@ -300,7 +325,7 @@ class SitesService {
 
     // Simultaneously retrieve all isomerpages repos
     const paramsArr = _.fill(Array(ISOMERPAGES_REPO_PAGE_COUNT), null).map(
-      (_, idx) => ({
+      (__, idx) => ({
         per_page: GH_MAX_REPO_COUNT,
         sort: "full_name",
         page: idx + 1,
@@ -366,34 +391,20 @@ class SitesService {
     return updatedAt
   }
 
-  async getStagingUrl(
+  getStagingUrl(
     sessionData: UserWithSiteSessionData
-  ): Promise<string | NotFoundError> {
-    const siteUrls = await this.getUrlsOfSite(sessionData)
-    if (siteUrls instanceof NotFoundError) {
-      return new NotFoundError(
-        `${sessionData.siteName} does not have a staging url`
-      )
-    }
-
-    const { staging } = siteUrls
-
-    return staging
+  ): ResultAsync<StagingPermalink, NotFoundError | MissingSiteError> {
+    return this.getUrlsOfSite(sessionData).andThen(({ staging }) =>
+      staging ? okAsync(staging) : errAsync(new NotFoundError())
+    )
   }
 
-  async getSiteUrl(
+  getSiteUrl(
     sessionData: UserWithSiteSessionData
-  ): Promise<string | NotFoundError> {
-    const siteUrls = await this.getUrlsOfSite(sessionData)
-    if (siteUrls instanceof NotFoundError) {
-      return new NotFoundError(
-        `${sessionData.siteName} does not have a site url`
-      )
-    }
-
-    const { prod } = siteUrls
-
-    return prod
+  ): ResultAsync<ProdPermalink, NotFoundError | MissingSiteError> {
+    return this.getUrlsOfSite(sessionData).andThen(({ prod }) =>
+      prod ? okAsync(prod) : errAsync(new NotFoundError())
+    )
   }
 
   async create(
@@ -412,50 +423,78 @@ class SitesService {
     })
   }
 
-  async getSiteInfo(
+  private getLatestCommitOfBranch(
+    sessionData: UserWithSiteSessionData,
+    branch: "staging" | "master"
+  ): ResultAsync<GitHubCommitData, UnprocessableError | NotFoundError> {
+    return ResultAsync.fromPromise(
+      this.gitHubService.getLatestCommitOfBranch(sessionData, branch),
+      () => new NotFoundError()
+    ).andThen((possibleCommit: unknown) => {
+      if (this.isGitHubCommitData(possibleCommit)) {
+        return okAsync(possibleCommit)
+      }
+      return errAsync(
+        new UnprocessableError("Unable to retrieve GitHub commit info")
+      )
+    })
+  }
+
+  getSiteInfo(
     sessionData: UserWithSiteSessionData
-  ): Promise<SiteInfo | UnprocessableError> {
-    const siteUrls = await this.getUrlsOfSite(sessionData)
-    if (siteUrls instanceof NotFoundError) {
-      return new UnprocessableError("Unable to retrieve site info")
-    }
-    const { staging: stagingUrl, prod: prodUrl } = siteUrls
-
-    const stagingCommit = await this.gitHubService.getLatestCommitOfBranch(
-      sessionData,
-      "staging"
-    )
-
-    const prodCommit = await this.gitHubService.getLatestCommitOfBranch(
-      sessionData,
-      "master"
-    )
-
-    if (
-      !this.isGitHubCommitData(stagingCommit) ||
-      !this.isGitHubCommitData(prodCommit)
-    ) {
-      return new UnprocessableError("Unable to retrieve GitHub commit info")
-    }
-
-    const {
-      author: { date: stagingDate },
-    } = stagingCommit
-    const {
-      author: { date: prodDate },
-    } = prodCommit
-
-    const stagingAuthor = await this.getCommitAuthorEmail(stagingCommit)
-    const prodAuthor = await this.getMergeAuthorEmail(prodCommit, sessionData)
-
-    return {
-      savedAt: new Date(stagingDate).getTime() || 0,
-      savedBy: stagingAuthor || "Unknown Author",
-      publishedAt: new Date(prodDate).getTime() || 0,
-      publishedBy: prodAuthor || "Unknown Author",
-      stagingUrl: stagingUrl || "",
-      siteUrl: prodUrl || "",
-    }
+  ): ResultAsync<SiteInfo, UnprocessableError> {
+    return this.getLatestCommitOfBranch(sessionData, "staging")
+      .andThen((staging) =>
+        this.getLatestCommitOfBranch(sessionData, "master").map((prod) => ({
+          staging,
+          prod,
+        }))
+      )
+      .map(({ staging, prod }) => {
+        const {
+          author: { date: stagingDate },
+        } = staging
+        const {
+          author: { date: prodDate },
+        } = prod
+        return {
+          staging,
+          prod,
+          savedAt: new Date(stagingDate).getTime() || 0,
+          publishedAt: new Date(prodDate).getTime() || 0,
+        }
+      })
+      .andThen(({ staging, ...rest }) =>
+        this.getCommitAuthorEmail(staging).map((stagingAuthor) => ({
+          savedBy: stagingAuthor || "Unknown Author",
+          staging,
+          ...rest,
+        }))
+      )
+      .andThen(({ prod, ...rest }) =>
+        this.getCommitAuthorEmail(prod).map((prodAuthor) => ({
+          publishedBy: prodAuthor || "Unknown Author",
+          prod,
+          ...rest,
+        }))
+      )
+      .andThen((partialSiteInfo) =>
+        this.getUrlsOfSite(sessionData).map((urls) => ({
+          stagingUrl: urls.staging || "",
+          siteUrl: urls.prod || "",
+          ...partialSiteInfo,
+        }))
+      )
+      .map((siteInfo) =>
+        _.pick(siteInfo, [
+          "savedAt",
+          "savedBy",
+          "publishedAt",
+          "publishedBy",
+          "siteUrl",
+          "stagingUrl",
+        ])
+      )
   }
 }
 

@@ -13,9 +13,8 @@ import {
   User,
   Whitelist,
 } from "@database/models"
-import { generateRouter, generateRouterForUserWithSite } from "@fixtures/app"
+import { generateRouterForUserWithSite } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
-import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
   formatNotification,
   highPriorityOldReadNotification,
@@ -35,7 +34,18 @@ import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/aut
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubService } from "@root/services/db/GitHubService"
+import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
+import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
+import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
+import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
+import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
+import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
+import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
+import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
+import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
@@ -58,13 +68,47 @@ const gitHubService = new GitHubService({
 const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })
+const footerYmlService = new FooterYmlService({ gitHubService })
+const collectionYmlService = new CollectionYmlService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+
+const contactUsService = new ContactUsPageService({
+  gitHubService,
+  footerYmlService,
+})
+const collectionPageService = new CollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const subCollectionPageService = new SubcollectionPageService({
+  gitHubService,
+  collectionYmlService,
+})
+const homepageService = new HomepagePageService({ gitHubService })
+const resourcePageService = new ResourcePageService({ gitHubService })
+const unlinkedPageService = new UnlinkedPageService({ gitHubService })
+const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
+  baseDirectoryService,
+  configYmlService,
+  gitHubService,
+})
+const pageService = new PageService({
+  collectionPageService,
+  contactUsService,
+  subCollectionPageService,
+  homepageService,
+  resourcePageService,
+  unlinkedPageService,
+  resourceRoomDirectoryService,
+})
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as typeof ReviewApi,
   User,
   ReviewRequest,
   Reviewer,
   ReviewMeta,
-  ReviewRequestView
+  ReviewRequestView,
+  pageService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

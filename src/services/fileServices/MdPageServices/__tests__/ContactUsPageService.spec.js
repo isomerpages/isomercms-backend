@@ -7,6 +7,7 @@ const {
   footerContent: mockFooterContent,
   footerSha: mockFooterSha,
 } = require("@fixtures/footer")
+const { CONTACT_US_FILENAME } = require("@root/constants/pages")
 const { NotFoundError } = require("@root/errors/NotFoundError")
 
 describe("ContactUs Page Service", () => {
@@ -14,7 +15,6 @@ describe("ContactUs Page Service", () => {
   const accessToken = "test-token"
   const reqDetails = { siteName, accessToken }
 
-  const CONTACT_US_FILE_NAME = "contact-us.md"
   const CONTACT_US_DIRECTORY_NAME = "pages"
 
   const mockFrontMatter = {
@@ -80,7 +80,7 @@ describe("ContactUs Page Service", () => {
         mockRawContactUsContent
       )
       expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
       })
       expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
@@ -95,7 +95,7 @@ describe("ContactUs Page Service", () => {
         mockRawContactUsContent
       )
       expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
       })
       expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
@@ -112,7 +112,7 @@ describe("ContactUs Page Service", () => {
         feedback: updatedFeedback,
       }
       const updateReq = {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         content: mockContent,
         frontMatter: mockUpdatedFrontMatter,
         sha: oldSha,
@@ -132,7 +132,7 @@ describe("ContactUs Page Service", () => {
         mockContent
       )
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
         fileContent: mockRawContactUsContent,
         sha: oldSha,
@@ -149,7 +149,7 @@ describe("ContactUs Page Service", () => {
     it("Propagates the correct error on failed update", async () => {
       mockGithubService.update.mockRejectedValueOnce(new NotFoundError(""))
       const updateReq = {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         content: mockContent,
         frontMatter: mockFrontMatter,
         sha: oldSha,
@@ -164,7 +164,7 @@ describe("ContactUs Page Service", () => {
         mockContent
       )
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
-        fileName: CONTACT_US_FILE_NAME,
+        fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
         fileContent: mockRawContactUsContent,
         sha: oldSha,

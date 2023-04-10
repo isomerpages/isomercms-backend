@@ -3,13 +3,12 @@ const {
   homepageSha: mockHomepageSha,
   rawHomepageContent: mockRawHomepageContent,
 } = require("@fixtures/homepage")
+const { HOMEPAGE_NAME } = require("@root/constants")
 
 describe("Homepage Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const reqDetails = { siteName, accessToken }
-
-  const HOMEPAGE_FILE_NAME = "index.md"
 
   const mockFrontMatter = mockHomepageContent.frontMatter
   const mockContent = mockHomepageContent.pageBody
@@ -59,7 +58,7 @@ describe("Homepage Page Service", () => {
         mockRawHomepageContent
       )
       expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
-        fileName: HOMEPAGE_FILE_NAME,
+        fileName: HOMEPAGE_NAME,
       })
     })
   })
@@ -70,7 +69,7 @@ describe("Homepage Page Service", () => {
     it("Updating page content works correctly", async () => {
       await expect(
         service.update(reqDetails, {
-          fileName: HOMEPAGE_FILE_NAME,
+          fileName: HOMEPAGE_NAME,
           content: mockContent,
           frontMatter: mockFrontMatter,
           sha: oldSha,
@@ -85,7 +84,7 @@ describe("Homepage Page Service", () => {
         mockContent
       )
       expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
-        fileName: HOMEPAGE_FILE_NAME,
+        fileName: HOMEPAGE_NAME,
         fileContent: mockRawHomepageContent,
         sha: oldSha,
       })

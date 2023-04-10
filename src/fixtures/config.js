@@ -112,6 +112,7 @@ const configContent = {
   shareicon: "/images/isomer-logo.svg",
   "facebook-pixel": "true",
   google_analytics: "UA-39345131-33",
+  google_analytics_ga4: "GA-test",
   "linkedin-insights": "12345",
 }
 
@@ -126,6 +127,7 @@ const configResponse = {
   is_government: configContent.is_government,
   facebook_pixel: configContent["facebook-pixel"],
   google_analytics: configContent.google_analytics,
+  google_analytics_ga4: configContent.google_analytics_ga4,
   linkedin_insights: configContent["linkedin-insights"],
   colors: configContent.colors,
 }

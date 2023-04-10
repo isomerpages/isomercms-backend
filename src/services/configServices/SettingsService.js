@@ -171,6 +171,7 @@ class SettingsService {
       is_government: config.content.is_government,
       facebook_pixel: config.content["facebook-pixel"],
       google_analytics: config.content.google_analytics,
+      google_analytics_ga4: config.content.google_analytics_ga4,
       linkedin_insights: config.content["linkedin-insights"],
       colors: config.content.colors,
     }
@@ -202,6 +203,7 @@ class SettingsService {
       "is_government",
       "facebook-pixel",
       "google_analytics",
+      "google_analytics_ga4",
       "linkedin-insights",
       "colors",
     ]

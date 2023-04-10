@@ -20,6 +20,7 @@ import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import { mailer } from "@services/utilServices/MailClient"
 
+import CollaboratorsService from "../identity/CollaboratorsService"
 import QueueService from "../identity/QueueService"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
@@ -31,6 +32,7 @@ interface InfraServiceProps {
   deploymentsService: DeploymentsService
   launchesService: LaunchesService
   queueService: QueueService
+  collaboratorsService: CollaboratorsService
 }
 
 interface dnsRecordDto {
@@ -49,27 +51,45 @@ export default class InfraService {
 
   private readonly queueService: InfraServiceProps["queueService"]
 
+  private readonly collaboratorsService: InfraServiceProps["collaboratorsService"]
+
   constructor({
     sitesService,
     reposService,
     deploymentsService,
     launchesService,
     queueService,
+    collaboratorsService,
   }: InfraServiceProps) {
     this.sitesService = sitesService
     this.reposService = reposService
     this.deploymentsService = deploymentsService
     this.launchesService = launchesService
     this.queueService = queueService
+    this.collaboratorsService = collaboratorsService
   }
 
-  createSite = async (creator: User, siteName: string, repoName: string) => {
+  createSite = async (
+    creator: User,
+    member: User,
+    siteName: string,
+    repoName: string
+  ) => {
     let site: Site | undefined // For error handling
+    const memberEmail = member.email
+    if (!memberEmail) {
+      logger.error(
+        `createSite: initial member for ${siteName} does not have associated email`
+      )
+      throw new Error(
+        `createSite: initial member for ${siteName} does not have associated email`
+      )
+    }
     try {
       // 1. Create a new site record in the Sites table
       const newSiteParams = {
         name: siteName,
-        apiTokenName: "", // TODO: figure this out
+        apiTokenName: "", // TODO (IS-76): Remove once DB has removed this param
         creator,
         creatorId: creator.id,
       }
@@ -96,6 +116,7 @@ export default class InfraService {
 
       // 5. Set up permissions
       await this.reposService.setRepoAndTeamPermissions(repoName)
+      await this.collaboratorsService.create(repoName, memberEmail, true)
 
       // 6. Update status
       const updateSuccessSiteInitParams = {

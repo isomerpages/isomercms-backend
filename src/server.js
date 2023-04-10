@@ -159,16 +159,6 @@ const launchesService = new LaunchesService({
   launchClient,
 })
 const queueService = new QueueService()
-const infraService = new InfraService({
-  sitesService,
-  reposService,
-  deploymentsService,
-  launchesService,
-  queueService,
-})
-
-// poller for incoming queue
-infraService.pollQueue()
 
 const identityAuthService = getIdentityAuthService(gitHubService)
 const collaboratorsService = new CollaboratorsService({
@@ -178,6 +168,17 @@ const collaboratorsService = new CollaboratorsService({
   usersService,
   whitelist: Whitelist,
 })
+
+const infraService = new InfraService({
+  sitesService,
+  reposService,
+  deploymentsService,
+  launchesService,
+  queueService,
+  collaboratorsService,
+})
+// poller for incoming queue
+infraService.pollQueue()
 
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({

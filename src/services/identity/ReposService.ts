@@ -64,7 +64,6 @@ export default class ReposService {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
     await this.createRepoOnGithub(repoName)
-    await this.createTeamOnGitHub(repoName)
     await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
     return this.create({
       name: repoName,
@@ -146,15 +145,6 @@ export default class ReposService {
       org: ISOMER_GITHUB_ORGANIZATION_NAME,
       name: repoName,
       private: false,
-    })
-
-  createTeamOnGitHub = (
-    repoName: string
-  ): Promise<octokitCreateTeamResponseType> =>
-    octokit.teams.create({
-      org: ISOMER_GITHUB_ORGANIZATION_NAME,
-      name: repoName,
-      privacy: "closed",
     })
 
   setRepoAndTeamPermissions = async (repoName: string): Promise<void> => {

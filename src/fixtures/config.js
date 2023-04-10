@@ -56,6 +56,7 @@ is_government: false
 shareicon: /images/isomer-logo.svg
 facebook-pixel: "true"
 google_analytics: UA-39345131-33
+google_analytics_ga4: GA-test
 linkedin-insights: "12345"
 `
 

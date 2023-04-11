@@ -6,7 +6,6 @@ import {
 } from "@root/services/infra/StatsService"
 import { RequestHandler } from "@root/types"
 
-// eslint-disable-next-line import/prefer-default-export
 export class StatsMiddleware {
   private readonly statsService: StatsService
 

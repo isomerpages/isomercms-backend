@@ -1,6 +1,6 @@
 {
   "name": "isomercms",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -158,6 +158,6 @@
     ]
   },
   "engines": {
-      "node" : ">=16.0.0"
-    }
+    "node": ">=16.0.0"
+  }
 }

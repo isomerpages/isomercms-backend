@@ -8,7 +8,7 @@ const { HOMEPAGE_FILENAME } = require("@root/constants")
 describe("Homepage Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockFrontMatter = mockHomepageContent.frontMatter
   const mockContent = mockHomepageContent.pageBody
@@ -50,14 +50,14 @@ describe("Homepage Page Service", () => {
       sha: mockHomepageSha,
     })
     it("Reading the homepage works correctly", async () => {
-      await expect(service.read(reqDetails)).resolves.toMatchObject({
+      await expect(service.read(sessionData)).resolves.toMatchObject({
         content: { frontMatter: mockFrontMatter, pageBody: mockContent },
         sha: mockHomepageSha,
       })
       expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
         mockRawHomepageContent
       )
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName: HOMEPAGE_FILENAME,
       })
     })
@@ -68,7 +68,7 @@ describe("Homepage Page Service", () => {
     mockGithubService.update.mockResolvedValue({ newSha: mockHomepageSha })
     it("Updating page content works correctly", async () => {
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName: HOMEPAGE_FILENAME,
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -83,7 +83,7 @@ describe("Homepage Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName: HOMEPAGE_FILENAME,
         fileContent: mockRawHomepageContent,
         sha: oldSha,

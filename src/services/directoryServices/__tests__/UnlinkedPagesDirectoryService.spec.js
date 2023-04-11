@@ -15,7 +15,7 @@ describe("Unlinked Pages Directory Service", () => {
     },
   ]
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockBaseDirectoryService = {
     list: jest.fn(),
@@ -67,9 +67,9 @@ describe("Unlinked Pages Directory Service", () => {
     mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
     it("Listing all unlinked pages works correctly", async () => {
       await expect(
-        service.listAllUnlinkedPages(reqDetails)
+        service.listAllUnlinkedPages(sessionData)
       ).resolves.toMatchObject(expectedResp)
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
         directoryName: UNLINKED_PAGE_DIRECTORY_NAME,
       })
     })
@@ -80,13 +80,13 @@ describe("Unlinked Pages Directory Service", () => {
     const targetSubcollectionName = "target-subcollection"
     it("Moving unlinked pages to a collection works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           targetCollectionName,
           objArray,
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           newFileCollection: targetCollectionName,
         })
@@ -94,14 +94,14 @@ describe("Unlinked Pages Directory Service", () => {
     })
     it("Moving unlinked pages to a subcollection works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           targetCollectionName,
           targetSubcollectionName,
           objArray,
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           newFileCollection: targetCollectionName,
           newFileSubcollection: targetSubcollectionName,

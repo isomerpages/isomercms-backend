@@ -9,7 +9,7 @@ const { ConfigYmlService } = require("../ConfigYmlService")
 describe("Config Yml Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const CONFIG_FILE_NAME = "_config.yml"
 
@@ -33,11 +33,11 @@ describe("Config Yml Service", () => {
       sha: mockConfigSha,
     })
     it("Reading the _config.yml file works correctly", async () => {
-      await expect(service.read(reqDetails)).resolves.toMatchObject({
+      await expect(service.read(sessionData)).resolves.toMatchObject({
         content: mockConfigContent,
         sha: mockConfigSha,
       })
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName: CONFIG_FILE_NAME,
       })
     })
@@ -48,14 +48,14 @@ describe("Config Yml Service", () => {
     mockGithubService.update.mockResolvedValueOnce({ newSha: mockConfigSha })
     it("Updating _config.yml file works correctly", async () => {
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileContent: mockConfigContent,
           sha: oldSha,
         })
       ).resolves.toMatchObject({
         newSha: mockConfigSha,
       })
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName: CONFIG_FILE_NAME,
         fileContent: mockRawConfigContent,
         sha: oldSha,

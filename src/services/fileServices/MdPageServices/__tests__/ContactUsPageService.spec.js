@@ -13,7 +13,7 @@ const { NotFoundError } = require("@root/errors/NotFoundError")
 describe("ContactUs Page Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const CONTACT_US_DIRECTORY_NAME = "pages"
 
@@ -71,7 +71,7 @@ describe("ContactUs Page Service", () => {
     })
 
     it("Reading the contact us page works correctly", async () => {
-      await expect(service.read(reqDetails)).resolves.toMatchObject({
+      await expect(service.read(sessionData)).resolves.toMatchObject({
         content: { frontMatter: mockFrontMatter, pageBody: mockContent },
         sha: mockContactUsSha,
       })
@@ -79,26 +79,28 @@ describe("ContactUs Page Service", () => {
       expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
         mockRawContactUsContent
       )
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
       })
-      expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockFooterYmlService.read).toHaveBeenCalledWith(sessionData)
     })
 
     it("Propagates the correct error on failed retrieval", async () => {
       mockFooterYmlService.read.mockRejectedValueOnce(new NotFoundError(""))
 
-      await expect(service.read(reqDetails)).rejects.toThrowError(NotFoundError)
+      await expect(service.read(sessionData)).rejects.toThrowError(
+        NotFoundError
+      )
 
       expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
         mockRawContactUsContent
       )
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
       })
-      expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
+      expect(mockFooterYmlService.read).toHaveBeenCalledWith(sessionData)
     })
   })
 
@@ -124,21 +126,21 @@ describe("ContactUs Page Service", () => {
       }
 
       await expect(
-        service.update(reqDetails, updateReq)
+        service.update(sessionData, updateReq)
       ).resolves.toMatchObject(expectedResp)
 
       expect(convertDataToMarkdown).toHaveBeenCalledWith(
         mockUpdatedFrontMatter,
         mockContent
       )
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
         fileContent: mockRawContactUsContent,
         sha: oldSha,
       })
-      expect(mockFooterYmlService.read).toHaveBeenCalledWith(reqDetails)
-      expect(mockFooterYmlService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockFooterYmlService.read).toHaveBeenCalledWith(sessionData)
+      expect(mockFooterYmlService.update).toHaveBeenCalledWith(sessionData, {
         fileContent: {
           ...mockFooterContent,
           feedback: updatedFeedback,
@@ -155,7 +157,7 @@ describe("ContactUs Page Service", () => {
         sha: oldSha,
       }
 
-      await expect(service.update(reqDetails, updateReq)).rejects.toThrowError(
+      await expect(service.update(sessionData, updateReq)).rejects.toThrowError(
         NotFoundError
       )
 
@@ -163,7 +165,7 @@ describe("ContactUs Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName: CONTACT_US_FILENAME,
         directoryName: CONTACT_US_DIRECTORY_NAME,
         fileContent: mockRawContactUsContent,

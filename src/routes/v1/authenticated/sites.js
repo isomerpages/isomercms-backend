@@ -189,7 +189,7 @@ router.get(
 )
 router.get(
   "/:siteName",
-  statsMiddleware.logV1CallFor("getSite"),
+  statsMiddleware.logV1CallFor("checkHasAccess"),
   attachReadRouteHandlerWrapper(checkHasAccess)
 )
 router.get(

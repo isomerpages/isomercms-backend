@@ -94,7 +94,7 @@ export class LaunchesService {
       const createRedirectionParams = {
         launchId: launch.id,
         type: RedirectionTypes.A,
-        source: createParams.redirectionDomainSource,
+        source: createParams.primaryDomainSource,
         target: createParams.primaryDomainTarget,
       }
       await this.redirectionsRepository.create(createRedirectionParams)

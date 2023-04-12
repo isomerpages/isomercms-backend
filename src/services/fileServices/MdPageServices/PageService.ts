@@ -349,7 +349,7 @@ export class PageService {
       case "SubcollectionPage": {
         return okAsync(
           `${baseUrl}/folders/${pageName.collection.slice(1)}/subfolders/${
-            pageName.subCollection
+            pageName.subcollection
           }/editPage/${pageName.name}`
         )
       }

@@ -1,4 +1,3 @@
-import { ReturnValue } from "aws-sdk/clients/dynamodb"
 import _ from "lodash"
 import { err, ok, okAsync } from "neverthrow"
 import { Attributes, ModelStatic } from "sequelize"
@@ -63,6 +62,7 @@ const MockPageService: {
   extractResourceRoomName: jest.fn(),
   parsePageName: jest.fn(),
   retrieveStagingPermalink: jest.fn(),
+  retrieveCmsPermalink: jest.fn(),
 }
 const MockReviewApi = {
   approvePullRequest: jest.fn(),
@@ -145,7 +145,8 @@ describe("ReviewRequestService", () => {
           type: ["page"],
           name: MOCK_PULL_REQUEST_FILE_FILENAME_ONE,
           path: [],
-          url: "www.google.com",
+          fileUrl: "www.google.com",
+          stagingUrl: "www.google.com",
           lastEditedBy: MOCK_GITHUB_NAME_ONE,
           lastEditedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
         },
@@ -153,7 +154,8 @@ describe("ReviewRequestService", () => {
           type: ["page"],
           name: MOCK_PULL_REQUEST_FILE_FILENAME_TWO,
           path: MOCK_COMMIT_FILEPATH_TWO.split("/"),
-          url: "www.google.com",
+          fileUrl: "www.google.com",
+          stagingUrl: "www.google.com",
           lastEditedBy: MOCK_GITHUB_NAME_TWO,
           lastEditedTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
         },
@@ -161,6 +163,9 @@ describe("ReviewRequestService", () => {
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockPageService.parsePageName.mockReturnValue(okAsync("mock page name"))
       MockPageService.retrieveStagingPermalink.mockReturnValue(
+        okAsync("www.google.com")
+      )
+      MockPageService.retrieveCmsPermalink.mockReturnValue(
         okAsync("www.google.com")
       )
 

@@ -23,7 +23,9 @@ class UnlinkedPageService {
       !shouldIgnoreCheck &&
       titleSpecialCharCheck({ title: fileName, isFile: true })
     )
-      throw new BadRequestError("Special characters not allowed in file name")
+      throw new BadRequestError(
+        `Special characters not allowed when creating file. Given name: ${fileName}`
+      )
     delete frontMatter.third_nav_title
     const newContent = convertDataToMarkdown(frontMatter, content)
     const { sha } = await this.gitHubService.create(sessionData, {
@@ -75,7 +77,9 @@ class UnlinkedPageService {
     { oldFileName, newFileName, content, frontMatter, sha }
   ) {
     if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
+      throw new BadRequestError(
+        `Special characters not allowed when renaming file. Given name: ${newFileName}`
+      )
     const newContent = convertDataToMarkdown(frontMatter, content)
     await this.gitHubService.delete(sessionData, {
       sha,

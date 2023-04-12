@@ -27,7 +27,9 @@ class ResourcePageService {
     const title = titleTokenArray.join("-")
 
     if (titleSpecialCharCheck({ title, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
+      throw new BadRequestError(
+        `Special characters not allowed when creating resource files. Given name: ${title}`
+      )
 
     return { date, type, title }
   }

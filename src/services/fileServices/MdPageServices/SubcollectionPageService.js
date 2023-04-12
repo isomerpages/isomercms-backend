@@ -29,7 +29,9 @@ class SubcollectionPageService {
       !shouldIgnoreCheck &&
       titleSpecialCharCheck({ title: fileName, isFile: true })
     )
-      throw new BadRequestError("Special characters not allowed in file name")
+      throw new BadRequestError(
+        `Special characters not allowed when creating files. Given name: ${fileName}`
+      )
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.addItemToOrder(sessionData, {
@@ -112,7 +114,9 @@ class SubcollectionPageService {
     }
   ) {
     if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
+      throw new BadRequestError(
+        `Special characters not allowed when renaming files. Given name: ${newFileName}`
+      )
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.updateItemInOrder(sessionData, {

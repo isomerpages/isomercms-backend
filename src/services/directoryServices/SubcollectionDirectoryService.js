@@ -44,7 +44,7 @@ class SubcollectionDirectoryService {
   ) {
     if (titleSpecialCharCheck({ title: subcollectionName, isFile: false }))
       throw new BadRequestError(
-        "Special characters not allowed in directory name"
+        `Special characters not allowed when creating subdirectory. Given name: ${subcollectionName}`
       )
     const parsedSubcollectionName = deslugifyCollectionName(subcollectionName)
     const parsedDir = `_${collectionName}/${parsedSubcollectionName}`
@@ -84,7 +84,7 @@ class SubcollectionDirectoryService {
   ) {
     if (titleSpecialCharCheck({ title: newDirectoryName, isFile: false }))
       throw new BadRequestError(
-        "Special characters not allowed in directory name"
+        `Special characters not allowed when renaming subdirectory. Given name: ${newDirectoryName}`
       )
     const parsedNewName = deslugifyCollectionName(newDirectoryName)
     const dir = `_${collectionName}/${subcollectionName}`

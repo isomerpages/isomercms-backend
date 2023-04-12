@@ -8,7 +8,10 @@ import {
   maliciousMarkdownContent,
   normalJsonObject,
   maliciousJsonObject,
+  rawInstagramEmbedScript,
+  sanitizedInstagramEmbedScript,
 } from "@fixtures/markdown-fixtures"
+import { sanitizer } from "@root/services/utilServices/Sanitizer"
 
 describe("Sanitized markdown utils test", () => {
   it("should parse normal markdown content into an object successfully", () => {
@@ -34,6 +37,15 @@ describe("Sanitized markdown utils test", () => {
     const { frontMatter, pageContent } = maliciousJsonObject
     expect(convertDataToMarkdown(frontMatter, pageContent)).toBe(
       normalMarkdownContent
+    )
+  })
+
+  it("should sanitize boolean tags with an empty string", () => {
+    // NOTE: Setting a boolean attr to an empty string is equivalent
+    // to it being true.
+    // See the HTML spec: https://html.spec.whatwg.org/#boolean-attributes
+    expect(sanitizer.sanitize(rawInstagramEmbedScript)).toBe(
+      sanitizedInstagramEmbedScript
     )
   })
 })

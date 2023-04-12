@@ -20,7 +20,7 @@ describe("Subcollection Directory Service", () => {
     },
   ]
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockBaseDirectoryService = {
     list: jest.fn(),
@@ -85,10 +85,10 @@ describe("Subcollection Directory Service", () => {
     mockCollectionYmlService.listContents.mockResolvedValueOnce(listResp)
     it("ListFiles returns all files properly formatted", async () => {
       await expect(
-        service.listFiles(reqDetails, { collectionName, subcollectionName })
+        service.listFiles(sessionData, { collectionName, subcollectionName })
       ).resolves.toMatchObject(expectedResp)
       expect(mockCollectionYmlService.listContents).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
         }
@@ -100,7 +100,7 @@ describe("Subcollection Directory Service", () => {
     const parsedDir = `_${collectionName}/${subcollectionName}`
     it("rejects subcollection names with special characters", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName,
           subcollectionName: "dir/dir",
         })
@@ -108,7 +108,7 @@ describe("Subcollection Directory Service", () => {
     })
     it("Creating a directory with no specified files works correctly", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName,
           subcollectionName,
         })
@@ -116,13 +116,13 @@ describe("Subcollection Directory Service", () => {
         newDirectoryName: subcollectionName,
         items: [],
       })
-      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGitHubService.create).toHaveBeenCalledWith(sessionData, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
         directoryName: parsedDir,
       })
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
           item: `${subcollectionName}/${PLACEHOLDER_FILE_NAME}`,
@@ -132,7 +132,7 @@ describe("Subcollection Directory Service", () => {
 
     it("Creating a directory with specified files works correctly", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName,
           subcollectionName,
           objArray,
@@ -141,20 +141,20 @@ describe("Subcollection Directory Service", () => {
         newDirectoryName: subcollectionName,
         items: objArray,
       })
-      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGitHubService.create).toHaveBeenCalledWith(sessionData, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
         directoryName: parsedDir,
       })
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
           item: `${subcollectionName}/${PLACEHOLDER_FILE_NAME}`,
         }
       )
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           newFileCollection: collectionName,
@@ -167,7 +167,7 @@ describe("Subcollection Directory Service", () => {
       const originalTitle = `hEllo there`
       const expectedTitle = `HEllo there`
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName,
           subcollectionName: originalTitle,
           objArray,
@@ -176,20 +176,20 @@ describe("Subcollection Directory Service", () => {
         newDirectoryName: expectedTitle,
         items: objArray,
       })
-      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGitHubService.create).toHaveBeenCalledWith(sessionData, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
         directoryName: `_${collectionName}/${expectedTitle}`,
       })
       expect(mockCollectionYmlService.addItemToOrder).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
           item: `${expectedTitle}/${PLACEHOLDER_FILE_NAME}`,
         }
       )
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           newFileCollection: collectionName,
@@ -227,7 +227,7 @@ describe("Subcollection Directory Service", () => {
 
     it("rejects subcollection names with special characters", async () => {
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(sessionData, {
           collectionName,
           subcollectionName,
           newDirectoryName: "dir/dir",
@@ -239,18 +239,18 @@ describe("Subcollection Directory Service", () => {
       const newDirectoryName = "New Dir"
       mockBaseDirectoryService.list.mockResolvedValueOnce(readDirResp)
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(sessionData, {
           collectionName,
           subcollectionName,
           newDirectoryName,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
         directoryName: dir,
       })
       readDirResp.forEach((file) => {
         if (file.name === PLACEHOLDER_FILE_NAME) {
-          expect(mockGitHubService.delete).toHaveBeenCalledWith(reqDetails, {
+          expect(mockGitHubService.delete).toHaveBeenCalledWith(sessionData, {
             sha: file.sha,
             fileName: file.name,
             directoryName: dir,
@@ -258,7 +258,7 @@ describe("Subcollection Directory Service", () => {
         } else {
           expect(
             mockSubcollectionPageService.updateSubcollection
-          ).toHaveBeenCalledWith(reqDetails, {
+          ).toHaveBeenCalledWith(sessionData, {
             fileName: file.name,
             collectionName,
             oldSubcollectionName: subcollectionName,
@@ -266,13 +266,13 @@ describe("Subcollection Directory Service", () => {
           })
         }
       })
-      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGitHubService.create).toHaveBeenCalledWith(sessionData, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
         directoryName: `_${collectionName}/${newDirectoryName}`,
       })
       expect(
-        mockCollectionYmlService.renameSubfolderInOrder(reqDetails, {
+        mockCollectionYmlService.renameSubfolderInOrder(sessionData, {
           collectionName,
           oldSubfolder: subcollectionName,
           newSubfolder: newDirectoryName,
@@ -285,18 +285,18 @@ describe("Subcollection Directory Service", () => {
       const expectedTitle = `HEllo there`
       mockBaseDirectoryService.list.mockResolvedValueOnce(readDirResp)
       await expect(
-        service.renameDirectory(reqDetails, {
+        service.renameDirectory(sessionData, {
           collectionName,
           subcollectionName,
           newDirectoryName: originalTitle,
         })
       ).resolves.not.toThrowError()
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
         directoryName: dir,
       })
       readDirResp.forEach((file) => {
         if (file.name === PLACEHOLDER_FILE_NAME) {
-          expect(mockGitHubService.delete).toHaveBeenCalledWith(reqDetails, {
+          expect(mockGitHubService.delete).toHaveBeenCalledWith(sessionData, {
             sha: file.sha,
             fileName: file.name,
             directoryName: dir,
@@ -304,7 +304,7 @@ describe("Subcollection Directory Service", () => {
         } else {
           expect(
             mockSubcollectionPageService.updateSubcollection
-          ).toHaveBeenCalledWith(reqDetails, {
+          ).toHaveBeenCalledWith(sessionData, {
             fileName: file.name,
             collectionName,
             oldSubcollectionName: subcollectionName,
@@ -312,13 +312,13 @@ describe("Subcollection Directory Service", () => {
           })
         }
       })
-      expect(mockGitHubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGitHubService.create).toHaveBeenCalledWith(sessionData, {
         content: "",
         fileName: PLACEHOLDER_FILE_NAME,
         directoryName: `_${collectionName}/${expectedTitle}`,
       })
       expect(
-        mockCollectionYmlService.renameSubfolderInOrder(reqDetails, {
+        mockCollectionYmlService.renameSubfolderInOrder(sessionData, {
           collectionName,
           oldSubfolder: subcollectionName,
           newSubfolder: expectedTitle,
@@ -330,13 +330,13 @@ describe("Subcollection Directory Service", () => {
   describe("DeleteDirectory", () => {
     it("Deleting a directory works correctly", async () => {
       await expect(
-        service.deleteDirectory(reqDetails, mockGithubSessionData, {
+        service.deleteDirectory(sessionData, mockGithubSessionData, {
           collectionName,
           subcollectionName,
         })
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           directoryName: `_${collectionName}/${subcollectionName}`,
@@ -345,7 +345,7 @@ describe("Subcollection Directory Service", () => {
       )
       expect(
         mockCollectionYmlService.deleteSubfolderFromOrder
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(sessionData, {
         collectionName,
         subfolder: subcollectionName,
       })
@@ -382,14 +382,14 @@ describe("Subcollection Directory Service", () => {
     mockCollectionYmlService.listContents.mockResolvedValueOnce(listResp)
     it("Reordering a directory works correctly", async () => {
       await expect(
-        service.reorderDirectory(reqDetails, {
+        service.reorderDirectory(sessionData, {
           collectionName,
           subcollectionName,
           objArray: newObjArray,
         })
       ).resolves.toMatchObject(newObjArray)
       expect(mockCollectionYmlService.updateOrder).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
           newOrder: expectedNewOrder,
@@ -403,14 +403,14 @@ describe("Subcollection Directory Service", () => {
     const targetSubcollectionName = "target-subcollection"
     it("Moving pages in a subcollection to unlinked pages works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           collectionName,
           subcollectionName,
           objArray,
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           oldFileSubcollection: subcollectionName,
@@ -419,7 +419,7 @@ describe("Subcollection Directory Service", () => {
     })
     it("Moving pages in a subcollection to a collection works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           collectionName,
           subcollectionName,
           targetCollectionName,
@@ -427,7 +427,7 @@ describe("Subcollection Directory Service", () => {
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           oldFileSubcollection: subcollectionName,
@@ -437,7 +437,7 @@ describe("Subcollection Directory Service", () => {
     })
     it("Moving pages in a subcollection to another subcollection works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           collectionName,
           subcollectionName,
           targetCollectionName,
@@ -446,7 +446,7 @@ describe("Subcollection Directory Service", () => {
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           oldFileSubcollection: subcollectionName,

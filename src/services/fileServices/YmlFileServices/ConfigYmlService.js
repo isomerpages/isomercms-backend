@@ -21,9 +21,9 @@ class ConfigYmlService {
     return { content, sha }
   }
 
-  async update(reqDetails, { fileContent, sha }) {
+  async update(sessionData, { fileContent, sha }) {
     const stringifiedContent = sanitizedYamlStringify(fileContent)
-    const { newSha } = await this.gitHubService.update(reqDetails, {
+    const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: stringifiedContent,
       sha,
       fileName: CONFIG_FILE_NAME,

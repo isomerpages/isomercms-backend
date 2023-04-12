@@ -193,17 +193,17 @@ export class FormsgSiteLaunchRouter {
 
         ({
           submissionId,
-          requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD),
-          repoName: element[2],
-          primaryDomain: this.getPrimaryDomain(element[0]),
+          requesterEmail: getField(responses, REQUESTER_EMAIL_FIELD)?.trim(),
+          repoName: element[2].trim(),
+          primaryDomain: this.getPrimaryDomain(element[0]).trim(),
           redirectionDomain:
             element[1] === "WWW"
-              ? `www.${this.getPrimaryDomain(element[0])}`
+              ? `www.${this.getPrimaryDomain(element[0]).trim()}`
               : "",
           // if agency email not needed, use email from requester instead
           agencyEmail: element[3]
-            ? element[3]
-            : getField(responses, REQUESTER_EMAIL_FIELD),
+            ? element[3].trim()
+            : getField(responses, REQUESTER_EMAIL_FIELD)?.trim(),
         })
       ) || []
 

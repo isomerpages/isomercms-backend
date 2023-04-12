@@ -1,4 +1,5 @@
 const specialCharactersRegexTest = /[~%^*_+\-./\\`;~{}[\]"<>]/
+const jekyllFirstCharacterRegexTest = /^[._#~]/
 const dateRegexTest = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 
 const mediaSpecialCharactersRegexTest = /[~%^#*+\./\\`;~{}[\]"<>]/ // Allows dashes
@@ -11,7 +12,10 @@ const titleSpecialCharCheck = ({ title, isFile = false }) => {
     // Remove .md
     testTitle = title.replace(/.md$/, "")
   }
-  return specialCharactersRegexTest.test(testTitle)
+  return (
+    specialCharactersRegexTest.test(testTitle) ||
+    jekyllFirstCharacterRegexTest.test(testTitle)
+  )
 }
 
 const isDateValid = (date) => dateRegexTest.test(date)

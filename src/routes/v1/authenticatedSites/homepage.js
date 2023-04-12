@@ -12,7 +12,7 @@ const {
 const { File, HomepageType } = require("@classes/File")
 
 // Constants
-const { HOMEPAGE_NAME } = require("@root/constants")
+const { HOMEPAGE_FILENAME } = require("@root/constants")
 
 // Read homepage index file
 async function readHomepage(req, res) {
@@ -24,7 +24,9 @@ async function readHomepage(req, res) {
   const IsomerFile = new File(accessToken, siteName)
   const homepageType = new HomepageType()
   IsomerFile.setFileType(homepageType)
-  const { sha, content: encodedContent } = await IsomerFile.read(HOMEPAGE_NAME)
+  const { sha, content: encodedContent } = await IsomerFile.read(
+    HOMEPAGE_FILENAME
+  )
   const content = Base64.decode(encodedContent)
 
   // TO-DO:
@@ -48,7 +50,7 @@ async function updateHomepage(req, res) {
   const homepageType = new HomepageType()
   IsomerFile.setFileType(homepageType)
   const { newSha } = await IsomerFile.update(
-    HOMEPAGE_NAME,
+    HOMEPAGE_FILENAME,
     Base64.encode(content),
     sha
   )

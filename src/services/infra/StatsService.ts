@@ -35,9 +35,9 @@ export class StatsService {
     this.sitesRepo = sitesRepo
   }
 
-  submitV1Count = (path: string) => {
-    this.statsD.increment("versions.v1", {
-      version: "v1",
+  submitApiVersionCount = (version: number, path: string) => {
+    this.statsD.increment(`versions.v${version}`, {
+      version: `v${version}`,
       path,
     })
   }

@@ -255,37 +255,37 @@ async function renameCollectionPage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listCollectionPages"),
+  statsMiddleware.logVersionNumberCallFor(1, "listCollectionPages"),
   attachReadRouteHandlerWrapper(listCollectionPages)
 )
 router.get(
   "/pages",
-  statsMiddleware.logV1CallFor("listCollectionPagesDetails"),
+  statsMiddleware.logVersionNumberCallFor(1, "listCollectionPagesDetails"),
   attachReadRouteHandlerWrapper(listCollectionPagesDetails)
 )
 router.post(
   "/pages/new/:pageName",
-  statsMiddleware.logV1CallFor("createCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "createCollectionPage"),
   attachRollbackRouteHandlerWrapper(createCollectionPage)
 )
 router.get(
   "/pages/:pageName",
-  statsMiddleware.logV1CallFor("readCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "readCollectionPage"),
   attachReadRouteHandlerWrapper(readCollectionPage)
 )
 router.post(
   "/pages/:pageName",
-  statsMiddleware.logV1CallFor("updateCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateCollectionPage"),
   attachWriteRouteHandlerWrapper(updateCollectionPage)
 )
 router.delete(
   "/pages/:pageName",
-  statsMiddleware.logV1CallFor("deleteCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteCollectionPage"),
   attachRollbackRouteHandlerWrapper(deleteCollectionPage)
 )
 router.post(
   "/pages/:pageName/rename/:newPageName",
-  statsMiddleware.logV1CallFor("renameCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameCollectionPage"),
   attachRollbackRouteHandlerWrapper(renameCollectionPage)
 )
 

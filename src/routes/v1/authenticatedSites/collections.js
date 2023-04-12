@@ -184,27 +184,27 @@ async function moveFiles(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listCollections"),
+  statsMiddleware.logVersionNumberCallFor(1, "listCollections"),
   attachReadRouteHandlerWrapper(listCollections)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("createNewCollection"),
+  statsMiddleware.logVersionNumberCallFor(1, "createNewCollection"),
   attachRollbackRouteHandlerWrapper(createNewCollection)
 )
 router.delete(
   "/:collectionName",
-  statsMiddleware.logV1CallFor("deleteCollection"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteCollection"),
   attachRollbackRouteHandlerWrapper(deleteCollection)
 )
 router.post(
   "/:collectionName/rename/:newCollectionName",
-  statsMiddleware.logV1CallFor("renameCollection"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameCollection"),
   attachRollbackRouteHandlerWrapper(renameCollection)
 )
 router.post(
   "/:collectionPath/move/:targetPath",
-  statsMiddleware.logV1CallFor("moveFiles"),
+  statsMiddleware.logVersionNumberCallFor(1, "moveFiles"),
   attachRollbackRouteHandlerWrapper(moveFiles)
 )
 

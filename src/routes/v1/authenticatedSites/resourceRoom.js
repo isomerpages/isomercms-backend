@@ -69,22 +69,22 @@ async function deleteResourceRoom(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("getResourceRoomName"),
+  statsMiddleware.logVersionNumberCallFor(1, "getResourceRoomName"),
   attachReadRouteHandlerWrapper(getResourceRoomName)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("createResourceRoom"),
+  statsMiddleware.logVersionNumberCallFor(1, "createResourceRoom"),
   attachRollbackRouteHandlerWrapper(createResourceRoom)
 )
 router.post(
   "/:resourceRoom",
-  statsMiddleware.logV1CallFor("renameResourceRoom"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameResourceRoom"),
   attachRollbackRouteHandlerWrapper(renameResourceRoom)
 )
 router.delete(
   "/",
-  statsMiddleware.logV1CallFor("deleteResourceRoom"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteResourceRoom"),
   attachRollbackRouteHandlerWrapper(deleteResourceRoom)
 )
 

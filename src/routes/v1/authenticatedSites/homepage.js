@@ -62,12 +62,12 @@ async function updateHomepage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("readHomepage"),
+  statsMiddleware.logVersionNumberCallFor(1, "readHomepage"),
   attachReadRouteHandlerWrapper(readHomepage)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("updateHomepage"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateHomepage"),
   attachWriteRouteHandlerWrapper(updateHomepage)
 )
 

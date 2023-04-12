@@ -58,12 +58,12 @@ async function updateNavigation(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("getNavigation"),
+  statsMiddleware.logVersionNumberCallFor(1, "getNavigation"),
   attachReadRouteHandlerWrapper(getNavigation)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("updateNavigation"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateNavigation"),
   attachWriteRouteHandlerWrapper(updateNavigation)
 )
 

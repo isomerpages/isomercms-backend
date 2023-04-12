@@ -21,7 +21,7 @@ const getAuthenticatedSubrouter = ({
   authenticatedSubrouter.use("/sites", sitesRouter)
   authenticatedSubrouter.use(
     "/user",
-    statsMiddleware.logV1CallFor("user"),
+    statsMiddleware.logVersionNumberCallFor(1, "user"),
     usersRouter.getRouter()
   )
 

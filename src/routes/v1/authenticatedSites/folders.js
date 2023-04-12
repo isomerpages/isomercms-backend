@@ -155,17 +155,17 @@ async function renameSubfolder(req, res) {
 
 router.get(
   "/all",
-  statsMiddleware.logV1CallFor("listAllFolderContent"),
+  statsMiddleware.logVersionNumberCallFor(1, "listAllFolderContent"),
   attachReadRouteHandlerWrapper(listAllFolderContent)
 )
 router.delete(
   "/:folderName/subfolder/:subfolderName",
-  statsMiddleware.logV1CallFor("deleteSubfolder"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteSubfolder"),
   attachRollbackRouteHandlerWrapper(deleteSubfolder)
 )
 router.post(
   "/:folderName/subfolder/:subfolderName/rename/:newSubfolderName",
-  statsMiddleware.logV1CallFor("renameSubfolder"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameSubfolder"),
   attachRollbackRouteHandlerWrapper(renameSubfolder)
 )
 

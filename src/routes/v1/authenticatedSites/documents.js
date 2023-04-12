@@ -184,37 +184,37 @@ async function moveDocument(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listDocuments"),
+  statsMiddleware.logVersionNumberCallFor(1, "listDocuments"),
   attachReadRouteHandlerWrapper(listDocuments)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("createNewDocument"),
+  statsMiddleware.logVersionNumberCallFor(1, "createNewDocument"),
   attachWriteRouteHandlerWrapper(createNewDocument)
 )
 router.get(
   "/:documentName",
-  statsMiddleware.logV1CallFor("readDocument"),
+  statsMiddleware.logVersionNumberCallFor(1, "readDocument"),
   attachReadRouteHandlerWrapper(readDocument)
 )
 router.post(
   "/:documentName",
-  statsMiddleware.logV1CallFor("updateDocument"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateDocument"),
   attachWriteRouteHandlerWrapper(updateDocument)
 )
 router.delete(
   "/:documentName",
-  statsMiddleware.logV1CallFor("deleteDocument"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteDocument"),
   attachWriteRouteHandlerWrapper(deleteDocument)
 )
 router.post(
   "/:documentName/rename/:newDocumentName",
-  statsMiddleware.logV1CallFor("renameDocument"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameDocument"),
   attachRollbackRouteHandlerWrapper(renameDocument)
 )
 router.post(
   "/:documentName/move/:newDocumentName",
-  statsMiddleware.logV1CallFor("moveDocument"),
+  statsMiddleware.logVersionNumberCallFor(1, "moveDocument"),
   attachRollbackRouteHandlerWrapper(moveDocument)
 )
 

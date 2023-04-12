@@ -176,32 +176,32 @@ async function renameResourcePage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listResourcePages"),
+  statsMiddleware.logVersionNumberCallFor(1, "listResourcePages"),
   attachReadRouteHandlerWrapper(listResourcePages)
 )
 router.post(
   "/pages/new/:pageName",
-  statsMiddleware.logV1CallFor("createNewResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "createNewResourcePage"),
   attachRollbackRouteHandlerWrapper(createNewResourcePage)
 )
 router.get(
   "/pages/:pageName",
-  statsMiddleware.logV1CallFor("readResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "readResourcePage"),
   attachReadRouteHandlerWrapper(readResourcePage)
 )
 router.post(
   "/pages/:pageName",
-  statsMiddleware.logV1CallFor("updateResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateResourcePage"),
   attachWriteRouteHandlerWrapper(updateResourcePage)
 )
 router.delete(
   "/pages/:pageName",
-  statsMiddleware.logV1CallFor("deleteResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteResourcePage"),
   attachRollbackRouteHandlerWrapper(deleteResourcePage)
 )
 router.post(
   "/pages/:pageName/rename/:newPageName",
-  statsMiddleware.logV1CallFor("renameResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameResourcePage"),
   attachRollbackRouteHandlerWrapper(renameResourcePage)
 )
 

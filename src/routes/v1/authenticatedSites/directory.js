@@ -35,7 +35,7 @@ async function listDirectoryContent(req, res) {
 
 router.get(
   "/:path",
-  statsMiddleware.logV1CallFor("listDirectoryContent"),
+  statsMiddleware.logVersionNumberCallFor(1, "listDirectoryContent"),
   attachReadRouteHandlerWrapper(listDirectoryContent)
 )
 

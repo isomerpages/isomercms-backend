@@ -184,22 +184,22 @@ async function getStagingUrl(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("getSites"),
+  statsMiddleware.logVersionNumberCallFor(1, "getSites"),
   attachReadRouteHandlerWrapper(getSites)
 )
 router.get(
   "/:siteName",
-  statsMiddleware.logV1CallFor("checkHasAccess"),
+  statsMiddleware.logVersionNumberCallFor(1, "checkHasAccess"),
   attachReadRouteHandlerWrapper(checkHasAccess)
 )
 router.get(
   "/:siteName/lastUpdated",
-  statsMiddleware.logV1CallFor("getLastUpdated"),
+  statsMiddleware.logVersionNumberCallFor(1, "getLastUpdated"),
   attachReadRouteHandlerWrapper(getLastUpdated)
 )
 router.get(
   "/:siteName/stagingUrl",
-  statsMiddleware.logV1CallFor("getStagingUrl"),
+  statsMiddleware.logVersionNumberCallFor(1, "getStagingUrl"),
   attachReadRouteHandlerWrapper(getStagingUrl)
 )
 

@@ -35,12 +35,12 @@ async function updateSettings(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("getSettings"),
+  statsMiddleware.logVersionNumberCallFor(1, "getSettings"),
   attachReadRouteHandlerWrapper(getSettings)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("updateSettings"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateSettings"),
   attachRollbackRouteHandlerWrapper(updateSettings)
 )
 

@@ -186,37 +186,37 @@ async function moveImage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listImages"),
+  statsMiddleware.logVersionNumberCallFor(1, "listImages"),
   attachReadRouteHandlerWrapper(listImages)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("createNewImage"),
+  statsMiddleware.logVersionNumberCallFor(1, "createNewImage"),
   attachWriteRouteHandlerWrapper(createNewImage)
 )
 router.get(
   "/:imageName",
-  statsMiddleware.logV1CallFor("readImage"),
+  statsMiddleware.logVersionNumberCallFor(1, "readImage"),
   attachReadRouteHandlerWrapper(readImage)
 )
 router.post(
   "/:imageName",
-  statsMiddleware.logV1CallFor("updateImage"),
+  statsMiddleware.logVersionNumberCallFor(1, "updateImage"),
   attachWriteRouteHandlerWrapper(updateImage)
 )
 router.delete(
   "/:imageName",
-  statsMiddleware.logV1CallFor("deleteImage"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteImage"),
   attachWriteRouteHandlerWrapper(deleteImage)
 )
 router.post(
   "/:imageName/rename/:newImageName",
-  statsMiddleware.logV1CallFor("renameImage"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameImage"),
   attachRollbackRouteHandlerWrapper(renameImage)
 )
 router.post(
   "/:imageName/move/:newImageName",
-  statsMiddleware.logV1CallFor("moveImage"),
+  statsMiddleware.logVersionNumberCallFor(1, "moveImage"),
   attachRollbackRouteHandlerWrapper(moveImage)
 )
 

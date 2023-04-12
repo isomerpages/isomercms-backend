@@ -15,12 +15,12 @@ export class StatsMiddleware {
     autoBind(this)
   }
 
-  logV1CallFor: (path: string) => RequestHandler = (path: string) => (
+  logVersionNumberCallFor = (version: number, path: string): RequestHandler => (
     _req,
     _res,
     next
   ) => {
-    this.statsService.submitV1Count(path)
+    this.statsService.submitApiVersionCount(version, path)
     next()
   }
 }

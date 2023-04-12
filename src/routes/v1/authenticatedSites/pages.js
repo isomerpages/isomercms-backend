@@ -222,37 +222,37 @@ async function moveUnlinkedPages(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listPages"),
+  statsMiddleware.logVersionNumberCallFor(1, "listPages"),
   attachReadRouteHandlerWrapper(listPages)
 )
 router.post(
   "/new/:pageName",
-  statsMiddleware.logV1CallFor("createPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "createPage"),
   attachWriteRouteHandlerWrapper(createPage)
 )
 router.get(
   "/:pageName",
-  statsMiddleware.logV1CallFor("readPage"),
+  statsMiddleware.logVersionNumberCallFor(1, "readPage"),
   attachReadRouteHandlerWrapper(readPage)
 )
 router.post(
   "/:pageName",
-  statsMiddleware.logV1CallFor("updatePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "updatePage"),
   attachWriteRouteHandlerWrapper(updatePage)
 )
 router.delete(
   "/:pageName",
-  statsMiddleware.logV1CallFor("deletePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "deletePage"),
   attachWriteRouteHandlerWrapper(deletePage)
 )
 router.post(
   "/:pageName/rename/:newPageName",
-  statsMiddleware.logV1CallFor("renamePage"),
+  statsMiddleware.logVersionNumberCallFor(1, "renamePage"),
   attachRollbackRouteHandlerWrapper(renamePage)
 )
 router.post(
   "/move/:newPagePath",
-  statsMiddleware.logV1CallFor("moveUnlinkedPages"),
+  statsMiddleware.logVersionNumberCallFor(1, "moveUnlinkedPages"),
   attachRollbackRouteHandlerWrapper(moveUnlinkedPages)
 )
 

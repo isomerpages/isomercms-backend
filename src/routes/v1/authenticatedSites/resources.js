@@ -125,27 +125,27 @@ async function moveResources(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("listResources"),
+  statsMiddleware.logVersionNumberCallFor(1, "listResources"),
   attachReadRouteHandlerWrapper(listResources)
 )
 router.post(
   "/",
-  statsMiddleware.logV1CallFor("createNewResource"),
+  statsMiddleware.logVersionNumberCallFor(1, "createNewResource"),
   attachRollbackRouteHandlerWrapper(createNewResource)
 )
 router.delete(
   "/:resourceName",
-  statsMiddleware.logV1CallFor("deleteResource"),
+  statsMiddleware.logVersionNumberCallFor(1, "deleteResource"),
   attachRollbackRouteHandlerWrapper(deleteResource)
 )
 router.post(
   "/:resourceName/rename/:newResourceName",
-  statsMiddleware.logV1CallFor("renameResource"),
+  statsMiddleware.logVersionNumberCallFor(1, "renameResource"),
   attachRollbackRouteHandlerWrapper(renameResource)
 )
 router.post(
   "/:resourceName/move/:newResourceName",
-  statsMiddleware.logV1CallFor("moveResources"),
+  statsMiddleware.logVersionNumberCallFor(1, "moveResources"),
   attachRollbackRouteHandlerWrapper(moveResources)
 )
 

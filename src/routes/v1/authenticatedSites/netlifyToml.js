@@ -33,7 +33,7 @@ async function getNetlifyToml(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logV1CallFor("getNetlifyToml"),
+  statsMiddleware.logVersionNumberCallFor(1, "getNetlifyToml"),
   attachReadRouteHandlerWrapper(getNetlifyToml)
 )
 

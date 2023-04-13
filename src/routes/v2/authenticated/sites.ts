@@ -68,10 +68,10 @@ export class SitesRouter {
     )
 
     // Check for error and throw
-    if (possibleStagingUrl instanceof BaseIsomerError) {
-      return res.status(404).json({ message: possibleStagingUrl.message })
+    if (possibleStagingUrl.isErr()) {
+      return res.status(404).json({ message: possibleStagingUrl.error.message })
     }
-    return res.status(200).json({ stagingUrl: possibleStagingUrl })
+    return res.status(200).json({ stagingUrl: possibleStagingUrl.value })
   }
 
   getSiteUrl: RequestHandler<

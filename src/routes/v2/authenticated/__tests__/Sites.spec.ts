@@ -1,4 +1,5 @@
 import express from "express"
+import { ok } from "neverthrow"
 import request from "supertest"
 
 import type { AuthorizationMiddleware } from "@middleware/authorization"
@@ -91,7 +92,7 @@ describe("Sites Router", () => {
   describe("getStagingUrl", () => {
     it("returns the site's staging URL", async () => {
       const stagingUrl = "staging-url"
-      mockSitesService.getStagingUrl.mockResolvedValueOnce(stagingUrl)
+      mockSitesService.getStagingUrl.mockResolvedValueOnce(ok(stagingUrl))
 
       const resp = await request(app)
         .get(`/${mockSiteName}/stagingUrl`)

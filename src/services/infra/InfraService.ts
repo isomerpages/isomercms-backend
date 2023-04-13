@@ -2,6 +2,8 @@ import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
 import { Err, err, errAsync, Ok, ok, okAsync, Result } from "neverthrow"
 
+import { config } from "@config/config"
+
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import {
@@ -226,23 +228,28 @@ export default class InfraService {
       )
 
       // Get DNS records from Amplify
-      /**
-       * note: we wait for ard 90 sec as there is a time taken
-       * for amplify to generate the certification manager in the first place
-       * This is a dirty workaround for now, and will cause issues when we integrate
-       * this directly within the Isomer CMS.
-       * todo: push this check into a queue-like system when integrating this with cms
-       */
-      await new Promise((resolve) => setTimeout(resolve, 90000))
-
-      /**
-       * todo: add some level of retry logic if get domain association command
-       * does not contain the DNS redirections info.
-       */
+      const isTestEnv =
+        config.get("env") === "test" || config.get("env") === "dev"
+      // since we mock values during development, we don't have to await for the dns records
+      if (!isTestEnv) {
+        /**
+         * note: we wait for ard 90 sec as there is a time taken
+         * for amplify to generate the certification manager in the first place
+         * This is a dirty workaround for now, and will cause issues when we integrate
+         * this directly within the Isomer CMS.
+         * todo: push this check into a queue-like system when integrating this with cms
+         */
+        await new Promise((resolve) => setTimeout(resolve, 90000))
+        /**
+         * todo: add some level of retry logic if get domain association command
+         * does not contain the DNS redirections info.
+         */
+      }
 
       const dnsInfo = await this.launchesService.getDomainAssociationRecord(
         primaryDomain,
-        appId
+        appId,
+        subDomainSettings
       )
 
       const certificationRecord = this.parseDNSRecords(

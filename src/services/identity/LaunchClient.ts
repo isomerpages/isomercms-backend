@@ -10,7 +10,7 @@ import {
 } from "@aws-sdk/client-amplify"
 import { SubDomain } from "aws-sdk/clients/amplify"
 
-import config from "@config/config"
+import { config } from "@config/config"
 
 // create a new interface that extends GetDomainAssociationCommandInput
 interface MockGetDomainAssociationCommandInput

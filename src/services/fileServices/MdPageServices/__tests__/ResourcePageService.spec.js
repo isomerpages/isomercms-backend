@@ -15,7 +15,7 @@ describe("Resource Page Service", () => {
   }
   const sha = "12345"
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockGithubService = {
     create: jest.fn(),
@@ -50,7 +50,7 @@ describe("Resource Page Service", () => {
     mockGithubService.create.mockResolvedValue({ sha })
     it("rejects page names with special characters", async () => {
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName: "file/file.md",
           resourceRoomName,
           resourceCategoryName,
@@ -61,7 +61,7 @@ describe("Resource Page Service", () => {
     })
     it("Creating pages works correctly", async () => {
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName,
           resourceRoomName,
           resourceCategoryName,
@@ -77,7 +77,7 @@ describe("Resource Page Service", () => {
         { ...mockFrontMatter },
         mockContent
       )
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockMarkdownContent,
         fileName,
         directoryName,
@@ -92,7 +92,7 @@ describe("Resource Page Service", () => {
     }),
       it("Reading pages works correctly", async () => {
         await expect(
-          service.read(reqDetails, {
+          service.read(sessionData, {
             fileName,
             resourceRoomName,
             resourceCategoryName,
@@ -105,7 +105,7 @@ describe("Resource Page Service", () => {
         expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
           mockMarkdownContent
         )
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+        expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
           fileName,
           directoryName,
         })
@@ -117,7 +117,7 @@ describe("Resource Page Service", () => {
     mockGithubService.update.mockResolvedValue({ newSha: sha })
     it("Updating page content works correctly", async () => {
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           resourceRoomName,
           resourceCategoryName,
@@ -135,7 +135,7 @@ describe("Resource Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         fileContent: mockMarkdownContent,
@@ -147,14 +147,14 @@ describe("Resource Page Service", () => {
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
       await expect(
-        service.delete(reqDetails, {
+        service.delete(sessionData, {
           fileName,
           resourceRoomName,
           resourceCategoryName,
           sha,
         })
       ).resolves.not.toThrow()
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha,
@@ -168,7 +168,7 @@ describe("Resource Page Service", () => {
     mockGithubService.create.mockResolvedValue({ sha })
     it("rejects renaming to page names with special characters", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(sessionData, {
           oldFileName,
           newFileName: "file/file.md",
           resourceRoomName,
@@ -180,7 +180,7 @@ describe("Resource Page Service", () => {
     })
     it("Renaming pages works correctly", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(sessionData, {
           oldFileName,
           newFileName: fileName,
           resourceRoomName,
@@ -195,12 +195,12 @@ describe("Resource Page Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
         fileName: oldFileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockMarkdownContent,
         fileName,
         directoryName,

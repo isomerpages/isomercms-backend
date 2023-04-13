@@ -23,7 +23,7 @@ describe("Nav Yml Service", () => {
   const collectionName = "collection"
   const directoryName = NAV_FILE_DIR
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
   const mockParsedContent = {
     links: [
       {
@@ -81,11 +81,11 @@ describe("Nav Yml Service", () => {
       sha: mockNavigationSha,
     })
     it("Reading the _data/navigation.yml file works correctly", async () => {
-      await expect(service.read(reqDetails)).resolves.toMatchObject({
+      await expect(service.read(sessionData)).resolves.toMatchObject({
         content: mockNavigationContent,
         sha: mockNavigationSha,
       })
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName: NAV_FILE_NAME,
         directoryName: NAV_FILE_DIR,
       })
@@ -99,14 +99,14 @@ describe("Nav Yml Service", () => {
     })
     it("Updating _data/navigation.yml file works correctly", async () => {
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileContent: mockNavigationContent,
           sha: oldSha,
         })
       ).resolves.toMatchObject({
         newSha: mockNavigationSha,
       })
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName: NAV_FILE_NAME,
         directoryName: NAV_FILE_DIR,
         fileContent: mockRawNavigationContent,
@@ -132,15 +132,15 @@ describe("Nav Yml Service", () => {
     mockGithubService.update.mockResolvedValueOnce({ newSha })
     it("Adds new collections to the end of the navigation file and returns the new sha", async () => {
       await expect(
-        service.createCollectionInNav(reqDetails, {
+        service.createCollectionInNav(sessionData, {
           collectionName: newCollection,
         })
       ).resolves.toMatchObject({ newSha })
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
       })
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         fileContent: sanitizedYamlStringify(updatedMockParsedContent),
@@ -171,16 +171,16 @@ describe("Nav Yml Service", () => {
     mockGithubService.update.mockResolvedValueOnce({ newSha })
     it("Adds new collections to the end of the navigation file and returns the new sha", async () => {
       await expect(
-        service.renameCollectionInNav(reqDetails, {
+        service.renameCollectionInNav(sessionData, {
           oldCollectionName: collectionName,
           newCollectionName: newCollection,
         })
       ).resolves.toMatchObject({ newSha })
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
       })
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         fileContent: sanitizedYamlStringify(updatedMockParsedContent),
@@ -204,15 +204,15 @@ describe("Nav Yml Service", () => {
     mockGithubService.update.mockResolvedValueOnce({ newSha })
     it("Removes selected collection from navigation file", async () => {
       await expect(
-        service.deleteCollectionInNav(reqDetails, {
+        service.deleteCollectionInNav(sessionData, {
           collectionName,
         })
       ).resolves.toMatchObject({ newSha })
-      expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
       })
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         fileContent: sanitizedYamlStringify(updatedMockParsedContent),

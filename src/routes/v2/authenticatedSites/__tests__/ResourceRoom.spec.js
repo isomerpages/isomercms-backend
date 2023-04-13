@@ -4,7 +4,10 @@ const request = require("supertest")
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
-const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
+const {
+  mockUserWithSiteSessionData,
+  mockGithubSessionData,
+} = require("@fixtures/sessionData")
 
 const { ResourceRoomRouter } = require("../resourceRoom")
 
@@ -136,10 +139,14 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(
         mockResourceRoomDirectoryService.renameResourceRoomDirectory
-      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
-        resourceRoomName,
-        newDirectoryName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+          newDirectoryName,
+        }
+      )
     })
   })
 
@@ -150,9 +157,13 @@ describe("Resource Room Router", () => {
         .expect(200)
       expect(
         mockResourceRoomDirectoryService.deleteResourceRoomDirectory
-      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
-        resourceRoomName,
-      })
+      ).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        {
+          resourceRoomName,
+        }
+      )
     })
   })
 })

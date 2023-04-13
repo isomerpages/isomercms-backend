@@ -167,6 +167,13 @@ class UsersService {
     return user
   }
 
+  async findOrCreateByEmail(email: string | undefined) {
+    const [user] = await this.repository.findOrCreate({
+      where: { email },
+    })
+    return user
+  }
+
   async login(githubId: string): Promise<User> {
     return this.sequelize.transaction<User>(async (transaction) => {
       // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction

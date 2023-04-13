@@ -15,7 +15,7 @@ const AuthService = new _AuthService({
 })
 
 describe("Auth Service", () => {
-  const mockReqDetails = {
+  const mocksessionData = {
     accessToken: mockAccessToken,
     siteName: mockSiteName,
   }

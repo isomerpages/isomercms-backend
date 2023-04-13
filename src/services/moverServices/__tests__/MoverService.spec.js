@@ -18,7 +18,7 @@ describe("Mover Service", () => {
   }
   const sha = "12345"
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockUnlinkedPageService = {
     create: jest.fn(),
@@ -69,7 +69,7 @@ describe("Mover Service", () => {
     mockSubcollectionPageService.create.mockResolvedValue(createResp)
     it("Moving unlinked page to a collection works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           // oldFileCollection,
           // oldFileSubcollection,
@@ -77,15 +77,15 @@ describe("Mover Service", () => {
           // newFileSubcollection,
         })
       ).resolves.toMatchObject(createResp)
-      expect(mockUnlinkedPageService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockUnlinkedPageService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
       })
-      expect(mockUnlinkedPageService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockUnlinkedPageService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         sha,
       })
       expect(mockCollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -97,7 +97,7 @@ describe("Mover Service", () => {
     })
     it("Moving unlinked page to a subcollection works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           // oldFileCollection,
           // oldFileSubcollection,
@@ -105,15 +105,15 @@ describe("Mover Service", () => {
           newFileSubcollection: subcollectionName,
         })
       ).resolves.toMatchObject(createResp)
-      expect(mockUnlinkedPageService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockUnlinkedPageService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
       })
-      expect(mockUnlinkedPageService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockUnlinkedPageService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         sha,
       })
       expect(mockSubcollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -126,7 +126,7 @@ describe("Mover Service", () => {
     })
     it("Moving collection page to unlinked pages works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           oldFileCollection: oldCollectionName,
           // oldFileSubcollection,
@@ -134,19 +134,19 @@ describe("Mover Service", () => {
           // newFileSubcollection,
         })
       ).resolves.toMatchObject(createResp)
-      expect(mockCollectionPageService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockCollectionPageService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
         collectionName: oldCollectionName,
       })
       expect(mockCollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
           sha,
         }
       )
-      expect(mockUnlinkedPageService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockUnlinkedPageService.create).toHaveBeenCalledWith(sessionData, {
         content: mockContent,
         frontMatter: mockFrontMatter,
         fileName,
@@ -155,7 +155,7 @@ describe("Mover Service", () => {
     })
     it("Moving collection page to another collection works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           oldFileCollection: oldCollectionName,
           // oldFileSubcollection,
@@ -163,12 +163,12 @@ describe("Mover Service", () => {
           // newFileSubcollection,
         })
       ).resolves.toMatchObject(createResp)
-      expect(mockCollectionPageService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockCollectionPageService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
         collectionName: oldCollectionName,
       })
       expect(mockCollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -176,7 +176,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockCollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -188,7 +188,7 @@ describe("Mover Service", () => {
     })
     it("Moving collection page to a subcollection works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           oldFileCollection: oldCollectionName,
           // oldFileSubcollection,
@@ -196,12 +196,12 @@ describe("Mover Service", () => {
           newFileSubcollection: subcollectionName,
         })
       ).resolves.toMatchObject(createResp)
-      expect(mockCollectionPageService.read).toHaveBeenCalledWith(reqDetails, {
+      expect(mockCollectionPageService.read).toHaveBeenCalledWith(sessionData, {
         fileName,
         collectionName: oldCollectionName,
       })
       expect(mockCollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -209,7 +209,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockSubcollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -222,14 +222,14 @@ describe("Mover Service", () => {
     })
     it("Moving subcollection page to unlinked pages works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           oldFileCollection: oldCollectionName,
           oldFileSubcollection: oldSubcollectionName,
         })
       ).resolves.toMatchObject(createResp)
       expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -237,7 +237,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockSubcollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -245,7 +245,7 @@ describe("Mover Service", () => {
           sha,
         }
       )
-      expect(mockUnlinkedPageService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockUnlinkedPageService.create).toHaveBeenCalledWith(sessionData, {
         content: mockContent,
         frontMatter: mockFrontMatter,
         fileName,
@@ -254,7 +254,7 @@ describe("Mover Service", () => {
     })
     it("Moving subcollection page to a collection works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           oldFileCollection: oldCollectionName,
           oldFileSubcollection: oldSubcollectionName,
@@ -262,7 +262,7 @@ describe("Mover Service", () => {
         })
       ).resolves.toMatchObject(createResp)
       expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -270,7 +270,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockSubcollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -279,7 +279,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockCollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -291,7 +291,7 @@ describe("Mover Service", () => {
     })
     it("Moving subcollection page to another subcollection works correctly", async () => {
       await expect(
-        service.movePage(reqDetails, {
+        service.movePage(sessionData, {
           fileName,
           oldFileCollection: oldCollectionName,
           oldFileSubcollection: oldSubcollectionName,
@@ -300,7 +300,7 @@ describe("Mover Service", () => {
         })
       ).resolves.toMatchObject(createResp)
       expect(mockSubcollectionPageService.read).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -308,7 +308,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockSubcollectionPageService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           fileName,
           collectionName: oldCollectionName,
@@ -317,7 +317,7 @@ describe("Mover Service", () => {
         }
       )
       expect(mockSubcollectionPageService.create).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           content: mockContent,
           frontMatter: mockFrontMatter,

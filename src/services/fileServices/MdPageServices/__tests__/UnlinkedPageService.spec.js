@@ -13,7 +13,7 @@ describe("Unlinked Page Service", () => {
   }
   const sha = "12345"
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockGithubService = {
     create: jest.fn(),
@@ -48,7 +48,7 @@ describe("Unlinked Page Service", () => {
     mockGithubService.create.mockResolvedValue({ sha })
     it("rejects page names with special characters", async () => {
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName: "file/file.md",
           content: mockContent,
           frontMatter: { ...mockFrontMatter },
@@ -57,7 +57,7 @@ describe("Unlinked Page Service", () => {
     })
     it("Creating pages works correctly", async () => {
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName,
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -71,7 +71,7 @@ describe("Unlinked Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockMarkdownContent,
         fileName,
         directoryName,
@@ -81,7 +81,7 @@ describe("Unlinked Page Service", () => {
     it("Creating pages skips the check for special characters if specified", async () => {
       const specialName = "test-name.md"
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName: specialName,
           content: mockContent,
           frontMatter: { ...mockFrontMatter },
@@ -96,7 +96,7 @@ describe("Unlinked Page Service", () => {
         { ...mockFrontMatter },
         mockContent
       )
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockMarkdownContent,
         fileName: specialName,
         directoryName,
@@ -111,7 +111,7 @@ describe("Unlinked Page Service", () => {
     }),
       it("Reading pages works correctly", async () => {
         await expect(
-          service.read(reqDetails, { fileName })
+          service.read(sessionData, { fileName })
         ).resolves.toMatchObject({
           fileName,
           content: { frontMatter: mockFrontMatter, pageBody: mockContent },
@@ -120,7 +120,7 @@ describe("Unlinked Page Service", () => {
         expect(retrieveDataFromMarkdown).toHaveBeenCalledWith(
           mockMarkdownContent
         )
-        expect(mockGithubService.read).toHaveBeenCalledWith(reqDetails, {
+        expect(mockGithubService.read).toHaveBeenCalledWith(sessionData, {
           fileName,
           directoryName,
         })
@@ -132,7 +132,7 @@ describe("Unlinked Page Service", () => {
     mockGithubService.update.mockResolvedValue({ newSha: sha })
     it("Updating page content works correctly", async () => {
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           content: mockContent,
           frontMatter: mockFrontMatter,
@@ -148,7 +148,7 @@ describe("Unlinked Page Service", () => {
         mockFrontMatter,
         mockContent
       )
-      expect(mockGithubService.update).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.update).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         fileContent: mockMarkdownContent,
@@ -160,9 +160,9 @@ describe("Unlinked Page Service", () => {
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
       await expect(
-        service.delete(reqDetails, { fileName, sha })
+        service.delete(sessionData, { fileName, sha })
       ).resolves.not.toThrow()
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha,
@@ -176,7 +176,7 @@ describe("Unlinked Page Service", () => {
     mockGithubService.create.mockResolvedValue({ sha })
     it("rejects renaming to page names with special characters", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(sessionData, {
           oldFileName,
           newFileName: "file/file.md",
           content: mockContent,
@@ -186,7 +186,7 @@ describe("Unlinked Page Service", () => {
     })
     it("Renaming pages works correctly", async () => {
       await expect(
-        service.rename(reqDetails, {
+        service.rename(sessionData, {
           oldFileName,
           newFileName: fileName,
           content: mockContent,
@@ -199,12 +199,12 @@ describe("Unlinked Page Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
         fileName: oldFileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockMarkdownContent,
         fileName,
         directoryName,

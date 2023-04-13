@@ -12,7 +12,7 @@ const {
 const { File, HomepageType } = require("@classes/File")
 
 // Constants
-const HOMEPAGE_INDEX_PATH = "index.md" // Empty string
+const { HOMEPAGE_FILENAME } = require("@root/constants")
 
 // Read homepage index file
 async function readHomepage(req, res) {
@@ -25,7 +25,7 @@ async function readHomepage(req, res) {
   const homepageType = new HomepageType()
   IsomerFile.setFileType(homepageType)
   const { sha, content: encodedContent } = await IsomerFile.read(
-    HOMEPAGE_INDEX_PATH
+    HOMEPAGE_FILENAME
   )
   const content = Base64.decode(encodedContent)
 
@@ -50,7 +50,7 @@ async function updateHomepage(req, res) {
   const homepageType = new HomepageType()
   IsomerFile.setFileType(homepageType)
   const { newSha } = await IsomerFile.update(
-    HOMEPAGE_INDEX_PATH,
+    HOMEPAGE_FILENAME,
     Base64.encode(content),
     sha
   )

@@ -5,6 +5,7 @@ import logger from "@logger/logger"
 
 import { Deployment, Site } from "@database/models"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
+import { Brand } from "@root/types/util"
 import DeploymentClient from "@services/identity/DeploymentClient"
 
 type deploymentsCreateParamsType = Partial<Deployment> & {
@@ -46,8 +47,12 @@ class DeploymentsService {
     const amplifyInfo = amplifyResult.value
 
     return this.create({
-      stagingUrl: `https://staging.${amplifyInfo.defaultDomain}`,
-      productionUrl: `https://master.${amplifyInfo.defaultDomain}`,
+      stagingUrl: Brand.fromString(
+        `https://staging.${amplifyInfo.defaultDomain}`
+      ),
+      productionUrl: Brand.fromString(
+        `https://master.${amplifyInfo.defaultDomain}`
+      ),
       site,
       siteId: site.id,
       hostingId: amplifyInfo.id,

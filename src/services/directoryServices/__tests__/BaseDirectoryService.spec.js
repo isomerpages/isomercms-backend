@@ -55,7 +55,7 @@ describe("Base Directory Service", () => {
     },
   ]
 
-  const reqDetails = { siteName, accessToken, currentCommitSha, treeSha }
+  const sessionData = { siteName, accessToken, currentCommitSha, treeSha }
 
   const mockGithubService = {
     readDirectory: jest.fn(),
@@ -99,13 +99,16 @@ describe("Base Directory Service", () => {
     mockGithubService.readDirectory.mockResolvedValueOnce(githubServiceResp)
     it("Listing directory contents filters and returns only relevant data", async () => {
       await expect(
-        service.list(reqDetails, {
+        service.list(sessionData, {
           directoryName,
         })
       ).resolves.toMatchObject(readDirResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-      })
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+        sessionData,
+        {
+          directoryName,
+        }
+      )
     })
   })
 
@@ -146,14 +149,14 @@ describe("Base Directory Service", () => {
     ])
     it("Renaming a directory to one with an existing name throws an error", async () => {
       await expect(
-        service.rename(reqDetails, mockGithubSessionData, {
+        service.rename(sessionData, mockGithubSessionData, {
           oldDirectoryName: directoryName,
           newDirectoryName: renamedDir,
           message,
         })
       ).rejects.toThrowError(ConflictError)
       expect(mockGithubService.getTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           isRecursive: true,
@@ -164,21 +167,21 @@ describe("Base Directory Service", () => {
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
     it("Renaming directories works correctly", async () => {
       await expect(
-        service.rename(reqDetails, mockGithubSessionData, {
+        service.rename(sessionData, mockGithubSessionData, {
           oldDirectoryName: directoryName,
           newDirectoryName: renamedDir,
           message,
         })
       ).resolves.not.toThrow()
       expect(mockGithubService.getTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           isRecursive: true,
         }
       )
       expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           gitTree: mockedRenamedTree,
@@ -186,7 +189,7 @@ describe("Base Directory Service", () => {
         }
       )
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           commitSha: sha,
         }
@@ -221,20 +224,20 @@ describe("Base Directory Service", () => {
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
     it("Deleting directories works correctly", async () => {
       await expect(
-        service.delete(reqDetails, mockGithubSessionData, {
+        service.delete(sessionData, mockGithubSessionData, {
           directoryName,
           message,
         })
       ).resolves.not.toThrow()
       expect(mockGithubService.getTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           isRecursive: true,
         }
       )
       expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           gitTree: mockedDeletedTree,
@@ -242,7 +245,7 @@ describe("Base Directory Service", () => {
         }
       )
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           commitSha: sha,
         }
@@ -281,7 +284,7 @@ describe("Base Directory Service", () => {
     ])
     it("Moving files to a directory which has a file of the same name throws an error", async () => {
       await expect(
-        service.moveFiles(reqDetails, mockGithubSessionData, {
+        service.moveFiles(sessionData, mockGithubSessionData, {
           oldDirectoryName: `${directoryName}/${subcollectionName}`,
           newDirectoryName: targetDir,
           targetFiles: ["file.md", "file2.md"],
@@ -289,7 +292,7 @@ describe("Base Directory Service", () => {
         })
       ).rejects.toThrowError(ConflictError)
       expect(mockGithubService.getTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           isRecursive: true,
@@ -300,7 +303,7 @@ describe("Base Directory Service", () => {
     mockGithubService.updateTree.mockResolvedValueOnce(sha)
     it("Moving files in directories works correctly", async () => {
       await expect(
-        service.moveFiles(reqDetails, mockGithubSessionData, {
+        service.moveFiles(sessionData, mockGithubSessionData, {
           oldDirectoryName: `${directoryName}/${subcollectionName}`,
           newDirectoryName: targetDir,
           targetFiles: ["file.md", "file2.md"],
@@ -308,14 +311,14 @@ describe("Base Directory Service", () => {
         })
       ).resolves.not.toThrow()
       expect(mockGithubService.getTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           isRecursive: true,
         }
       )
       expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           gitTree: mockedMovedTree,
@@ -323,7 +326,7 @@ describe("Base Directory Service", () => {
         }
       )
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           commitSha: sha,
         }

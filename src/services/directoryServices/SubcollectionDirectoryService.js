@@ -2,7 +2,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const { deslugifyCollectionName } = require("@utils/utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { hasSpecialCharInTitle } = require("@validators/validators")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
@@ -21,8 +21,8 @@ class SubcollectionDirectoryService {
     this.gitHubService = gitHubService
   }
 
-  async listFiles(reqDetails, { collectionName, subcollectionName }) {
-    const files = await this.collectionYmlService.listContents(reqDetails, {
+  async listFiles(sessionData, { collectionName, subcollectionName }) {
+    const files = await this.collectionYmlService.listContents(sessionData, {
       collectionName,
     })
     const subcollectionFiles = files.filter(
@@ -39,22 +39,22 @@ class SubcollectionDirectoryService {
   }
 
   async createDirectory(
-    reqDetails,
+    sessionData,
     { collectionName, subcollectionName, objArray }
   ) {
-    if (titleSpecialCharCheck({ title: subcollectionName, isFile: false }))
+    if (hasSpecialCharInTitle({ title: subcollectionName, isFile: false }))
       throw new BadRequestError(
-        "Special characters not allowed in directory name"
+        `Special characters not allowed when creating subdirectory. Given name: ${subcollectionName}`
       )
     const parsedSubcollectionName = deslugifyCollectionName(subcollectionName)
     const parsedDir = `_${collectionName}/${parsedSubcollectionName}`
-    await this.gitHubService.create(reqDetails, {
+    await this.gitHubService.create(sessionData, {
       content: "",
       fileName: PLACEHOLDER_FILE_NAME,
       directoryName: parsedDir,
     })
 
-    await this.collectionYmlService.addItemToOrder(reqDetails, {
+    await this.collectionYmlService.addItemToOrder(sessionData, {
       collectionName,
       item: `${parsedSubcollectionName}/${PLACEHOLDER_FILE_NAME}`,
     })
@@ -64,7 +64,7 @@ class SubcollectionDirectoryService {
       /* eslint-disable no-await-in-loop, no-restricted-syntax */
       for (const file of objArray) {
         const fileName = file.name
-        await this.moverService.movePage(reqDetails, {
+        await this.moverService.movePage(sessionData, {
           fileName,
           oldFileCollection: collectionName,
           newFileCollection: collectionName,
@@ -79,16 +79,16 @@ class SubcollectionDirectoryService {
   }
 
   async renameDirectory(
-    reqDetails,
+    sessionData,
     { collectionName, subcollectionName, newDirectoryName }
   ) {
-    if (titleSpecialCharCheck({ title: newDirectoryName, isFile: false }))
+    if (hasSpecialCharInTitle({ title: newDirectoryName, isFile: false }))
       throw new BadRequestError(
-        "Special characters not allowed in directory name"
+        `Special characters not allowed when renaming subdirectory. Given name: ${newDirectoryName}`
       )
     const parsedNewName = deslugifyCollectionName(newDirectoryName)
     const dir = `_${collectionName}/${subcollectionName}`
-    const files = await this.baseDirectoryService.list(reqDetails, {
+    const files = await this.baseDirectoryService.list(sessionData, {
       directoryName: dir,
     })
     // We can't perform these operations concurrently because of conflict issues
@@ -97,26 +97,26 @@ class SubcollectionDirectoryService {
       if (file.type !== "file") continue
       const fileName = file.name
       if (fileName === PLACEHOLDER_FILE_NAME) {
-        await this.gitHubService.delete(reqDetails, {
+        await this.gitHubService.delete(sessionData, {
           sha: file.sha,
           fileName,
           directoryName: dir,
         })
         continue
       }
-      await this.subcollectionPageService.updateSubcollection(reqDetails, {
+      await this.subcollectionPageService.updateSubcollection(sessionData, {
         fileName,
         collectionName,
         oldSubcollectionName: subcollectionName,
         newSubcollectionName: parsedNewName,
       })
     }
-    await this.gitHubService.create(reqDetails, {
+    await this.gitHubService.create(sessionData, {
       content: "",
       fileName: PLACEHOLDER_FILE_NAME,
       directoryName: `_${collectionName}/${parsedNewName}`,
     })
-    await this.collectionYmlService.renameSubfolderInOrder(reqDetails, {
+    await this.collectionYmlService.renameSubfolderInOrder(sessionData, {
       collectionName,
       oldSubfolder: subcollectionName,
       newSubfolder: parsedNewName,
@@ -124,29 +124,29 @@ class SubcollectionDirectoryService {
   }
 
   async deleteDirectory(
-    reqDetails,
+    sessionData,
     githubSessionData,
     { collectionName, subcollectionName }
   ) {
     const dir = `_${collectionName}/${subcollectionName}`
-    await this.baseDirectoryService.delete(reqDetails, githubSessionData, {
+    await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: dir,
       message: `Deleting subcollection ${collectionName}/${subcollectionName}`,
     })
-    await this.collectionYmlService.deleteSubfolderFromOrder(reqDetails, {
+    await this.collectionYmlService.deleteSubfolderFromOrder(sessionData, {
       collectionName,
       subfolder: subcollectionName,
     })
   }
 
   async reorderDirectory(
-    reqDetails,
+    sessionData,
     { collectionName, subcollectionName, objArray }
   ) {
     const newSubcollectionOrder = [`${subcollectionName}/.keep`].concat(
       objArray.map((obj) => `${subcollectionName}/${obj.name}`)
     )
-    const files = await this.collectionYmlService.listContents(reqDetails, {
+    const files = await this.collectionYmlService.listContents(sessionData, {
       collectionName,
     })
     const insertPos = files.findIndex((fileName) =>
@@ -158,7 +158,7 @@ class SubcollectionDirectoryService {
     )
     filteredFiles.splice(insertPos, 0, ...newSubcollectionOrder)
 
-    await this.collectionYmlService.updateOrder(reqDetails, {
+    await this.collectionYmlService.updateOrder(sessionData, {
       collectionName,
       newOrder: filteredFiles,
     })
@@ -166,7 +166,7 @@ class SubcollectionDirectoryService {
   }
 
   async movePages(
-    reqDetails,
+    sessionData,
     {
       collectionName,
       subcollectionName,
@@ -179,7 +179,7 @@ class SubcollectionDirectoryService {
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of objArray) {
       const fileName = file.name
-      await this.moverService.movePage(reqDetails, {
+      await this.moverService.movePage(sessionData, {
         fileName,
         oldFileCollection: collectionName,
         oldFileSubcollection: subcollectionName,

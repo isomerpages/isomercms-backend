@@ -6,7 +6,7 @@ const {
 } = require("@utils/markdown-utils")
 const { deslugifyCollectionName } = require("@utils/utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { hasSpecialCharInTitle } = require("@validators/validators")
 
 class SubcollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
@@ -27,9 +27,11 @@ class SubcollectionPageService {
   ) {
     if (
       !shouldIgnoreCheck &&
-      titleSpecialCharCheck({ title: fileName, isFile: true })
+      hasSpecialCharInTitle({ title: fileName, isFile: true })
     )
-      throw new BadRequestError("Special characters not allowed in file name")
+      throw new BadRequestError(
+        `Special characters not allowed when creating files. Given name: ${fileName}`
+      )
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.addItemToOrder(sessionData, {
@@ -111,8 +113,10 @@ class SubcollectionPageService {
       sha,
     }
   ) {
-    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
-      throw new BadRequestError("Special characters not allowed in file name")
+    if (hasSpecialCharInTitle({ title: newFileName, isFile: true }))
+      throw new BadRequestError(
+        `Special characters not allowed when renaming files. Given name: ${newFileName}`
+      )
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
 
     await this.collectionYmlService.updateItemInOrder(sessionData, {

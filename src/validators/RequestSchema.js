@@ -251,6 +251,7 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
   favicon: Joi.string(),
   "facebook-pixel": Joi.string().allow(""),
   google_analytics: Joi.string().allow(""),
+  google_analytics_ga4: Joi.string().allow(""),
   "linkedin-insights": Joi.string().allow(""),
   is_government: Joi.boolean(),
   shareicon: Joi.string().allow(""),

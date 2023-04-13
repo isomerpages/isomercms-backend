@@ -1,17 +1,21 @@
 const specialCharactersRegexTest = /[~%^*_+\-./\\`;~{}[\]"<>]/
+const jekyllFirstCharacterRegexTest = /^[._#~]/
 const dateRegexTest = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 
 const mediaSpecialCharactersRegexTest = /[~%^#*+\./\\`;~{}[\]"<>]/ // Allows dashes
 // Allows only media root folders (/images or /files) and media subdirectories (/images/subdir or /files/subdir) with no banned characters
 const mediaSubfolderRegexText = /^(images|files|(images|files)\/[^#?~%^*+\.\\`;~{}[\]"<>]+)$/
 
-const titleSpecialCharCheck = ({ title, isFile = false }) => {
+const hasSpecialCharInTitle = ({ title, isFile = false }) => {
   let testTitle = title
   if (isFile) {
     // Remove .md
     testTitle = title.replace(/.md$/, "")
   }
-  return specialCharactersRegexTest.test(testTitle)
+  return (
+    specialCharactersRegexTest.test(testTitle) ||
+    jekyllFirstCharacterRegexTest.test(testTitle)
+  )
 }
 
 const isDateValid = (date) => dateRegexTest.test(date)
@@ -27,7 +31,7 @@ const isMediaPathValid = ({ path, isFile = false }) => {
 }
 
 module.exports = {
-  titleSpecialCharCheck,
+  hasSpecialCharInTitle,
   isDateValid,
   isMediaPathValid,
 }

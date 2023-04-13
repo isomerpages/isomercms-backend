@@ -1,6 +1,7 @@
 import autoBind from "auto-bind"
 import express from "express"
 import _ from "lodash"
+import { ResultAsync } from "neverthrow"
 
 import logger from "@logger/logger"
 
@@ -101,13 +102,13 @@ export class ReviewsRouter {
       userWithSiteSessionData
     )
 
-    if (!site && doesUnmigratedSiteExist)
+    if (site.isErr() && doesUnmigratedSiteExist)
       return res.status(200).json({ message: "Unmigrated site" })
 
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
@@ -121,11 +122,17 @@ export class ReviewsRouter {
       return res.status(404).json({ message: "No site members found" })
     }
 
-    const files = await this.reviewRequestService.compareDiff(
-      userWithSiteSessionData
-    )
-
-    return res.status(200).json({ items: files })
+    return this.sitesService
+      .getStagingUrl(userWithSiteSessionData)
+      .andThen((stagingLink) =>
+        ResultAsync.fromSafePromise(
+          this.reviewRequestService.compareDiff(
+            userWithSiteSessionData,
+            stagingLink
+          )
+        )
+      )
+      .map((items) => res.status(200).json({ items }))
   }
 
   createReviewRequest: RequestHandler<
@@ -140,7 +147,7 @@ export class ReviewsRouter {
     const site = await this.sitesService.getBySiteName(siteName)
     const { userWithSiteSessionData } = res.locals
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "createReviewRequest",
@@ -229,7 +236,7 @@ export class ReviewsRouter {
       // and assert that the user is an admin of said site.
       // This guarantees that the user exists in our database.
       admin!,
-      site,
+      site.value,
       title,
       description
     )
@@ -271,17 +278,17 @@ export class ReviewsRouter {
       userWithSiteSessionData
     )
 
-    if (!site && doesUnmigratedSiteExist)
+    if (site.isErr() && doesUnmigratedSiteExist)
       return res.status(200).json({ message: "Unmigrated site" })
 
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "listReviews",
@@ -323,7 +330,7 @@ export class ReviewsRouter {
     // Step 3: Fetch data and return
     const reviews = await this.reviewRequestService.listReviewRequest(
       userWithSiteSessionData,
-      site
+      site.value
     )
 
     return res.status(200).json({
@@ -342,7 +349,7 @@ export class ReviewsRouter {
     const { siteName } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -368,7 +375,7 @@ export class ReviewsRouter {
     // Step 3: Update all review requests for the site as viewed
     await this.reviewRequestService.markAllReviewRequestsAsViewed(
       userWithSiteSessionData,
-      site
+      site.value
     )
 
     return res.status(200).send()
@@ -385,7 +392,7 @@ export class ReviewsRouter {
     const { siteName, requestId: prNumber } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -410,7 +417,7 @@ export class ReviewsRouter {
 
     // Step 3: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       prNumber
     )
 
@@ -431,7 +438,7 @@ export class ReviewsRouter {
     // Step 4: Mark review request as viewed
     await this.reviewRequestService.markReviewRequestAsViewed(
       userWithSiteSessionData,
-      site,
+      site.value,
       possibleReviewRequest.id
     )
 
@@ -453,18 +460,18 @@ export class ReviewsRouter {
       userWithSiteSessionData
     )
 
-    if (!site && doesUnmigratedSiteExist) {
+    if (site.isErr() && doesUnmigratedSiteExist) {
       return res.status(200).json({ message: "Unmigrated site" })
     }
 
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "getReviewRequest",
@@ -505,13 +512,21 @@ export class ReviewsRouter {
       })
     }
 
-    const possibleReviewRequest = await this.reviewRequestService.getFullReviewRequest(
-      userWithSiteSessionData,
-      site,
-      requestId
-    )
+    const possibleReviewRequest = await this.sitesService
+      .getStagingUrl(userWithSiteSessionData)
+      .andThen((stagingLink) =>
+        this.reviewRequestService.getFullReviewRequest(
+          userWithSiteSessionData,
+          site.value,
+          requestId,
+          stagingLink
+        )
+      )
 
-    if (isIsomerError(possibleReviewRequest)) {
+    // NOTE: This method call (`getFullReviewRequest`) should be
+    // in the result also but as it returns a promise at the moment,
+    // we just do a simple check
+    if (possibleReviewRequest.isErr()) {
       logger.error({
         message: "Invalid review request requested",
         method: "getReviewRequest",
@@ -522,12 +537,12 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(possibleReviewRequest.status).send({
-        message: possibleReviewRequest.message,
+      return res.status(possibleReviewRequest.error.status).send({
+        message: possibleReviewRequest.error.message,
       })
     }
 
-    return res.status(200).json({ reviewRequest: possibleReviewRequest })
+    return res.status(200).json({ reviewRequest: possibleReviewRequest.value })
   }
 
   updateReviewRequest: RequestHandler<
@@ -542,7 +557,7 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "updateReviewRequest",
@@ -560,7 +575,7 @@ export class ReviewsRouter {
 
     // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -641,7 +656,7 @@ export class ReviewsRouter {
     const { userSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "mergeReviewRequest",
@@ -683,7 +698,7 @@ export class ReviewsRouter {
 
     // Step 3: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -709,7 +724,10 @@ export class ReviewsRouter {
 
     // Step 5: Clean up the review request view records
     // The error is discarded as we are guaranteed to have a review request
-    await this.reviewRequestService.deleteAllReviewRequestViews(site, requestId)
+    await this.reviewRequestService.deleteAllReviewRequestViews(
+      site.value,
+      requestId
+    )
 
     return res.status(200).send()
   }
@@ -726,7 +744,7 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "approveReviewRequest",
@@ -743,7 +761,7 @@ export class ReviewsRouter {
 
     // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -832,18 +850,18 @@ export class ReviewsRouter {
       userWithSiteSessionData
     )
 
-    if (!site && doesUnmigratedSiteExist) {
+    if (site.isErr() && doesUnmigratedSiteExist) {
       return res.status(200).json({ message: "Unmigrated site" })
     }
 
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "getComments",
@@ -886,7 +904,7 @@ export class ReviewsRouter {
 
     // Step 3: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -907,7 +925,7 @@ export class ReviewsRouter {
     // Step 4: Retrieve comments
     const comments = await this.reviewRequestService.getComments(
       userWithSiteSessionData,
-      site,
+      site.value,
       requestId
     )
 
@@ -927,7 +945,7 @@ export class ReviewsRouter {
 
     // Step 1: Check that the site exists
     const site = await this.sitesService.getBySiteName(siteName)
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "createComment",
@@ -970,7 +988,7 @@ export class ReviewsRouter {
 
     // Step 3: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -1009,7 +1027,7 @@ export class ReviewsRouter {
     const { siteName, requestId } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -1033,7 +1051,7 @@ export class ReviewsRouter {
 
     // Step 3: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -1044,7 +1062,7 @@ export class ReviewsRouter {
     // Step 4: Update user's last viewed timestamp for the review request
     await this.reviewRequestService.updateReviewRequestLastViewedAt(
       userWithSiteSessionData,
-      site,
+      site.value,
       possibleReviewRequest
     )
 
@@ -1063,7 +1081,7 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "closeReviewRequest",
@@ -1080,7 +1098,7 @@ export class ReviewsRouter {
 
     // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -1127,7 +1145,10 @@ export class ReviewsRouter {
 
     // Step 5: Clean up the review request view records
     // The error is discarded as we are guaranteed to have a review request
-    await this.reviewRequestService.deleteAllReviewRequestViews(site, requestId)
+    await this.reviewRequestService.deleteAllReviewRequestViews(
+      site.value,
+      requestId
+    )
 
     // Step 7: Create notifications
     const collaborators = await this.collaboratorsService.list(siteName)
@@ -1158,7 +1179,7 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "deleteReviewRequestApproval",
@@ -1175,7 +1196,7 @@ export class ReviewsRouter {
 
     // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 
@@ -1241,18 +1262,18 @@ export class ReviewsRouter {
       userWithSiteSessionData
     )
 
-    if (!site && doesUnmigratedSiteExist) {
+    if (site.isErr() && doesUnmigratedSiteExist) {
       return res.status(200).json({ message: "Unmigrated site" })
     }
 
     const siteMembers = await this.collaboratorsService.list(siteName)
     // NOTE: This is an initial migrated site but
     // we haven't migrated the users.
-    if (siteMembers.length === 0 && site) {
+    if (siteMembers.length === 0 && site.isOk()) {
       return res.status(200).json({ message: "Unmigrated users" })
     }
 
-    if (!site) {
+    if (site.isErr()) {
       logger.error({
         message: "Invalid site requested",
         method: "getBlob",
@@ -1269,7 +1290,7 @@ export class ReviewsRouter {
 
     // Step 2: Retrieve review request
     const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site,
+      site.value,
       requestId
     )
 

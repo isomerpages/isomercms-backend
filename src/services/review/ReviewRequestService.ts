@@ -1,4 +1,6 @@
+import { AxiosResponse } from "axios"
 import _ from "lodash"
+import { errAsync, okAsync, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
@@ -10,6 +12,7 @@ import { ReviewRequestStatus } from "@root/constants"
 import { ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
   CommentItem,
@@ -21,8 +24,11 @@ import {
 } from "@root/types/dto/review"
 import { isIsomerError } from "@root/types/error"
 import { Commit, fromGithubCommitMessage } from "@root/types/github"
+import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
 import * as ReviewApi from "@services/db/review"
+
+import { PageService } from "../fileServices/MdPageServices/PageService"
 
 /**
  * NOTE: This class does not belong as a subset of GitHub service.
@@ -47,13 +53,16 @@ export default class ReviewRequestService {
 
   private readonly reviewRequestView: ModelStatic<ReviewRequestView>
 
+  private readonly pageService: PageService
+
   constructor(
     apiService: typeof ReviewApi,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,
     reviewMeta: ModelStatic<ReviewMeta>,
-    reviewRequestView: ModelStatic<ReviewRequestView>
+    reviewRequestView: ModelStatic<ReviewRequestView>,
+    pageService: PageService
   ) {
     this.apiService = apiService
     this.users = users
@@ -61,10 +70,12 @@ export default class ReviewRequestService {
     this.reviewers = reviewers
     this.reviewMeta = reviewMeta
     this.reviewRequestView = reviewRequestView
+    this.pageService = pageService
   }
 
   compareDiff = async (
-    sessionData: UserWithSiteSessionData
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
   ): Promise<EditedItemDto[]> => {
     // Step 1: Get the site name
     const { siteName } = sessionData
@@ -76,34 +87,45 @@ export default class ReviewRequestService {
 
     const mappings = await this.computeShaMappings(commits)
 
-    return files.map(({ filename, contents_url }) => {
-      const fullPath = filename.split("/")
-      const items = contents_url.split("?ref=")
-      // NOTE: We have to compute sha this way rather than
-      // taking the file sha.
-      // This is because the sha present on the file is
-      // a checksum of the files contents.
-      // And the actual commit sha is given by the ref param
-      const sha = items[items.length - 1]
+    return Promise.all(
+      files.map(async ({ filename, contents_url }) => {
+        const fullPath = filename.split("/")
+        const items = contents_url.split("?ref=")
+        // NOTE: We have to compute sha this way rather than
+        // taking the file sha.
+        // This is because the sha present on the file is
+        // a checksum of the files contents.
+        // And the actual commit sha is given by the ref param
+        const sha = items[items.length - 1]
+        const url = await this.pageService
+          .parsePageName(filename, sessionData)
+          .andThen((pageName) =>
+            this.pageService.retrieveStagingPermalink(
+              sessionData,
+              stagingLink,
+              pageName
+            )
+          )
+          // NOTE: We ignore the errors and use a placeholder
+          .unwrapOr("")
 
-      return {
-        type: this.computeFileType(filename),
-        // NOTE: The string is guaranteed to be non-empty
-        // and hence this should exist.
-        name: fullPath.pop() || "",
-        // NOTE: pop alters in place
-        path: fullPath,
-        url: this.computeFileUrl(filename, siteName),
-        lastEditedBy: mappings[sha]?.author || "Unknown user",
-        lastEditedTime: mappings[sha]?.unixTime || 0,
-      }
-    })
+        return {
+          type: this.computeFileType(filename),
+          // NOTE: The string is guaranteed to be non-empty
+          // and hence this should exist.
+          name: fullPath.pop()!,
+          // NOTE: pop alters in place
+          path: fullPath,
+          url,
+          lastEditedBy: mappings[sha]?.author || "Unknown user",
+          lastEditedTime: mappings[sha]?.unixTime || 0,
+        }
+      })
+    )
   }
 
   // TODO
   computeFileType = (filename: string): FileType[] => ["page"]
-
-  computeFileUrl = (filename: string, siteName: string) => "www.google.com"
 
   computeShaMappings = async (
     commits: Commit[]
@@ -304,16 +326,15 @@ export default class ReviewRequestService {
     await Promise.all(
       // Using map here to allow creations to be done concurrently
       // But we do not actually need the result of the view creation
-      requestIdsToMarkAsViewed.map(
-        async (requestId) =>
-          await this.reviewRequestView.create({
-            reviewRequestId: requestId,
-            siteId: site.id,
-            userId,
-            // This field represents the user opening the review request
-            // itself, which the user has not done so yet at this stage.
-            lastViewedAt: null,
-          })
+      requestIdsToMarkAsViewed.map(async (requestId) =>
+        this.reviewRequestView.create({
+          reviewRequestId: requestId,
+          siteId: site.id,
+          userId,
+          // This field represents the user opening the review request
+          // itself, which the user has not done so yet at this stage.
+          lastViewedAt: null,
+        })
       )
     )
   }
@@ -366,7 +387,7 @@ export default class ReviewRequestService {
   deleteAllReviewRequestViews = async (
     site: Site,
     pullRequestNumber: number
-  ): Promise<void | RequestNotFoundError> => {
+  ): Promise<number | RequestNotFoundError> => {
     const possibleReviewRequest = await this.getReviewRequest(
       site,
       pullRequestNumber
@@ -378,7 +399,7 @@ export default class ReviewRequestService {
 
     const { id: reviewRequestId } = possibleReviewRequest
 
-    await this.reviewRequestView.destroy({
+    return this.reviewRequestView.destroy({
       where: {
         reviewRequestId,
         siteId: site.id,
@@ -386,7 +407,10 @@ export default class ReviewRequestService {
     })
   }
 
-  getReviewRequest = async (site: Site, pullRequestNumber: number) => {
+  getReviewRequest = async (
+    site: Site,
+    pullRequestNumber: number
+  ): Promise<ReviewRequest | RequestNotFoundError> => {
     const possibleReviewRequest = await this.repository.findOne({
       where: {
         siteId: site.id,
@@ -420,114 +444,131 @@ export default class ReviewRequestService {
     return possibleReviewRequest
   }
 
-  getLatestMergedReviewRequest = async (site: Site) => {
-    const possibleReviewRequest = await this.repository.findOne({
-      where: {
-        siteId: site.id,
-        reviewStatus: ReviewRequestStatus.Merged,
-      },
-      include: [
-        {
-          model: ReviewMeta,
-          as: "reviewMeta",
+  getLatestMergedReviewRequest = (
+    site: Site
+  ): ResultAsync<ReviewRequest, RequestNotFoundError> =>
+    ResultAsync.fromPromise(
+      this.repository.findOne({
+        where: {
+          siteId: site.id,
+          reviewStatus: ReviewRequestStatus.Merged,
         },
-        {
-          model: User,
-          as: "requestor",
-        },
-        {
-          model: User,
-          as: "reviewers",
-        },
-        {
-          model: Site,
-        },
-      ],
-      order: [
-        [
+        include: [
           {
             model: ReviewMeta,
             as: "reviewMeta",
           },
-          "pullRequestNumber",
-          "DESC",
+          {
+            model: User,
+            as: "requestor",
+          },
+          {
+            model: User,
+            as: "reviewers",
+          },
+          {
+            model: Site,
+          },
         ],
-      ],
+        order: [
+          [
+            {
+              model: ReviewMeta,
+              as: "reviewMeta",
+            },
+            "pullRequestNumber",
+            "DESC",
+          ],
+        ],
+      }),
+      () => new RequestNotFoundError()
+    ).andThen((possibleReviewRequest) => {
+      if (!possibleReviewRequest) {
+        return errAsync(new RequestNotFoundError())
+      }
+      return okAsync(possibleReviewRequest)
     })
 
-    if (!possibleReviewRequest) {
-      return new RequestNotFoundError()
-    }
-
-    return possibleReviewRequest
-  }
-
-  getFullReviewRequest = async (
+  getFullReviewRequest = (
     userWithSiteSessionData: UserWithSiteSessionData,
     site: Site,
-    pullRequestNumber: number
-  ): Promise<ReviewRequestDto | RequestNotFoundError> => {
+    pullRequestNumber: number,
+    stagingLink: StagingPermalink
+  ): ResultAsync<ReviewRequestDto, RequestNotFoundError> => {
     const { siteName } = userWithSiteSessionData
-    const review = await this.repository.findOne({
-      where: {
-        siteId: site.id,
-      },
-      include: [
-        {
-          model: ReviewMeta,
-          as: "reviewMeta",
-          where: {
-            pullRequestNumber,
+    return ResultAsync.fromPromise(
+      this.repository.findOne({
+        where: {
+          siteId: site.id,
+        },
+        include: [
+          {
+            model: ReviewMeta,
+            as: "reviewMeta",
+            where: {
+              pullRequestNumber,
+            },
           },
-        },
-        {
-          model: User,
-          as: "requestor",
-        },
-        {
-          model: User,
-          as: "reviewers",
-        },
-        {
-          model: Site,
-        },
-      ],
-    })
-
-    // As the db stores github's PR # and (siteName, prNumber)
-    // should be a unique identifier for a specific review request,
-    // unable to find a RR with the tuple implies that said RR does not exist.
-    // This could happen when the user queries for an existing PR that is on github,
-    // but created prior to this feature rolling out.
-    if (!review) {
-      return new RequestNotFoundError()
-    }
-
-    // NOTE: We explicitly destructure as the raw data
-    // contains ALOT more than these fields, which we want to
-    // discard to lower retrieval times for FE
-    const { title, created_at } = await this.apiService.getPullRequest(
-      siteName,
-      pullRequestNumber
+          {
+            model: User,
+            as: "requestor",
+          },
+          {
+            model: User,
+            as: "reviewers",
+          },
+          {
+            model: Site,
+          },
+        ],
+      }),
+      () => new RequestNotFoundError()
     )
-
-    const changedItems = await this.compareDiff(userWithSiteSessionData)
-
-    return {
-      reviewUrl: review.reviewMeta.reviewLink,
-      title,
-      status: review.reviewStatus,
-      requestor: review.requestor.email || "",
-      reviewers: review.reviewers.map(({ email }) => email || ""),
-      reviewRequestedTime: new Date(created_at).getTime(),
-      changedItems,
-    }
+      .andThen((reviewRequest) =>
+        // As the db stores github's PR # and (siteName, prNumber)
+        // should be a unique identifier for a specific review request,
+        // unable to find a RR with the tuple implies that said RR does not exist.
+        // This could happen when the user queries for an existing PR that is on github,
+        // but created prior to this feature rolling out.
+        reviewRequest
+          ? okAsync(reviewRequest)
+          : errAsync(new RequestNotFoundError())
+      )
+      .andThen(({ reviewMeta, reviewStatus, requestor, reviewers }) =>
+        ResultAsync.fromPromise(
+          this.apiService.getPullRequest(siteName, pullRequestNumber),
+          // NOTE: Because we validate existence of the pull request
+          // and the site, the error here is not the fault of the user.
+          // It might be due to credentials or network issues, both of which
+          // are hidden behind our backend.
+          () => new NotFoundError()
+        ) // NOTE: We explicitly destructure as the raw data
+          // contains ALOT more than these fields, which we want to
+          // discard to lower retrieval times for FE
+          .map(({ title, created_at }) => ({
+            reviewUrl: reviewMeta.reviewLink,
+            title,
+            status: reviewStatus,
+            requestor: requestor.email || "",
+            reviewers: reviewers.map(({ email }) => email || ""),
+            reviewRequestedTime: new Date(created_at).getTime(),
+          }))
+      )
+      .andThen((rest) =>
+        ResultAsync.fromPromise(
+          this.compareDiff(userWithSiteSessionData, stagingLink),
+          () => new NotFoundError()
+        ).map((changedItems) => ({
+          ...rest,
+          changedItems,
+        }))
+      )
   }
 
   updateReviewRequest = async (
     reviewRequest: ReviewRequest,
     { reviewers }: RequestChangeInfo
-  ) => {
+  ): Promise<void> => {
     // Update db state with new reviewers
     await reviewRequest.$set("reviewers", reviewers)
     await reviewRequest.save()
@@ -535,17 +576,21 @@ export default class ReviewRequestService {
 
   // NOTE: The semantics of our reviewing system is slightly different from github.
   // The approval is tied to the request, rather than the user.
-  approveReviewRequest = async (reviewRequest: ReviewRequest) => {
+  approveReviewRequest = async (
+    reviewRequest: ReviewRequest
+  ): Promise<void> => {
     reviewRequest.reviewStatus = ReviewRequestStatus.Approved
     await reviewRequest.save()
   }
 
-  deleteReviewRequestApproval = async (reviewRequest: ReviewRequest) => {
+  deleteReviewRequestApproval = async (
+    reviewRequest: ReviewRequest
+  ): Promise<void> => {
     reviewRequest.reviewStatus = ReviewRequestStatus.Open
     await reviewRequest.save()
   }
 
-  closeReviewRequest = async (reviewRequest: ReviewRequest) => {
+  closeReviewRequest = async (reviewRequest: ReviewRequest): Promise<void> => {
     const siteName = reviewRequest.site.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
     await this.apiService.closeReviewRequest(siteName, pullRequestNumber)
@@ -571,7 +616,7 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     pullRequestNumber: number,
     message: string
-  ) => {
+  ): Promise<AxiosResponse<void>> => {
     const { siteName, isomerUserId } = sessionData
 
     return this.apiService.createComment(

@@ -102,7 +102,6 @@ class CollectionsRouter {
     if (subcollectionName) {
       await this.subcollectionDirectoryService.renameDirectory(
         userWithSiteSessionData,
-        githubSessionData,
         {
           collectionName,
           subcollectionName,

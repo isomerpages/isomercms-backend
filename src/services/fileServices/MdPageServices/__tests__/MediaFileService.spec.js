@@ -15,7 +15,7 @@ describe("Media File Service", () => {
   const sha = "12345"
   const mockGithubSessionData = "githubData"
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockGithubService = {
     create: jest.fn(),
@@ -54,7 +54,7 @@ describe("Media File Service", () => {
   describe("Create", () => {
     it("rejects page names with special characters", async () => {
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName: "file/file.pdf",
           directoryName,
           content: mockContent,
@@ -65,7 +65,7 @@ describe("Media File Service", () => {
     mockGithubService.create.mockResolvedValueOnce({ sha })
     it("Creating pages works correctly", async () => {
       await expect(
-        service.create(reqDetails, {
+        service.create(sessionData, {
           fileName,
           directoryName,
           content: mockContent,
@@ -75,7 +75,7 @@ describe("Media File Service", () => {
         content: mockContent,
         sha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockSanitizedContent,
         fileName,
         directoryName,
@@ -121,15 +121,18 @@ describe("Media File Service", () => {
         sha,
       }
       await expect(
-        service.read(reqDetails, {
+        service.read(sessionData, {
           fileName: imageName,
           directoryName,
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-      })
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+        sessionData,
+        {
+          directoryName,
+        }
+      )
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
     const svgName = "image.svg"
     mockGithubService.readDirectory.mockResolvedValueOnce([
@@ -149,16 +152,19 @@ describe("Media File Service", () => {
         sha,
       }
       await expect(
-        service.read(reqDetails, {
+        service.read(sessionData, {
           fileName: svgName,
           directoryName,
           mediaType: "images",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-      })
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+        sessionData,
+        {
+          directoryName,
+        }
+      )
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
     mockGithubService.readDirectory.mockResolvedValueOnce(imageDirResp)
     mockGithubService.getRepoInfo.mockResolvedValueOnce({
@@ -171,17 +177,20 @@ describe("Media File Service", () => {
         sha,
       }
       await expect(
-        service.read(reqDetails, {
+        service.read(sessionData, {
           fileName: imageName,
           directoryName,
           mediaType: "images",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-      })
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
-      expect(mockGithubService.readMedia).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+        sessionData,
+        {
+          directoryName,
+        }
+      )
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
+      expect(mockGithubService.readMedia).toHaveBeenCalledWith(sessionData, {
         fileSha: sha,
       })
     })
@@ -199,16 +208,19 @@ describe("Media File Service", () => {
         sha,
       }
       await expect(
-        service.read(reqDetails, {
+        service.read(sessionData, {
           fileName,
           directoryName,
           mediaType: "files",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(reqDetails, {
-        directoryName,
-      })
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(reqDetails)
+      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+        sessionData,
+        {
+          directoryName,
+        }
+      )
+      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
   })
 
@@ -217,7 +229,7 @@ describe("Media File Service", () => {
     mockGithubService.create.mockResolvedValueOnce({ sha })
     it("Updating media file content works correctly", async () => {
       await expect(
-        service.update(reqDetails, {
+        service.update(sessionData, {
           fileName,
           directoryName,
           content: mockContent,
@@ -229,12 +241,12 @@ describe("Media File Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockSanitizedContent,
         fileName,
         directoryName,
@@ -247,9 +259,9 @@ describe("Media File Service", () => {
   describe("Delete", () => {
     it("Deleting pages works correctly", async () => {
       await expect(
-        service.delete(reqDetails, { fileName, directoryName, sha })
+        service.delete(sessionData, { fileName, directoryName, sha })
       ).resolves.not.toThrow()
-      expect(mockGithubService.delete).toHaveBeenCalledWith(reqDetails, {
+      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha,
@@ -289,7 +301,7 @@ describe("Media File Service", () => {
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(
-        service.rename(reqDetails, mockGithubSessionData, {
+        service.rename(sessionData, mockGithubSessionData, {
           oldFileName,
           newFileName: "file/file.pdf",
           directoryName,
@@ -299,7 +311,7 @@ describe("Media File Service", () => {
     })
     it("Renaming pages works correctly", async () => {
       await expect(
-        service.rename(reqDetails, mockGithubSessionData, {
+        service.rename(sessionData, mockGithubSessionData, {
           oldFileName,
           newFileName: fileName,
           directoryName,
@@ -312,14 +324,14 @@ describe("Media File Service", () => {
         sha,
       })
       expect(mockGithubService.getTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           isRecursive: true,
         }
       )
       expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           gitTree: mockedMovedTree,
@@ -327,7 +339,7 @@ describe("Media File Service", () => {
         }
       )
       expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           commitSha: treeSha,
         }

@@ -18,7 +18,7 @@ describe("Collection Directory Service", () => {
     },
   ]
 
-  const reqDetails = { siteName, accessToken }
+  const sessionData = { siteName, accessToken }
 
   const mockBaseDirectoryService = {
     list: jest.fn(),
@@ -107,9 +107,9 @@ describe("Collection Directory Service", () => {
     mockBaseDirectoryService.list.mockResolvedValueOnce(listResp)
     it("Listing collections only returns collections and not protected folders", async () => {
       await expect(
-        service.listAllCollections(reqDetails)
+        service.listAllCollections(sessionData)
       ).resolves.toMatchObject(expectedResp)
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(reqDetails, {
+      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
         directoryName: "",
       })
     })
@@ -146,10 +146,10 @@ describe("Collection Directory Service", () => {
     mockCollectionYmlService.listContents.mockResolvedValueOnce(listResp)
     it("ListFiles returns all files and collections properly formatted", async () => {
       await expect(
-        service.listFiles(reqDetails, { collectionName })
+        service.listFiles(sessionData, { collectionName })
       ).resolves.toMatchObject(expectedResp)
       expect(mockCollectionYmlService.listContents).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
         }
@@ -160,7 +160,7 @@ describe("Collection Directory Service", () => {
   describe("CreateDirectory", () => {
     it("rejects collections with the same name as protected folders", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName: "data",
         })
       ).rejects.toThrowError(ConflictError)
@@ -168,7 +168,7 @@ describe("Collection Directory Service", () => {
 
     it("rejects collections with special characters", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName: "dir/dir",
         })
       ).rejects.toThrowError(BadRequestError)
@@ -176,37 +176,43 @@ describe("Collection Directory Service", () => {
 
     it("Creating a directory with no specified files works correctly", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName,
         })
       ).resolves.toMatchObject({
         newDirectoryName: collectionName,
         items: [],
       })
-      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
-        collectionName,
-      })
+      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(
+        sessionData,
+        {
+          collectionName,
+        }
+      )
     })
 
     it("Creating a collection directory slugifies the collection name", async () => {
       const originalCollectionName = "Test Collection"
       const slugifiedCollectionName = "test-collection"
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName: originalCollectionName,
         })
       ).resolves.toMatchObject({
         newDirectoryName: slugifiedCollectionName,
         items: [],
       })
-      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
-        collectionName: slugifiedCollectionName,
-      })
+      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(
+        sessionData,
+        {
+          collectionName: slugifiedCollectionName,
+        }
+      )
     })
 
     it("Creating a directory with specified files works correctly", async () => {
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName,
           objArray,
         })
@@ -214,11 +220,14 @@ describe("Collection Directory Service", () => {
         newDirectoryName: collectionName,
         items: objArray,
       })
-      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
-        collectionName,
-      })
+      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(
+        sessionData,
+        {
+          collectionName,
+        }
+      )
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           newFileCollection: collectionName,
         })
@@ -229,7 +238,7 @@ describe("Collection Directory Service", () => {
       const originalCollectionName = "Test Collection"
       const slugifiedCollectionName = "test-collection"
       await expect(
-        service.createDirectory(reqDetails, {
+        service.createDirectory(sessionData, {
           collectionName: originalCollectionName,
           objArray,
         })
@@ -237,11 +246,14 @@ describe("Collection Directory Service", () => {
         newDirectoryName: slugifiedCollectionName,
         items: objArray,
       })
-      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(reqDetails, {
-        collectionName: slugifiedCollectionName,
-      })
+      expect(mockCollectionYmlService.create).toHaveBeenCalledWith(
+        sessionData,
+        {
+          collectionName: slugifiedCollectionName,
+        }
+      )
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           newFileCollection: slugifiedCollectionName,
         })
@@ -253,7 +265,7 @@ describe("Collection Directory Service", () => {
     const newDirectoryName = "new-dir"
     it("rejects renaming to a collection with the same name as protected folders", async () => {
       await expect(
-        service.renameDirectory(reqDetails, mockGithubSessionData, {
+        service.renameDirectory(sessionData, mockGithubSessionData, {
           collectionName,
           newDirectoryName: "files",
         })
@@ -262,7 +274,7 @@ describe("Collection Directory Service", () => {
 
     it("rejects collections with special characters", async () => {
       await expect(
-        service.renameDirectory(reqDetails, mockGithubSessionData, {
+        service.renameDirectory(sessionData, mockGithubSessionData, {
           collectionName,
           newDirectoryName: "dir/dir",
         })
@@ -271,13 +283,13 @@ describe("Collection Directory Service", () => {
 
     it("Renaming a collection works correctly", async () => {
       await expect(
-        service.renameDirectory(reqDetails, mockGithubSessionData, {
+        service.renameDirectory(sessionData, mockGithubSessionData, {
           collectionName,
           newDirectoryName,
         })
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           oldDirectoryName: `_${collectionName}`,
@@ -287,12 +299,12 @@ describe("Collection Directory Service", () => {
       )
       expect(
         mockCollectionYmlService.renameCollectionInOrder
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(sessionData, {
         oldCollectionName: collectionName,
         newCollectionName: newDirectoryName,
       })
       expect(mockNavYmlService.renameCollectionInNav).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           oldCollectionName: collectionName,
           newCollectionName: newDirectoryName,
@@ -303,13 +315,13 @@ describe("Collection Directory Service", () => {
       const originalCollectionName = "Test Collection"
       const slugifiedCollectionName = "test-collection"
       await expect(
-        service.renameDirectory(reqDetails, mockGithubSessionData, {
+        service.renameDirectory(sessionData, mockGithubSessionData, {
           collectionName,
           newDirectoryName: originalCollectionName,
         })
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.rename).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           oldDirectoryName: `_${collectionName}`,
@@ -319,12 +331,12 @@ describe("Collection Directory Service", () => {
       )
       expect(
         mockCollectionYmlService.renameCollectionInOrder
-      ).toHaveBeenCalledWith(reqDetails, {
+      ).toHaveBeenCalledWith(sessionData, {
         oldCollectionName: collectionName,
         newCollectionName: slugifiedCollectionName,
       })
       expect(mockNavYmlService.renameCollectionInNav).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           oldCollectionName: collectionName,
           newCollectionName: slugifiedCollectionName,
@@ -336,7 +348,7 @@ describe("Collection Directory Service", () => {
   describe("DeleteDirectory", () => {
     it("rejects deleting a collection with the same name as protected folders", async () => {
       await expect(
-        service.deleteDirectory(reqDetails, mockGithubSessionData, {
+        service.deleteDirectory(sessionData, mockGithubSessionData, {
           collectionName: "data",
         })
       ).rejects.toThrowError(ConflictError)
@@ -344,12 +356,12 @@ describe("Collection Directory Service", () => {
 
     it("Deleting a directory works correctly", async () => {
       await expect(
-        service.deleteDirectory(reqDetails, mockGithubSessionData, {
+        service.deleteDirectory(sessionData, mockGithubSessionData, {
           collectionName,
         })
       ).resolves.not.toThrowError()
       expect(mockBaseDirectoryService.delete).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         mockGithubSessionData,
         {
           directoryName: `_${collectionName}`,
@@ -357,7 +369,7 @@ describe("Collection Directory Service", () => {
         }
       )
       expect(mockNavYmlService.deleteCollectionInNav).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
         }
@@ -368,13 +380,13 @@ describe("Collection Directory Service", () => {
   describe("ReorderDirectory", () => {
     it("Reordering a directory works correctly", async () => {
       await expect(
-        service.reorderDirectory(reqDetails, {
+        service.reorderDirectory(sessionData, {
           collectionName,
           objArray,
         })
       ).resolves.toMatchObject(objArray)
       expect(mockCollectionYmlService.updateOrder).toHaveBeenCalledWith(
-        reqDetails,
+        sessionData,
         {
           collectionName,
           newOrder: objArray.map((file) => file.name),
@@ -388,13 +400,13 @@ describe("Collection Directory Service", () => {
     const targetSubcollectionName = "target-subcollection"
     it("Moving pages in a collection to unlinked pages works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           collectionName,
           objArray,
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
         })
@@ -402,14 +414,14 @@ describe("Collection Directory Service", () => {
     })
     it("Moving pages in a collection to another collection works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           collectionName,
           targetCollectionName,
           objArray,
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           newFileCollection: targetCollectionName,
@@ -418,7 +430,7 @@ describe("Collection Directory Service", () => {
     })
     it("Moving pages in a collection to a subcollection works correctly", async () => {
       await expect(
-        service.movePages(reqDetails, {
+        service.movePages(sessionData, {
           collectionName,
           targetCollectionName,
           targetSubcollectionName,
@@ -426,7 +438,7 @@ describe("Collection Directory Service", () => {
         })
       ).resolves.not.toThrowError()
       objArray.forEach((file) => {
-        expect(mockMoverService.movePage).toHaveBeenCalledWith(reqDetails, {
+        expect(mockMoverService.movePage).toHaveBeenCalledWith(sessionData, {
           fileName: file.name,
           oldFileCollection: collectionName,
           newFileCollection: targetCollectionName,

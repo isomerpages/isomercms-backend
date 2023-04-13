@@ -1,14 +1,26 @@
+import { ConfigYmlData } from "@root/types/configYml"
 import { GitHubRepositoryData } from "@root/types/repoInfo"
+import { Brand } from "@root/types/util"
 
-export const MOCK_STAGING_URL_GITHUB = "https://repo-staging.netlify.app"
-export const MOCK_STAGING_URL_CONFIGYML =
-  "https://repo-staging-configyml.netlify.app"
-export const MOCK_STAGING_URL_DB = "https://repo-staging-db.netlify.app"
+export const MOCK_STAGING_URL_GITHUB: NonNullable<
+  ConfigYmlData["staging"]
+> = Brand.fromString("https://repo-staging.netlify.app")
+export const MOCK_STAGING_URL_CONFIGYML: NonNullable<
+  ConfigYmlData["staging"]
+> = Brand.fromString("https://repo-staging-configyml.netlify.app")
+export const MOCK_STAGING_URL_DB: NonNullable<
+  ConfigYmlData["staging"]
+> = Brand.fromString("https://repo-staging-db.netlify.app")
 
-export const MOCK_PRODUCTION_URL_GITHUB = "https://repo-prod.netlify.app"
-export const MOCK_PRODUCTION_URL_CONFIGYML =
-  "https://repo-prod-configyml.netlify.app"
-export const MOCK_PRODUCTION_URL_DB = "https://repo-prod-db.netlify.app"
+export const MOCK_PRODUCTION_URL_GITHUB: NonNullable<
+  ConfigYmlData["prod"]
+> = Brand.fromString("https://repo-prod.netlify.app")
+export const MOCK_PRODUCTION_URL_CONFIGYML: NonNullable<
+  ConfigYmlData["prod"]
+> = Brand.fromString("https://repo-prod-configyml.netlify.app")
+export const MOCK_PRODUCTION_URL_DB: NonNullable<
+  ConfigYmlData["prod"]
+> = Brand.fromString("https://repo-prod-db.netlify.app")
 
 export const repoInfo: GitHubRepositoryData = {
   name: "repo",

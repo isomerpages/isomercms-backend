@@ -141,7 +141,11 @@ class AuthService {
   async getUserInfo(sessionData) {
     try {
       if (sessionData.isomerUserId === E2E_ISOMER_ID) {
-        return { email: E2E_TEST_EMAIL, contactNumber: E2E_TEST_CONTACT }
+        return {
+          userId: E2E_ISOMER_ID,
+          email: E2E_TEST_EMAIL,
+          contactNumber: E2E_TEST_CONTACT,
+        }
       }
       if (sessionData.isEmailUser()) {
         const { email } = sessionData

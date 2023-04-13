@@ -330,15 +330,11 @@ describe("Collections Router", () => {
         .expect(200)
       expect(
         mockSubcollectionDirectoryService.renameDirectory
-      ).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData,
-        mockGithubSessionData,
-        {
-          collectionName,
-          subcollectionName,
-          newDirectoryName,
-        }
-      )
+      ).toHaveBeenCalledWith(mockUserWithSiteSessionData, {
+        collectionName,
+        subcollectionName,
+        newDirectoryName,
+      })
     })
   })
 

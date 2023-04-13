@@ -67,7 +67,7 @@ class ResourceRoomRouter {
 
   // Rename resource room
   async renameResourceRoomDirectory(req, res, next) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName } = req.params
     const { error } = RenameResourceDirectoryRequestSchema.validate(req.body)
@@ -75,6 +75,7 @@ class ResourceRoomRouter {
     const { newDirectoryName } = req.body
     await this.resourceRoomDirectoryService.renameResourceRoomDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
         newDirectoryName,
@@ -87,11 +88,12 @@ class ResourceRoomRouter {
 
   // Delete resource room
   async deleteResourceRoomDirectory(req, res) {
-    const { userWithSiteSessionData } = res.locals
+    const { userWithSiteSessionData, githubSessionData } = res.locals
 
     const { resourceRoomName } = req.params
     await this.resourceRoomDirectoryService.deleteResourceRoomDirectory(
       userWithSiteSessionData,
+      githubSessionData,
       {
         resourceRoomName,
       }

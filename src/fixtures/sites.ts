@@ -75,7 +75,7 @@ export const MOCK_REPO_DBENTRY_TWO: Attributes<Repo> = {
   updatedAt: MOCK_SITE_DATE_TWO,
 }
 
-export const MOCK_DEPLOYMENT_DBENTRY_ONE: Attributes<Deployment> = {
+export const MOCK_DEPLOYMENT_DBENTRY_ONE = {
   id: 1,
   siteId: MOCK_SITE_ID_ONE,
   productionUrl: MOCK_DEPLOYMENT_PROD_URL_ONE,

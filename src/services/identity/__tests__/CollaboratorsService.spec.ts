@@ -1,3 +1,4 @@
+import { errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { ForbiddenError } from "@errors/ForbiddenError"
@@ -286,7 +287,9 @@ describe("CollaboratorsService", () => {
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
       ) as unknown) as () => Promise<CollaboratorRoles | null>
-      mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
+      mockSitesService.getBySiteName.mockReturnValue(
+        okAsync({ id: mockSiteId })
+      )
       mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
@@ -369,7 +372,7 @@ describe("CollaboratorsService", () => {
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
       ) as unknown) as () => Promise<CollaboratorRoles | null>
-      mockSitesService.getBySiteName.mockResolvedValue(null)
+      mockSitesService.getBySiteName.mockResolvedValue(errAsync(null))
       mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
@@ -397,7 +400,9 @@ describe("CollaboratorsService", () => {
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
       ) as unknown) as () => Promise<CollaboratorRoles | null>
-      mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync({ id: mockSiteId })
+      )
       mockUsersService.findByEmail.mockResolvedValue(null)
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
@@ -425,7 +430,9 @@ describe("CollaboratorsService", () => {
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
       ) as unknown) as () => Promise<CollaboratorRoles | null>
-      mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync({ id: mockSiteId })
+      )
       mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(mockSiteMemberRecord)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
@@ -453,7 +460,9 @@ describe("CollaboratorsService", () => {
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Contributor
       ) as unknown) as () => Promise<CollaboratorRoles | null>
-      mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync({ id: mockSiteId })
+      )
       mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)

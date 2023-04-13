@@ -6,7 +6,7 @@ const mediaSpecialCharactersRegexTest = /[~%^#*+\./\\`;~{}[\]"<>]/ // Allows das
 // Allows only media root folders (/images or /files) and media subdirectories (/images/subdir or /files/subdir) with no banned characters
 const mediaSubfolderRegexText = /^(images|files|(images|files)\/[^#?~%^*+\.\\`;~{}[\]"<>]+)$/
 
-const titleSpecialCharCheck = ({ title, isFile = false }) => {
+const hasSpecialCharInTitle = ({ title, isFile = false }) => {
   let testTitle = title
   if (isFile) {
     // Remove .md
@@ -31,7 +31,7 @@ const isMediaPathValid = ({ path, isFile = false }) => {
 }
 
 module.exports = {
-  titleSpecialCharCheck,
+  hasSpecialCharInTitle,
   isDateValid,
   isMediaPathValid,
 }

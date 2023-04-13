@@ -5,7 +5,7 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const { titleSpecialCharCheck, isDateValid } = require("@validators/validators")
+const { hasSpecialCharInTitle, isDateValid } = require("@validators/validators")
 
 class ResourcePageService {
   constructor({ gitHubService }) {
@@ -26,7 +26,7 @@ class ResourcePageService {
     const titleTokenArray = type ? tokenArray.slice(4) : tokenArray.slice(3)
     const title = titleTokenArray.join("-")
 
-    if (titleSpecialCharCheck({ title, isFile: true }))
+    if (hasSpecialCharInTitle({ title, isFile: true }))
       throw new BadRequestError(
         `Special characters not allowed when creating resource files. Given name: ${title}`
       )

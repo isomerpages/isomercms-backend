@@ -5,7 +5,7 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { hasSpecialCharInTitle } = require("@validators/validators")
 
 class CollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
@@ -19,7 +19,7 @@ class CollectionPageService {
   ) {
     if (
       !shouldIgnoreCheck &&
-      titleSpecialCharCheck({ title: fileName, isFile: true })
+      hasSpecialCharInTitle({ title: fileName, isFile: true })
     )
       throw new BadRequestError(
         `Special characters not allowed when creating files. Given name: ${fileName}`
@@ -95,7 +95,7 @@ class CollectionPageService {
     sessionData,
     { oldFileName, newFileName, collectionName, content, frontMatter, sha }
   ) {
-    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
+    if (hasSpecialCharInTitle({ title: newFileName, isFile: true }))
       throw new BadRequestError(
         `Special characters not allowed when renaming files. Given name: ${newFileName}`
       )

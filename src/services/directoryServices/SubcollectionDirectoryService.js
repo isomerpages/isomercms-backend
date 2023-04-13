@@ -2,7 +2,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const { deslugifyCollectionName } = require("@utils/utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { hasSpecialCharInTitle } = require("@validators/validators")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
@@ -42,7 +42,7 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, objArray }
   ) {
-    if (titleSpecialCharCheck({ title: subcollectionName, isFile: false }))
+    if (hasSpecialCharInTitle({ title: subcollectionName, isFile: false }))
       throw new BadRequestError(
         `Special characters not allowed when creating subdirectory. Given name: ${subcollectionName}`
       )
@@ -82,7 +82,7 @@ class SubcollectionDirectoryService {
     reqDetails,
     { collectionName, subcollectionName, newDirectoryName }
   ) {
-    if (titleSpecialCharCheck({ title: newDirectoryName, isFile: false }))
+    if (hasSpecialCharInTitle({ title: newDirectoryName, isFile: false }))
       throw new BadRequestError(
         `Special characters not allowed when renaming subdirectory. Given name: ${newDirectoryName}`
       )

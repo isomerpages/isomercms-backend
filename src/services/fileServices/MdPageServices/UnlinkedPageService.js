@@ -5,7 +5,7 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const { titleSpecialCharCheck } = require("@validators/validators")
+const { hasSpecialCharInTitle } = require("@validators/validators")
 
 const UNLINKED_PAGES_DIRECTORY_NAME = "pages"
 
@@ -21,7 +21,7 @@ class UnlinkedPageService {
     // Ensure that third_nav_title is removed for files that are being moved from collections
     if (
       !shouldIgnoreCheck &&
-      titleSpecialCharCheck({ title: fileName, isFile: true })
+      hasSpecialCharInTitle({ title: fileName, isFile: true })
     )
       throw new BadRequestError(
         `Special characters not allowed when creating file. Given name: ${fileName}`
@@ -76,7 +76,7 @@ class UnlinkedPageService {
     sessionData,
     { oldFileName, newFileName, content, frontMatter, sha }
   ) {
-    if (titleSpecialCharCheck({ title: newFileName, isFile: true }))
+    if (hasSpecialCharInTitle({ title: newFileName, isFile: true }))
       throw new BadRequestError(
         `Special characters not allowed when renaming file. Given name: ${newFileName}`
       )

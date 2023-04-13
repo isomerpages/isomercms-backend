@@ -368,7 +368,7 @@ export default class InfraService {
     await Promise.all(
       messages.map(async (message) => {
         const site = await this.sitesService.getBySiteName(message.repoName)
-        if (!site) {
+        if (!site || site.isErr()) {
           return
         }
         const isSuccess = message.status === SiteLaunchLambdaStatus.SUCCESS
@@ -377,13 +377,13 @@ export default class InfraService {
 
         if (isSuccess) {
           updateSiteLaunchParams = {
-            id: site.id,
+            id: site.value.id,
             siteStatus: SiteStatus.Launched,
             jobStatus: JobStatus.Running,
           }
         } else {
           updateSiteLaunchParams = {
-            id: site.id,
+            id: site.value.id,
             siteStatus: SiteStatus.Initialized,
             jobStatus: JobStatus.Failed,
           }

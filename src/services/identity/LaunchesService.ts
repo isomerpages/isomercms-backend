@@ -192,11 +192,13 @@ export class LaunchesService {
 
   getDomainAssociationRecord = async (
     domainName: string,
-    appId: string
+    appId: string,
+    subDomainSettings: SubDomainSetting[]
   ): Promise<GetDomainAssociationCommandOutput> => {
     const getDomainAssociationOptions = this.launchClient.createGetDomainAssociationCommandInput(
       appId,
-      domainName
+      domainName,
+      subDomainSettings
     )
     return this.launchClient.sendGetDomainAssociationCommand(
       getDomainAssociationOptions

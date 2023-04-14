@@ -155,8 +155,8 @@ class LaunchClient {
         statusReason: undefined,
       },
     }
-    const hasCreated = true // this is a get call, assume domain has already been created
-    const subDomains = this.getSubDomains(input.subDomainSettings, hasCreated)
+    const isCreated = true // this is a get call, assume domain has already been created
+    const subDomains = this.getSubDomains(input.subDomainSettings, isCreated)
 
     // We know that domainAssociation is not undefined, so we can use the non-null assertion operator
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

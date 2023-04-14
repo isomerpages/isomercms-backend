@@ -113,11 +113,14 @@ class LaunchClient {
     return Promise.resolve(mockResponse)
   }
 
-  private isTestEnv() {
+  private isTestEnv(): boolean {
     return isSecure
   }
 
-  private getSubDomains(subDomainList: SubDomainSetting[], hasCreated = false) {
+  private getSubDomains(
+    subDomainList: SubDomainSetting[],
+    hasCreated = false
+  ): SubDomain[] {
     const subDomainPrefixList = subDomainList
       .map((subDomain) => subDomain.prefix)
       .filter((prefix) => prefix !== undefined) as string[]

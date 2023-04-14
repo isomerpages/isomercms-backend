@@ -10,7 +10,7 @@ import {
 } from "@aws-sdk/client-amplify"
 import { SubDomain } from "aws-sdk/clients/amplify"
 
-import { isSecure } from "@root/utils/auth-utils"
+import { config } from "@config/config"
 
 // create a new interface that extends GetDomainAssociationCommandInput
 interface MockGetDomainAssociationCommandInput
@@ -41,7 +41,7 @@ class LaunchClient {
   sendCreateDomainAssociation = (
     input: CreateDomainAssociationCommandInput
   ): Promise<CreateDomainAssociationCommandOutput> => {
-    if (this.isTestEnv()) {
+    if (this.shouldMockAmplifyCreateDomainCalls()) {
       return this.mockCreateDomainAssociationOutput(input)
     }
     const output = this.amplifyClient.send(
@@ -59,7 +59,7 @@ class LaunchClient {
     | MockGetDomainAssociationCommandInput => ({
     appId,
     domainName,
-    ...(this.isTestEnv() && { subDomainSettings }),
+    ...(this.shouldMockAmplifyCreateDomainCalls() && { subDomainSettings }),
   })
 
   sendGetDomainAssociationCommand = (
@@ -113,8 +113,8 @@ class LaunchClient {
     return Promise.resolve(mockResponse)
   }
 
-  private isTestEnv(): boolean {
-    return isSecure
+  private shouldMockAmplifyCreateDomainCalls(): boolean {
+    return config.get("aws.amplify.mockAmplifyCreateDomainAssociationCalls")
   }
 
   private getSubDomains(

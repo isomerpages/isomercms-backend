@@ -10,7 +10,7 @@ import {
 } from "@aws-sdk/client-amplify"
 import { SubDomain } from "aws-sdk/clients/amplify"
 
-import { config } from "@config/config"
+import { isSecure } from "@root/utils/auth-utils"
 
 // create a new interface that extends GetDomainAssociationCommandInput
 interface MockGetDomainAssociationCommandInput
@@ -114,7 +114,7 @@ class LaunchClient {
   }
 
   private isTestEnv() {
-    return config.get("env") === "test" || config.get("env") === "dev"
+    return isSecure
   }
 
   private getSubDomains(subDomainList: SubDomainSetting[], hasCreated = false) {

@@ -7,7 +7,25 @@ export function getField(
 ): string | undefined {
   const response = responses.find(({ question }) => question === name)
 
-  return response?.answer
+  return response?.answer?.trim()
+}
+
+function trimAllStrings(
+  responseArray: string[] | string[][]
+): string[] | string[][] {
+  if (Array.isArray(responseArray)) {
+    responseArray.map((item) => {
+      if (Array.isArray(item)) {
+        return trimAllStrings(item)
+      }
+      if (typeof item === "string") {
+        return item.trim()
+      }
+      return item
+    })
+    return responseArray
+  }
+  return responseArray
 }
 
 export function getFieldsFromTable(
@@ -15,5 +33,9 @@ export function getFieldsFromTable(
   name: string
 ): string[] | string[][] | undefined {
   const response = responses.find(({ question }) => question === name)
+  let answers = response?.answerArray
+  if (answers) {
+    answers = trimAllStrings(answers)
+  }
   return response?.answerArray
 }

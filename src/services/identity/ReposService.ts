@@ -170,13 +170,6 @@ export default class ReposService {
       repo: repoName,
       permission: "admin",
     })
-    await octokit.teams.addOrUpdateRepoPermissionsInOrg({
-      org: ISOMER_GITHUB_ORGANIZATION_NAME,
-      team_slug: repoName,
-      owner: ISOMER_GITHUB_ORGANIZATION_NAME,
-      repo: repoName,
-      permission: "push",
-    })
   }
 
   generateRepoAndPublishToGitHub = async (

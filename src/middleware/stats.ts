@@ -1,19 +1,19 @@
 import autoBind from "auto-bind"
 
+import logger from "@root/logger/logger"
 import {
   statsService as statsServiceInstance,
   StatsService,
 } from "@root/services/infra/StatsService"
 import { RequestHandler } from "@root/types"
 
-type SideEffect = () => Promise<void> | void
-
+type SideEffect = () => Promise<void>
 const wrapAsRequestHandler = (sideEffect: SideEffect): RequestHandler => (
   req,
   res,
   next
 ) => {
-  sideEffect()
+  sideEffect().catch(logger.info)
   next()
 }
 
@@ -45,11 +45,11 @@ export class StatsMiddleware {
     this.statsService.countMigratedSites()
   )
 
-  trackGithubLogins = wrapAsRequestHandler(() =>
+  trackGithubLogins = wrapAsRequestHandler(async () =>
     this.statsService.trackGithubLogins()
   )
 
-  trackEmailLogins = wrapAsRequestHandler(() =>
+  trackEmailLogins = wrapAsRequestHandler(async () =>
     this.statsService.trackEmailLogins()
   )
 }

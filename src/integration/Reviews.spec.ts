@@ -174,6 +174,8 @@ const migrateSpy = jest
   .spyOn(ReviewsRouter, "checkIfSiteIsUnmigrated")
   .mockResolvedValue(true)
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
+
 describe("Review Requests Integration Tests", () => {
   beforeAll(async () => {
     // NOTE: Because SitesService uses an axios instance,
@@ -264,7 +266,8 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
-            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
             lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -272,7 +275,8 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
             path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
-            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -749,7 +753,8 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
-            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
             lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -757,7 +762,8 @@ describe("Review Requests Integration Tests", () => {
             type: ["page"],
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
             path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
-            url: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },

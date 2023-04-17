@@ -35,6 +35,8 @@ import { ResourcePageService } from "./ResourcePageService"
 import { SubcollectionPageService } from "./SubcollectionPageService"
 import { UnlinkedPageService } from "./UnlinkedPageService"
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
+
 // NOTE: This handler retrieves data from github then parses it
 // and it should handle the errors appropriately.
 // We return `BaseIsomerError` as a stop gap measure but in the future,
@@ -318,6 +320,51 @@ export class PageService {
       name,
       path: ok(fullPath),
     })
+  }
+
+  retrieveCmsPermalink = (
+    pageName: PageName,
+    siteName: string
+  ): ResultAsync<string, BaseIsomerError> => {
+    const baseUrl = `${FRONTEND_URL}/sites/${siteName}`
+    switch (pageName.kind) {
+      case "Homepage": {
+        return okAsync(`${baseUrl}/homepage`)
+      }
+      case "ContactUsPage": {
+        return okAsync(`${baseUrl}/contact-us`)
+      }
+      case "UnlinkedPage": {
+        return okAsync(`${baseUrl}/editPage/${pageName.name}`)
+      }
+      // NOTE: All collections are prefixed by `_` as a result of jekyll
+      // so we have to remove it
+      case "CollectionPage": {
+        return okAsync(
+          `${baseUrl}/folders/${pageName.collection.slice(1)}/editPage/${
+            pageName.name
+          }`
+        )
+      }
+      case "SubcollectionPage": {
+        return okAsync(
+          `${baseUrl}/folders/${pageName.collection.slice(1)}/subfolders/${
+            pageName.subcollection
+          }/editPage/${pageName.name}`
+        )
+      }
+      case "ResourceCategoryPage": {
+        return okAsync(
+          `${baseUrl}/resourceRoom/${pageName.resourceRoom}/resourceCategory/${pageName.resourceCategory}/editPage/${pageName.name}`
+        )
+      }
+      default: {
+        const unimplErr: never = pageName
+        return errAsync(
+          new BaseIsomerError(500, `Unimplemented page type: ${unimplErr}`)
+        )
+      }
+    }
   }
 
   retrieveStagingPermalink = (

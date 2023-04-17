@@ -328,13 +328,15 @@ const config = convict({
       default: 10,
     },
     dbAcquire: {
-      doc: "",
+      doc:
+        "The maximum time, in milliseconds, that pool will try to get connection before throwing error",
       env: "DB_ACQUIRE",
       format: "required-positive-number",
       default: 60000,
     },
     dbTimeout: {
-      doc: "",
+      doc:
+        "The maximum time, in milliseconds, before an idle session within an open transaction will be terminated",
       env: "DB_TIMEOUT",
       format: "required-positive-number",
       default: 10000,

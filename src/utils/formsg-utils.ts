@@ -13,11 +13,6 @@ export function getField(
 function trimAllStrings(
   responseArray: string[] | string[][]
 ): string[] | string[][] {
-  if (!Array.isArray(responseArray)) {
-    // defensively return if responseArray is not an array
-    return responseArray
-  }
-
   responseArray.map((item) => {
     if (Array.isArray(item)) {
       return trimAllStrings(item)

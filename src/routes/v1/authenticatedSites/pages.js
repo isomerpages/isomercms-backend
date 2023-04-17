@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 const express = require("express")
 
 // Import middleware
@@ -222,37 +224,37 @@ async function moveUnlinkedPages(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "listPages"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listPages"),
   attachReadRouteHandlerWrapper(listPages)
 )
 router.post(
   "/new/:pageName",
-  statsMiddleware.logVersionNumberCallFor(1, "createPage"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createPage"),
   attachWriteRouteHandlerWrapper(createPage)
 )
 router.get(
   "/:pageName",
-  statsMiddleware.logVersionNumberCallFor(1, "readPage"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readPage"),
   attachReadRouteHandlerWrapper(readPage)
 )
 router.post(
   "/:pageName",
-  statsMiddleware.logVersionNumberCallFor(1, "updatePage"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updatePage"),
   attachWriteRouteHandlerWrapper(updatePage)
 )
 router.delete(
   "/:pageName",
-  statsMiddleware.logVersionNumberCallFor(1, "deletePage"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deletePage"),
   attachWriteRouteHandlerWrapper(deletePage)
 )
 router.post(
   "/:pageName/rename/:newPageName",
-  statsMiddleware.logVersionNumberCallFor(1, "renamePage"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renamePage"),
   attachRollbackRouteHandlerWrapper(renamePage)
 )
 router.post(
   "/move/:newPagePath",
-  statsMiddleware.logVersionNumberCallFor(1, "moveUnlinkedPages"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "moveUnlinkedPages"),
   attachRollbackRouteHandlerWrapper(moveUnlinkedPages)
 )
 

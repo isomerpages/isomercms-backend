@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 import { statsMiddleware } from "@root/middleware/stats"
 
 const express = require("express")
@@ -33,7 +35,7 @@ async function getNetlifyToml(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "getNetlifyToml"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getNetlifyToml"),
   attachReadRouteHandlerWrapper(getNetlifyToml)
 )
 

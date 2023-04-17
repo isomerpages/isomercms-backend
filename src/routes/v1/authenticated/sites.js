@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 import { config } from "@config/config"
 
 import { GITHUB_ORG_REPOS_ENDPOINT } from "@root/constants"
@@ -184,22 +186,22 @@ async function getStagingUrl(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "getSites"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getSites"),
   attachReadRouteHandlerWrapper(getSites)
 )
 router.get(
   "/:siteName",
-  statsMiddleware.logVersionNumberCallFor(1, "checkHasAccess"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "checkHasAccess"),
   attachReadRouteHandlerWrapper(checkHasAccess)
 )
 router.get(
   "/:siteName/lastUpdated",
-  statsMiddleware.logVersionNumberCallFor(1, "getLastUpdated"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getLastUpdated"),
   attachReadRouteHandlerWrapper(getLastUpdated)
 )
 router.get(
   "/:siteName/stagingUrl",
-  statsMiddleware.logVersionNumberCallFor(1, "getStagingUrl"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getStagingUrl"),
   attachReadRouteHandlerWrapper(getStagingUrl)
 )
 

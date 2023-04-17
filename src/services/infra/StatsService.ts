@@ -6,10 +6,13 @@ import { ModelStatic } from "sequelize"
 import { config } from "@config/config"
 
 import {
+  VERSIONS,
   GH_MAX_REPO_COUNT,
   GITHUB_ORG_REPOS_ENDPOINT,
   ISOMERPAGES_REPO_PAGE_COUNT,
-} from "@root/constants"
+  VERSION_NUMBERS,
+} from "@constants/index"
+
 import { AccessToken, Site, User } from "@root/database/models"
 
 import { genericGitHubAxiosInstance } from "../api/AxiosInstance"
@@ -35,9 +38,9 @@ export class StatsService {
     this.sitesRepo = sitesRepo
   }
 
-  submitApiVersionCount = (version: number, path: string) => {
-    this.statsD.increment(`versions.v${version}`, {
-      version: `v${version}`,
+  submitApiVersionCount = (version: VERSION_NUMBERS, path: string) => {
+    this.statsD.increment(`versions.${version}`, {
+      version,
       path,
     })
   }
@@ -53,7 +56,7 @@ export class StatsService {
     // NOTE: Technically our e2e user will be here also
     // but over-counting by 1 here is acceptable.
     this.statsD.distribution("users.email.current", numUsers, 1, {
-      version: "v2",
+      version: VERSIONS.v2,
     })
   }
 
@@ -93,13 +96,13 @@ export class StatsService {
 
   trackGithubLogins = () => {
     this.statsD.increment("users.github.login", {
-      version: "v1",
+      version: VERSIONS.v1,
     })
   }
 
   trackEmailLogins = () => {
     this.statsD.increment("users.email.login", {
-      version: "v2",
+      version: VERSIONS.v2,
     })
   }
 }

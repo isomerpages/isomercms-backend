@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 import { statsMiddleware } from "@root/middleware/stats"
 
 const express = require("express")
@@ -35,7 +37,7 @@ async function listDirectoryContent(req, res) {
 
 router.get(
   "/:path",
-  statsMiddleware.logVersionNumberCallFor(1, "listDirectoryContent"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listDirectoryContent"),
   attachReadRouteHandlerWrapper(listDirectoryContent)
 )
 

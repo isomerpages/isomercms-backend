@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 import { statsMiddleware } from "@root/middleware/stats"
 
 const express = require("express")
@@ -184,37 +186,37 @@ async function moveDocument(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "listDocuments"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listDocuments"),
   attachReadRouteHandlerWrapper(listDocuments)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "createNewDocument"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createNewDocument"),
   attachWriteRouteHandlerWrapper(createNewDocument)
 )
 router.get(
   "/:documentName",
-  statsMiddleware.logVersionNumberCallFor(1, "readDocument"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readDocument"),
   attachReadRouteHandlerWrapper(readDocument)
 )
 router.post(
   "/:documentName",
-  statsMiddleware.logVersionNumberCallFor(1, "updateDocument"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateDocument"),
   attachWriteRouteHandlerWrapper(updateDocument)
 )
 router.delete(
   "/:documentName",
-  statsMiddleware.logVersionNumberCallFor(1, "deleteDocument"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteDocument"),
   attachWriteRouteHandlerWrapper(deleteDocument)
 )
 router.post(
   "/:documentName/rename/:newDocumentName",
-  statsMiddleware.logVersionNumberCallFor(1, "renameDocument"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameDocument"),
   attachRollbackRouteHandlerWrapper(renameDocument)
 )
 router.post(
   "/:documentName/move/:newDocumentName",
-  statsMiddleware.logVersionNumberCallFor(1, "moveDocument"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "moveDocument"),
   attachRollbackRouteHandlerWrapper(moveDocument)
 )
 

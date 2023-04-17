@@ -1,3 +1,5 @@
+import { VERSIONS } from "@root/constants"
+
 const express = require("express")
 
 const sitesRouter = require("@routes/v1/authenticated/sites")
@@ -21,7 +23,7 @@ const getAuthenticatedSubrouter = ({
   authenticatedSubrouter.use("/sites", sitesRouter)
   authenticatedSubrouter.use(
     "/user",
-    statsMiddleware.logVersionNumberCallFor(1, "user"),
+    statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "user"),
     usersRouter.getRouter()
   )
 

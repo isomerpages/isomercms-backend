@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 import { statsMiddleware } from "@root/middleware/stats"
 
 const express = require("express")
@@ -69,22 +71,22 @@ async function deleteResourceRoom(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "getResourceRoomName"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getResourceRoomName"),
   attachReadRouteHandlerWrapper(getResourceRoomName)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "createResourceRoom"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createResourceRoom"),
   attachRollbackRouteHandlerWrapper(createResourceRoom)
 )
 router.post(
   "/:resourceRoom",
-  statsMiddleware.logVersionNumberCallFor(1, "renameResourceRoom"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameResourceRoom"),
   attachRollbackRouteHandlerWrapper(renameResourceRoom)
 )
 router.delete(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "deleteResourceRoom"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteResourceRoom"),
   attachRollbackRouteHandlerWrapper(deleteResourceRoom)
 )
 

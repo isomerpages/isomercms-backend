@@ -1,3 +1,5 @@
+import { VERSIONS } from "@constants"
+
 import { statsMiddleware } from "@root/middleware/stats"
 
 const express = require("express")
@@ -58,12 +60,12 @@ async function updateNavigation(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "getNavigation"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getNavigation"),
   attachReadRouteHandlerWrapper(getNavigation)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(1, "updateNavigation"),
+  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateNavigation"),
   attachWriteRouteHandlerWrapper(updateNavigation)
 )
 

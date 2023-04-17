@@ -1,5 +1,6 @@
 import autoBind from "auto-bind"
 
+import { VERSION_NUMBERS } from "@root/constants"
 import logger from "@root/logger/logger"
 import {
   statsService as statsServiceInstance,
@@ -26,11 +27,10 @@ export class StatsMiddleware {
     autoBind(this)
   }
 
-  logVersionNumberCallFor = (version: number, path: string): RequestHandler => (
-    _req,
-    _res,
-    next
-  ) => {
+  logVersionNumberCallFor = (
+    version: VERSION_NUMBERS,
+    path: string
+  ): RequestHandler => (_req, _res, next) => {
     this.statsService.submitApiVersionCount(version, path)
     next()
   }

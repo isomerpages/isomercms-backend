@@ -6,6 +6,17 @@ import {
 } from "@root/services/infra/StatsService"
 import { RequestHandler } from "@root/types"
 
+type SideEffect = () => Promise<void> | void
+
+const wrapAsRequestHandler = (sideEffect: SideEffect): RequestHandler => (
+  req,
+  res,
+  next
+) => {
+  sideEffect()
+  next()
+}
+
 export class StatsMiddleware {
   private readonly statsService: StatsService
 
@@ -23,6 +34,24 @@ export class StatsMiddleware {
     this.statsService.submitApiVersionCount(version, path)
     next()
   }
+
+  countDbUsers = wrapAsRequestHandler(() => this.statsService.countDbUsers())
+
+  countGithubSites = wrapAsRequestHandler(() =>
+    this.statsService.countGithubSites()
+  )
+
+  countMigratedSites = wrapAsRequestHandler(() =>
+    this.statsService.countMigratedSites()
+  )
+
+  trackGithubLogins = wrapAsRequestHandler(() =>
+    this.statsService.trackGithubLogins()
+  )
+
+  trackEmailLogins = wrapAsRequestHandler(() =>
+    this.statsService.trackEmailLogins()
+  )
 }
 
 export const statsMiddleware = new StatsMiddleware(statsServiceInstance)

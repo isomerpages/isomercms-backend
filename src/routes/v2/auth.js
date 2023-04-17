@@ -19,13 +19,13 @@ class AuthRouter {
   constructor({
     authService,
     authenticationMiddleware,
-    statsService,
+    statsMiddleware,
     apiLogger,
     rateLimiter,
   }) {
     this.authService = authService
     this.authenticationMiddleware = authenticationMiddleware
-    this.statsService = statsService
+    this.statsMiddleware = statsMiddleware
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
     // We need to bind all methods because we don't invoke them from the class directly
@@ -69,8 +69,7 @@ class AuthRouter {
     })
     logger.info(`User ${userInfo.email} successfully logged in`)
     Object.assign(req.session, { userInfo })
-    res.redirect(`${FRONTEND_URL}/sites`)
-    this.statsService.trackGithubLogins()
+    return res.redirect(`${FRONTEND_URL}/sites`)
   }
 
   async login(req, res) {
@@ -93,8 +92,7 @@ class AuthRouter {
     const userInfo = await this.authService.verifyOtp({ email, otp })
     Object.assign(req.session, { userInfo })
     logger.info(`User ${userInfo.email} successfully logged in`)
-    res.sendStatus(200)
-    this.statsService.trackEmailLogins()
+    return res.sendStatus(200)
   }
 
   async logout(req, res) {
@@ -112,8 +110,7 @@ class AuthRouter {
       req.session.destroy()
       return res.sendStatus(401)
     }
-    res.status(200).json(userInfo)
-    return this.statsService.countDbUsers()
+    return res.status(200).json(userInfo)
   }
 
   getRouter() {
@@ -125,13 +122,22 @@ class AuthRouter {
       "/github-redirect",
       attachReadRouteHandlerWrapper(this.authRedirect)
     )
-    router.get("/", attachReadRouteHandlerWrapper(this.githubAuth))
+    router.get(
+      "/",
+      this.statsMiddleware.trackGithubLogins,
+      attachReadRouteHandlerWrapper(this.githubAuth)
+    )
     router.post("/login", attachReadRouteHandlerWrapper(this.login))
-    router.post("/verify", attachReadRouteHandlerWrapper(this.verify))
+    router.post(
+      "/verify",
+      this.statsMiddleware.trackEmailLogins,
+      attachReadRouteHandlerWrapper(this.verify)
+    )
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
       this.authenticationMiddleware.verifyAccess,
+      this.statsMiddleware.countDbUsers,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

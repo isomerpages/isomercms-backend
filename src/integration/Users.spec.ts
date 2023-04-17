@@ -9,7 +9,6 @@ import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockIsomerUserId } from "@root/fixtures/sessionData"
 import { UsersRouter as _UsersRouter } from "@root/routes/v2/authenticated/users"
-import { StatsService } from "@root/services/infra/StatsService"
 import { getUsersService } from "@services/identity"
 import { sequelize } from "@tests/database"
 

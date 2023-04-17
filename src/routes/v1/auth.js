@@ -20,9 +20,9 @@ const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const { authenticationMiddleware } = require("@root/middleware")
+const { statsMiddleware } = require("@root/middleware/stats")
 // Import services
 const identityServices = require("@services/identity")
-const { statsService } = require("@services/infra/StatsService")
 
 const router = express.Router()
 
@@ -118,8 +118,7 @@ async function githubAuth(req, res) {
   }
   Object.assign(req.session, { userInfo })
   logger.info(`User ${userInfo.email} successfully logged in`)
-  res.redirect(`${FRONTEND_URL}/sites`)
-  statsService.trackGithubLogins()
+  return res.redirect(`${FRONTEND_URL}/sites`)
 }
 
 async function logout(req, res) {
@@ -149,8 +148,7 @@ async function whoami(req, res) {
       email,
       contactNumber,
     } = await identityServices.usersService.findByGitHubId(userId)
-    res.status(200).json({ userId, email, contactNumber })
-    return statsService.countDbUsers()
+    return res.status(200).json({ userId, email, contactNumber })
   } catch (err) {
     clearAllCookies(res)
     // Return a 401 so that user will be redirected to logout
@@ -159,11 +157,16 @@ async function whoami(req, res) {
 }
 
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
-router.get("/", attachReadRouteHandlerWrapper(githubAuth))
+router.get(
+  "/",
+  statsMiddleware.trackGithubLogins,
+  attachReadRouteHandlerWrapper(githubAuth)
+)
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
   authenticationMiddleware.verifyAccess,
+  statsMiddleware.countDbUsers,
   attachReadRouteHandlerWrapper(whoami)
 )
 

@@ -264,7 +264,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   sitesService,
   usersService,
   reposService,
-  statsService,
+  statsMiddleware,
   deploymentsService,
   apiLogger,
   collaboratorsService,
@@ -287,7 +287,7 @@ const authV2Router = new AuthRouter({
   authService,
   apiLogger,
   rateLimiter,
-  statsService,
+  statsMiddleware,
 })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({

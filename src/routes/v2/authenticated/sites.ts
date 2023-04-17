@@ -10,14 +10,14 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import type UserSessionData from "@root/classes/UserSessionData"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
-import { StatsService } from "@root/services/infra/StatsService"
+import { StatsMiddleware } from "@root/middleware/stats"
 import type { RequestHandler } from "@root/types"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
   sitesService: SitesService
   authorizationMiddleware: AuthorizationMiddleware
-  statsService: StatsService
+  statsMiddleware: StatsMiddleware
 }
 
 export class SitesRouter {
@@ -25,16 +25,16 @@ export class SitesRouter {
 
   private readonly authorizationMiddleware
 
-  private readonly statsService
+  private readonly statsMiddleware
 
   constructor({
     sitesService,
     authorizationMiddleware,
-    statsService,
+    statsMiddleware,
   }: SitesRouterProps) {
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
-    this.statsService = statsService
+    this.statsMiddleware = statsMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -48,9 +48,7 @@ export class SitesRouter {
   > = async (req, res) => {
     const { userSessionData } = res.locals
     const siteNames = await this.sitesService.getSites(userSessionData)
-    res.status(200).json({ siteNames })
-    this.statsService.countGithubSites()
-    this.statsService.countMigratedSites()
+    return res.status(200).json({ siteNames })
   }
 
   getLastUpdated: RequestHandler<
@@ -128,7 +126,12 @@ export class SitesRouter {
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
-    router.get("/", attachReadRouteHandlerWrapper(this.getSites))
+    router.get(
+      "/",
+      this.statsMiddleware.countGithubSites,
+      this.statsMiddleware.countMigratedSites,
+      attachReadRouteHandlerWrapper(this.getSites)
+    )
     router.get(
       "/:siteName/lastUpdated",
       attachSiteHandler,

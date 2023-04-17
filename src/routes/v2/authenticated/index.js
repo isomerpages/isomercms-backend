@@ -18,7 +18,7 @@ const getAuthenticatedSubrouter = ({
   sitesService,
   usersService,
   apiLogger,
-  statsService,
+  statsMiddleware,
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
@@ -29,7 +29,7 @@ const getAuthenticatedSubrouter = ({
   const sitesV2Router = new SitesRouter({
     sitesService,
     authorizationMiddleware,
-    statsService,
+    statsMiddleware,
   })
   const collaboratorsRouter = new CollaboratorsRouter({
     collaboratorsService,

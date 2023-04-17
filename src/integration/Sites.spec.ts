@@ -20,6 +20,7 @@ import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
 import { mockEmail, mockIsomerUserId } from "@root/fixtures/sessionData"
 import { getAuthorizationMiddleware } from "@root/middleware"
+import { statsMiddleware } from "@root/middleware/stats"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { isomerRepoAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubService } from "@root/services/db/GitHubService"
@@ -37,7 +38,6 @@ import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/Co
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import SitesService from "@root/services/identity/SitesService"
-import { StatsService } from "@root/services/infra/StatsService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -121,17 +121,10 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   collaboratorsService,
 })
 
-const statsService = new StatsService(
-  new StatsDClient(),
-  User,
-  AccessToken,
-  Site
-)
-
 const SitesRouter = new _SitesRouter({
   sitesService,
   authorizationMiddleware,
-  statsService,
+  statsMiddleware,
 })
 const sitesSubrouter = SitesRouter.getRouter()
 

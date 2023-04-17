@@ -13,18 +13,20 @@ export function getField(
 function trimAllStrings(
   responseArray: string[] | string[][]
 ): string[] | string[][] {
-  if (Array.isArray(responseArray)) {
-    responseArray.map((item) => {
-      if (Array.isArray(item)) {
-        return trimAllStrings(item)
-      }
-      if (typeof item === "string") {
-        return item.trim()
-      }
-      return item
-    })
+  if (!Array.isArray(responseArray)) {
+    // defensively return if responseArray is not an array
     return responseArray
   }
+
+  responseArray.map((item) => {
+    if (Array.isArray(item)) {
+      return trimAllStrings(item)
+    }
+    if (typeof item === "string") {
+      return item.trim()
+    }
+    return item
+  })
   return responseArray
 }
 
@@ -37,5 +39,5 @@ export function getFieldsFromTable(
   if (answers) {
     answers = trimAllStrings(answers)
   }
-  return response?.answerArray
+  return answers
 }

@@ -10,6 +10,8 @@ const { parse } = require("pg-connection-string")
 const { DB_URI } = process.env
 const DB_MIN_POOL = parseInt(process.env.DB_MIN_POOL, 10)
 const DB_MAX_POOL = parseInt(process.env.DB_MAX_POOL, 10)
+const DB_ACQUIRE = parseInt(process.env.DB_ACQUIRE, 10)
+const DB_TIMEOUT = parseInt(process.env.DB_TIMEOUT, 10)
 
 const parsed = parse(DB_URI)
 const port = parsed.port ? parseInt(parsed.port, 10) : 5432
@@ -27,6 +29,7 @@ module.exports = {
   dialectOptions: {
     useUTC: false,
     timezone: "+08:00",
+    idle_in_transaction_session_timeout: DB_TIMEOUT,
   },
   timezone: "+08:00",
   define: {
@@ -38,5 +41,6 @@ module.exports = {
   pool: {
     min: DB_MIN_POOL,
     max: DB_MAX_POOL,
+    acquire: DB_ACQUIRE,
   },
 }

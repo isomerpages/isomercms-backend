@@ -327,6 +327,18 @@ const config = convict({
       format: "required-positive-number",
       default: 10,
     },
+    dbAcquire: {
+      doc: "",
+      env: "DB_ACQUIRE",
+      format: "required-positive-number",
+      default: 60000,
+    },
+    dbTimeout: {
+      doc: "",
+      env: "DB_TIMEOUT",
+      format: "required-positive-number",
+      default: 10000,
+    },
     dbEnableLogging: {
       doc: "Enable database logging",
       env: "DB_ENABLE_LOGGING",

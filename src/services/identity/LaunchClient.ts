@@ -119,31 +119,33 @@ class LaunchClient {
 
   private getSubDomains(
     subDomainList: SubDomainSetting[],
-    hasCreated = false
+    isCreated = false
   ): SubDomain[] {
-    const subDomainPrefixList = subDomainList
+    const subDomains = subDomainList
       .map((subDomain) => subDomain.prefix)
-      .filter((prefix) => prefix !== undefined) as string[]
-
-    const subDomains: SubDomain[] = []
-    subDomainPrefixList.forEach((subDomainPrefix) => {
-      subDomains.push({
+      .filter((prefix) => prefix !== undefined && prefix !== null)
+      .map((subDomainPrefix) => ({
         dnsRecord: `${subDomainPrefix} CNAME ${
-          hasCreated ? "test.cloudfront.net" : "<pending>"
+          isCreated ? "test.cloudfront.net" : "<pending>"
         }`,
         subDomainSetting: {
           branchName: "master",
           prefix: subDomainPrefix,
         },
         verified: false,
-      })
-    })
+      })) as SubDomain[]
     return subDomains
   }
 
   mockGetDomainAssociationOutput(
     input: MockGetDomainAssociationCommandInput
   ): Promise<GetDomainAssociationCommandOutput> {
+    const isSubDomainCreated = true // this is a `get` call, assume domain has already been created
+    const subDomains = this.getSubDomains(
+      input.subDomainSettings,
+      isSubDomainCreated
+    )
+
     const mockResponse: GetDomainAssociationCommandOutput = {
       $metadata: {
         httpStatusCode: 200,
@@ -154,16 +156,10 @@ class LaunchClient {
         domainName: input.domainName,
         domainStatus: "PENDING_VERIFICATION",
         enableAutoSubDomain: false,
-        subDomains: undefined,
+        subDomains,
         statusReason: undefined,
       },
     }
-    const isCreated = true // this is a get call, assume domain has already been created
-    const subDomains = this.getSubDomains(input.subDomainSettings, isCreated)
-
-    // We know that domainAssociation is not undefined, so we can use the non-null assertion operator
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    mockResponse.domainAssociation!.subDomains = subDomains
 
     return Promise.resolve(mockResponse)
   }

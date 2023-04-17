@@ -375,7 +375,7 @@ export default class InfraService {
     await Promise.all(
       messages.map(async (message) => {
         const site = await this.sitesService.getBySiteName(message.repoName)
-        if (!site || site.isErr()) {
+        if (site.isErr()) {
           return
         }
         const isSuccess = message.status === SiteLaunchLambdaStatus.SUCCESS

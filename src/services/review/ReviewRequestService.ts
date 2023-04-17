@@ -97,8 +97,11 @@ export default class ReviewRequestService {
         // a checksum of the files contents.
         // And the actual commit sha is given by the ref param
         const sha = items[items.length - 1]
-        const url = await this.pageService
-          .parsePageName(filename, sessionData)
+        const pageNameRes = this.pageService.parsePageName(
+          filename,
+          sessionData
+        )
+        const stagingUrl = await pageNameRes
           .andThen((pageName) =>
             this.pageService.retrieveStagingPermalink(
               sessionData,
@@ -108,6 +111,11 @@ export default class ReviewRequestService {
           )
           // NOTE: We ignore the errors and use a placeholder
           .unwrapOr("")
+        const fileUrl = await pageNameRes
+          .andThen((pageName) =>
+            this.pageService.retrieveCmsPermalink(pageName, siteName)
+          )
+          .unwrapOr("")
 
         return {
           type: this.computeFileType(filename),
@@ -116,7 +124,8 @@ export default class ReviewRequestService {
           name: fullPath.pop()!,
           // NOTE: pop alters in place
           path: fullPath,
-          url,
+          stagingUrl,
+          fileUrl,
           lastEditedBy: mappings[sha]?.author || "Unknown user",
           lastEditedTime: mappings[sha]?.unixTime || 0,
         }

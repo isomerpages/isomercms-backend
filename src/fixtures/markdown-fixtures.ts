@@ -46,3 +46,9 @@ export const maliciousJsonObject = {
   },
   pageContent: maliciousPageContent,
 }
+
+export const rawInstagramEmbedScript =
+  '<script src="//www.instagram.com/embed.js" async></script>'
+
+export const sanitizedInstagramEmbedScript =
+  '<script async="" src="//www.instagram.com/embed.js"></script>'

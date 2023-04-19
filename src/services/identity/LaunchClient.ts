@@ -1,10 +1,10 @@
 import {
   AmplifyClient,
   CreateDomainAssociationCommand,
-  CreateDomainAssociationCommandInput,
+  CreateDomainAssociationCommandInput as AmplifySDKCreateDomainAssociationCommandInput,
   CreateDomainAssociationCommandOutput,
   GetDomainAssociationCommand,
-  GetDomainAssociationCommandInput,
+  GetDomainAssociationCommandInput as AmplifySDKGetDomainAssociationCommandInput,
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
@@ -12,20 +12,30 @@ import { SubDomain } from "aws-sdk/clients/amplify"
 
 import { config } from "@config/config"
 
-// create a new interface that extends GetDomainAssociationCommandInput
-interface MockGetDomainAssociationCommandInput
-  extends GetDomainAssociationCommandInput {
-  subDomainSettings: SubDomainSetting[]
+// stricter typing to interact with Amplify SDK
+type CreateDomainAssociationCommandInput = {
+  [K in keyof AmplifySDKCreateDomainAssociationCommandInput]: NonNullable<
+    AmplifySDKCreateDomainAssociationCommandInput[K]
+  >
+}
+
+type GetDomainAssociationCommandInput = {
+  [K in keyof AmplifySDKGetDomainAssociationCommandInput]: NonNullable<
+    AmplifySDKGetDomainAssociationCommandInput[K]
+  >
 }
 
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>
+
+  private readonly mockDomainAssociations: Map<string, SubDomainSetting[]>
 
   constructor() {
     const AWS_REGION = "ap-southeast-1"
     this.amplifyClient = new AmplifyClient({
       region: AWS_REGION,
     })
+    this.mockDomainAssociations = new Map()
   }
 
   createDomainAssociationCommandInput = (
@@ -41,7 +51,7 @@ class LaunchClient {
   sendCreateDomainAssociation = (
     input: CreateDomainAssociationCommandInput
   ): Promise<CreateDomainAssociationCommandOutput> => {
-    if (this.shouldMockAmplifyCreateDomainCalls()) {
+    if (this.shouldMockAmplifyDomainCalls()) {
       return this.mockCreateDomainAssociationOutput(input)
     }
     const output = this.amplifyClient.send(
@@ -52,23 +62,16 @@ class LaunchClient {
 
   createGetDomainAssociationCommandInput = (
     appId: string,
-    domainName: string,
-    subDomainSettings: SubDomainSetting[]
-  ):
-    | GetDomainAssociationCommandInput
-    | MockGetDomainAssociationCommandInput => ({
+    domainName: string
+  ): GetDomainAssociationCommandInput => ({
     appId,
     domainName,
-    ...(this.shouldMockAmplifyCreateDomainCalls() && { subDomainSettings }),
   })
 
   sendGetDomainAssociationCommand = (
-    input:
-      | GetDomainAssociationCommandInput
-      | MockGetDomainAssociationCommandInput
+    input: GetDomainAssociationCommandInput
   ): Promise<GetDomainAssociationCommandOutput> => {
-    const isMockInput = "subDomainSettings" in input
-    if (isMockInput) {
+    if (this.shouldMockAmplifyDomainCalls()) {
       // handle mock input
       return this.mockGetDomainAssociationOutput(input)
     }
@@ -83,6 +86,8 @@ class LaunchClient {
   mockCreateDomainAssociationOutput = (
     input: CreateDomainAssociationCommandInput
   ): Promise<CreateDomainAssociationCommandOutput> => {
+    // We are mocking the response from the Amplify API, so we need to store the input
+    this.mockDomainAssociations.set(input.domainName, input.subDomainSettings)
     const mockResponse: CreateDomainAssociationCommandOutput = {
       $metadata: {
         httpStatusCode: 200,
@@ -113,7 +118,7 @@ class LaunchClient {
     return Promise.resolve(mockResponse)
   }
 
-  private shouldMockAmplifyCreateDomainCalls(): boolean {
+  private shouldMockAmplifyDomainCalls(): boolean {
     return config.get("aws.amplify.mockAmplifyCreateDomainAssociationCalls")
   }
 
@@ -138,13 +143,16 @@ class LaunchClient {
   }
 
   mockGetDomainAssociationOutput(
-    input: MockGetDomainAssociationCommandInput
+    input: GetDomainAssociationCommandInput
   ): Promise<GetDomainAssociationCommandOutput> {
     const isSubDomainCreated = true // this is a `get` call, assume domain has already been created
-    const subDomains = this.getSubDomains(
-      input.subDomainSettings,
-      isSubDomainCreated
-    )
+    const subDomainSettings = this.mockDomainAssociations.get(input.domainName)
+    if (!subDomainSettings) {
+      throw new Error(
+        `NotFoundException: Domain association ${input.domainName} not found.`
+      )
+    }
+    const subDomains = this.getSubDomains(subDomainSettings, isSubDomainCreated)
 
     const mockResponse: GetDomainAssociationCommandOutput = {
       $metadata: {

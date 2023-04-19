@@ -15,10 +15,20 @@ const retrieveDataFromMarkdown = (fileContent) => {
   const [unused, encodedFrontMatter, ...pageContent] = fileContent.split("---")
   // NOTE: We separate the sanitization into 2 steps.
   // This is because DOMPurify does URL encoding when it detects html in the string.
-  // For example, `<b>&something</b>` will get escaped to `<b>&amp;something</b>`.
+  // For example, `<b>&something</b>` will get HTML encoded to `<b>&amp;something</b>`.
   // To prevent this behaviour from affecting our frontmatter, we do the sanitization separately
   // on the frontmatter and the content
-  const frontMatter = sanitizedYamlParse(encodedFrontMatter)
+  const frontMatter = _.mapValues(
+    sanitizedYamlParse(encodedFrontMatter),
+    // NOTE: We call `unescape` here to transform `&amp` into `&`.
+    // Because of the above property, where DOMPurify does html encoding on detection of a html tag,
+    // there might be special characters that are encoded into their html form.
+    // This is a safe transformation to run because the original value was already a special character
+    // so this does not do anything destructive.
+    // Do note that frontmatter containing pre-existing html encoded characters (&amp;)
+    // will get transformed regardless.
+    (val) => _.unescape(val)
+  )
   return {
     frontMatter,
     pageContent: sanitizer.sanitize(pageContent.join("---")).trim(),
@@ -39,9 +49,15 @@ const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   if (permalink) {
     frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
   }
-  const newFrontMatter = sanitizedYamlStringify(frontMatter)
-  const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")
-  return sanitizer.sanitize(newContent)
+  // NOTE: See above on why we call `unescape`
+  const newFrontMatter = _.unescape(sanitizedYamlStringify(frontMatter))
+  const newContent = [
+    "---\n",
+    newFrontMatter,
+    "---\n",
+    sanitizer.sanitize(pageContent),
+  ].join("")
+  return newContent
 }
 
 module.exports = {

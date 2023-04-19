@@ -10,6 +10,7 @@ import {
   maliciousJsonObject,
   rawInstagramEmbedScript,
   sanitizedInstagramEmbedScript,
+  frontMatterWithSymbol,
 } from "@fixtures/markdown-fixtures"
 import { sanitizer } from "@root/services/utilServices/Sanitizer"
 
@@ -46,6 +47,12 @@ describe("Sanitized markdown utils test", () => {
     // See the HTML spec: https://html.spec.whatwg.org/#boolean-attributes
     expect(sanitizer.sanitize(rawInstagramEmbedScript)).toBe(
       sanitizedInstagramEmbedScript
+    )
+  })
+
+  it("should not escape special characters in our frontmatter", () => {
+    expect(sanitizer.sanitize(frontMatterWithSymbol)).toBe(
+      frontMatterWithSymbol
     )
   })
 })

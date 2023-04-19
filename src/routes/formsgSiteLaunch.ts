@@ -208,7 +208,7 @@ export class FormsgSiteLaunchRouter {
       ) || []
 
     res.sendStatus(200) // we have received the form and obtained relevant field
-    await this.handleSiteLaunchResults(formResponses, submissionId)
+    this.handleSiteLaunchResults(formResponses, submissionId)
   }
 
   sendLaunchError = async (
@@ -301,33 +301,39 @@ export class FormsgSiteLaunchRouter {
     formResponses: FormResponsesProps[],
     submissionId: string
   ) {
-    const launchResults = await Promise.all(
-      formResponses.map(this.launchSiteFromForm)
-    )
-    const successResults: DnsRecordsEmailProps[] = []
-    launchResults.forEach((launchResult) => {
-      if (launchResult.isOk()) {
-        successResults.push(launchResult.value)
-      }
-    })
+    try {
+      const launchResults = await Promise.all(
+        formResponses.map(this.launchSiteFromForm)
+      )
+      const successResults: DnsRecordsEmailProps[] = []
+      launchResults.forEach((launchResult) => {
+        if (launchResult.isOk()) {
+          successResults.push(launchResult.value)
+        }
+      })
 
-    await this.sendDNSRecords(submissionId, successResults)
+      await this.sendDNSRecords(submissionId, successResults)
 
-    const failureResults: LaunchFailureEmailProps[] = []
+      const failureResults: LaunchFailureEmailProps[] = []
 
-    launchResults.forEach((launchResult) => {
-      if (launchResult.isErr() && launchResult.error) {
-        failureResults.push(launchResult.error)
-        return
-      }
-      if (launchResult.isErr()) {
-        failureResults.push({
-          error: "Unknown error",
-        })
-      }
-    })
+      launchResults.forEach((launchResult) => {
+        if (launchResult.isErr() && launchResult.error) {
+          failureResults.push(launchResult.error)
+          return
+        }
+        if (launchResult.isErr()) {
+          failureResults.push({
+            error: "Unknown error",
+          })
+        }
+      })
 
-    await this.sendLaunchError(submissionId, failureResults)
+      await this.sendLaunchError(submissionId, failureResults)
+    } catch (e) {
+      logger.error(
+        `Something unexpected went wrong when launching sites from form submission ${submissionId}. Error: ${e}`
+      )
+    }
   }
 
   getRouter() {

@@ -10,7 +10,7 @@ import {
   GH_MAX_REPO_COUNT,
   GITHUB_ORG_REPOS_ENDPOINT,
   ISOMERPAGES_REPO_PAGE_COUNT,
-  VersionNumbers,
+  VersionNumber,
 } from "@constants/index"
 
 import { AccessToken, Site, User } from "@root/database/models"
@@ -38,7 +38,7 @@ export class StatsService {
     this.sitesRepo = sitesRepo
   }
 
-  submitApiVersionCount = (version: VersionNumbers, path: string) => {
+  submitApiVersionCount = (version: VersionNumber, path: string) => {
     this.statsD.increment(`versions.${version}`, {
       version,
       path,
@@ -94,9 +94,9 @@ export class StatsService {
     this.statsD.distribution("sites.db.all", numMigratedSites, 1)
   }
 
-  trackGithubLogins = () => {
+  trackGithubLogins = (version: VersionNumber) => {
     this.statsD.increment("users.github.login", {
-      version: Versions.V1,
+      version,
     })
   }
 

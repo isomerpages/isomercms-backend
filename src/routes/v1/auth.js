@@ -159,7 +159,7 @@ async function whoami(req, res) {
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
 router.get(
   "/",
-  statsMiddleware.trackGithubLogins,
+  statsMiddleware.trackV1GithubLogins,
   attachReadRouteHandlerWrapper(githubAuth)
 )
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))

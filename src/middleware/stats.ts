@@ -1,6 +1,6 @@
 import autoBind from "auto-bind"
 
-import { VersionNumbers } from "@root/constants"
+import { VersionNumber, Versions } from "@root/constants"
 import logger from "@root/logger/logger"
 import {
   statsService as statsServiceInstance,
@@ -28,7 +28,7 @@ export class StatsMiddleware {
   }
 
   logVersionNumberCallFor = (
-    version: VersionNumbers,
+    version: VersionNumber,
     path: string
   ): RequestHandler => (_req, _res, next) => {
     this.statsService.submitApiVersionCount(version, path)
@@ -45,8 +45,12 @@ export class StatsMiddleware {
     this.statsService.countMigratedSites()
   )
 
-  trackGithubLogins = wrapAsRequestHandler(async () =>
-    this.statsService.trackGithubLogins()
+  trackV1GithubLogins = wrapAsRequestHandler(async () =>
+    this.statsService.trackGithubLogins(Versions.V1)
+  )
+
+  trackV2GithubLogins = wrapAsRequestHandler(async () =>
+    this.statsService.trackGithubLogins(Versions.V2)
   )
 
   trackEmailLogins = wrapAsRequestHandler(async () =>

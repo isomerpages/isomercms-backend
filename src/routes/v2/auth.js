@@ -124,7 +124,7 @@ class AuthRouter {
     )
     router.get(
       "/",
-      this.statsMiddleware.trackGithubLogins,
+      this.statsMiddleware.trackV2GithubLogins,
       attachReadRouteHandlerWrapper(this.githubAuth)
     )
     router.post("/login", attachReadRouteHandlerWrapper(this.login))

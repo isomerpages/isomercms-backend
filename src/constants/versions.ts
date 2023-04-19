@@ -3,4 +3,4 @@ export const Versions = {
   V2: "v2",
 } as const
 
-export type VersionNumbers = typeof Versions[keyof typeof Versions]
+export type VersionNumber = typeof Versions[keyof typeof Versions]

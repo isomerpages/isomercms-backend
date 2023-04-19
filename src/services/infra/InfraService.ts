@@ -248,8 +248,7 @@ export default class InfraService {
 
       const dnsInfo = await this.launchesService.getDomainAssociationRecord(
         primaryDomain,
-        appId,
-        subDomainSettings
+        appId
       )
 
       const certificationRecord = this.parseDNSRecords(

@@ -14,7 +14,6 @@ import {
 } from "@database/models"
 import { GitHubService } from "@services/db/GitHubService"
 import SmsClient from "@services/identity/SmsClient"
-import TotpGenerator from "@services/identity/TotpGenerator"
 import { mailer } from "@services/utilServices/MailClient"
 
 import AuthService from "./AuthService"
@@ -24,16 +23,8 @@ import OtpService from "./OtpService"
 import UsersService from "./UsersService"
 
 const NODE_ENV = config.get("env")
-const OTP_SECRET = config.get("auth.otpSecret")
-const OTP_EXPIRY = config.get("auth.otpExpiry")
 
 const IS_DEV = NODE_ENV === "dev"
-
-// TODO: To remove TOTP
-const totpGenerator = new TotpGenerator({
-  secret: OTP_SECRET,
-  expiry: OTP_EXPIRY,
-})
 
 const smsClient = IS_DEV
   ? ({

@@ -28,7 +28,9 @@ const mockInvalidOtp = "000000"
 
 const UsersService = getUsersService(sequelize)
 
-const UsersRouter = new _UsersRouter({ usersService: UsersService })
+const UsersRouter = new _UsersRouter({
+  usersService: UsersService,
+})
 const usersSubrouter = UsersRouter.getRouter()
 
 // Set up express with defaults and use the router under test

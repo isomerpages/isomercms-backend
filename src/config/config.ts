@@ -128,13 +128,6 @@ const config = convict({
       format: "required-positive-number",
       default: 900000,
     },
-    otpSecret: {
-      doc: "Secret used for OTP generation",
-      env: "OTP_SECRET",
-      sensitive: true,
-      format: "required-string",
-      default: "",
-    },
     sessionSecret: {
       doc: "Secret used for sessions",
       env: "SESSION_SECRET",

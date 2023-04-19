@@ -20,6 +20,7 @@ const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const { authenticationMiddleware } = require("@root/middleware")
+const { statsMiddleware } = require("@root/middleware/stats")
 // Import services
 const identityServices = require("@services/identity")
 
@@ -150,17 +151,22 @@ async function whoami(req, res) {
     return res.status(200).json({ userId, email, contactNumber })
   } catch (err) {
     clearAllCookies(res)
-    // Return a 401 os that user will be redirected to logout
+    // Return a 401 so that user will be redirected to logout
     return res.sendStatus(401)
   }
 }
 
 router.get("/github-redirect", attachReadRouteHandlerWrapper(authRedirect))
-router.get("/", attachReadRouteHandlerWrapper(githubAuth))
+router.get(
+  "/",
+  statsMiddleware.trackV1GithubLogins,
+  attachReadRouteHandlerWrapper(githubAuth)
+)
 router.delete("/logout", attachReadRouteHandlerWrapper(logout))
 router.get(
   "/whoami",
   authenticationMiddleware.verifyAccess,
+  statsMiddleware.countDbUsers,
   attachReadRouteHandlerWrapper(whoami)
 )
 

@@ -1,3 +1,5 @@
+import { Versions } from "@root/constants"
+
 const express = require("express")
 
 const sitesRouter = require("@routes/v1/authenticated/sites")
@@ -6,6 +8,7 @@ const { UsersRouter } = require("@routes/v2/authenticated/users")
 const getAuthenticatedSubrouter = ({
   authenticationMiddleware,
   usersService,
+  statsMiddleware,
   apiLogger,
 }) => {
   // Workaround - no v1 users router exists
@@ -18,7 +21,11 @@ const getAuthenticatedSubrouter = ({
   // which is only available after verifying that the jwt is valid
   authenticatedSubrouter.use(apiLogger)
   authenticatedSubrouter.use("/sites", sitesRouter)
-  authenticatedSubrouter.use("/user", usersRouter.getRouter())
+  authenticatedSubrouter.use(
+    "/user",
+    statsMiddleware.logVersionNumberCallFor(Versions.V1, "user"),
+    usersRouter.getRouter()
+  )
 
   return authenticatedSubrouter
 }

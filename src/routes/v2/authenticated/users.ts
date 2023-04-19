@@ -75,7 +75,7 @@ export class UsersRouter {
     }
 
     await this.usersService.updateUserByIsomerId(userId, { email })
-    return res.sendStatus(200)
+    res.sendStatus(200)
   }
 
   sendMobileNumberOtp: RequestHandler<

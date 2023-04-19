@@ -1,3 +1,7 @@
+import { Versions } from "@constants"
+
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 const toml = require("toml")
 
@@ -29,6 +33,10 @@ async function getNetlifyToml(req, res) {
   return res.status(200).json({ netlifyTomlHeaderValues })
 }
 
-router.get("/", attachReadRouteHandlerWrapper(getNetlifyToml))
+router.get(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getNetlifyToml"),
+  attachReadRouteHandlerWrapper(getNetlifyToml)
+)
 
 module.exports = router

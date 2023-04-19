@@ -1,4 +1,9 @@
+import { Versions } from "@constants"
+
 import { config } from "@config/config"
+
+import { GITHUB_ORG_REPOS_ENDPOINT } from "@root/constants"
+import { statsMiddleware } from "@root/middleware/stats"
 
 const Bluebird = require("bluebird")
 const express = require("express")
@@ -58,8 +63,6 @@ async function getSites(req, res) {
   const { userSessionData } = res.locals
   const { accessToken } = userSessionData
 
-  const endpoint = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
-
   // Simultaneously retrieve all isomerpages repos
   const paramsArr = []
   for (let i = 0; i < ISOMERPAGES_REPO_PAGE_COUNT; i += 1) {
@@ -71,7 +74,7 @@ async function getSites(req, res) {
   }
 
   const sites = await Bluebird.map(paramsArr, async (params) => {
-    const resp = await axios.get(endpoint, {
+    const resp = await axios.get(GITHUB_ORG_REPOS_ENDPOINT, {
       params,
       headers: {
         Authorization: `token ${accessToken}`,
@@ -181,14 +184,24 @@ async function getStagingUrl(req, res) {
   return res.status(200).json({ stagingUrl })
 }
 
-router.get("/", attachReadRouteHandlerWrapper(getSites))
-router.get("/:siteName", attachReadRouteHandlerWrapper(checkHasAccess))
+router.get(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getSites"),
+  attachReadRouteHandlerWrapper(getSites)
+)
+router.get(
+  "/:siteName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "checkHasAccess"),
+  attachReadRouteHandlerWrapper(checkHasAccess)
+)
 router.get(
   "/:siteName/lastUpdated",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getLastUpdated"),
   attachReadRouteHandlerWrapper(getLastUpdated)
 )
 router.get(
   "/:siteName/stagingUrl",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getStagingUrl"),
   attachReadRouteHandlerWrapper(getStagingUrl)
 )
 

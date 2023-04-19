@@ -1,3 +1,7 @@
+import { Versions } from "@constants"
+
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -31,7 +35,15 @@ async function updateSettings(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(getSettings))
-router.post("/", attachRollbackRouteHandlerWrapper(updateSettings))
+router.get(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getSettings"),
+  attachReadRouteHandlerWrapper(getSettings)
+)
+router.post(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateSettings"),
+  attachRollbackRouteHandlerWrapper(updateSettings)
+)
 
 module.exports = router

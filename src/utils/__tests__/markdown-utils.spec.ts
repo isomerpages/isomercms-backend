@@ -10,7 +10,12 @@ import {
   maliciousJsonObject,
   rawInstagramEmbedScript,
   sanitizedInstagramEmbedScript,
-  frontMatterWithSymbol,
+  frontMatterWithSymbolAndHtmlBody,
+  frontMatterWithSymbolAndHtml,
+  frontMatterWithSymbolWithoutBodyAndHtml,
+  escapedFrontMatterWithSymbolAndHtml,
+  escapedFrontMatterWithSymbolAndHtmlBody,
+  frontMatterWithSymbolAndBodyWithoutHtml,
 } from "@fixtures/markdown-fixtures"
 import { sanitizer } from "@root/services/utilServices/Sanitizer"
 
@@ -50,9 +55,27 @@ describe("Sanitized markdown utils test", () => {
     )
   })
 
-  it("should not escape special characters in our frontmatter", () => {
-    expect(sanitizer.sanitize(frontMatterWithSymbol)).toBe(
-      frontMatterWithSymbol
+  it("should escape special characters in our frontmatter if there is html in the frontmatter", () => {
+    expect(sanitizer.sanitize(frontMatterWithSymbolAndHtml)).toBe(
+      escapedFrontMatterWithSymbolAndHtml
+    )
+  })
+
+  it("should escape special characters in our frontmatter if there is html in the body", () => {
+    expect(sanitizer.sanitize(frontMatterWithSymbolAndHtmlBody)).toBe(
+      escapedFrontMatterWithSymbolAndHtmlBody
+    )
+  })
+
+  it("should not escape special characters in our frontmatter if there is no html and no body", () => {
+    expect(sanitizer.sanitize(frontMatterWithSymbolWithoutBodyAndHtml)).toBe(
+      frontMatterWithSymbolWithoutBodyAndHtml
+    )
+  })
+
+  it("should not escape special characters in our frontmatter if there is no html but there is body", () => {
+    expect(sanitizer.sanitize(frontMatterWithSymbolAndBodyWithoutHtml)).toBe(
+      frontMatterWithSymbolAndBodyWithoutHtml
     )
   })
 })

@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -127,27 +127,27 @@ async function moveResources(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listResources"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listResources"),
   attachReadRouteHandlerWrapper(listResources)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createNewResource"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewResource"),
   attachRollbackRouteHandlerWrapper(createNewResource)
 )
 router.delete(
   "/:resourceName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteResource"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteResource"),
   attachRollbackRouteHandlerWrapper(deleteResource)
 )
 router.post(
   "/:resourceName/rename/:newResourceName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameResource"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameResource"),
   attachRollbackRouteHandlerWrapper(renameResource)
 )
 router.post(
   "/:resourceName/move/:newResourceName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "moveResources"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "moveResources"),
   attachRollbackRouteHandlerWrapper(moveResources)
 )
 

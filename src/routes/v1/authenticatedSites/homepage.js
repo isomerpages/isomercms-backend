@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -64,12 +64,12 @@ async function updateHomepage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readHomepage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readHomepage"),
   attachReadRouteHandlerWrapper(readHomepage)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateHomepage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateHomepage"),
   attachWriteRouteHandlerWrapper(updateHomepage)
 )
 

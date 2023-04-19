@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -178,32 +178,32 @@ async function renameResourcePage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listResourcePages"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listResourcePages"),
   attachReadRouteHandlerWrapper(listResourcePages)
 )
 router.post(
   "/pages/new/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createNewResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewResourcePage"),
   attachRollbackRouteHandlerWrapper(createNewResourcePage)
 )
 router.get(
   "/pages/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readResourcePage"),
   attachReadRouteHandlerWrapper(readResourcePage)
 )
 router.post(
   "/pages/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateResourcePage"),
   attachWriteRouteHandlerWrapper(updateResourcePage)
 )
 router.delete(
   "/pages/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteResourcePage"),
   attachRollbackRouteHandlerWrapper(deleteResourcePage)
 )
 router.post(
   "/pages/:pageName/rename/:newPageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameResourcePage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameResourcePage"),
   attachRollbackRouteHandlerWrapper(renameResourcePage)
 )
 

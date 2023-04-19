@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -83,17 +83,17 @@ async function renameSubfolder(req, res) {
 
 router.post(
   "/:folderPath",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createSubfolder"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createSubfolder"),
   attachWriteRouteHandlerWrapper(createSubfolder)
 )
 router.delete(
   "/:folderPath",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteSubfolder"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteSubfolder"),
   attachRollbackRouteHandlerWrapper(deleteSubfolder)
 )
 router.post(
   "/:oldFolderPath/rename/:newFolderPath",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameSubfolder"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameSubfolder"),
   attachRollbackRouteHandlerWrapper(renameSubfolder)
 )
 

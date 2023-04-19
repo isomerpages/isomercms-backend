@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -188,37 +188,37 @@ async function moveImage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listImages"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listImages"),
   attachReadRouteHandlerWrapper(listImages)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createNewImage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewImage"),
   attachWriteRouteHandlerWrapper(createNewImage)
 )
 router.get(
   "/:imageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readImage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readImage"),
   attachReadRouteHandlerWrapper(readImage)
 )
 router.post(
   "/:imageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateImage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateImage"),
   attachWriteRouteHandlerWrapper(updateImage)
 )
 router.delete(
   "/:imageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteImage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteImage"),
   attachWriteRouteHandlerWrapper(deleteImage)
 )
 router.post(
   "/:imageName/rename/:newImageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameImage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameImage"),
   attachRollbackRouteHandlerWrapper(renameImage)
 )
 router.post(
   "/:imageName/move/:newImageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "moveImage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "moveImage"),
   attachRollbackRouteHandlerWrapper(moveImage)
 )
 

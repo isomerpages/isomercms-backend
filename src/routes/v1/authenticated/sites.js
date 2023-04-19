@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { config } from "@config/config"
 
@@ -186,22 +186,22 @@ async function getStagingUrl(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getSites"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getSites"),
   attachReadRouteHandlerWrapper(getSites)
 )
 router.get(
   "/:siteName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "checkHasAccess"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "checkHasAccess"),
   attachReadRouteHandlerWrapper(checkHasAccess)
 )
 router.get(
   "/:siteName/lastUpdated",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getLastUpdated"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getLastUpdated"),
   attachReadRouteHandlerWrapper(getLastUpdated)
 )
 router.get(
   "/:siteName/stagingUrl",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getStagingUrl"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getStagingUrl"),
   attachReadRouteHandlerWrapper(getStagingUrl)
 )
 

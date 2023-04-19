@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -186,37 +186,37 @@ async function moveDocument(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listDocuments"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listDocuments"),
   attachReadRouteHandlerWrapper(listDocuments)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createNewDocument"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewDocument"),
   attachWriteRouteHandlerWrapper(createNewDocument)
 )
 router.get(
   "/:documentName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readDocument"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readDocument"),
   attachReadRouteHandlerWrapper(readDocument)
 )
 router.post(
   "/:documentName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateDocument"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateDocument"),
   attachWriteRouteHandlerWrapper(updateDocument)
 )
 router.delete(
   "/:documentName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteDocument"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteDocument"),
   attachWriteRouteHandlerWrapper(deleteDocument)
 )
 router.post(
   "/:documentName/rename/:newDocumentName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameDocument"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameDocument"),
   attachRollbackRouteHandlerWrapper(renameDocument)
 )
 router.post(
   "/:documentName/move/:newDocumentName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "moveDocument"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "moveDocument"),
   attachRollbackRouteHandlerWrapper(moveDocument)
 )
 

@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -37,7 +37,7 @@ async function listDirectoryContent(req, res) {
 
 router.get(
   "/:path",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listDirectoryContent"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listDirectoryContent"),
   attachReadRouteHandlerWrapper(listDirectoryContent)
 )
 

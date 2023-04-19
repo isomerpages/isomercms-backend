@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -60,12 +60,12 @@ async function updateNavigation(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "getNavigation"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "getNavigation"),
   attachReadRouteHandlerWrapper(getNavigation)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateNavigation"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateNavigation"),
   attachWriteRouteHandlerWrapper(updateNavigation)
 )
 

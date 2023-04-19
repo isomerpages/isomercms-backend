@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -186,27 +186,27 @@ async function moveFiles(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listCollections"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listCollections"),
   attachReadRouteHandlerWrapper(listCollections)
 )
 router.post(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createNewCollection"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewCollection"),
   attachRollbackRouteHandlerWrapper(createNewCollection)
 )
 router.delete(
   "/:collectionName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteCollection"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteCollection"),
   attachRollbackRouteHandlerWrapper(deleteCollection)
 )
 router.post(
   "/:collectionName/rename/:newCollectionName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameCollection"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameCollection"),
   attachRollbackRouteHandlerWrapper(renameCollection)
 )
 router.post(
   "/:collectionPath/move/:targetPath",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "moveFiles"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "moveFiles"),
   attachRollbackRouteHandlerWrapper(moveFiles)
 )
 

@@ -1,4 +1,4 @@
-import { VERSIONS } from "@constants"
+import { Versions } from "@constants"
 
 import { statsMiddleware } from "@root/middleware/stats"
 
@@ -257,40 +257,40 @@ async function renameCollectionPage(req, res) {
 
 router.get(
   "/",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "listCollectionPages"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listCollectionPages"),
   attachReadRouteHandlerWrapper(listCollectionPages)
 )
 router.get(
   "/pages",
   statsMiddleware.logVersionNumberCallFor(
-    VERSIONS.v1,
+    Versions.V1,
     "listCollectionPagesDetails"
   ),
   attachReadRouteHandlerWrapper(listCollectionPagesDetails)
 )
 router.post(
   "/pages/new/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "createCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createCollectionPage"),
   attachRollbackRouteHandlerWrapper(createCollectionPage)
 )
 router.get(
   "/pages/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "readCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readCollectionPage"),
   attachReadRouteHandlerWrapper(readCollectionPage)
 )
 router.post(
   "/pages/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "updateCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateCollectionPage"),
   attachWriteRouteHandlerWrapper(updateCollectionPage)
 )
 router.delete(
   "/pages/:pageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "deleteCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteCollectionPage"),
   attachRollbackRouteHandlerWrapper(deleteCollectionPage)
 )
 router.post(
   "/pages/:pageName/rename/:newPageName",
-  statsMiddleware.logVersionNumberCallFor(VERSIONS.v1, "renameCollectionPage"),
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameCollectionPage"),
   attachRollbackRouteHandlerWrapper(renameCollectionPage)
 )
 

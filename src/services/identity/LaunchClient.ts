@@ -83,7 +83,7 @@ class LaunchClient {
    * We want to limit interference with operations, as such we mock this call during development.
    * @returns Mocked output for CreateDomainAssociationCommand
    */
-  mockCreateDomainAssociationOutput = (
+  private mockCreateDomainAssociationOutput = (
     input: CreateDomainAssociationCommandInput
   ): Promise<CreateDomainAssociationCommandOutput> => {
     // We are mocking the response from the Amplify API, so we need to store the input
@@ -142,7 +142,7 @@ class LaunchClient {
     return subDomains
   }
 
-  mockGetDomainAssociationOutput(
+  private mockGetDomainAssociationOutput(
     input: GetDomainAssociationCommandInput
   ): Promise<GetDomainAssociationCommandOutput> {
     const isSubDomainCreated = true // this is a `get` call, assume domain has already been created

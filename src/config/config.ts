@@ -172,9 +172,9 @@ const config = convict({
         format: String,
         default: "",
       },
-      mockAmplifyCreateDomainAssociationCalls: {
-        doc: "Mock createDomainAssociation calls to Amplify ",
-        env: "MOCK_AMPLIFY_CREATE_DOMAIN_ASSOCIATION_CALLS",
+      mockAmplifyDomainAssociationCalls: {
+        doc: "Mock domain association calls to Amplify",
+        env: "MOCK_AMPLIFY_DOMAIN_ASSOCIATION_CALLS",
         format: "required-boolean",
         default: true,
       },

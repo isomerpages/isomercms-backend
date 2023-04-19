@@ -135,10 +135,10 @@ class LaunchClient {
         }`,
         subDomainSetting: {
           branchName: "master",
-          prefix: subDomainPrefix,
+          prefix: subDomainPrefix as string,
         },
         verified: false,
-      })) as SubDomain[]
+      }))
     return subDomains
   }
 

@@ -108,7 +108,10 @@ export class StatsService {
 }
 
 const statsDClient = new StatsDClient({
-  globalTags: { env: config.get("env"), service: "isomer" },
+  globalTags: {
+    env: config.get("dataDog.env"),
+    service: config.get("dataDog.service"),
+  },
   prefix: "isomer.",
 })
 export const statsService = new StatsService(

@@ -119,7 +119,7 @@ class LaunchClient {
   }
 
   private shouldMockAmplifyDomainCalls(): boolean {
-    return config.get("aws.amplify.mockAmplifyCreateDomainAssociationCalls")
+    return config.get("aws.amplify.mockAmplifyDomainAssociationCalls")
   }
 
   private getSubDomains(

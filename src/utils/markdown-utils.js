@@ -29,9 +29,15 @@ const retrieveDataFromMarkdown = (fileContent) => {
     // will get transformed regardless.
     (val) => _.unescape(val)
   )
+  const originalPageContent = pageContent.join("---")
+  // NOTE: We don't sanitize if there is no page content.
+  // This is to avoid injection of a HTML comment by the sanitize function.
+  const sanitizedPageContent = originalPageContent
+    ? sanitizer.sanitize(originalPageContent).trim()
+    : ""
   return {
     frontMatter,
-    pageContent: sanitizer.sanitize(pageContent.join("---")).trim(),
+    pageContent: sanitizedPageContent,
   }
 }
 
@@ -49,13 +55,18 @@ const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   if (permalink) {
     frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
   }
+  // NOTE: We don't sanitize if there is no page content.
+  // This is to avoid injection of a HTML comment by the sanitize function.
+  const sanitizedPageContent = pageContent
+    ? sanitizer.sanitize(pageContent)
+    : ""
   // NOTE: See above on why we call `unescape`
   const newFrontMatter = _.unescape(sanitizedYamlStringify(frontMatter))
   const newContent = [
     "---\n",
     newFrontMatter,
     "---\n",
-    sanitizer.sanitize(pageContent),
+    sanitizedPageContent,
   ].join("")
   return newContent
 }

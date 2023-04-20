@@ -152,3 +152,5 @@ third_nav_title: Masterclasses & Workshops
 title: <b>Digital Strategy & the 101 of Search Engine Optimisation (SEO)</b>
 ---
 <b>&amp;something</b>`
+
+export const HTML_COMMENT_TAG = "<!---->"

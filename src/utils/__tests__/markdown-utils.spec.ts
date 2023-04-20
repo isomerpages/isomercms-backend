@@ -20,6 +20,7 @@ import {
   safeEscapedJson,
   frontMatterWithSymbolAndEscapedBody,
   encodedFrontmatterJson,
+  HTML_COMMENT_TAG,
 } from "@fixtures/markdown-fixtures"
 import { sanitizer } from "@root/services/utilServices/Sanitizer"
 
@@ -100,6 +101,10 @@ describe("Sanitized markdown utils test", () => {
       expect(sanitizer.sanitize(frontMatterWithSymbolAndBodyWithoutHtml)).toBe(
         frontMatterWithSymbolAndBodyWithoutHtml
       )
+    })
+
+    it("should inject a html comment tag when the string is empty", () => {
+      expect(sanitizer.sanitize("")).toBe(HTML_COMMENT_TAG)
     })
   })
 })

@@ -133,7 +133,11 @@ class AuthRouter {
       this.statsMiddleware.trackEmailLogins,
       attachReadRouteHandlerWrapper(this.verify)
     )
-    router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
+    router.delete(
+      "/logout",
+      this.statsMiddleware.trackV2Logout,
+      attachReadRouteHandlerWrapper(this.logout)
+    )
     router.get(
       "/whoami",
       this.authenticationMiddleware.verifyAccess,

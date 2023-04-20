@@ -105,6 +105,12 @@ export class StatsService {
       version: Versions.V2,
     })
   }
+
+  trackLogout = (version: VersionNumber) => {
+    this.statsD.increment("users.logout", {
+      version,
+    })
+  }
 }
 
 const statsDClient = new StatsDClient({

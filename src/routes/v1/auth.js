@@ -162,7 +162,11 @@ router.get(
   statsMiddleware.trackV1GithubLogins,
   attachReadRouteHandlerWrapper(githubAuth)
 )
-router.delete("/logout", attachReadRouteHandlerWrapper(logout))
+router.delete(
+  "/logout",
+  statsMiddleware.trackV1Logout,
+  attachReadRouteHandlerWrapper(logout)
+)
 router.get(
   "/whoami",
   authenticationMiddleware.verifyAccess,

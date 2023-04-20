@@ -53,6 +53,14 @@ export class StatsMiddleware {
     this.statsService.trackGithubLogins(Versions.V2)
   )
 
+  trackV1Logout = wrapAsRequestHandler(async () =>
+    this.statsService.trackLogout(Versions.V1)
+  )
+
+  trackV2Logout = wrapAsRequestHandler(async () =>
+    this.statsService.trackLogout(Versions.V2)
+  )
+
   trackEmailLogins = wrapAsRequestHandler(async () =>
     this.statsService.trackEmailLogins()
   )

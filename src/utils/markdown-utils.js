@@ -12,11 +12,33 @@ const getTrailingSlashWithPermalink = (permalink) =>
 
 const retrieveDataFromMarkdown = (fileContent) => {
   // eslint-disable-next-line no-unused-vars
-  const [unused, encodedFrontMatter, ...pageContent] = sanitizer
-    .sanitize(fileContent)
-    .split("---")
-  const frontMatter = sanitizedYamlParse(encodedFrontMatter)
-  return { frontMatter, pageContent: pageContent.join("---").trim() }
+  const [unused, encodedFrontMatter, ...pageContent] = fileContent.split("---")
+  // NOTE: We separate the sanitization into 2 steps.
+  // This is because DOMPurify does URL encoding when it detects html in the string.
+  // For example, `<b>&something</b>` will get HTML encoded to `<b>&amp;something</b>`.
+  // To prevent this behaviour from affecting our frontmatter, we do the sanitization separately
+  // on the frontmatter and the content
+  const frontMatter = _.mapValues(
+    sanitizedYamlParse(encodedFrontMatter),
+    // NOTE: We call `unescape` here to transform `&amp` into `&`.
+    // Because of the above property, where DOMPurify does html encoding on detection of a html tag,
+    // there might be special characters that are encoded into their html form.
+    // This is a safe transformation to run because the original value was already a special character
+    // so this does not do anything destructive.
+    // Do note that frontmatter containing pre-existing html encoded characters (&amp;)
+    // will get transformed regardless.
+    (val) => _.unescape(val)
+  )
+  const originalPageContent = pageContent.join("---")
+  // NOTE: We don't sanitize if there is no page content.
+  // This is to avoid injection of a HTML comment by the sanitize function.
+  const sanitizedPageContent = originalPageContent
+    ? sanitizer.sanitize(originalPageContent).trim()
+    : ""
+  return {
+    frontMatter,
+    pageContent: sanitizedPageContent,
+  }
 }
 
 const isResourceFileOrLink = (frontMatter) => {
@@ -33,9 +55,20 @@ const convertDataToMarkdown = (originalFrontMatter, pageContent) => {
   if (permalink) {
     frontMatter.permalink = getTrailingSlashWithPermalink(permalink)
   }
-  const newFrontMatter = sanitizedYamlStringify(frontMatter)
-  const newContent = ["---\n", newFrontMatter, "---\n", pageContent].join("")
-  return sanitizer.sanitize(newContent)
+  // NOTE: We don't sanitize if there is no page content.
+  // This is to avoid injection of a HTML comment by the sanitize function.
+  const sanitizedPageContent = pageContent
+    ? sanitizer.sanitize(pageContent)
+    : ""
+  // NOTE: See above on why we call `unescape`
+  const newFrontMatter = _.unescape(sanitizedYamlStringify(frontMatter))
+  const newContent = [
+    "---\n",
+    newFrontMatter,
+    "---\n",
+    sanitizedPageContent,
+  ].join("")
+  return newContent
 }
 
 module.exports = {

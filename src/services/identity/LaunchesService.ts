@@ -11,7 +11,9 @@ import logger from "@logger/logger"
 import { Deployment, Launch, Repo, User, Redirection } from "@database/models"
 import { RedirectionTypes } from "@root/constants/constants"
 import { AmplifyError } from "@root/types/index"
-import LaunchClient from "@services/identity/LaunchClient"
+import LaunchClient, {
+  isAmplifyDomainNotFoundException,
+} from "@services/identity/LaunchClient"
 
 export type SiteLaunchCreateParams = {
   userId: number
@@ -157,6 +159,41 @@ export class LaunchesService {
     const siteIdResult = await this.getSiteId(repoName)
     if (siteIdResult.isErr()) {
       throw siteIdResult.error
+    }
+
+    try {
+      // Check if association already exists
+      const getDomainAssociationCommandInput = this.launchClient.createGetDomainAssociationCommandInput(
+        appIdResult.value,
+        domainName
+      )
+
+      const getDomainAssociationResult = await this.launchClient.sendGetDomainAssociationCommand(
+        getDomainAssociationCommandInput
+      )
+      const hasDomainAssociationFailed =
+        getDomainAssociationResult?.domainAssociation?.domainStatus === "FAILED"
+      if (hasDomainAssociationFailed) {
+        // safe to delete and retry
+        const deleteDomainAssociationCommandInput = this.launchClient.createDeleteDomainAssociationCommandInput(
+          appIdResult.value,
+          domainName
+        )
+        await this.launchClient.sendDeleteDomainAssociationCommand(
+          deleteDomainAssociationCommandInput
+        )
+      }
+    } catch (error: unknown) {
+      const isExpectedNotFoundError = isAmplifyDomainNotFoundException(error)
+      if (!isExpectedNotFoundError) {
+        return err(
+          new AmplifyError(
+            `Unable to connect to Amplify for: ${repoName}, ${error}`,
+            repoName,
+            appIdResult.value
+          )
+        )
+      }
     }
 
     const launchAppOptions = this.launchClient.createDomainAssociationCommandInput(

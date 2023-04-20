@@ -228,8 +228,9 @@ export default class InfraService {
       )
 
       // Get DNS records from Amplify
-      const isTestEnv =
-        config.get("env") === "test" || config.get("env") === "dev"
+      const isTestEnv = config.get(
+        "aws.amplify.mockAmplifyDomainAssociationCalls"
+      )
       // since we mock values during development, we don't have to await for the dns records
       if (!isTestEnv) {
         /**

@@ -7,10 +7,15 @@ import {
   GetDomainAssociationCommandInput as AmplifySDKGetDomainAssociationCommandInput,
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
+  DeleteDomainAssociationCommandInput as AmplifySDKDeleteDomainAssociationCommandInput,
+  DeleteDomainAssociationCommand,
+  NotFoundException,
 } from "@aws-sdk/client-amplify"
 import { SubDomain } from "aws-sdk/clients/amplify"
 
 import { config } from "@config/config"
+
+import { AmplifyError } from "@root/types"
 
 // stricter typing to interact with Amplify SDK
 type CreateDomainAssociationCommandInput = {
@@ -24,6 +29,19 @@ type GetDomainAssociationCommandInput = {
     AmplifySDKGetDomainAssociationCommandInput[K]
   >
 }
+
+type DeleteDomainAssociationCommandInput = {
+  [K in keyof AmplifySDKDeleteDomainAssociationCommandInput]: NonNullable<
+    AmplifySDKDeleteDomainAssociationCommandInput[K]
+  >
+}
+
+export type AmplifyDomainNotFoundException = AmplifyError | NotFoundException
+
+export const isAmplifyDomainNotFoundException = (
+  obj: unknown
+): obj is AmplifyDomainNotFoundException =>
+  obj instanceof AmplifyError || obj instanceof NotFoundException
 
 class LaunchClient {
   private readonly amplifyClient: InstanceType<typeof AmplifyClient>
@@ -64,6 +82,14 @@ class LaunchClient {
     appId: string,
     domainName: string
   ): GetDomainAssociationCommandInput => ({
+    appId,
+    domainName,
+  })
+
+  createDeleteDomainAssociationCommandInput = (
+    appId: string,
+    domainName: string
+  ): DeleteDomainAssociationCommandInput => ({
     appId,
     domainName,
   })
@@ -142,13 +168,33 @@ class LaunchClient {
     return subDomains
   }
 
+  async sendDeleteDomainAssociationCommand(
+    input: DeleteDomainAssociationCommandInput
+  ): Promise<void> {
+    if (this.shouldMockAmplifyDomainCalls()) {
+      this.mockDeleteDomainAssociationOutput(input)
+    }
+    await this.amplifyClient.send(new DeleteDomainAssociationCommand(input))
+  }
+
+  mockDeleteDomainAssociationOutput(
+    input: DeleteDomainAssociationCommandInput
+  ) {
+    if (!this.mockDomainAssociations.has(input.domainName)) {
+      throw new AmplifyError(
+        `NotFoundException: Domain association ${input.domainName} not found.`
+      )
+    }
+    this.mockDomainAssociations.delete(input.domainName)
+  }
+
   private mockGetDomainAssociationOutput(
     input: GetDomainAssociationCommandInput
   ): Promise<GetDomainAssociationCommandOutput> {
     const isSubDomainCreated = true // this is a `get` call, assume domain has already been created
     const subDomainSettings = this.mockDomainAssociations.get(input.domainName)
     if (!subDomainSettings) {
-      throw new Error(
+      throw new AmplifyError(
         `NotFoundException: Domain association ${input.domainName} not found.`
       )
     }

@@ -128,13 +128,6 @@ const config = convict({
       format: "required-positive-number",
       default: 900000,
     },
-    otpSecret: {
-      doc: "Secret used for OTP generation",
-      env: "OTP_SECRET",
-      sensitive: true,
-      format: "required-string",
-      default: "",
-    },
     sessionSecret: {
       doc: "Secret used for sessions",
       env: "SESSION_SECRET",
@@ -171,6 +164,12 @@ const config = convict({
         sensitive: true,
         format: String,
         default: "",
+      },
+      mockAmplifyDomainAssociationCalls: {
+        doc: "Mock domain association calls to Amplify",
+        env: "MOCK_AMPLIFY_DOMAIN_ASSOCIATION_CALLS",
+        format: "required-boolean",
+        default: true,
       },
     },
     sqs: {

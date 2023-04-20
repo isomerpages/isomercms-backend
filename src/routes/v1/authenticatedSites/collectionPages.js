@@ -1,3 +1,7 @@
+import { Versions } from "@constants"
+
+import { statsMiddleware } from "@root/middleware/stats"
+
 const Bluebird = require("bluebird")
 const express = require("express")
 const _ = require("lodash")
@@ -251,26 +255,42 @@ async function renameCollectionPage(req, res) {
     .json({ collectionName, pageName: newPageName, pageContent, sha: newSha })
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listCollectionPages))
-router.get("/pages", attachReadRouteHandlerWrapper(listCollectionPagesDetails))
+router.get(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listCollectionPages"),
+  attachReadRouteHandlerWrapper(listCollectionPages)
+)
+router.get(
+  "/pages",
+  statsMiddleware.logVersionNumberCallFor(
+    Versions.V1,
+    "listCollectionPagesDetails"
+  ),
+  attachReadRouteHandlerWrapper(listCollectionPagesDetails)
+)
 router.post(
   "/pages/new/:pageName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createCollectionPage"),
   attachRollbackRouteHandlerWrapper(createCollectionPage)
 )
 router.get(
   "/pages/:pageName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readCollectionPage"),
   attachReadRouteHandlerWrapper(readCollectionPage)
 )
 router.post(
   "/pages/:pageName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateCollectionPage"),
   attachWriteRouteHandlerWrapper(updateCollectionPage)
 )
 router.delete(
   "/pages/:pageName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteCollectionPage"),
   attachRollbackRouteHandlerWrapper(deleteCollectionPage)
 )
 router.post(
   "/pages/:pageName/rename/:newPageName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameCollectionPage"),
   attachRollbackRouteHandlerWrapper(renameCollectionPage)
 )
 

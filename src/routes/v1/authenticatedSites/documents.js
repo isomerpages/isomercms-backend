@@ -1,3 +1,7 @@
+import { Versions } from "@constants"
+
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 const router = express.Router({ mergeParams: true })
@@ -180,17 +184,39 @@ async function moveDocument(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listDocuments))
-router.post("/", attachWriteRouteHandlerWrapper(createNewDocument))
-router.get("/:documentName", attachReadRouteHandlerWrapper(readDocument))
-router.post("/:documentName", attachWriteRouteHandlerWrapper(updateDocument))
-router.delete("/:documentName", attachWriteRouteHandlerWrapper(deleteDocument))
+router.get(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listDocuments"),
+  attachReadRouteHandlerWrapper(listDocuments)
+)
+router.post(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewDocument"),
+  attachWriteRouteHandlerWrapper(createNewDocument)
+)
+router.get(
+  "/:documentName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "readDocument"),
+  attachReadRouteHandlerWrapper(readDocument)
+)
+router.post(
+  "/:documentName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "updateDocument"),
+  attachWriteRouteHandlerWrapper(updateDocument)
+)
+router.delete(
+  "/:documentName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteDocument"),
+  attachWriteRouteHandlerWrapper(deleteDocument)
+)
 router.post(
   "/:documentName/rename/:newDocumentName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameDocument"),
   attachRollbackRouteHandlerWrapper(renameDocument)
 )
 router.post(
   "/:documentName/move/:newDocumentName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "moveDocument"),
   attachRollbackRouteHandlerWrapper(moveDocument)
 )
 

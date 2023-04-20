@@ -32,6 +32,7 @@ import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
 } from "@root/middleware"
+import { statsMiddleware } from "@root/middleware/stats"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
@@ -55,6 +56,7 @@ import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
+import { statsService } from "@services/infra/StatsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
@@ -247,6 +249,7 @@ const reviewRouter = new ReviewsRouter(
 )
 const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
   authenticationMiddleware,
+  statsMiddleware,
   usersService,
   apiLogger,
 })
@@ -261,9 +264,9 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   sitesService,
   usersService,
   reposService,
+  statsMiddleware,
   deploymentsService,
   apiLogger,
-  isomerAdminsService,
   collaboratorsService,
   authorizationMiddleware,
   reviewRouter,
@@ -284,6 +287,7 @@ const authV2Router = new AuthRouter({
   authService,
   apiLogger,
   rateLimiter,
+  statsMiddleware,
 })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({

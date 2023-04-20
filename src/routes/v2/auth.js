@@ -11,7 +11,6 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const FRONTEND_URL = config.get("app.frontendUrl")
 const { isSecure } = require("@utils/auth-utils")
 
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
@@ -20,11 +19,13 @@ class AuthRouter {
   constructor({
     authService,
     authenticationMiddleware,
+    statsMiddleware,
     apiLogger,
     rateLimiter,
   }) {
     this.authService = authService
     this.authenticationMiddleware = authenticationMiddleware
+    this.statsMiddleware = statsMiddleware
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
     // We need to bind all methods because we don't invoke them from the class directly
@@ -121,13 +122,22 @@ class AuthRouter {
       "/github-redirect",
       attachReadRouteHandlerWrapper(this.authRedirect)
     )
-    router.get("/", attachReadRouteHandlerWrapper(this.githubAuth))
+    router.get(
+      "/",
+      this.statsMiddleware.trackV2GithubLogins,
+      attachReadRouteHandlerWrapper(this.githubAuth)
+    )
     router.post("/login", attachReadRouteHandlerWrapper(this.login))
-    router.post("/verify", attachReadRouteHandlerWrapper(this.verify))
+    router.post(
+      "/verify",
+      this.statsMiddleware.trackEmailLogins,
+      attachReadRouteHandlerWrapper(this.verify)
+    )
     router.delete("/logout", attachReadRouteHandlerWrapper(this.logout))
     router.get(
       "/whoami",
       this.authenticationMiddleware.verifyAccess,
+      this.statsMiddleware.countDbUsers,
       attachReadRouteHandlerWrapper(this.whoami)
     )
 

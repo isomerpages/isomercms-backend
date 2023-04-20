@@ -11,6 +11,7 @@ import {
   mockUserSessionData,
   mockUserWithSiteSessionData,
 } from "@fixtures/sessionData"
+import { StatsMiddleware } from "@root/middleware/stats"
 import type SitesService from "@services/identity/SitesService"
 
 import { SitesRouter } from "../sites"
@@ -28,9 +29,15 @@ describe("Sites Router", () => {
     verifySiteMember: jest.fn(),
   }
 
+  const mockStatsMiddleware = {
+    countGithubSites: jest.fn(),
+    countMigratedSites: jest.fn(),
+  }
+
   const router = new SitesRouter({
     sitesService: (mockSitesService as unknown) as SitesService,
     authorizationMiddleware: (mockAuthorizationMiddleware as unknown) as AuthorizationMiddleware,
+    statsMiddleware: (mockStatsMiddleware as unknown) as StatsMiddleware,
   })
 
   const subrouter = express()

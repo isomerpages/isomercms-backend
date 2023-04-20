@@ -1,3 +1,7 @@
+import { Versions } from "@constants"
+
+import { statsMiddleware } from "@root/middleware/stats"
+
 const Bluebird = require("bluebird")
 const express = require("express")
 
@@ -151,13 +155,19 @@ async function renameSubfolder(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/all", attachReadRouteHandlerWrapper(listAllFolderContent))
+router.get(
+  "/all",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listAllFolderContent"),
+  attachReadRouteHandlerWrapper(listAllFolderContent)
+)
 router.delete(
   "/:folderName/subfolder/:subfolderName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteSubfolder"),
   attachRollbackRouteHandlerWrapper(deleteSubfolder)
 )
 router.post(
   "/:folderName/subfolder/:subfolderName/rename/:newSubfolderName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameSubfolder"),
   attachRollbackRouteHandlerWrapper(renameSubfolder)
 )
 

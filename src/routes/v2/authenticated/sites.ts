@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import autoBind from "auto-bind"
 import express from "express"
 
@@ -9,12 +10,14 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import type UserSessionData from "@root/classes/UserSessionData"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
+import { StatsMiddleware } from "@root/middleware/stats"
 import type { RequestHandler } from "@root/types"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
   sitesService: SitesService
   authorizationMiddleware: AuthorizationMiddleware
+  statsMiddleware: StatsMiddleware
 }
 
 export class SitesRouter {
@@ -22,9 +25,16 @@ export class SitesRouter {
 
   private readonly authorizationMiddleware
 
-  constructor({ sitesService, authorizationMiddleware }: SitesRouterProps) {
+  private readonly statsMiddleware
+
+  constructor({
+    sitesService,
+    authorizationMiddleware,
+    statsMiddleware,
+  }: SitesRouterProps) {
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
+    this.statsMiddleware = statsMiddleware
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -116,7 +126,12 @@ export class SitesRouter {
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
-    router.get("/", attachReadRouteHandlerWrapper(this.getSites))
+    router.get(
+      "/",
+      this.statsMiddleware.countGithubSites,
+      this.statsMiddleware.countMigratedSites,
+      attachReadRouteHandlerWrapper(this.getSites)
+    )
     router.get(
       "/:siteName/lastUpdated",
       attachSiteHandler,

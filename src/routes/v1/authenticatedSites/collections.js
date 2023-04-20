@@ -1,3 +1,7 @@
+import { Versions } from "@constants"
+
+import { statsMiddleware } from "@root/middleware/stats"
+
 const express = require("express")
 
 // Import middleware
@@ -180,18 +184,29 @@ async function moveFiles(req, res) {
   return res.status(200).send("OK")
 }
 
-router.get("/", attachReadRouteHandlerWrapper(listCollections))
-router.post("/", attachRollbackRouteHandlerWrapper(createNewCollection))
+router.get(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "listCollections"),
+  attachReadRouteHandlerWrapper(listCollections)
+)
+router.post(
+  "/",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "createNewCollection"),
+  attachRollbackRouteHandlerWrapper(createNewCollection)
+)
 router.delete(
   "/:collectionName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "deleteCollection"),
   attachRollbackRouteHandlerWrapper(deleteCollection)
 )
 router.post(
   "/:collectionName/rename/:newCollectionName",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "renameCollection"),
   attachRollbackRouteHandlerWrapper(renameCollection)
 )
 router.post(
   "/:collectionPath/move/:targetPath",
+  statsMiddleware.logVersionNumberCallFor(Versions.V1, "moveFiles"),
   attachRollbackRouteHandlerWrapper(moveFiles)
 )
 

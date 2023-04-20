@@ -21,7 +21,7 @@ const settingsRouter = require("@routes/v1/authenticatedSites/settings")
 const getAuthenticatedSitesSubrouter = ({
   authenticationMiddleware,
   authorizationMiddleware,
-  apiLogger
+  apiLogger,
 }) => {
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 

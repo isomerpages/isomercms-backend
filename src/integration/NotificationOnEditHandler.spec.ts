@@ -192,7 +192,6 @@ describe("Notifications Router", () => {
     await Site.create({
       id: mockSiteId,
       name: mockSiteName,
-      apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
       creatorId: mockIsomerUserId,
@@ -217,7 +216,6 @@ describe("Notifications Router", () => {
     await Site.create({
       id: mockAdditionalSiteId,
       name: "mockSite2",
-      apiTokenName: "token",
       jobStatus: "READY",
       siteStatus: "LAUNCHED",
       creatorId: mockIsomerUserId,

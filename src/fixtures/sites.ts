@@ -38,7 +38,6 @@ export const MOCK_DEPLOYMENT_STAGING_URL_TWO =
 export const MOCK_SITE_DBENTRY_ONE: Attributes<Site> = {
   id: MOCK_SITE_ID_ONE,
   name: MOCK_REPO_NAME_ONE,
-  apiTokenName: "unused",
   siteStatus: SiteStatus.Launched,
   jobStatus: JobStatus.Ready,
   creatorId: MOCK_USER_ID_ONE,
@@ -49,7 +48,6 @@ export const MOCK_SITE_DBENTRY_ONE: Attributes<Site> = {
 export const MOCK_SITE_DBENTRY_TWO: Attributes<Site> = {
   id: MOCK_SITE_ID_TWO,
   name: MOCK_REPO_NAME_TWO,
-  apiTokenName: "unused",
   siteStatus: SiteStatus.Launched,
   jobStatus: JobStatus.Ready,
   creatorId: MOCK_USER_ID_TWO,

@@ -7,7 +7,6 @@ import {
   UpdateCommand,
   DeleteCommand,
   UpdateCommandInput,
-  PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 

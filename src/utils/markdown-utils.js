@@ -10,6 +10,20 @@ const { sanitizer } = require("@services/utilServices/Sanitizer")
 const getTrailingSlashWithPermalink = (permalink) =>
   permalink.endsWith("/") ? permalink : `${permalink}/`
 
+const recursiveUnescape = (val) => {
+  if (val === "") return val
+  if (Array.isArray(val)) {
+    return val.map(recursiveUnescape)
+  }
+  if (typeof val === "object") {
+    return Object.keys(val).reduce((result, key) => {
+      result[key] = recursiveUnescape(val[key])
+      return result
+    }, {})
+  }
+  return _.unescape(val)
+}
+
 const retrieveDataFromMarkdown = (fileContent) => {
   // eslint-disable-next-line no-unused-vars
   const [unused, encodedFrontMatter, ...pageContent] = fileContent.split("---")
@@ -27,7 +41,7 @@ const retrieveDataFromMarkdown = (fileContent) => {
     // so this does not do anything destructive.
     // Do note that frontmatter containing pre-existing html encoded characters (&amp;)
     // will get transformed regardless.
-    (val) => _.unescape(val)
+    (val) => recursiveUnescape(val)
   )
   const originalPageContent = pageContent.join("---")
   // NOTE: We don't sanitize if there is no page content.

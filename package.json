@@ -26,7 +26,9 @@
   "dependencies": {
     "@aws-sdk/client-amplify": "^3.290.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.290.0",
+    "@aws-sdk/client-dynamodb": "^3.316.0",
     "@aws-sdk/client-secrets-manager": "^3.290.0",
+    "@aws-sdk/lib-dynamodb": "^3.316.0",
     "@octokit/rest": "^18.12.0",
     "@opengovsg/formsg-sdk": "^0.9.0",
     "auto-bind": "^4.0.0",

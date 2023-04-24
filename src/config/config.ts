@@ -172,6 +172,14 @@ const config = convict({
         default: true,
       },
     },
+    dynamodb: {
+      siteLaunchTableName: {
+        doc: "Name of the DynamoDB table used for site launches",
+        env: "SITE_LAUNCH_DYNAMO_DB_TABLE_NAME",
+        format: "required-string",
+        default: "site-launch",
+      },
+    },
     sqs: {
       incomingQueueUrl: {
         doc: "URL of the incoming SQS queue",

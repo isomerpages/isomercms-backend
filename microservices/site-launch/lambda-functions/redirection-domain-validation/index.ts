@@ -32,15 +32,13 @@ export const redirectionDomainValidation = async (
    * The params of `MessageBody` is designed to handle more complicated
    * redirects for future extensions.
    * */
-
-  const githubRedirect = githubRedirects[0] // only handling blah.gov.sg -> www.blah.gov.sg
   const template = `server {
       listen          443 ssl http2;
       listen          [::]:443 ssl http2;
       server_name     ${primaryDomainSource};
       ssl_certificate /etc/letsencrypt/live/${primaryDomainSource}/fullchain.pem;
       ssl_certificate_key     /etc/letsencrypt/live/${primaryDomainSource}/privkey.pem;
-      return          301 https://${githubRedirect.source}$request_uri;
+      return          301 https://www.${primaryDomainSource}$request_uri;
   }`
 
   const octokit = new Octokit({

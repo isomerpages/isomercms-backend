@@ -138,7 +138,7 @@ describe("Sites Router", () => {
         stagingUrl: "staging-url",
         siteUrl: "prod-url",
       }
-      mockSitesService.getSiteInfo.mockResolvedValueOnce(siteInfo)
+      mockSitesService.getSiteInfo.mockResolvedValueOnce(ok(siteInfo))
 
       const resp = await request(app).get(`/${mockSiteName}/info`).expect(200)
 

@@ -71,6 +71,9 @@ export const MOCK_REVIEW_REQUEST_ONE: Attributes<ReviewRequest> = {
   id: 1,
   site: {
     name: "Test Site 1",
+    repo: {
+      name: "test-repo-1",
+    },
   },
   requestor: mockCollaboratorContributor1,
   reviewMeta: {

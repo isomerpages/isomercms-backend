@@ -39,12 +39,6 @@ export class Site extends Model {
 
   @Column({
     allowNull: false,
-    type: DataType.TEXT,
-  })
-  apiTokenName!: string
-
-  @Column({
-    allowNull: false,
     type: DataType.ENUM(...Object.values(SiteStatus)),
     defaultValue: SiteStatus.Empty,
   })

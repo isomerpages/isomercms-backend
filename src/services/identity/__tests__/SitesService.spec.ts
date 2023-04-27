@@ -95,7 +95,6 @@ const SpySitesService = {
 const mockSiteName = "some site name"
 const mockSite = ({
   name: "i m a site",
-  apiTokenName: "0000",
   users: [],
 } as unknown) as Site
 

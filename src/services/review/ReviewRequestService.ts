@@ -9,7 +9,7 @@ import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
 import { ReviewRequestStatus } from "@root/constants"
-import { ReviewRequestView } from "@root/database/models"
+import { Repo, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import { NotFoundError } from "@root/errors/NotFoundError"
@@ -442,6 +442,7 @@ export default class ReviewRequestService {
         },
         {
           model: Site,
+          include: [Repo],
         },
       ],
     })
@@ -611,11 +612,16 @@ export default class ReviewRequestService {
   mergeReviewRequest = async (
     reviewRequest: ReviewRequest
   ): Promise<ReviewRequest | RequestNotFoundError> => {
-    const siteName = reviewRequest.site.name
+    const { repo } = reviewRequest.site
+    if (!repo) throw new RequestNotFoundError("Repo not found")
+    const repoNameInGithub = repo.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
+    await this.apiService.approvePullRequest(
+      repoNameInGithub,
+      pullRequestNumber
+    )
 
-    await this.apiService.approvePullRequest(siteName, pullRequestNumber)
-    await this.apiService.mergePullRequest(siteName, pullRequestNumber)
+    await this.apiService.mergePullRequest(repoNameInGithub, pullRequestNumber)
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()

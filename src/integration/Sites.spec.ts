@@ -177,7 +177,6 @@ describe("Sites Router", () => {
       await Site.create({
         id: mockSiteId,
         name: mockSite,
-        apiTokenName: "token",
         jobStatus: "READY",
         siteStatus: "LAUNCHED",
         creatorId: mockIsomerUserId,
@@ -185,7 +184,6 @@ describe("Sites Router", () => {
       await Site.create({
         id: "200",
         name: mockAdminSite,
-        apiTokenName: "token",
         jobStatus: "READY",
         siteStatus: "LAUNCHED",
         creatorId: mockIsomerUserId,

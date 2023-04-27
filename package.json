@@ -1,6 +1,6 @@
 {
   "name": "isomercms",
-  "version": "0.23.1",
+  "version": "0.24.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -84,7 +84,7 @@
     "validator": "^13.6.0",
     "winston": "^3.3.3",
     "winston-cloudwatch": "^6.1.1",
-    "yaml": "^2.2.1"
+    "yaml": "^2.2.2"
   },
   "devDependencies": {
     "@octokit/types": "^6.35.0",

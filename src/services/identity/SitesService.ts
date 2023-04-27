@@ -409,7 +409,6 @@ class SitesService {
   async create(
     createParams: Partial<Site> & {
       name: Site["name"]
-      apiTokenName: Site["apiTokenName"]
       creator: Site["creator"]
     }
   ) {

@@ -117,10 +117,10 @@ export class SitesRouter {
     )
 
     // Check for error and throw
-    if (possibleSiteInfo instanceof BaseIsomerError) {
-      return res.status(400).json({ message: possibleSiteInfo.message })
+    if (possibleSiteInfo.isErr()) {
+      return res.status(400).json({ message: possibleSiteInfo.error.message })
     }
-    return res.status(200).json(possibleSiteInfo)
+    return res.status(200).json(possibleSiteInfo.value)
   }
 
   getRouter() {

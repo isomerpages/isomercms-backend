@@ -33,11 +33,15 @@ const headerRowStyle =
 const repoNameStyle =
   "padding: 8px; text-align: left; font-weight: bold; border: 1px solid #ddd;"
 
+const bodyTitleStyle = "font-size: 16px; font-weight: bold;"
+
+const bodyFooterStyle = "font-size: 14px;"
+
 export function getDNSRecordsEmailBody(
   submissionId: string,
   dnsRecordsEmailProps: DnsRecordsEmailProps[]
 ) {
-  let html = `<p style="font-size: 16px; font-weight: bold;">Isomer sites are in the process of launching. (Form submission id [${submissionId}])</p>
+  let html = `<p style="${bodyTitleStyle}">Isomer sites are in the process of launching. (Form submission id [${submissionId}])</p>
       <table style="${tableStyle}">
         <thead>
           <tr style="${headerRowStyle}">
@@ -88,7 +92,7 @@ export function getDNSRecordsEmailBody(
     })
   })
   html += `</tbody></table>
-      <p style="font-size: 14px;">This email was sent from the Isomer CMS backend.</p>`
+      <p style="${bodyFooterStyle}">This email was sent from the Isomer CMS backend.</p>`
   return html
 }
 
@@ -96,7 +100,7 @@ export function getErrorEmailBody(
   submissionId: string,
   failureResults: LaunchFailureEmailProps[]
 ) {
-  let html = `<p style="font-size: 16px; font-weight: bold;">The following sites were NOT launched successfully. (Form submission id [${submissionId}])</p>
+  let html = `<p style="${bodyTitleStyle}">The following sites were NOT launched successfully. (Form submission id [${submissionId}])</p>
         <table style="${tableStyle}">
           <thead>
             <tr style="${headerRowStyle}">
@@ -116,6 +120,6 @@ export function getErrorEmailBody(
   html += `
           </tbody>
         </table>
-        <p style="font-size: 14px;">This email was sent from the Isomer CMS backend.</p>`
+        <p style="${bodyFooterStyle}">This email was sent from the Isomer CMS backend.</p>`
   return html
 }

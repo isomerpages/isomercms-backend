@@ -16,6 +16,7 @@ const {
 const { isMediaPathValid } = require("@validators/validators")
 
 const { getFileExt } = require("@root/utils/files")
+const { getMediaFileInfo } = require("@root/utils/media-utils")
 
 class MediaFileService {
   constructor({ gitHubService }) {
@@ -66,31 +67,17 @@ class MediaFileService {
     const targetFile = directoryData.find(
       (fileOrDir) => fileOrDir.name === fileName
     )
-    const { sha } = targetFile
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       sessionData
     )
-    const fileData = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName
-        .split("/")
-        .map((v) => encodeURIComponent(v))
-        .join("/")}/${fileName}${
-        fileName.endsWith(".svg") ? "?sanitize=true" : ""
-      }`,
-      name: fileName,
-      sha,
-      mediaPath: `${directoryName}/${fileName}`,
-    }
-    if (mediaType === "images" && isPrivate) {
-      // Generate blob url
-      const imageExt = fileName.slice(fileName.lastIndexOf(".") + 1)
-      const contentType = `image/${imageExt === "svg" ? "svg+xml" : imageExt}`
-      const { content } = await this.gitHubService.readMedia(sessionData, {
-        fileSha: sha,
-      })
-      const blobURL = `data:${contentType};base64,${content}`
-      fileData.mediaUrl = blobURL
-    }
+    const fileData = await getMediaFileInfo(
+      targetFile,
+      siteName,
+      directoryName,
+      mediaType,
+      isPrivate
+    )
+
     return fileData
   }
 

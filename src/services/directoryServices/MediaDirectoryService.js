@@ -1,12 +1,10 @@
-const { config } = require("@config/config")
-
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const GITHUB_ORG_NAME = config.get("github.orgName")
+const { isMediaPathValid } = require("@validators/validators")
+
+const { getMediaFileInfo } = require("@root/utils/media-utils")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
-
-const { isMediaPathValid } = require("@validators/validators")
 
 class MediaDirectoryService {
   constructor({ baseDirectoryService, gitHubService }) {
@@ -40,39 +38,20 @@ class MediaDirectoryService {
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       sessionData
     )
-    const files = await this.listWithDefault(sessionData, { directoryName })
+    const files = (
+      await this.listWithDefault(sessionData, { directoryName })
+    ).filter(
+      (file) =>
+        (file.type === "file" || file.type === "dir") &&
+        file.name !== PLACEHOLDER_FILE_NAME
+    )
 
-    const resp = []
-    for (const curr of files) {
-      if (curr.type === "dir") {
-        resp.push({
-          name: curr.name,
-          type: "dir",
-        })
-      }
-      if (curr.type !== "file" || curr.name === PLACEHOLDER_FILE_NAME) continue
-      const fileData = {
-        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${curr.path
-          .split("/")
-          .map((v) => encodeURIComponent(v))
-          .join("/")}${curr.path.endsWith(".svg") ? "?sanitize=true" : ""}`,
-        name: curr.name,
-        sha: curr.sha,
-        mediaPath: `${directoryName}/${curr.name}`,
-        type: curr.type,
-      }
-      if (mediaType === "images" && isPrivate) {
-        // Generate blob url
-        const imageExt = curr.name.slice(curr.name.lastIndexOf(".") + 1)
-        const contentType = `image/${imageExt === "svg" ? "svg+xml" : imageExt}`
-        const { content } = await this.gitHubService.readMedia(sessionData, {
-          fileSha: curr.sha,
-        })
-        const blobURL = `data:${contentType};base64,${content}`
-        fileData.mediaUrl = blobURL
-      }
-      resp.push(fileData)
-    }
+    const resp = await Promise.all(
+      files.map((curr) =>
+        getMediaFileInfo(curr, siteName, directoryName, mediaType, isPrivate)
+      )
+    )
+
     return resp
   }
 

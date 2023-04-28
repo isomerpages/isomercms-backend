@@ -67,15 +67,20 @@ export const closeReviewRequest = (
     { state: "closed" }
   )
 
-export const mergePullRequest = (siteName: string, pullRequestNumber: number) =>
-  axiosInstance.put<void>(`${siteName}/pulls/${pullRequestNumber}/merge`)
+export const mergePullRequest = (
+  repoNameInGithub: string,
+  pullRequestNumber: number
+) =>
+  axiosInstance.put<void>(
+    `${repoNameInGithub}/pulls/${pullRequestNumber}/merge`
+  )
 
 export const approvePullRequest = (
-  siteName: string,
+  repoNameInGithub: string,
   pullRequestNumber: number
 ) =>
   axiosInstance.post<void>(
-    `${siteName}/pulls/${pullRequestNumber}/reviews`,
+    `${repoNameInGithub}/pulls/${pullRequestNumber}/reviews`,
     {
       event: "APPROVE",
     },

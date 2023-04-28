@@ -18,6 +18,7 @@ const ALLOWED_FILE_EXTENSIONS = [
   "tif",
   "bmp",
   "ico",
+  "svg",
 ]
 const defaultCloudmersiveClient = CloudmersiveVirusApiClient.ApiClient.instance
 

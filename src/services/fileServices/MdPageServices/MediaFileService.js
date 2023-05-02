@@ -66,13 +66,13 @@ class MediaFileService {
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       sessionData
     )
-    const fileData = await getMediaFileInfo(
-      targetFile,
+    const fileData = await getMediaFileInfo({
+      file: targetFile,
       siteName,
       directoryName,
       mediaType,
-      isPrivate
-    )
+      isPrivate,
+    })
 
     return fileData
   }

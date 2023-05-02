@@ -6,20 +6,47 @@ import { getAccessToken } from "@root/utils/token-retrieval-utils"
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
-interface mediaFile {
+type ItemType = "dir" | "file"
+
+export interface MediaFile {
   name: string
-  type: string
+  type: ItemType
   sha: string
   path: string
 }
 
-export const getMediaFileInfo = async (
-  file: mediaFile,
-  siteName: string,
-  directoryName: string,
-  mediaType: string,
+interface MediaFileInput {
+  file: MediaFile
+  siteName: string
+  directoryName: string
+  mediaType: string
   isPrivate: boolean
-) => {
+}
+
+interface MediaFileOutput {
+  name: string
+  sha: string
+  mediaUrl: string
+  mediaPath: string
+  type: ItemType
+}
+
+interface MediaDirOutput {
+  name: string
+  type: ItemType
+}
+
+export const isMediaFileOutput = (
+  t: MediaFileOutput | MediaDirOutput
+): t is MediaFileOutput => (t as MediaFileOutput).sha !== undefined
+
+export const getMediaFileInfo = async ({
+  file,
+  siteName,
+  directoryName,
+  mediaType,
+  isPrivate,
+}: MediaFileInput): Promise<MediaFileOutput | MediaDirOutput> => {
   if (file.type === "dir") {
     return {
       name: file.name,

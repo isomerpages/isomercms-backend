@@ -87,8 +87,10 @@ export class FormsgRouter {
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
         return res.sendStatus(200)
       }
-      const foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
-
+      let foundOwner
+      if (isEmailLogin) {
+        foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
+      }
       // 3. Use service to create site
       const { deployment } = await this.infraService.createSite({
         creator: foundIsomerRequester,

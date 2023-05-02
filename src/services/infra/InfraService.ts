@@ -45,7 +45,8 @@ interface dnsRecordDto {
 
 type CreateSiteParams = {
   creator: User
-  member: User
+  // this is ok, since we don't need this for github login flow
+  member: User | undefined
   siteName: string
   repoName: string
   isEmailLogin: boolean
@@ -132,11 +133,7 @@ export default class InfraService {
 
       // 5. Set up permissions
       await this.reposService.setRepoAndTeamPermissions(repoName, isEmailLogin)
-      if (isEmailLogin) {
-        if (!memberEmail) {
-          // This should never happen
-          throw new Error(`Should not reach here`)
-        }
+      if (isEmailLogin && memberEmail) {
         await this.collaboratorsService.create(repoName, memberEmail, true)
       }
       // 6. Update status

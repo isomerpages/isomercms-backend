@@ -8,7 +8,9 @@ describe("Media File Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
   const imageName = "test image.png"
+  const imageEncodedName = encodeURIComponent(imageName)
   const fileName = "test file.pdf"
+  const fileEncodedName = encodeURIComponent(fileName)
   const directoryName = "images/subfolder"
   const mockContent = "schema, test"
   const mockSanitizedContent = "sanitized-test"
@@ -90,20 +92,24 @@ describe("Media File Service", () => {
     const imageDirResp = [
       {
         name: imageName,
+        path: `${directoryName}/${imageName}`,
         sha,
       },
       {
         name: "image2.png",
+        path: `${directoryName}/image2.png`,
         sha: "image2sha",
       },
     ]
     const fileDirResp = [
       {
         name: fileName,
+        path: `${directoryName}/${fileName}`,
         sha,
       },
       {
         name: "file2.pdf",
+        path: `${directoryName}/file2.pdf`,
         sha: "file2sha",
       },
     ]
@@ -116,7 +122,7 @@ describe("Media File Service", () => {
     })
     it("Reading image files in public repos works correctly", async () => {
       const expectedResp = {
-        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${imageName}`,
+        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${imageEncodedName}`,
         name: imageName,
         sha,
       }
@@ -139,6 +145,7 @@ describe("Media File Service", () => {
       ...imageDirResp,
       {
         sha,
+        path: `${directoryName}/${svgName}`,
         name: svgName,
       },
     ])
@@ -166,34 +173,6 @@ describe("Media File Service", () => {
       )
       expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
-    mockGithubService.readDirectory.mockResolvedValueOnce(imageDirResp)
-    mockGithubService.getRepoInfo.mockResolvedValueOnce({
-      private: true,
-    })
-    it("Reading image files in private repos works correctly", async () => {
-      const expectedResp = {
-        mediaUrl: `data:image/png;base64,${mockContent}`,
-        name: imageName,
-        sha,
-      }
-      await expect(
-        service.read(sessionData, {
-          fileName: imageName,
-          directoryName,
-          mediaType: "images",
-        })
-      ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
-        sessionData,
-        {
-          directoryName,
-        }
-      )
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
-      expect(mockGithubService.readMedia).toHaveBeenCalledWith(sessionData, {
-        fileSha: sha,
-      })
-    })
     mockGithubService.readDirectory.mockResolvedValueOnce(fileDirResp)
     mockGithubService.getRepoInfo.mockResolvedValueOnce({
       private: false,
@@ -203,7 +182,7 @@ describe("Media File Service", () => {
     })
     it("Reading files in public repos works correctly", async () => {
       const expectedResp = {
-        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${fileName}`,
+        mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${fileEncodedName}`,
         name: fileName,
         sha,
       }

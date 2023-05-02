@@ -1,4 +1,3 @@
-/* eslint-disable consistent-return */ // todo remove this
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import {
   DynamoDBDocumentClient,
@@ -7,6 +6,9 @@ import {
   UpdateCommand,
   DeleteCommand,
   UpdateCommandInput,
+  PutCommandOutput,
+  UpdateCommandOutput,
+  DeleteCommandOutput,
 } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 
@@ -46,7 +48,10 @@ export default class DynamoDBDocClient {
     autoBind(this)
   }
 
-  createItem = async (tableName: string, item: MessageBody) => {
+  createItem = async (
+    tableName: string,
+    item: MessageBody
+  ): Promise<PutCommandOutput> => {
     const params = {
       TableName: tableName,
       Item: {
@@ -55,13 +60,18 @@ export default class DynamoDBDocClient {
       },
     }
     try {
-      return await this.dynamoDBDocClient.send(new PutCommand(params))
+      const response = await this.dynamoDBDocClient.send(new PutCommand(params))
+      return response
     } catch (error) {
       logger.error(`Error in createItem for the table ${tableName}: ${error}`)
+      throw error
     }
   }
 
-  getItem = async (tableName: string, key: string) => {
+  getItem = async (
+    tableName: string,
+    key: string
+  ): Promise<Record<string, unknown> | undefined> => {
     const params = {
       TableName: tableName,
       Key: { appId: key },
@@ -70,8 +80,9 @@ export default class DynamoDBDocClient {
     try {
       const result = await this.dynamoDBDocClient.send(new GetCommand(params))
       return result.Item
-    } catch (err) {
-      logger.error(`Error in getItem for the table ${tableName}: ${err}`)
+    } catch (error) {
+      logger.error(`Error in getItem for the table ${tableName}: ${error}`)
+      throw error
     }
   }
 
@@ -81,7 +92,7 @@ export default class DynamoDBDocClient {
     UpdateExpression,
     ExpressionAttributeNames,
     ExpressionAttributeValues,
-  }: UpdateParams) => {
+  }: UpdateParams): Promise<UpdateCommandOutput> => {
     try {
       const params: UpdateCommandInput = {
         TableName,
@@ -96,10 +107,14 @@ export default class DynamoDBDocClient {
       return result
     } catch (error) {
       logger.error(`Error in updateItem for the table ${TableName}: ${error}`)
+      throw error
     }
   }
 
-  deleteItem = async (tableName: string, key: Record<string, string>) => {
+  deleteItem = async (
+    tableName: string,
+    key: Record<string, string>
+  ): Promise<DeleteCommandOutput> => {
     const params = {
       TableName: tableName,
       Key: key,
@@ -108,6 +123,7 @@ export default class DynamoDBDocClient {
       return await this.dynamoDBDocClient.send(new DeleteCommand(params))
     } catch (error) {
       logger.error(`Error in deleteItem for the table ${tableName}: ${error}`)
+      throw error
     }
   }
 }

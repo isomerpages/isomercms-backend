@@ -66,7 +66,7 @@ export default class ReposService {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
     await this.createRepoOnGithub(repoName)
-    if (isEmailLogin) {
+    if (!isEmailLogin) {
       await this.createTeamOnGitHub(repoName)
     }
     await this.generateRepoAndPublishToGitHub(repoName, repoUrl)

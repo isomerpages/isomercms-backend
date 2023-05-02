@@ -132,7 +132,7 @@ export default class InfraService {
 
       // 5. Set up permissions
       await this.reposService.setRepoAndTeamPermissions(repoName, isEmailLogin)
-      if (doesMemberEmailExistForEmailLogin) {
+      if (isEmailLogin) {
         if (!memberEmail) {
           // This should never happen
           throw new Error(`Should not reach here`)

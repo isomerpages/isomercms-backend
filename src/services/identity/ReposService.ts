@@ -187,7 +187,7 @@ export default class ReposService {
       repo: repoName,
       permission: "admin",
     })
-    if (isEmailLogin) {
+    if (!isEmailLogin) {
       await octokit.teams.addOrUpdateRepoPermissionsInOrg({
         org: ISOMER_GITHUB_ORGANIZATION_NAME,
         team_slug: repoName,

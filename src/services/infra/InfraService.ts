@@ -89,7 +89,7 @@ export default class InfraService {
     isEmailLogin,
   }: CreateSiteParams) => {
     let site: Site | undefined // For error handling
-    const memberEmail = member.email
+    const memberEmail = member?.email
     const doesMemberEmailExistForEmailLogin = !memberEmail && isEmailLogin
     if (doesMemberEmailExistForEmailLogin) {
       logger.error(

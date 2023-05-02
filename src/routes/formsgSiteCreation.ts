@@ -7,7 +7,6 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
-import InitializationError from "@errors/InitializationError"
 
 import { getField } from "@utils/formsg-utils"
 
@@ -21,6 +20,7 @@ const REQUESTER_EMAIL_FIELD = "Government E-mail"
 const SITE_NAME_FIELD = "Site Name"
 const REPO_NAME_FIELD = "Repository Name"
 const OWNER_NAME_FIELD = "Site Owner E-mail"
+const LOGIN_TYPE_FIELD = "Login Type"
 
 export interface FormsgRouterProps {
   usersService: UsersService
@@ -55,7 +55,7 @@ export class FormsgRouter {
     const ownerEmail = getField(responses, OWNER_NAME_FIELD)
       ?.toLowerCase()
       .trim()
-
+    const isEmailLogin = getField(responses, LOGIN_TYPE_FIELD) === "Email based"
     logger.info(
       `Create site form submission [${submissionId}] (repoName '${repoName}', siteName '${siteName}') requested by <${requesterEmail}>`
     )
@@ -90,12 +90,13 @@ export class FormsgRouter {
       const foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
 
       // 3. Use service to create site
-      const { deployment } = await this.infraService.createSite(
-        foundIsomerRequester,
-        foundOwner,
+      const { deployment } = await this.infraService.createSite({
+        creator: foundIsomerRequester,
+        member: foundOwner,
         siteName,
-        repoName
-      )
+        repoName,
+        isEmailLogin,
+      })
       await this.sendCreateSuccess(
         requesterEmail,
         repoName,

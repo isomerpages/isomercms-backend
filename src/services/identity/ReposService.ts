@@ -57,13 +57,18 @@ export default class ReposService {
   setupGithubRepo = async ({
     repoName,
     site,
+    isEmailLogin,
   }: {
     repoName: string
     site: Site
+    isEmailLogin: boolean
   }): Promise<Repo> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
     await this.createRepoOnGithub(repoName)
+    if (isEmailLogin) {
+      await this.createTeamOnGitHub(repoName)
+    }
     await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
     return this.create({
       name: repoName,
@@ -72,6 +77,15 @@ export default class ReposService {
       siteId: site.id,
     })
   }
+
+  createTeamOnGitHub = (
+    repoName: string
+  ): Promise<octokitCreateTeamResponseType> =>
+    octokit.teams.create({
+      org: ISOMER_GITHUB_ORGANIZATION_NAME,
+      name: repoName,
+      privacy: "closed",
+    })
 
   modifyDeploymentUrlsOnRepo = async (
     repoName: string,
@@ -147,7 +161,10 @@ export default class ReposService {
       private: false,
     })
 
-  setRepoAndTeamPermissions = async (repoName: string): Promise<void> => {
+  setRepoAndTeamPermissions = async (
+    repoName: string,
+    isEmailLogin: boolean
+  ): Promise<void> => {
     await octokit.repos.updateBranchProtection({
       owner: ISOMER_GITHUB_ORGANIZATION_NAME,
       repo: repoName,
@@ -170,6 +187,15 @@ export default class ReposService {
       repo: repoName,
       permission: "admin",
     })
+    if (isEmailLogin) {
+      await octokit.teams.addOrUpdateRepoPermissionsInOrg({
+        org: ISOMER_GITHUB_ORGANIZATION_NAME,
+        team_slug: repoName,
+        owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+        repo: repoName,
+        permission: "push",
+      })
+    }
   }
 
   generateRepoAndPublishToGitHub = async (

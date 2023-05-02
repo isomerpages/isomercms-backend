@@ -13,6 +13,7 @@ import {
 import autoBind from "auto-bind"
 
 import { MessageBody } from "@root/../microservices/site-launch/shared/types"
+import config from "@root/config/config"
 import logger from "@root/logger/logger"
 
 export interface UpdateParams {
@@ -41,7 +42,7 @@ export default class DynamoDBDocClient {
     }
 
     this.dynamoDBDocClient = DynamoDBDocumentClient.from(
-      new DynamoDBClient({ region: "ap-southeast-1" }),
+      new DynamoDBClient({ region: config.get("aws.amplify.region") }),
       { marshallOptions, unmarshallOptions }
     )
 

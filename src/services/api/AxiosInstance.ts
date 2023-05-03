@@ -36,10 +36,10 @@ const respHandler = (response: AxiosResponse) => {
   // Any status code that lie within the range of 2xx will cause this function to trigger
   const GITHUB_API_LIMIT = 5000
   const remainingRequests = response.headers["x-ratelimit-remaining"]
-  if (remainingRequests < GITHUB_API_LIMIT * 0.4) {
-    logger.info("60% of access token capacity reached")
-  } else if (remainingRequests < GITHUB_API_LIMIT * 0.2) {
+  if (remainingRequests < GITHUB_API_LIMIT * 0.2) {
     logger.info("80% of access token capacity reached")
+  } else if (remainingRequests < GITHUB_API_LIMIT * 0.4) {
+    logger.info("60% of access token capacity reached")
   }
   return response
 }

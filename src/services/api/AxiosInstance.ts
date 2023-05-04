@@ -33,6 +33,7 @@ const requestFormatter = async (config: AxiosRequestConfig) => {
         },
       },
     })
+    logger.info(`Email login user made call to Github API: ${config.url}`)
   } else {
     tracer.use("http", {
       hooks: {
@@ -41,6 +42,7 @@ const requestFormatter = async (config: AxiosRequestConfig) => {
         },
       },
     })
+    logger.info(`Github login user made call to Github API: ${config.url}`)
   }
   return {
     ...config,

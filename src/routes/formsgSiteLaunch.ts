@@ -11,6 +11,12 @@ import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
+import {
+  DnsRecordsEmailProps,
+  LaunchFailureEmailProps,
+  getDNSRecordsEmailBody,
+  getErrorEmailBody,
+} from "@root/services/utilServices/SendDNSRecordEmailClient"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 
@@ -50,26 +56,6 @@ interface FormResponsesProps {
    */
 
   siteLaunchDetails?: string[] | string[][]
-}
-
-interface LaunchFailureEmailProps {
-  // The fields here are optional since a misconfiguration in our
-  // formSG can cause some or even all fields to be missing
-  requesterEmail?: string
-  repoName?: string
-  primaryDomain?: string
-  error: string
-}
-
-interface DnsRecordsEmailProps {
-  requesterEmail: string
-  repoName: string
-  domainValidationSource: string
-  domainValidationTarget: string
-  primaryDomainSource: string
-  primaryDomainTarget: string
-  redirectionDomainSource?: string
-  redirectionDomainTarget?: string
 }
 
 export class FormsgSiteLaunchRouter {
@@ -219,21 +205,7 @@ export class FormsgSiteLaunchRouter {
     const { requesterEmail } = failureResults[0]
     const email = requesterEmail || ISOMER_ADMIN_EMAIL
     const subject = `[Isomer] Launch site FAILURE`
-    let html = `<p>The following sites were NOT launched successfully. (Form submission id [${submissionId}])</p>
-    <table><thread><tr><th>Repo Name</th><th>Error</th></tr></thread><tbody>`
-
-    failureResults.forEach((failureResult) => {
-      const displayedRepoName = failureResult.repoName || "<missing repo name>"
-      html += `
-      <tr>
-        <td>${displayedRepoName}</td>
-        <td>${failureResult.error}</td>
-      </tr>`
-    })
-    html += `
-    </tbody></table>
-    <p>This email was sent from the Isomer CMS backend.</p>`
-
+    const html = getErrorEmailBody(submissionId, failureResults)
     await mailer.sendMail(email, subject, html)
   }
 
@@ -244,56 +216,7 @@ export class FormsgSiteLaunchRouter {
     if (dnsRecordsEmailProps.length === 0) return
     const { requesterEmail } = dnsRecordsEmailProps[0]
     const subject = `[Isomer] DNS records for launching websites`
-
-    let html = `<p>Isomer sites are in the process of launching. (Form submission id [${submissionId}])</p>
-    <table>
-    <thead>
-      <tr>
-        <th>Repo Name</th>
-        <th>Source</th>
-        <th>Target</th>
-        <th>Type</th>
-      </tr>
-    </thead>
-    <tbody>`
-    dnsRecordsEmailProps.forEach((dnsRecords) => {
-      // check if dnsRecords.redirectionDomain is undefined
-      const hasRedirection = !!dnsRecords.redirectionDomainSource
-      html += `
-    <tr>
-      <td>${dnsRecords.repoName}</td>
-      <td>${dnsRecords.domainValidationSource}</td>
-      <td>${dnsRecords.domainValidationTarget}</td>
-      <td>CNAME</td>
-    </tr>
-    <tr>
-      <td>${dnsRecords.repoName}</td>
-      <td>${
-        hasRedirection
-          ? // if redirection, website will be hosted in the 'www' subdomain
-            `www.${dnsRecords.primaryDomainSource}`
-          : dnsRecords.primaryDomainSource
-      }</td>
-      <td>${dnsRecords.primaryDomainTarget}</td>
-      <td>CNAME</td>
-    </tr>`
-
-      if (hasRedirection) {
-        html += `
-      <tr>
-        <td>${dnsRecords.repoName}</td>
-        <td>${
-          // note that the source here is the primary domain source
-          // since the non-www will be the one pointing to our redirection server
-          dnsRecords.primaryDomainSource
-        }</td>
-        <td>${dnsRecords.redirectionDomainTarget}</td>
-        <td>A Record</td>
-      </tr>`
-      }
-    })
-    html += `</tbody></table>
-    <p>This email was sent from the Isomer CMS backend.</p>`
+    const html = getDNSRecordsEmailBody(submissionId, dnsRecordsEmailProps)
     await mailer.sendMail(requesterEmail, subject, html)
   }
 

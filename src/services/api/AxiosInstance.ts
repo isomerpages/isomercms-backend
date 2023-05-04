@@ -5,6 +5,7 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import { getAccessToken } from "@utils/token-retrieval-utils"
+import tracer from "@utils/tracer"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
@@ -15,13 +16,33 @@ const requestFormatter = async (config: AxiosRequestConfig) => {
   const authMessage = config.headers.Authorization
 
   // If accessToken is missing, authMessage is `token `
-  if (
+  // NOTE: This also implies that the user has not provided
+  // their own github token and hence, are email login users.
+  const isEmailLoginUser =
     !authMessage ||
     authMessage === "token " ||
     authMessage === "token undefined"
-  ) {
+
+  if (isEmailLoginUser) {
     const accessToken = await getAccessToken()
     config.headers.Authorization = `token ${accessToken}`
+    tracer.use("http", {
+      hooks: {
+        request: (span, req, res) => {
+          span?.setTag("user.type", "email")
+        },
+      },
+    })
+    logger.info(`Email login user made call to Github API: ${config.url}`)
+  } else {
+    tracer.use("http", {
+      hooks: {
+        request: (span, req, res) => {
+          span?.setTag("user.type", "github")
+        },
+      },
+    })
+    logger.info(`Github login user made call to Github API: ${config.url}`)
   }
   return {
     ...config,

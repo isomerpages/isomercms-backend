@@ -612,6 +612,8 @@ export default class ReviewRequestService {
   mergeReviewRequest = async (
     reviewRequest: ReviewRequest
   ): Promise<ReviewRequest | RequestNotFoundError> => {
+    if (reviewRequest.reviewStatus !== ReviewRequestStatus.Approved)
+      throw new RequestNotFoundError("Approved review request not found!")
     const { repo } = reviewRequest.site
     if (!repo) throw new RequestNotFoundError("Repo not found")
     const repoNameInGithub = repo.name

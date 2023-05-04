@@ -11,7 +11,7 @@ const getTrailingSlashWithPermalink = (permalink) =>
   permalink.endsWith("/") ? permalink : `${permalink}/`
 
 const recursiveUnescape = (val) => {
-  if (val === "") return val
+  if (!val) return val
   if (Array.isArray(val)) {
     return val.map(recursiveUnescape)
   }

@@ -31,7 +31,7 @@
     "@opengovsg/formsg-sdk": "^0.9.0",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
-    "aws-sdk": "^2.946.0",
+    "aws-sdk": "^2.1371.0",
     "axios": "^0.21.3",
     "base-64": "^0.1.0",
     "bcrypt": "^5.1.0",

@@ -42,6 +42,16 @@ interface dnsRecordDto {
   target: string
   type: RedirectionTypes
 }
+
+type CreateSiteParams = {
+  creator: User
+  // this is ok, since we don't need this for github login flow
+  member: User | undefined
+  siteName: string
+  repoName: string
+  isEmailLogin: boolean
+}
+
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 
@@ -71,20 +81,22 @@ export default class InfraService {
     this.collaboratorsService = collaboratorsService
   }
 
-  createSite = async (
-    creator: User,
-    member: User,
-    siteName: string,
-    repoName: string
-  ) => {
+  createSite = async ({
+    creator,
+    member,
+    siteName,
+    repoName,
+    isEmailLogin,
+  }: CreateSiteParams) => {
     let site: Site | undefined // For error handling
-    const memberEmail = member.email
-    if (!memberEmail) {
+    const memberEmail = member?.email
+    const doesMemberEmailExistForEmailLogin = !memberEmail && isEmailLogin
+    if (doesMemberEmailExistForEmailLogin) {
       logger.error(
-        `createSite: initial member for ${siteName} does not have associated email`
+        `createSite: initial member for ${siteName} for email login flow does not have associated email`
       )
       throw new Error(
-        `createSite: initial member for ${siteName} does not have associated email`
+        `createSite: initial member for ${siteName} for email login flow does not have associated email`
       )
     }
     try {
@@ -98,7 +110,11 @@ export default class InfraService {
       logger.info(`Created site record in database, site ID: ${site.id}`)
 
       // 2. Set up GitHub repo and branches using the ReposService
-      const repo = await this.reposService.setupGithubRepo({ repoName, site })
+      const repo = await this.reposService.setupGithubRepo({
+        repoName,
+        site,
+        isEmailLogin,
+      })
       logger.info(`Created repo in GitHub, repo name: ${repoName}`)
 
       // 3. Set up the Amplify project using the DeploymentsService
@@ -116,9 +132,10 @@ export default class InfraService {
       )
 
       // 5. Set up permissions
-      await this.reposService.setRepoAndTeamPermissions(repoName)
-      await this.collaboratorsService.create(repoName, memberEmail, true)
-
+      await this.reposService.setRepoAndTeamPermissions(repoName, isEmailLogin)
+      if (isEmailLogin && memberEmail) {
+        await this.collaboratorsService.create(repoName, memberEmail, true)
+      }
       // 6. Update status
       const updateSuccessSiteInitParams = {
         id: site.id,

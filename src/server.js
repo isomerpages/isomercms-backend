@@ -1,4 +1,5 @@
-import "dd-trace/init"
+// NOTE: the import for tracer doesn't resolve with path aliasing
+import "./utils/tracer"
 import "module-alias/register"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"

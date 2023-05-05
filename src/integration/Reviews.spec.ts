@@ -1265,6 +1265,23 @@ describe("Review Requests Integration Tests", () => {
       })
     })
 
+    it("should return 404 if review request is not approved", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_TWO
+      )
+
+      // Act
+      const actual = await request(app).post(
+        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/merge`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(404)
+    })
+
     it("should merge the pull request successfully", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
@@ -1272,6 +1289,17 @@ describe("Review Requests Integration Tests", () => {
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_ONE
       )
+      const activeReviewRequest = await ReviewRequest.findOne({
+        where: {
+          requestorId: MOCK_USER_ID_ONE,
+          siteId: MOCK_SITE_ID_ONE,
+        },
+      })
+      if (!activeReviewRequest) fail("Should not reach here")
+      await activeReviewRequest.set({
+        reviewStatus: ReviewRequestStatus.Approved,
+      })
+      await activeReviewRequest.save()
       mockGenericAxios.post.mockResolvedValueOnce(null)
       mockGenericAxios.put.mockResolvedValueOnce(null)
 

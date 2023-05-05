@@ -1066,6 +1066,7 @@ describe("ReviewRequestService", () => {
     it("should merge the review request successfully", async () => {
       // Arrange
       const mockReviewRequestOpen = _.clone(MockReviewRequest)
+      mockReviewRequestOpen.reviewStatus = ReviewRequestStatus.Approved
       MockReviewApi.approvePullRequest.mockResolvedValueOnce(undefined)
       MockReviewApi.mergePullRequest.mockResolvedValueOnce(undefined)
 

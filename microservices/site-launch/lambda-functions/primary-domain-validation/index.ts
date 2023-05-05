@@ -78,7 +78,7 @@ export const primaryDomainValidation = async (
     )
     return {
       lambdaType: SiteLaunchLambdaType.PRIMARY_DOMAIN_VALIDATION,
-      status: SiteLaunchLambdaStatus.SUCCESS,
+      status: SiteLaunchLambdaStatus.SUCCESS_SITE_LIVE,
       message: event,
     }
   } catch (error) {

@@ -71,7 +71,7 @@ export const generalDomainValidation = async (
 
   return {
     lambdaType: SiteLaunchLambdaType.GENERAL_DOMAIN_VALIDATION,
-    status: SiteLaunchLambdaStatus.SUCCESS,
+    status: SiteLaunchLambdaStatus.SUCCESS_SITE_LIVE,
     appId,
     primaryDomain,
     message: event,

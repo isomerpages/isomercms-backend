@@ -5,9 +5,12 @@ export enum SiteLaunchLambdaType {
 }
 
 export enum SiteLaunchLambdaStatus {
-  SUCCESS = "success",
-  FAILURE = "failure",
-  PENDING = "pending",
+  SUCCESS_SITE_LIVE = "success - site live",
+  SUCCESS_PROPAGATING = "success - propagating",
+  FAILURE_WRONG_CLOUDFRONT_DISTRIBUTION = "failure - wrong cloudfront distribution",
+  FAILURE_CLOUDFRONT_ALIAS_CLASH = "failure - cloudfront alias clash",
+  PENDING_DURING_SITE_LAUNCH = "pending - during site launch",
+  PENDING_PRE_SITE_LAUNCH = "pending - pre site launch",
 }
 
 export interface MessageBody {

@@ -394,7 +394,8 @@ export default class InfraService {
         if (site.isErr()) {
           return
         }
-        const isSuccess = message.status === SiteLaunchLambdaStatus.SUCCESS
+        const isSuccess =
+          message.status === SiteLaunchLambdaStatus.SUCCESS_SITE_LIVE
 
         let updateSiteLaunchParams
 

@@ -916,10 +916,7 @@ describe("SitesService", () => {
 
       const expectedResp: RepositoryData[] = [
         {
-          lastUpdated: repoInfo.pushed_at,
-          permissions: repoInfo.permissions,
           repoName: repoInfo.name,
-          isPrivate: repoInfo.private,
         },
       ]
       MockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
@@ -939,7 +936,7 @@ describe("SitesService", () => {
       expect(MockIsomerAdminsService.getByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
       )
-      expect(mockAxios.get).toHaveBeenCalledTimes(3)
+      expect(mockAxios.get).toHaveBeenCalledTimes(0)
       config.set("sites.pageCount", currRepoCount)
       expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
@@ -968,7 +965,7 @@ describe("SitesService", () => {
       expect(MockUsersService.findSitesByUserId).toHaveBeenCalledWith(
         mockIsomerUserId
       )
-      expect(mockAxios.get).toHaveBeenCalledTimes(3)
+      expect(mockAxios.get).toHaveBeenCalledTimes(0)
       config.set("sites.pageCount", currRepoCount)
       expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })

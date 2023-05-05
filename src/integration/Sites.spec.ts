@@ -220,30 +220,10 @@ describe("Sites Router", () => {
       const expected = {
         siteNames: [
           {
-            lastUpdated: mockUpdatedAt,
             repoName: mockSite,
-            isPrivate: mockPrivate,
-            permissions: mockPermissions,
           },
         ],
       }
-
-      mockGenericAxios.get.mockResolvedValueOnce({
-        data: [
-          {
-            pushed_at: mockUpdatedAt,
-            permissions: mockPermissions,
-            name: mockSite,
-            private: mockPrivate,
-          },
-          {
-            pushed_at: mockUpdatedAt,
-            permissions: mockPermissions,
-            name: mockAdminSite,
-            private: mockPrivate,
-          },
-        ],
-      })
 
       // Act
       const actual = await request(app).get("/")

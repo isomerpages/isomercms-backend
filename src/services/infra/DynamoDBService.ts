@@ -8,7 +8,7 @@ import autoBind from "auto-bind"
 import { config } from "@config/config"
 
 import {
-  MessageBody,
+  SiteLaunchMessage,
   SiteLaunchLambdaStatus,
 } from "@root/../microservices/site-launch/shared/types"
 

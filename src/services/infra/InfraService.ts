@@ -7,7 +7,7 @@ import { config } from "@config/config"
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import {
-  MessageBody,
+  SiteLaunchMessage,
   SiteLaunchLambdaStatus,
 } from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
@@ -353,7 +353,7 @@ export default class InfraService {
       )
       logger.info(`Created launch record in database:  ${launchesRecord}`)
 
-      const message: MessageBody = {
+      const message: SiteLaunchMessage = {
         repoName,
         appId,
         primaryDomainSource: primaryDomain,
@@ -424,7 +424,7 @@ export default class InfraService {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
   }
 
-  sendEmailUpdate = async (message: MessageBody, isSuccess: boolean) => {
+  sendEmailUpdate = async (message: SiteLaunchMessage, isSuccess: boolean) => {
     const successEmailDetails = {
       subject: `Launch site ${message.repoName} SUCCESS`,
       body: `<p>Isomer site ${message.repoName} was launched successfully.</p>

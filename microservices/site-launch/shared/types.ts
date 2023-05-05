@@ -13,7 +13,7 @@ export enum SiteLaunchLambdaStatus {
   PENDING_PRE_SITE_LAUNCH = "pending - pre site launch",
 }
 
-export interface MessageBody {
+export interface SiteLaunchMessage {
   repoName: string
   appId: string
   primaryDomainSource: string

@@ -13,7 +13,7 @@ import type {
 
 import logger from "../../shared/logger"
 import {
-  MessageBody,
+  SiteLaunchMessage,
   SiteLaunchLambdaStatus,
   SiteLaunchLambdaType,
 } from "../../shared/types"
@@ -21,11 +21,11 @@ import {
 interface PrimaryDomainValidationLambdaResponse {
   lambdaType: SiteLaunchLambdaType
   status: SiteLaunchLambdaStatus
-  message: MessageBody
+  message: SiteLaunchMessage
 }
 
 export const primaryDomainValidation = async (
-  event: MessageBody
+  event: SiteLaunchMessage
 ): Promise<PrimaryDomainValidationLambdaResponse> => {
   logger.info(event)
 

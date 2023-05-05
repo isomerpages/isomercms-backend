@@ -4,11 +4,11 @@ import { RequestError } from "@octokit/request-error"
 import { Octokit } from "@octokit/rest"
 
 import logger from "../../shared/logger"
-import { MessageBody } from "../../shared/types"
+import { SiteLaunchMessage } from "../../shared/types"
 
 export const redirectionDomainValidation = async (
   event: Pick<
-    MessageBody,
+    SiteLaunchMessage,
     "redirectionDomain" | "primaryDomainTarget" | "primaryDomainSource"
   >
 ) => {

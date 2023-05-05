@@ -331,14 +331,10 @@ class SitesService {
       })
     )
 
-    // helper type guard
-    // note: empty strings will return false as well
-    const isString = (val: string | undefined): val is string => !!val
-
     // get sites from DB for email login users
     if (!isAdminUser && isEmailUser) {
       const retrievedSitesByEmail = await this.getSitesForEmailUser(userId)
-      const filteredValidSites = retrievedSitesByEmail.filter(isString)
+      const filteredValidSites = retrievedSitesByEmail.filter(_.isString)
 
       const repoData: RepositoryData[] = filteredValidSites.map((site) => ({
         repoName: site,

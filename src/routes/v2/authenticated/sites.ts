@@ -128,7 +128,6 @@ export class SitesRouter {
 
     router.get(
       "/",
-      this.statsMiddleware.countGithubSites,
       this.statsMiddleware.countMigratedSites,
       attachReadRouteHandlerWrapper(this.getSites)
     )

@@ -738,9 +738,9 @@ describe("Review Requests Router", () => {
       // Arrange
 
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
-      mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
-        "review request"
-      )
+      mockReviewRequestService.getReviewRequest.mockResolvedValueOnce({
+        reviewStatus: ReviewRequestStatus.Approved,
+      })
       mockReviewRequestService.mergeReviewRequest.mockResolvedValueOnce(
         undefined
       )

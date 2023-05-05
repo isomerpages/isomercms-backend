@@ -331,6 +331,21 @@ class SitesService {
       })
     )
 
+    // helper type guard
+    // note: empty strings will return false as well
+    const isString = (val: string | undefined): val is string => !!val
+
+    // get sites from DB for email login users
+    if (!isAdminUser && isEmailUser) {
+      const retrievedSitesByEmail = await this.getSitesForEmailUser(userId)
+      const filteredValidSites = retrievedSitesByEmail.filter(isString)
+
+      const repoData: RepositoryData[] = filteredValidSites.map((site) => ({
+        repoName: site,
+      }))
+      return repoData
+    }
+
     const allSites = await Promise.all(
       paramsArr.map(async (params) => {
         const {
@@ -358,25 +373,22 @@ class SitesService {
               isPrivate,
             } as RepositoryData
           })
-          .filter(
-            (repoData) =>
+          .filter((repoData) => {
+            if (!repoData || !repoData.permissions) {
+              return false
+            }
+            return (
               repoData.permissions.push === true &&
               !ISOMER_ADMIN_REPOS.includes(repoData.repoName)
-          )
+            )
+          })
       })
     )
 
     const flattenedAllSites = _.flatten(allSites)
     // Github users are using their own access token, which already filters sites to only those they have write access to
     // Admin users should have access to all sites regardless
-    if (isAdminUser || !isEmailUser) return flattenedAllSites
-
-    // Email users need to have the list of sites filtered to those they have access to in our db, since our centralised token returns all sites
-    const retrievedSitesByEmail = await this.getSitesForEmailUser(userId)
-
-    return flattenedAllSites.filter((repoData) =>
-      retrievedSitesByEmail.includes(repoData.repoName)
-    )
+    return flattenedAllSites
   }
 
   async checkHasAccessForGitHubUser(sessionData: UserWithSiteSessionData) {

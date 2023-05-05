@@ -601,9 +601,14 @@ export default class ReviewRequestService {
   }
 
   closeReviewRequest = async (reviewRequest: ReviewRequest): Promise<void> => {
-    const siteName = reviewRequest.site.name
+    const { repo } = reviewRequest.site
+    if (!repo) throw new RequestNotFoundError("Repo not found")
+    const repoNameInGithub = repo.name
     const { pullRequestNumber } = reviewRequest.reviewMeta
-    await this.apiService.closeReviewRequest(siteName, pullRequestNumber)
+    await this.apiService.closeReviewRequest(
+      repoNameInGithub,
+      pullRequestNumber
+    )
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Closed
     await reviewRequest.save()

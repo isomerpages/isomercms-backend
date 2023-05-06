@@ -1,12 +1,12 @@
-const express = require("express")
-const request = require("supertest")
+import express from "express"
+import request from "supertest"
 
-const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
+import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-const { generateRouter } = require("@fixtures/app")
-const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
+import { generateRouter } from "@fixtures/app"
+import { mockUserWithSiteSessionData } from "@fixtures/sessionData"
 
-const { CollectionPagesRouter } = require("../collectionPages")
+import { CollectionPagesRouter } from "../collectionPages"
 
 describe("Collection Pages Router", () => {
   const mockCollectionPageService = {
@@ -15,6 +15,8 @@ describe("Collection Pages Router", () => {
     update: jest.fn(),
     delete: jest.fn(),
     rename: jest.fn(),
+    gitHubService: {},
+    collectionYmlService: {},
   }
 
   const mockSubcollectionPageService = {
@@ -23,6 +25,9 @@ describe("Collection Pages Router", () => {
     update: jest.fn(),
     delete: jest.fn(),
     rename: jest.fn(),
+    updateSubcollection: jest.fn(),
+    gitHubService: {},
+    collectionYmlService: {},
   }
 
   const router = new CollectionPagesRouter({
@@ -103,6 +108,7 @@ describe("Collection Pages Router", () => {
         collectionName,
         content: pageDetails.content.pageBody,
         frontMatter: pageDetails.content.frontMatter,
+        shouldIgnoreCheck: false,
       }
       await request(app)
         .post(`/${siteName}/collections/${collectionName}/pages`)
@@ -121,6 +127,7 @@ describe("Collection Pages Router", () => {
         subcollectionName,
         content: pageDetails.content.pageBody,
         frontMatter: pageDetails.content.frontMatter,
+        shouldIgnoreCheck: false,
       }
       await request(app)
         .post(

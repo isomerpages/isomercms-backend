@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import autoBind from "auto-bind"
 import express, { NextFunction, Request, Response } from "express"
 
@@ -19,7 +20,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { CollectionPageService } from "@services/fileServices/MdPageServices/CollectionPageService"
 import { SubcollectionPageService } from "@services/fileServices/MdPageServices/SubcollectionPageService"
 
-class CollectionPagesRouter {
+export class CollectionPagesRouter {
   collectionPageService: CollectionPageService
 
   subcollectionPageService: SubcollectionPageService
@@ -203,6 +204,7 @@ class CollectionPagesRouter {
     const { pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
+    const { sha } = req.body
     try {
       await this.getCollectionPage({
         subcollectionName,
@@ -212,7 +214,7 @@ class CollectionPagesRouter {
       })
     } catch (_) {
       res
-        .status(409)
+        .status(404)
         .json("The page that you are trying to delete does not exist")
       return next()
     }
@@ -224,12 +226,7 @@ class CollectionPagesRouter {
           fileName: pageName,
           collectionName,
           subcollectionName,
-          /**
-           * todo: can remove this line after moving
-           * subcollectionPageService.delete to use deleteFile
-           * into ts and marking this as optional
-           * */
-          sha: undefined,
+          sha,
         }
       )
     } else {
@@ -238,12 +235,7 @@ class CollectionPagesRouter {
         {
           fileName: pageName,
           collectionName,
-          /**
-           * todo: can remove this line after moving
-           * subcollectionPageService.delete to use deleteFile
-           * into ts and marking this as optional
-           * */
-          sha: undefined,
+          sha,
         }
       )
     }
@@ -290,4 +282,3 @@ class CollectionPagesRouter {
     return router
   }
 }
-export default CollectionPagesRouter

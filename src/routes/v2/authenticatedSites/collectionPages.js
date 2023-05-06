@@ -68,6 +68,21 @@ class CollectionPagesRouter {
 
     const { pageName, collectionName, subcollectionName } = req.params
 
+    const readResp = await this.getCollectionPage(
+      subcollectionName,
+      userWithSiteSessionData,
+      pageName,
+      collectionName
+    )
+    return res.status(200).json(readResp)
+  }
+
+  async getCollectionPage(
+    subcollectionName,
+    userWithSiteSessionData,
+    pageName,
+    collectionName
+  ) {
     let readResp
     if (subcollectionName) {
       readResp = await this.subcollectionPageService.read(
@@ -87,7 +102,7 @@ class CollectionPagesRouter {
         }
       )
     }
-    return res.status(200).json(readResp)
+    return readResp
   }
 
   // Update page in collection
@@ -97,6 +112,21 @@ class CollectionPagesRouter {
     const { pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
+    // check if subcollection still exists
+    try {
+      await this.getCollectionPage(
+        subcollectionName,
+        userWithSiteSessionData,
+        pageName,
+        collectionName
+      )
+    } catch (_) {
+      res
+        .status(409)
+        .json("The page that you are trying to edit does not exist")
+      return next()
+    }
+
     const {
       content: { frontMatter, pageBody },
       sha,

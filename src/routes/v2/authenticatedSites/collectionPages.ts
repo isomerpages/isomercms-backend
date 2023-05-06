@@ -1,32 +1,43 @@
-const autoBind = require("auto-bind")
-const express = require("express")
+import autoBind from "auto-bind"
+import express, { NextFunction, Request, Response } from "express"
 
 // Import middleware
-const { BadRequestError } = require("@errors/BadRequestError")
+import { BadRequestError } from "@errors/BadRequestError"
 
-const {
+import {
   attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
-} = require("@middleware/routeHandler")
+} from "@middleware/routeHandler"
 
-const {
+import {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
   DeletePageRequestSchema,
-} = require("@validators/RequestSchema")
+} from "@validators/RequestSchema"
+
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { CollectionPageService } from "@services/fileServices/MdPageServices/CollectionPageService"
+import { SubcollectionPageService } from "@services/fileServices/MdPageServices/SubcollectionPageService"
 
 class CollectionPagesRouter {
-  constructor({ collectionPageService, subcollectionPageService }) {
+  collectionPageService: CollectionPageService
+
+  subcollectionPageService: SubcollectionPageService
+
+  constructor({
+    collectionPageService,
+    subcollectionPageService,
+  }: {
+    collectionPageService: CollectionPageService
+    subcollectionPageService: SubcollectionPageService
+  }) {
     this.collectionPageService = collectionPageService
     this.subcollectionPageService = subcollectionPageService
-    // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
 
-  // Create new page in collection
-  async createCollectionPage(req, res, next) {
+  async createCollectionPage(req: Request, res: Response, next: NextFunction) {
     const { userWithSiteSessionData } = res.locals
-
     const { collectionName, subcollectionName } = req.params
     const { error } = CreatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
@@ -44,6 +55,7 @@ class CollectionPagesRouter {
           content: pageBody,
           frontMatter,
           subcollectionName,
+          shouldIgnoreCheck: false,
         }
       )
     } else {
@@ -54,35 +66,37 @@ class CollectionPagesRouter {
           collectionName,
           content: pageBody,
           frontMatter,
+          shouldIgnoreCheck: false,
         }
       )
     }
-
     res.status(200).json(createResp)
     return next()
   }
 
-  // Read page in collection
-  async readCollectionPage(req, res) {
+  async readCollectionPage(req: Request, res: Response) {
     const { userWithSiteSessionData } = res.locals
-
     const { pageName, collectionName, subcollectionName } = req.params
-
-    const readResp = await this.getCollectionPage(
+    const readResp = await this.getCollectionPage({
       subcollectionName,
       userWithSiteSessionData,
       pageName,
-      collectionName
-    )
+      collectionName,
+    })
     return res.status(200).json(readResp)
   }
 
-  async getCollectionPage(
+  async getCollectionPage({
     subcollectionName,
     userWithSiteSessionData,
     pageName,
-    collectionName
-  ) {
+    collectionName,
+  }: {
+    subcollectionName: string
+    userWithSiteSessionData: UserWithSiteSessionData
+    pageName: string
+    collectionName: string
+  }) {
     let readResp
     if (subcollectionName) {
       readResp = await this.subcollectionPageService.read(
@@ -105,28 +119,24 @@ class CollectionPagesRouter {
     return readResp
   }
 
-  // Update page in collection
-  async updateCollectionPage(req, res, next) {
+  async updateCollectionPage(req: Request, res: Response, next: NextFunction) {
     const { userWithSiteSessionData } = res.locals
-
     const { pageName, collectionName, subcollectionName } = req.params
     const { error } = UpdatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    // check if subcollection still exists
     try {
-      await this.getCollectionPage(
+      await this.getCollectionPage({
         subcollectionName,
         userWithSiteSessionData,
         pageName,
-        collectionName
-      )
+        collectionName,
+      })
     } catch (_) {
       res
         .status(409)
         .json("The page that you are trying to edit does not exist")
       return next()
     }
-
     const {
       content: { frontMatter, pageBody },
       sha,
@@ -160,61 +170,84 @@ class CollectionPagesRouter {
           }
         )
       }
+    } else if (newFileName) {
+      updateResp = await this.collectionPageService.rename(
+        userWithSiteSessionData,
+        {
+          oldFileName: pageName,
+          newFileName,
+          collectionName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        }
+      )
     } else {
-      /* eslint-disable no-lonely-if */
-      if (newFileName) {
-        updateResp = await this.collectionPageService.rename(
-          userWithSiteSessionData,
-          {
-            oldFileName: pageName,
-            newFileName,
-            collectionName,
-            content: pageBody,
-            frontMatter,
-            sha,
-          }
-        )
-      } else {
-        updateResp = await this.collectionPageService.update(
-          userWithSiteSessionData,
-          {
-            fileName: pageName,
-            collectionName,
-            content: pageBody,
-            frontMatter,
-            sha,
-          }
-        )
-      }
+      updateResp = await this.collectionPageService.update(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          collectionName,
+          content: pageBody,
+          frontMatter,
+          sha,
+        }
+      )
     }
     res.status(200).json(updateResp)
     return next()
   }
 
-  // Delete page in collection
-  async deleteCollectionPage(req, res, next) {
+  async deleteCollectionPage(req: Request, res: Response, next: NextFunction) {
     const { userWithSiteSessionData } = res.locals
-
     const { pageName, collectionName, subcollectionName } = req.params
     const { error } = DeletePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
-    const { sha } = req.body
-    if (subcollectionName) {
-      await this.subcollectionPageService.delete(userWithSiteSessionData, {
-        fileName: pageName,
-        collectionName,
+    try {
+      await this.getCollectionPage({
         subcollectionName,
-        sha,
-      })
-    } else {
-      await this.collectionPageService.delete(userWithSiteSessionData, {
-        fileName: pageName,
+        userWithSiteSessionData,
+        pageName,
         collectionName,
-        sha,
       })
+    } catch (_) {
+      res
+        .status(409)
+        .json("The page that you are trying to delete does not exist")
+      return next()
     }
-
-    res.status(200).send("OK")
+    let deleteResp
+    if (subcollectionName) {
+      deleteResp = await this.subcollectionPageService.delete(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          collectionName,
+          subcollectionName,
+          /**
+           * todo: can remove this line after moving
+           * subcollectionPageService.delete to use deleteFile
+           * into ts and marking this as optional
+           * */
+          sha: undefined,
+        }
+      )
+    } else {
+      deleteResp = await this.collectionPageService.delete(
+        userWithSiteSessionData,
+        {
+          fileName: pageName,
+          collectionName,
+          /**
+           * todo: can remove this line after moving
+           * subcollectionPageService.delete to use deleteFile
+           * into ts and marking this as optional
+           * */
+          sha: undefined,
+        }
+      )
+    }
+    res.status(200).json(deleteResp)
     return next()
   }
 
@@ -257,5 +290,4 @@ class CollectionPagesRouter {
     return router
   }
 }
-
-module.exports = { CollectionPagesRouter }
+export default CollectionPagesRouter

@@ -133,7 +133,7 @@ class CollectionPagesRouter {
       })
     } catch (_) {
       res
-        .status(409)
+        .status(404)
         .json("The page that you are trying to edit does not exist")
       return next()
     }

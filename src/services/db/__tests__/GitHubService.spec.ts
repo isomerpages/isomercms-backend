@@ -31,7 +31,21 @@ describe("Github Service", () => {
   const sha = "12345"
   const treeSha = mockTreeSha
   const content = "test-content"
+  const collectionYmlContent = `collections:
+  new-folder:
+    output: true
+    order: []`
+
+  const indexHtmlContent = `---
+  layout: resources-alt
+  title: some-folder
+  ---`
   const userId = mockIsomerUserId
+  const subDirectoryName = `_${collectionName}/${subcollectionName}`
+  const subDirectoryFileName = ".keep"
+  const resourceCategoryName = "resources/some-folder"
+  const topLevelDirectoryFileName = "collection.yml"
+  const resourceCategoryFileName = "index.html"
 
   const sessionData = mockUserWithSiteSessionData
 
@@ -101,7 +115,9 @@ describe("Github Service", () => {
   })
 
   describe("Create", () => {
-    const endpoint = `${siteName}/contents/${directoryName}/${fileName}`
+    const folderParentEndpoint = `${siteName}/contents/${directoryName}`
+    const folderEndpoint = `${folderParentEndpoint}/${fileName}`
+    const resourceRoomEndpoint = `${siteName}/contents/${resourceCategoryName}`
     const encodedContent = Base64.encode(content)
 
     const message = JSON.stringify({
@@ -135,8 +151,84 @@ describe("Github Service", () => {
         sha,
       })
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
-        endpoint,
+        folderEndpoint,
         params,
+        authHeader
+      )
+    })
+
+    it("Creating a top level folder works correctly", async () => {
+      const collectionYmlMessage = JSON.stringify({
+        message: `Create file: ${topLevelDirectoryFileName}`,
+        fileName: topLevelDirectoryFileName,
+        userId,
+      })
+
+      const resp = {
+        data: {
+          content: {
+            sha,
+          },
+        },
+      }
+      mockAxiosInstance.put.mockResolvedValueOnce(resp)
+      mockAxiosInstance.get.mockResolvedValueOnce("")
+      await expect(
+        service.create(sessionData, {
+          content: collectionYmlContent,
+          fileName: topLevelDirectoryFileName,
+          directoryName,
+        })
+      ).resolves.toMatchObject({
+        sha,
+      })
+      const resourceRoomParams = {
+        message: collectionYmlMessage,
+        content: Base64.encode(collectionYmlContent),
+        branch: params.branch,
+      }
+      const topLevelFolderEndpoint = `${folderParentEndpoint}/${topLevelDirectoryFileName}`
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        topLevelFolderEndpoint,
+        resourceRoomParams,
+        authHeader
+      )
+    })
+
+    it("Creating a resource category works correctly", async () => {
+      const resourceRoomMessage = JSON.stringify({
+        message: `Create file: ${resourceCategoryFileName}`,
+        fileName: resourceCategoryFileName,
+        userId,
+      })
+
+      const resp = {
+        data: {
+          content: {
+            sha,
+          },
+        },
+      }
+      mockAxiosInstance.put.mockResolvedValueOnce(resp)
+      mockAxiosInstance.get.mockResolvedValueOnce("")
+      await expect(
+        service.create(sessionData, {
+          content: indexHtmlContent,
+          fileName: resourceCategoryFileName,
+          directoryName,
+        })
+      ).resolves.toMatchObject({
+        sha,
+      })
+      const resourceRoomParams = {
+        message: resourceRoomMessage,
+        content: Base64.encode(indexHtmlContent),
+        branch: params.branch,
+      }
+      const resourceRoomFolderEndpoint = `${folderParentEndpoint}/${resourceCategoryFileName}`
+      expect(mockAxiosInstance.put).toHaveBeenCalledWith(
+        resourceRoomFolderEndpoint,
+        resourceRoomParams,
         authHeader
       )
     })
@@ -162,7 +254,7 @@ describe("Github Service", () => {
         sha,
       })
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
-        endpoint,
+        folderEndpoint,
         {
           ...params,
           content,
@@ -189,10 +281,70 @@ describe("Github Service", () => {
         })
       ).rejects.toThrowError(ConflictError)
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
-        endpoint,
+        folderEndpoint,
         params,
         authHeader
       )
+    })
+
+    it("Create throws an error if parent directory is deleted", async () => {
+      mockAxiosInstance.get.mockImplementation(() => {
+        throw new Error()
+      })
+      await expect(
+        service.create(sessionData, {
+          content,
+          fileName,
+          directoryName,
+        })
+      ).rejects.toThrowError()
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
+        validateStatus,
+        headers: authHeader.headers,
+        params: {
+          ref: BRANCH_REF,
+        },
+      })
+    })
+
+    it("Create throws an error if a new sub directory is created while the parent directory is deleted", async () => {
+      mockAxiosInstance.get.mockImplementation(() => {
+        throw new Error()
+      })
+      await expect(
+        service.create(sessionData, {
+          content,
+          fileName: subDirectoryFileName,
+          directoryName: subDirectoryName,
+        })
+      ).rejects.toThrowError()
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
+        validateStatus,
+        headers: authHeader.headers,
+        params: {
+          ref: BRANCH_REF,
+        },
+      })
+    })
+
+    it("Create throws an error if a resource is created while the resource folder is deleted", async () => {
+      mockAxiosInstance.get.mockImplementation(() => {
+        throw new Error()
+      })
+      await expect(
+        service.create(sessionData, {
+          content,
+          fileName,
+          directoryName: `${resourceCategoryName}/_posts`,
+        })
+      ).rejects.toThrowError()
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(resourceRoomEndpoint, {
+        validateStatus,
+        headers: authHeader.headers,
+        params: {
+          ref: BRANCH_REF,
+        },
+      })
     })
   })
 
@@ -756,6 +908,7 @@ describe("Github Service", () => {
       "Content-Type": "application/json",
     }
     it("Checks whether user has write access to site", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       await service.checkHasAccess(sessionData)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(refEndpoint, {
         headers,

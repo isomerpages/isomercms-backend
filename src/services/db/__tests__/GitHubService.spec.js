@@ -121,6 +121,7 @@ describe("Github Service", () => {
         },
       }
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       await expect(
         service.create(sessionData, {
           content,
@@ -145,6 +146,7 @@ describe("Github Service", () => {
           },
         },
       }
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
       await expect(
         service.create(sessionData, {
@@ -167,6 +169,7 @@ describe("Github Service", () => {
     })
 
     it("Create parses and throws the correct error in case of a conflict", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockImplementation(() => {
         const err = new Error()
         err.response = {
@@ -346,6 +349,7 @@ describe("Github Service", () => {
     }
 
     it("Updating a file works correctly", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       const resp = {
         data: {
           content: {
@@ -372,6 +376,7 @@ describe("Github Service", () => {
     })
 
     it("Update throws the correct error if file cannot be found", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockImplementation(() => {
         const err = new Error()
         err.response = {
@@ -395,6 +400,7 @@ describe("Github Service", () => {
     })
 
     it("Updating a file with no sha works correctly", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       const getResp = {
         data: {
           content: encodedContent,
@@ -435,6 +441,7 @@ describe("Github Service", () => {
     })
 
     it("Update with no sha provided throws the correct error if file cannot be found", async () => {
+      mockAxiosInstance.get.mockResolvedValueOnce("")
       const readParams = {
         ref: BRANCH_REF,
       }

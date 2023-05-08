@@ -94,6 +94,23 @@ class GitHubService {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
+      const isCreatingTopLevelDirectory = fileName === "collection.yml"
+      const isCreatingNewResourceFolder = fileName === "index.html"
+      const checkDirectoryExist =
+        !isCreatingTopLevelDirectory && !isCreatingNewResourceFolder
+
+      if (checkDirectoryExist) {
+        const isCreatingSubDirectory = fileName === ".keep"
+        const isCreatingPostResource = directoryName.endsWith("_posts")
+
+        let pathToCheck = directoryName
+        if (isCreatingSubDirectory || isCreatingPostResource) {
+          pathToCheck = directoryName.split("/").slice(0, -1).join("/")
+        }
+        // this is to check if the file path still exists, else this will throw a 404
+        await this.readDirectory(sessionData, { directoryName: pathToCheck })
+      }
+
       // Validation and sanitisation of media already done
       const encodedContent = isMedia ? content : Base64.encode(content)
 
@@ -202,6 +219,8 @@ class GitHubService {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
+      // this is to check if the file path still exists, else this will throw a 404
+      await this.readDirectory(sessionData, { directoryName })
       const encodedNewContent = Base64.encode(fileContent)
 
       let fileSha = sha

@@ -1,10 +1,10 @@
-const { ConflictError } = require("@errors/ConflictError")
-const { NotFoundError } = require("@errors/NotFoundError")
-const { UnprocessableError } = require("@errors/UnprocessableError")
+import { ConflictError } from "@errors/ConflictError"
+import { NotFoundError } from "@errors/NotFoundError"
+import { UnprocessableError } from "@errors/UnprocessableError"
 
-const validateStatus = require("@utils/axios-utils")
+import validateStatus from "@utils/axios-utils"
 
-const {
+import {
   mockUserWithSiteSessionData,
   mockSiteName,
   mockAccessToken,
@@ -13,8 +13,11 @@ const {
   mockCurrentCommitSha,
   mockGithubSessionData,
   mockIsomerUserId,
-} = require("@fixtures/sessionData")
-const { GitHubService } = require("@services/db/GitHubService")
+} from "@fixtures/sessionData"
+import { GitHubService } from "@services/db/GitHubService"
+
+// using es6 gives some error
+const { Base64 } = require("js-base64")
 
 const BRANCH_REF = "staging"
 
@@ -56,9 +59,9 @@ describe("Github Service", () => {
 
   describe("getFilePath", () => {
     it("Retrieves the right unlinked page file path", async () => {
-      expect(service.getFilePath({ siteName, fileName })).toEqual(
-        `${siteName}/contents/${fileName}`
-      )
+      expect(
+        service.getFilePath({ siteName, fileName, directoryName: undefined })
+      ).toEqual(`${siteName}/contents/${fileName}`)
     })
 
     it("Retrieves the right collection page file path", async () => {
@@ -171,11 +174,12 @@ describe("Github Service", () => {
     it("Create parses and throws the correct error in case of a conflict", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockImplementation(() => {
-        const err = new Error()
-        err.response = {
-          status: 422,
+        const error = {
+          response: {
+            status: 422,
+          },
         }
-        throw err
+        throw error
       })
       await expect(
         service.create(sessionData, {
@@ -303,7 +307,6 @@ describe("Github Service", () => {
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
         service.readDirectory(sessionData, {
-          fileName,
           directoryName,
         })
       ).resolves.toEqual(data)
@@ -321,7 +324,6 @@ describe("Github Service", () => {
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
         service.readDirectory(sessionData, {
-          fileName,
           directoryName,
         })
       ).rejects.toThrowError(NotFoundError)
@@ -378,9 +380,10 @@ describe("Github Service", () => {
     it("Update throws the correct error if file cannot be found", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockImplementation(() => {
-        const err = new Error()
-        err.response = {
-          status: 404,
+        const err = {
+          response: {
+            status: 404,
+          },
         }
         throw err
       })
@@ -424,6 +427,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           fileContent: content,
+          sha: undefined,
         })
       ).resolves.toMatchObject({
         newSha: sha,
@@ -454,6 +458,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           fileContent: content,
+          sha: undefined,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
@@ -491,9 +496,10 @@ describe("Github Service", () => {
 
     it("Deleting throws the correct error if file cannot be found", async () => {
       mockAxiosInstance.delete.mockImplementation(() => {
-        const err = new Error()
-        err.response = {
-          status: 404,
+        const err = {
+          response: {
+            status: 404,
+          },
         }
         throw err
       })
@@ -595,9 +601,10 @@ describe("Github Service", () => {
 
     it("Getting an invalid branch should throw UnprocessableError", async () => {
       mockAxiosInstance.get.mockImplementationOnce(() => {
-        const err = new Error()
-        err.response = {
-          status: 422,
+        const err = {
+          response: {
+            status: 422,
+          },
         }
         throw err
       })
@@ -612,9 +619,6 @@ describe("Github Service", () => {
     it("Getting other kinds of errors should throw the original error", async () => {
       mockAxiosInstance.get.mockImplementationOnce(() => {
         const err = new Error()
-        err.response = {
-          status: 418,
-        }
         throw err
       })
       await expect(
@@ -647,7 +651,9 @@ describe("Github Service", () => {
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
-        service.getTree(sessionData, mockGithubSessionData, {})
+        service.getTree(sessionData, mockGithubSessionData, {
+          isRecursive: false,
+        })
       ).resolves.toEqual(tree)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(url, {
         params,

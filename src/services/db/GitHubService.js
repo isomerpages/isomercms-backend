@@ -106,6 +106,11 @@ class GitHubService {
         !isCreatingTopLevelDirectory && !isCreatingNewResourceFolder
 
       if (checkDirectoryExist) {
+        /**
+         * When we are creating a new resource post or creating a new subDirectory,
+         * we create a _posts and a .keep folder respectively. However, we still need to check if
+         * parent directory still exists.
+         */
         const isCreatingSubDirectory = fileName === ".keep"
         const isCreatingPostResource = directoryName.endsWith("_posts")
         if (!directoryName) {
@@ -113,6 +118,7 @@ class GitHubService {
         }
         let pathToCheck = directoryName
         if (isCreatingSubDirectory || isCreatingPostResource) {
+          // get parent directory
           pathToCheck = directoryName.split("/").slice(0, -1).join("/")
         }
         // this is to check if the file path still exists, else this will throw a 404

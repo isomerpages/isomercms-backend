@@ -94,6 +94,12 @@ class GitHubService {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
+
+      /**
+       * Currently, this rides on the assumption that creating a top level
+       * directly will create a collection.yml file, and creating a new resource
+       * folder will create an index.html file.
+       */
       const isCreatingTopLevelDirectory = fileName === "collection.yml"
       const isCreatingNewResourceFolder = fileName === "index.html"
       const checkDirectoryExist =
@@ -102,7 +108,9 @@ class GitHubService {
       if (checkDirectoryExist) {
         const isCreatingSubDirectory = fileName === ".keep"
         const isCreatingPostResource = directoryName.endsWith("_posts")
-
+        if (!directoryName) {
+          throw new NotFoundError("Directory name is not defined")
+        }
         let pathToCheck = directoryName
         if (isCreatingSubDirectory || isCreatingPostResource) {
           pathToCheck = directoryName.split("/").slice(0, -1).join("/")

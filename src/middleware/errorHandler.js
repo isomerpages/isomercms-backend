@@ -11,11 +11,17 @@ function errorHandler(err, req, res, next) {
   const serialisedErr = serializeError(err)
   // NOTE: If the error is an axios error or a network error,
   // the token used (if any) will be present on `request` + `config`.
-  // Hence, we omit both of these.
+  // Hence, we omit both of these and only pick the selected properties.
+  // This is also to avoid picking the `session`, which has raws bytes
+  // that is not useful to debugging
   const sanitisedErr = containsSensitiveInfo
-    ? _.omit(serialisedErr, ["request", "config"])
+    ? {
+        // NOTE: Default error properties
+        ..._.pick(serialisedErr, ["name", "message", "stack"]),
+        ..._.pick(serialisedErr.response, ["headers", "data", "status"]),
+      }
     : serialisedErr
-  const errMsg = `${new Date()}: ${JSON.stringify(sanitisedErr)}`
+  const errMsg = JSON.stringify(sanitisedErr)
 
   // set locals, only providing error in development
   res.locals.message = err.message

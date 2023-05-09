@@ -57,7 +57,7 @@ describe("error handler", () => {
     // Assert
     expect(stringifySpy).toHaveBeenCalledWith(
       // NOTE: `config` property removed
-      serializeError(_.omit(mockAxiosError, ["config", "request"]))
+      serializeError(_.pick(mockAxiosError, ["name", "message"]))
     )
   })
 })

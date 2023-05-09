@@ -233,8 +233,9 @@ class GitHubService {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
-      // this is to check if the file path still exists, else this will throw a 404
-      await this.readDirectory(sessionData, { directoryName })
+      // this is to check if the file path still exists, else this will throw a 404. Only needed for paths outside of root
+      if (directoryName)
+        await this.readDirectory(sessionData, { directoryName })
       const encodedNewContent = Base64.encode(fileContent)
 
       let fileSha = sha

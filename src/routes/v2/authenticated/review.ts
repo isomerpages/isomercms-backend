@@ -716,13 +716,19 @@ export class ReviewsRouter {
       return res.status(404).json({ message: possibleReviewRequest.message })
     }
 
-    // Step 4: Merge review request
+    // Step 4: Check if review request is valid
+    if (possibleReviewRequest.reviewStatus !== ReviewRequestStatus.Approved)
+      return res
+        .status(404)
+        .json({ message: "Approved review request not found!" })
+
+    // Step 5: Merge review request
     // NOTE: We are not checking for existence of PR
     // as the underlying Github API returns 404 if
     // the requested review could not be found.
     await this.reviewRequestService.mergeReviewRequest(possibleReviewRequest)
 
-    // Step 5: Clean up the review request view records
+    // Step 6: Clean up the review request view records
     // The error is discarded as we are guaranteed to have a review request
     await this.reviewRequestService.deleteAllReviewRequestViews(
       site.value,

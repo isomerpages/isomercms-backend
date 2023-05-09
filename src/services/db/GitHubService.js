@@ -94,6 +94,37 @@ class GitHubService {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
+
+      /**
+       * Currently, this rides on the assumption that creating a top level
+       * directly will create a collection.yml file, and creating a new resource
+       * folder will create an index.html file.
+       */
+      const isCreatingTopLevelDirectory = fileName === "collection.yml"
+      const isCreatingNewResourceFolder = fileName === "index.html"
+      const checkDirectoryExist =
+        !isCreatingTopLevelDirectory && !isCreatingNewResourceFolder
+
+      if (checkDirectoryExist) {
+        /**
+         * When we are creating a new resource post or creating a new subDirectory,
+         * we create a _posts and a .keep folder respectively. However, we still need to check if
+         * parent directory still exists.
+         */
+        const isCreatingSubDirectory = fileName === ".keep"
+        const isCreatingPostResource = directoryName.endsWith("_posts")
+        if (!directoryName) {
+          throw new NotFoundError("Directory name is not defined")
+        }
+        let pathToCheck = directoryName
+        if (isCreatingSubDirectory || isCreatingPostResource) {
+          // get parent directory
+          pathToCheck = directoryName.split("/").slice(0, -1).join("/")
+        }
+        // this is to check if the file path still exists, else this will throw a 404
+        await this.readDirectory(sessionData, { directoryName: pathToCheck })
+      }
+
       // Validation and sanitisation of media already done
       const encodedContent = isMedia ? content : Base64.encode(content)
 
@@ -202,6 +233,9 @@ class GitHubService {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
+      // this is to check if the file path still exists, else this will throw a 404. Only needed for paths outside of root
+      if (directoryName)
+        await this.readDirectory(sessionData, { directoryName })
       const encodedNewContent = Base64.encode(fileContent)
 
       let fileSha = sha

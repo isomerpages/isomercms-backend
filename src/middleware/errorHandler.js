@@ -1,4 +1,5 @@
 // Import dependencies
+const _ = require("lodash")
 const { serializeError } = require("serialize-error")
 
 // Import logger
@@ -6,7 +7,17 @@ const logger = require("@logger/logger")
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()
-  const errMsg = `${new Date()}: ${JSON.stringify(serializeError(err))}`
+  const containsSensitiveInfo = _.isEmpty(err.request)
+  const serialisedErr = serializeError(err)
+  // NOTE: If the error is an axios error or a network error, it will have a response.
+  // We only take the `body` section because `request` + `config`
+  // might contain the auth token used, which is sensitive
+  const sanitisedErr = containsSensitiveInfo
+    ? _.omit(serialisedErr, ["request", "config"])
+    : serialisedErr
+  const errMsg = `${new Date()}: ${JSON.stringify(
+    serializeError(sanitisedErr)
+  )}`
 
   // set locals, only providing error in development
   res.locals.message = err.message

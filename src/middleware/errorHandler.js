@@ -7,17 +7,15 @@ const logger = require("@logger/logger")
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()
-  const containsSensitiveInfo = _.isEmpty(err.request)
+  const containsSensitiveInfo = !_.isEmpty(err.config?.headers?.Authorization)
   const serialisedErr = serializeError(err)
-  // NOTE: If the error is an axios error or a network error, it will have a response.
-  // We only take the `body` section because `request` + `config`
-  // might contain the auth token used, which is sensitive
+  // NOTE: If the error is an axios error or a network error,
+  // the token used (if any) will be present on `request` + `config`.
+  // Hence, we omit both of these.
   const sanitisedErr = containsSensitiveInfo
     ? _.omit(serialisedErr, ["request", "config"])
     : serialisedErr
-  const errMsg = `${new Date()}: ${JSON.stringify(
-    serializeError(sanitisedErr)
-  )}`
+  const errMsg = `${new Date()}: ${JSON.stringify(sanitisedErr)}`
 
   // set locals, only providing error in development
   res.locals.message = err.message

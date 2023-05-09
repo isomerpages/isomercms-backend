@@ -91,6 +91,11 @@ class SubcollectionDirectoryService {
     const files = await this.baseDirectoryService.list(sessionData, {
       directoryName: dir,
     })
+    await this.gitHubService.create(sessionData, {
+      content: "",
+      fileName: PLACEHOLDER_FILE_NAME,
+      directoryName: `_${collectionName}/${parsedNewName}`,
+    })
     // We can't perform these operations concurrently because of conflict issues
     /* eslint-disable no-await-in-loop, no-restricted-syntax */
     for (const file of files) {
@@ -111,11 +116,6 @@ class SubcollectionDirectoryService {
         newSubcollectionName: parsedNewName,
       })
     }
-    await this.gitHubService.create(sessionData, {
-      content: "",
-      fileName: PLACEHOLDER_FILE_NAME,
-      directoryName: `_${collectionName}/${parsedNewName}`,
-    })
     await this.collectionYmlService.renameSubfolderInOrder(sessionData, {
       collectionName,
       oldSubfolder: subcollectionName,

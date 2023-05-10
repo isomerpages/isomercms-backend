@@ -50,15 +50,21 @@ export default class DynamoDBService {
   }
 
   async updateItem(message: MessageBody) {
-    // todo: delete mocking after integration
+    // todo: delete mocking after integration in IS-186
     this.mockLaunch.status = SiteLaunchLambdaStatus.SUCCESS
     const updateParams: UpdateParams = {
       TableName: this.TABLE_NAME,
       Key: { appId: this.mockLaunch.appId },
-      UpdateExpression: "set #s = :s",
-      ExpressionAttributeNames: { "#s": "status" },
+      // The update expression to apply to the item,
+      // in this case setting the "status" attribute to a value
+      UpdateExpression: "set #status = :s",
+      // A map of expression attribute names used in the update expression,
+      // in this case mapping "#status" to the "status" attribute
+      ExpressionAttributeNames: { "#status": "status" },
+      // A map of expression attribute values used in the update expression,
+      // in this case mapping ":status" to the value of the Launch status
       ExpressionAttributeValues: {
-        ":s": this.mockLaunch.status,
+        ":status": this.mockLaunch.status,
       },
     }
     return this.dynamoDBClient.updateItem(updateParams)

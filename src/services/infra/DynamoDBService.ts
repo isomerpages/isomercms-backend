@@ -14,7 +14,7 @@ export default class DynamoDBService {
 
   private readonly TABLE_NAME: string
 
-  // todo: delete these mock after integration
+  // todo: delete these mock after integration in IS-186
   private mockLaunch: MessageBody = {
     repoName: "my-repo",
     appId: "my-app",

@@ -14,7 +14,7 @@ export default class DynamoDBService {
 
   private readonly TABLE_NAME: string
 
-  // todo: delete these mock after integration in IS-186
+  // TODO: delete these mock after integration in IS-186
   private mockLaunch: MessageBody = {
     repoName: "my-repo",
     appId: "my-app",
@@ -50,7 +50,7 @@ export default class DynamoDBService {
   }
 
   async updateItem(message: MessageBody) {
-    // todo: delete mocking after integration in IS-186
+    // TODO: delete mocking after integration in IS-186
     this.mockLaunch.status = SiteLaunchLambdaStatus.SUCCESS
     const updateParams: UpdateParams = {
       TableName: this.TABLE_NAME,

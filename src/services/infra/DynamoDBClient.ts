@@ -49,6 +49,20 @@ export default class DynamoDBDocClient {
     autoBind(this)
   }
 
+  private withLogger = async <T>(
+    promise: Promise<T>,
+    type: "create" | "get" | "delete" | "update"
+  ): Promise<T> => {
+    try {
+      return promise
+    } catch (e) {
+      logger.error(
+        `Error in operation ${type} item for the dynamoDB table: ${e}`
+      )
+      throw e
+    }
+  }
+
   createItem = async (
     tableName: string,
     item: MessageBody
@@ -60,13 +74,11 @@ export default class DynamoDBDocClient {
         ...item,
       },
     }
-    try {
-      const response = await this.dynamoDBDocClient.send(new PutCommand(params))
-      return response
-    } catch (error) {
-      logger.error(`Error in createItem for the table ${tableName}: ${error}`)
-      throw error
-    }
+
+    return this.withLogger(
+      this.dynamoDBDocClient.send(new PutCommand(params)),
+      "create"
+    )
   }
 
   getItem = async (
@@ -78,13 +90,10 @@ export default class DynamoDBDocClient {
       Key: { appId: key },
     }
 
-    try {
-      const result = await this.dynamoDBDocClient.send(new GetCommand(params))
-      return result.Item
-    } catch (error) {
-      logger.error(`Error in getItem for the table ${tableName}: ${error}`)
-      throw error
-    }
+    return this.withLogger(
+      this.dynamoDBDocClient.send(new GetCommand(params)),
+      "get"
+    )
   }
 
   updateItem = async ({
@@ -94,22 +103,17 @@ export default class DynamoDBDocClient {
     ExpressionAttributeNames,
     ExpressionAttributeValues,
   }: UpdateParams): Promise<UpdateCommandOutput> => {
-    try {
-      const params: UpdateCommandInput = {
-        TableName,
-        Key,
-        UpdateExpression,
-        ExpressionAttributeNames,
-        ExpressionAttributeValues,
-      }
-      const result = await this.dynamoDBDocClient.send(
-        new UpdateCommand(params)
-      )
-      return result
-    } catch (error) {
-      logger.error(`Error in updateItem for the table ${TableName}: ${error}`)
-      throw error
+    const params: UpdateCommandInput = {
+      TableName,
+      Key,
+      UpdateExpression,
+      ExpressionAttributeNames,
+      ExpressionAttributeValues,
     }
+    return this.withLogger(
+      this.dynamoDBDocClient.send(new UpdateCommand(params)),
+      "update"
+    )
   }
 
   deleteItem = async (
@@ -120,11 +124,9 @@ export default class DynamoDBDocClient {
       TableName: tableName,
       Key: key,
     }
-    try {
-      return await this.dynamoDBDocClient.send(new DeleteCommand(params))
-    } catch (error) {
-      logger.error(`Error in deleteItem for the table ${tableName}: ${error}`)
-      throw error
-    }
+    return this.withLogger(
+      this.dynamoDBDocClient.send(new DeleteCommand(params)),
+      "delete"
+    )
   }
 }

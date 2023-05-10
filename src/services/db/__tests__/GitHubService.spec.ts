@@ -14,6 +14,8 @@ import {
   mockGithubSessionData,
   mockIsomerUserId,
 } from "@fixtures/sessionData"
+import { indexHtmlContent } from "@root/fixtures/markdown-fixtures"
+import { collectionYmlContent } from "@root/fixtures/yaml-fixtures"
 import { GitHubService } from "@services/db/GitHubService"
 
 // using es6 gives some error
@@ -31,15 +33,7 @@ describe("Github Service", () => {
   const sha = "12345"
   const treeSha = mockTreeSha
   const content = "test-content"
-  const collectionYmlContent = `collections:
-  new-folder:
-    output: true
-    order: []`
 
-  const indexHtmlContent = `---
-  layout: resources-alt
-  title: some-folder
-  ---`
   const userId = mockIsomerUserId
   const subDirectoryName = `_${collectionName}/${subcollectionName}`
   const subDirectoryFileName = ".keep"

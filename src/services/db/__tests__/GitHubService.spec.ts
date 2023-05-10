@@ -66,19 +66,19 @@ describe("Github Service", () => {
   })
 
   describe("getFilePath", () => {
-    it("Retrieves the right unlinked page file path", async () => {
+    it("should retrieve the right unlinked page file path", async () => {
       expect(
         service.getFilePath({ siteName, fileName, directoryName: undefined })
       ).toEqual(`${siteName}/contents/${fileName}`)
     })
 
-    it("Retrieves the right collection page file path", async () => {
+    it("should retrieve the right collection page file path", async () => {
       expect(
         service.getFilePath({ siteName, fileName, directoryName })
       ).toEqual(`${siteName}/contents/${directoryName}/${fileName}`)
     })
 
-    it("Retrieves the right subcollection page file path", async () => {
+    it("should retrieve the right subcollection page file path", async () => {
       const subcollectionPath = `_${collectionName}/${subcollectionName}`
       expect(
         service.getFilePath({
@@ -91,13 +91,13 @@ describe("Github Service", () => {
   })
 
   describe("getFolderPath", () => {
-    it("Retrieves the right folder path", async () => {
+    it("should retrieve the right folder path", async () => {
       expect(service.getFolderPath({ siteName, directoryName })).toEqual(
         `${siteName}/contents/${directoryName}`
       )
     })
 
-    it("Retrieves the right folder path even with special characters", async () => {
+    it("should retrieve the right folder path even with special characters", async () => {
       const specialDirName = `special?/direct ory`
       const specialParsedDirName = `${encodeURIComponent(
         "special?"
@@ -125,7 +125,32 @@ describe("Github Service", () => {
       branch: BRANCH_REF,
     }
 
-    it("Creating a file works correctly", async () => {
+    const collectionYmlMessage = JSON.stringify({
+      message: `Create file: ${topLevelDirectoryFileName}`,
+      fileName: topLevelDirectoryFileName,
+      userId,
+    })
+
+    const resourceRoomParams = {
+      message: collectionYmlMessage,
+      content: Base64.encode(collectionYmlContent),
+      branch: params.branch,
+    }
+    const topLevelFolderEndpoint = `${folderParentEndpoint}/${topLevelDirectoryFileName}`
+
+    const resourceRoomMessage = JSON.stringify({
+      message: `Create file: ${resourceCategoryFileName}`,
+      fileName: resourceCategoryFileName,
+      userId,
+    })
+    const resourceCategoryParams = {
+      message: resourceRoomMessage,
+      content: Base64.encode(indexHtmlContent),
+      branch: params.branch,
+    }
+    const resourceRoomFolderEndpoint = `${folderParentEndpoint}/${resourceCategoryFileName}`
+
+    it("should create a file works correctly", async () => {
       const resp = {
         data: {
           content: {
@@ -151,13 +176,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Creating a top level folder works correctly", async () => {
-      const collectionYmlMessage = JSON.stringify({
-        message: `Create file: ${topLevelDirectoryFileName}`,
-        fileName: topLevelDirectoryFileName,
-        userId,
-      })
-
+    it("should create a top level folder works correctly", async () => {
       const resp = {
         data: {
           content: {
@@ -176,12 +195,7 @@ describe("Github Service", () => {
       ).resolves.toMatchObject({
         sha,
       })
-      const resourceRoomParams = {
-        message: collectionYmlMessage,
-        content: Base64.encode(collectionYmlContent),
-        branch: params.branch,
-      }
-      const topLevelFolderEndpoint = `${folderParentEndpoint}/${topLevelDirectoryFileName}`
+
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         topLevelFolderEndpoint,
         resourceRoomParams,
@@ -189,13 +203,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Creating a resource category works correctly", async () => {
-      const resourceRoomMessage = JSON.stringify({
-        message: `Create file: ${resourceCategoryFileName}`,
-        fileName: resourceCategoryFileName,
-        userId,
-      })
-
+    it("should create a resource category works correctly", async () => {
       const resp = {
         data: {
           content: {
@@ -214,20 +222,15 @@ describe("Github Service", () => {
       ).resolves.toMatchObject({
         sha,
       })
-      const resourceRoomParams = {
-        message: resourceRoomMessage,
-        content: Base64.encode(indexHtmlContent),
-        branch: params.branch,
-      }
-      const resourceRoomFolderEndpoint = `${folderParentEndpoint}/${resourceCategoryFileName}`
+
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         resourceRoomFolderEndpoint,
-        resourceRoomParams,
+        resourceCategoryParams,
         authHeader
       )
     })
 
-    it("Creating a media file does not encode it", async () => {
+    it("should create a media file does not encode it", async () => {
       const resp = {
         data: {
           content: {
@@ -257,7 +260,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Create parses and throws the correct error in case of a conflict", async () => {
+    it("should parse and throw the correct error in case of a conflict", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockImplementation(() => {
         const error = {
@@ -281,7 +284,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Create throws an error if parent directory is deleted", async () => {
+    it("should throw an error if parent directory is deleted", async () => {
       mockAxiosInstance.get.mockImplementation(() => {
         throw new Error()
       })
@@ -301,7 +304,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Create throws an error if a new sub directory is created while the parent directory is deleted", async () => {
+    it("should throw an error if a new sub directory is created while the parent directory is deleted", async () => {
       mockAxiosInstance.get.mockImplementation(() => {
         throw new Error()
       })
@@ -321,7 +324,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Create throws an error if a resource is created while the resource folder is deleted", async () => {
+    it("should throw an error if a resource is created while the resource folder is deleted", async () => {
       mockAxiosInstance.get.mockImplementation(() => {
         throw new Error()
       })
@@ -349,7 +352,7 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Reading a file works correctly", async () => {
+    it("should read a file works correctly", async () => {
       const resp = {
         data: {
           content: encodedContent,
@@ -373,7 +376,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Read throws the correct error if file cannot be found", async () => {
+    it("should throw the correct error if file cannot be found", async () => {
       const resp = {
         status: 404,
       }
@@ -398,7 +401,7 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Reading a media file works correctly", async () => {
+    it("should read a media file works correctly", async () => {
       const resp = {
         data: {
           content,
@@ -421,7 +424,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Read throws the correct error if file cannot be found", async () => {
+    it("should throw the correct error if file cannot be found", async () => {
       const resp = {
         status: 404,
       }
@@ -445,7 +448,7 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Reading a directory works correctly", async () => {
+    it("should read a directory correctly", async () => {
       const data = "test-data"
       const resp = {
         data,
@@ -463,7 +466,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Read throws the correct error if directory cannot be found", async () => {
+    it("should throw the correct error if directory cannot be found", async () => {
       const resp = {
         status: 404,
       }
@@ -496,7 +499,7 @@ describe("Github Service", () => {
       sha,
     }
 
-    it("Updating a file works correctly", async () => {
+    it("should update a file correctly", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       const resp = {
         data: {
@@ -523,7 +526,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Update throws the correct error if file cannot be found", async () => {
+    it("should throw the correct error if file cannot be found", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       mockAxiosInstance.put.mockImplementation(() => {
         const err = {
@@ -548,7 +551,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Updating a file with no sha works correctly", async () => {
+    it("should update a file with no sha works correctly", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       const getResp = {
         data: {
@@ -590,7 +593,7 @@ describe("Github Service", () => {
       )
     })
 
-    it("Update with no sha provided throws the correct error if file cannot be found", async () => {
+    it("should update with no sha provided throws the correct error if file cannot be found", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       const readParams = {
         ref: BRANCH_REF,
@@ -628,7 +631,7 @@ describe("Github Service", () => {
       sha,
     }
 
-    it("Deleting a file works correctly", async () => {
+    it("should delete a file correctly", async () => {
       await service.delete(sessionData, {
         fileName,
         directoryName,
@@ -640,7 +643,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Deleting throws the correct error if file cannot be found", async () => {
+    it("should throw the correct error if file cannot be found", async () => {
       mockAxiosInstance.delete.mockImplementation(() => {
         const err = {
           response: {
@@ -672,7 +675,7 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Getting repo info works correctly", async () => {
+    it("should get repo info works correctly", async () => {
       const resp = {
         data: {
           private: true,
@@ -696,7 +699,7 @@ describe("Github Service", () => {
       ref: BRANCH_REF,
     }
 
-    it("Getting a repo state works correctly", async () => {
+    it("should get a repo state works correctly", async () => {
       const resp = {
         data: [
           {
@@ -723,7 +726,7 @@ describe("Github Service", () => {
       Authorization: `token ${accessToken}`,
     }
 
-    it("Getting the latest commit of branch works correctly", async () => {
+    it("should get the latest commit of branch works correctly", async () => {
       const expected = {
         author: {
           name: "test",
@@ -745,7 +748,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Getting an invalid branch should throw UnprocessableError", async () => {
+    it("should throw UnprocessableError when getting an invalid branch", async () => {
       mockAxiosInstance.get.mockImplementationOnce(() => {
         const err = {
           response: {
@@ -762,7 +765,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Getting other kinds of errors should throw the original error", async () => {
+    it("should throw the original error when getting other kinds of errors", async () => {
       mockAxiosInstance.get.mockImplementationOnce(() => {
         const err = new Error()
         throw err
@@ -789,7 +792,7 @@ describe("Github Service", () => {
 
     const tree = "test-tree"
 
-    it("Getting a repo tree works correctly", async () => {
+    it("should get a repo tree correctly", async () => {
       const resp = {
         data: {
           tree,
@@ -807,7 +810,7 @@ describe("Github Service", () => {
       })
     })
 
-    it("Getting the repo state recursively works correctly", async () => {
+    it("should get the repo state recursively correctly", async () => {
       const resp = {
         data: {
           tree,
@@ -833,7 +836,7 @@ describe("Github Service", () => {
     const url = `${siteName}/git/trees`
     const commitEndpoint = `${siteName}/git/commits`
 
-    it("Updating a repo tree works correctly", async () => {
+    it("should update a repo tree correctly", async () => {
       const firstSha = "first-sha"
       const secondSha = "second-sha"
       const gitTree = "git-tree"
@@ -885,7 +888,7 @@ describe("Github Service", () => {
   describe("updateRepoState", () => {
     const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
 
-    it("Updating a repo state works correctly", async () => {
+    it("should update a repo state correctly", async () => {
       await service.updateRepoState(sessionData, { commitSha: sha })
       expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
         refEndpoint,
@@ -901,7 +904,7 @@ describe("Github Service", () => {
       Authorization: `token ${accessToken}`,
       "Content-Type": "application/json",
     }
-    it("Checks whether user has write access to site", async () => {
+    it("should check whether user has write access to site", async () => {
       mockAxiosInstance.get.mockResolvedValueOnce("")
       await service.checkHasAccess(sessionData)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(refEndpoint, {

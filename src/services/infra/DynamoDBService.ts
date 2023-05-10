@@ -14,31 +14,29 @@ import {
 
 import DynamoDBClient, { UpdateParams } from "./DynamoDBClient"
 
+const MOCK_LAUNCH: MessageBody = {
+  repoName: "my-repo",
+  appId: "my-app",
+  primaryDomainSource: "example.com",
+  primaryDomainTarget: "myapp.example.com",
+  domainValidationSource: "example.com",
+  domainValidationTarget: "myapp.example.com",
+  requestorEmail: "john@example.com",
+  agencyEmail: "agency@example.com",
+  githubRedirectionUrl: "https://github.com/my-repo",
+  redirectionDomain: [
+    {
+      source: "example.com",
+      target: "myapp.example.com",
+      type: "A",
+    },
+  ],
+  status: SiteLaunchLambdaStatus.PENDING,
+}
 export default class DynamoDBService {
   private readonly dynamoDBClient: DynamoDBClient
 
   private readonly TABLE_NAME: string
-
-  // TODO: delete these mock after integration in IS-186
-  private mockLaunch: MessageBody = {
-    repoName: "my-repo",
-    appId: "my-app",
-    primaryDomainSource: "example.com",
-    primaryDomainTarget: "myapp.example.com",
-    domainValidationSource: "example.com",
-    domainValidationTarget: "myapp.example.com",
-    requestorEmail: "john@example.com",
-    agencyEmail: "agency@example.com",
-    githubRedirectionUrl: "https://github.com/my-repo",
-    redirectionDomain: [
-      {
-        source: "example.com",
-        target: "myapp.example.com",
-        type: "A",
-      },
-    ],
-    status: SiteLaunchLambdaStatus.PENDING,
-  }
 
   constructor() {
     this.dynamoDBClient = new DynamoDBClient()
@@ -47,19 +45,19 @@ export default class DynamoDBService {
   }
 
   async createItem(message: MessageBody): Promise<void> {
-    await this.dynamoDBClient.createItem(this.TABLE_NAME, this.mockLaunch)
+    await this.dynamoDBClient.createItem(this.TABLE_NAME, MOCK_LAUNCH)
   }
 
   async getItem(message: MessageBody): Promise<GetCommandOutput> {
-    return this.dynamoDBClient.getItem(this.TABLE_NAME, this.mockLaunch.appId)
+    return this.dynamoDBClient.getItem(this.TABLE_NAME, MOCK_LAUNCH.appId)
   }
 
   async updateItem(message: MessageBody): Promise<UpdateCommandOutput> {
     // TODO: delete mocking after integration in IS-186
-    this.mockLaunch.status = SiteLaunchLambdaStatus.SUCCESS
+    MOCK_LAUNCH.status = SiteLaunchLambdaStatus.SUCCESS
     const updateParams: UpdateParams = {
       TableName: this.TABLE_NAME,
-      Key: { appId: this.mockLaunch.appId },
+      Key: { appId: MOCK_LAUNCH.appId },
       // The update expression to apply to the item,
       // in this case setting the "status" attribute to a value
       UpdateExpression: "set #status = :s",
@@ -69,7 +67,7 @@ export default class DynamoDBService {
       // A map of expression attribute values used in the update expression,
       // in this case mapping ":status" to the value of the Launch status
       ExpressionAttributeValues: {
-        ":status": this.mockLaunch.status,
+        ":status": MOCK_LAUNCH.status,
       },
     }
     return this.dynamoDBClient.updateItem(updateParams)
@@ -77,7 +75,7 @@ export default class DynamoDBService {
 
   async deleteItem(message: MessageBody): Promise<DeleteCommandOutput> {
     return this.dynamoDBClient.deleteItem(this.TABLE_NAME, {
-      appId: this.mockLaunch.appId,
+      appId: MOCK_LAUNCH.appId,
     })
   }
 }

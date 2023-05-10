@@ -72,7 +72,7 @@ export default class DynamoDBService {
 
   async deleteItem(message: MessageBody) {
     return this.dynamoDBClient.deleteItem(this.TABLE_NAME, {
-      appId: this.mockLaunch.appId || "",
+      appId: this.mockLaunch.appId,
     })
   }
 }

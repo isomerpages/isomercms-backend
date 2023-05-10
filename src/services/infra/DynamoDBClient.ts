@@ -9,6 +9,7 @@ import {
   PutCommandOutput,
   UpdateCommandOutput,
   DeleteCommandOutput,
+  GetCommandOutput,
 } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 
@@ -84,7 +85,7 @@ export default class DynamoDBDocClient {
   getItem = async (
     tableName: string,
     key: string
-  ): Promise<Record<string, unknown> | undefined> => {
+  ): Promise<GetCommandOutput> => {
     const params = {
       TableName: tableName,
       Key: { appId: key },

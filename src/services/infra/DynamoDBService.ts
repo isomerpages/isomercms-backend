@@ -1,3 +1,8 @@
+import {
+  DeleteCommandOutput,
+  GetCommandOutput,
+  UpdateCommandOutput,
+} from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 
 import { config } from "@config/config"
@@ -45,11 +50,11 @@ export default class DynamoDBService {
     await this.dynamoDBClient.createItem(this.TABLE_NAME, this.mockLaunch)
   }
 
-  async getItem(message: MessageBody) {
+  async getItem(message: MessageBody): Promise<GetCommandOutput> {
     return this.dynamoDBClient.getItem(this.TABLE_NAME, this.mockLaunch.appId)
   }
 
-  async updateItem(message: MessageBody) {
+  async updateItem(message: MessageBody): Promise<UpdateCommandOutput> {
     // TODO: delete mocking after integration in IS-186
     this.mockLaunch.status = SiteLaunchLambdaStatus.SUCCESS
     const updateParams: UpdateParams = {
@@ -70,7 +75,7 @@ export default class DynamoDBService {
     return this.dynamoDBClient.updateItem(updateParams)
   }
 
-  async deleteItem(message: MessageBody) {
+  async deleteItem(message: MessageBody): Promise<DeleteCommandOutput> {
     return this.dynamoDBClient.deleteItem(this.TABLE_NAME, {
       appId: this.mockLaunch.appId,
     })

@@ -35,7 +35,7 @@ describe("Github Service", () => {
   const content = "test-content"
 
   const userId = mockIsomerUserId
-  const subDirectoryName = `_${collectionName}/${subcollectionName}`
+  const subDirectoryName = `files/parent-file/sub-directory`
   const subDirectoryFileName = ".keep"
   const resourceCategoryName = "resources/some-folder"
   const topLevelDirectoryFileName = "collection.yml"
@@ -109,6 +109,7 @@ describe("Github Service", () => {
   })
 
   describe("Create", () => {
+    const fileParentEndpoint = `${siteName}/contents/files/parent-file`
     const folderParentEndpoint = `${siteName}/contents/${directoryName}`
     const folderEndpoint = `${folderParentEndpoint}/${fileName}`
     const resourceRoomEndpoint = `${siteName}/contents/${resourceCategoryName}`
@@ -185,7 +186,6 @@ describe("Github Service", () => {
         },
       }
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
-      mockAxiosInstance.get.mockResolvedValueOnce("")
       await expect(
         service.create(sessionData, {
           content: collectionYmlContent,
@@ -212,7 +212,6 @@ describe("Github Service", () => {
         },
       }
       mockAxiosInstance.put.mockResolvedValueOnce(resp)
-      mockAxiosInstance.get.mockResolvedValueOnce("")
       await expect(
         service.create(sessionData, {
           content: indexHtmlContent,
@@ -286,7 +285,7 @@ describe("Github Service", () => {
 
     it("should throw an error if parent directory is deleted", async () => {
       mockAxiosInstance.get.mockImplementation(() => {
-        throw new Error()
+        throw new NotFoundError()
       })
       await expect(
         service.create(sessionData, {
@@ -294,7 +293,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
         })
-      ).rejects.toThrowError()
+      ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
         validateStatus,
         headers: authHeader.headers,
@@ -306,8 +305,9 @@ describe("Github Service", () => {
 
     it("should throw an error if a new sub directory is created while the parent directory is deleted", async () => {
       mockAxiosInstance.get.mockImplementation(() => {
-        throw new Error()
+        throw new NotFoundError()
       })
+
       await expect(
         service.create(sessionData, {
           content,
@@ -315,7 +315,7 @@ describe("Github Service", () => {
           directoryName: subDirectoryName,
         })
       ).rejects.toThrowError()
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(fileParentEndpoint, {
         validateStatus,
         headers: authHeader.headers,
         params: {
@@ -326,7 +326,7 @@ describe("Github Service", () => {
 
     it("should throw an error if a resource is created while the resource folder is deleted", async () => {
       mockAxiosInstance.get.mockImplementation(() => {
-        throw new Error()
+        throw new NotFoundError()
       })
       await expect(
         service.create(sessionData, {
@@ -334,7 +334,7 @@ describe("Github Service", () => {
           fileName,
           directoryName: `${resourceCategoryName}/_posts`,
         })
-      ).rejects.toThrowError()
+      ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(resourceRoomEndpoint, {
         validateStatus,
         headers: authHeader.headers,

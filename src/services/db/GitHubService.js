@@ -104,7 +104,6 @@ class GitHubService {
       const isCreatingNewResourceFolder = fileName === "index.html"
       const checkDirectoryExist =
         !isCreatingTopLevelDirectory && !isCreatingNewResourceFolder
-
       if (checkDirectoryExist) {
         /**
          * When we are creating a new resource post or creating a new subDirectory,
@@ -147,6 +146,7 @@ class GitHubService {
 
       return { sha: resp.data.content.sha }
     } catch (err) {
+      if (err instanceof NotFoundError) throw err
       const { status } = err.response
       if (status === 422 || status === 409)
         throw new ConflictError(inputNameConflictErrorMsg(fileName))

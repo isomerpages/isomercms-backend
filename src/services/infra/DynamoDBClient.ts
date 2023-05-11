@@ -55,7 +55,7 @@ export default class DynamoDBDocClient {
     type: "create" | "get" | "delete" | "update"
   ): Promise<T> => {
     try {
-      return promise
+      return await promise
     } catch (e) {
       logger.error(
         `Error in operation ${type} item for the dynamoDB table: ${e}`

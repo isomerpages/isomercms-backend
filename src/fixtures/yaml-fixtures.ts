@@ -63,3 +63,8 @@ export const maliciousYamlObject = {
     },
   ],
 }
+
+export const collectionYmlContent = `collections:
+new-folder:
+  output: true
+  order: []`

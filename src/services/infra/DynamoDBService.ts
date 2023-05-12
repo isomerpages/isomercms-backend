@@ -60,7 +60,7 @@ export default class DynamoDBService {
       Key: { appId: MOCK_LAUNCH.appId },
       // The update expression to apply to the item,
       // in this case setting the "status" attribute to a value
-      UpdateExpression: "set #status = :s",
+      UpdateExpression: "set #status = :status",
       // A map of expression attribute names used in the update expression,
       // in this case mapping "#status" to the "status" attribute
       ExpressionAttributeNames: { "#status": "status" },

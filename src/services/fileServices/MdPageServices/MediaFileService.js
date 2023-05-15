@@ -116,7 +116,6 @@ class MediaFileService {
     githubSessionData,
     { oldFileName, newFileName, directoryName, sha }
   ) {
-    console.log(oldFileName, newFileName)
     this.mediaNameChecks({ directoryName, fileName: oldFileName })
     this.mediaNameChecks({ directoryName, fileName: newFileName })
     const oldExt = getFileExt(oldFileName)

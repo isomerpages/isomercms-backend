@@ -7,14 +7,12 @@ import {
   MEDIA_FILE_NAME,
   MEDIA_FILE_SHA,
   MEDIA_SITE_NAME,
-  dirInput,
-  imageFilePrivateInput,
-  imageFilePublicInput,
-  mediaDir,
-  pdfFilePrivateInput,
-  pdfFilePublicInput,
-  svgFilePrivateInput,
-  svgFilePublicInput,
+  IMAGE_FILE_PRIVATE_INPUT,
+  IMAGE_FILE_PUBLIC_INPUT,
+  PDF_FILE_PRIVATE_INPUT,
+  PDF_FILE_PUBLIC_INPUT,
+  SVG_FILE_PRIVATE_INPUT,
+  SVG_FILE_PUBLIC_INPUT,
 } from "@root/fixtures/media"
 
 import { getMediaFileInfo, isMediaFileOutput } from "../media-utils"

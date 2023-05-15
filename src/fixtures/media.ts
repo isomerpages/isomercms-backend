@@ -1,70 +1,70 @@
-import { MediaFile } from "@root/utils/media-utils"
+import { MediaFile } from "@root/types"
 
 export const MEDIA_FILE_NAME = "test file"
 export const MEDIA_SITE_NAME = "site"
 export const MEDIA_DIRECTORY_NAME = "dir"
 export const MEDIA_FILE_SHA = "sha"
 
-export const mediaDir: MediaFile = {
+export const MEDIA_DIR: MediaFile = {
   name: "directory",
   type: "dir",
   sha: MEDIA_FILE_SHA,
   path: `${MEDIA_DIRECTORY_NAME}/directory`,
 }
 
-const baseMediaFile: MediaFile = {
+const BASE_MEDIA_FILE: MediaFile = {
   name: MEDIA_FILE_NAME,
   type: "file",
   sha: MEDIA_FILE_SHA,
   path: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
 }
 
-export const svgFile = {
-  ...baseMediaFile,
+export const SVG_FILE = {
+  ...BASE_MEDIA_FILE,
   name: `${MEDIA_FILE_NAME}.svg`,
   path: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
 }
 
-const baseInput = {
+const BASE_INPUT = {
   siteName: MEDIA_SITE_NAME,
   directoryName: MEDIA_DIRECTORY_NAME,
 }
 
-export const dirInput = {
-  ...baseInput,
-  file: mediaDir,
+export const DIR_INPUT = {
+  ...BASE_INPUT,
+  file: MEDIA_DIR,
   mediaType: "images",
   isPrivate: false,
 }
 
-export const imageFilePublicInput = {
-  ...baseInput,
-  file: baseMediaFile,
+export const IMAGE_FILE_PUBLIC_INPUT = {
+  ...BASE_INPUT,
+  file: BASE_MEDIA_FILE,
   mediaType: "images",
   isPrivate: false,
 }
 
-export const svgFilePublicInput = {
-  ...imageFilePublicInput,
-  file: svgFile,
+export const SVG_FILE_PUBLIC_INPUT = {
+  ...IMAGE_FILE_PUBLIC_INPUT,
+  file: SVG_FILE,
 }
 
-export const imageFilePrivateInput = {
-  ...imageFilePublicInput,
+export const IMAGE_FILE_PRIVATE_INPUT = {
+  ...IMAGE_FILE_PUBLIC_INPUT,
   isPrivate: true,
 }
 
-export const svgFilePrivateInput = {
-  ...svgFilePublicInput,
+export const SVG_FILE_PRIVATE_INPUT = {
+  ...SVG_FILE_PUBLIC_INPUT,
   isPrivate: true,
 }
 
-export const pdfFilePublicInput = {
-  ...imageFilePublicInput,
+export const PDF_FILE_PUBLIC_INPUT = {
+  ...IMAGE_FILE_PUBLIC_INPUT,
   mediaType: "files",
 }
 
-export const pdfFilePrivateInput = {
-  ...pdfFilePublicInput,
+export const PDF_FILE_PRIVATE_INPUT = {
+  ...PDF_FILE_PUBLIC_INPUT,
   isPrivate: true,
 }

@@ -288,6 +288,10 @@ export class FormsgSiteLaunchRouter {
               type: record.type,
               value: record.value,
             }))
+          } else {
+            logger.info(
+              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}`
+            )
           }
           successResults.push(successResult)
         }

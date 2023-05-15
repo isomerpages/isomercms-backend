@@ -1,4 +1,4 @@
-import axios from "axios"
+import mockAxios from "jest-mock-axios"
 
 import { config } from "@config/config"
 
@@ -19,20 +19,20 @@ import { getMediaFileInfo, isMediaFileOutput } from "../media-utils"
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
+const mockGenericAxios = mockAxios.create()
+
 jest.mock("@utils/token-retrieval-utils", () => ({
   getAccessToken: jest.fn().mockResolvedValue("token"),
 }))
-jest.mock("axios", () => ({
-  get: jest.fn().mockResolvedValue({
-    data: "blahblah",
-    headers: {
-      "content-type": "blahblah",
-    },
-  }),
-}))
+mockGenericAxios.get.mockResolvedValue({
+  data: "blahblah",
+  headers: {
+    "content-type": "blahblah",
+  },
+})
 
 describe("Media utils test", () => {
-  it("should return normal information for images in public repos", async () => {
+  it("should return mediaUrl as raw github information for images in public repos", async () => {
     const expectedResp = {
       mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
         MEDIA_FILE_NAME
@@ -42,12 +42,12 @@ describe("Media utils test", () => {
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
     }
-    expect(await getMediaFileInfo(imageFilePublicInput)).toStrictEqual(
+    expect(await getMediaFileInfo(IMAGE_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
     )
   })
 
-  it("should return normal information for svgs in public repos", async () => {
+  it("should return mediaUrl as raw github information for svgs with sanitisation in public repos", async () => {
     const expectedResp = {
       mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
         MEDIA_FILE_NAME
@@ -57,12 +57,12 @@ describe("Media utils test", () => {
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
       type: "file",
     }
-    expect(await getMediaFileInfo(svgFilePublicInput)).toStrictEqual(
+    expect(await getMediaFileInfo(SVG_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
     )
   })
 
-  it("should return normal information for files in public repos", async () => {
+  it("should return mediaUrl as raw github information for files in public repos", async () => {
     const expectedResp = {
       mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
         MEDIA_FILE_NAME
@@ -72,7 +72,7 @@ describe("Media utils test", () => {
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
     }
-    expect(await getMediaFileInfo(pdfFilePublicInput)).toStrictEqual(
+    expect(await getMediaFileInfo(PDF_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
     )
   })
@@ -84,14 +84,14 @@ describe("Media utils test", () => {
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
     }
-    const resp = await getMediaFileInfo(imageFilePrivateInput)
+    const resp = await getMediaFileInfo(IMAGE_FILE_PRIVATE_INPUT)
     if (!isMediaFileOutput(resp)) {
       fail("Should not reach here")
     }
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
     expect(resp.mediaUrl).toContain("data:")
     expect(
-      axios.get
+      mockGenericAxios.get
     ).toHaveBeenCalledWith(
       `https://token@raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
         MEDIA_FILE_NAME
@@ -100,21 +100,21 @@ describe("Media utils test", () => {
     )
   })
 
-  it("should handle mediaUrl for svgs in private repos", async () => {
+  it("should handle mediaUrl for svgs and sanitise image in private repos", async () => {
     const expectedPartialResp = {
       name: `${MEDIA_FILE_NAME}.svg`,
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
       type: "file",
     }
-    const resp = await getMediaFileInfo(svgFilePrivateInput)
+    const resp = await getMediaFileInfo(SVG_FILE_PRIVATE_INPUT)
     if (!isMediaFileOutput(resp)) {
       fail("Should not reach here")
     }
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
     expect(resp.mediaUrl).toContain("data:")
     expect(
-      axios.get
+      mockGenericAxios.get
     ).toHaveBeenCalledWith(
       `https://token@raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
         MEDIA_FILE_NAME
@@ -123,7 +123,7 @@ describe("Media utils test", () => {
     )
   })
 
-  it("should return normal information for files in private repos", async () => {
+  it("should return mediaUrl as raw github information information for files in private repos", async () => {
     const expectedResp = {
       mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
         MEDIA_FILE_NAME
@@ -133,7 +133,7 @@ describe("Media utils test", () => {
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
     }
-    expect(await getMediaFileInfo(pdfFilePrivateInput)).toStrictEqual(
+    expect(await getMediaFileInfo(PDF_FILE_PRIVATE_INPUT)).toStrictEqual(
       expectedResp
     )
   })

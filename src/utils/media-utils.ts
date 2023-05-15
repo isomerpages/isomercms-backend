@@ -31,14 +31,8 @@ interface MediaFileOutput {
   type: ItemType
 }
 
-interface MediaDirOutput {
-  name: string
-  type: ItemType
-}
-
-export const isMediaFileOutput = (
-  t: MediaFileOutput | MediaDirOutput
-): t is MediaFileOutput => (t as MediaFileOutput).sha !== undefined
+export const isMediaFileOutput = (t: MediaFileOutput): t is MediaFileOutput =>
+  (t as MediaFileOutput).sha !== undefined
 
 export const getMediaFileInfo = async ({
   file,
@@ -46,13 +40,7 @@ export const getMediaFileInfo = async ({
   directoryName,
   mediaType,
   isPrivate,
-}: MediaFileInput): Promise<MediaFileOutput | MediaDirOutput> => {
-  if (file.type === "dir") {
-    return {
-      name: file.name,
-      type: "dir",
-    }
-  }
+}: MediaFileInput): Promise<MediaFileOutput> => {
   const fileData = {
     mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${file.path
       .split("/")

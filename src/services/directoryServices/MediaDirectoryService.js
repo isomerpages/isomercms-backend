@@ -47,15 +47,21 @@ class MediaDirectoryService {
     )
 
     const resp = await Promise.all(
-      files.map((curr) =>
-        getMediaFileInfo({
+      files.map((curr) => {
+        if (curr.type === "dir") {
+          return {
+            name: curr.name,
+            type: "dir",
+          }
+        }
+        return getMediaFileInfo({
           file: curr,
           siteName,
           directoryName,
           mediaType,
           isPrivate,
         })
-      )
+      })
     )
 
     return resp

@@ -256,7 +256,7 @@ export class FormsgSiteLaunchRouter {
         logger.info(`Received DIG response: ${JSON.stringify(result)}`)
         return result
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         logger.error(
           `An error occurred while performing dig for domain: ${domain}`
         )

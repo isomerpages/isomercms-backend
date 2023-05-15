@@ -3,34 +3,10 @@ import axios from "axios"
 import { config } from "@config/config"
 
 import logger from "@root/logger/logger"
+import { MediaFileInput, MediaFileOutput } from "@root/types"
 import { getAccessToken } from "@root/utils/token-retrieval-utils"
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
-
-type ItemType = "dir" | "file"
-
-interface MediaFile {
-  name: string
-  type: ItemType
-  sha: string
-  path: string
-}
-
-interface MediaFileInput {
-  file: MediaFile
-  siteName: string
-  directoryName: string
-  mediaType: string
-  isPrivate: boolean
-}
-
-interface MediaFileOutput {
-  name: string
-  sha: string
-  mediaUrl: string
-  mediaPath: string
-  type: ItemType
-}
 
 export const isMediaFileOutput = (t: MediaFileOutput): t is MediaFileOutput =>
   (t as MediaFileOutput).sha !== undefined

@@ -1,4 +1,5 @@
 export * from "./axios"
 export * from "./error"
+export * from "./media"
 export * from "./request"
 export * from "./amplify"

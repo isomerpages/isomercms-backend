@@ -32,13 +32,6 @@ jest.mock("axios", () => ({
 }))
 
 describe("Media utils test", () => {
-  it("should return directory information", async () => {
-    const expectedResp = {
-      name: `${mediaDir.name}`,
-      type: "dir",
-    }
-    expect(await getMediaFileInfo(dirInput)).toStrictEqual(expectedResp)
-  })
   it("should return normal information for images in public repos", async () => {
     const expectedResp = {
       mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(

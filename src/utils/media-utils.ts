@@ -8,7 +8,7 @@ const GITHUB_ORG_NAME = config.get("github.orgName")
 
 type ItemType = "dir" | "file"
 
-export interface MediaFile {
+interface MediaFile {
   name: string
   type: ItemType
   sha: string

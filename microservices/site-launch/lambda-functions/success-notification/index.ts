@@ -4,16 +4,16 @@ import { SQS } from "aws-sdk"
 
 import logger from "../../shared/logger"
 import {
-  MessageBody,
-  SiteLaunchLambdaStatus,
+  SiteLaunchMessage,
+  SiteLaunchStatus,
   SiteLaunchLambdaType,
 } from "../../shared/types"
 
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 export interface InputParams {
   lambdaType: SiteLaunchLambdaType
-  status: SiteLaunchLambdaStatus
-  message: MessageBody
+  status: SiteLaunchStatus
+  message: SiteLaunchMessage
 }
 
 export const successNotification = async (

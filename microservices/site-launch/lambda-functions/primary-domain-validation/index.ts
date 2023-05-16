@@ -13,19 +13,19 @@ import type {
 
 import logger from "../../shared/logger"
 import {
-  MessageBody,
-  SiteLaunchLambdaStatus,
+  SiteLaunchMessage,
+  SiteLaunchStatus,
   SiteLaunchLambdaType,
 } from "../../shared/types"
 
 interface PrimaryDomainValidationLambdaResponse {
   lambdaType: SiteLaunchLambdaType
-  status: SiteLaunchLambdaStatus
-  message: MessageBody
+  status: SiteLaunchStatus
+  message: SiteLaunchMessage
 }
 
 export const primaryDomainValidation = async (
-  event: MessageBody
+  event: SiteLaunchMessage
 ): Promise<PrimaryDomainValidationLambdaResponse> => {
   logger.info(event)
 
@@ -78,7 +78,7 @@ export const primaryDomainValidation = async (
     )
     return {
       lambdaType: SiteLaunchLambdaType.PRIMARY_DOMAIN_VALIDATION,
-      status: SiteLaunchLambdaStatus.SUCCESS,
+      status: { state: "success", message: "SUCCESS_SITE_LIVE" },
       message: event,
     }
   } catch (error) {

@@ -75,7 +75,11 @@ const respHandler = (response: AxiosResponse) => {
 const isomerRepoAxiosInstance = setupCache(
   axios.create({
     baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
-  })
+  }),
+  {
+    interpretHeader: true,
+    etag: true,
+  }
 )
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)

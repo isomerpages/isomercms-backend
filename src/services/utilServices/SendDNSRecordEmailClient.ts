@@ -1,4 +1,4 @@
-import { groupBy, has } from "lodash"
+import { groupBy } from "lodash"
 
 export interface QuadARecord {
   domain: string
@@ -104,6 +104,8 @@ export function getDNSRecordsEmailBody(
   html += `
     </tbody>
   </table>`
+
+  console.log(`GROUPED: ${JSON.stringify(groupedDnsRecords, null, 2)}`)
 
   Object.keys(groupedDnsRecords).forEach((repoName) => {
     const allQuadARecordsForRepo: QuadARecord[] = []

@@ -14,13 +14,13 @@ import type {
 import logger from "../../shared/logger"
 import {
   SiteLaunchMessage,
-  SiteLaunchLambdaStatus,
+  SiteLaunchStatus,
   SiteLaunchLambdaType,
 } from "../../shared/types"
 
 interface PrimaryDomainValidationLambdaResponse {
   lambdaType: SiteLaunchLambdaType
-  status: SiteLaunchLambdaStatus
+  status: SiteLaunchStatus
   message: SiteLaunchMessage
 }
 
@@ -78,7 +78,7 @@ export const primaryDomainValidation = async (
     )
     return {
       lambdaType: SiteLaunchLambdaType.PRIMARY_DOMAIN_VALIDATION,
-      status: SiteLaunchLambdaStatus.SUCCESS_SITE_LIVE,
+      status: { state: "success", message: "SUCCESS_SITE_LIVE" },
       message: event,
     }
   } catch (error) {

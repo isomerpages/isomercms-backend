@@ -13,6 +13,11 @@ export enum SiteLaunchLambdaStatus {
   PENDING_PRE_SITE_LAUNCH = "pending - pre site launch",
 }
 
+export type SiteLaunchStatus = {
+  state: "success" | "failure" | "pending"
+  message: keyof typeof SiteLaunchLambdaStatus
+}
+
 export interface SiteLaunchMessage {
   repoName: string
   appId: string
@@ -30,6 +35,6 @@ export interface SiteLaunchMessage {
       type: string
     }
   ]
-  status?: SiteLaunchLambdaStatus
+  status?: SiteLaunchStatus
   statusMetadata?: string
 }

@@ -5,14 +5,14 @@ import { SQS } from "aws-sdk"
 import logger from "../../shared/logger"
 import {
   SiteLaunchMessage,
-  SiteLaunchLambdaStatus,
+  SiteLaunchStatus,
   SiteLaunchLambdaType,
 } from "../../shared/types"
 
 const { INCOMING_QUEUE_URL, AWS_REGION } = process.env
 export interface InputParams {
   lambdaType: SiteLaunchLambdaType
-  status: SiteLaunchLambdaStatus
+  status: SiteLaunchStatus
   message: SiteLaunchMessage
 }
 

@@ -92,15 +92,10 @@ export class SitesRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-    const possibleSiteUrl = await this.sitesService.getSiteUrl(
-      userWithSiteSessionData
-    )
-
-    // Check for error and throw
-    if (possibleSiteUrl instanceof BaseIsomerError) {
-      return res.status(404).json({ message: possibleSiteUrl.message })
-    }
-    return res.status(200).json({ siteUrl: possibleSiteUrl })
+    return this.sitesService
+      .getSiteUrl(userWithSiteSessionData)
+      .map((siteUrl) => res.status(200).json({ siteUrl }))
+      .mapErr((err) => res.status(404).json({ message: err.message }))
   }
 
   getSiteInfo: RequestHandler<

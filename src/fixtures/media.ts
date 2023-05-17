@@ -1,8 +1,9 @@
-import { MediaFile } from "@root/types"
+import { MediaType, MediaFile } from "@root/types"
 
 export const MEDIA_FILE_NAME = "test file"
 export const MEDIA_SITE_NAME = "site"
 export const MEDIA_DIRECTORY_NAME = "dir"
+export const MEDIA_SUBDIRECTORY_NAME = "sub dir"
 export const MEDIA_FILE_SHA = "sha"
 
 export const MEDIA_DIR: MediaFile = {
@@ -19,6 +20,11 @@ const BASE_MEDIA_FILE: MediaFile = {
   path: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
 }
 
+export const NESTED_MEDIA_FILE: MediaFile = {
+  ...BASE_MEDIA_FILE,
+  path: `${MEDIA_DIRECTORY_NAME}/${MEDIA_SUBDIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
+}
+
 export const SVG_FILE = {
   ...BASE_MEDIA_FILE,
   name: `${MEDIA_FILE_NAME}.svg`,
@@ -33,15 +39,21 @@ const BASE_INPUT = {
 export const DIR_INPUT = {
   ...BASE_INPUT,
   file: MEDIA_DIR,
-  mediaType: "images",
+  mediaType: "images" as MediaType,
   isPrivate: false,
 }
 
 export const IMAGE_FILE_PUBLIC_INPUT = {
   ...BASE_INPUT,
   file: BASE_MEDIA_FILE,
-  mediaType: "images",
+  mediaType: "images" as MediaType,
   isPrivate: false,
+}
+
+export const NESTED_IMAGE_FILE_PUBLIC_INPUT = {
+  ...IMAGE_FILE_PUBLIC_INPUT,
+  file: NESTED_MEDIA_FILE,
+  directoryName: `${MEDIA_DIRECTORY_NAME}/${MEDIA_SUBDIRECTORY_NAME}`,
 }
 
 export const SVG_FILE_PUBLIC_INPUT = {
@@ -61,7 +73,7 @@ export const SVG_FILE_PRIVATE_INPUT = {
 
 export const PDF_FILE_PUBLIC_INPUT = {
   ...IMAGE_FILE_PUBLIC_INPUT,
-  mediaType: "files",
+  mediaType: "files" as MediaType,
 }
 
 export const PDF_FILE_PRIVATE_INPUT = {

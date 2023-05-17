@@ -13,6 +13,8 @@ import {
   PDF_FILE_PUBLIC_INPUT,
   SVG_FILE_PRIVATE_INPUT,
   SVG_FILE_PUBLIC_INPUT,
+  MEDIA_SUBDIRECTORY_NAME,
+  NESTED_IMAGE_FILE_PUBLIC_INPUT,
 } from "@root/fixtures/media"
 
 import { getMediaFileInfo } from "../media-utils"
@@ -45,6 +47,21 @@ describe("Media utils test", () => {
     expect(await getMediaFileInfo(IMAGE_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
     )
+  })
+
+  it("should handle nested images in public repos", async () => {
+    const expectedResp = {
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+        MEDIA_SUBDIRECTORY_NAME
+      )}/${encodeURIComponent(MEDIA_FILE_NAME)}`,
+      name: MEDIA_FILE_NAME,
+      sha: MEDIA_FILE_SHA,
+      mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_SUBDIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
+      type: "file",
+    }
+    expect(
+      await getMediaFileInfo(NESTED_IMAGE_FILE_PUBLIC_INPUT)
+    ).toStrictEqual(expectedResp)
   })
 
   it("should return mediaUrl as raw github information for svgs with sanitisation in public repos", async () => {

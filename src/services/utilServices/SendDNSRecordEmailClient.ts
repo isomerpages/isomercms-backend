@@ -1,9 +1,11 @@
 import { groupBy } from "lodash"
 
+import { DigType } from "@root/types/dig"
+
 export interface QuadARecord {
   domain: string
   class: string
-  type: string
+  type: DigType
   value: string
 }
 export interface DnsRecordsEmailProps {

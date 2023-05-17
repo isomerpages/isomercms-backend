@@ -18,6 +18,7 @@ import {
   getDNSRecordsEmailBody,
   getErrorEmailBody,
 } from "@root/services/utilServices/SendDNSRecordEmailClient"
+import { DigResponse, DigType } from "@root/types/dig"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 
@@ -58,32 +59,6 @@ interface FormResponsesProps {
 
   siteLaunchDetails?: string[] | string[][]
 }
-
-type DigResponse = {
-  question: string[][]
-  answer?: {
-    domain: string
-    ttl: string
-    class: string
-    type: string
-    value: string
-  }[]
-  time?: number
-  server?: string
-  datetime?: string
-  size?: number
-}
-
-type DigType =
-  | "A"
-  | "AAAA"
-  | "CNAME"
-  | "MX"
-  | "NS"
-  | "PTR"
-  | "SOA"
-  | "SRV"
-  | "TXT"
 
 export class FormsgSiteLaunchRouter {
   launchSiteFromForm = async (formResponses: FormResponsesProps) => {

@@ -77,7 +77,7 @@ describe("Media utils test", () => {
     )
   })
 
-  it("should handle mediaUrl for images in private repos", async () => {
+  it("should return the mediaUrl as a data url for images in private repos", async () => {
     const expectedPartialResp = {
       name: MEDIA_FILE_NAME,
       sha: MEDIA_FILE_SHA,

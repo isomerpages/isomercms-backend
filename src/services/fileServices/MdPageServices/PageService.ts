@@ -196,7 +196,7 @@ export class PageService {
   }: PathInfo): Result<ContactUsPageName, NotFoundError> => {
     if (
       path.isOk() &&
-      path.value.pop() === "pages" &&
+      path.value.at(-1) === "pages" &&
       name === CONTACT_US_FILENAME
     ) {
       return ok({ name: Brand.fromString(name), kind: "ContactUsPage" })

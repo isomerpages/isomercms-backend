@@ -215,7 +215,7 @@ export default class ReviewRequestService {
         // NOTE: The string is guaranteed to be non-empty
         // and hence this should exist.
         name,
-        path: path.unwrapOr([""]),
+        path: path.unwrapOr([]),
         stagingUrl,
         cmsFileUrl,
       }))

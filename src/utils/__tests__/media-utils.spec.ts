@@ -15,7 +15,7 @@ import {
   SVG_FILE_PUBLIC_INPUT,
 } from "@root/fixtures/media"
 
-import { getMediaFileInfo, isMediaFileOutput } from "../media-utils"
+import { getMediaFileInfo } from "../media-utils"
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
@@ -85,9 +85,6 @@ describe("Media utils test", () => {
       type: "file",
     }
     const resp = await getMediaFileInfo(IMAGE_FILE_PRIVATE_INPUT)
-    if (!isMediaFileOutput(resp)) {
-      fail("Should not reach here")
-    }
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
     expect(resp.mediaUrl).toContain("data:")
     expect(
@@ -108,9 +105,6 @@ describe("Media utils test", () => {
       type: "file",
     }
     const resp = await getMediaFileInfo(SVG_FILE_PRIVATE_INPUT)
-    if (!isMediaFileOutput(resp)) {
-      fail("Should not reach here")
-    }
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
     expect(resp.mediaUrl).toContain("data:")
     expect(

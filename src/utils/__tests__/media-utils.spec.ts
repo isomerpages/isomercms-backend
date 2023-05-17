@@ -100,7 +100,7 @@ describe("Media utils test", () => {
     )
   })
 
-  it("should handle mediaUrl for svgs and sanitise image in private repos", async () => {
+  it("should return the mediaUrl as a data url for svgs and sanitise the svgs for svgs in private repos", async () => {
     const expectedPartialResp = {
       name: `${MEDIA_FILE_NAME}.svg`,
       sha: MEDIA_FILE_SHA,

@@ -1,5 +1,13 @@
 import { groupBy } from "lodash"
 
+import { DigType } from "@root/types/dig"
+
+export interface QuadARecord {
+  domain: string
+  class: string
+  type: DigType
+  value: string
+}
 export interface DnsRecordsEmailProps {
   requesterEmail: string
   repoName: string
@@ -9,6 +17,7 @@ export interface DnsRecordsEmailProps {
   primaryDomainTarget: string
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
+  quadARecords?: QuadARecord[]
 }
 
 export interface LaunchFailureEmailProps {
@@ -57,6 +66,7 @@ export function getDNSRecordsEmailBody(
     const hasRedirection = !!groupedDnsRecords[repoName].some(
       (dnsRecords) => !!dnsRecords.redirectionDomainSource
     )
+
     html += `<tr style="${headerRowStyle}">
           <td style="${repoNameStyle}" rowspan="${
       hasRedirection ? 4 : 3
@@ -87,12 +97,56 @@ export function getDNSRecordsEmailBody(
             <td style="${tdStyle}">${dnsRecords.primaryDomainSource}</td>
             <td style="${tdStyle}">${dnsRecords.redirectionDomainTarget}</td>
             <td style="${tdStyle}">A Record</td>
-          </tr>`
+          </tr>
+        `
       }
     })
   })
-  html += `</tbody></table>
-      <p style="${bodyFooterStyle}">This email was sent from the Isomer CMS backend.</p>`
+
+  html += `
+    </tbody>
+  </table>`
+
+  Object.keys(groupedDnsRecords).forEach((repoName) => {
+    const allQuadARecordsForRepo: QuadARecord[] = []
+    groupedDnsRecords[repoName].forEach((dnsRecord) => {
+      if (dnsRecord.quadARecords) {
+        allQuadARecordsForRepo.push(...dnsRecord.quadARecords)
+      }
+    })
+
+    if (allQuadARecordsForRepo.length > 0) {
+      html += `<p style="${bodyFooterStyle}">Note that there are some AAAA records found for the following repo: <b>${repoName}</b>. Please
+        make sure to drop these records.</p>
+        <table style="${tableStyle}">
+        <thead>
+          <tr style="${headerRowStyle}">
+            <th style="${thStyle}">Domain</th>
+            <th style="${thStyle}">Class</th>
+            <th style="${thStyle}">Type</th>
+            <th style="${thStyle}">Value</th>
+          </tr>
+        </thead>
+        <tbody>`
+
+      allQuadARecordsForRepo.forEach((record) => {
+        html += `
+                <tr style="${tdStyle}">
+                  <td style="${tdStyle}" >${record.domain}</td>
+                  <td style="${tdStyle}">${record.class}</td>
+                  <td style="${tdStyle}">${record.type}</td>
+                  <td style="${tdStyle}">${record.value}</td>
+                </tr>`
+      })
+
+      html += `
+        </tbody>
+      </table>`
+    }
+  })
+
+  html += `<p style="${bodyFooterStyle}">This email was sent from the Isomer CMS backend.</p>`
+
   return html
 }
 

@@ -105,8 +105,6 @@ export function getDNSRecordsEmailBody(
     </tbody>
   </table>`
 
-  console.log(`GROUPED: ${JSON.stringify(groupedDnsRecords, null, 2)}`)
-
   Object.keys(groupedDnsRecords).forEach((repoName) => {
     const allQuadARecordsForRepo: QuadARecord[] = []
     groupedDnsRecords[repoName].forEach((dnsRecord) => {

@@ -225,7 +225,7 @@ export class FormsgSiteLaunchRouter {
   private digDomainForQuadARecords = async (
     domain: string,
     digType: DigType
-  ): Promise<DigResponse> =>
+  ): Promise<DigResponse | null> =>
     dig([domain, digType])
       .then((result: DigResponse) => {
         logger.info(`Received DIG response: ${JSON.stringify(result)}`)
@@ -233,9 +233,11 @@ export class FormsgSiteLaunchRouter {
       })
       .catch((err: unknown) => {
         logger.error(
-          `An error occurred while performing dig for domain: ${domain}`
+          `An error occurred while performing dig for domain: ${domain}: ${JSON.stringify(
+            err
+          )}`
         )
-        throw err
+        return null
       })
 
   private async handleSiteLaunchResults(
@@ -250,13 +252,13 @@ export class FormsgSiteLaunchRouter {
       for (const launchResult of launchResults) {
         if (launchResult.isOk()) {
           // check for AAAA records
-          const digReponse = await this.digDomainForQuadARecords(
+          const digResponse = await this.digDomainForQuadARecords(
             launchResult.value.primaryDomainSource,
             "AAAA"
           )
           const successResult: DnsRecordsEmailProps = launchResult.value
-          if (digReponse.answer) {
-            const quadARecords = digReponse.answer
+          if (digResponse && digResponse.answer) {
+            const quadARecords = digResponse.answer
             successResult.quadARecords = quadARecords.map((record) => ({
               domain: record.domain,
               class: record.class,
@@ -265,7 +267,7 @@ export class FormsgSiteLaunchRouter {
             }))
           } else {
             logger.info(
-              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}`
+              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for AAAA records`
             )
           }
           successResults.push(successResult)

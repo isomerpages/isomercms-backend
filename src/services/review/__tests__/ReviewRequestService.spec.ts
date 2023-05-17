@@ -50,6 +50,7 @@ import {
 } from "@root/fixtures/review"
 import { mockUserWithSiteSessionData } from "@root/fixtures/sessionData"
 import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
+import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { EditedPageDto, GithubCommentData } from "@root/types/dto/review"
 import { Commit } from "@root/types/github"
 import * as ReviewApi from "@services/db/review"
@@ -108,6 +109,10 @@ const MockReviewRequest = {
   save: jest.fn(),
 }
 
+const MockConfigService = {
+  isConfigFile: jest.fn(),
+}
+
 const ReviewRequestService = new _ReviewRequestService(
   (MockReviewApi as unknown) as typeof ReviewApi,
   (MockUsersRepository as unknown) as ModelStatic<User>,
@@ -115,12 +120,12 @@ const ReviewRequestService = new _ReviewRequestService(
   (MockReviewersRepository as unknown) as ModelStatic<Reviewer>,
   (MockReviewMetaRepository as unknown) as ModelStatic<ReviewMeta>,
   (MockReviewRequestViewRepository as unknown) as ModelStatic<ReviewRequestView>,
-  (MockPageService as unknown) as PageService
+  (MockPageService as unknown) as PageService,
+  (MockConfigService as unknown) as ConfigService
 )
 
 const SpyReviewRequestService = {
   computeCommentData: jest.spyOn(ReviewRequestService, "computeCommentData"),
-  computeFileType: jest.spyOn(ReviewRequestService, "computeFileType"),
   computeShaMappings: jest.spyOn(ReviewRequestService, "computeShaMappings"),
   getComments: jest.spyOn(ReviewRequestService, "getComments"),
   getReviewRequest: jest.spyOn(ReviewRequestService, "getReviewRequest"),
@@ -140,9 +145,9 @@ describe("ReviewRequestService", () => {
         ],
         commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
       }
-      const expected = [
+      const expected = ok([
         {
-          type: ["page"],
+          type: "page",
           name: MOCK_PULL_REQUEST_FILE_FILENAME_ONE,
           path: [],
           cmsFileUrl: "www.google.com",
@@ -151,7 +156,7 @@ describe("ReviewRequestService", () => {
           lastEditedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
         },
         {
-          type: ["page"],
+          type: "page",
           name: MOCK_PULL_REQUEST_FILE_FILENAME_TWO,
           path: MOCK_COMMIT_FILEPATH_TWO.split("/"),
           cmsFileUrl: "www.google.com",
@@ -159,7 +164,7 @@ describe("ReviewRequestService", () => {
           lastEditedBy: MOCK_GITHUB_NAME_TWO,
           lastEditedTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
         },
-      ]
+      ])
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockPageService.parsePageName.mockReturnValue(okAsync("mock page name"))
       MockPageService.retrieveStagingPermalink.mockReturnValue(
@@ -167,6 +172,12 @@ describe("ReviewRequestService", () => {
       )
       MockPageService.retrieveCmsPermalink.mockReturnValue(
         okAsync("www.google.com")
+      )
+      MockConfigService.isConfigFile.mockReturnValueOnce(
+        err("not a config file")
+      )
+      MockConfigService.isConfigFile.mockReturnValueOnce(
+        err("not a config file")
       )
 
       // Act
@@ -178,7 +189,6 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(actual).toEqual(expected)
       expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
-      expect(SpyReviewRequestService.computeFileType).toHaveBeenCalled()
       expect(MockPageService.retrieveStagingPermalink).toHaveBeenCalled()
     })
 
@@ -188,7 +198,7 @@ describe("ReviewRequestService", () => {
         files: [],
         commits: [],
       }
-      const expected: EditedPageDto[] = []
+      const expected = ok([])
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
 
       // Act
@@ -200,7 +210,6 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(actual).toEqual(expected)
       expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
-      expect(SpyReviewRequestService.computeFileType).not.toHaveBeenCalled()
       expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
     })
 
@@ -210,7 +219,7 @@ describe("ReviewRequestService", () => {
         files: [],
         commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
       }
-      const expected: EditedPageDto[] = []
+      const expected = ok([])
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
 
       // Act
@@ -222,22 +231,7 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(actual).toEqual(expected)
       expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
-      expect(SpyReviewRequestService.computeFileType).not.toHaveBeenCalled()
       expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
-    })
-  })
-
-  describe("computeFileType", () => {
-    // TODO
-    it("should return the correct file type", () => {
-      // Arrange
-      const expected = ["page"]
-
-      // Act
-      const actual = ReviewRequestService.computeFileType("filename")
-
-      // Assert
-      expect(actual).toEqual(expected)
     })
   })
 

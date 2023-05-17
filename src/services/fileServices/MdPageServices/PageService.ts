@@ -263,7 +263,9 @@ export class PageService {
           () => new NotFoundError()
         ).andThen<ResourceCategoryPageName, NotFoundError>(({ content }) => {
           if (content.frontMatter.layout !== "post")
-            return errAsync(new NotFoundError())
+            return errAsync(
+              new NotFoundError("Please ensure that the post exists!")
+            )
           return okAsync({
             name: Brand.fromString(name),
             resourceRoom: resourceRoomName.name,
@@ -274,7 +276,11 @@ export class PageService {
       })
       // NOTE: If we get an empty string as the `pageName`,
       // we just treat the file as not being found
-      .mapErr(() => new NotFoundError())
+      .mapErr((e) => {
+        // NOTE: Done to preserve any existing error messages
+        if (e instanceof NotFoundError) return e
+        return new NotFoundError()
+      })
 
   // NOTE: This is a safe wrapper over the js file for `getResourceRoomDirectoryName`
   extractResourceRoomName = (

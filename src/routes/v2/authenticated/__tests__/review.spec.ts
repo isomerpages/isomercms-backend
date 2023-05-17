@@ -148,10 +148,12 @@ describe("Review Requests Router", () => {
       // Arrange
       const mockFilesChanged = ["file1", "file2"]
       mockIdentityUsersService.getSiteMember.mockResolvedValueOnce("user")
-      mockReviewRequestService.compareDiff.mockResolvedValueOnce(
-        mockFilesChanged
+      mockReviewRequestService.compareDiff.mockReturnValueOnce(
+        okAsync(mockFilesChanged)
       )
       mockSitesService.getBySiteName.mockResolvedValueOnce(ok(true))
+      mockSitesService.getStagingUrl.mockReturnValueOnce(okAsync("staging-url"))
+      mockGithubService.getRepoInfo.mockResolvedValueOnce(true)
 
       // Act
       const response = await request(app).get("/mockSite/review/compare")

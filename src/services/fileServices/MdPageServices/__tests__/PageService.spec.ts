@@ -16,6 +16,7 @@ import {
   UnlinkedPageName,
 } from "@root/types/pages"
 import { Brand } from "@root/types/util"
+import { extractPathInfo } from "@root/utils/files"
 import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
 
 import { CollectionPageService } from "../CollectionPageService"
@@ -88,7 +89,7 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        "index.md",
+        { name: "index.md", path: err([]), __kind: "PathInfo" },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -105,7 +106,7 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        "pages/contact-us.md",
+        { name: CONTACT_US_FILENAME, path: ok(["pages"]), __kind: "PathInfo" },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -115,14 +116,18 @@ describe("PageService", () => {
 
     it('should parse "contact-us.md" into an error', async () => {
       // Arrange
-      const expected = err(new NotFoundError())
+      const expected = err(
+        new NotFoundError(
+          "Error when parsing path: , please ensure that the file exists!"
+        )
+      )
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
 
       // Act
       const actual = await pageService.parsePageName(
-        CONTACT_US_FILENAME,
+        { name: CONTACT_US_FILENAME, path: ok([]), __kind: "PathInfo" },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -139,7 +144,11 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        `pages/${MOCK_UNLINKED_PAGE_NAME}`,
+        {
+          name: `${MOCK_UNLINKED_PAGE_NAME}`,
+          path: ok(["pages"]),
+          __kind: "PathInfo",
+        },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -171,7 +180,15 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        `${MOCK_RESOURCE_ROOM_NAME}/${MOCK_RESOURCE_CATEGORY_NAME}/_posts/${MOCK_UNLINKED_PAGE_NAME}`,
+        {
+          name: `${MOCK_UNLINKED_PAGE_NAME}`,
+          path: ok([
+            MOCK_RESOURCE_ROOM_NAME,
+            MOCK_RESOURCE_CATEGORY_NAME,
+            "_posts",
+          ]),
+          __kind: "PathInfo",
+        },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -182,15 +199,7 @@ describe("PageService", () => {
 
     it("should return `NotFoundError` if the `layout` of the resource item is not `post`", async () => {
       // Arrange
-      const MOCK_RESOURCE_ITEM = `${MOCK_RESOURCE_ROOM_NAME}/${MOCK_RESOURCE_CATEGORY_NAME}/_posts/${MOCK_UNLINKED_PAGE_NAME}`
-      const expected = err(
-        new NotFoundError(
-          `Error when parsing path: ${MOCK_RESOURCE_ITEM.split("/").slice(
-            0,
-            -1
-          )}, please ensure that the file exists!`
-        )
-      )
+      const expected = err(new NotFoundError())
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
@@ -207,7 +216,15 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        MOCK_RESOURCE_ITEM,
+        {
+          name: MOCK_UNLINKED_PAGE_NAME,
+          path: ok([
+            MOCK_RESOURCE_ROOM_NAME,
+            MOCK_RESOURCE_CATEGORY_NAME,
+            "_posts",
+          ]),
+          __kind: "PathInfo",
+        },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -229,7 +246,11 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        `${MOCK_COLLECTION_NAME}/${MOCK_UNLINKED_PAGE_NAME}`,
+        {
+          name: MOCK_UNLINKED_PAGE_NAME,
+          path: ok([MOCK_COLLECTION_NAME]),
+          __kind: "PathInfo",
+        },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -252,7 +273,11 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        `${MOCK_COLLECTION_NAME}/${MOCK_SUBCOLLECTION_NAME}/${MOCK_UNLINKED_PAGE_NAME}`,
+        {
+          name: MOCK_UNLINKED_PAGE_NAME,
+          path: ok([MOCK_COLLECTION_NAME, MOCK_SUBCOLLECTION_NAME]),
+          __kind: "PathInfo",
+        },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -263,11 +288,7 @@ describe("PageService", () => {
 
     it("should parse two level filepaths including 'index.md' to `NotFoundError`", async () => {
       // Arrange
-      const expected = err(
-        new NotFoundError(
-          `Error when parsing path: , please ensure that the file exists!`
-        )
-      )
+      const expected = err(new NotFoundError())
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
@@ -275,25 +296,7 @@ describe("PageService", () => {
       // Act
       const actual = await pageService.parsePageName(
         // NOTE: Extra front slash
-        `/${HOMEPAGE_FILENAME}`,
-        MOCK_USER_SESSION_DATA_ONE
-      )
-
-      // Assert
-      expect(actual).toEqual(expected)
-      expect(mockResourcePageService.read).toBeCalled()
-    })
-
-    it("should parse empty strings into `EmptyStringError`", async () => {
-      // Arrange
-      const expected = err(new EmptyStringError())
-      mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
-        { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
-      )
-
-      // Act
-      const actual = await pageService.parsePageName(
-        "",
+        { name: `/${HOMEPAGE_FILENAME}`, path: err([]), __kind: "PathInfo" },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -304,18 +307,14 @@ describe("PageService", () => {
 
     it("should parse `/` into `NotFoundError`", async () => {
       // Arrange
-      const expected = err(
-        new NotFoundError(
-          "Error when parsing path: , please ensure that the file exists!"
-        )
-      )
+      const expected = err(new NotFoundError())
       mockResourceRoomDirectoryService.getResourceRoomDirectoryName.mockResolvedValueOnce(
         { resourceRoomName: MOCK_RESOURCE_ROOM_NAME }
       )
 
       // Act
       const actual = await pageService.parsePageName(
-        "/",
+        { name: "/", path: err([]), __kind: "PathInfo" },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -333,7 +332,7 @@ describe("PageService", () => {
 
       // Act
       const actual = await pageService.parsePageName(
-        "gibberish",
+        { name: "gibberish", path: err([]), __kind: "PathInfo" },
         MOCK_USER_SESSION_DATA_ONE
       )
 
@@ -411,10 +410,11 @@ describe("PageService", () => {
       const expected = ok({
         name: MOCK_UNLINKED_PAGE_NAME,
         path: ok([MOCK_RESOURCE_ROOM_NAME, MOCK_RESOURCE_CATEGORY_NAME]),
+        __kind: "PathInfo",
       })
 
       // Act
-      const actual = pageService.extractPathInfo(
+      const actual = extractPathInfo(
         `${MOCK_RESOURCE_ROOM_NAME}/${MOCK_RESOURCE_CATEGORY_NAME}/${MOCK_UNLINKED_PAGE_NAME}`
       )
 
@@ -427,10 +427,11 @@ describe("PageService", () => {
       const expected = ok({
         name: MOCK_UNLINKED_PAGE_NAME,
         path: err([]),
+        __kind: "PathInfo",
       })
 
       // Act
-      const actual = pageService.extractPathInfo(`${MOCK_UNLINKED_PAGE_NAME}`)
+      const actual = extractPathInfo(`${MOCK_UNLINKED_PAGE_NAME}`)
 
       // Assert
       expect(actual).toStrictEqual(expected)
@@ -441,10 +442,11 @@ describe("PageService", () => {
       const expected = ok({
         name: "",
         path: ok([MOCK_RESOURCE_ROOM_NAME]),
+        __kind: "PathInfo",
       })
 
       // Act
-      const actual = pageService.extractPathInfo(`${MOCK_RESOURCE_ROOM_NAME}/`)
+      const actual = extractPathInfo(`${MOCK_RESOURCE_ROOM_NAME}/`)
 
       // Assert
       expect(actual).toStrictEqual(expected)
@@ -455,7 +457,7 @@ describe("PageService", () => {
       const expected = err(new EmptyStringError())
 
       // Act
-      const actual = pageService.extractPathInfo("")
+      const actual = extractPathInfo("")
 
       // Assert
       expect(actual).toEqual(expected)

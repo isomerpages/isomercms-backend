@@ -224,9 +224,13 @@ export default class ReviewRequestService {
     const { siteName, isomerUserId: userId } = sessionData
 
     // Find all review requests associated with the site
-    const requests = await this.repository.findAll({
+    // TODO: Note this needs to be findAll when we reach a stage of allowing
+    // multiple open PRs simultaneously
+    // Current behaviour returns the newest Open PR based on created_at field
+    const request = await this.repository.findOne({
       where: {
         siteId: site.id,
+        reviewStatus: ReviewRequestStatus.Open,
       },
       include: [
         {
@@ -238,7 +242,12 @@ export default class ReviewRequestService {
           as: "requestor",
         },
       ],
+      order: [["created_at", "DESC"]],
     })
+
+    // NOTE: Doing this so that we can easily change back to using
+    // findAll once ready
+    const requests = [request]
 
     // NOTE: This has a max of 30 pull requests
     // and returns only open pull requests.

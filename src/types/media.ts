@@ -1,4 +1,5 @@
 export type ItemType = "dir" | "file"
+export type MediaType = "images" | "files"
 
 export interface MediaFile {
   name: string
@@ -11,8 +12,8 @@ export interface MediaFileInput {
   file: MediaFile
   siteName: string
   directoryName: string
-  mediaType: string
-  isPrivate: boolean
+  mediaType: MediaType
+  isPrivate?: boolean
 }
 
 export interface MediaFileOutput {

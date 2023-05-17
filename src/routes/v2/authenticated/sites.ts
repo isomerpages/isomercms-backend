@@ -8,7 +8,6 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import type UserSessionData from "@root/classes/UserSessionData"
-import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
 import { StatsMiddleware } from "@root/middleware/stats"
 import type { RequestHandler } from "@root/types"

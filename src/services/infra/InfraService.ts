@@ -6,10 +6,7 @@ import { config } from "@config/config"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import {
-  SiteLaunchMessage,
-  SiteLaunchLambdaStatus,
-} from "@root/../microservices/site-launch/shared/types"
+import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
 import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
@@ -25,6 +22,9 @@ import { mailer } from "@services/utilServices/MailClient"
 import CollaboratorsService from "../identity/CollaboratorsService"
 import QueueService from "../identity/QueueService"
 
+import DynamoDBService from "./DynamoDBService"
+import StepFunctionsService from "./StepFunctionsService"
+
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
 export const REDIRECTION_SERVER_IP = "18.136.36.203"
 
@@ -35,6 +35,8 @@ interface InfraServiceProps {
   launchesService: LaunchesService
   queueService: QueueService
   collaboratorsService: CollaboratorsService
+  stepFunctionsService: StepFunctionsService
+  dynamoDBService: DynamoDBService
 }
 
 interface dnsRecordDto {
@@ -52,6 +54,7 @@ type CreateSiteParams = {
   isEmailLogin: boolean
 }
 
+const ARE_QUEUES_DEPRECIATED = true
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 
@@ -65,6 +68,10 @@ export default class InfraService {
 
   private readonly collaboratorsService: InfraServiceProps["collaboratorsService"]
 
+  private readonly stepFunctionsService: InfraServiceProps["stepFunctionsService"]
+
+  private readonly dynamoDBService: InfraServiceProps["dynamoDBService"]
+
   constructor({
     sitesService,
     reposService,
@@ -72,6 +79,8 @@ export default class InfraService {
     launchesService,
     queueService,
     collaboratorsService,
+    stepFunctionsService,
+    dynamoDBService,
   }: InfraServiceProps) {
     this.sitesService = sitesService
     this.reposService = reposService
@@ -79,6 +88,8 @@ export default class InfraService {
     this.launchesService = launchesService
     this.queueService = queueService
     this.collaboratorsService = collaboratorsService
+    this.stepFunctionsService = stepFunctionsService
+    this.dynamoDBService = dynamoDBService
   }
 
   createSite = async ({
@@ -373,8 +384,12 @@ export default class InfraService {
         message.redirectionDomain = [redirectionDomainObject]
       }
 
-      this.queueService.sendMessage(message)
-
+      if (ARE_QUEUES_DEPRECIATED) {
+        this.dynamoDBService.createItem(message)
+        this.stepFunctionsService.triggerFlow(message)
+      } else {
+        this.queueService.sendMessage(message)
+      }
       return okAsync(newLaunchParams)
     } catch (error) {
       return errAsync(
@@ -387,7 +402,9 @@ export default class InfraService {
   }
 
   siteUpdate = async () => {
-    const messages = await this.queueService.pollMessages()
+    const messages = ARE_QUEUES_DEPRECIATED
+      ? await this.dynamoDBService.getAllSuccessOrFailureLaunches()
+      : await this.queueService.pollMessages()
     await Promise.all(
       messages.map(async (message) => {
         const site = await this.sitesService.getBySiteName(message.repoName)
@@ -419,7 +436,7 @@ export default class InfraService {
     )
   }
 
-  pollQueue = async () => {
+  pollMessages = async () => {
     setInterval(this.siteUpdate, SITE_LAUNCH_UPDATE_INTERVAL)
   }
 

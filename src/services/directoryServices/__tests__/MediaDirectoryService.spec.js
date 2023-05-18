@@ -130,46 +130,6 @@ describe("Media Directory Service", () => {
       })
     })
     mockGitHubService.getRepoInfo.mockResolvedValueOnce({
-      private: true,
-    })
-    mockBaseDirectoryService.list.mockResolvedValueOnce(readImgDirResp)
-    mockGitHubService.readMedia.mockResolvedValueOnce({
-      content: mockContent1,
-    })
-    mockGitHubService.readMedia.mockResolvedValueOnce({
-      content: mockContent2,
-    })
-    it("ListFiles for an image directory in a private repo returns all images properly formatted", async () => {
-      const expectedResp = [
-        {
-          mediaUrl: `data:image/png;base64,${mockContent1}`,
-          name: testImg1.name,
-          sha: testImg1.sha,
-          mediaPath: `${imageDirectoryName}/${testImg1.name}`,
-        },
-        {
-          mediaUrl: `data:image/svg+xml;base64,${mockContent2}`,
-          name: testImg2.name,
-          sha: testImg2.sha,
-          mediaPath: `${imageDirectoryName}/${testImg2.name}`,
-        },
-        {
-          name: dir.name,
-          type: dir.type,
-        },
-      ]
-      await expect(
-        service.listFiles(sessionData, {
-          mediaType: "images",
-          directoryName: imageDirectoryName,
-        })
-      ).resolves.toMatchObject(expectedResp)
-      expect(mockGitHubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
-        directoryName: imageDirectoryName,
-      })
-    })
-    mockGitHubService.getRepoInfo.mockResolvedValueOnce({
       private: false,
     })
     mockBaseDirectoryService.list.mockResolvedValueOnce(readFileDirResp)

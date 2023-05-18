@@ -180,6 +180,14 @@ const config = convict({
         default: "site-launch",
       },
     },
+    stepFunctions: {
+      stepFunctionsArn: {
+        doc: "Amazon Resource Name (ARN) of the Step Functions state machine",
+        env: "STEP_FUNCTIONS_ARN",
+        format: "required-string",
+        default: "",
+      },
+    },
     sqs: {
       incomingQueueUrl: {
         doc: "URL of the incoming SQS queue",

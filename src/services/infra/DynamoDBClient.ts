@@ -1,15 +1,11 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
+import { DynamoDBClient, ScanCommandOutput } from "@aws-sdk/client-dynamodb"
 import {
   DynamoDBDocumentClient,
   PutCommand,
-  GetCommand,
-  UpdateCommand,
   DeleteCommand,
-  UpdateCommandInput,
   PutCommandOutput,
-  UpdateCommandOutput,
   DeleteCommandOutput,
-  GetCommandOutput,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 
@@ -52,7 +48,7 @@ export default class DynamoDBDocClient {
 
   private withLogger = async <T>(
     promise: Promise<T>,
-    type: "create" | "get" | "delete" | "update"
+    type: "create" | "scan" | "delete" | "update"
   ): Promise<T> => {
     try {
       return await promise
@@ -82,38 +78,13 @@ export default class DynamoDBDocClient {
     )
   }
 
-  getItem = async (
-    tableName: string,
-    key: string
-  ): Promise<GetCommandOutput> => {
+  getAllItems = async (tableName: string): Promise<ScanCommandOutput> => {
     const params = {
       TableName: tableName,
-      Key: { appId: key },
-    }
-
-    return this.withLogger(
-      this.dynamoDBDocClient.send(new GetCommand(params)),
-      "get"
-    )
-  }
-
-  updateItem = async ({
-    TableName,
-    Key,
-    UpdateExpression,
-    ExpressionAttributeNames,
-    ExpressionAttributeValues,
-  }: UpdateParams): Promise<UpdateCommandOutput> => {
-    const params: UpdateCommandInput = {
-      TableName,
-      Key,
-      UpdateExpression,
-      ExpressionAttributeNames,
-      ExpressionAttributeValues,
     }
     return this.withLogger(
-      this.dynamoDBDocClient.send(new UpdateCommand(params)),
-      "update"
+      this.dynamoDBDocClient.send(new ScanCommand(params)),
+      "scan"
     )
   }
 

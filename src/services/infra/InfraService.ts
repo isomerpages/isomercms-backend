@@ -54,7 +54,7 @@ type CreateSiteParams = {
   isEmailLogin: boolean
 }
 
-const ARE_QUEUES_DEPRECIATED = true
+const ARE_QUEUES_DEPRECIATED = false
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 

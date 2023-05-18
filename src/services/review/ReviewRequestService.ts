@@ -247,7 +247,7 @@ export default class ReviewRequestService {
 
     // NOTE: Doing this so that we can easily change back to using
     // findAll once ready
-    const requests = [request]
+    const requests = request ? [request] : []
 
     // NOTE: This has a max of 30 pull requests
     // and returns only open pull requests.

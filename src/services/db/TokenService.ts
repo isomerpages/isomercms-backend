@@ -19,6 +19,8 @@ import { AccessToken } from "@database/models"
 const GITHUB_TOKEN_LIMIT = 5000
 const GITHUB_TOKEN_THRESHOLD = 4000
 const GITHUB_RESET_INTERVAL = 60 * 60 // seconds
+const ACTIVE_TOKEN_ALERT_1 = 0.6
+const ACTIVE_TOKEN_ALERT_2 = 0.8
 
 const NoResetTime = null
 type MaybeResetTime = number | typeof NoResetTime
@@ -171,7 +173,37 @@ class TokenService {
         tokenData.resetTime
       )
     })
+    this.activeUsageAlert()
     return response
+  }
+
+  activeUsageAlert() {
+    let exhaustedTokensCount = 0
+    this.activeTokensData.forEach((tokenData) => {
+      if (
+        tokenData.remainingRequests <=
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      ) {
+        exhaustedTokensCount += 1
+      }
+    })
+    if (
+      exhaustedTokensCount >=
+      this.activeTokensData.length * ACTIVE_TOKEN_ALERT_2
+    ) {
+      logger.info(`${ACTIVE_TOKEN_ALERT_2}% of access token capacity reached`)
+      logger.info(
+        `${exhaustedTokensCount}/${this.activeTokensData.length} active tokens exhausted`
+      )
+    } else if (
+      exhaustedTokensCount >=
+      this.activeTokensData.length * ACTIVE_TOKEN_ALERT_1
+    ) {
+      logger.info(`${ACTIVE_TOKEN_ALERT_1}% of access token capacity reached`)
+      logger.info(
+        `${exhaustedTokensCount}/${this.activeTokensData.length} active tokens exhausted`
+      )
+    }
   }
 
   static parseResponseTokenData(

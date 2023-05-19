@@ -210,28 +210,26 @@ class TokenService {
     response: AxiosResponse
   ): Result<ResponseTokenData, AxiosTokenParsingError> {
     // response.config.headers.Authorization format: token ghp_********************************
-    if (typeof response.config?.headers?.Authorization !== "string") {
-    } else if (response.config?.headers?.Authorization.length !== 46) {
-    } else if (
-      response.config?.headers?.Authorization.slice(0, 6) !== "token "
+    if (
+      typeof response.config?.headers?.Authorization !== "string" ||
+      response.config?.headers?.Authorization.length !== 46 ||
+      response.config?.headers?.Authorization.slice(0, 6) !== "token " ||
+      Number.isNaN(+response.headers?.["x-ratelimit-remaining"]) ||
+      Number.isNaN(+response.headers?.["x-ratelimit-reset"])
     ) {
-    } else if (Number.isNaN(+response.headers?.["x-ratelimit-remaining"])) {
-    } else if (Number.isNaN(+response.headers?.["x-ratelimit-reset"])) {
-    } else {
-      const token: string = response.config.headers.Authorization.slice(6)
-
-      const remainingRequests = +response.headers["x-ratelimit-remaining"]
-      const resetTime = +response.headers["x-ratelimit-reset"]
-      return ok({ token, remainingRequests, resetTime })
+      return err({
+        code: "AxiosTokenParsingError",
+        message: "error parsing token data from axios response",
+        meta: {
+          response,
+        },
+      } as AxiosTokenParsingError)
     }
+    const token: string = response.config.headers.Authorization.slice(6)
 
-    return err({
-      code: "AxiosTokenParsingError",
-      message: "error parsing token data from axios response",
-      meta: {
-        response,
-      },
-    } as AxiosTokenParsingError)
+    const remainingRequests = +response.headers["x-ratelimit-remaining"]
+    const resetTime = +response.headers["x-ratelimit-reset"]
+    return ok({ token, remainingRequests, resetTime })
   }
 
   updateTokens(token: string, remainingRequests: number, resetTime: number) {

@@ -27,6 +27,22 @@ export class AccessToken extends Model {
   })
   token!: string
 
+  @Column({
+    allowNull: false,
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+    validate: {
+      notEmpty: true,
+    },
+  })
+  isReserved!: boolean
+
+  @Column({
+    allowNull: true,
+    type: DataType.DATE,
+  })
+  resetTime!: Date | null
+
   @CreatedAt
   createdAt!: Date
 

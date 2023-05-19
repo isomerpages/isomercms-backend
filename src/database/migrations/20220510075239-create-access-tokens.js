@@ -12,6 +12,14 @@ module.exports = {
         unique: true,
         type: Sequelize.TEXT,
       },
+      is_reserved: {
+        allowNull: false,
+        type: Sequelize.BOOLEAN,
+      },
+      reset_time: {
+        allowNull: true,
+        type: Sequelize.DATE,
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

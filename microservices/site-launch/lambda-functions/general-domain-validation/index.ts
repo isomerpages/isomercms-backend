@@ -11,17 +11,17 @@ import type {
 
 import logger from "../../shared/logger"
 import {
-  MessageBody,
-  SiteLaunchLambdaStatus,
+  SiteLaunchMessage,
+  SiteLaunchStatus,
   SiteLaunchLambdaType,
 } from "../../shared/types"
 
 interface GeneralDomainValidationLambdaResponse {
   lambdaType: SiteLaunchLambdaType
-  status: SiteLaunchLambdaStatus
+  status: SiteLaunchStatus
   appId: string
   primaryDomain: string
-  message: MessageBody
+  message: SiteLaunchMessage
 }
 
 const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
@@ -30,7 +30,7 @@ const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
 ]
 
 export const generalDomainValidation = async (
-  event: MessageBody
+  event: SiteLaunchMessage
 ): Promise<GeneralDomainValidationLambdaResponse> => {
   logger.info(event)
 
@@ -71,7 +71,7 @@ export const generalDomainValidation = async (
 
   return {
     lambdaType: SiteLaunchLambdaType.GENERAL_DOMAIN_VALIDATION,
-    status: SiteLaunchLambdaStatus.SUCCESS,
+    status: { state: "success", message: "SUCCESS_SITE_LIVE" },
     appId,
     primaryDomain,
     message: event,

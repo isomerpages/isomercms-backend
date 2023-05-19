@@ -2,6 +2,7 @@ import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
 import express, { RequestHandler } from "express"
 import { err, ok } from "neverthrow"
+import dig from "node-dig-dns"
 
 import logger from "@logger/logger"
 
@@ -17,6 +18,7 @@ import {
   getDNSRecordsEmailBody,
   getErrorEmailBody,
 } from "@root/services/utilServices/SendDNSRecordEmailClient"
+import { DigResponse, DigType } from "@root/types/dig"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 
@@ -220,6 +222,24 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(requesterEmail, subject, html)
   }
 
+  private digDomainForQuadARecords = async (
+    domain: string,
+    digType: DigType
+  ): Promise<DigResponse | null> =>
+    dig([domain, digType])
+      .then((result: DigResponse) => {
+        logger.info(`Received DIG response: ${JSON.stringify(result)}`)
+        return result
+      })
+      .catch((err: unknown) => {
+        logger.error(
+          `An error occurred while performing dig for domain: ${domain}: ${JSON.stringify(
+            err
+          )}`
+        )
+        return null
+      })
+
   private async handleSiteLaunchResults(
     formResponses: FormResponsesProps[],
     submissionId: string
@@ -229,11 +249,30 @@ export class FormsgSiteLaunchRouter {
         formResponses.map(this.launchSiteFromForm)
       )
       const successResults: DnsRecordsEmailProps[] = []
-      launchResults.forEach((launchResult) => {
+      for (const launchResult of launchResults) {
         if (launchResult.isOk()) {
-          successResults.push(launchResult.value)
+          // check for AAAA records
+          const digResponse = await this.digDomainForQuadARecords(
+            launchResult.value.primaryDomainSource,
+            "AAAA"
+          )
+          const successResult: DnsRecordsEmailProps = launchResult.value
+          if (digResponse && digResponse.answer) {
+            const quadARecords = digResponse.answer
+            successResult.quadARecords = quadARecords.map((record) => ({
+              domain: record.domain,
+              class: record.class,
+              type: record.type,
+              value: record.value,
+            }))
+          } else {
+            logger.info(
+              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for AAAA records`
+            )
+          }
+          successResults.push(successResult)
         }
-      })
+      }
 
       await this.sendDNSRecords(submissionId, successResults)
 

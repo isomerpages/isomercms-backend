@@ -1,4 +1,4 @@
-import { MessageBody } from "@root/../microservices/site-launch/shared/types"
+import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
 import logger from "@root/logger/logger"
 
 import QueueClient from "./QueueClient"
@@ -10,12 +10,12 @@ export default class QueueService {
     this.queueClient = queueClient ?? new QueueClient()
   }
 
-  sendMessage = async (message: MessageBody) => {
+  sendMessage = async (message: SiteLaunchMessage) => {
     this.queueClient.sendMessage(JSON.stringify(message))
   }
 
   pollMessages = async () => {
-    const messageBodies: MessageBody[] = []
+    const messageBodies: SiteLaunchMessage[] = []
     const messages = await this.queueClient.receiveMessage()
 
     messages?.forEach((message) => {
@@ -30,7 +30,7 @@ export default class QueueService {
     return messageBodies
   }
 
-  private parseMessageBody(message: string): MessageBody | null {
+  private parseMessageBody(message: string): SiteLaunchMessage | null {
     let parsedMessage = null
     try {
       if (message) {

@@ -81,11 +81,7 @@ const isomerRepoAxiosInstance = setupCache(
     etag: true,
   }
 )
-isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
-isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 
 const genericGitHubAxiosInstance = axios.create()
-genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
-genericGitHubAxiosInstance.interceptors.response.use(respHandler)
 
 export { isomerRepoAxiosInstance, genericGitHubAxiosInstance }

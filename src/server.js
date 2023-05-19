@@ -43,7 +43,10 @@ import { SubcollectionPageService } from "@root/services/fileServices/MdPageServ
 import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
-import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import {
+  genericGitHubAxiosInstance,
+  isomerRepoAxiosInstance,
+} from "@services/api/AxiosInstance"
 import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import {
@@ -137,12 +140,17 @@ const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { GitHubService } = require("@services/db/GitHubService")
+const { TokenService } = require("@services/db/TokenService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const authService = new AuthService({ usersService })
 const gitHubService = new GitHubService({
   axiosInstance: isomerRepoAxiosInstance,
 })
+const tokenService = new TokenService([
+  isomerRepoAxiosInstance,
+  genericGitHubAxiosInstance,
+])
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })

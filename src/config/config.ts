@@ -201,9 +201,9 @@ const config = convict({
         format: "required-string",
         default: "",
       },
-      areQueuesDeprecated: {
+      ffDeprecateSiteQueues: {
         doc: "Whether the queues are deprecated",
-        env: "ARE_QUEUES_DEPRECATED",
+        env: "FF_DEPRECATE_SITE_QUEUES",
         format: "required-boolean",
         default: false,
       },

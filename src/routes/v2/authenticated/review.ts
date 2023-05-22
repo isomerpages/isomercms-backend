@@ -30,7 +30,6 @@ import {
   ReviewRequestDto,
   BlobDiffDto,
   EditedItemDto,
-  BaseEditedItemDto,
 } from "@root/types/dto/review"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
@@ -88,7 +87,7 @@ export class ReviewsRouter {
 
   compareDiff: RequestHandler<
     { siteName: string },
-    { items: (EditedItemDto | BaseEditedItemDto)[] } | ResponseErrorBody,
+    { items: EditedItemDto[] } | ResponseErrorBody,
     unknown,
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }

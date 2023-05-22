@@ -57,7 +57,7 @@ export interface ReviewRequestDto {
   reviewers: string[]
   reviewRequestedTime: number
   status: ReviewRequestStatus
-  changedItems: (WithEditMeta<EditedItemDto> | BaseEditedItemDto)[]
+  changedItems: WithEditMeta<EditedItemDto>[]
 }
 
 export interface UpdateReviewRequestDto {

@@ -57,6 +57,19 @@ import * as ReviewApi from "@services/db/review"
 import { PageService } from "../fileServices/MdPageServices/PageService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
 
+const injectDefaultEditMeta = ({
+  path,
+  name,
+}: BaseEditedItemDto): WithEditMeta<EditedPageDto> => ({
+  lastEditedBy: "Unknown",
+  lastEditedTime: 0,
+  type: "page",
+  cmsFileUrl: "",
+  stagingUrl: "",
+  path,
+  name,
+})
+
 /**
  * NOTE: This class does not belong as a subset of GitHub service.
  * This is because GitHub service exists to operate on _files_
@@ -107,7 +120,7 @@ export default class ReviewRequestService {
   compareDiff = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
-  ) =>
+  ): ResultAsync<WithEditMeta<EditedItemDto>[], NetworkError | DatabaseError> =>
     ResultAsync.fromPromise(
       this.apiService.getCommitDiff(userWithSiteSessionData.siteName),
       // TODO: Write a handler for github errors to our own internal errors
@@ -129,8 +142,8 @@ export default class ReviewRequestService {
           ).map((res) =>
             res
               // NOTE: Need to type-hint so that we can recover
-              .map<BaseEditedItemDto | WithEditMeta<EditedItemDto>>(_.identity)
-              .orElse((baseItem) => okAsync(baseItem))
+              .map<WithEditMeta<EditedItemDto>>(_.identity)
+              .orElse((baseItem) => okAsync(injectDefaultEditMeta(baseItem)))
           )
         )
       )

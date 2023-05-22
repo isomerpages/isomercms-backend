@@ -54,7 +54,9 @@ type CreateSiteParams = {
   isEmailLogin: boolean
 }
 
-const DEPRECATE_SITE_QUEUES = config.get("aws.sqs.ffDeprecateSiteQueues")
+const DEPRECATE_SITE_QUEUES = config.get(
+  "aws.sqs.featureFlag.shouldDeprecateSiteQueues"
+)
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 

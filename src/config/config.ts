@@ -201,11 +201,13 @@ const config = convict({
         format: "required-string",
         default: "",
       },
-      ffDeprecateSiteQueues: {
-        doc: "Whether the queues are deprecated",
-        env: "FF_DEPRECATE_SITE_QUEUES",
-        format: "required-boolean",
-        default: false,
+      featureFlag: {
+        shouldDeprecateSiteQueues: {
+          doc: "Whether the queues are deprecated",
+          env: "FF_DEPRECATE_SITE_QUEUES",
+          format: "required-boolean",
+          default: false,
+        },
       },
     },
   },

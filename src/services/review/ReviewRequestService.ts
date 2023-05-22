@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios"
 import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
-import { ModelStatic } from "sequelize"
+import { ModelStatic, Op } from "sequelize"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
@@ -230,7 +230,12 @@ export default class ReviewRequestService {
     const request = await this.repository.findOne({
       where: {
         siteId: site.id,
-        reviewStatus: ReviewRequestStatus.Open,
+        [Op.or]: [
+          {
+            reviewStatus: ReviewRequestStatus.Open,
+          },
+          { reviewStatus: ReviewRequestStatus.Approved },
+        ],
       },
       include: [
         {

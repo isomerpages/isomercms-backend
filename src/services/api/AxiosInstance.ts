@@ -8,7 +8,7 @@ import logger from "@logger/logger"
 import { getAccessToken } from "@utils/token-retrieval-utils"
 import tracer from "@utils/tracer"
 
-import { headerInterpreter } from "@root/utils/headerInterpreter"
+import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
@@ -81,7 +81,7 @@ const isomerRepoAxiosInstance = setupCache(
   {
     interpretHeader: true,
     etag: true,
-    headerInterpreter,
+    headerInterpreter: customHeaderInterpreter,
   }
 )
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)

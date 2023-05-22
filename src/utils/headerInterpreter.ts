@@ -9,7 +9,7 @@ import { parse } from "cache-parser"
 // This incurs an extra network call on every update, which is not ideal but in 304
 // this is an empty request.
 // eslint-disable-next-line import/prefer-default-export
-export const headerInterpreter: HeadersInterpreter = (headers) => {
+export const customHeaderInterpreter: HeadersInterpreter = (headers) => {
   if (!headers) return "not enough headers"
 
   const cacheControl = headers[Header.CacheControl]

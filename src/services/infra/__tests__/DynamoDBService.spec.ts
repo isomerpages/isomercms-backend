@@ -76,7 +76,7 @@ describe("DynamoDBService", () => {
         Items: [mockSuccessLaunch, mockLaunch, mockFailureLaunch],
       }
       mockDynamoDBClient.getAllItems.mockReturnValueOnce(scanCommandOutput)
-      const result: SiteLaunchMessage[] = await dynamoDBService.getAllSuccessOrFailureLaunches()
+      const result: SiteLaunchMessage[] = await dynamoDBService.getAllCompletedLaunches()
       expect(dynamoDBClient.getAllItems).toHaveBeenCalledWith(tableName)
       expect(spyDynamoDBService.deleteItem).toHaveBeenCalledWith(
         mockSuccessLaunch

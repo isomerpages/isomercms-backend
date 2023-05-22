@@ -201,6 +201,12 @@ const config = convict({
         format: "required-string",
         default: "",
       },
+      areQueuesDeprecated: {
+        doc: "Whether the queues are deprecated",
+        env: "ARE_QUEUES_DEPRECATED",
+        format: "required-boolean",
+        default: false,
+      },
     },
   },
   github: {

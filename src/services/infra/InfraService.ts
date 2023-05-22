@@ -54,7 +54,7 @@ type CreateSiteParams = {
   isEmailLogin: boolean
 }
 
-const ARE_QUEUES_DEPRECIATED = false
+const ARE_QUEUES_DEPRECATED = config.get("aws.sqs.areQueuesDeprecated")
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 
@@ -384,7 +384,7 @@ export default class InfraService {
         message.redirectionDomain = [redirectionDomainObject]
       }
 
-      if (ARE_QUEUES_DEPRECIATED) {
+      if (ARE_QUEUES_DEPRECATED) {
         this.dynamoDBService.createItem(message)
         this.stepFunctionsService.triggerFlow(message)
       } else {
@@ -402,8 +402,8 @@ export default class InfraService {
   }
 
   siteUpdate = async () => {
-    const messages = ARE_QUEUES_DEPRECIATED
-      ? await this.dynamoDBService.getAllSuccessOrFailureLaunches()
+    const messages = ARE_QUEUES_DEPRECATED
+      ? await this.dynamoDBService.getAllCompletedLaunches()
       : await this.queueService.pollMessages()
     await Promise.all(
       messages.map(async (message) => {

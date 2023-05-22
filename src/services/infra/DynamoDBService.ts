@@ -22,7 +22,7 @@ export default class DynamoDBService {
     await this.dynamoDBClient.createItem(this.TABLE_NAME, message)
   }
 
-  async getAllSuccessOrFailureLaunches(): Promise<SiteLaunchMessage[]> {
+  async getAllCompletedLaunches(): Promise<SiteLaunchMessage[]> {
     const entries = ((await this.dynamoDBClient.getAllItems(this.TABLE_NAME))
       .Items as unknown) as SiteLaunchMessage[]
 

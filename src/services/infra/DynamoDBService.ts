@@ -1,3 +1,4 @@
+import { AttributeValue } from "@aws-sdk/client-dynamodb"
 import { DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 

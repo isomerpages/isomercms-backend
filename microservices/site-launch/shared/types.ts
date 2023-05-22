@@ -40,7 +40,7 @@ export interface SiteLaunchMessage {
 }
 
 export function isSiteLaunchMessage(obj: unknown): obj is SiteLaunchMessage {
-  if (typeof obj !== "object" || obj === null) {
+  if (!obj) {
     return false
   }
 

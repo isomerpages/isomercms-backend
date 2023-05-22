@@ -185,7 +185,7 @@ const config = convict({
         doc: "Amazon Resource Name (ARN) of the Step Functions state machine",
         env: "STEP_FUNCTIONS_ARN",
         format: "required-string",
-        default: "",
+        default: "SiteLaunchStepFunctions-dev",
       },
     },
     sqs: {

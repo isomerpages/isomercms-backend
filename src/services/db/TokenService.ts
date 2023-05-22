@@ -11,6 +11,10 @@ import {
 
 import logger from "@logger/logger"
 
+import DatabaseError from "@errors/DatabaseError"
+import NoAvailableTokenError from "@errors/NoAvailableTokenError"
+import TokenParsingError from "@errors/TokenParsingError"
+
 import tracer from "@utils/tracer"
 
 import { AccessToken } from "@database/models"
@@ -38,32 +42,6 @@ type TokenData = {
 const NoTokenData = null
 type MaybeTokenData = TokenData | typeof NoTokenData
 
-// TODO: `Change errors to follow format and consolidate`
-
-type NoAvailableTokensError = {
-  code: "NoAvailableTokensError"
-  message: string
-  meta: {
-    timestamp: Date
-  }
-}
-
-type DatabaseTokenQueryError = {
-  code: "DatabaseTokenQueryError"
-  message: string
-  meta: {
-    timestamp: Date
-  }
-}
-
-type AxiosTokenParsingError = {
-  code: "AxiosTokenParsingError"
-  message: string
-  meta: {
-    response: AxiosResponse
-  }
-}
-
 type ResponseTokenData = {
   token: string
   remainingRequests: number
@@ -85,7 +63,7 @@ class TokenService {
     })
   }
 
-  setUpTokens(): ResultAsync<void, DatabaseTokenQueryError> {
+  setUpTokens(): ResultAsync<void, DatabaseError> {
     return fromPromise(
       AccessToken.findAll({
         where: {
@@ -94,14 +72,7 @@ class TokenService {
       }),
 
       (error) =>
-        ({
-          code: "DatabaseTokenQueryError",
-          message: "database query error",
-          meta: {
-            timestamp: new Date(),
-            rawError: error,
-          },
-        } as DatabaseTokenQueryError)
+        new DatabaseError("Unable to retrieve active tokens from database")
     ).map((activeTokens) => {
       activeTokens.forEach((activeToken) => {
         this.activeTokensData.push({
@@ -208,7 +179,7 @@ class TokenService {
 
   static parseResponseTokenData(
     response: AxiosResponse
-  ): Result<ResponseTokenData, AxiosTokenParsingError> {
+  ): Result<ResponseTokenData, TokenParsingError> {
     // response.config.headers.Authorization format: token ghp_********************************
     if (
       typeof response.config?.headers?.Authorization !== "string" ||
@@ -217,13 +188,7 @@ class TokenService {
       Number.isNaN(+response.headers?.["x-ratelimit-remaining"]) ||
       Number.isNaN(+response.headers?.["x-ratelimit-reset"])
     ) {
-      return err({
-        code: "AxiosTokenParsingError",
-        message: "error parsing token data from axios response",
-        meta: {
-          response,
-        },
-      } as AxiosTokenParsingError)
+      return err(new TokenParsingError(response))
     }
     const token: string = response.config.headers.Authorization.slice(6)
 
@@ -245,10 +210,7 @@ class TokenService {
     }
   }
 
-  selectToken(): ResultAsync<
-    TokenData,
-    NoAvailableTokensError | DatabaseTokenQueryError
-  > {
+  selectToken(): ResultAsync<TokenData, NoAvailableTokenError | DatabaseError> {
     if (this.useReservedTokens === false) {
       const activeToken = this.selectActiveToken()
       if (activeToken !== NoTokenData) {
@@ -266,13 +228,7 @@ class TokenService {
         return okAsync(reservedToken)
       }
       logger.info("reserved tokens capacity reached")
-      return errAsync({
-        code: "NoAvailableTokensError",
-        message: "no available tokens error",
-        meta: {
-          timestamp: new Date(),
-        },
-      } as NoAvailableTokensError)
+      return errAsync(new NoAvailableTokenError())
     })
   }
 
@@ -310,7 +266,7 @@ class TokenService {
     return token
   }
 
-  selectReservedToken(): ResultAsync<MaybeTokenData, DatabaseTokenQueryError> {
+  selectReservedToken(): ResultAsync<MaybeTokenData, DatabaseError> {
     if (
       this.reservedTokenData === NoTokenData ||
       this.reservedTokenData.remainingRequests >
@@ -323,7 +279,7 @@ class TokenService {
     return okAsync(this.reservedTokenData)
   }
 
-  sourceReservedToken(): ResultAsync<void, DatabaseTokenQueryError> {
+  sourceReservedToken(): ResultAsync<void, DatabaseError> {
     return fromPromise(
       AccessToken.findOne({
         where: {
@@ -332,14 +288,7 @@ class TokenService {
         },
       }),
       (error) =>
-        ({
-          code: "DatabaseTokenQueryError",
-          message: "database query error",
-          meta: {
-            timestamp: new Date(),
-            rawError: error,
-          },
-        } as DatabaseTokenQueryError)
+        new DatabaseError("Unable to retrieve reserved tokens from database")
     ).map((reservedToken) => {
       if (reservedToken !== null) {
         this.reservedTokenData = {

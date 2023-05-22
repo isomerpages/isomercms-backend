@@ -55,7 +55,7 @@ export class NotificationOnEditHandler {
     const site = await this.sitesService.getBySiteName(siteName)
     const users = await this.collaboratorsService.list(siteName, userId)
     if (site.isErr()) throw new Error("Site should always exist")
-    const reviewRequests = await this.reviewRequestService.listReviewRequest(
+    const reviewRequests = await this.reviewRequestService.listValidReviewRequests(
       userWithSiteSessionData,
       site.value
     )

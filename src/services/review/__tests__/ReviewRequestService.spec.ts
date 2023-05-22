@@ -547,7 +547,7 @@ describe("ReviewRequestService", () => {
       })
 
       // Act
-      const actual = await ReviewRequestService.listReviewRequest(
+      const actual = await ReviewRequestService.listValidReviewRequests(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
@@ -608,7 +608,7 @@ describe("ReviewRequestService", () => {
       })
 
       // Act
-      const actual = await ReviewRequestService.listReviewRequest(
+      const actual = await ReviewRequestService.listValidReviewRequests(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
@@ -660,7 +660,7 @@ describe("ReviewRequestService", () => {
       )
 
       // Act
-      const actual = await ReviewRequestService.listReviewRequest(
+      const actual = await ReviewRequestService.listValidReviewRequests(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )

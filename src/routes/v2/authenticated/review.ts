@@ -328,7 +328,7 @@ export class ReviewsRouter {
     }
 
     // Step 3: Fetch data and return
-    const reviews = await this.reviewRequestService.listReviewRequest(
+    const reviews = await this.reviewRequestService.listValidReviewRequests(
       userWithSiteSessionData,
       site.value
     )

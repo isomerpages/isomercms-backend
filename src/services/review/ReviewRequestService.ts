@@ -217,7 +217,7 @@ export default class ReviewRequestService {
     return pullRequestNumber
   }
 
-  listReviewRequest = async (
+  listValidReviewRequests = async (
     sessionData: UserWithSiteSessionData,
     site: Site
   ): Promise<DashboardReviewRequestDto[]> => {

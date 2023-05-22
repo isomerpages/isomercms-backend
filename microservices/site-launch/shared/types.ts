@@ -72,7 +72,7 @@ export function isSiteLaunchMessage(obj: unknown): obj is SiteLaunchMessage {
           message.status.state === "failure" ||
           message.status.state === "pending") &&
         typeof message.status.message === "string" &&
-        Object.values(SiteLaunchLambdaStatus).includes(
+        Object.keys(SiteLaunchLambdaStatus).includes(
           message.status.message as SiteLaunchLambdaStatus
         ))) &&
     (typeof message.statusMetadata === "undefined" ||

@@ -1,9 +1,13 @@
+import { AttributeValue } from "@aws-sdk/client-dynamodb"
 import { DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 
 import { config } from "@config/config"
 
-import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
+import {
+  SiteLaunchMessage,
+  isSiteLaunchMessage,
+} from "@root/../microservices/site-launch/shared/types"
 
 import DynamoDBClient from "./DynamoDBClient"
 
@@ -23,18 +27,19 @@ export default class DynamoDBService {
   }
 
   async getAllCompletedLaunches(): Promise<SiteLaunchMessage[]> {
-    const entries = ((await this.dynamoDBClient.getAllItems(this.TABLE_NAME))
-      .Items as unknown) as SiteLaunchMessage[]
+    const entries = ((
+      await this.dynamoDBClient.getAllItems(this.TABLE_NAME)
+    ).Items?.filter(isSiteLaunchMessage) as unknown) as SiteLaunchMessage[]
 
-    const successEntries =
+    const completedEntries =
       entries?.filter(
         (entry) =>
           entry.status?.state === "success" || entry.status?.state === "failure"
       ) || []
 
     // Delete after retrieving the items
-    Promise.all(successEntries.map((entry) => this.deleteItem(entry)))
-    return successEntries
+    Promise.all(completedEntries.map((entry) => this.deleteItem(entry)))
+    return completedEntries
   }
 
   async deleteItem(message: SiteLaunchMessage): Promise<DeleteCommandOutput> {

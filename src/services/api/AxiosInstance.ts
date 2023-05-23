@@ -29,6 +29,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   if (isEmailLoginUser) {
     const accessToken = await getAccessToken()
     axiosConfig.headers = {
+      ...(axiosConfig.headers ?? {}),
       Authorization: `token ${accessToken}`,
     }
     tracer.use("http", {

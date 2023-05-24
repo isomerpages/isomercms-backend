@@ -209,7 +209,9 @@ const launchesService = new LaunchesService({
 })
 const queueService = new QueueService()
 const stepFunctionsService = new StepFunctionsService()
-const dynamoDBService = new DynamoDBService(new DynamoDBDocClient())
+const dynamoDBService = new DynamoDBService({
+  dynamoDBClient: new DynamoDBDocClient(),
+})
 
 const identityAuthService = getIdentityAuthService(gitHubService)
 const collaboratorsService = new CollaboratorsService({

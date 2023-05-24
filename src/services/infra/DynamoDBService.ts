@@ -16,9 +16,15 @@ export default class DynamoDBService {
 
   private readonly TABLE_NAME: string
 
-  constructor(dynamoDBClient: DynamoDBClient) {
+  constructor({
+    dynamoDBClient,
+    dynamoDbTableName = config.get("aws.dynamodb.siteLaunchTableName"),
+  }: {
+    dynamoDBClient: DynamoDBClient
+    dynamoDbTableName?: string
+  }) {
     this.dynamoDBClient = dynamoDBClient
-    this.TABLE_NAME = config.get("aws.dynamodb.siteLaunchTableName")
+    this.TABLE_NAME = dynamoDbTableName
     autoBind(this)
   }
 

@@ -55,7 +55,7 @@ type CreateSiteParams = {
 }
 
 const DEPRECATE_SITE_QUEUES = config.get(
-  "aws.sqs.featureFlag.shouldDeprecateSiteQueues"
+  "aws.sqs.featureFlags.shouldDeprecateSiteQueues"
 )
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]

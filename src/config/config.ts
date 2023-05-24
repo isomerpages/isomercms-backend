@@ -201,7 +201,7 @@ const config = convict({
         format: "required-string",
         default: "",
       },
-      featureFlag: {
+      featureFlags: {
         shouldDeprecateSiteQueues: {
           doc: "Whether the queues are deprecated",
           env: "FF_DEPRECATE_SITE_QUEUES",

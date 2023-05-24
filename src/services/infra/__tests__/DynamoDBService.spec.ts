@@ -50,7 +50,7 @@ const mockDynamoDBClient = {
 }
 
 const dynamoDBClient = (mockDynamoDBClient as unknown) as DynamoDBClient
-const dynamoDBService = new DynamoDBService(dynamoDBClient)
+const dynamoDBService = new DynamoDBService({ dynamoDBClient })
 
 const spyDynamoDBService = {
   deleteItem: jest.spyOn(dynamoDBService, "deleteItem"),

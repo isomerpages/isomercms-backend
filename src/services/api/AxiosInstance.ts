@@ -1,12 +1,14 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { setupCache } from "axios-cache-interceptor"
+import { err } from "neverthrow"
 
 import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
-import { getAccessToken } from "@utils/token-retrieval-utils"
 import tracer from "@utils/tracer"
+
+import { tokenServiceInstance } from "@services/db/TokenService"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
@@ -25,9 +27,13 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
     authMessage === "token undefined"
 
   if (isEmailLoginUser) {
-    const accessToken = await getAccessToken()
-    axiosConfig.headers = {
-      Authorization: `token ${accessToken}`,
+    const accessToken = await tokenServiceInstance
+      .getAccessToken()
+      .map((token) => token.tokenString)
+      .unwrapOr("null")
+    console.log("token:", accessToken)
+    if (axiosConfig.headers) {
+      axiosConfig.headers.Authorization = `token ${accessToken}`
     }
     tracer.use("http", {
       hooks: {
@@ -58,17 +64,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
 
 const respHandler = (response: AxiosResponse) => {
   // Any status code that lie within the range of 2xx will cause this function to trigger
-  const GITHUB_API_LIMIT = 5000
-  const remainingRequests =
-    // NOTE: This raises an alarm if the header is missing
-    // or if the header is not a number.
-    // This is because the header should always be present.
-    parseInt(response.headers["x-ratelimit-remaining"], 10) || 0
-  if (remainingRequests < GITHUB_API_LIMIT * 0.2) {
-    logger.info("80% of access token capacity reached")
-  } else if (remainingRequests < GITHUB_API_LIMIT * 0.4) {
-    logger.info("60% of access token capacity reached")
-  }
+  tokenServiceInstance.onResponse(response)
   return response
 }
 
@@ -81,7 +77,11 @@ const isomerRepoAxiosInstance = setupCache(
     etag: true,
   }
 )
+isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
+isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 
 const genericGitHubAxiosInstance = axios.create()
+genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
+genericGitHubAxiosInstance.interceptors.response.use(respHandler)
 
 export { isomerRepoAxiosInstance, genericGitHubAxiosInstance }

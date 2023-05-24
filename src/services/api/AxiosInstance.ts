@@ -8,6 +8,8 @@ import logger from "@logger/logger"
 import { getAccessToken } from "@utils/token-retrieval-utils"
 import tracer from "@utils/tracer"
 
+import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
+
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
@@ -27,6 +29,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   if (isEmailLoginUser) {
     const accessToken = await getAccessToken()
     axiosConfig.headers = {
+      ...(axiosConfig.headers ?? {}),
       Authorization: `token ${accessToken}`,
     }
     tracer.use("http", {
@@ -79,6 +82,7 @@ const isomerRepoAxiosInstance = setupCache(
   {
     interpretHeader: true,
     etag: true,
+    headerInterpreter: customHeaderInterpreter,
   }
 )
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)

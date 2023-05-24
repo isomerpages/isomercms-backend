@@ -19,7 +19,7 @@ class ConfigYmlService {
     )
     const sanitisedContent = sanitizedYamlParse(unparsedContent)
     const sanitisedFacebookPixel =
-      sanitisedContent["facebook-pixel"] &&
+      !!sanitisedContent["facebook-pixel"] &&
       parseInt(sanitisedContent["facebook-pixel"], 10)
     const content = {
       ...sanitisedContent,

@@ -84,7 +84,7 @@ class Directory {
           `Path ${this.dirType.getFolderName()} was invalid!`
         )
       }
-      return {}
+      return []
     }
 
     if (this.dirType instanceof FolderType) {
@@ -106,6 +106,9 @@ class Directory {
           type,
         }
       })
+
+      console.log("===", filesOrDirs)
+      console.log("=== compacted", _.compact(filesOrDirs))
 
       return _.compact(filesOrDirs)
     }

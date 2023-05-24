@@ -387,10 +387,10 @@ export default class InfraService {
       }
 
       if (DEPRECATE_SITE_QUEUES) {
-        this.dynamoDBService.createItem(message)
-        this.stepFunctionsService.triggerFlow(message)
+        await this.dynamoDBService.createItem(message)
+        await this.stepFunctionsService.triggerFlow(message)
       } else {
-        this.queueService.sendMessage(message)
+        await this.queueService.sendMessage(message)
       }
       return okAsync(newLaunchParams)
     } catch (error) {

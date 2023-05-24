@@ -8,6 +8,7 @@ import {
   errAsync,
   fromPromise,
 } from "neverthrow"
+import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
@@ -55,6 +56,8 @@ class TokenService {
 
   private useReservedTokens = false
 
+  private static readonly tokenDB: ModelStatic<AccessToken> = AccessToken
+
   constructor(axiosInstances: AxiosInstance[]) {
     this.setUpTokens()
     axiosInstances.forEach((axiosInstance) => {
@@ -65,7 +68,7 @@ class TokenService {
 
   setUpTokens(): ResultAsync<void, DatabaseError> {
     return fromPromise(
-      AccessToken.findAll({
+      TokenService.tokenDB.findAll({
         where: {
           isReserved: false,
         },
@@ -281,7 +284,7 @@ class TokenService {
 
   sourceReservedToken(): ResultAsync<void, DatabaseError> {
     return fromPromise(
-      AccessToken.findOne({
+      TokenService.tokenDB.findOne({
         where: {
           isReserved: true,
           resetTime: null,

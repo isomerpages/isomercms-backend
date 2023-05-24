@@ -27,8 +27,8 @@ const GITHUB_RESET_INTERVAL = 60 * 60 // seconds
 const ACTIVE_TOKEN_ALERT_1 = 0.6
 const ACTIVE_TOKEN_ALERT_2 = 0.8
 
-const NoResetTime = null
-type MaybeResetTime = number | typeof NoResetTime
+type MaybeResetTime = Result<number, null>
+const NoResetTime: MaybeResetTime = err(null)
 
 type TokenData = {
   id: number
@@ -204,12 +204,12 @@ class TokenService {
     this.activeTokensData.forEach((activeTokenData) => {
       if (activeTokenData.tokenString === token) {
         activeTokenData.remainingRequests = remainingRequests
-        activeTokenData.resetTime = resetTime
+        activeTokenData.resetTime = ok(resetTime)
       }
     })
     if (this.reservedTokenData?.tokenString === token) {
       this.reservedTokenData.remainingRequests = remainingRequests
-      this.reservedTokenData.resetTime = resetTime
+      this.reservedTokenData.resetTime = ok(resetTime)
     }
   }
 
@@ -244,8 +244,8 @@ class TokenService {
     this.activeTokensData.forEach((activeTokenData) => {
       // Set reset time to null if time has past
       if (
-        activeTokenData.resetTime !== NoResetTime &&
-        activeTokenData.resetTime < nowEpochSecondsUTC
+        activeTokenData.resetTime.unwrapOr(Number.MAX_VALUE) <
+        nowEpochSecondsUTC
       ) {
         activeTokenData.resetTime = NoResetTime
       }
@@ -254,13 +254,13 @@ class TokenService {
         activeTokenData.remainingRequests >
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       ) {
-        if (activeTokenData.resetTime === NoResetTime) {
-          if (earliestResetTime === NoResetTime) {
+        if (activeTokenData.resetTime.isErr()) {
+          if (earliestResetTime.isErr()) {
             token = activeTokenData
           }
         } else if (
-          earliestResetTime === null ||
-          activeTokenData.resetTime < earliestResetTime
+          earliestResetTime.isErr() ||
+          activeTokenData.resetTime.value < earliestResetTime.value
         ) {
           token = activeTokenData
         }

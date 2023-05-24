@@ -35,7 +35,7 @@ describe("Review Requests Router", () => {
     getComments: jest.fn(),
     getFullReviewRequest: jest.fn(),
     getReviewRequest: jest.fn(),
-    listReviewRequest: jest.fn(),
+    listValidReviewRequests: jest.fn(),
     markAllReviewRequestsAsViewed: jest.fn(),
     markReviewRequestAsViewed: jest.fn(),
     mergeReviewRequest: jest.fn(),
@@ -336,7 +336,7 @@ describe("Review Requests Router", () => {
       const mockReviews = ["review1", "review2"]
 
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
-      mockReviewRequestService.listReviewRequest.mockResolvedValueOnce(
+      mockReviewRequestService.listValidReviewRequests.mockResolvedValueOnce(
         mockReviews
       )
 
@@ -348,9 +348,9 @@ describe("Review Requests Router", () => {
       expect(response.body).toEqual({ reviews: mockReviews })
       expect(mockSitesService.getBySiteName).toHaveBeenCalledTimes(1)
       expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
-      expect(mockReviewRequestService.listReviewRequest).toHaveBeenCalledTimes(
-        1
-      )
+      expect(
+        mockReviewRequestService.listValidReviewRequests
+      ).toHaveBeenCalledTimes(1)
     })
 
     it("should return 404 if the site does not exist", async () => {
@@ -368,7 +368,9 @@ describe("Review Requests Router", () => {
       expect(response.status).toEqual(404)
       expect(mockSitesService.getBySiteName).toHaveBeenCalledTimes(1)
       expect(mockCollaboratorsService.getRole).not.toHaveBeenCalled()
-      expect(mockReviewRequestService.listReviewRequest).not.toHaveBeenCalled()
+      expect(
+        mockReviewRequestService.listValidReviewRequests
+      ).not.toHaveBeenCalled()
     })
 
     it("should return 404 if user is not a site collaborator", async () => {
@@ -383,7 +385,9 @@ describe("Review Requests Router", () => {
       expect(response.status).toEqual(404)
       expect(mockSitesService.getBySiteName).toHaveBeenCalledTimes(1)
       expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
-      expect(mockReviewRequestService.listReviewRequest).not.toHaveBeenCalled()
+      expect(
+        mockReviewRequestService.listValidReviewRequests
+      ).not.toHaveBeenCalled()
     })
   })
 

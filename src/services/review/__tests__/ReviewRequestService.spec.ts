@@ -529,9 +529,9 @@ describe("ReviewRequestService", () => {
           firstView: true,
         },
       ]
-      MockReviewRequestRepository.findAll.mockResolvedValueOnce([
-        MOCK_REVIEW_REQUEST_ONE,
-      ])
+      MockReviewRequestRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_ONE
+      )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(0)
       MockReviewApi.getComments.mockResolvedValueOnce([
@@ -547,14 +547,14 @@ describe("ReviewRequestService", () => {
       })
 
       // Act
-      const actual = await ReviewRequestService.listReviewRequest(
+      const actual = await ReviewRequestService.listValidReviewRequests(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
+      expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalledWith(
         mockUserWithSiteSessionData.siteName,
         MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
@@ -588,9 +588,9 @@ describe("ReviewRequestService", () => {
           firstView: false,
         },
       ]
-      MockReviewRequestRepository.findAll.mockResolvedValueOnce([
-        MOCK_REVIEW_REQUEST_ONE,
-      ])
+      MockReviewRequestRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_ONE
+      )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
       MockReviewApi.getComments.mockResolvedValueOnce([
@@ -608,14 +608,14 @@ describe("ReviewRequestService", () => {
       })
 
       // Act
-      const actual = await ReviewRequestService.listReviewRequest(
+      const actual = await ReviewRequestService.listValidReviewRequests(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
+      expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalledWith(
         mockUserWithSiteSessionData.siteName,
         MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
@@ -649,9 +649,9 @@ describe("ReviewRequestService", () => {
           firstView: false,
         },
       ]
-      MockReviewRequestRepository.findAll.mockResolvedValueOnce([
-        MOCK_REVIEW_REQUEST_ONE,
-      ])
+      MockReviewRequestRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_ONE
+      )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
       MockReviewApi.getComments.mockResolvedValueOnce([])
@@ -660,14 +660,14 @@ describe("ReviewRequestService", () => {
       )
 
       // Act
-      const actual = await ReviewRequestService.listReviewRequest(
+      const actual = await ReviewRequestService.listValidReviewRequests(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
+      expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalledWith(
         mockUserWithSiteSessionData.siteName,
         MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber

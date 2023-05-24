@@ -107,9 +107,6 @@ class Directory {
         }
       })
 
-      console.log("===", filesOrDirs)
-      console.log("=== compacted", _.compact(filesOrDirs))
-
       return _.compact(filesOrDirs)
     }
 

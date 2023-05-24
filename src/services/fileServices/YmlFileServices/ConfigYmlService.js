@@ -17,7 +17,13 @@ class ConfigYmlService {
         fileName: CONFIG_FILE_NAME,
       }
     )
-    const content = sanitizedYamlParse(unparsedContent)
+    const sanitisedContent = sanitizedYamlParse(unparsedContent)
+    const content = {
+      ...sanitisedContent,
+      "facebook-pixel": sanitisedContent["facebook-pixel"]
+        ? parseInt(sanitisedContent["facebook-pixel"], 10)
+        : null,
+    }
     return { content, sha }
   }
 

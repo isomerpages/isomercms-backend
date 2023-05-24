@@ -404,38 +404,42 @@ export default class InfraService {
   }
 
   siteUpdate = async () => {
-    const messages = DEPRECATE_SITE_QUEUES
-      ? await this.dynamoDBService.getAllCompletedLaunches()
-      : await this.queueService.pollMessages()
-    await Promise.all(
-      messages.map(async (message) => {
-        const site = await this.sitesService.getBySiteName(message.repoName)
-        if (site.isErr()) {
-          return
-        }
-        const isSuccess = message.status?.state === "success"
-
-        let updateSiteLaunchParams
-
-        if (isSuccess) {
-          updateSiteLaunchParams = {
-            id: site.value.id,
-            siteStatus: SiteStatus.Launched,
-            jobStatus: JobStatus.Running,
+    try {
+      const messages = DEPRECATE_SITE_QUEUES
+        ? await this.dynamoDBService.getAllCompletedLaunches()
+        : await this.queueService.pollMessages()
+      await Promise.all(
+        messages.map(async (message) => {
+          const site = await this.sitesService.getBySiteName(message.repoName)
+          if (site.isErr()) {
+            return
           }
-        } else {
-          updateSiteLaunchParams = {
-            id: site.value.id,
-            siteStatus: SiteStatus.Initialized,
-            jobStatus: JobStatus.Failed,
+          const isSuccess = message.status?.state === "success"
+
+          let updateSiteLaunchParams
+
+          if (isSuccess) {
+            updateSiteLaunchParams = {
+              id: site.value.id,
+              siteStatus: SiteStatus.Launched,
+              jobStatus: JobStatus.Running,
+            }
+          } else {
+            updateSiteLaunchParams = {
+              id: site.value.id,
+              siteStatus: SiteStatus.Initialized,
+              jobStatus: JobStatus.Failed,
+            }
           }
-        }
 
-        await this.sitesService.update(updateSiteLaunchParams)
+          await this.sitesService.update(updateSiteLaunchParams)
 
-        await this.sendEmailUpdate(message, isSuccess)
-      })
-    )
+          await this.sendEmailUpdate(message, isSuccess)
+        })
+      )
+    } catch (error) {
+      logger.error(`Error in site update: ${error}`)
+    }
   }
 
   pollMessages = async () => {

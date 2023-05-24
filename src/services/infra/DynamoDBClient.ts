@@ -39,7 +39,7 @@ export default class DynamoDBDocClient {
     }
 
     this.dynamoDBDocClient = DynamoDBDocumentClient.from(
-      new DynamoDBClient({ region: config.get("aws.amplify.region") }),
+      new DynamoDBClient({ region: config.get("aws.region") }),
       { marshallOptions, unmarshallOptions }
     )
 

@@ -137,13 +137,13 @@ const config = convict({
     },
   },
   aws: {
+    region: {
+      doc: "AWS region",
+      env: "AWS_REGION",
+      format: "required-string",
+      default: "ap-southeast-1",
+    },
     amplify: {
-      region: {
-        doc: "AWS region",
-        env: "AWS_REGION",
-        format: "required-string",
-        default: "ap-southeast-1",
-      },
       accountNumber: {
         doc: "AWS account number (microservices)",
         env: "AWS_ACCOUNT_NUMBER",

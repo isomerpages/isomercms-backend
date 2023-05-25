@@ -84,7 +84,7 @@ class Directory {
           `Path ${this.dirType.getFolderName()} was invalid!`
         )
       }
-      return {}
+      return []
     }
 
     if (this.dirType instanceof FolderType) {

@@ -31,7 +31,6 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
       .getAccessToken()
       .map((token) => token.tokenString)
       .unwrapOr("null")
-    console.log("token:", accessToken)
     if (axiosConfig.headers) {
       axiosConfig.headers.Authorization = `token ${accessToken}`
     }

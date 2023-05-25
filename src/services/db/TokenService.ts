@@ -16,21 +16,19 @@ import DatabaseError from "@errors/DatabaseError"
 import NoAvailableTokenError from "@errors/NoAvailableTokenError"
 import TokenParsingError from "@errors/TokenParsingError"
 
-import tracer from "@utils/tracer"
-
 import { AccessToken } from "@database/models"
 
 // Env vars
-const GITHUB_TOKEN_LIMIT = 5000
-const GITHUB_TOKEN_THRESHOLD = 4000
-const GITHUB_RESET_INTERVAL = 60 * 60 // seconds
-const ACTIVE_TOKEN_ALERT_1 = 0.6
-const ACTIVE_TOKEN_ALERT_2 = 0.8
+export const GITHUB_TOKEN_LIMIT = 5000
+export const GITHUB_TOKEN_THRESHOLD = 4000 // allowed uses
+export const GITHUB_RESET_INTERVAL = 60 * 60 // seconds
+export const ACTIVE_TOKEN_ALERT_1 = 0.6
+export const ACTIVE_TOKEN_ALERT_2 = 0.8
 
-type MaybeResetTime = Result<number, null>
-const NoResetTime: MaybeResetTime = err(null)
+export type MaybeResetTime = Result<number, null>
+export const NoResetTime: MaybeResetTime = err(null)
 
-type TokenData = {
+export type TokenData = {
   id: number
 
   tokenString: string
@@ -40,8 +38,8 @@ type TokenData = {
   resetTime: MaybeResetTime
 }
 
-type MaybeTokenData = Result<TokenData, null>
-const NoTokenData: MaybeTokenData = err(null)
+export type MaybeTokenData = Result<TokenData, null>
+export const NoTokenData: MaybeTokenData = err(null)
 
 type ResponseTokenData = {
   token: string
@@ -49,9 +47,7 @@ type ResponseTokenData = {
   resetTime: number
 }
 
-const tokenDB: ModelStatic<AccessToken> = AccessToken
-
-class TokenService {
+export class TokenService {
   private activeTokensData: TokenData[] = []
 
   private reservedTokenData: MaybeTokenData = NoTokenData
@@ -60,8 +56,14 @@ class TokenService {
 
   private initialized = false
 
+  private tokenDB: ModelStatic<AccessToken>
+
+  constructor(tokenDB: ModelStatic<AccessToken>) {
+    this.tokenDB = tokenDB
+  }
+
   setUpTokens(): ResultAsync<void, DatabaseError> {
-    return queryActiveTokens().map((activeTokensData) => {
+    return queryActiveTokens(this.tokenDB).map((activeTokensData) => {
       this.activeTokensData = activeTokensData
     })
   }
@@ -71,18 +73,21 @@ class TokenService {
     NoAvailableTokenError | DatabaseError
   > {
     if (!this.initialized) {
+      this.initialized = true
       return this.setUpTokens().andThen(() =>
         selectToken(
           this.useReservedTokens,
           this.activeTokensData,
-          this.reservedTokenData
+          this.reservedTokenData,
+          this.tokenDB
         )
       )
     }
     return selectToken(
       this.useReservedTokens,
       this.activeTokensData,
-      this.reservedTokenData
+      this.reservedTokenData,
+      this.tokenDB
     )
   }
 
@@ -91,7 +96,9 @@ class TokenService {
   }
 }
 
-function queryActiveTokens(): ResultAsync<TokenData[], DatabaseError> {
+export function queryActiveTokens(
+  tokenDB: ModelStatic<AccessToken>
+): ResultAsync<TokenData[], DatabaseError> {
   return fromPromise(
     tokenDB.findAll({
       where: {
@@ -113,7 +120,7 @@ function queryActiveTokens(): ResultAsync<TokenData[], DatabaseError> {
   )
 }
 
-function handleResponse(
+export function handleResponse(
   response: AxiosResponse,
   activeTokensData: TokenData[],
   reservedTokenData: MaybeTokenData
@@ -129,7 +136,7 @@ function handleResponse(
   })
 }
 
-function activeUsageAlert(activeTokensData: TokenData[]) {
+export function activeUsageAlert(activeTokensData: TokenData[]) {
   let exhaustedTokensCount = 0
   activeTokensData.forEach((tokenData) => {
     if (
@@ -155,7 +162,7 @@ function activeUsageAlert(activeTokensData: TokenData[]) {
   }
 }
 
-function parseResponseTokenData(
+export function parseResponseTokenData(
   response: AxiosResponse
 ): Result<ResponseTokenData, TokenParsingError> {
   // response.config.headers.Authorization format: token ghp_********************************
@@ -175,7 +182,7 @@ function parseResponseTokenData(
   return ok({ token, remainingRequests, resetTime })
 }
 
-function updateTokens(
+export function updateTokens(
   token: string,
   remainingRequests: number,
   resetTime: number,
@@ -198,10 +205,11 @@ function updateTokens(
   activeUsageAlert(activeTokensData)
 }
 
-function selectToken(
+export function selectToken(
   useReservedTokens: boolean,
   activeTokenData: TokenData[],
-  reservedToken: MaybeTokenData
+  reservedToken: MaybeTokenData,
+  tokenDB: ModelStatic<AccessToken>
 ): ResultAsync<TokenData, NoAvailableTokenError | DatabaseError> {
   if (useReservedTokens === false) {
     const activeToken = selectActiveToken(activeTokenData)
@@ -215,16 +223,20 @@ function selectToken(
       useReservedTokens = false
     }, GITHUB_RESET_INTERVAL * 1000) // 1 hour timeout
   }
-  return selectReservedToken(reservedToken).andThen((reservedToken) => {
-    if (reservedToken.isOk()) {
-      return okAsync(reservedToken.value)
+  return selectReservedToken(reservedToken, tokenDB).andThen(
+    (reservedToken) => {
+      if (reservedToken.isOk()) {
+        return okAsync(reservedToken.value)
+      }
+      logger.info("reserved tokens capacity reached")
+      return errAsync(new NoAvailableTokenError())
     }
-    logger.info("reserved tokens capacity reached")
-    return errAsync(new NoAvailableTokenError())
-  })
+  )
 }
 
-function selectActiveToken(activeTokensData: TokenData[]): MaybeTokenData {
+export function selectActiveToken(
+  activeTokensData: TokenData[]
+): MaybeTokenData {
   let token: MaybeTokenData = NoTokenData
   const earliestResetTime: MaybeResetTime = NoResetTime
   const now: Date = new Date()
@@ -243,7 +255,7 @@ function selectActiveToken(activeTokensData: TokenData[]): MaybeTokenData {
       GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
     ) {
       if (activeTokenData.resetTime.isErr()) {
-        if (earliestResetTime.isErr()) {
+        if (token.isErr()) {
           token = ok(activeTokenData)
         }
       } else if (
@@ -257,20 +269,25 @@ function selectActiveToken(activeTokensData: TokenData[]): MaybeTokenData {
   return token
 }
 
-function selectReservedToken(
-  reservedTokenData: MaybeTokenData
+export function selectReservedToken(
+  reservedTokenData: MaybeTokenData,
+  tokenDB: ModelStatic<AccessToken>
 ): ResultAsync<MaybeTokenData, DatabaseError> {
   if (
     reservedTokenData.isErr() ||
     reservedTokenData.value.remainingRequests >
       GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
   ) {
-    return sourceReservedToken().andThen(() => okAsync(reservedTokenData))
+    return sourceReservedToken(tokenDB).andThen(() =>
+      okAsync(reservedTokenData)
+    )
   }
   return okAsync(reservedTokenData)
 }
 
-function sourceReservedToken(): ResultAsync<TokenData, DatabaseError> {
+export function sourceReservedToken(
+  tokenDB: ModelStatic<AccessToken>
+): ResultAsync<TokenData, DatabaseError> {
   return fromPromise(
     tokenDB.findOne({
       where: {
@@ -306,6 +323,6 @@ function sourceReservedToken(): ResultAsync<TokenData, DatabaseError> {
   })
 }
 
-const tokenServiceInstance = new TokenService()
+const tokenServiceInstance = new TokenService(AccessToken)
 
 export { tokenServiceInstance }

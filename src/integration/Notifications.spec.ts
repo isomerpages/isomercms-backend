@@ -31,7 +31,6 @@ import {
 } from "@root/fixtures/sessionData"
 import { getAuthorizationMiddleware } from "@root/middleware"
 import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
-import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubService } from "@root/services/db/GitHubService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
@@ -44,6 +43,7 @@ import { ResourcePageService } from "@root/services/fileServices/MdPageServices/
 import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
 import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
@@ -101,6 +101,7 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as typeof ReviewApi,
   User,
@@ -108,7 +109,8 @@ const reviewRequestService = new ReviewRequestService(
   Reviewer,
   ReviewMeta,
   ReviewRequestView,
-  pageService
+  pageService,
+  configService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

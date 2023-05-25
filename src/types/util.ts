@@ -21,3 +21,8 @@ export const Brand = {
   toString: (branded: Brand<string, unknown>): string =>
     (branded as unknown) as string,
 }
+
+export type FileNameBrand<T extends string> = {
+  name: string & { __kind: T }
+  kind: T
+}

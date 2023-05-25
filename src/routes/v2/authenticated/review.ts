@@ -1,7 +1,6 @@
 import autoBind from "auto-bind"
 import express from "express"
 import _ from "lodash"
-import { ResultAsync } from "neverthrow"
 
 import logger from "@logger/logger"
 
@@ -15,6 +14,8 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import { SiteMember, User } from "@root/database/models"
+import MissingSiteError from "@root/errors/MissingSiteError"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import { GitHubService } from "@root/services/db/GitHubService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import NotificationsService from "@root/services/identity/NotificationsService"
@@ -25,10 +26,10 @@ import { ResponseErrorBody } from "@root/types/dto/error"
 import {
   CommentItem,
   DashboardReviewRequestDto,
-  EditedItemDto,
   UpdateReviewRequestDto,
   ReviewRequestDto,
   BlobDiffDto,
+  EditedItemDto,
 } from "@root/types/dto/review"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
@@ -125,14 +126,18 @@ export class ReviewsRouter {
     return this.sitesService
       .getStagingUrl(userWithSiteSessionData)
       .andThen((stagingLink) =>
-        ResultAsync.fromSafePromise(
-          this.reviewRequestService.compareDiff(
-            userWithSiteSessionData,
-            stagingLink
-          )
+        this.reviewRequestService.compareDiff(
+          userWithSiteSessionData,
+          stagingLink
         )
       )
       .map((items) => res.status(200).json({ items }))
+      .mapErr((err) => {
+        if (err instanceof MissingSiteError || err instanceof NotFoundError) {
+          return res.status(404).json({ message: err.message })
+        }
+        return res.status(500).json({ message: err.message })
+      })
   }
 
   createReviewRequest: RequestHandler<

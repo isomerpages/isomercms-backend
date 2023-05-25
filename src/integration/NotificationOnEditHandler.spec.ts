@@ -33,6 +33,7 @@ import { ResourcePageService } from "@root/services/fileServices/MdPageServices/
 import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
 import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
@@ -100,6 +101,7 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (mockGithubService as unknown) as typeof ReviewApi,
   User,
@@ -107,7 +109,8 @@ const reviewRequestService = new ReviewRequestService(
   Reviewer,
   ReviewMeta,
   ReviewRequestView,
-  pageService
+  pageService,
+  configService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

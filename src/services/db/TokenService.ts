@@ -114,11 +114,29 @@ export function parseResponseTokenData(
   return ok({ token, remainingRequests, resetTime })
 }
 
+export function compareResetTime(
+  left: TokenData,
+  right: TokenData,
+  nowEpochSecondsUTC: number
+): boolean {
+  return (
+    left.resetTime
+      .andThen((resetTime) =>
+        resetTime < nowEpochSecondsUTC ? NoResetTime : ok(resetTime)
+      )
+      .unwrapOr(Number.MAX_VALUE) <
+    right.resetTime
+      .andThen((resetTime) =>
+        resetTime < nowEpochSecondsUTC ? NoResetTime : ok(resetTime)
+      )
+      .unwrapOr(Number.MAX_VALUE)
+  )
+}
+
 export function selectActiveToken(
   activeTokensData: TokenData[]
 ): MaybeTokenData {
   let token: MaybeTokenData = NoTokenData
-  const earliestResetTime: MaybeResetTime = NoResetTime
   const now: Date = new Date()
   const nowEpochSecondsUTC: number =
     now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000
@@ -129,16 +147,8 @@ export function selectActiveToken(
       GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
     ) {
       if (
-        activeTokenData.resetTime.isErr() ||
-        activeTokenData.resetTime.unwrapOr(Number.MAX_VALUE) <
-          nowEpochSecondsUTC
-      ) {
-        if (token.isErr()) {
-          token = ok(activeTokenData)
-        }
-      } else if (
-        earliestResetTime.isErr() ||
-        activeTokenData.resetTime.value < earliestResetTime.value
+        token.isErr() ||
+        compareResetTime(activeTokenData, token.value, nowEpochSecondsUTC)
       ) {
         token = ok(activeTokenData)
       }

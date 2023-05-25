@@ -491,16 +491,11 @@ class SitesService {
           ...partialSiteInfo,
         }))
       )
-      .map((siteInfo) =>
-        _.pick(siteInfo, [
-          "savedAt",
-          "savedBy",
-          "publishedAt",
-          "publishedBy",
-          "siteUrl",
-          "stagingUrl",
-        ])
-      )
+      .map(({ stagingUrl, siteUrl, ...rest }) => ({
+        ..._.pick(rest, ["savedAt", "savedBy", "publishedAt", "publishedBy"]),
+        siteUrl: Brand.fromString(siteUrl),
+        stagingUrl: Brand.fromString(stagingUrl),
+      }))
   }
 }
 

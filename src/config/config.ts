@@ -137,13 +137,13 @@ const config = convict({
     },
   },
   aws: {
+    region: {
+      doc: "AWS region",
+      env: "AWS_REGION",
+      format: "required-string",
+      default: "ap-southeast-1",
+    },
     amplify: {
-      region: {
-        doc: "AWS region",
-        env: "AWS_REGION",
-        format: "required-string",
-        default: "ap-southeast-1",
-      },
       accountNumber: {
         doc: "AWS account number (microservices)",
         env: "AWS_ACCOUNT_NUMBER",
@@ -180,6 +180,14 @@ const config = convict({
         default: "site-launch",
       },
     },
+    stepFunctions: {
+      stepFunctionsArn: {
+        doc: "Amazon Resource Name (ARN) of the Step Functions state machine",
+        env: "STEP_FUNCTIONS_ARN",
+        format: "required-string",
+        default: "SiteLaunchStepFunctions-dev",
+      },
+    },
     sqs: {
       incomingQueueUrl: {
         doc: "URL of the incoming SQS queue",
@@ -192,6 +200,14 @@ const config = convict({
         env: "OUTGOING_QUEUE_URL",
         format: "required-string",
         default: "",
+      },
+      featureFlags: {
+        shouldDeprecateSiteQueues: {
+          doc: "Whether the queues are deprecated",
+          env: "FF_DEPRECATE_SITE_QUEUES",
+          format: "required-boolean",
+          default: false,
+        },
       },
     },
   },

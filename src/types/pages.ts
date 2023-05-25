@@ -1,52 +1,28 @@
 import { Result } from "neverthrow"
 
-import { Brand, ToBrand } from "./util"
+import { Brand, FileNameBrand, ToBrand } from "./util"
 
-type NameInfo = {
-  name: string
-  kind: string
-}
+export type ResourceRoomName = FileNameBrand<"ResourceRoomName">
 
-type PageBrand<T extends NameInfo> = ToBrand<T, "name">
-
-export type ResourceRoomName = {
-  name: string & { __kind: "ResourceRoomName" }
-  kind: "ResourceRoomName"
-}
-
-export type SubcollectionPageName = {
-  name: string & { __kind: "SubcollectionPage" }
+export type SubcollectionPageName = FileNameBrand<"SubcollectionPage"> & {
   collection: string
   subcollection: string
   kind: "SubcollectionPage"
 }
 
-export type CollectionPageName = {
-  name: string & { __kind: "CollectionPage" }
+export type CollectionPageName = FileNameBrand<"CollectionPage"> & {
   collection: string
-  kind: "CollectionPage"
 }
 
-export type ContactUsPageName = {
-  name: string & { __kind: "ContactUsPage" }
-  kind: "ContactUsPage"
-}
+export type ContactUsPageName = FileNameBrand<"ContactUsPage">
 
-export type UnlinkedPageName = {
-  name: string & { __kind: "UnlinkedPage" }
-  kind: "UnlinkedPage"
-}
+export type UnlinkedPageName = FileNameBrand<"UnlinkedPage">
 
-export type HomepageName = {
-  name: string & { __kind: "Homepage" }
-  kind: "Homepage"
-}
+export type HomepageName = FileNameBrand<"Homepage">
 
-export type ResourceCategoryPageName = {
-  name: string & { __kind: "ResourceCategoryPage" }
+export type ResourceCategoryPageName = FileNameBrand<"ResourceCategoryPage"> & {
   resourceRoom: ToBrand<ResourceRoomName, "name">
   resourceCategory: string
-  kind: "ResourceCategoryPage"
 }
 
 export type PageName =
@@ -84,25 +60,24 @@ export type ResourcePageInfo = PageInfo & {
   }
 }
 
-// Homepage also
 export type ContactUsPage = Brand<PageInfo, "ContactUsPage">
 
 export type Homepage = Brand<PageInfo, "Homepage">
 
 export type CollectionPage = PageInfo & {
-  fileName: PageBrand<CollectionPageName>
+  fileName: CollectionPageName
 }
 
 export type SubcollectionPage = PageInfo & {
-  fileName: PageBrand<SubcollectionPageName>
+  fileName: SubcollectionPageName
 }
 
 export type ResourceCategoryPage = PageInfo & {
-  fileName: PageBrand<ResourceCategoryPageName>
+  fileName: ResourceCategoryPageName
 }
 
 export type UnlinkedPage = PageInfo & {
-  fileName: PageBrand<UnlinkedPageName>
+  fileName: UnlinkedPageName
 }
 
 export type StagingPermalink = Brand<string, "staging">
@@ -112,7 +87,25 @@ export type ProdPermalink = Brand<string, "prod">
 // also includes the respective base url in front.
 export type FullPermalink = StagingPermalink | ProdPermalink
 
-export type PathInfo = {
-  name: string
-  path: Result<string[], never[]>
-}
+/**
+ * NOTE: We brand this to prevent ad-hoc creation
+ * so that it has to come from the method.
+ *
+ * The `path` represents the path prefix of a given page
+ * and the `name` is the page name itself.
+ *
+ * This means that, for example, our homepage would be
+ * `path: Err([])` as there is no actual path to speak of
+ * and the name is `name: index.md`
+ *
+ * For another page such as `contact-us`,
+ * the path would then be `/pages` and the
+ * name would be `contact-us.md`
+ */
+export type PathInfo = Brand<
+  {
+    name: string
+    path: Result<string[], never[]>
+  },
+  "PathInfo"
+>

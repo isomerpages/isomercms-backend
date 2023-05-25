@@ -14,7 +14,7 @@ import { config } from "@config/config"
 
 import { AmplifyError } from "@root/types/index"
 
-const AWS_REGION = config.get("aws.amplify.region")
+const AWS_REGION = config.get("aws.region")
 const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 
 const AMPLIFY_BUILD_SPEC = `

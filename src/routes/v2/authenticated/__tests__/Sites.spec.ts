@@ -1,5 +1,5 @@
 import express from "express"
-import { ok, okAsync } from "neverthrow"
+import { okAsync } from "neverthrow"
 import request from "supertest"
 
 import type { AuthorizationMiddleware } from "@middleware/authorization"
@@ -99,7 +99,7 @@ describe("Sites Router", () => {
   describe("getStagingUrl", () => {
     it("returns the site's staging URL", async () => {
       const stagingUrl = "staging-url"
-      mockSitesService.getStagingUrl.mockResolvedValueOnce(ok(stagingUrl))
+      mockSitesService.getStagingUrl.mockReturnValueOnce(okAsync(stagingUrl))
 
       const resp = await request(app)
         .get(`/${mockSiteName}/stagingUrl`)
@@ -138,7 +138,7 @@ describe("Sites Router", () => {
         stagingUrl: "staging-url",
         siteUrl: "prod-url",
       }
-      mockSitesService.getSiteInfo.mockResolvedValueOnce(ok(siteInfo))
+      mockSitesService.getSiteInfo.mockReturnValueOnce(okAsync(siteInfo))
 
       const resp = await request(app).get(`/${mockSiteName}/info`).expect(200)
 

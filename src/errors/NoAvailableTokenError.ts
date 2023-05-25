@@ -1,4 +1,4 @@
-const { BaseIsomerError } = require("@errors/BaseError")
+import { BaseIsomerError } from "@errors/BaseError"
 
 export default class NoAvailableTokenError extends BaseIsomerError {
   timestamp: Date

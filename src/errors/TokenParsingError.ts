@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios"
 
-const { BaseIsomerError } = require("@errors/BaseError")
+import { BaseIsomerError } from "@errors/BaseError"
 
 export default class TokenParsingError extends BaseIsomerError {
   response: AxiosResponse

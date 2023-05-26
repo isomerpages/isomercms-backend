@@ -249,7 +249,7 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
     ),
   }),
   favicon: Joi.string(),
-  "facebook-pixel": Joi.number().unsafe().allow(null),
+  "facebook-pixel": Joi.string().allow(""),
   google_analytics: Joi.string().allow(""),
   google_analytics_ga4: Joi.string().allow(""),
   "linkedin-insights": Joi.string().allow(""),

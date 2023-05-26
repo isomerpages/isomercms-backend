@@ -54,7 +54,7 @@ prod: https://e2e-test-repo-prod.netlify.app
 resources_name: resources
 is_government: false
 shareicon: /images/isomer-logo.svg
-facebook-pixel: 12345
+facebook-pixel: "12345"
 google_analytics: UA-39345131-33
 google_analytics_ga4: GA-test
 linkedin-insights: "12345"
@@ -111,7 +111,7 @@ const configContent = {
   resources_name: "resources",
   is_government: false,
   shareicon: "/images/isomer-logo.svg",
-  "facebook-pixel": 12345,
+  "facebook-pixel": "12345",
   google_analytics: "UA-39345131-33",
   google_analytics_ga4: "GA-test",
   "linkedin-insights": "12345",

@@ -1,6 +1,6 @@
 // Import logger
 import _ from "lodash"
-import { RequireAllOrNone } from "type-fest"
+import { RequireAllOrNone, SetOptional } from "type-fest"
 
 import { config } from "@config/config"
 
@@ -34,7 +34,12 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/auth/whoami",
 ]
 
-export type VerifyAccessProps = SessionData & {
+type UnverifiedSession =
+  | Partial<SessionData>
+  | { userInfo: Record<string, never> }
+  | { userInfo: SetOptional<SessionData["userInfo"], "email"> }
+
+export type VerifyAccessProps = UnverifiedSession & {
   // NOTE: Either both properties are present on the cookie
   // or none are present.
   // We disallow having 1 or the other.
@@ -134,7 +139,7 @@ export default class AuthenticationMiddlewareService {
     }
 
     try {
-      if (_.isEmpty(userInfo)) {
+      if (_.isEmpty(userInfo) || !userInfo.isomerUserId) {
         const notLoggedInError = new Error("User not logged in with email")
         notLoggedInError.name = "NotLoggedInError"
         throw notLoggedInError
@@ -148,7 +153,12 @@ export default class AuthenticationMiddlewareService {
       const accessToken = retrievedToken
         ? jwtUtils.decryptToken(retrievedToken)
         : ""
-      return { accessToken, githubId, isomerUserId, email }
+      return {
+        accessToken,
+        githubId: githubId ?? "",
+        isomerUserId,
+        email: email ?? "",
+      }
     } catch (err) {
       if (!(err instanceof Error)) {
         // NOTE: If the error is of an unknown kind, we bubble it up the stack and block access.

@@ -14,9 +14,9 @@ const timestampGenerator = () =>
   moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
 
 export class IsomerLogger implements Logger {
-  loggers: Logger[]
+  private loggers: Logger[]
 
-  formatters: Formatter[]
+  private formatters: Formatter[]
 
   constructor() {
     this.loggers = []

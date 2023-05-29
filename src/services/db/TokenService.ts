@@ -24,6 +24,8 @@ export const GITHUB_TOKEN_THRESHOLD = 4000 // allowed uses
 export const GITHUB_RESET_INTERVAL = 60 * 60 // seconds
 export const ACTIVE_TOKEN_ALERT_1 = 0.6
 export const ACTIVE_TOKEN_ALERT_2 = 0.8
+export const GITHUB_TOKEN_REMAINING_HEADER = "x-ratelimit-remaining"
+export const GITHUB_TOKEN_RESET_HEADER = "x-ratelimit-reset"
 
 export type MaybeResetTime = Result<number, null>
 export const NoResetTime: MaybeResetTime = err(null)
@@ -102,15 +104,15 @@ export function parseResponseTokenData(
     typeof response.config?.headers?.Authorization !== "string" ||
     response.config?.headers?.Authorization.length !== 46 ||
     response.config?.headers?.Authorization.slice(0, 6) !== "token " ||
-    Number.isNaN(+response.headers?.["x-ratelimit-remaining"]) ||
-    Number.isNaN(+response.headers?.["x-ratelimit-reset"])
+    Number.isNaN(+response.headers?.[GITHUB_TOKEN_REMAINING_HEADER]) ||
+    Number.isNaN(+response.headers?.[GITHUB_TOKEN_RESET_HEADER])
   ) {
     return err(new TokenParsingError(response))
   }
   const token: string = response.config.headers.Authorization.slice(6)
 
-  const remainingRequests = +response.headers["x-ratelimit-remaining"]
-  const resetTime = +response.headers["x-ratelimit-reset"]
+  const remainingRequests = +response.headers[GITHUB_TOKEN_REMAINING_HEADER]
+  const resetTime = +response.headers[GITHUB_TOKEN_RESET_HEADER]
   return ok({ token, remainingRequests, resetTime })
 }
 
@@ -157,9 +159,20 @@ export function selectActiveToken(
   return token
 }
 
+export function occupyReservedToken(reservedToken: AccessToken) {
+  const resetTime = new Date()
+  resetTime.setSeconds(resetTime.getSeconds() + GITHUB_RESET_INTERVAL)
+  reservedToken.update("resetTime", resetTime)
+
+  // set reset time to null after reset time
+  setTimeout(() => {
+    reservedToken.update("resetTime", null)
+  }, GITHUB_RESET_INTERVAL * 1000)
+}
+
 export function sourceReservedToken(
   tokenDB: ModelStatic<AccessToken>
-): ResultAsync<TokenData, DatabaseError> {
+): ResultAsync<MaybeTokenData, DatabaseError> {
   return fromPromise(
     tokenDB.findOne({
       where: {
@@ -168,19 +181,12 @@ export function sourceReservedToken(
       },
     }),
     (error) =>
-      new DatabaseError("Unable to retrieve reserved tokens from database")
-  ).andThen((reservedToken) => {
+      new DatabaseError(
+        `Unable to retrieve reserved tokens from database: ${error}`
+      )
+  ).map((reservedToken) => {
     if (reservedToken !== null) {
-      const resetTime = new Date()
-      resetTime.setSeconds(resetTime.getSeconds() + GITHUB_RESET_INTERVAL)
-      reservedToken.set("resetTime", resetTime)
-      reservedToken.save()
-
-      // set reset time to null after reset time
-      setTimeout(() => {
-        reservedToken.set("resetTime", null)
-        reservedToken.save()
-      }, GITHUB_RESET_INTERVAL * 1000)
+      occupyReservedToken(reservedToken)
 
       return ok({
         id: reservedToken.id,
@@ -189,9 +195,7 @@ export function sourceReservedToken(
         resetTime: NoResetTime,
       })
     }
-    return err(
-      new DatabaseError("Unable to retrieve reserved tokens from database")
-    )
+    return NoTokenData
   })
 }
 
@@ -200,15 +204,13 @@ export function selectReservedToken(
   tokenDB: ModelStatic<AccessToken>
 ): ResultAsync<MaybeTokenData, DatabaseError> {
   if (
-    reservedTokenData.isErr() ||
+    reservedTokenData.isOk() &&
     reservedTokenData.value.remainingRequests >
       GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
   ) {
-    return sourceReservedToken(tokenDB).andThen(() =>
-      okAsync(reservedTokenData)
-    )
+    return okAsync(reservedTokenData)
   }
-  return okAsync(reservedTokenData)
+  return sourceReservedToken(tokenDB)
 }
 
 type IsReservedTokenType = boolean
@@ -268,6 +270,14 @@ export class TokenService {
     })
   }
 
+  switchToReserve() {
+    logger.info("switching to using reserved tokens")
+    this.useReservedTokens = true
+    setTimeout(() => {
+      this.useReservedTokens = false
+    }, GITHUB_RESET_INTERVAL * 1000) // 1 hour timeout
+  }
+
   getAccessToken(): ResultAsync<
     TokenData,
     NoAvailableTokenError | DatabaseError
@@ -281,11 +291,8 @@ export class TokenService {
       ).andThen((validToken) => {
         const [tokenData, isReserved] = validToken
         if (isReserved && !this.useReservedTokens) {
-          logger.info("switching to using reserved tokens")
-          this.useReservedTokens = true
-          setTimeout(() => {
-            this.useReservedTokens = false
-          }, GITHUB_RESET_INTERVAL * 1000) // 1 hour timeout
+          this.switchToReserve()
+          this.reservedTokenData = ok(tokenData)
         }
         return okAsync(tokenData)
       })

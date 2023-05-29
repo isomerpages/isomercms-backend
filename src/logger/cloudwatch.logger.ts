@@ -64,7 +64,7 @@ export default class CloudWatchLogger {
   }
 
   // this method is used to log non-error messages, replacing console.log
-  async info(logMessage: string) {
+  async info(logMessage: string | Record<string, unknown>) {
     try {
       await this._logger.info(`${logMessage}`)
     } catch (err) {
@@ -72,7 +72,7 @@ export default class CloudWatchLogger {
     }
   }
 
-  warn = async (message: string) => {
+  warn = async (message: string | Record<string, unknown>) => {
     try {
       await this._logger.warn(`${message}`)
     } catch (err) {
@@ -81,7 +81,7 @@ export default class CloudWatchLogger {
   }
 
   // this method is used to log error messages and write to stderr, replacing console.error
-  async error(errMessage: string) {
+  async error(errMessage: string | Record<string, unknown>) {
     try {
       await this._logger.error(`${errMessage}`)
     } catch (err) {

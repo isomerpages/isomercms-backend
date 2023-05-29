@@ -23,18 +23,23 @@ export class IsomerLogger implements Logger {
     this.formatters = []
   }
 
-  private getFormattedMessage = (message: string): string =>
-    this.formatters.reduce((prev, cur) => cur(prev), message)
+  private getFormattedMessage = (
+    message: string | Record<string, unknown>
+  ): string => {
+    const baseMessage =
+      typeof message === "string" ? message : JSON.stringify(message)
+    return this.formatters.reduce((prev, cur) => cur(prev), baseMessage)
+  }
 
-  info: LogMethod = (message: string): void => {
+  info: LogMethod = (message: string | Record<string, unknown>): void => {
     this.loggers.map((logger) => logger.info(this.getFormattedMessage(message)))
   }
 
-  warn: LogMethod = (message: string): void => {
+  warn: LogMethod = (message: string | Record<string, unknown>): void => {
     this.loggers.map((logger) => logger.warn(this.getFormattedMessage(message)))
   }
 
-  error: LogMethod = (message: string): void => {
+  error: LogMethod = (message: string | Record<string, unknown>): void => {
     this.loggers.map((logger) =>
       logger.error(this.getFormattedMessage(message))
     )

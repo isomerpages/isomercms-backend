@@ -10,7 +10,7 @@ States:
             Type: Task
             Resource: arn:aws:states:::lambda:invoke
             OutputPath: $.Payload
-            InputPath: $.Records[0].body
+            InputPath: $.body
             Parameters:
               FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-generalDomainValidation"
               Payload.$: $
@@ -29,7 +29,7 @@ States:
             OutputPath: $.Payload
             Parameters:
               FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-primaryDomainValidation"
-              Payload.$: $.Records[0].body
+              Payload.$: $.body
             Retry:
               - ErrorEquals:
                   - "States.ALL"
@@ -45,7 +45,7 @@ States:
             OutputPath: $.Payload
             Parameters:
               FunctionName: "arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${opt:stage, 'dev'}-redirectionDomainValidation"
-              Payload.$: $.Records[0].body
+              Payload.$: $.body
             Retry:
               - ErrorEquals:
                   - "States.ALL"

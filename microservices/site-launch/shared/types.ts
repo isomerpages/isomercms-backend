@@ -1,3 +1,4 @@
+// Please update any changes here to the file here: https://github.com/isomerpages/isomer-infra/blob/main/src/site-launch-microservice/model.ts
 export enum SiteLaunchLambdaType {
   GENERAL_DOMAIN_VALIDATION = "general-domain-validation",
   PRIMARY_DOMAIN_VALIDATION = "primary-domain-validation",
@@ -9,6 +10,7 @@ export enum SiteLaunchLambdaStatus {
   SUCCESS_PROPAGATING = "success - propagating",
   FAILURE_WRONG_CLOUDFRONT_DISTRIBUTION = "failure - wrong cloudfront distribution",
   FAILURE_CLOUDFRONT_ALIAS_CLASH = "failure - cloudfront alias clash",
+  FAILURE_UNKNOWN_ERROR = "failure - unknown error",
   PENDING_DURING_SITE_LAUNCH = "pending - during site launch",
   PENDING_PRE_SITE_LAUNCH = "pending - pre site launch",
 }

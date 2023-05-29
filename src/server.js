@@ -1,6 +1,7 @@
 // NOTE: the import for tracer doesn't resolve with path aliasing
 import "./utils/tracer"
 import "module-alias/register"
+import { StepFunctions } from "aws-sdk"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
 import nocache from "nocache"
@@ -208,7 +209,7 @@ const launchesService = new LaunchesService({
   launchClient,
 })
 const queueService = new QueueService()
-const stepFunctionsService = new StepFunctionsService()
+const stepFunctionsService = new StepFunctionsService(new StepFunctions())
 const dynamoDBService = new DynamoDBService({
   dynamoDBClient: new DynamoDBDocClient(),
 })
@@ -378,4 +379,56 @@ sequelize
     // If we cannot connect to the db, report an error using status code
     // And gracefully shut down the application since we can't serve client
     process.exitCode = 1
+  })
+
+// const formResponses = [
+//   {
+//     submissionId: "",
+//     requesterEmail: "kishore@open.gov.sg",
+//     repoName: "kishore-test",
+//     primaryDomain: "kishorewithwww.isomer.gov.sg",
+//     redirectionDomain: "www.kishorewithwww.isomer.gov.sg",
+//     agencyEmail: "alexander@open.gov.sg",
+//   },
+// ]
+
+// formsgSiteLaunchRouter.handleSiteLaunchResults(formResponses, "test")
+
+const message = {
+  repoName: "kishore-test",
+  appId: "d2o1jqfefd52uh",
+  primaryDomainSource: "kishorewithwww.isomer.gov.sg",
+  primaryDomainTarget: "d3p2fij9tvbt0v.cloudfront.net",
+  domainValidationSource:
+    "_0710dc63378cf3eb51c76fc55edbb51b.kishorewithwww.isomer.gov.sg",
+  domainValidationTarget:
+    "_4046887c88cf94a6e7b651c8a04abe70.yygwskclfy.acm-validations.aws",
+  requestorEmail: "kishore@open.gov.sg",
+  agencyEmail: "alexander@open.gov.sg",
+  redirectionDomain: [
+    {
+      source: "kishorewithwww.isomer.gov.sg",
+      target: "18.136.36.203",
+      type: "A",
+    },
+  ],
+}
+dynamoDBService
+  .createItem(message)
+  .then((data) => {
+    logger.info(`Successfully created item in DynamoDB: ${data}`)
+    return data
+  })
+  .catch((err) => {
+    logger.error(`Error creating item in DynamoDB: ${err}`)
+  })
+
+stepFunctionsService
+  .triggerFlow(message)
+  .then((data) => {
+    logger.info(`Successfully triggered flow: ${data}`)
+    return data
+  })
+  .catch((err) => {
+    logger.error(`Error triggering flow: ${err}`)
   })

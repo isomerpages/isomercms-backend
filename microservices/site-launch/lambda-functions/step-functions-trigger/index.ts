@@ -6,10 +6,10 @@ import logger from "../../shared/logger"
 import { SiteLaunchMessage } from "../../shared/types"
 
 export const stepFunctionsTrigger = async (event: SiteLaunchMessage) => {
-  const { AWS_REGION, AWS_ACCOUNT_NUMBER, STATE_MACHINE_NAME } = process.env
+  const { AWS_REGION, AWS_ACCOUNT_NUMBER, STEP_FUNCTIONS_ARN } = process.env
   try {
     const stepFunctions = new StepFunctions()
-    const stateMachineArn = `arn:aws:states:${AWS_REGION}:${AWS_ACCOUNT_NUMBER}:stateMachine:${STATE_MACHINE_NAME}`
+    const stateMachineArn = `arn:aws:states:${AWS_REGION}:${AWS_ACCOUNT_NUMBER}:stateMachine:${STEP_FUNCTIONS_ARN}`
     const params = {
       stateMachineArn,
       input: JSON.stringify(event),

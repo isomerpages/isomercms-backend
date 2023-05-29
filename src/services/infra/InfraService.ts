@@ -385,7 +385,7 @@ export default class InfraService {
         }
         message.redirectionDomain = [redirectionDomainObject]
       }
-
+      console.log("input to step functions", message)
       if (DEPRECATE_SITE_QUEUES) {
         await this.dynamoDBService.createItem(message)
         await this.stepFunctionsService.triggerFlow(message)

@@ -5,16 +5,20 @@ frameworkVersion: "3"
 plugins:
   - serverless-plugin-typescript
   - serverless-step-functions
+  - serverless-plugin-ifelse
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs16.x
   region: ${env:AWS_REGION}
   environment:
     INCOMING_QUEUE_URL: ${env:INCOMING_QUEUE_URL}
     OUTGOING_QUEUE_URL: ${env:OUTGOING_QUEUE_URL}
     NODE_ENV: ${env:NODE_ENV}
     SYSTEM_GITHUB_TOKEN: ${env:SYSTEM_GITHUB_TOKEN}
+    STEP_FUNCTIONS_ARN: ${env:STEP_FUNCTIONS_ARN}
+    FF_DEPRECATE_SITE_QUEUES: ${env:FF_DEPRECATE_SITE_QUEUES}
+    SITE_LAUNCH_DYNAMO_DB_TABLE_NAME: ${env:SITE_LAUNCH_DYNAMO_DB_TABLE_NAME}
 
 functions:
   generalDomainValidation:
@@ -34,8 +38,17 @@ functions:
 
 custom:
   stateMachineName: SiteLaunchStepFunctions-${opt:stage, 'dev'}
-stepFunctions:
-  stateMachines:
-    siteLaunch:
-      name: ${self:custom.stateMachineName}
-      definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}
+serverlessIfElse:
+  - If: ${env:FF_DEPRECATE_SITE_QUEUES}
+    Set:
+      stepFunctions:
+        stateMachines:
+          siteLaunch:
+            name: ${self:custom.stateMachineName}
+            definition: ${file(./site-launch/step-function-workflows/site-launch-with-db.asl.yaml)}
+    ElseSet:
+      stepFunctions:
+        stateMachines:
+          siteLaunch:
+            name: ${self:custom.stateMachineName}
+            definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}

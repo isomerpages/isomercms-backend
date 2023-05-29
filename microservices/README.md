@@ -6,7 +6,7 @@ We do intend to move away from serverless soon in favour of Pullumi. In the inte
 
 1. Run `npm install -g serverless`
 
-By the very nature of cloud development, everyone will have access to the same shared resource. If you seek to do develop in an isolated environment, please use:
+By the very nature of cloud development, everyone will have access to the same shared resource. If you seek to do develop in an isolated environment, update your .env.dev to your preferred values and use:
 
 `npm run deploy:dev -- --stage <identifiable-unique-name>`
 

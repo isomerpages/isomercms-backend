@@ -1,2 +1,8 @@
 name: SiteLaunch${self:service}${opt:stage, 'dev'}
-definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}
+
+serverlessIfElse:
+  - If: '"${env:FF_DEPRECATE_SITE_QUEUES}" == "true"'
+    Set:
+      definition: ${file(./site-launch/step-function-workflows/site-launch-with-db.asl.yaml)}
+    ElseSet:
+      definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}

@@ -30,6 +30,13 @@ export enum ReviewRequestStatus {
 }
 
 export const E2E_ISOMER_ID = "-1"
+export const E2E_EMAIL_ADMIN_ISOMER_ID = config.get(
+  "cypress.e2eEmailAdminIsomerId"
+)
+export const E2E_EMAIL_COLLAB_ISOMER_ID = config.get(
+  "cypress.e2eEmailCollabIsomerId"
+)
+
 export const E2E_TEST_EMAIL = "test@e2e"
 export const E2E_TEST_CONTACT = "12345678"
 

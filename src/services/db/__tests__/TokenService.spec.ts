@@ -270,10 +270,10 @@ describe("Token Service", () => {
       resetTime: NoResetTime,
     }))
 
-    const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+    const mockEmptyTokenDB = ({
       findAll: jest.fn(async () => null),
       findOne: jest.fn(async () => null),
-    } as unknown) as ModelStatic<AccessToken>)
+    } as unknown) as ModelStatic<AccessToken>
 
     jest.useFakeTimers()
 
@@ -303,13 +303,13 @@ describe("Token Service", () => {
       existingToken.value.remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
 
-      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 3,
         token: "reserved_token_db",
         resetTime: null,
         isReserved: true,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
       const expected = ok(
         ok({
@@ -320,10 +320,10 @@ describe("Token Service", () => {
         })
       )
 
-      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      const nonEmptyTokenDB = ({
         findAll: jest.fn(async () => null),
         findOne: jest.fn(async () => mockAccessTokenDB),
-      } as unknown) as ModelStatic<AccessToken>)
+      } as unknown) as ModelStatic<AccessToken>
 
       // Act
       const actual = await selectReservedToken(existingToken, nonEmptyTokenDB)
@@ -372,10 +372,10 @@ describe("Token Service", () => {
       resetTime: NoResetTime,
     }))
 
-    const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+    const mockEmptyTokenDB = ({
       findAll: jest.fn(async () => null),
       findOne: jest.fn(async () => null),
-    } as unknown) as ModelStatic<AccessToken>)
+    } as unknown) as ModelStatic<AccessToken>
 
     jest.useFakeTimers()
 
@@ -446,18 +446,18 @@ describe("Token Service", () => {
       activeTokens[0].resetTime = ok(resetTime)
       const existingReservedToken = NoTokenData
 
-      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 3,
         token: "reserved_token_db",
         resetTime: null,
         isReserved: true,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
-      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      const nonEmptyTokenDB = ({
         findAll: jest.fn(async () => null),
         findOne: jest.fn(async () => mockAccessTokenDB),
-      } as unknown) as ModelStatic<AccessToken>)
+      } as unknown) as ModelStatic<AccessToken>
 
       const expected = ok([
         {
@@ -486,18 +486,18 @@ describe("Token Service", () => {
       const activeTokens = mockActiveTokens()
       const existingReservedToken = NoTokenData
 
-      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 3,
         token: "reserved_token_db",
         resetTime: null,
         isReserved: true,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
-      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      const nonEmptyTokenDB = ({
         findAll: jest.fn(async () => null),
         findOne: jest.fn(async () => mockAccessTokenDB),
-      } as unknown) as ModelStatic<AccessToken>)
+      } as unknown) as ModelStatic<AccessToken>
 
       const expected = ok([
         {
@@ -708,9 +708,9 @@ describe("Token Service", () => {
 
     const mockLoggingFunction = jest.fn()
 
-    const mockLogger = jest.mocked<typeof logger>(({
+    const mockLogger = ({
       info: mockLoggingFunction,
-    } as unknown) as LoggerType)
+    } as unknown) as LoggerType
 
     const mockActiveTokens = jest.fn(() => [
       {
@@ -824,18 +824,18 @@ describe("Token Service", () => {
 
     it("should return an active token", async () => {
       // Arrange
-      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 1,
         token: "active_token_1",
         resetTime: null,
         isReserved: false,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
-      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      const nonEmptyTokenDB = ({
         findAll: jest.fn(async () => [mockAccessTokenDB]),
         findOne: jest.fn(async () => null),
-      } as unknown) as ModelStatic<AccessToken>)
+      } as unknown) as ModelStatic<AccessToken>
 
       const expected = ok("active_token_1")
 
@@ -849,18 +849,18 @@ describe("Token Service", () => {
 
     it("should raise an error as token has been exhausted", async () => {
       // Arrange
-      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 1,
         token: "active_token_1",
         resetTime: null,
         isReserved: false,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
-      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      const nonEmptyTokenDB = ({
         findAll: jest.fn(async () => [mockAccessTokenDB]),
         findOne: jest.fn(async () => null),
-      } as unknown) as ModelStatic<AccessToken>)
+      } as unknown) as ModelStatic<AccessToken>
       const expected = err(new NoAvailableTokenError())
       const now = new Date()
       const resetTime =
@@ -882,26 +882,26 @@ describe("Token Service", () => {
 
     it("should wait for an hour upon entering reserve mode before going back to active", async () => {
       // Arrange
-      const mockActiveAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockActiveAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 1,
         token: "active_token_1",
         resetTime: null,
         isReserved: false,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
-      const mockReservedAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+      const mockReservedAccessTokenDB: AccessToken = ({
         update: jest.fn(),
         id: 2,
         token: "reserved_token_1",
         resetTime: null,
         isReserved: true,
-      } as unknown) as AccessToken)
+      } as unknown) as AccessToken
 
-      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      const nonEmptyTokenDB = ({
         findAll: jest.fn(async () => [mockActiveAccessTokenDB]),
         findOne: jest.fn(async () => mockReservedAccessTokenDB),
-      } as unknown) as ModelStatic<AccessToken>)
+      } as unknown) as ModelStatic<AccessToken>
       const expected1 = ok("active_token_1")
       const expected2 = ok("reserved_token_1")
       const expected3 = ok("reserved_token_1")

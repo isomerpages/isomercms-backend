@@ -97,7 +97,7 @@ describe("Settings Service", () => {
     mockNavYmlService.read.mockResolvedValue(navigation)
     mockHomepagePageService.read.mockResolvedValue(homepage)
 
-    const updatedFbPixelValue = `${configContent["facebook-pixel"]}0`
+    const updatedFbPixelValue = `123456789012340`
     const updatedTitleValue = `${configContent.title}test`
     const updatedDescriptionValue = `${configContent.description}test`
     const updatedFaq = `${footerContent.faq}test`

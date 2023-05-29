@@ -92,7 +92,7 @@ describe("Settings Router", () => {
       homepage,
     })
 
-    const updatedFbPixelValue = `${configContent["facebook-pixel"]}0`
+    const updatedFbPixelValue = `123456789012340`
     const updatedTitleValue = `${configContent.title}test`
     const updatedFaq = `${footerContent.faq}test`
     const updatedLogo = `${navigationContent.logo}test`

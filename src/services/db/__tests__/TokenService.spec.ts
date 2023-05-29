@@ -19,6 +19,7 @@ import {
   GITHUB_TOKEN_REMAINING_HEADER,
   GITHUB_TOKEN_RESET_HEADER,
   selectToken,
+  TokenService,
 } from "@services/db/TokenService"
 
 describe("Token Service", () => {
@@ -232,6 +233,29 @@ describe("Token Service", () => {
       // Assert
       expect(actual).toEqual(expected)
     })
+
+    it("should return second token as its reset time has past", async () => {
+      // Arrange
+      const now = new Date()
+      const futureResetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const pastResetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const expected = NoTokenData
+      const input = mockActiveTokens()
+      input[0].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      input[0].resetTime = ok(futureResetTime)
+      input[1].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      input[1].resetTime = ok(pastResetTime)
+      input[2].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      input[2].resetTime = ok(futureResetTime)
+
+      // Act
+      const actual = selectActiveToken(input)
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
   })
 
   describe("selectReservedToken", () => {
@@ -377,7 +401,27 @@ describe("Token Service", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should return the stored reserved token", async () => {
+    it("should return the stored reserved token (non-reserve mode)", async () => {
+      // Arrange
+      const activeTokens = mockActiveTokens()
+      activeTokens[0].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      const existingReservedToken = ok(mockExistingReserveToken())
+      const expected = ok([existingReservedToken.value, true])
+
+      // Act
+      const actual = await selectToken(
+        true,
+        activeTokens,
+        existingReservedToken,
+        mockEmptyTokenDB
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should return the stored reserved token (reserve mode)", async () => {
       // Arrange
       const activeTokens = mockActiveTokens()
       const existingReservedToken = ok(mockExistingReserveToken())
@@ -395,7 +439,53 @@ describe("Token Service", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should return the queried reserved token from db", async () => {
+    it("should return the queried reserved token from db (non-reserve mode)", async () => {
+      // Arrange
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const activeTokens = mockActiveTokens()
+      activeTokens[0].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[0].resetTime = ok(resetTime)
+      const existingReservedToken = NoTokenData
+
+      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 3,
+        token: "reserved_token_db",
+        resetTime: null,
+        isReserved: true,
+      } as unknown) as AccessToken)
+
+      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+        findAll: jest.fn(async () => null),
+        findOne: jest.fn(async () => mockAccessTokenDB),
+      } as unknown) as ModelStatic<AccessToken>)
+
+      const expected = ok([
+        {
+          id: mockAccessTokenDB.id,
+          tokenString: mockAccessTokenDB.token,
+          remainingRequests: GITHUB_TOKEN_LIMIT,
+          resetTime: NoResetTime,
+        },
+        true,
+      ])
+
+      // Act
+      const actual = await selectToken(
+        false,
+        activeTokens,
+        existingReservedToken,
+        nonEmptyTokenDB
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should return the queried reserved token from db (reserve mode)", async () => {
       // Arrange
       const activeTokens = mockActiveTokens()
       const existingReservedToken = NoTokenData
@@ -435,7 +525,32 @@ describe("Token Service", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should return a no available token error", async () => {
+    it("should raise a no available token error (non-reserved mode)", async () => {
+      // Arrange
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const activeTokens = mockActiveTokens()
+      activeTokens[0].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[0].resetTime = ok(resetTime)
+      const existingReservedToken = NoTokenData
+
+      const expected = err(new NoAvailableTokenError())
+
+      // Act
+      const actual = await selectToken(
+        false,
+        activeTokens,
+        existingReservedToken,
+        mockEmptyTokenDB
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should raise a no available token error (reserved mode)", async () => {
       // Arrange
       const activeTokens = mockActiveTokens()
       const existingReservedToken = NoTokenData
@@ -589,6 +704,125 @@ describe("Token Service", () => {
 
       // Assert
       expect(actual).toEqual(expected)
+    })
+  })
+
+  describe("TokenService", () => {
+    const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      findAll: jest.fn(async () => null),
+      findOne: jest.fn(async () => null),
+    } as unknown) as ModelStatic<AccessToken>)
+
+    jest.useFakeTimers()
+
+    it("should return an active token", async () => {
+      // Arrange
+      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 1,
+        token: "active_token_1",
+        resetTime: null,
+        isReserved: false,
+      } as unknown) as AccessToken)
+
+      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+        findAll: jest.fn(async () => [mockAccessTokenDB]),
+        findOne: jest.fn(async () => null),
+      } as unknown) as ModelStatic<AccessToken>)
+
+      const expected = ok("active_token_1")
+
+      // Act
+      const tokenService = new TokenService(nonEmptyTokenDB)
+      const actual = await tokenService.getAccessToken()
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should raise an error as token has been exhausted", async () => {
+      // Arrange
+      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 1,
+        token: "active_token_1",
+        resetTime: null,
+        isReserved: false,
+      } as unknown) as AccessToken)
+
+      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+        findAll: jest.fn(async () => [mockAccessTokenDB]),
+        findOne: jest.fn(async () => null),
+      } as unknown) as ModelStatic<AccessToken>)
+      const expected = err(new NoAvailableTokenError())
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+
+      // Act
+      const tokenService = new TokenService(nonEmptyTokenDB)
+      await tokenService.getAccessToken()
+      tokenService.updateTokens(
+        "active_token_1",
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD,
+        resetTime
+      )
+      const actual = await tokenService.getAccessToken()
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should wait for an hour upon entering reserve mode before going back to active", async () => {
+      // Arrange
+      const mockActiveAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 1,
+        token: "active_token_1",
+        resetTime: null,
+        isReserved: false,
+      } as unknown) as AccessToken)
+
+      const mockReservedAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 2,
+        token: "reserved_token_1",
+        resetTime: null,
+        isReserved: true,
+      } as unknown) as AccessToken)
+
+      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+        findAll: jest.fn(async () => [mockActiveAccessTokenDB]),
+        findOne: jest.fn(async () => mockReservedAccessTokenDB),
+      } as unknown) as ModelStatic<AccessToken>)
+      const expected_1 = ok("active_token_1")
+      const expected_2 = ok("reserved_token_1")
+      const expected_3 = ok("reserved_token_1")
+      const expected_4 = ok("active_token_1")
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+
+      // Act
+      const tokenService = new TokenService(nonEmptyTokenDB)
+      await tokenService.getAccessToken()
+      const actual_1 = await tokenService.getAccessToken()
+      tokenService.updateTokens(
+        "active_token_1",
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD,
+        resetTime
+      )
+      const actual_2 = await tokenService.getAccessToken()
+      jest.advanceTimersByTime(59 * 60 * 1000)
+      const actual_3 = await tokenService.getAccessToken()
+      jest.advanceTimersByTime(2 * 60 * 1000)
+      const actual_4 = await tokenService.getAccessToken()
+
+      // Assert
+      expect(actual_1).toEqual(expected_1)
+      expect(actual_2).toEqual(expected_2)
+      expect(actual_3).toEqual(expected_3)
+      expect(actual_4).toEqual(expected_4)
     })
   })
 })

@@ -74,7 +74,7 @@ type LoggerType = typeof logger
 
 export function activeUsageAlert(
   activeTokensData: TokenData[],
-  logger: LoggerType
+  useLogger: LoggerType
 ) {
   let exhaustedTokensCount = 0
   activeTokensData.forEach((tokenData) => {
@@ -86,16 +86,16 @@ export function activeUsageAlert(
     }
   })
   if (exhaustedTokensCount >= activeTokensData.length * ACTIVE_TOKEN_ALERT_2) {
-    logger.info(`${ACTIVE_TOKEN_ALERT_2}% of access token capacity reached`)
-    logger.info(
+    useLogger.info(`${ACTIVE_TOKEN_ALERT_2}% of access token capacity reached`)
+    useLogger.info(
       `${exhaustedTokensCount}/${activeTokensData.length} active tokens exhausted`
     )
   } else if (
     exhaustedTokensCount >=
     activeTokensData.length * ACTIVE_TOKEN_ALERT_1
   ) {
-    logger.info(`${ACTIVE_TOKEN_ALERT_1}% of access token capacity reached`)
-    logger.info(
+    useLogger.info(`${ACTIVE_TOKEN_ALERT_1}% of access token capacity reached`)
+    useLogger.info(
       `${exhaustedTokensCount}/${activeTokensData.length} active tokens exhausted`
     )
   }
@@ -231,7 +231,6 @@ export function selectToken(
   [TokenData, IsReservedTokenType],
   NoAvailableTokenError | DatabaseError
 > {
-  console.log(`useReservedTokens ${useReservedTokens}`)
   if (useReservedTokens === false) {
     const activeToken = selectActiveToken(activeTokenData)
     if (activeToken.isOk()) {
@@ -284,7 +283,6 @@ export class TokenService {
     this.useReservedTokens = true
     setTimeout(() => {
       this.useReservedTokens = false
-      console.log("hmmmmm")
     }, GITHUB_RESET_INTERVAL * 1000) // 1 hour timeout
   }
 
@@ -331,7 +329,9 @@ export class TokenService {
       this.reservedTokenData.value.remainingRequests = remainingRequests
       this.reservedTokenData.value.resetTime = ok(resetTime)
     }
-    activeUsageAlert(this.activeTokensData, logger)
+    if (this.initialized) {
+      activeUsageAlert(this.activeTokensData, logger)
+    }
   }
 }
 

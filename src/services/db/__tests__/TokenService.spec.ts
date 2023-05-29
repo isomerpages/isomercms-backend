@@ -1,7 +1,9 @@
 import { expect, jest } from "@jest/globals"
 import { AxiosResponse } from "axios"
-import { ok, err, okAsync } from "neverthrow"
+import { ok, err } from "neverthrow"
 import { ModelStatic } from "sequelize"
+
+import logger from "@logger/logger"
 
 import TokenParsingError from "@errors/TokenParsingError"
 
@@ -10,15 +12,17 @@ import NoAvailableTokenError from "@root/errors/NoAvailableTokenError"
 import {
   GITHUB_TOKEN_LIMIT,
   GITHUB_TOKEN_THRESHOLD,
-  TokenData,
   NoTokenData,
   NoResetTime,
   selectActiveToken,
   selectReservedToken,
+  selectToken,
   parseResponseTokenData,
+  activeUsageAlert,
+  ACTIVE_TOKEN_ALERT_1,
+  ACTIVE_TOKEN_ALERT_2,
   GITHUB_TOKEN_REMAINING_HEADER,
   GITHUB_TOKEN_RESET_HEADER,
-  selectToken,
   TokenService,
 } from "@services/db/TokenService"
 
@@ -368,14 +372,6 @@ describe("Token Service", () => {
       resetTime: NoResetTime,
     }))
 
-    const mockAccessTokenQuery: AccessToken = jest.mocked<AccessToken>(({
-      update: jest.fn(),
-      id: 3,
-      token: "new_token",
-      resetTime: null,
-      isReserved: true,
-    } as unknown) as AccessToken)
-
     const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
       findAll: jest.fn(async () => null),
       findOne: jest.fn(async () => null),
@@ -707,12 +703,123 @@ describe("Token Service", () => {
     })
   })
 
-  describe("TokenService", () => {
-    const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
-      findAll: jest.fn(async () => null),
-      findOne: jest.fn(async () => null),
-    } as unknown) as ModelStatic<AccessToken>)
+  describe("activeUsageAlert", () => {
+    type LoggerType = typeof logger
 
+    const mockLoggingFunction = jest.fn()
+
+    const mockLogger = jest.mocked<typeof logger>(({
+      info: mockLoggingFunction,
+    } as unknown) as LoggerType)
+
+    const mockActiveTokens = jest.fn(() => [
+      {
+        id: 1,
+        tokenString: "token_1",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NoResetTime,
+      },
+      {
+        id: 2,
+        tokenString: "token_2",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NoResetTime,
+      },
+      {
+        id: 3,
+        tokenString: "token_3",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NoResetTime,
+      },
+      {
+        id: 4,
+        tokenString: "token_3",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NoResetTime,
+      },
+      {
+        id: 5,
+        tokenString: "token_3",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NoResetTime,
+      },
+    ])
+
+    it("should not sound any alarms", () => {
+      // Arrange
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const activeTokens = mockActiveTokens()
+      activeTokens[0].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[0].resetTime = ok(resetTime)
+      activeTokens[1].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[1].resetTime = ok(resetTime)
+
+      // Act
+      activeUsageAlert(activeTokens, mockLogger)
+
+      // Assert
+      expect(mockLoggingFunction.mock.calls.length).toBe(0)
+    })
+
+    it("should sound first alarm (60%)", () => {
+      // Arrange
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const activeTokens = mockActiveTokens()
+      activeTokens[0].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[0].resetTime = ok(resetTime)
+      activeTokens[1].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[1].resetTime = ok(resetTime)
+      activeTokens[2].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[2].resetTime = ok(resetTime)
+
+      // Act
+      activeUsageAlert(activeTokens, mockLogger)
+
+      // Assert
+      expect(mockLoggingFunction.mock.calls[0][0]).toBe(
+        `${ACTIVE_TOKEN_ALERT_1}% of access token capacity reached`
+      )
+    })
+
+    it("should sound 2nd alarm (80%)", () => {
+      // Arrange
+      const now = new Date()
+      const resetTime =
+        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
+      const activeTokens = mockActiveTokens()
+      activeTokens[0].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[0].resetTime = ok(resetTime)
+      activeTokens[1].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[1].resetTime = ok(resetTime)
+      activeTokens[2].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[2].resetTime = ok(resetTime)
+      activeTokens[3].remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+      activeTokens[3].resetTime = ok(resetTime)
+
+      // Act
+      activeUsageAlert(activeTokens, mockLogger)
+
+      // Assert
+      expect(mockLoggingFunction.mock.calls[0][0]).toBe(
+        `${ACTIVE_TOKEN_ALERT_2}% of access token capacity reached`
+      )
+    })
+  })
+
+  describe("TokenService", () => {
     jest.useFakeTimers()
 
     it("should return an active token", async () => {
@@ -795,10 +902,10 @@ describe("Token Service", () => {
         findAll: jest.fn(async () => [mockActiveAccessTokenDB]),
         findOne: jest.fn(async () => mockReservedAccessTokenDB),
       } as unknown) as ModelStatic<AccessToken>)
-      const expected_1 = ok("active_token_1")
-      const expected_2 = ok("reserved_token_1")
-      const expected_3 = ok("reserved_token_1")
-      const expected_4 = ok("active_token_1")
+      const expected1 = ok("active_token_1")
+      const expected2 = ok("reserved_token_1")
+      const expected3 = ok("reserved_token_1")
+      const expected4 = ok("active_token_1")
       const now = new Date()
       const resetTime =
         now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
@@ -806,23 +913,23 @@ describe("Token Service", () => {
       // Act
       const tokenService = new TokenService(nonEmptyTokenDB)
       await tokenService.getAccessToken()
-      const actual_1 = await tokenService.getAccessToken()
+      const actual1 = await tokenService.getAccessToken()
       tokenService.updateTokens(
         "active_token_1",
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD,
         resetTime
       )
-      const actual_2 = await tokenService.getAccessToken()
+      const actual2 = await tokenService.getAccessToken()
       jest.advanceTimersByTime(59 * 60 * 1000)
-      const actual_3 = await tokenService.getAccessToken()
+      const actual3 = await tokenService.getAccessToken()
       jest.advanceTimersByTime(2 * 60 * 1000)
-      const actual_4 = await tokenService.getAccessToken()
+      const actual4 = await tokenService.getAccessToken()
 
       // Assert
-      expect(actual_1).toEqual(expected_1)
-      expect(actual_2).toEqual(expected_2)
-      expect(actual_3).toEqual(expected_3)
-      expect(actual_4).toEqual(expected_4)
+      expect(actual1).toEqual(expected1)
+      expect(actual2).toEqual(expected2)
+      expect(actual3).toEqual(expected3)
+      expect(actual4).toEqual(expected4)
     })
   })
 })

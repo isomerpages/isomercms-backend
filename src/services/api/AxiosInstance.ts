@@ -29,7 +29,6 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   if (isEmailLoginUser) {
     const accessToken = await tokenServiceInstance
       .getAccessToken()
-      .map((token) => token.tokenString)
       .unwrapOr("null")
     if (axiosConfig.headers) {
       axiosConfig.headers.Authorization = `token ${accessToken}`

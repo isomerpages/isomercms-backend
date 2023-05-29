@@ -70,7 +70,12 @@ export function queryActiveTokens(
   )
 }
 
-export function activeUsageAlert(activeTokensData: TokenData[]) {
+type LoggerType = typeof logger
+
+export function activeUsageAlert(
+  activeTokensData: TokenData[],
+  logger: LoggerType
+) {
   let exhaustedTokensCount = 0
   activeTokensData.forEach((tokenData) => {
     if (
@@ -146,7 +151,9 @@ export function selectActiveToken(
     // Choose earliest non-null reset time from tokens that has not exceeded  threshold
     if (
       activeTokenData.remainingRequests >
-      GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD ||
+      activeTokenData.resetTime.isErr() ||
+      activeTokenData.resetTime.value < nowEpochSecondsUTC
     ) {
       if (
         token.isErr() ||
@@ -224,6 +231,7 @@ export function selectToken(
   [TokenData, IsReservedTokenType],
   NoAvailableTokenError | DatabaseError
 > {
+  console.log(`useReservedTokens ${useReservedTokens}`)
   if (useReservedTokens === false) {
     const activeToken = selectActiveToken(activeTokenData)
     if (activeToken.isOk()) {
@@ -264,24 +272,23 @@ export class TokenService {
     if (this.initialized) {
       return okAsync(true)
     }
+    this.initialized = true
     return queryActiveTokens(this.tokenDB).map((activeTokensData) => {
       this.activeTokensData = activeTokensData
       return false
     })
   }
 
-  switchToReserve() {
+  private switchToReserve() {
     logger.info("switching to using reserved tokens")
     this.useReservedTokens = true
     setTimeout(() => {
       this.useReservedTokens = false
+      console.log("hmmmmm")
     }, GITHUB_RESET_INTERVAL * 1000) // 1 hour timeout
   }
 
-  getAccessToken(): ResultAsync<
-    TokenData,
-    NoAvailableTokenError | DatabaseError
-  > {
+  getAccessToken(): ResultAsync<string, NoAvailableTokenError | DatabaseError> {
     return this.ensureInitialization().andThen((isInitialised) =>
       selectToken(
         this.useReservedTokens,
@@ -294,7 +301,7 @@ export class TokenService {
           this.switchToReserve()
           this.reservedTokenData = ok(tokenData)
         }
-        return okAsync(tokenData)
+        return okAsync(tokenData.tokenString)
       })
     )
   }
@@ -324,7 +331,7 @@ export class TokenService {
       this.reservedTokenData.value.remainingRequests = remainingRequests
       this.reservedTokenData.value.resetTime = ok(resetTime)
     }
-    activeUsageAlert(this.activeTokensData)
+    activeUsageAlert(this.activeTokensData, logger)
   }
 }
 

@@ -27,4 +27,16 @@ describe("logger", () => {
     expect(mockLog).toHaveBeenCalledTimes(methods.length)
     expect(mockLog).toHaveBeenCalledWith(MOCK_LOG_MESSAGE)
   })
+  it("should format the message according to the formatter given", () => {
+    // Arrange
+    const mockFormatter = jest.fn().mockReturnValue("")
+    logger.useFormatter(mockFormatter)
+
+    // Act
+    logger.info(MOCK_LOG_MESSAGE)
+
+    // Assert
+    expect(mockFormatter).toHaveBeenCalledWith(MOCK_LOG_MESSAGE)
+    expect(mockLog).toHaveBeenCalledWith("")
+  })
 })

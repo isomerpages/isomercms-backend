@@ -1,14 +1,16 @@
 import { expect, jest } from "@jest/globals"
 import { AxiosResponse } from "axios"
-import { ok, err } from "neverthrow"
+import { ok, err, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import TokenParsingError from "@errors/TokenParsingError"
 
 import { AccessToken } from "@database/models"
+import NoAvailableTokenError from "@root/errors/NoAvailableTokenError"
 import {
   GITHUB_TOKEN_LIMIT,
   GITHUB_TOKEN_THRESHOLD,
+  TokenData,
   NoTokenData,
   NoResetTime,
   selectActiveToken,
@@ -16,6 +18,7 @@ import {
   parseResponseTokenData,
   GITHUB_TOKEN_REMAINING_HEADER,
   GITHUB_TOKEN_RESET_HEADER,
+  selectToken,
 } from "@services/db/TokenService"
 
 describe("Token Service", () => {
@@ -232,29 +235,23 @@ describe("Token Service", () => {
   })
 
   describe("selectReservedToken", () => {
-    let mockAccessTokenQuery: AccessToken | null = jest.mocked<AccessToken>(({
-      update: jest.fn(),
-      id: 1,
-      token: "new_token",
-      resetTime: null,
-      isReserved: true,
-    } as unknown) as AccessToken)
+    const mockExistingReserveToken = jest.fn(() => ({
+      id: 2,
+      tokenString: "existing_token",
+      remainingRequests: GITHUB_TOKEN_LIMIT,
+      resetTime: NoResetTime,
+    }))
 
-    const mockTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
-      findAll: jest.fn(),
-      findOne: jest.fn(async () => mockAccessTokenQuery),
+    const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      findAll: jest.fn(async () => null),
+      findOne: jest.fn(async () => null),
     } as unknown) as ModelStatic<AccessToken>)
 
     jest.useFakeTimers()
 
     it("should return the existing reserved token", async () => {
       // Arrange
-      const existingToken = ok({
-        id: 2,
-        tokenString: "existing_token",
-        remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
-      })
+      const existingToken = ok(mockExistingReserveToken())
       const expected = ok(
         ok({
           id: 2,
@@ -265,59 +262,193 @@ describe("Token Service", () => {
       )
 
       // Act
-      const actual = await selectReservedToken(existingToken, mockTokenDB)
+      const actual = await selectReservedToken(existingToken, mockEmptyTokenDB)
 
       // Assert
       expect(actual).toEqual(expected)
       jest.advanceTimersByTime(61 * 60 * 1000)
-      expect(mockAccessTokenQuery?.update).toHaveBeenCalledTimes(0)
     })
 
     it("should return the a new reserved token data from db", async () => {
       // Arrange
-      const existingToken = ok({
-        id: 2,
-        tokenString: "existing_token",
-        remainingRequests: GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD,
-        resetTime: NoResetTime,
-      })
+      const existingToken = ok(mockExistingReserveToken())
+      existingToken.value.remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+
+      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 3,
+        token: "reserved_token_db",
+        resetTime: null,
+        isReserved: true,
+      } as unknown) as AccessToken)
+
       const expected = ok(
         ok({
-          id: 1,
-          tokenString: "new_token",
+          id: mockAccessTokenDB.id,
+          tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
           resetTime: NoResetTime,
         })
       )
 
+      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+        findAll: jest.fn(async () => null),
+        findOne: jest.fn(async () => mockAccessTokenDB),
+      } as unknown) as ModelStatic<AccessToken>)
+
       // Act
-      const actual = await selectReservedToken(existingToken, mockTokenDB)
+      const actual = await selectReservedToken(existingToken, nonEmptyTokenDB)
 
       // Assert
       expect(actual).toEqual(expected)
       jest.advanceTimersByTime(59 * 60 * 1000)
-      expect(mockAccessTokenQuery?.update).toHaveBeenCalledTimes(1)
+      expect(mockAccessTokenDB.update).toHaveBeenCalledTimes(1)
 
       jest.advanceTimersByTime(2 * 60 * 1000)
-      expect(mockAccessTokenQuery?.update).toHaveBeenCalledTimes(2)
+      expect(mockAccessTokenDB.update).toHaveBeenCalledTimes(2)
     })
 
     it("should return no tokens with no database error", async () => {
       // Arrange
-      const existingToken = ok({
-        id: 2,
-        tokenString: "existing_token",
-        remainingRequests: GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD,
-        resetTime: NoResetTime,
-      })
+      const existingToken = ok(mockExistingReserveToken())
+      existingToken.value.remainingRequests =
+        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       const expected = ok(NoTokenData)
 
-      mockAccessTokenQuery = null
       const future = new Date()
       future.setSeconds(future.getSeconds() + 60)
 
       // Act
-      const actual = await selectReservedToken(existingToken, mockTokenDB)
+      const actual = await selectReservedToken(existingToken, mockEmptyTokenDB)
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe("selectToken", () => {
+    const mockActiveTokens = jest.fn(() => [
+      {
+        id: 1,
+        tokenString: "active_token",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NoResetTime,
+      },
+    ])
+
+    const mockExistingReserveToken = jest.fn(() => ({
+      id: 2,
+      tokenString: "existing_token",
+      remainingRequests: GITHUB_TOKEN_LIMIT,
+      resetTime: NoResetTime,
+    }))
+
+    const mockAccessTokenQuery: AccessToken = jest.mocked<AccessToken>(({
+      update: jest.fn(),
+      id: 3,
+      token: "new_token",
+      resetTime: null,
+      isReserved: true,
+    } as unknown) as AccessToken)
+
+    const mockEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+      findAll: jest.fn(async () => null),
+      findOne: jest.fn(async () => null),
+    } as unknown) as ModelStatic<AccessToken>)
+
+    jest.useFakeTimers()
+
+    it("should return an active token", async () => {
+      // Arrange
+      const activeTokens = mockActiveTokens()
+      const existingReservedToken = ok(mockExistingReserveToken())
+      const expected = ok([activeTokens[0], false])
+
+      // Act
+      const actual = await selectToken(
+        false,
+        activeTokens,
+        existingReservedToken,
+        mockEmptyTokenDB
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should return the stored reserved token", async () => {
+      // Arrange
+      const activeTokens = mockActiveTokens()
+      const existingReservedToken = ok(mockExistingReserveToken())
+      const expected = ok([existingReservedToken.value, true])
+
+      // Act
+      const actual = await selectToken(
+        true,
+        activeTokens,
+        existingReservedToken,
+        mockEmptyTokenDB
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should return the queried reserved token from db", async () => {
+      // Arrange
+      const activeTokens = mockActiveTokens()
+      const existingReservedToken = NoTokenData
+
+      const mockAccessTokenDB: AccessToken = jest.mocked<AccessToken>(({
+        update: jest.fn(),
+        id: 3,
+        token: "reserved_token_db",
+        resetTime: null,
+        isReserved: true,
+      } as unknown) as AccessToken)
+
+      const nonEmptyTokenDB = jest.mocked<ModelStatic<AccessToken>>(({
+        findAll: jest.fn(async () => null),
+        findOne: jest.fn(async () => mockAccessTokenDB),
+      } as unknown) as ModelStatic<AccessToken>)
+
+      const expected = ok([
+        {
+          id: mockAccessTokenDB.id,
+          tokenString: mockAccessTokenDB.token,
+          remainingRequests: GITHUB_TOKEN_LIMIT,
+          resetTime: NoResetTime,
+        },
+        true,
+      ])
+
+      // Act
+      const actual = await selectToken(
+        true,
+        activeTokens,
+        existingReservedToken,
+        nonEmptyTokenDB
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+    })
+
+    it("should return a no available token error", async () => {
+      // Arrange
+      const activeTokens = mockActiveTokens()
+      const existingReservedToken = NoTokenData
+
+      const expected = err(new NoAvailableTokenError())
+
+      // Act
+      const actual = await selectToken(
+        true,
+        activeTokens,
+        existingReservedToken,
+        mockEmptyTokenDB
+      )
 
       // Assert
       expect(actual).toEqual(expected)

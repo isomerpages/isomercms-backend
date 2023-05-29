@@ -1,4 +1,4 @@
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 const { BadRequestError } = require("@errors/BadRequestError")
 const { MediaTypeError } = require("@errors/MediaTypeError")

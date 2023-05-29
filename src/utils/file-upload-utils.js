@@ -4,7 +4,7 @@ const isSvg = require("is-svg")
 
 const { config } = require("@config/config")
 
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 const { sanitizer } = require("@services/utilServices/Sanitizer")
 

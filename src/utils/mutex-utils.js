@@ -3,7 +3,7 @@ const { serializeError } = require("serialize-error")
 
 const { config } = require("@config/config")
 
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 const { ConflictError } = require("@errors/ConflictError")
 

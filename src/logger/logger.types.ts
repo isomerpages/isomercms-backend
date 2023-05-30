@@ -1,5 +1,7 @@
+export type Loggable = string | Record<string, unknown>
+
 export interface LogMethod {
-  (message: string | Record<string, unknown>): void
+  (message: Loggable): void
 }
 
 export type Formatter = (message: string) => string

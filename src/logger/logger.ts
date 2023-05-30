@@ -4,7 +4,7 @@ import { config } from "@root/config/config"
 
 import { cloudwatchLogger } from "./cloudwatch.logger"
 import { consoleLogger } from "./console.logger"
-import { Formatter, Logger, LogMethod } from "./logger.types"
+import { Formatter, Loggable, Logger, LogMethod } from "./logger.types"
 
 const NODE_ENV = config.get("env")
 const useCloudwatchLogger = NODE_ENV === "prod" || NODE_ENV === "vapt"
@@ -23,23 +23,21 @@ export class IsomerLogger implements Logger {
     this.formatters = []
   }
 
-  private getFormattedMessage = (
-    message: string | Record<string, unknown>
-  ): string => {
+  private getFormattedMessage = (message: Loggable): string => {
     const baseMessage =
       typeof message === "string" ? message : JSON.stringify(message)
     return this.formatters.reduce((prev, cur) => cur(prev), baseMessage)
   }
 
-  info: LogMethod = (message: string | Record<string, unknown>): void => {
+  info: LogMethod = (message: Loggable): void => {
     this.loggers.map((logger) => logger.info(this.getFormattedMessage(message)))
   }
 
-  warn: LogMethod = (message: string | Record<string, unknown>): void => {
+  warn: LogMethod = (message: Loggable): void => {
     this.loggers.map((logger) => logger.warn(this.getFormattedMessage(message)))
   }
 
-  error: LogMethod = (message: string | Record<string, unknown>): void => {
+  error: LogMethod = (message: Loggable): void => {
     this.loggers.map((logger) =>
       logger.error(this.getFormattedMessage(message))
     )

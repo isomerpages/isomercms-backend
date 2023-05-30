@@ -89,5 +89,3 @@ export default class CloudWatchLogger {
     }
   }
 }
-
-export const cloudwatchLogger = new CloudWatchLogger()

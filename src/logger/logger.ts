@@ -2,7 +2,7 @@ import moment from "moment-timezone"
 
 import { config } from "@root/config/config"
 
-import { cloudwatchLogger } from "./cloudwatch.logger"
+import CloudWatchLogger from "./cloudwatch.logger"
 import { consoleLogger } from "./console.logger"
 import { Formatter, Loggable, Logger, LogMethod } from "./logger.types"
 
@@ -54,7 +54,7 @@ export class IsomerLogger implements Logger {
 
 const logger = new IsomerLogger()
 if (useConsoleLogger) logger.use(consoleLogger)
-if (useCloudwatchLogger) logger.use(cloudwatchLogger)
+if (useCloudwatchLogger) logger.use(new CloudWatchLogger())
 logger.useFormatter((message) => `${timestampGenerator()}: ${message}`)
 
 export default logger

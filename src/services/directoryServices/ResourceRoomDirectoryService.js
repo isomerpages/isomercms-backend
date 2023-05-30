@@ -51,7 +51,7 @@ class ResourceRoomDirectoryService {
       sessionData
     )
     // If resource room already exists, throw error
-    if ("resources_name" in configContent)
+    if ("resources_name" in configContent && configContent.resources_name)
       throw new ConflictError("Resource room already exists")
     configContent.resources_name = slugifiedResourceRoomName
     await this.configYmlService.update(sessionData, {

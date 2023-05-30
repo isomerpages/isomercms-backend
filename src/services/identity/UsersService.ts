@@ -71,7 +71,8 @@ class UsersService {
   }
 
   async findByEmail(email: string) {
-    return this.repository.findOne({ where: { email } })
+    const parsedEmail = email.toLowerCase()
+    return this.repository.findOne({ where: { email: parsedEmail } })
   }
 
   async findByGitHubId(githubId: string) {
@@ -168,8 +169,9 @@ class UsersService {
   }
 
   async findOrCreateByEmail(email: string | undefined) {
+    const parsedEmail = email.toLowerCase()
     const [user] = await this.repository.findOrCreate({
-      where: { email },
+      where: { email: parsedEmail },
     })
     return user
   }
@@ -195,10 +197,11 @@ class UsersService {
   }
 
   async loginWithEmail(email: string): Promise<User> {
+    const parsedEmail = email.toLowerCase()
     return this.sequelize.transaction<User>(async (transaction) => {
       // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
       const [user] = await this.repository.findOrCreate({
-        where: { email },
+        where: { email: parsedEmail },
         transaction,
       })
       user.lastLoggedIn = new Date()
@@ -207,6 +210,7 @@ class UsersService {
   }
 
   async canSendEmailOtp(email: string) {
+    const parsedEmail = email.toLowerCase()
     const whitelistEntries = await this.whitelist.findAll({
       attributes: ["email"],
       where: {
@@ -217,18 +221,22 @@ class UsersService {
     })
     const whitelistDomains = whitelistEntries.map((entry) => entry.email)
     const hasMatchDomain =
-      whitelistDomains.filter((domain) => email.endsWith(domain)).length > 0
+      whitelistDomains.filter((domain) => parsedEmail.endsWith(domain)).length >
+      0
     return hasMatchDomain
   }
 
   async sendEmailOtp(email: string) {
+    const parsedEmail = email.toLowerCase()
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
 
     // Reset attempts to login
-    const otpEntry = await this.otpRepository.findOne({ where: { email } })
+    const otpEntry = await this.otpRepository.findOne({
+      where: { email: parsedEmail },
+    })
     if (!otpEntry) {
       // create new entry
-      await this.createOtpEntry(email, OtpType.Email, hashedOtp)
+      await this.createOtpEntry(parsedEmail, OtpType.Email, hashedOtp)
     } else {
       await otpEntry?.update({
         hashedOtp,
@@ -243,7 +251,7 @@ class UsersService {
     )} minutes. Please use this to verify your email address.</p>
     <p>If your OTP does not work, please request for a new OTP.</p>
     <p>IsomerCMS Support Team</p>`
-    await this.mailer.sendMail(email, subject, html)
+    await this.mailer.sendMail(parsedEmail, subject, html)
   }
 
   async sendSmsOtp(mobileNumber: string) {
@@ -303,7 +311,10 @@ class UsersService {
   }
 
   async verifyEmailOtp(email: string, otp: string) {
-    const otpEntry = await this.otpRepository.findOne({ where: { email } })
+    const parsedEmail = email.toLowerCase()
+    const otpEntry = await this.otpRepository.findOne({
+      where: { email: parsedEmail },
+    })
     return this.verifyOtp(otpEntry, otp)
   }
 
@@ -325,7 +336,7 @@ class UsersService {
   ) {
     if (keyType === OtpType.Email) {
       await this.otpRepository.create({
-        email: key,
+        email: key.toLowerCase(),
         hashedOtp,
         expiresAt: this.getOtpExpiry(),
       })

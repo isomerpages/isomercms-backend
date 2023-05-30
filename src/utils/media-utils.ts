@@ -57,7 +57,7 @@ export const getMediaFileInfo = async ({
       }
     } catch (err) {
       // If an error occurs while retrieving the image, we log but continue to return generic values
-      logger.error(err)
+      logger.error(JSON.stringify(err))
       return {
         ...baseFileData,
         mediaUrl: "",

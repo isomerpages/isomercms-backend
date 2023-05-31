@@ -4,6 +4,7 @@ import { FileNameBrand } from "./util"
 export type ConfigYmlData = {
   staging?: StagingPermalink
   prod?: ProdPermalink
+  "facebook-pixel": string
 }
 
 // TODO: make this type of same shape as the PageNames

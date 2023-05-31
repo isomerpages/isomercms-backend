@@ -89,6 +89,16 @@ export class FormsgRouter {
       }
       let foundOwner
       if (isEmailLogin) {
+        if (!ownerEmail) {
+          const err = `An owner email is required for email login`
+          await this.sendCreateError(
+            requesterEmail,
+            repoName,
+            submissionId,
+            err
+          )
+          return res.sendStatus(200)
+        }
         foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
       }
       // 3. Use service to create site

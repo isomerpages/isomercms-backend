@@ -168,7 +168,7 @@ class UsersService {
     return user
   }
 
-  async findOrCreateByEmail(email: string | undefined) {
+  async findOrCreateByEmail(email: string) {
     const parsedEmail = email.toLowerCase()
     const [user] = await this.repository.findOrCreate({
       where: { email: parsedEmail },

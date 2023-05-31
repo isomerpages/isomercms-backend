@@ -3,6 +3,8 @@ import Bluebird from "bluebird"
 import winston from "winston"
 import WinstonCloudwatch from "winston-cloudwatch"
 
+import { config } from "@root/config/config"
+
 import { consoleLogger } from "./console.logger"
 import { LogMethod, Loggable } from "./logger.types"
 
@@ -15,7 +17,7 @@ const withConsoleError = (logFn: LogMethod) => (message: Loggable): void => {
 }
 
 // AWS
-const AWS_REGION_NAME = "ap-southeast-1"
+const AWS_REGION_NAME = config.get("aws.region")
 AWS.config.update({ region: AWS_REGION_NAME })
 const awsMetadata = new AWS.MetadataService()
 const metadataRequest = Bluebird.promisify<string, string>(

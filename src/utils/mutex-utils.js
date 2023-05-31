@@ -15,7 +15,7 @@ const IS_DEV = NODE_ENV === "dev" || NODE_ENV === "test" || NODE_ENV === "vapt"
 const mockMutexObj = {}
 
 // Dynamodb constants
-const AWS_REGION_NAME = "ap-southeast-1"
+const AWS_REGION_NAME = config.get("aws.region")
 AWS.config.update({ region: AWS_REGION_NAME })
 const docClient = new AWS.DynamoDB.DocumentClient()
 

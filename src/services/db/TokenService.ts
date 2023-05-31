@@ -18,14 +18,14 @@ import TokenParsingError from "@errors/TokenParsingError"
 
 import { AccessToken } from "@database/models"
 
-// Env vars
 export const GITHUB_TOKEN_LIMIT = 5000
 export const GITHUB_TOKEN_THRESHOLD = 4000 // allowed uses
 export const GITHUB_RESET_INTERVAL = 60 * 60 // seconds
-export const ACTIVE_TOKEN_ALERT_1 = 0.6
-export const ACTIVE_TOKEN_ALERT_2 = 0.8
 export const GITHUB_TOKEN_REMAINING_HEADER = "x-ratelimit-remaining"
 export const GITHUB_TOKEN_RESET_HEADER = "x-ratelimit-reset"
+const ACTIVE_TOKEN_WARN_LEVEL = 0.6
+const ACTIVE_TOKEN_ALARM_LEVEL = 0.8
+const GITHUB_TOKEN_LENGTH = 40
 
 export type MaybeResetTime = Result<number, null>
 export const NoResetTime: MaybeResetTime = err(null)
@@ -58,8 +58,13 @@ export function queryActiveTokens(
         isReserved: false,
       },
     }),
-    (error) =>
-      new DatabaseError("Unable to retrieve active tokens from database")
+    (error) => {
+      const dbError = new DatabaseError(
+        `Unable to retrieve active tokens from database: ${error}`
+      )
+      logger.error(dbError.message)
+      return dbError
+    }
   ).map((activeTokens) =>
     activeTokens.map((activeToken) => ({
       id: activeToken.id,
@@ -85,39 +90,57 @@ export function activeUsageAlert(
       exhaustedTokensCount += 1
     }
   })
-  if (exhaustedTokensCount >= activeTokensData.length * ACTIVE_TOKEN_ALERT_2) {
-    useLogger.info(`${ACTIVE_TOKEN_ALERT_2}% of access token capacity reached`)
+  if (
+    exhaustedTokensCount >=
+    activeTokensData.length * ACTIVE_TOKEN_ALARM_LEVEL
+  ) {
+    useLogger.info(
+      `${ACTIVE_TOKEN_ALARM_LEVEL * 100}% of access token capacity reached`
+    )
     useLogger.info(
       `${exhaustedTokensCount}/${activeTokensData.length} active tokens exhausted`
     )
   } else if (
     exhaustedTokensCount >=
-    activeTokensData.length * ACTIVE_TOKEN_ALERT_1
+    activeTokensData.length * ACTIVE_TOKEN_WARN_LEVEL
   ) {
-    useLogger.info(`${ACTIVE_TOKEN_ALERT_1}% of access token capacity reached`)
+    useLogger.info(
+      `${ACTIVE_TOKEN_WARN_LEVEL * 100}% of access token capacity reached`
+    )
     useLogger.info(
       `${exhaustedTokensCount}/${activeTokensData.length} active tokens exhausted`
     )
   }
 }
 
+function validateResponseTokenData(response: AxiosResponse) {
+  // response.config.headers.Authorization format: token ghp_********************************
+  return (
+    typeof response.config?.headers?.Authorization === "string" &&
+    response.config?.headers?.Authorization.length ===
+      "token ".length + GITHUB_TOKEN_LENGTH &&
+    response.config?.headers?.Authorization.slice(0, 6) === "token " &&
+    !Number.isNaN(+response.headers?.[GITHUB_TOKEN_REMAINING_HEADER]) &&
+    !Number.isNaN(+response.headers?.[GITHUB_TOKEN_RESET_HEADER])
+  )
+}
+
 export function parseResponseTokenData(
   response: AxiosResponse
 ): Result<ResponseTokenData, TokenParsingError> {
-  // response.config.headers.Authorization format: token ghp_********************************
   if (
-    typeof response.config?.headers?.Authorization !== "string" ||
-    response.config?.headers?.Authorization.length !== 46 ||
-    response.config?.headers?.Authorization.slice(0, 6) !== "token " ||
-    Number.isNaN(+response.headers?.[GITHUB_TOKEN_REMAINING_HEADER]) ||
-    Number.isNaN(+response.headers?.[GITHUB_TOKEN_RESET_HEADER])
+    !validateResponseTokenData(response) ||
+    typeof response.config?.headers?.Authorization !== "string"
   ) {
+    logger.error(`Invalid GitHub response format: ${response}`)
     return err(new TokenParsingError(response))
   }
-  const token: string = response.config.headers.Authorization.slice(6)
 
-  const remainingRequests = +response.headers[GITHUB_TOKEN_REMAINING_HEADER]
-  const resetTime = +response.headers[GITHUB_TOKEN_RESET_HEADER]
+  const token: string = response.config?.headers?.Authorization?.slice(6)
+  const remainingRequests = Number(
+    response.headers[GITHUB_TOKEN_REMAINING_HEADER]
+  )
+  const resetTime = Number(response.headers[GITHUB_TOKEN_RESET_HEADER])
   return ok({ token, remainingRequests, resetTime })
 }
 
@@ -187,10 +210,13 @@ export function sourceReservedToken(
         resetTime: null,
       },
     }),
-    (error) =>
-      new DatabaseError(
+    (error) => {
+      const dbError = new DatabaseError(
         `Unable to retrieve reserved tokens from database: ${error}`
       )
+      logger.error(dbError.message)
+      return dbError
+    }
   ).map((reservedToken) => {
     if (reservedToken !== null) {
       occupyReservedToken(reservedToken)
@@ -246,7 +272,7 @@ export function selectToken(
           IsReservedTokenType
         ])
       }
-      logger.info("reserved tokens capacity reached")
+      logger.error("All tokens capacity reached")
       return errAsync(new NoAvailableTokenError())
     }
   )
@@ -287,7 +313,7 @@ export class TokenService {
   }
 
   getAccessToken(): ResultAsync<string, NoAvailableTokenError | DatabaseError> {
-    return this.ensureInitialization().andThen((isInitialised) =>
+    return this.ensureInitialization().andThen((_isInitialised) =>
       selectToken(
         this.useReservedTokens,
         this.activeTokensData,

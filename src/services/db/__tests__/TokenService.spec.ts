@@ -19,8 +19,6 @@ import {
   selectToken,
   parseResponseTokenData,
   activeUsageAlert,
-  ACTIVE_TOKEN_ALERT_1,
-  ACTIVE_TOKEN_ALERT_2,
   GITHUB_TOKEN_REMAINING_HEADER,
   GITHUB_TOKEN_RESET_HEADER,
   TokenService,
@@ -786,7 +784,7 @@ describe("Token Service", () => {
 
       // Assert
       expect(mockLoggingFunction.mock.calls[0][0]).toBe(
-        `${ACTIVE_TOKEN_ALERT_1}% of access token capacity reached`
+        `60% of access token capacity reached`
       )
     })
 
@@ -814,7 +812,7 @@ describe("Token Service", () => {
 
       // Assert
       expect(mockLoggingFunction.mock.calls[0][0]).toBe(
-        `${ACTIVE_TOKEN_ALERT_2}% of access token capacity reached`
+        `80% of access token capacity reached`
       )
     })
   })

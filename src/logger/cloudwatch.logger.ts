@@ -4,6 +4,15 @@ import winston from "winston"
 import WinstonCloudwatch from "winston-cloudwatch"
 
 import { consoleLogger } from "./console.logger"
+import { LogMethod, Loggable } from "./logger.types"
+
+const withConsoleError = (logFn: LogMethod) => (message: Loggable): void => {
+  try {
+    logFn(message)
+  } catch (err) {
+    consoleLogger.error(`${err}`)
+  }
+}
 
 // AWS
 const AWS_REGION_NAME = "ap-southeast-1"
@@ -64,28 +73,13 @@ export default class CloudWatchLogger {
   }
 
   // this method is used to log non-error messages, replacing console.log
-  async info(logMessage: string | Record<string, unknown>) {
-    try {
-      await this._logger.info(`${logMessage}`)
-    } catch (err) {
-      consoleLogger.error(`${err}`)
-    }
-  }
+  info = (message: string | Record<string, unknown>) =>
+    withConsoleError(this._logger.info)(message)
 
-  warn = async (message: string | Record<string, unknown>) => {
-    try {
-      await this._logger.warn(`${message}`)
-    } catch (err) {
-      consoleLogger.error(`${err}`)
-    }
-  }
+  warn = (message: string | Record<string, unknown>) =>
+    withConsoleError(this._logger.warn)(message)
 
   // this method is used to log error messages and write to stderr, replacing console.error
-  async error(errMessage: string | Record<string, unknown>) {
-    try {
-      await this._logger.error(`${errMessage}`)
-    } catch (err) {
-      consoleLogger.error(`${err}`)
-    }
-  }
+  error = (message: string | Record<string, unknown>) =>
+    withConsoleError(this._logger.error)(message)
 }

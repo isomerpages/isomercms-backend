@@ -111,7 +111,7 @@ export class LaunchesService {
     const siteId = await this.getSiteId(repoName)
     if (siteId.isErr()) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
-      logger.error(error)
+      logger.error(JSON.stringify(error))
       return err(error)
     }
 
@@ -124,7 +124,7 @@ export class LaunchesService {
       const error = Error(
         `Failed to find hosting ID for deployment '${deploy}' on Isomer`
       )
-      logger.error(error)
+      logger.error(JSON.stringify(error))
       return err(error)
     }
     return ok(hostingID)
@@ -140,7 +140,7 @@ export class LaunchesService {
 
     if (!siteId) {
       const error = Error(`Failed to find site id for '${repoName}' on Isomer`)
-      logger.error(error)
+      logger.error(JSON.stringify(error))
       return err(error)
     }
     return ok(siteId)

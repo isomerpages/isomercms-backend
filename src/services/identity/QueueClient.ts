@@ -51,7 +51,7 @@ export default class QueueClient {
      */
     const response = await this.sqs.receiveMessage(params).promise()
     if (response.$response.error) {
-      logger.error(response.$response.error)
+      logger.error(JSON.stringify(response.$response.error))
     }
     if (response.Messages) {
       this.deleteMessage(response)
@@ -81,7 +81,7 @@ export default class QueueClient {
             this.createDeleteMessageParams(receiptHandle),
             (err) => {
               if (err) {
-                logger.error(err)
+                logger.error(JSON.stringify(err))
               }
             }
           )

@@ -155,7 +155,7 @@ export default class AuthenticationMiddlewareService {
         : ""
       return {
         accessToken,
-        githubId: githubId ?? "",
+        githubId,
         isomerUserId,
         email: email ?? "",
       }

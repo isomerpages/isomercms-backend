@@ -7,7 +7,8 @@ import { consoleLogger } from "./console.logger"
 import { Formatter, Loggable, Logger, LogMethod } from "./logger.types"
 
 const NODE_ENV = config.get("env")
-const useCloudwatchLogger = NODE_ENV === "prod" || NODE_ENV === "vapt"
+const useCloudwatchLogger =
+  NODE_ENV === "prod" || NODE_ENV === "vapt" || NODE_ENV === "staging"
 const useConsoleLogger = !(NODE_ENV === "test")
 
 const timestampGenerator = () =>

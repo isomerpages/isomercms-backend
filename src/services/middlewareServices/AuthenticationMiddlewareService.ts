@@ -63,25 +63,31 @@ const getUserType = (userType: string): TestUserTypes => {
   throw new Error(`Invalid user type: ${userType}`)
 }
 
+const generateEmailAdminUser = (): SessionDataProps => ({
+  isomerUserId: E2E_EMAIL_ADMIN_ISOMER_ID,
+  email: E2E_TEST_EMAIL,
+})
+
+const generateEmailCollaboratorUser = (): SessionDataProps => ({
+  isomerUserId: E2E_EMAIL_COLLAB_ISOMER_ID,
+  email: E2E_TEST_EMAIL,
+})
+
+const generateGithubUser = (): SessionDataProps => ({
+  accessToken: E2E_TEST_GH_TOKEN,
+  githubId: E2E_TEST_USER,
+  isomerUserId: E2E_ISOMER_ID,
+  email: E2E_TEST_EMAIL,
+})
+
 const extractE2eUserInfo = (userType: TestUserTypes): SessionDataProps => {
   switch (userType) {
     case "Email admin":
-      return {
-        isomerUserId: E2E_EMAIL_ADMIN_ISOMER_ID,
-        email: E2E_TEST_EMAIL,
-      }
+      return generateEmailAdminUser()
     case "Email collaborator":
-      return {
-        isomerUserId: E2E_EMAIL_COLLAB_ISOMER_ID,
-        email: E2E_TEST_EMAIL,
-      }
+      return generateEmailCollaboratorUser()
     case "Github user":
-      return {
-        accessToken: E2E_TEST_GH_TOKEN,
-        githubId: E2E_TEST_USER,
-        isomerUserId: E2E_ISOMER_ID,
-        email: E2E_TEST_EMAIL,
-      }
+      return generateGithubUser()
     default: {
       const missingUserType: never = userType
       throw new Error(`Missing user type: ${missingUserType}`)

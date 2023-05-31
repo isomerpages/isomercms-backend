@@ -3,7 +3,7 @@ import Bluebird from "bluebird"
 import winston from "winston"
 import WinstonCloudwatch from "winston-cloudwatch"
 
-import { config } from "@root/config/config"
+import { config } from "@config/config"
 
 import { consoleLogger } from "./console.logger"
 import { LogMethod, Loggable } from "./logger.types"

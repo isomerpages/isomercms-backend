@@ -29,10 +29,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   if (isEmailLoginUser) {
     const accessToken = await tokenServiceInstance
       .getAccessToken()
-      .unwrapOr("null")
-    if (axiosConfig.headers) {
-      axiosConfig.headers.Authorization = `token ${accessToken}`
-    }
+      .unwrapOr("unable to get github token")
     tracer.use("http", {
       hooks: {
         request: (span, req, res) => {
@@ -41,16 +38,23 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
       },
     })
     logger.info(`Email login user made call to Github API: ${axiosConfig.url}`)
-  } else {
-    tracer.use("http", {
-      hooks: {
-        request: (span, req, res) => {
-          span?.setTag("user.type", "github")
-        },
+    return {
+      ...axiosConfig,
+      headers: {
+        "Content-Type": "application/json",
+        ...axiosConfig.headers,
+        Authorization: `token ${accessToken}`,
       },
-    })
-    logger.info(`Github login user made call to Github API: ${axiosConfig.url}`)
+    }
   }
+  tracer.use("http", {
+    hooks: {
+      request: (span, req, res) => {
+        span?.setTag("user.type", "github")
+      },
+    },
+  })
+  logger.info(`Github login user made call to Github API: ${axiosConfig.url}`)
   return {
     ...axiosConfig,
     headers: {

@@ -7,7 +7,7 @@ const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 // Import error
 const { AuthError } = require("@errors/AuthError")

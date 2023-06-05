@@ -4,7 +4,16 @@ import { config } from "@root/config/config"
 
 import CloudWatchLogger from "./cloudwatch.logger"
 import { consoleLogger } from "./console.logger"
-import { Formatter, Loggable, Logger, LogMethod } from "./logger.types"
+import {
+  Formatter,
+  Loggable,
+  ExtendedLogger,
+  LogMethod,
+  Logger,
+  WithDebug,
+  LoggerVariants,
+  WithFatal,
+} from "./logger.types"
 
 const NODE_ENV = config.get("env")
 const useCloudwatchLogger =
@@ -14,8 +23,14 @@ const useConsoleLogger = !(NODE_ENV === "test")
 const timestampGenerator = () =>
   moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
 
-export class IsomerLogger implements Logger {
-  private loggers: Logger[]
+const hasDebug = (logger: LoggerVariants): logger is WithDebug<Logger> =>
+  (logger as WithDebug<Logger>).debug !== undefined
+
+const hasFatal = (logger: LoggerVariants): logger is WithFatal<Logger> =>
+  (logger as WithFatal<Logger>).fatal !== undefined
+
+export class IsomerLogger implements ExtendedLogger {
+  private loggers: LoggerVariants[]
 
   private formatters: Formatter[]
 
@@ -44,7 +59,19 @@ export class IsomerLogger implements Logger {
     )
   }
 
-  use(logger: Logger) {
+  debug: LogMethod = (message: Loggable): void => {
+    this.loggers.forEach((logger) => {
+      if (hasDebug(logger)) logger.debug(this.getFormattedMessage(message))
+    })
+  }
+
+  fatal: LogMethod = (message: Loggable): void => {
+    this.loggers.forEach((logger) => {
+      if (hasFatal(logger)) logger.fatal(this.getFormattedMessage(message))
+    })
+  }
+
+  use(logger: LoggerVariants) {
     this.loggers.push(logger)
   }
 

@@ -68,13 +68,14 @@ export class UsersRouter {
     const { email, otp } = req.body
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
+    const parsedEmail = email.toLowerCase()
 
-    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
+    const isOtpValid = await this.usersService.verifyEmailOtp(parsedEmail, otp)
     if (!isOtpValid) {
       throw new BadRequestError("Invalid OTP")
     }
 
-    await this.usersService.updateUserByIsomerId(userId, { email })
+    await this.usersService.updateUserByIsomerId(userId, { email: parsedEmail })
     res.sendStatus(200)
   }
 

@@ -1,3 +1,4 @@
+import { AxiosError } from "axios"
 import _ from "lodash"
 
 import { config } from "@config/config"
@@ -147,5 +148,13 @@ export const getBlob = async (
       headers: {
         Accept: "application/vnd.github.raw",
       },
+    })
+    .catch((err: AxiosError) => {
+      // NOTE: This happens when either an existing file in a folder is deleted
+      // or when the file is newly created inside a folder.
+      // This means that the upstream ref either before/after does not exist
+      // and would lead to 404, so we return an empty string instead.
+      if (err.isAxiosError && err?.response?.status === 404) return { data: "" }
+      throw err
     })
     .then(({ data }) => data)

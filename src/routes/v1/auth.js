@@ -123,8 +123,9 @@ async function githubAuth(req, res) {
 
 async function logout(req, res) {
   clearAllCookies(res)
+  const { email } = req.session.userInfo
   req.session.destroy()
-  logger.info(`User ${userInfo.email} successfully logged out`)
+  logger.info(`User ${email} successfully logged out`)
   return res.sendStatus(200)
 }
 

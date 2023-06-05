@@ -308,24 +308,6 @@ const config = convict({
     },
   },
   cypress: {
-    e2eEmailTestRepo: {
-      doc: "Name of the e2e test GitHub repository for email users",
-      env: "E2E_EMAIL_TEST_REPO",
-      format: "required-string",
-      default: "e2e-email-test-repo",
-    },
-    e2eEmailAdminIsomerId: {
-      doc: "Id of the e2e email admin user in the users table",
-      env: "E2E_EMAIL_ADMIN_ISOMER_ID",
-      format: "required-string",
-      default: "0",
-    },
-    e2eEmailCollabIsomerId: {
-      doc: "Id of the e2e email collaborator user in the users table",
-      env: "E2E_EMAIL_COLLAB_ISOMER_ID",
-      format: "required-string",
-      default: "1",
-    },
     e2eTestRepo: {
       doc: "Name of the e2e test GitHub repository",
       env: "E2E_TEST_REPO",

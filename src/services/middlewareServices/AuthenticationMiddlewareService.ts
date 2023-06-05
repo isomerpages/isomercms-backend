@@ -42,6 +42,12 @@ const GENERAL_ACCESS_PATHS = [
 const E2E_ADMIN_EMAIL = "admin@e2e.gov.sg"
 const E2E_COLLAB_EMAIL = "collab@e2e.gov.sg"
 
+interface E2eCookie {
+  isomercmsE2E: string
+  e2eUserType: string
+  site: string
+}
+
 type UnverifiedSession =
   | Partial<SessionData>
   | { userInfo: Record<string, never> }
@@ -51,13 +57,7 @@ export type VerifyAccessProps = UnverifiedSession & {
   // NOTE: Either both properties are present on the cookie
   // or none are present.
   // We disallow having 1 or the other.
-  cookies: RequireAllOrNone<
-    {
-      isomercmsE2E: string
-      e2eUserType: string
-    },
-    "e2eUserType" | "isomercmsE2E"
-  >
+  cookies: RequireAllOrNone<E2eCookie, "e2eUserType" | "isomercmsE2E" | "site">
   url: string
 }
 
@@ -72,7 +72,8 @@ const getUserType = (userType: string): TestUserTypes => {
 }
 
 const generateE2eEmailUser = async (
-  role: CollaboratorRoles
+  role: CollaboratorRoles,
+  site?: string
 ): Promise<SessionDataProps> => {
   const [user] = await User.findOrCreate({
     where: {
@@ -81,18 +82,21 @@ const generateE2eEmailUser = async (
       contactNumber: "1235678",
     },
   })
-  const [site] = await Site.findOrCreate({
-    where: {
-      name: E2E_EMAIL_TEST_SITE.name,
-    },
-  })
-  await SiteMember.findOrCreate({
-    where: {
-      userId: user.id,
-      siteId: site.id,
-      role,
-    },
-  })
+
+  if (site) {
+    const [createdSite] = await Site.findOrCreate({
+      where: {
+        name: site,
+      },
+    })
+    await SiteMember.findOrCreate({
+      where: {
+        userId: user.id,
+        siteId: createdSite.id,
+        role,
+      },
+    })
+  }
 
   return {
     isomerUserId: `${user.id}`,
@@ -108,13 +112,14 @@ const generateGithubUser = (): SessionDataProps => ({
 })
 
 const extractE2eUserInfo = async (
-  userType: TestUserTypes
+  userType: TestUserTypes,
+  site?: string
 ): Promise<SessionDataProps> => {
   switch (userType) {
     case "Email admin":
-      return generateE2eEmailUser(CollaboratorRoles.Admin)
+      return generateE2eEmailUser(CollaboratorRoles.Admin, site)
     case "Email collaborator":
-      return generateE2eEmailUser(CollaboratorRoles.Contributor)
+      return generateE2eEmailUser(CollaboratorRoles.Contributor, site)
     case "Github user":
       return generateGithubUser()
     default: {
@@ -129,11 +134,11 @@ export default class AuthenticationMiddlewareService {
     cookies,
     url,
   }: Omit<VerifyAccessProps, "userInfo">): TestUserTypes | false {
-    const { isomercmsE2E, e2eUserType } = cookies
+    const { isomercmsE2E, e2eUserType, site } = cookies
     const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
 
     // NOTE: If the cookie is not set, this is an actual user.
-    if (!isomercmsE2E || !e2eUserType) return false
+    if (!isomercmsE2E || !e2eUserType || !site) return false
 
     // NOTE: Cookie is set but wrong, implying someone is trying to figure out the secret
     if (isomercmsE2E !== E2E_TEST_SECRET) throw new AuthError("Bad credentials")
@@ -170,7 +175,7 @@ export default class AuthenticationMiddlewareService {
   }: VerifyAccessProps): Promise<SessionDataProps> {
     const e2eUserType = this.verifyE2E({ cookies, url })
     if (e2eUserType) {
-      return extractE2eUserInfo(e2eUserType)
+      return extractE2eUserInfo(e2eUserType, cookies.site)
     }
 
     try {

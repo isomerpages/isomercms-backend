@@ -10,7 +10,7 @@ import {
 import { AuthError } from "@root/errors/AuthError"
 
 import AuthenticationMiddlewareService, {
-  E2E_EMAIL_TEST_REPO,
+  E2E_EMAIL_TEST_SITE,
   E2E_TEST_GH_TOKEN,
   E2E_TEST_REPO,
   E2E_TEST_USER,
@@ -20,7 +20,7 @@ import AuthenticationMiddlewareService, {
 const authenticationMiddlewareService = new AuthenticationMiddlewareService()
 
 const E2E_GITHUB_REPO_URL = `/v1/sites/${E2E_TEST_REPO}`
-const E2E_EMAIL_REPO_URL = `/v1/sites/${E2E_EMAIL_TEST_REPO}`
+const E2E_EMAIL_REPO_URL = `/v1/sites/${E2E_EMAIL_TEST_SITE.repo}`
 
 const MOCK_GITHUB_USER_PROPS: VerifyAccessProps = {
   // NOTE: Actual users won't have cookies - instead, they will use our session

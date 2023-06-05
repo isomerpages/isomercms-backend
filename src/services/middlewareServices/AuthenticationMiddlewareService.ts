@@ -15,14 +15,19 @@ import { SessionDataProps } from "@root/classes"
 import {
   E2E_TEST_EMAIL,
   E2E_ISOMER_ID,
-  E2E_EMAIL_ADMIN_ISOMER_ID,
-  E2E_EMAIL_COLLAB_ISOMER_ID,
+  CollaboratorRoles,
 } from "@root/constants"
+import { Site, SiteMember, User } from "@root/database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { SessionData } from "@root/types/express/session"
 
 export const E2E_TEST_REPO = config.get("cypress.e2eTestRepo")
-export const E2E_EMAIL_TEST_REPO = config.get("cypress.e2eEmailTestRepo")
+export const E2E_EMAIL_TEST_SITE = {
+  // NOTE: name is a human readable name
+  // but repo is the underlying github reference
+  name: "e2e email test site",
+  repo: "e2e-email-test-repo",
+}
 const E2E_TEST_SECRET = config.get("cypress.e2eTestSecret")
 
 export const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
@@ -33,6 +38,9 @@ const GENERAL_ACCESS_PATHS = [
   "/v2/sites",
   "/v2/auth/whoami",
 ]
+
+const E2E_ADMIN_EMAIL = "admin@e2e.gov.sg"
+const E2E_COLLAB_EMAIL = "collab@e2e.gov.sg"
 
 type UnverifiedSession =
   | Partial<SessionData>
@@ -63,15 +71,34 @@ const getUserType = (userType: string): TestUserTypes => {
   throw new Error(`Invalid user type: ${userType}`)
 }
 
-const generateEmailAdminUser = (): SessionDataProps => ({
-  isomerUserId: E2E_EMAIL_ADMIN_ISOMER_ID,
-  email: E2E_TEST_EMAIL,
-})
+const generateE2eEmailUser = async (
+  role: CollaboratorRoles
+): Promise<SessionDataProps> => {
+  const [user] = await User.findOrCreate({
+    where: {
+      email:
+        role === CollaboratorRoles.Admin ? E2E_ADMIN_EMAIL : E2E_COLLAB_EMAIL,
+      contactNumber: "1235678",
+    },
+  })
+  const [site] = await Site.findOrCreate({
+    where: {
+      name: E2E_EMAIL_TEST_SITE.name,
+    },
+  })
+  await SiteMember.findOrCreate({
+    where: {
+      userId: user.id,
+      siteId: site.id,
+      role,
+    },
+  })
 
-const generateEmailCollaboratorUser = (): SessionDataProps => ({
-  isomerUserId: E2E_EMAIL_COLLAB_ISOMER_ID,
-  email: E2E_TEST_EMAIL,
-})
+  return {
+    isomerUserId: `${user.id}`,
+    email: user.email!,
+  }
+}
 
 const generateGithubUser = (): SessionDataProps => ({
   accessToken: E2E_TEST_GH_TOKEN,
@@ -80,12 +107,14 @@ const generateGithubUser = (): SessionDataProps => ({
   email: E2E_TEST_EMAIL,
 })
 
-const extractE2eUserInfo = (userType: TestUserTypes): SessionDataProps => {
+const extractE2eUserInfo = async (
+  userType: TestUserTypes
+): Promise<SessionDataProps> => {
   switch (userType) {
     case "Email admin":
-      return generateEmailAdminUser()
+      return generateE2eEmailUser(CollaboratorRoles.Admin)
     case "Email collaborator":
-      return generateEmailCollaboratorUser()
+      return generateE2eEmailUser(CollaboratorRoles.Contributor)
     case "Github user":
       return generateGithubUser()
     default: {
@@ -121,24 +150,24 @@ export default class AuthenticationMiddlewareService {
     const repo = urlTokens[3]
 
     const isEmailE2eAccess =
-      repo === E2E_EMAIL_TEST_REPO &&
+      repo === E2E_EMAIL_TEST_SITE.repo &&
       (userType === "Email admin" || userType === "Email collaborator")
     const isGithubE2eAccess =
       repo === E2E_TEST_REPO && userType === "Github user"
 
     if (!isGithubE2eAccess && !isEmailE2eAccess)
       throw new AuthError(
-        `E2E tests can only access either ${E2E_TEST_REPO} or ${E2E_EMAIL_TEST_REPO}.`
+        `E2E tests can only access either ${E2E_TEST_REPO} or ${E2E_EMAIL_TEST_SITE.name}.`
       )
 
     return userType
   }
 
-  verifyAccess({
+  async verifyAccess({
     cookies,
     url,
     userInfo,
-  }: VerifyAccessProps): SessionDataProps {
+  }: VerifyAccessProps): Promise<SessionDataProps> {
     const e2eUserType = this.verifyE2E({ cookies, url })
     if (e2eUserType) {
       return extractE2eUserInfo(e2eUserType)

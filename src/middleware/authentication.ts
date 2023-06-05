@@ -24,13 +24,17 @@ export class AuthenticationMiddleware {
     autoBind(this)
   }
 
-  verifyAccess(req: RequestWithSession, res: Response, next: NextFunction) {
+  async verifyAccess(
+    req: RequestWithSession,
+    res: Response,
+    next: NextFunction
+  ) {
     const { cookies, originalUrl: url, session } = req
     const {
       isomerUserId,
       email,
       ...rest
-    } = this.authenticationMiddlewareService.verifyAccess({
+    } = await this.authenticationMiddlewareService.verifyAccess({
       cookies,
       url,
       userInfo: session.userInfo,

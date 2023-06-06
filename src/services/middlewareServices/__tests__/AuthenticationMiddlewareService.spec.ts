@@ -1,12 +1,7 @@
 import jwtUtil from "@utils/jwt-utils"
 
 import config from "@root/config/config"
-import {
-  E2E_EMAIL_ADMIN_ISOMER_ID,
-  E2E_EMAIL_COLLAB_ISOMER_ID,
-  E2E_ISOMER_ID,
-  E2E_TEST_EMAIL,
-} from "@root/constants"
+import { E2E_ISOMER_ID, E2E_TEST_EMAIL } from "@root/constants"
 import { AuthError } from "@root/errors/AuthError"
 
 import AuthenticationMiddlewareService, {
@@ -21,6 +16,9 @@ const authenticationMiddlewareService = new AuthenticationMiddlewareService()
 
 const E2E_GITHUB_REPO_URL = `/v1/sites/${E2E_TEST_REPO}`
 const E2E_EMAIL_REPO_URL = `/v1/sites/${E2E_EMAIL_TEST_SITE.repo}`
+
+const E2E_EMAIL_ADMIN_ISOMER_ID = "1"
+const E2E_EMAIL_COLLAB_ISOMER_ID = "2"
 
 const MOCK_GITHUB_USER_PROPS: VerifyAccessProps = {
   // NOTE: Actual users won't have cookies - instead, they will use our session
@@ -39,6 +37,8 @@ const E2E_GITHUB_USER_PROPS: VerifyAccessProps = {
   cookies: {
     isomercmsE2E: config.get("cypress.e2eTestSecret"),
     e2eUserType: "Github user",
+    site: "",
+    email: "",
   },
   userInfo: {
     githubId: "MOCK_E2E_USER",
@@ -54,6 +54,8 @@ const E2E_EMAIL_COLLAB_PROPS: VerifyAccessProps = {
   cookies: {
     isomercmsE2E: config.get("cypress.e2eTestSecret"),
     e2eUserType: "Email collaborator",
+    site: "",
+    email: "",
   },
   userInfo: {
     // NOTE: email users won't have github related fields
@@ -68,6 +70,8 @@ const E2E_EMAIL_ADMIN_PROPS: VerifyAccessProps = {
   cookies: {
     isomercmsE2E: config.get("cypress.e2eTestSecret"),
     e2eUserType: "Email admin",
+    site: "",
+    email: "",
   },
   userInfo: {
     // NOTE: email users won't have github related fields

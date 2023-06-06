@@ -159,7 +159,7 @@ export default class AuthenticationMiddlewareService {
     const repo = urlTokens[3]
 
     const isEmailE2eAccess =
-      repo === E2E_EMAIL_TEST_SITE.repo &&
+      (repo === E2E_EMAIL_TEST_SITE.repo || repo === E2E_TEST_REPO) &&
       (userType === "Email admin" || userType === "Email collaborator")
     const isGithubE2eAccess =
       repo === E2E_TEST_REPO && userType === "Github user"

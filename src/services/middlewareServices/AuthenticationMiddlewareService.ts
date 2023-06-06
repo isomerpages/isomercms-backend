@@ -112,7 +112,8 @@ const generateGithubUser = (): SessionDataProps => ({
   email: E2E_TEST_EMAIL,
 })
 
-const extractE2eUserInfo = async (
+// NOTE: Exported for testing as this should be mocked to avoid hitting the db
+export const extractE2eUserInfo = async (
   userType: TestUserTypes,
   site?: string,
   email?: string

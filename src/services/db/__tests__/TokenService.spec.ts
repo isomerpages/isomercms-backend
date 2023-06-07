@@ -12,8 +12,8 @@ import NoAvailableTokenError from "@root/errors/NoAvailableTokenError"
 import {
   GITHUB_TOKEN_LIMIT,
   GITHUB_TOKEN_THRESHOLD,
-  NoTokenData,
-  NoResetTime,
+  NO_TOKEN_DATA,
+  NO_RESET_TIME,
   selectActiveToken,
   selectReservedToken,
   selectToken,
@@ -35,19 +35,19 @@ describe("Token Service", () => {
         id: 1,
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
       {
         id: 2,
         tokenString: "token_2",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
       {
         id: 3,
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
     ])
 
@@ -57,7 +57,7 @@ describe("Token Service", () => {
         id: 1,
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       })
       const input = mockActiveTokens()
 
@@ -116,7 +116,7 @@ describe("Token Service", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should set second token reset time to null pick the first token based on index", async () => {
+    it("should set second token reset time to null pick and the first token based on index", async () => {
       // Arrange
       const now = new Date()
       const pastResetTime =
@@ -125,7 +125,7 @@ describe("Token Service", () => {
         id: 1,
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       })
       const input = mockActiveTokens()
       input[1].resetTime = ok(pastResetTime)
@@ -173,7 +173,7 @@ describe("Token Service", () => {
         id: 2,
         tokenString: "token_2",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       })
       const input = mockActiveTokens()
       input[0].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
@@ -220,7 +220,7 @@ describe("Token Service", () => {
       const now = new Date()
       const futureResetTime =
         now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
-      const expected = NoTokenData
+      const expected = NO_TOKEN_DATA
       const input = mockActiveTokens()
       input[0].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       input[0].resetTime = ok(futureResetTime)
@@ -243,7 +243,7 @@ describe("Token Service", () => {
         now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
       const pastResetTime =
         now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
-      const expected = NoTokenData
+      const expected = NO_TOKEN_DATA
       const input = mockActiveTokens()
       input[0].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       input[0].resetTime = ok(futureResetTime)
@@ -265,7 +265,7 @@ describe("Token Service", () => {
       id: 2,
       tokenString: "existing_token",
       remainingRequests: GITHUB_TOKEN_LIMIT,
-      resetTime: NoResetTime,
+      resetTime: NO_RESET_TIME,
     }))
 
     const mockEmptyTokenDB = ({
@@ -283,7 +283,7 @@ describe("Token Service", () => {
           id: 2,
           tokenString: "existing_token",
           remainingRequests: GITHUB_TOKEN_LIMIT,
-          resetTime: NoResetTime,
+          resetTime: NO_RESET_TIME,
         })
       )
 
@@ -314,7 +314,7 @@ describe("Token Service", () => {
           id: mockAccessTokenDB.id,
           tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
-          resetTime: NoResetTime,
+          resetTime: NO_RESET_TIME,
         })
       )
 
@@ -340,7 +340,7 @@ describe("Token Service", () => {
       const existingToken = ok(mockExistingReserveToken())
       existingToken.value.remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
-      const expected = ok(NoTokenData)
+      const expected = ok(NO_TOKEN_DATA)
 
       const future = new Date()
       future.setSeconds(future.getSeconds() + 60)
@@ -359,7 +359,7 @@ describe("Token Service", () => {
         id: 1,
         tokenString: "active_token",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
     ])
 
@@ -367,7 +367,7 @@ describe("Token Service", () => {
       id: 2,
       tokenString: "existing_token",
       remainingRequests: GITHUB_TOKEN_LIMIT,
-      resetTime: NoResetTime,
+      resetTime: NO_RESET_TIME,
     }))
 
     const mockEmptyTokenDB = ({
@@ -442,7 +442,7 @@ describe("Token Service", () => {
       activeTokens[0].remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       activeTokens[0].resetTime = ok(resetTime)
-      const existingReservedToken = NoTokenData
+      const existingReservedToken = NO_TOKEN_DATA
 
       const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
@@ -462,7 +462,7 @@ describe("Token Service", () => {
           id: mockAccessTokenDB.id,
           tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
-          resetTime: NoResetTime,
+          resetTime: NO_RESET_TIME,
         },
         true,
       ])
@@ -482,7 +482,7 @@ describe("Token Service", () => {
     it("should return the queried reserved token from db (reserve mode)", async () => {
       // Arrange
       const activeTokens = mockActiveTokens()
-      const existingReservedToken = NoTokenData
+      const existingReservedToken = NO_TOKEN_DATA
 
       const mockAccessTokenDB: AccessToken = ({
         update: jest.fn(),
@@ -502,7 +502,7 @@ describe("Token Service", () => {
           id: mockAccessTokenDB.id,
           tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
-          resetTime: NoResetTime,
+          resetTime: NO_RESET_TIME,
         },
         true,
       ])
@@ -528,7 +528,7 @@ describe("Token Service", () => {
       activeTokens[0].remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       activeTokens[0].resetTime = ok(resetTime)
-      const existingReservedToken = NoTokenData
+      const existingReservedToken = NO_TOKEN_DATA
 
       const expected = err(new NoAvailableTokenError())
 
@@ -547,7 +547,7 @@ describe("Token Service", () => {
     it("should raise a no available token error (reserved mode)", async () => {
       // Arrange
       const activeTokens = mockActiveTokens()
-      const existingReservedToken = NoTokenData
+      const existingReservedToken = NO_TOKEN_DATA
 
       const expected = err(new NoAvailableTokenError())
 
@@ -702,44 +702,36 @@ describe("Token Service", () => {
   })
 
   describe("activeUsageAlert", () => {
-    type LoggerType = typeof logger
-
-    const mockLoggingFunction = jest.fn()
-
-    const mockLogger = ({
-      info: mockLoggingFunction,
-    } as unknown) as LoggerType
-
     const mockActiveTokens = jest.fn(() => [
       {
         id: 1,
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
       {
         id: 2,
         tokenString: "token_2",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
       {
         id: 3,
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
       {
         id: 4,
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
       {
         id: 5,
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       },
     ])
 
@@ -755,12 +747,13 @@ describe("Token Service", () => {
       activeTokens[1].remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       activeTokens[1].resetTime = ok(resetTime)
+      const spyLogInfo = jest.spyOn(logger, "info")
 
       // Act
-      activeUsageAlert(activeTokens, mockLogger)
+      activeUsageAlert(activeTokens)
 
       // Assert
-      expect(mockLoggingFunction.mock.calls.length).toBe(0)
+      expect(spyLogInfo).not.toHaveBeenCalled()
     })
 
     it("should sound first alarm (60%)", () => {
@@ -778,12 +771,13 @@ describe("Token Service", () => {
       activeTokens[2].remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       activeTokens[2].resetTime = ok(resetTime)
+      const spyLogInfo = jest.spyOn(logger, "info")
 
       // Act
-      activeUsageAlert(activeTokens, mockLogger)
+      activeUsageAlert(activeTokens)
 
       // Assert
-      expect(mockLoggingFunction.mock.calls[0][0]).toBe(
+      expect(spyLogInfo).toHaveBeenCalledWith(
         `60% of access token capacity reached`
       )
     })
@@ -806,12 +800,13 @@ describe("Token Service", () => {
       activeTokens[3].remainingRequests =
         GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
       activeTokens[3].resetTime = ok(resetTime)
+      const spyLogInfo = jest.spyOn(logger, "info")
 
       // Act
-      activeUsageAlert(activeTokens, mockLogger)
+      activeUsageAlert(activeTokens)
 
       // Assert
-      expect(mockLoggingFunction.mock.calls[0][0]).toBe(
+      expect(spyLogInfo).toHaveBeenCalledWith(
         `80% of access token capacity reached`
       )
     })

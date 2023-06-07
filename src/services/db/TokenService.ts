@@ -28,7 +28,7 @@ const ACTIVE_TOKEN_ALARM_LEVEL = 0.8
 const GITHUB_TOKEN_LENGTH = 40
 
 export type MaybeResetTime = Result<number, null>
-export const NoResetTime: MaybeResetTime = err(null)
+export const NO_RESET_TIME: MaybeResetTime = err(null)
 
 export type TokenData = {
   id: number
@@ -41,7 +41,7 @@ export type TokenData = {
 }
 
 export type MaybeTokenData = Result<TokenData, null>
-export const NoTokenData: MaybeTokenData = err(null)
+export const NO_TOKEN_DATA: MaybeTokenData = err(null)
 
 type ResponseTokenData = {
   token: string
@@ -70,44 +70,34 @@ export function queryActiveTokens(
       id: activeToken.id,
       tokenString: activeToken.token,
       remainingRequests: GITHUB_TOKEN_LIMIT,
-      resetTime: NoResetTime,
+      resetTime: NO_RESET_TIME,
     }))
   )
 }
 
-type LoggerType = typeof logger
-
-export function activeUsageAlert(
-  activeTokensData: TokenData[],
-  useLogger: LoggerType
-) {
-  let exhaustedTokensCount = 0
-  activeTokensData.forEach((tokenData) => {
-    if (
-      tokenData.remainingRequests <=
-      GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
-    ) {
-      exhaustedTokensCount += 1
-    }
-  })
+export function activeUsageAlert(activeTokensData: TokenData[]) {
+  const exhaustedTokensCount = activeTokensData.filter(
+    (tokenData) =>
+      tokenData.remainingRequests <= GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+  ).length
   if (
     exhaustedTokensCount >=
     activeTokensData.length * ACTIVE_TOKEN_ALARM_LEVEL
   ) {
-    useLogger.info(
+    logger.info(
       `${ACTIVE_TOKEN_ALARM_LEVEL * 100}% of access token capacity reached`
     )
-    useLogger.info(
+    logger.info(
       `${exhaustedTokensCount}/${activeTokensData.length} active tokens exhausted`
     )
   } else if (
     exhaustedTokensCount >=
     activeTokensData.length * ACTIVE_TOKEN_WARN_LEVEL
   ) {
-    useLogger.info(
+    logger.info(
       `${ACTIVE_TOKEN_WARN_LEVEL * 100}% of access token capacity reached`
     )
-    useLogger.info(
+    logger.info(
       `${exhaustedTokensCount}/${activeTokensData.length} active tokens exhausted`
     )
   }
@@ -149,44 +139,44 @@ export function compareResetTime(
   right: TokenData,
   nowEpochSecondsUTC: number
 ): boolean {
-  return (
-    left.resetTime
-      .andThen((resetTime) =>
-        resetTime < nowEpochSecondsUTC ? NoResetTime : ok(resetTime)
-      )
-      .unwrapOr(Number.MAX_VALUE) <
-    right.resetTime
-      .andThen((resetTime) =>
-        resetTime < nowEpochSecondsUTC ? NoResetTime : ok(resetTime)
-      )
-      .unwrapOr(Number.MAX_VALUE)
+  const leftResetTime = left.resetTime.andThen((resetTime) =>
+    resetTime < nowEpochSecondsUTC ? NO_RESET_TIME : ok(resetTime)
   )
+  const rightResetTime = right.resetTime.andThen((resetTime) =>
+    resetTime < nowEpochSecondsUTC ? NO_RESET_TIME : ok(resetTime)
+  )
+  if (leftResetTime.isOk() && rightResetTime.isOk()) {
+    return leftResetTime.value < rightResetTime.value
+  }
+  return leftResetTime.isOk()
 }
 
 export function selectActiveToken(
   activeTokensData: TokenData[]
 ): MaybeTokenData {
-  let token: MaybeTokenData = NoTokenData
+  let currentBest: MaybeTokenData = NO_TOKEN_DATA
   const now: Date = new Date()
   const nowEpochSecondsUTC: number =
     now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000
   activeTokensData.forEach((activeTokenData) => {
     // Choose earliest non-null reset time from tokens that has not exceeded  threshold
-    if (
+    const notExhaused =
       activeTokenData.remainingRequests >
-        GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD ||
+      GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
+    const resetTimeHasPast =
       activeTokenData.resetTime.isErr() ||
       activeTokenData.resetTime.value < nowEpochSecondsUTC
-    ) {
-      if (
-        token.isErr() ||
-        compareResetTime(activeTokenData, token.value, nowEpochSecondsUTC)
-      ) {
-        token = ok(activeTokenData)
+
+    if (notExhaused || resetTimeHasPast) {
+      const earlierThanCurrentBest =
+        currentBest.isErr() ||
+        compareResetTime(activeTokenData, currentBest.value, nowEpochSecondsUTC)
+      if (earlierThanCurrentBest) {
+        currentBest = ok(activeTokenData)
       }
     }
   })
-  return token
+  return currentBest
 }
 
 export function occupyReservedToken(reservedToken: AccessToken) {
@@ -225,10 +215,10 @@ export function sourceReservedToken(
         id: reservedToken.id,
         tokenString: reservedToken.token,
         remainingRequests: GITHUB_TOKEN_LIMIT,
-        resetTime: NoResetTime,
+        resetTime: NO_RESET_TIME,
       })
     }
-    return NoTokenData
+    return NO_TOKEN_DATA
   })
 }
 
@@ -267,9 +257,9 @@ export function selectToken(
   return selectReservedToken(reservedToken, tokenDB).andThen(
     (newReservedToken) => {
       if (newReservedToken.isOk()) {
-        return okAsync([newReservedToken.value, true] as [
-          TokenData,
-          IsReservedTokenType
+        return okAsync<[TokenData, IsReservedTokenType]>([
+          newReservedToken.value,
+          true,
         ])
       }
       logger.error("All tokens capacity reached")
@@ -281,7 +271,7 @@ export function selectToken(
 export class TokenService {
   private activeTokensData: TokenData[] = []
 
-  private reservedTokenData: MaybeTokenData = NoTokenData
+  private reservedTokenData: MaybeTokenData = NO_TOKEN_DATA
 
   private useReservedTokens = false
 
@@ -341,12 +331,12 @@ export class TokenService {
   }
 
   updateTokens(token: string, remainingRequests: number, resetTime: number) {
-    const findActive = this.activeTokensData.find(
+    const foundActiveToken = this.activeTokensData.find(
       (activeTokenData) => activeTokenData.tokenString === token
     )
-    if (findActive !== undefined) {
-      findActive.remainingRequests = remainingRequests
-      findActive.resetTime = ok(resetTime)
+    if (foundActiveToken !== undefined) {
+      foundActiveToken.remainingRequests = remainingRequests
+      foundActiveToken.resetTime = ok(resetTime)
     }
     if (
       this.reservedTokenData.isOk() &&
@@ -356,7 +346,7 @@ export class TokenService {
       this.reservedTokenData.value.resetTime = ok(resetTime)
     }
     if (this.initialized) {
-      activeUsageAlert(this.activeTokensData, logger)
+      activeUsageAlert(this.activeTokensData)
     }
   }
 }

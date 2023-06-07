@@ -27,24 +27,26 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
     authMessage === "token undefined"
 
   if (isEmailLoginUser) {
-    const accessToken = await tokenServiceInstance
-      .getAccessToken()
-      .unwrapOr("unable to get github token")
-    tracer.use("http", {
-      hooks: {
-        request: (span, req, res) => {
-          span?.setTag("user.type", "email")
+    const accessToken = await tokenServiceInstance.getAccessToken()
+    if (accessToken.isOk()) {
+      tracer.use("http", {
+        hooks: {
+          request: (span, req, res) => {
+            span?.setTag("user.type", "email")
+          },
         },
-      },
-    })
-    logger.info(`Email login user made call to Github API: ${axiosConfig.url}`)
-    return {
-      ...axiosConfig,
-      headers: {
-        "Content-Type": "application/json",
-        ...axiosConfig.headers,
-        Authorization: `token ${accessToken}`,
-      },
+      })
+      logger.info(
+        `Email login user made call to Github API: ${axiosConfig.url}`
+      )
+      return {
+        ...axiosConfig,
+        headers: {
+          "Content-Type": "application/json",
+          ...axiosConfig.headers,
+          Authorization: `token ${accessToken.value}`,
+        },
+      }
     }
   }
   tracer.use("http", {

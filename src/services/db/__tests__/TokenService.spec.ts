@@ -22,6 +22,8 @@ import {
   GITHUB_TOKEN_REMAINING_HEADER,
   GITHUB_TOKEN_RESET_HEADER,
   TokenService,
+  ReservedTokenData,
+  ActiveTokenData,
 } from "@services/db/TokenService"
 
 describe("Token Service", () => {
@@ -30,24 +32,27 @@ describe("Token Service", () => {
   })
 
   describe("selectActiveToken", () => {
-    const mockActiveTokens = jest.fn(() => [
+    const mockActiveTokens = jest.fn((): ActiveTokenData[] => [
       {
         id: 1,
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       },
       {
         id: 2,
         tokenString: "token_2",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       },
       {
         id: 3,
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       },
     ])
 
@@ -58,6 +63,7 @@ describe("Token Service", () => {
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       })
       const input = mockActiveTokens()
 
@@ -80,6 +86,7 @@ describe("Token Service", () => {
         tokenString: "token_2",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: ok(earlyFutureResetTime),
+        type: "active",
       })
       const input = mockActiveTokens()
       input[0].resetTime = ok(lateFutureResetTime)
@@ -104,6 +111,7 @@ describe("Token Service", () => {
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: ok(earlyFutureResetTime),
+        type: "active",
       })
       const input = mockActiveTokens()
       input[0].resetTime = ok(earlyFutureResetTime)
@@ -126,6 +134,7 @@ describe("Token Service", () => {
         tokenString: "token_1",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       })
       const input = mockActiveTokens()
       input[1].resetTime = ok(pastResetTime)
@@ -151,6 +160,7 @@ describe("Token Service", () => {
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: ok(futureResetTime),
+        type: "active",
       })
       const input = mockActiveTokens()
       input[0].resetTime = ok(earlyPastResetTime)
@@ -174,6 +184,7 @@ describe("Token Service", () => {
         tokenString: "token_2",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       })
       const input = mockActiveTokens()
       input[0].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
@@ -198,6 +209,7 @@ describe("Token Service", () => {
         tokenString: "token_3",
         remainingRequests: GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD + 1,
         resetTime: ok(lateFutureResetTime),
+        type: "active",
       })
       const input = mockActiveTokens()
       input[0].remainingRequests = GITHUB_TOKEN_LIMIT - GITHUB_TOKEN_THRESHOLD
@@ -261,12 +273,15 @@ describe("Token Service", () => {
   })
 
   describe("selectReservedToken", () => {
-    const mockExistingReserveToken = jest.fn(() => ({
-      id: 2,
-      tokenString: "existing_token",
-      remainingRequests: GITHUB_TOKEN_LIMIT,
-      resetTime: NO_RESET_TIME,
-    }))
+    const mockExistingReserveToken = jest.fn(
+      (): ReservedTokenData => ({
+        id: 2,
+        tokenString: "existing_token",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NO_RESET_TIME,
+        type: "reserve",
+      })
+    )
 
     const mockEmptyTokenDB = ({
       findAll: jest.fn(async () => null),
@@ -284,6 +299,7 @@ describe("Token Service", () => {
           tokenString: "existing_token",
           remainingRequests: GITHUB_TOKEN_LIMIT,
           resetTime: NO_RESET_TIME,
+          type: "reserve",
         })
       )
 
@@ -315,6 +331,7 @@ describe("Token Service", () => {
           tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
           resetTime: NO_RESET_TIME,
+          type: "reserve",
         })
       )
 
@@ -354,21 +371,25 @@ describe("Token Service", () => {
   })
 
   describe("selectToken", () => {
-    const mockActiveTokens = jest.fn(() => [
+    const mockActiveTokens = jest.fn((): ActiveTokenData[] => [
       {
         id: 1,
         tokenString: "active_token",
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "active",
       },
     ])
 
-    const mockExistingReserveToken = jest.fn(() => ({
-      id: 2,
-      tokenString: "existing_token",
-      remainingRequests: GITHUB_TOKEN_LIMIT,
-      resetTime: NO_RESET_TIME,
-    }))
+    const mockExistingReserveToken = jest.fn(
+      (): ReservedTokenData => ({
+        id: 2,
+        tokenString: "existing_token",
+        remainingRequests: GITHUB_TOKEN_LIMIT,
+        resetTime: NO_RESET_TIME,
+        type: "reserve",
+      })
+    )
 
     const mockEmptyTokenDB = ({
       findAll: jest.fn(async () => null),
@@ -463,6 +484,7 @@ describe("Token Service", () => {
           tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
           resetTime: NO_RESET_TIME,
+          type: "reserve",
         },
         true,
       ])
@@ -503,6 +525,7 @@ describe("Token Service", () => {
           tokenString: mockAccessTokenDB.token,
           remainingRequests: GITHUB_TOKEN_LIMIT,
           resetTime: NO_RESET_TIME,
+          type: "reserve",
         },
         true,
       ])

@@ -39,8 +39,16 @@ export type TokenData = {
   resetTime: MaybeResetTime
 }
 
-export type MaybeTokenData = Result<TokenData, null>
-export const NO_TOKEN_DATA: MaybeTokenData = err(null)
+export type ActiveTokenData = TokenData & { type: "active" }
+export type ReservedTokenData = TokenData & { type: "reserve" }
+
+export type MaybeTokenData = Result<ActiveTokenData | ReservedTokenData, null>
+export type MaybeActiveTokenData = Result<ActiveTokenData, null>
+export type MaybeReservedTokenData = Result<ReservedTokenData, null>
+export const NO_TOKEN_DATA: MaybeActiveTokenData & MaybeReservedTokenData = err<
+  never,
+  null
+>(null)
 
 type ResponseTokenData = {
   token: string
@@ -50,7 +58,7 @@ type ResponseTokenData = {
 
 export function queryActiveTokens(
   tokenDB: ModelStatic<AccessToken>
-): ResultAsync<TokenData[], DatabaseError> {
+): ResultAsync<ActiveTokenData[], DatabaseError> {
   return fromPromise(
     tokenDB.findAll({
       where: {
@@ -70,6 +78,7 @@ export function queryActiveTokens(
       tokenString: activeToken.token,
       remainingRequests: GITHUB_TOKEN_LIMIT,
       resetTime: NO_RESET_TIME,
+      type: "active",
     }))
   )
 }
@@ -149,9 +158,9 @@ export function compareResetTime(
 }
 
 export function selectActiveToken(
-  activeTokensData: TokenData[]
-): MaybeTokenData {
-  let currentBest: MaybeTokenData = NO_TOKEN_DATA
+  activeTokensData: ActiveTokenData[]
+): MaybeActiveTokenData {
+  let currentBest: MaybeActiveTokenData = NO_TOKEN_DATA
   const now: Date = new Date()
   const nowEpochSecondsUTC: number =
     now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000
@@ -189,7 +198,7 @@ export function occupyReservedToken(reservedToken: AccessToken) {
 
 export function sourceReservedToken(
   tokenDB: ModelStatic<AccessToken>
-): ResultAsync<MaybeTokenData, DatabaseError> {
+): ResultAsync<MaybeReservedTokenData, DatabaseError> {
   return fromPromise(
     tokenDB.findOne({
       where: {
@@ -213,6 +222,7 @@ export function sourceReservedToken(
         tokenString: reservedToken.token,
         remainingRequests: GITHUB_TOKEN_LIMIT,
         resetTime: NO_RESET_TIME,
+        type: "reserve",
       })
     }
     return NO_TOKEN_DATA
@@ -220,9 +230,9 @@ export function sourceReservedToken(
 }
 
 export function selectReservedToken(
-  reservedTokenData: MaybeTokenData,
+  reservedTokenData: MaybeReservedTokenData,
   tokenDB: ModelStatic<AccessToken>
-): ResultAsync<MaybeTokenData, DatabaseError> {
+): ResultAsync<MaybeReservedTokenData, DatabaseError> {
   if (
     reservedTokenData.isOk() &&
     reservedTokenData.value.remainingRequests >
@@ -237,8 +247,8 @@ type IsReservedTokenType = boolean
 
 export function selectToken(
   useReservedTokens: boolean,
-  activeTokenData: TokenData[],
-  reservedToken: MaybeTokenData,
+  activeTokenData: ActiveTokenData[],
+  reservedToken: MaybeReservedTokenData,
   tokenDB: ModelStatic<AccessToken>
 ): ResultAsync<
   [TokenData, IsReservedTokenType],
@@ -266,9 +276,9 @@ export function selectToken(
 }
 
 export class TokenService {
-  private activeTokensData: TokenData[] = []
+  private activeTokensData: ActiveTokenData[] = []
 
-  private reservedTokenData: MaybeTokenData = NO_TOKEN_DATA
+  private reservedTokenData: MaybeReservedTokenData = NO_TOKEN_DATA
 
   private useReservedTokens = false
 
@@ -310,7 +320,7 @@ export class TokenService {
         const [tokenData, isReserved] = validToken
         if (isReserved && !this.useReservedTokens) {
           this.switchToReserve()
-          this.reservedTokenData = ok(tokenData)
+          this.reservedTokenData = ok({ ...tokenData, type: "reserve" })
         }
         return okAsync(tokenData.tokenString)
       })

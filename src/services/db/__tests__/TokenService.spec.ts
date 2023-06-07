@@ -625,28 +625,6 @@ describe("Token Service", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should raise an error based on invalid token length", async () => {
-      // Arrange
-      const now = new Date()
-      const resetTime =
-        now.getTime() / 1000 + (now.getTimezoneOffset() * 60) / 1000 + 10
-      const response = mockAxiosResponse(resetTime)
-      if (response.config && response.config.headers) {
-        response.config.headers.Authorization = `token ${sampleGithubToken.slice(
-          0,
-          -1
-        )}`
-      }
-
-      const expected = err(new TokenParsingError(response))
-
-      // Act
-      const actual = parseResponseTokenData(response)
-
-      // Assert
-      expect(actual).toEqual(expected)
-    })
-
     it("should raise an error based on invalid token prefix", async () => {
       // Arrange
       const now = new Date()

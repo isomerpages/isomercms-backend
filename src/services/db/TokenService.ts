@@ -25,7 +25,6 @@ export const GITHUB_TOKEN_REMAINING_HEADER = "x-ratelimit-remaining"
 export const GITHUB_TOKEN_RESET_HEADER = "x-ratelimit-reset"
 const ACTIVE_TOKEN_WARN_LEVEL = 0.6
 const ACTIVE_TOKEN_ALARM_LEVEL = 0.8
-const GITHUB_TOKEN_LENGTH = 40
 
 export type MaybeResetTime = Result<number, null>
 export const NO_RESET_TIME: MaybeResetTime = err(null)
@@ -107,8 +106,6 @@ function validateResponseTokenData(response: AxiosResponse) {
   // response.config.headers.Authorization format: token ghp_********************************
   return (
     typeof response.config?.headers?.Authorization === "string" &&
-    response.config?.headers?.Authorization.length ===
-      "token ".length + GITHUB_TOKEN_LENGTH &&
     response.config?.headers?.Authorization.slice(0, 6) === "token " &&
     !Number.isNaN(+response.headers?.[GITHUB_TOKEN_REMAINING_HEADER]) &&
     !Number.isNaN(+response.headers?.[GITHUB_TOKEN_RESET_HEADER])

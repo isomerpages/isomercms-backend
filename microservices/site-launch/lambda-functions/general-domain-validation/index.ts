@@ -24,7 +24,7 @@ interface GeneralDomainValidationLambdaResponse {
   message: SiteLaunchMessage
 }
 
-const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES = [
+const SUCCESSFUL_GENERAL_DOMAIN_VALIDATION_STATUSES: DomainStatus[] = [
   DomainStatus.AVAILABLE,
   DomainStatus.PENDING_DEPLOYMENT,
 ]

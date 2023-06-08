@@ -123,7 +123,7 @@ export class FormsgRouter {
         submissionId,
         `Error: ${err}`
       )
-      logger.error(err)
+      logger.error(JSON.stringify(err))
     }
 
     return res.sendStatus(200)

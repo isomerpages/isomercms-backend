@@ -49,7 +49,7 @@ class LaunchClient {
   private readonly mockDomainAssociations: Map<string, SubDomainSetting[]>
 
   constructor() {
-    const AWS_REGION = "ap-southeast-1"
+    const AWS_REGION = config.get("aws.region")
     this.amplifyClient = new AmplifyClient({
       region: AWS_REGION,
     })

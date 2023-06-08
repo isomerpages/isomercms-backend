@@ -1,7 +1,11 @@
-class BaseIsomerError extends Error {
+import { IsomerInternalError } from "./IsomerError"
+
+class BaseIsomerError extends Error implements IsomerInternalError {
   status: number
 
-  isIsomerError: true
+  code = "BaseError"
+
+  isIsomerError = true
 
   constructor(status = 500, message = "Something went wrong") {
     super()
@@ -9,7 +13,6 @@ class BaseIsomerError extends Error {
     this.name = this.constructor.name
     this.status = status
     this.message = message
-    this.isIsomerError = true
   }
 }
 

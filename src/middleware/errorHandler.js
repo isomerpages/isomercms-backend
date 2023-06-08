@@ -3,7 +3,7 @@ const _ = require("lodash")
 const { serializeError } = require("serialize-error")
 
 // Import logger
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()

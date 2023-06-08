@@ -42,7 +42,7 @@ export default class FormsProcessingService {
       // Continue processing the POST body
       next()
     } catch (e) {
-      logger.error(e)
+      logger.error(JSON.stringify(e))
       throw new AuthError(`Unauthorized form submission at ${postUri}`)
     }
   }

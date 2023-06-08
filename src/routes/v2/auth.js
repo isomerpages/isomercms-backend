@@ -3,7 +3,7 @@ const express = require("express")
 
 const { config } = require("@config/config")
 
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")

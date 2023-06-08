@@ -1,10 +1,10 @@
-import { config } from "@config/config"
-
-import logger from "@logger/logger"
-
 const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
+
+const { config } = require("@config/config")
+
+const logger = require("@logger/logger").default
 
 const { sanitizer } = require("@services/utilServices/Sanitizer")
 

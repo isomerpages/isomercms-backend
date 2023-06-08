@@ -4,15 +4,32 @@ export type ReviewRequestStatus = "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
 
 export type FileType = "page" | "nav" | "setting" | "file" | "image"
 
-export interface EditedItemDto {
-  type: FileType[]
+export interface BaseEditedItemDto {
   name: string
   path: string[]
-  stagingUrl: string
-  fileUrl: string
+  type: FileType
+}
+
+export type WithEditMeta<T> = T & {
   lastEditedBy: string
   lastEditedTime: number
 }
+
+export interface EditedPageDto extends BaseEditedItemDto {
+  type: "page"
+  stagingUrl: string
+  cmsFileUrl: string
+}
+
+export interface EditedConfigDto extends BaseEditedItemDto {
+  type: "nav" | "setting"
+}
+
+export interface EditedMediaDto extends BaseEditedItemDto {
+  type: "file" | "image"
+}
+
+export type EditedItemDto = EditedPageDto | EditedConfigDto | EditedMediaDto
 
 export interface UserDto {
   email: string
@@ -40,7 +57,7 @@ export interface ReviewRequestDto {
   reviewers: string[]
   reviewRequestedTime: number
   status: ReviewRequestStatus
-  changedItems: EditedItemDto[]
+  changedItems: WithEditMeta<EditedItemDto>[]
 }
 
 export interface UpdateReviewRequestDto {

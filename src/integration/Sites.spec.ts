@@ -34,6 +34,7 @@ import { ResourcePageService } from "@root/services/fileServices/MdPageServices/
 import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
 import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
@@ -89,6 +90,7 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
   User,
@@ -96,7 +98,8 @@ const reviewRequestService = new ReviewRequestService(
   Reviewer,
   ReviewMeta,
   ReviewRequestView,
-  pageService
+  pageService,
+  configService
 )
 const sitesService = new SitesService({
   siteRepository: Site,

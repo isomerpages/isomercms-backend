@@ -1,8 +1,10 @@
+import { ProdPermalink, StagingPermalink } from "./pages"
+
 export type SiteInfo = {
   savedAt: number
   savedBy: string
   publishedAt: number
   publishedBy: string
-  stagingUrl: string
-  siteUrl: string
+  stagingUrl: StagingPermalink
+  siteUrl: ProdPermalink
 }

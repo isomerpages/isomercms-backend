@@ -7,7 +7,7 @@ const express = require("express")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 // Import error
 const { AuthError } = require("@errors/AuthError")
@@ -123,8 +123,9 @@ async function githubAuth(req, res) {
 
 async function logout(req, res) {
   clearAllCookies(res)
+  const { email } = req.session.userInfo
   req.session.destroy()
-  logger.info(`User ${userInfo.email} successfully logged out`)
+  logger.info(`User ${email} successfully logged out`)
   return res.sendStatus(200)
 }
 

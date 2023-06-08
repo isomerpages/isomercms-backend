@@ -2,7 +2,7 @@
 const express = require("express")
 
 // Logger
-const logger = require("@logger/logger")
+const logger = require("@logger/logger").default
 
 const apiLogger = express.Router()
 

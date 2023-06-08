@@ -83,6 +83,7 @@ import { ResourcePageService } from "@root/services/fileServices/MdPageServices/
 import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
 import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { ReviewRequestDto } from "@root/types/dto/review"
 import { GitHubService } from "@services/db/GitHubService"
@@ -132,6 +133,7 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as typeof ReviewApi,
   User,
@@ -139,7 +141,8 @@ const reviewRequestService = new ReviewRequestService(
   Reviewer,
   ReviewMeta,
   ReviewRequestView,
-  pageService
+  pageService,
+  configService
 )
 const sitesService = new SitesService({
   siteRepository: Site,
@@ -263,20 +266,20 @@ describe("Review Requests Integration Tests", () => {
       const expected = {
         items: [
           {
-            type: ["page"],
+            type: "page",
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
             stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
-            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
-            lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
           {
-            type: ["page"],
+            type: "page",
             name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
             path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
             stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
-            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
           },
@@ -750,22 +753,22 @@ describe("Review Requests Integration Tests", () => {
         reviewRequestedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
         changedItems: [
           {
-            type: ["page"],
+            type: "page",
             name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
             path: [],
-            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
-            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
-            lastEditedBy: MOCK_USER_EMAIL_TWO, // TODO: This should be MOCK_USER_EMAIL_ONE
-            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
-          },
-          {
-            type: ["page"],
-            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
-            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
-            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
-            fileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
             lastEditedBy: MOCK_USER_EMAIL_TWO,
             lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
+          },
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
           },
         ],
       }
@@ -1480,7 +1483,6 @@ describe("Review Requests Integration Tests", () => {
       const actual = await request(app).post(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
       )
-      console.log(actual.error)
 
       // Assert
       expect(actual.statusCode).toEqual(403)
@@ -1498,7 +1500,6 @@ describe("Review Requests Integration Tests", () => {
       const actual = await request(app).post(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/approve`
       )
-      console.log(actual.error)
 
       // Assert
       expect(actual.statusCode).toEqual(403)

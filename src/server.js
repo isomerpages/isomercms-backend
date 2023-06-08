@@ -43,6 +43,7 @@ import { SubcollectionPageService } from "@root/services/fileServices/MdPageServ
 import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+import DynamoDBService from "@root/services/infra/DynamoDBService"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -58,6 +59,7 @@ import ReposService from "@services/identity/ReposService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import { statsService } from "@services/infra/StatsService"
+import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
@@ -68,9 +70,11 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
+import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
+import DynamoDBDocClient from "./services/infra/DynamoDBClient"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import { isSecure } from "./utils/auth-utils"
 
@@ -184,7 +188,8 @@ const reviewRequestService = new ReviewRequestService(
   Reviewer,
   ReviewMeta,
   ReviewRequestView,
-  pageService
+  pageService,
+  new ConfigService()
 )
 const sitesService = new SitesService({
   siteRepository: Site,
@@ -205,6 +210,10 @@ const launchesService = new LaunchesService({
   launchClient,
 })
 const queueService = new QueueService()
+const stepFunctionsService = new StepFunctionsService()
+const dynamoDBService = new DynamoDBService({
+  dynamoDBClient: new DynamoDBDocClient(),
+})
 
 const identityAuthService = getIdentityAuthService(gitHubService)
 const collaboratorsService = new CollaboratorsService({
@@ -222,9 +231,11 @@ const infraService = new InfraService({
   launchesService,
   queueService,
   collaboratorsService,
+  stepFunctionsService,
+  dynamoDBService,
 })
-// poller for incoming queue
-infraService.pollQueue()
+// poller site launch updates
+infraService.pollMessages()
 
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({

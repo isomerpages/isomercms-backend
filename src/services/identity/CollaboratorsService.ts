@@ -125,7 +125,12 @@ class CollaboratorsService {
     )
   }
 
-  create = async (siteName: string, email: string, acknowledged: boolean) => {
+  create = async (
+    siteName: string,
+    unparsedEmail: string,
+    acknowledged: boolean
+  ) => {
+    const email = unparsedEmail.toLowerCase()
     if (!email || !validator.isEmail(email)) {
       return new BadRequestError(
         "That doesn't look like a valid email. Try a gov.sg or other whitelisted email."

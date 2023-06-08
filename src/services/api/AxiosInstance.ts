@@ -8,6 +8,7 @@ import logger from "@logger/logger"
 
 import tracer from "@utils/tracer"
 
+import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 import { tokenServiceInstance } from "@services/db/TokenService"
 
 // Env vars
@@ -79,6 +80,7 @@ const isomerRepoAxiosInstance = setupCache(
   {
     interpretHeader: true,
     etag: true,
+    headerInterpreter: customHeaderInterpreter,
   }
 )
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)

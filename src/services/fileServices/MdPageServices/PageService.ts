@@ -3,9 +3,9 @@ import { ok, err, Result, ResultAsync, okAsync, errAsync } from "neverthrow"
 import UserSessionData from "@root/classes/UserSessionData"
 import { CONTACT_US_FILENAME, HOMEPAGE_FILENAME } from "@root/constants"
 import { BaseIsomerError } from "@root/errors/BaseError"
-import EmptyStringError from "@root/errors/EmptyStringError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import PageParseError from "@root/errors/PageParseError"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import {
   CollectionPageName,
@@ -17,7 +17,6 @@ import {
   StagingPermalink,
   SubcollectionPageName,
   UnlinkedPageName,
-  PathInfo,
   Homepage,
   PageInfo,
   ContactUsPage,
@@ -25,6 +24,7 @@ import {
   SubcollectionPage,
   ResourceCategoryPage,
   UnlinkedPage,
+  PathInfo,
 } from "@root/types/pages"
 import { Brand } from "@root/types/util"
 
@@ -116,35 +116,46 @@ export class PageService {
    * @param sessionData session credentials of the user
    */
   parsePageName = (
-    pageName: string,
+    pathInfo: PathInfo,
     sessionData: UserSessionData
   ): ResultAsync<PageName, NotFoundError | MissingResourceRoomError> =>
-    this.parseHomepage(pageName)
+    this.isMarkdownPage(pathInfo.name)
+      .andThen(() => this.parseHomepage(pathInfo))
       // NOTE: Order is important as `contact-us` and unlinked pages
       // are both rooted at `/pages`
-      .orElse(() => this.parseContactUsPage(pageName))
-      .orElse(() => this.parseUnlinkedPages(pageName))
+      .orElse(() => this.parseContactUsPage(pathInfo))
+      .orElse(() => this.parseUnlinkedPages(pathInfo))
       .asyncAndThen<PageName, NotFoundError>(okAsync)
       // NOTE: We read the `_config.yml` to determine if it is a resource page.
       // If it is not, we assume that this is a collection page.
       // Because this method is invoked on existing file paths from the frontend,
       // this assumption will hold true.
-      .orElse(() => this.parseResourceRoomPage(pageName, sessionData))
-      .orElse(() => this.parseCollectionPage(pageName))
+      .orElse(() => this.parseResourceRoomPage(pathInfo, sessionData))
+      .orElse(() => this.parseCollectionPage(pathInfo))
+
+  isMarkdownPage = (pageName: string): Result<string, PageParseError> => {
+    if (pageName.endsWith(".md")) return ok(pageName)
+    return err(new PageParseError(pageName))
+  }
 
   // NOTE: Collection pages can be nested in either a collection: a/collection
   // or within a sub-collection: a/sub/collection
-  private parseCollectionPage = (
-    pageName: string
-  ): ResultAsync<
+  private parseCollectionPage = ({
+    name,
+    path,
+  }: PathInfo): ResultAsync<
     CollectionPageName | SubcollectionPageName,
-    EmptyStringError | NotFoundError
+    NotFoundError
   > =>
-    this.extractPathInfo(pageName).asyncAndThen(({ name, path }) =>
-      path
-        .mapErr(() => new NotFoundError())
-        .asyncAndThen((rawPath) => {
-          if (rawPath.length === 1 && !!rawPath[0]) {
+    path
+      .mapErr(() => new NotFoundError())
+      .asyncAndThen<CollectionPageName | SubcollectionPageName, NotFoundError>(
+        (rawPath) => {
+          // NOTE: Only 2 levels of nesting
+          if (rawPath.length > 2) {
+            return errAsync(new NotFoundError())
+          }
+          if (rawPath.length === 1) {
             return okAsync({
               name: Brand.fromString(name),
               collection: rawPath[0],
@@ -164,51 +175,45 @@ export class PageService {
               `Error when parsing path: ${rawPath}, please ensure that the file exists!`
             )
           )
-        })
-    )
-
-  private parseHomepage = (
-    pageName: string
-  ): Result<HomepageName, NotFoundError> =>
-    this.extractPathInfo(pageName).andThen<HomepageName, NotFoundError>(
-      ({ name, path }) => {
-        if (path.isErr() && name === HOMEPAGE_FILENAME) {
-          return ok({ name: Brand.fromString(name), kind: "Homepage" })
         }
-        return err(new NotFoundError())
-      }
-    )
+      )
+
+  private parseHomepage = ({
+    name,
+    path,
+  }: PathInfo): Result<HomepageName, NotFoundError> => {
+    if (path.isErr() && name === HOMEPAGE_FILENAME) {
+      return ok({ name: Brand.fromString(name), kind: "Homepage" })
+    }
+    return err(new NotFoundError())
+  }
 
   // NOTE: The contact us page has a fixed structure
   // It needs to be rooted at `/pages/contact-us`
-  private parseContactUsPage = (
-    pageName: string
-  ): Result<ContactUsPageName, NotFoundError> =>
-    this.extractPathInfo(pageName).andThen<ContactUsPageName, NotFoundError>(
-      ({ name, path }) => {
-        if (
-          path.isOk() &&
-          path.value.pop() === "pages" &&
-          name === CONTACT_US_FILENAME
-        ) {
-          return ok({ name: Brand.fromString(name), kind: "ContactUsPage" })
-        }
-        return err(new NotFoundError())
-      }
-    )
+  private parseContactUsPage = ({
+    name,
+    path,
+  }: PathInfo): Result<ContactUsPageName, NotFoundError> => {
+    if (
+      path.isOk() &&
+      path.value.at(-1) === "pages" &&
+      name === CONTACT_US_FILENAME
+    ) {
+      return ok({ name: Brand.fromString(name), kind: "ContactUsPage" })
+    }
+    return err(new NotFoundError())
+  }
 
-  private parseUnlinkedPages = (
-    pageName: string
-  ): Result<UnlinkedPageName, NotFoundError> =>
-    this.extractPathInfo(pageName)
-      .andThen(({ path, name }) =>
-        path
-          .map((rawPath) => rawPath.length === 1 && rawPath[0] === "pages")
-          .andThen<UnlinkedPageName, NotFoundError>((isPages) =>
-            isPages
-              ? ok({ name: Brand.fromString(name), kind: "UnlinkedPage" })
-              : err(new NotFoundError())
-          )
+  private parseUnlinkedPages = ({
+    name,
+    path,
+  }: PathInfo): Result<UnlinkedPageName, NotFoundError> =>
+    path
+      .map((rawPath) => rawPath.length === 1 && rawPath[0] === "pages")
+      .andThen<UnlinkedPageName, NotFoundError>((isPages) =>
+        isPages
+          ? ok({ name: Brand.fromString(name), kind: "UnlinkedPage" })
+          : err(new NotFoundError())
       )
       // NOTE: If there's no containing folder, it's not an unlinked page.
       .mapErr(() => new NotFoundError())
@@ -217,65 +222,65 @@ export class PageService {
   // The page can be nested 1 or 2 levels deep:
   // eg: one/level or two/levels/deep
   private parseResourceRoomPage = (
-    pageName: string,
+    pathInfo: PathInfo,
     sessionData: UserSessionData
   ): ResultAsync<
     ResourceCategoryPageName,
     NotFoundError | MissingResourceRoomError
   > =>
     this.extractResourceRoomName(sessionData).andThen((name) =>
-      this.extractResourcePageName(name, pageName, sessionData)
+      this.extractResourcePageName(name, pathInfo, sessionData)
     )
 
   private extractResourcePageName = (
     resourceRoomName: ResourceRoomName,
-    pageName: string,
+    { name, path }: PathInfo,
     sessionData: UserSessionData
   ): ResultAsync<ResourceCategoryPageName, NotFoundError> =>
-    this.extractPathInfo(pageName)
-      .asyncAndThen(({ name, path }) =>
-        path.asyncAndThen<ResourceCategoryPageName, NotFoundError>(
-          (rawPath) => {
-            if (rawPath[0] !== resourceRoomName.name) {
-              return errAsync(new NotFoundError())
-            }
+    path
+      .asyncAndThen<ResourceCategoryPageName, NotFoundError>((rawPath) => {
+        if (rawPath[0] !== resourceRoomName.name) {
+          return errAsync(new NotFoundError())
+        }
 
-            if (rawPath.length !== 3 && rawPath.at(-1) !== "_posts") {
-              return errAsync(new NotFoundError())
-            }
+        if (rawPath.length !== 3 && rawPath.at(-1) !== "_posts") {
+          return errAsync(new NotFoundError())
+        }
 
-            // NOTE: We need to read the frontmatter and check the layout.
-            // The `layout` needs to be `post` for us to give a staging url
-            // as the others are either an ext link or a file.
-            // Because we only have the filename at this point, it is
-            // insufficient to use that to determine the resource type.
-            // This is because the actual underlying resource can be
-            // named totally differently from the containing github file.
-            return ResultAsync.fromPromise(
-              this.resourcePageService.read(sessionData, {
-                fileName: name,
-                resourceRoomName: resourceRoomName.name,
-                resourceCategoryName: rawPath[1],
-              }),
-              () => new NotFoundError()
-            ).andThen<ResourceCategoryPageName, NotFoundError>(
-              ({ content }) => {
-                if (content.frontMatter.layout !== "post")
-                  return errAsync(new NotFoundError())
-                return okAsync({
-                  name: Brand.fromString(name),
-                  resourceRoom: resourceRoomName.name,
-                  resourceCategory: rawPath[1],
-                  kind: "ResourceCategoryPage",
-                })
-              }
+        // NOTE: We need to read the frontmatter and check the layout.
+        // The `layout` needs to be `post` for us to give a staging url
+        // as the others are either an ext link or a file.
+        // Because we only have the filename at this point, it is
+        // insufficient to use that to determine the resource type.
+        // This is because the actual underlying resource can be
+        // named totally differently from the containing github file.
+        return ResultAsync.fromPromise(
+          this.resourcePageService.read(sessionData, {
+            fileName: name,
+            resourceRoomName: resourceRoomName.name,
+            resourceCategoryName: rawPath[1],
+          }),
+          () => new NotFoundError()
+        ).andThen<ResourceCategoryPageName, NotFoundError>(({ content }) => {
+          if (content.frontMatter.layout !== "post")
+            return errAsync(
+              new NotFoundError("Please ensure that the post exists!")
             )
-          }
-        )
-      )
+          return okAsync({
+            name: Brand.fromString(name),
+            resourceRoom: resourceRoomName.name,
+            resourceCategory: rawPath[1],
+            kind: "ResourceCategoryPage",
+          })
+        })
+      })
       // NOTE: If we get an empty string as the `pageName`,
       // we just treat the file as not being found
-      .mapErr(() => new NotFoundError())
+      .mapErr((e) => {
+        // NOTE: Done to preserve any existing error messages
+        if (e instanceof NotFoundError) return e
+        return new NotFoundError()
+      })
 
   // NOTE: This is a safe wrapper over the js file for `getResourceRoomDirectoryName`
   extractResourceRoomName = (
@@ -297,30 +302,6 @@ export class PageService {
             })
           : err(new MissingResourceRoomError())
     )
-
-  extractPathInfo = (pageName: string): Result<PathInfo, EmptyStringError> => {
-    if (!pageName) {
-      return err(new EmptyStringError())
-    }
-
-    const fullPath = pageName.split("/")
-    // NOTE: Name is guaranteed to exist
-    // as this method only accepts a string
-    // and we've validated that the string is not empty
-    const name = fullPath.pop()!
-
-    if (fullPath.length === 0) {
-      return ok({
-        name,
-        path: err([]),
-      })
-    }
-
-    return ok({
-      name,
-      path: ok(fullPath),
-    })
-  }
 
   retrieveCmsPermalink = (
     pageName: PageName,

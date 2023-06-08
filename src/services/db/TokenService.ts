@@ -8,7 +8,7 @@ import {
   errAsync,
   fromPromise,
 } from "neverthrow"
-import { ModelStatic } from "sequelize"
+import { ModelStatic, Op } from "sequelize"
 
 import logger from "@logger/logger"
 
@@ -81,6 +81,34 @@ export function queryActiveTokens(
       type: "active",
     }))
   )
+}
+
+export function resetStrandedTokens(
+  tokenDB: ModelStatic<AccessToken>
+): ResultAsync<void, DatabaseError> {
+  return fromPromise(
+    tokenDB.findAll({
+      where: {
+        resetTime: {
+          [Op.not]: null,
+        },
+      },
+    }),
+    (error) => {
+      const dbError = new DatabaseError(
+        `Unable to query tokens from database: ${error}`
+      )
+      logger.error(dbError.message)
+      return dbError
+    }
+  ).map((tokensWithReset) => {
+    const now = new Date()
+    tokensWithReset.map((tokenWithReset) => {
+      if (tokenWithReset.resetTime !== null && tokenWithReset.resetTime < now) {
+        tokenWithReset.update({ resetTime: null })
+      }
+    })
+  })
 }
 
 export function activeUsageAlert(activeTokensData: TokenData[]) {
@@ -188,11 +216,11 @@ export function selectActiveToken(
 export function occupyReservedToken(reservedToken: AccessToken) {
   const resetTime = new Date()
   resetTime.setSeconds(resetTime.getSeconds() + GITHUB_RESET_INTERVAL)
-  reservedToken.update("resetTime", resetTime)
+  reservedToken.update({ resetTime })
 
   // set reset time to null after reset time
   setTimeout(() => {
-    reservedToken.update("resetTime", null)
+    reservedToken.update({ resetTime: null })
   }, GITHUB_RESET_INTERVAL * 1000)
 }
 
@@ -295,10 +323,12 @@ export class TokenService {
       return okAsync(true)
     }
     this.initialized = true
-    return queryActiveTokens(this.tokenDB).map((activeTokensData) => {
-      this.activeTokensData = activeTokensData
-      return false
-    })
+    return resetStrandedTokens(this.tokenDB).andThen(() =>
+      queryActiveTokens(this.tokenDB).map((activeTokensData) => {
+        this.activeTokensData = activeTokensData
+        return false
+      })
+    )
   }
 
   private switchToReserve() {

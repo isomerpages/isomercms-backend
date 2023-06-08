@@ -1,7 +1,11 @@
 import { IsomerInternalError } from "./IsomerError"
 
 class BaseIsomerError extends Error implements IsomerInternalError {
+  name: string
+
   status: number
+
+  message: string
 
   code = "BaseError"
 

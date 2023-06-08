@@ -4,7 +4,7 @@ export interface IsomerExternalError {
   message: string
 }
 
-/* Internal representation of Isomer errors - passed to frontend client */
+/* Internal representation of Isomer errors - passed to log stream */
 export interface IsomerInternalError {
   code: string
   message: string

@@ -1,7 +1,7 @@
 class BaseIsomerError extends Error {
   status: number
 
-  isIsomerError: boolean
+  isIsomerError: true
 
   constructor(status = 500, message = "Something went wrong") {
     super()

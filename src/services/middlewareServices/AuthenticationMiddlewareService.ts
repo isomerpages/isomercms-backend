@@ -229,6 +229,10 @@ export default class AuthenticationMiddlewareService {
         accessToken,
         githubId,
         isomerUserId,
+        // NOTE: Email can be empty as
+        // Github users don't have emails on their first sign in
+        // and we ask them to validate,
+        // after which their email exists.
         email: email ?? "",
       }
     } catch (err) {

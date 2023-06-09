@@ -90,13 +90,27 @@ const generateE2eEmailUser = async (
         name: site,
       },
     })
-    await SiteMember.findOrCreate({
+    // NOTE: We need to do this because e2e tests could try to
+    // regenerate the site member with a different role.
+    // Doing a `findOrCreate` with the role
+    // will cause 2 entries to be created, which is not what we want.
+    const siteMember = await SiteMember.findOne({
       where: {
         userId: user.id,
         siteId: createdSite.id,
-        role,
       },
     })
+
+    if (siteMember) {
+      siteMember.role = role
+      await siteMember.save()
+    } else {
+      await SiteMember.create({
+        userId: user.id,
+        siteId: createdSite.id,
+        role,
+      })
+    }
   }
 
   return {

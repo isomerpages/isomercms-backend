@@ -31,7 +31,7 @@ export const E2E_EMAIL_TEST_SITE = {
 const E2E_TEST_SECRET = config.get("cypress.e2eTestSecret")
 
 export const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
-export const E2E_TEST_USER = "e2e-test"
+export const E2E_TEST_GITHUB_USER = "e2e-test"
 const GENERAL_ACCESS_PATHS = [
   "/v1/sites",
   "/v1/auth/whoami",
@@ -121,7 +121,7 @@ const generateE2eEmailUser = async (
 
 const generateGithubUser = (): SessionDataProps => ({
   accessToken: E2E_TEST_GH_TOKEN,
-  githubId: E2E_TEST_USER,
+  githubId: E2E_TEST_GITHUB_USER,
   isomerUserId: E2E_ISOMER_ID,
   email: E2E_TEST_EMAIL,
 })

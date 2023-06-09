@@ -14,7 +14,7 @@ const {
   E2E_EMAIL_TEST_SITE,
   E2E_TEST_GH_TOKEN,
   E2E_TEST_REPO,
-  E2E_TEST_USER,
+  E2E_TEST_GITHUB_USER,
   default: AuthenticationMiddlewareService,
 } = auth
 
@@ -134,7 +134,7 @@ describe("AuthenticationMiddlewareService", () => {
       // Arrange
       const extractedValues = {
         accessToken: E2E_TEST_GH_TOKEN,
-        githubId: E2E_TEST_USER,
+        githubId: E2E_TEST_GITHUB_USER,
         isomerUserId: E2E_ISOMER_ID,
         email: E2E_TEST_EMAIL,
       }

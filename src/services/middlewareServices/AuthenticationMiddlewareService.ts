@@ -62,13 +62,25 @@ export type VerifyAccessProps = UnverifiedSession & {
   url: string
 }
 
-type TestUserTypes = "Email admin" | "Email collaborator" | "Github user"
+const E2E_USERS = {
+  Email: {
+    Admin: "Email admin",
+    Collaborator: "Email collaborator",
+  },
+  Github: {
+    User: "Github user",
+  },
+} as const
+
+type TestUserTypes =
+  | typeof E2E_USERS["Email"][keyof typeof E2E_USERS["Email"]]
+  | typeof E2E_USERS["Github"][keyof typeof E2E_USERS["Github"]]
 
 // NOTE: Precondition to use this function is that the user type is valid.
 const getUserType = (userType: string): TestUserTypes => {
-  if (userType === "Email admin") return "Email admin"
-  if (userType === "Email collaborator") return "Email collaborator"
-  if (userType === "Github user") return "Github user"
+  if (userType === E2E_USERS.Email.Admin) return userType
+  if (userType === E2E_USERS.Email.Collaborator) return userType
+  if (userType === E2E_USERS.Github.User) return userType
   throw new Error(`Invalid user type: ${userType}`)
 }
 
@@ -133,11 +145,11 @@ export const extractE2eUserInfo = async (
   email?: string
 ): Promise<SessionDataProps> => {
   switch (userType) {
-    case "Email admin":
+    case E2E_USERS.Email.Admin:
       return generateE2eEmailUser(CollaboratorRoles.Admin, site, email)
-    case "Email collaborator":
+    case E2E_USERS.Email.Collaborator:
       return generateE2eEmailUser(CollaboratorRoles.Contributor, site, email)
-    case "Github user":
+    case E2E_USERS.Github.User:
       return generateGithubUser()
     default: {
       const missingUserType: never = userType
@@ -175,7 +187,8 @@ export default class AuthenticationMiddlewareService {
 
     const isEmailE2eAccess =
       (repo === E2E_EMAIL_TEST_SITE.repo || repo === E2E_TEST_REPO) &&
-      (userType === "Email admin" || userType === "Email collaborator")
+      (userType === E2E_USERS.Email.Admin ||
+        userType === E2E_USERS.Email.Collaborator)
     const isGithubE2eAccess =
       repo === E2E_TEST_REPO && userType === "Github user"
 

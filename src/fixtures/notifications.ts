@@ -42,7 +42,9 @@ export const highPriorityOldReadNotification = {
   firstReadTime: OLD_READ_TIME,
 }
 
-export const formatNotification = (notification: any) => ({
+export const formatNotification = (
+  notification: typeof normalPriorityUnreadNotification
+) => ({
   message: notification.message,
   createdAt: CREATED_TIME.toISOString(),
   link: notification.link,

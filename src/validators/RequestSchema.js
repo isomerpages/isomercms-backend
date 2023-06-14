@@ -250,7 +250,7 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
   }),
   favicon: Joi.string(),
   "facebook-pixel": Joi.string()
-    .regex(/^[0-9]{15}$/)
+    .regex(/^[0-9]{15,16}$/)
     .allow(""),
   google_analytics: Joi.string().allow(""),
   google_analytics_ga4: Joi.string().allow(""),

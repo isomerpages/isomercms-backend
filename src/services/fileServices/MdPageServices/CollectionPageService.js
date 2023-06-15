@@ -7,6 +7,8 @@ const {
 
 const { hasSpecialCharInTitle } = require("@validators/validators")
 
+const { ComponentTypes, FileCodes } = require("@root/errors/IsomerError")
+
 class CollectionPageService {
   constructor({ gitHubService, collectionYmlService }) {
     this.gitHubService = gitHubService
@@ -20,10 +22,16 @@ class CollectionPageService {
     if (
       !shouldIgnoreCheck &&
       hasSpecialCharInTitle({ title: fileName, isFile: true })
-    )
-      throw new BadRequestError(
-        `Special characters not allowed when creating files. Given name: ${fileName}`
+    ) {
+      const err = new BadRequestError(
+        `Special characters not allowed when creating files. Given name: ${fileName}`,
+        { fileName },
+        ComponentTypes.Service,
+        FileCodes.CollectionPageService
       )
+      err.isV2Err = true
+      throw err
+    }
     const parsedCollectionName = `_${collectionName}`
 
     await this.collectionYmlService.addItemToOrder(sessionData, {
@@ -95,10 +103,16 @@ class CollectionPageService {
     sessionData,
     { oldFileName, newFileName, collectionName, content, frontMatter, sha }
   ) {
-    if (hasSpecialCharInTitle({ title: newFileName, isFile: true }))
-      throw new BadRequestError(
-        `Special characters not allowed when renaming files. Given name: ${newFileName}`
+    if (hasSpecialCharInTitle({ title: newFileName, isFile: true })) {
+      const err = new BadRequestError(
+        `Special characters not allowed when renaming files. Given name: ${newFileName}`,
+        { fileName: newFileName },
+        ComponentTypes.Service,
+        FileCodes.CollectionPageService
       )
+      err.isV2Err = true
+      throw err
+    }
     const parsedCollectionName = `_${collectionName}`
 
     await this.collectionYmlService.updateItemInOrder(sessionData, {

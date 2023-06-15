@@ -2,8 +2,8 @@
 const { BaseIsomerError } = require("@errors/BaseError")
 
 class BadRequestError extends BaseIsomerError {
-  constructor(message) {
-    super(400, message)
+  constructor(message, meta = {}) {
+    super({ status: 400, code: "BadRequestError", message, meta })
   }
 }
 

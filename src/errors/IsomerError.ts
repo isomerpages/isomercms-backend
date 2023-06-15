@@ -9,8 +9,8 @@ export interface IsomerInternalError {
   code: string
   message: string
   meta?: Record<string, unknown>
-  componentCode?: string
-  fileCode?: string
+  componentCode: string
+  fileCode: string
 }
 
 export const ComponentTypes = {
@@ -26,17 +26,16 @@ export const FileCodes = {
   CollectionPageService: "001",
 }
 
-const getErrCode = (
+const getExternalCode = (
   componentCode: string,
   fileCode: string,
-  seqNum: number
-): string => `${componentCode}${fileCode}-${seqNum}`
+  errCode: string
+): string => `${componentCode}-${fileCode}-${errCode}`
 
 /* Namespace for Error functions */
 export const IsomerError = {
-  // TODO: Once we start implementing errors, we need to define the codes in the error files
   toExternalRepresentation: (e: IsomerInternalError): IsomerExternalError => ({
-    code: e.code,
+    code: getExternalCode(e.componentCode, e.fileCode, e.code),
     message: e.message,
   }),
   getLog: (error: IsomerInternalError): Record<string, unknown> => ({

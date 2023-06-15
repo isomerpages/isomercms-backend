@@ -1,14 +1,15 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { setupCache } from "axios-cache-interceptor"
+import { err } from "neverthrow"
 
 import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
-import { getAccessToken } from "@utils/token-retrieval-utils"
 import tracer from "@utils/tracer"
 
 import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
+import { tokenServiceInstance } from "@services/db/TokenService"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
@@ -27,29 +28,36 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
     authMessage === "token undefined"
 
   if (isEmailLoginUser) {
-    const accessToken = await getAccessToken()
-    axiosConfig.headers = {
-      ...(axiosConfig.headers ?? {}),
-      Authorization: `token ${accessToken}`,
+    const accessToken = await tokenServiceInstance.getAccessToken()
+    if (accessToken.isOk()) {
+      tracer.use("http", {
+        hooks: {
+          request: (span, req, res) => {
+            span?.setTag("user.type", "email")
+          },
+        },
+      })
+      logger.info(
+        `Email login user made call to Github API: ${axiosConfig.url}`
+      )
+      return {
+        ...axiosConfig,
+        headers: {
+          "Content-Type": "application/json",
+          ...axiosConfig.headers,
+          Authorization: `token ${accessToken.value}`,
+        },
+      }
     }
-    tracer.use("http", {
-      hooks: {
-        request: (span, req, res) => {
-          span?.setTag("user.type", "email")
-        },
-      },
-    })
-    logger.info(`Email login user made call to Github API: ${axiosConfig.url}`)
-  } else {
-    tracer.use("http", {
-      hooks: {
-        request: (span, req, res) => {
-          span?.setTag("user.type", "github")
-        },
-      },
-    })
-    logger.info(`Github login user made call to Github API: ${axiosConfig.url}`)
   }
+  tracer.use("http", {
+    hooks: {
+      request: (span, req, res) => {
+        span?.setTag("user.type", "github")
+      },
+    },
+  })
+  logger.info(`Github login user made call to Github API: ${axiosConfig.url}`)
   return {
     ...axiosConfig,
     headers: {
@@ -61,17 +69,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
 
 const respHandler = (response: AxiosResponse) => {
   // Any status code that lie within the range of 2xx will cause this function to trigger
-  const GITHUB_API_LIMIT = 5000
-  const remainingRequests =
-    // NOTE: This raises an alarm if the header is missing
-    // or if the header is not a number.
-    // This is because the header should always be present.
-    parseInt(response.headers["x-ratelimit-remaining"], 10) || 0
-  if (remainingRequests < GITHUB_API_LIMIT * 0.2) {
-    logger.info("80% of access token capacity reached")
-  } else if (remainingRequests < GITHUB_API_LIMIT * 0.4) {
-    logger.info("60% of access token capacity reached")
-  }
+  tokenServiceInstance.onResponse(response)
   return response
 }
 

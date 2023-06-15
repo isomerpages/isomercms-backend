@@ -113,5 +113,19 @@ describe("Settings Router", () => {
       expect(mockSettingsService.retrieveSettingsFiles).toHaveBeenCalled()
       expect(mockSettingsService.updateSettingsFiles).toHaveBeenCalled()
     })
+    it("should allow for facebook pixel values of length 16", async () => {
+      // Arrange
+      // NOTE: Old fb pixel values are 16 characters long
+      const params = {
+        "facebook-pixel": `${updatedFbPixelValue}0`,
+      }
+
+      // Act
+      await request(app).post(`/${siteName}/settings`).send(params).expect(200)
+
+      // Assert
+      expect(mockSettingsService.retrieveSettingsFiles).toHaveBeenCalled()
+      expect(mockSettingsService.updateSettingsFiles).toHaveBeenCalled()
+    })
   })
 })

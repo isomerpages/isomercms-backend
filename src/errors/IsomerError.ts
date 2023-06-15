@@ -24,6 +24,7 @@ export const ComponentTypes = {
 
 export const FileCodes = {
   CollectionPageService: "001",
+  Undefined: "000",
 }
 
 const getExternalCode = (

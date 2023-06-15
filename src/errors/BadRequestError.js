@@ -1,14 +1,14 @@
 // Import base error
 const { BaseIsomerError } = require("@errors/BaseError")
 
-const { ComponentTypes } = require("./IsomerError")
+const { ComponentTypes, FileCodes } = require("./IsomerError")
 
 class BadRequestError extends BaseIsomerError {
   constructor(
     message,
     meta = {},
     componentCode = ComponentTypes.Other,
-    fileCode = "000"
+    fileCode = FileCodes.Undefined
   ) {
     super({
       status: 400,

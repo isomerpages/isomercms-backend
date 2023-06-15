@@ -1,3 +1,7 @@
+import { Attributes } from "sequelize"
+
+import type { Notification } from "@database/models"
+
 const CREATED_TIME = new Date()
 const READ_TIME = new Date()
 const OLD_READ_TIME = new Date("1995-12-17T03:24:00")
@@ -42,7 +46,7 @@ export const highPriorityOldReadNotification = {
   firstReadTime: OLD_READ_TIME,
 }
 
-export const formatNotification = (notification: any) => ({
+export const formatNotification = (notification: Attributes<Notification>) => ({
   message: notification.message,
   createdAt: CREATED_TIME.toISOString(),
   link: notification.link,

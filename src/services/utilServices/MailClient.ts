@@ -25,7 +25,7 @@ class MailClient {
     subject: string,
     body: string
   ): Promise<void> {
-    const endpoint = `${POSTMAN_API_URL}/transactional/email/send`
+    const sendEndpoint = `${POSTMAN_API_URL}/transactional/email/send`
     const email = {
       subject,
       from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
@@ -35,7 +35,7 @@ class MailClient {
     }
 
     try {
-      const sendMailResponse = await axios.post<MailData>(endpoint, email, {
+      const sendMailResponse = await axios.post<MailData>(sendEndpoint, email, {
         headers: {
           Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
         },
@@ -48,9 +48,9 @@ class MailClient {
   }
 
   async verifyMail(sendMailData: MailData): Promise<void> {
-    const endpoint = `${POSTMAN_API_URL}/transactional/email/${sendMailData.id}`
+    const verfyEndpoint = `${POSTMAN_API_URL}/transactional/email/${sendMailData.id}`
     await new Promise((res) => setTimeout(res, MAIL_VERIFICATION_DELAY))
-    const verifyMailResponse = await axios.get<MailData>(endpoint, {
+    const verifyMailResponse = await axios.get<MailData>(verfyEndpoint, {
       headers: {
         Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
       },

@@ -1,6 +1,7 @@
 const autoBind = require("auto-bind")
 const Bluebird = require("bluebird")
 const _ = require("lodash")
+const { okAsync, errAsync } = require("neverthrow")
 
 class SettingsService {
   constructor({
@@ -8,11 +9,17 @@ class SettingsService {
     footerYmlService,
     navYmlService,
     homepagePageService,
+    sitesService,
+    deploymentsService,
+    gitHubService,
   }) {
     this.configYmlService = configYmlService
     this.footerYmlService = footerYmlService
     this.navYmlService = navYmlService
     this.homepagePageService = homepagePageService
+    this.sitesService = sitesService
+    this.deploymentsService = deploymentsService
+    this.gitHubService = gitHubService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -41,6 +48,37 @@ class SettingsService {
       navigation,
       homepage,
     }
+  }
+
+  async getEncryptedPassword(sessionData) {
+    const { siteName } = sessionData
+    const siteInfo = await this.sitesService.getBySiteName(siteName)
+    if (siteInfo.isErr()) {
+      // Missing site indicating netlify site - return special result
+      return okAsync({
+        encryptedPassword: "",
+        iv: "",
+        isAmplifySite: false,
+      })
+    }
+    const { id, isPrivate } = siteInfo.value
+    if (!isPrivate)
+      return okAsync({
+        encryptedPassword: "",
+        iv: "",
+        isAmplifySite: true,
+      })
+
+    const deploymentInfo = await this.deploymentsService.getDeploymentInfoFromSiteId(
+      id
+    )
+    if (deploymentInfo.isErr()) return deploymentInfo
+
+    return okAsync({
+      encryptedPassword: deploymentInfo.value.encryptedPassword,
+      iv: deploymentInfo.value.encryptionIv,
+      isAmplifySite: true,
+    })
   }
 
   async updateSettingsFiles(
@@ -114,6 +152,36 @@ class SettingsService {
         sha: navigation.sha,
       })
     }
+  }
+
+  async updatePassword(sessionData, { encryptedPassword, iv }) {
+    const { siteName } = sessionData
+    const siteInfo = await this.sitesService.getBySiteName(siteName)
+    if (siteInfo.isErr()) {
+      return siteInfo
+    }
+    const { id, isPrivate } = siteInfo.value
+    if (!isPrivate) {
+      // For previously public repos, also need to set github repo to private
+      const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(
+        sessionData,
+        true
+      )
+      if (privatiseRepoRes.isErr()) return privatiseRepoRes
+      try {
+        await this.sitesService.update({
+          id,
+          isPrivate: true,
+        })
+      } catch (err) {
+        return errAsync(err)
+      }
+    }
+    return this.deploymentsService.updateAmplifyPassword(
+      siteName,
+      encryptedPassword,
+      iv
+    )
   }
 
   shouldUpdateHomepage(updatedConfigContent, configContent) {

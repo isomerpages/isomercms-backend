@@ -35,7 +35,7 @@ class MailClient {
     }
 
     try {
-      const sendMailResponse = await axios.post(endpoint, email, {
+      const sendMailResponse = await axios.post<MailData>(endpoint, email, {
         headers: {
           Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
         },
@@ -50,7 +50,7 @@ class MailClient {
   async verifyMail(sendMailData: MailData): Promise<void> {
     const endpoint = `${POSTMAN_API_URL}/transactional/email/${sendMailData.id}`
     await new Promise((res) => setTimeout(res, MAIL_VERIFICATION_DELAY))
-    const verifyMailResponse = await axios.get(endpoint, {
+    const verifyMailResponse = await axios.get<MailData>(endpoint, {
       headers: {
         Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
       },

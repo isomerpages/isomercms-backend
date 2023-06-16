@@ -275,6 +275,11 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
   logo: Joi.string().allow(""),
 })
 
+const UpdateRepoPasswordRequestSchema = Joi.object().keys({
+  encryptedPassword: Joi.string(),
+  iv: Joi.string(),
+})
+
 module.exports = {
   UpdateContactUsSchema,
   UpdateHomepageSchema,
@@ -299,4 +304,5 @@ module.exports = {
   DeleteMediaFileRequestSchema,
   UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
+  UpdateRepoPasswordRequestSchema,
 }

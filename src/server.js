@@ -296,8 +296,9 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   gitHubService,
   configYmlService,
   apiLogger,
-  notificationsService,
   notificationOnEditHandler,
+  sitesService,
+  deploymentsService,
 })
 const authV2Router = new AuthRouter({
   authenticationMiddleware,

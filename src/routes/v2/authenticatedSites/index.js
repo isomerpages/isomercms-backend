@@ -89,8 +89,9 @@ const getAuthenticatedSitesSubrouter = ({
   gitHubService,
   configYmlService,
   apiLogger,
-  notificationsService,
   notificationOnEditHandler,
+  sitesService,
+  deploymentsService,
 }) => {
   const collectionYmlService = new CollectionYmlService({ gitHubService })
   const homepagePageService = new HomepagePageService({ gitHubService })
@@ -152,6 +153,9 @@ const getAuthenticatedSitesSubrouter = ({
     configYmlService,
     footerYmlService,
     navYmlService,
+    sitesService,
+    deploymentsService,
+    gitHubService,
   })
 
   const unlinkedPagesRouter = new UnlinkedPagesRouter({

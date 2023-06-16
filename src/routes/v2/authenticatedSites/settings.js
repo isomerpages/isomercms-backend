@@ -10,7 +10,10 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
-const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
+const {
+  UpdateSettingsRequestSchema,
+  UpdateRepoPasswordRequestSchema,
+} = require("@validators/RequestSchema")
 
 const { SettingsService } = require("@services/configServices/SettingsService")
 
@@ -77,11 +80,57 @@ class SettingsRouter {
     return next()
   }
 
+  async getRepoPassword(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
+
+    const passwordRes = await this.settingsService.getEncryptedPassword(
+      userWithSiteSessionData
+    )
+
+    if (passwordRes.isErr()) {
+      throw passwordRes.error
+    }
+
+    return res.status(200).send(passwordRes.value)
+  }
+
+  async updateRepoPassword(req, res, next) {
+    const { body } = req
+    const { userWithSiteSessionData } = res.locals
+
+    const { error } = UpdateRepoPasswordRequestSchema.validate(req.body)
+    if (error) throw new BadRequestError(error.message)
+
+    const { encryptedPassword, iv } = body
+    const passwordRes = await this.settingsService.updatePassword(
+      userWithSiteSessionData,
+      {
+        encryptedPassword,
+        iv,
+      }
+    )
+
+    if (passwordRes.isErr()) {
+      throw passwordRes.error
+    }
+
+    res.status(200).send("OK")
+    return next()
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.readSettingsPage))
     router.post("/", attachRollbackRouteHandlerWrapper(this.updateSettingsPage))
+    router.get(
+      "/repoPassword",
+      attachReadRouteHandlerWrapper(this.getRepoPassword)
+    )
+    router.post(
+      "/repoPassword",
+      attachRollbackRouteHandlerWrapper(this.updateRepoPassword)
+    )
 
     return router
   }

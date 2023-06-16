@@ -55,4 +55,16 @@ export class Deployment extends Model {
     type: DataType.TEXT,
   })
   hostingId!: string
+
+  @Column({
+    allowNull: true,
+    type: DataType.TEXT,
+  })
+  encryptedPassword!: string
+
+  @Column({
+    allowNull: true,
+    type: DataType.TEXT,
+  })
+  encryptionIv!: string
 }

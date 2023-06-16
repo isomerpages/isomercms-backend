@@ -1,11 +1,14 @@
-import { errAsync } from "neverthrow"
+import { errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
+import {} from "crypto"
 import logger from "@logger/logger"
 
-import { Deployment, Site } from "@database/models"
+import { Deployment, Repo, Site } from "@database/models"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
 import { Brand } from "@root/types/util"
+import { decryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
 
 type deploymentsCreateParamsType = Partial<Deployment> & {
@@ -114,6 +117,62 @@ class DeploymentsService {
           .sendCreateBranch(createStagingBranchInput)
           .map(() => amplifyInfo)
       })
+  }
+
+  getDeploymentInfoFromSiteId = async (repoId: string) => {
+    const deploymentInfo = await this.repository.findOne({
+      where: {
+        siteId: repoId,
+      },
+    })
+    if (!deploymentInfo)
+      return errAsync(new NotFoundError("Site has not been deployed!"))
+    return okAsync(deploymentInfo)
+  }
+
+  updateAmplifyPassword = async (
+    repoName: string,
+    encryptedPassword: string,
+    iv: string
+  ) => {
+    const deploymentInfo = await this.repository.findOne({
+      include: [
+        {
+          model: Site,
+          required: true,
+          include: [
+            {
+              model: Repo,
+              required: true,
+              where: {
+                name: repoName,
+              },
+            },
+          ],
+        },
+      ],
+    })
+    if (!deploymentInfo)
+      return errAsync(`Deployment for ${repoName} does not exist`)
+    const { id, hostingId: appId } = deploymentInfo
+    const decryptedPassword = decryptPassword(encryptedPassword, iv)
+    const updateResp = await this.deploymentClient.sendUpdateApp(
+      this.deploymentClient.generateUpdatePasswordInput(
+        appId,
+        decryptedPassword
+      )
+    )
+    if (updateResp.isErr()) {
+      return updateResp
+    }
+    await this.repository.update(
+      {
+        encryptedPassword,
+        encryptionIv: iv,
+      },
+      { where: { id } }
+    )
+    return updateResp
   }
 }
 

@@ -171,6 +171,12 @@ const config = convict({
         format: "required-boolean",
         default: true,
       },
+      passwordSecretKey: {
+        doc: "Secret key used to encrypt password",
+        env: "SITE_PASSWORD_SECRET_KEY",
+        format: String,
+        default: "",
+      },
     },
     dynamodb: {
       siteLaunchTableName: {

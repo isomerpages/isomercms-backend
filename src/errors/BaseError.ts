@@ -7,17 +7,17 @@ class BaseIsomerError extends Error implements IsomerInternalError {
 
   message: string
 
-  code = "BaseError"
+  code = "BaseError" // name of the error
 
   isIsomerError = true
 
-  meta: Record<string, unknown>
+  meta: Record<string, unknown> // additional properties that provides context for the error
 
-  isV2Err = false
+  isV2Err = false // indicates if this is the new error format
 
-  componentCode: string
+  componentCode: string // a selection from ComponentTypes
 
-  fileCode: string
+  fileCode: string // a selection from FileCodes
 
   constructor({
     status = 500,

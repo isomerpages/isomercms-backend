@@ -1,4 +1,5 @@
 const { Base64 } = require("js-base64")
+const { okAsync, errAsync } = require("neverthrow")
 
 const BRANCH_REF = "staging"
 
@@ -10,6 +11,8 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const { UnprocessableError } = require("@errors/UnprocessableError")
 
 const validateStatus = require("@utils/axios-utils")
+
+const logger = require("@root/logger/logger")
 
 const ReviewApi = require("./review")
 
@@ -485,6 +488,35 @@ class GitHubService {
       if (status === 404 || status === 403)
         throw new NotFoundError("Site does not exist")
       throw err
+    }
+  }
+
+  async changeRepoPrivacy(sessionData, shouldMakePrivate) {
+    const { siteName, isomerUserId } = sessionData
+    const endpoint = `${siteName}`
+
+    // Privatising a repo is restricted to repo admins - an admin token will be inserted in via our axios interceptor
+    const headers = {
+      Authorization: "",
+      "Content-Type": "application/json",
+    }
+    try {
+      await this.axiosInstance.patch(
+        endpoint,
+        { private: shouldMakePrivate },
+        { headers }
+      )
+      return okAsync()
+    } catch (error) {
+      const { status } = error.response
+      // If user is unauthorized or site does not exist, show the same NotFoundError
+      if (status === 404 || status === 403) {
+        logger.error(
+          `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
+        )
+        return errAsync(new NotFoundError("Site does not exist"))
+      }
+      return errAsync(error)
     }
   }
 }

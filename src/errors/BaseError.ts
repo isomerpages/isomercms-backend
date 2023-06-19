@@ -1,4 +1,4 @@
-import { IsomerInternalError } from "./IsomerError"
+import type { IsomerInternalError } from "./IsomerError"
 
 class BaseIsomerError extends Error implements IsomerInternalError {
   name: string

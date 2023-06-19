@@ -127,7 +127,7 @@ describe("Collaborator Router", () => {
     it("should not delete last admin collaborator", async () => {
       // Arrange
       mockCollaboratorsService.delete.mockResolvedValue(
-        new UnprocessableError("")
+        new UnprocessableError()
       )
 
       // Act
@@ -144,7 +144,7 @@ describe("Collaborator Router", () => {
 
     it("should not delete user if user is not a site collaborator", async () => {
       // Arrange
-      mockCollaboratorsService.delete.mockResolvedValue(new NotFoundError(""))
+      mockCollaboratorsService.delete.mockResolvedValue(new NotFoundError())
 
       // Act
       await request(app)

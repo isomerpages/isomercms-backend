@@ -29,7 +29,6 @@ class CollectionPageService {
         ComponentTypes.Service,
         FileCodes.CollectionPageService
       )
-      err.isV2Err = true
       throw err
     }
     const parsedCollectionName = `_${collectionName}`

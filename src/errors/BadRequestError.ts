@@ -8,18 +8,22 @@ import {
 export default class BadRequestError
   extends BaseIsomerError
   implements IdentifiableError {
-  componentCode: PossibleComponentTypes = "X"
+  componentCode: PossibleComponentTypes
 
-  fileCode: PossibleFileCodes = "000"
+  fileCode: PossibleFileCodes
 
   constructor(
-    componentCode: IdentifiableError["componentCode"],
-    fileCode: IdentifiableError["fileCode"],
-    message?: string
+    // NOTE: This is technically optional but we want to
+    // preserve argument ordering for back-compat
+    // with our JS files.
+    message?: string | undefined,
+    meta?: Record<string, unknown>,
+    componentCode?: IdentifiableError["componentCode"],
+    fileCode?: IdentifiableError["fileCode"]
   ) {
-    super({ status: 400, message })
-    this.componentCode = componentCode
-    this.fileCode = fileCode
+    super({ status: 400, message, meta })
+    this.componentCode = componentCode || "X"
+    this.fileCode = fileCode || "000"
   }
 }
 

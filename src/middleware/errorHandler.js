@@ -1,5 +1,3 @@
-import { LegacyError } from "../errors/IsomerError"
-
 const _ = require("lodash")
 const { serializeError } = require("serialize-error")
 
@@ -7,6 +5,8 @@ const { serializeError } = require("serialize-error")
 const logger = require("@logger/logger").default
 
 const { IsomerError } = require("@root/errors/IsomerError")
+
+const { LegacyError } = require("../errors/IsomerError")
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()

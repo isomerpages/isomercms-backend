@@ -1,3 +1,5 @@
+import { BaseIsomerError } from "./BaseError"
+
 export const ComponentTypes = {
   Service: "S",
   Router: "R",
@@ -52,5 +54,28 @@ export const IsomerError = {
   }),
   getLog: (error: IsomerInternalError): Record<string, unknown> => ({
     ...error,
+  }),
+  isIdentifiable: <E extends BaseIsomerError>(
+    err: E
+  ): err is E & IdentifiableError =>
+    ((err as unknown) as IdentifiableError).componentCode !== undefined &&
+    ((err as unknown) as IdentifiableError).fileCode !== undefined,
+}
+
+interface LegacyRepresentation {
+  name: string
+  code: number
+  message: string
+}
+
+export const LegacyError = {
+  toExternalRepresentation: ({
+    name,
+    message,
+    status,
+  }: BaseIsomerError): LegacyRepresentation => ({
+    name,
+    code: status,
+    message,
   }),
 }

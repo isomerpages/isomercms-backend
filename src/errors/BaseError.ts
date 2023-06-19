@@ -32,6 +32,7 @@ class BaseIsomerError extends Error implements IsomerInternalError {
     this.name = this.constructor.name
     this.code = code
     this.status = status
+    this.code = this.name
     this.message = message
     this.meta = meta
     this.componentCode = componentCode
@@ -39,8 +40,5 @@ class BaseIsomerError extends Error implements IsomerInternalError {
   }
 }
 
-module.exports = {
-  BaseIsomerError,
-}
-
 export { BaseIsomerError }
+export default BaseIsomerError

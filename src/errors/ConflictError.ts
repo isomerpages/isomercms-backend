@@ -8,7 +8,7 @@ export const protectedFolderConflictErrorMsg = (folderName: string) =>
 
 export class ConflictError extends BaseIsomerError {
   constructor(message?: string) {
-    super(409, message)
+    super({ status: 409, message })
   }
 }
 

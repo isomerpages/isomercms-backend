@@ -1,4 +1,4 @@
-import { ComponentTypes, IsomerInternalError } from "./IsomerError"
+import { IsomerInternalError } from "./IsomerError"
 
 class BaseIsomerError extends Error implements IsomerInternalError {
   name: string
@@ -15,28 +15,14 @@ class BaseIsomerError extends Error implements IsomerInternalError {
 
   isV2Err = false // indicates if this is the new error format
 
-  componentCode: string // a selection from ComponentTypes
-
-  fileCode: string // a selection from FileCodes
-
-  constructor({
-    status = 500,
-    code = "BaseError",
-    message = "Something went wrong",
-    meta = {},
-    componentCode = ComponentTypes.Other,
-    fileCode = "000",
-  }) {
+  constructor({ status = 500, message = "Something went wrong", meta = {} }) {
     super()
     Error.captureStackTrace(this, this.constructor)
     this.name = this.constructor.name
-    this.code = code
     this.status = status
     this.code = this.name
     this.message = message
     this.meta = meta
-    this.componentCode = componentCode
-    this.fileCode = fileCode
   }
 }
 

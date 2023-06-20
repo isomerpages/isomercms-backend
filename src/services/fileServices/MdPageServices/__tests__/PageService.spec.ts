@@ -499,7 +499,7 @@ describe("PageService", () => {
         kind: "UnlinkedPage",
       }
       mockUnlinkedPageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -525,7 +525,7 @@ describe("PageService", () => {
         kind: "UnlinkedPage",
       }
       mockUnlinkedPageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -575,7 +575,7 @@ describe("PageService", () => {
         kind: "ContactUsPage",
       }
       mockContactUsService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -598,7 +598,7 @@ describe("PageService", () => {
         kind: "ContactUsPage",
       }
       mockContactUsService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -646,7 +646,7 @@ describe("PageService", () => {
         kind: "Homepage",
       }
       mockHomepageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -669,7 +669,7 @@ describe("PageService", () => {
         kind: "Homepage",
       }
       mockHomepageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -726,7 +726,7 @@ describe("PageService", () => {
         resourceRoom: Brand.fromString(MOCK_RESOURCE_ROOM_NAME),
       }
       mockResourcePageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -756,7 +756,7 @@ describe("PageService", () => {
         resourceRoom: Brand.fromString(MOCK_RESOURCE_ROOM_NAME),
       }
       mockResourcePageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -818,7 +818,7 @@ describe("PageService", () => {
         subcollection: Brand.fromString(MOCK_SUBCOLLECTION_NAME),
       }
       mockSubcollectionPageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -848,7 +848,7 @@ describe("PageService", () => {
         subcollection: Brand.fromString(MOCK_SUBCOLLECTION_NAME),
       }
       mockSubcollectionPageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -907,7 +907,7 @@ describe("PageService", () => {
         collection: MOCK_COLLECTION_NAME,
       }
       mockCollectionPageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(
@@ -935,7 +935,7 @@ describe("PageService", () => {
         collection: MOCK_COLLECTION_NAME,
       }
       mockCollectionPageService.read.mockRejectedValueOnce({})
-      const expected = err(new BaseIsomerError())
+      const expected = err(new BaseIsomerError({}))
 
       // Act
       const actual = await pageService.retrieveStagingPermalink(

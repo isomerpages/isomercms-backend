@@ -3,7 +3,7 @@ const { BaseIsomerError } = require("@errors/BaseError")
 
 class AuthError extends BaseIsomerError {
   constructor(message) {
-    super(401, message)
+    super({ status: 401, code: "AuthError", message })
   }
 }
 

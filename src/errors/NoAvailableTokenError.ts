@@ -7,7 +7,7 @@ export default class NoAvailableTokenError extends BaseIsomerError {
     message = "Unable to select token for request",
     timestamp = new Date()
   ) {
-    super(503, message)
+    super({ status: 503, code: "NoAvailableTokenError", message })
     this.timestamp = timestamp
   }
 }

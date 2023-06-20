@@ -78,7 +78,7 @@ class MediaFile {
     if (resp.status !== 200) {
       if (resp.status === 404)
         throw new NotFoundError("Media Directory does not exist")
-      throw new BaseIsomerError(resp)
+      throw new BaseIsomerError({ message: resp })
     }
 
     return resp.data

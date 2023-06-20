@@ -3,7 +3,7 @@ const { BaseIsomerError } = require("@errors/BaseError")
 
 class NotFoundError extends BaseIsomerError {
   constructor(message) {
-    super(404, message)
+    super({ status: 404, code: "NotFoundError", message })
   }
 }
 

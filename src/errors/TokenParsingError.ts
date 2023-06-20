@@ -9,7 +9,7 @@ export default class TokenParsingError extends BaseIsomerError {
     response: AxiosResponse,
     message = "Unable parse token from axios response"
   ) {
-    super(422, message)
+    super({ status: 422, code: "TokenParsingError", message })
     this.response = response
   }
 }

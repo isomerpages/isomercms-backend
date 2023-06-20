@@ -44,13 +44,13 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
 // This is (at a glance), either a failure to read from github
 // or the parsing fails (we have a sentinel value of an empty string)
 const withErrorHandler = (promise: Promise<PageInfo>) =>
-  ResultAsync.fromPromise(promise, () => new BaseIsomerError()).andThen(
+  ResultAsync.fromPromise(promise, () => new BaseIsomerError({})).andThen(
     (data) =>
       // NOTE: This is a fail-safe check as `yaml.parse`
       // doesn't guarantee existence.
       data?.content?.frontMatter?.permalink
         ? ok(data)
-        : err(new BaseIsomerError())
+        : err(new BaseIsomerError({}))
   )
 
 const extractStagingPermalink = (stagingLink: string) => ({
@@ -342,7 +342,10 @@ export class PageService {
       default: {
         const unimplErr: never = pageName
         return errAsync(
-          new BaseIsomerError(500, `Unimplemented page type: ${unimplErr}`)
+          new BaseIsomerError({
+            status: 500,
+            message: `Unimplemented page type: ${unimplErr}`,
+          })
         )
       }
     }

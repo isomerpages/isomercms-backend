@@ -9,7 +9,7 @@ const protectedFolderConflictErrorMsg = (folderName) =>
 
 class ConflictError extends BaseIsomerError {
   constructor(message) {
-    super(409, message)
+    super({ status: 409, code: "ConflictError", message })
   }
 }
 module.exports = {

@@ -21,6 +21,15 @@ module.exports = {
             transaction: t,
           }
         ),
+        queryInterface.addColumn(
+          "deployments", // name of Source model
+          "password_date", // name of column we're adding
+          {
+            type: Sequelize.DATE,
+            allowNull: true,
+            transaction: t,
+          }
+        ),
       ])
     )
   },
@@ -36,6 +45,11 @@ module.exports = {
         queryInterface.removeColumn(
           "deployments", // name of Source Model
           "encryption_iv", // name of column we want to remove
+          { transaction: t }
+        ),
+        queryInterface.removeColumn(
+          "deployments", // name of Source Model
+          "password_date", // name of column we want to remove
           { transaction: t }
         ),
       ])

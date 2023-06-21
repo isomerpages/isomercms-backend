@@ -14,6 +14,7 @@ import {
   mockGithubSessionData,
   mockIsomerUserId,
 } from "@fixtures/sessionData"
+import { ForbiddenError } from "@root/errors/ForbiddenError"
 import { indexHtmlContent } from "@root/fixtures/markdown-fixtures"
 import { collectionYmlContent } from "@root/fixtures/yaml-fixtures"
 import { GitHubService } from "@services/db/GitHubService"
@@ -910,6 +911,41 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(refEndpoint, {
         headers,
       })
+    })
+  })
+
+  describe("changeRepoPrivacy", () => {
+    const refEndpoint = `${siteName}`
+    const headers = {
+      Authorization: "",
+      "Content-Type": "application/json",
+    }
+    it("should modify the repo privacy accordingly if changing to true", async () => {
+      const shouldBePrivate = true
+      mockAxiosInstance.patch.mockResolvedValueOnce("")
+      const resp = await service.changeRepoPrivacy(sessionData, shouldBePrivate)
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        refEndpoint,
+        { private: shouldBePrivate },
+        {
+          headers,
+        }
+      )
+      expect(resp.isOk()).toEqual(true)
+    })
+
+    it("should modify the repo privacy accordingly if changing to false", async () => {
+      const shouldBePrivate = false
+      mockAxiosInstance.patch.mockResolvedValueOnce("")
+      const resp = await service.changeRepoPrivacy(sessionData, shouldBePrivate)
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        refEndpoint,
+        { private: shouldBePrivate },
+        {
+          headers,
+        }
+      )
+      expect(resp.isOk()).toEqual(true)
     })
   })
 })

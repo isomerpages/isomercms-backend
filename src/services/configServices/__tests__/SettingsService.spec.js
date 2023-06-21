@@ -1,8 +1,16 @@
+const { okAsync, errAsync } = require("neverthrow")
+
 const { configContent, configSha } = require("@fixtures/config")
 const { footerContent, footerSha } = require("@fixtures/footer")
 const { homepageContent, homepageSha } = require("@fixtures/homepage")
 const { navigationContent, navigationSha } = require("@fixtures/navigation")
 const { mockUserWithSiteSessionData } = require("@fixtures/sessionData")
+const {
+  MOCK_SITE_DBENTRY_ONE,
+  MOCK_SITE_DBENTRY_TWO,
+  MOCK_DEPLOYMENT_DBENTRY_TWO,
+} = require("@fixtures/sites")
+const { NotFoundError } = require("@root/errors/NotFoundError")
 
 const { SettingsService } = require("../SettingsService")
 
@@ -44,11 +52,28 @@ describe("Settings Service", () => {
     update: jest.fn(),
   }
 
+  const mockSitesService = {
+    getBySiteName: jest.fn(),
+    update: jest.fn(),
+  }
+
+  const mockDeploymentsService = {
+    getDeploymentInfoFromSiteId: jest.fn(),
+    updateAmplifyPassword: jest.fn(),
+  }
+
+  const mockGitHubService = {
+    changeRepoPrivacy: jest.fn(),
+  }
+
   const service = new SettingsService({
     configYmlService: mockConfigYmlService,
     homepagePageService: mockHomepagePageService,
     footerYmlService: mockFooterYmlService,
     navYmlService: mockNavYmlService,
+    sitesService: mockSitesService,
+    deploymentsService: mockDeploymentsService,
+    gitHubService: mockGitHubService,
   })
 
   afterEach(() => {
@@ -88,6 +113,68 @@ describe("Settings Service", () => {
       expect(mockFooterYmlService.read).toHaveBeenCalled()
       expect(mockNavYmlService.read).toHaveBeenCalled()
       expect(mockHomepagePageService.read).toHaveBeenCalled()
+    })
+  })
+
+  describe("getEncryptedPassword", () => {
+    it("retrieves password data successfully for private amplify repos", async () => {
+      // Arrange
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync(MOCK_SITE_DBENTRY_TWO)
+      )
+      mockDeploymentsService.getDeploymentInfoFromSiteId.mockResolvedValue(
+        okAsync(MOCK_DEPLOYMENT_DBENTRY_TWO)
+      )
+
+      // Act
+      const resp = await service.getEncryptedPassword(
+        mockUserWithSiteSessionData
+      )
+
+      // Assert
+      expect(resp.value).toMatchObject({
+        encryptedPassword: MOCK_DEPLOYMENT_DBENTRY_TWO.encryptedPassword,
+        iv: MOCK_DEPLOYMENT_DBENTRY_TWO.encryptionIv,
+        isAmplifySite: true,
+      })
+    })
+
+    it("returns appropriate response for non-private amplify repos", async () => {
+      // Arrange
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync(MOCK_SITE_DBENTRY_ONE)
+      )
+
+      // Act
+      const resp = await service.getEncryptedPassword(
+        mockUserWithSiteSessionData
+      )
+
+      // Assert
+      expect(resp.value).toMatchObject({
+        encryptedPassword: "",
+        iv: "",
+        isAmplifySite: true,
+      })
+    })
+
+    it("returns appropriate response for netlify repos", async () => {
+      // Arrange
+      mockSitesService.getBySiteName.mockResolvedValue(
+        errAsync(new NotFoundError())
+      )
+
+      // Act
+      const resp = await service.getEncryptedPassword(
+        mockUserWithSiteSessionData
+      )
+
+      // Assert
+      expect(resp.value).toMatchObject({
+        encryptedPassword: "",
+        iv: "",
+        isAmplifySite: false,
+      })
     })
   })
 
@@ -371,6 +458,138 @@ describe("Settings Service", () => {
         mockUserWithSiteSessionData,
         expectedHomepageServiceInput
       )
+    })
+  })
+
+  describe.only("updatePassword", () => {
+    const encryptedPassword = "newPass"
+    const iv = "iv"
+
+    it("updates password for private amplify repos", async () => {
+      // Arrange
+      const enablePassword = true
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync(MOCK_SITE_DBENTRY_TWO)
+      )
+      mockDeploymentsService.updateAmplifyPassword.mockResolvedValue(
+        okAsync("")
+      )
+
+      // Act
+      await service.updatePassword(mockUserWithSiteSessionData, {
+        encryptedPassword,
+        iv,
+        enablePassword,
+      })
+
+      // Assert
+      expect(mockGitHubService.changeRepoPrivacy).not.toHaveBeenCalled()
+      expect(mockSitesService.update).not.toHaveBeenCalled()
+      expect(
+        mockDeploymentsService.updateAmplifyPassword
+      ).toHaveBeenLastCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        encryptedPassword,
+        iv,
+        enablePassword
+      )
+    })
+
+    it("updates password for previously public amplify repos", async () => {
+      // Arrange
+      const enablePassword = true
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync(MOCK_SITE_DBENTRY_ONE)
+      )
+      mockGitHubService.changeRepoPrivacy.mockResolvedValueOnce(okAsync(""))
+      mockSitesService.update.mockResolvedValue("")
+      mockDeploymentsService.updateAmplifyPassword.mockResolvedValue(
+        okAsync("")
+      )
+
+      // Act
+      await service.updatePassword(mockUserWithSiteSessionData, {
+        encryptedPassword,
+        iv,
+        enablePassword,
+      })
+
+      // Assert
+      expect(mockGitHubService.changeRepoPrivacy).toHaveBeenLastCalledWith(
+        mockUserWithSiteSessionData,
+        enablePassword
+      )
+      expect(mockSitesService.update).toHaveBeenLastCalledWith({
+        id: MOCK_SITE_DBENTRY_ONE.id,
+        isPrivate: enablePassword,
+      })
+      expect(
+        mockDeploymentsService.updateAmplifyPassword
+      ).toHaveBeenLastCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        encryptedPassword,
+        iv,
+        enablePassword
+      )
+    })
+
+    it("removes password for previously private amplify repos", async () => {
+      // Arrange
+      const enablePassword = false
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync(MOCK_SITE_DBENTRY_TWO)
+      )
+      mockGitHubService.changeRepoPrivacy.mockResolvedValueOnce(okAsync(""))
+      mockSitesService.update.mockResolvedValue("")
+      mockDeploymentsService.updateAmplifyPassword.mockResolvedValue(
+        okAsync("")
+      )
+
+      // Act
+      await service.updatePassword(mockUserWithSiteSessionData, {
+        encryptedPassword,
+        iv,
+        enablePassword,
+      })
+
+      // Assert
+      expect(mockGitHubService.changeRepoPrivacy).toHaveBeenLastCalledWith(
+        mockUserWithSiteSessionData,
+        enablePassword
+      )
+      expect(mockSitesService.update).toHaveBeenLastCalledWith({
+        id: MOCK_SITE_DBENTRY_TWO.id,
+        isPrivate: enablePassword,
+      })
+      expect(
+        mockDeploymentsService.updateAmplifyPassword
+      ).toHaveBeenLastCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        encryptedPassword,
+        iv,
+        enablePassword
+      )
+    })
+
+    it("fails if attempting to change password on a netlify repo", async () => {
+      // Arrange
+      const thrownErr = new NotFoundError()
+      mockSitesService.getBySiteName.mockResolvedValue(errAsync(thrownErr))
+
+      // Act
+      const resp = await service.updatePassword(mockUserWithSiteSessionData, {
+        encryptedPassword,
+        iv,
+        enablePassword: true,
+      })
+
+      // Assert
+      expect(resp.error).toBe(thrownErr)
+      expect(mockGitHubService.changeRepoPrivacy).not.toHaveBeenCalled()
+      expect(mockSitesService.update).not.toHaveBeenCalled()
+      expect(
+        mockDeploymentsService.updateAmplifyPassword
+      ).not.toHaveBeenCalled()
     })
   })
 })

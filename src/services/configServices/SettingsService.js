@@ -154,24 +154,24 @@ class SettingsService {
     }
   }
 
-  async updatePassword(sessionData, { encryptedPassword, iv }) {
+  async updatePassword(sessionData, { encryptedPassword, iv, enablePassword }) {
     const { siteName } = sessionData
     const siteInfo = await this.sitesService.getBySiteName(siteName)
     if (siteInfo.isErr()) {
       return siteInfo
     }
     const { id, isPrivate } = siteInfo.value
-    if (!isPrivate) {
+    if (isPrivate !== enablePassword) {
       // For previously public repos, also need to set github repo to private
       const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(
         sessionData,
-        true
+        enablePassword
       )
       if (privatiseRepoRes.isErr()) return privatiseRepoRes
       try {
         await this.sitesService.update({
           id,
-          isPrivate: true,
+          isPrivate: enablePassword,
         })
       } catch (err) {
         return errAsync(err)
@@ -180,7 +180,8 @@ class SettingsService {
     return this.deploymentsService.updateAmplifyPassword(
       siteName,
       encryptedPassword,
-      iv
+      iv,
+      enablePassword
     )
   }
 

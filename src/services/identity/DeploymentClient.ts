@@ -100,12 +100,24 @@ class DeploymentClient {
   generateUpdatePasswordInput = (
     appId: string,
     password: string
-  ): UpdateBranchCommandInput => ({
-    appId,
-    branchName: "staging",
-    enableBasicAuth: true,
-    basicAuthCredentials: Buffer.from(`user:${password}`).toString("base64"),
-  })
+  ): UpdateBranchCommandInput => {
+    if (password) {
+      return {
+        appId,
+        branchName: "staging",
+        enableBasicAuth: true,
+        basicAuthCredentials: Buffer.from(`user:${password}`).toString(
+          "base64"
+        ),
+      }
+    }
+    return {
+      appId,
+      branchName: "staging",
+      enableBasicAuth: false,
+      basicAuthCredentials: "",
+    }
+  }
 }
 
 export default DeploymentClient

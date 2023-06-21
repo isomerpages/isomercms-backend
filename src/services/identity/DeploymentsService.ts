@@ -133,7 +133,8 @@ class DeploymentsService {
   updateAmplifyPassword = async (
     repoName: string,
     encryptedPassword: string,
-    iv: string
+    iv: string,
+    enablePassword: boolean
   ) => {
     const deploymentInfo = await this.repository.findOne({
       include: [
@@ -155,23 +156,43 @@ class DeploymentsService {
     if (!deploymentInfo)
       return errAsync(`Deployment for ${repoName} does not exist`)
     const { id, hostingId: appId } = deploymentInfo
-    const decryptedPassword = decryptPassword(encryptedPassword, iv)
-    const updateResp = await this.deploymentClient.sendUpdateApp(
-      this.deploymentClient.generateUpdatePasswordInput(
+    let updateAppInput
+    if (!enablePassword) {
+      updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
+        appId,
+        ""
+      )
+    } else {
+      const decryptedPassword = decryptPassword(encryptedPassword, iv)
+      updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
         appId,
         decryptedPassword
       )
-    )
+    }
+    const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
+
     if (updateResp.isErr()) {
       return updateResp
     }
-    await this.repository.update(
-      {
-        encryptedPassword,
-        encryptionIv: iv,
-      },
-      { where: { id } }
-    )
+    if (!enablePassword) {
+      await this.repository.update(
+        {
+          encryptedPassword: null,
+          encryptionIv: null,
+          passwordDate: null,
+        },
+        { where: { id } }
+      )
+    } else {
+      await this.repository.update(
+        {
+          encryptedPassword,
+          encryptionIv: iv,
+          passwordDate: new Date(),
+        },
+        { where: { id } }
+      )
+    }
     return updateResp
   }
 }

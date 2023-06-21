@@ -10,7 +10,7 @@ const MAIL_VERIFICATION_DELAY = 60000 // 60 seconds
 type MailData = {
   id: string
   recipient: string
-  status: string
+  status: "UNSENT" | "ACCEPTED" | "SENT" | "BOUNCED" | "DELIVERED" | "OPENED"
 }
 
 class MailClient {
@@ -48,9 +48,9 @@ class MailClient {
   }
 
   async verifyMail(sendMailData: MailData): Promise<void> {
-    const verfyEndpoint = `${POSTMAN_API_URL}/transactional/email/${sendMailData.id}`
+    const verifyEndpoint = `${POSTMAN_API_URL}/transactional/email/${sendMailData.id}`
     await new Promise((res) => setTimeout(res, MAIL_VERIFICATION_DELAY))
-    const verifyMailResponse = await axios.get<MailData>(verfyEndpoint, {
+    const verifyMailResponse = await axios.get<MailData>(verifyEndpoint, {
       headers: {
         Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
       },
@@ -60,7 +60,12 @@ class MailClient {
 
   logEmailStatus(verifyMailData: MailData) {
     const mailStatus = verifyMailData.status
+    let unknownMailStatus: never
     switch (mailStatus) {
+      case "DELIVERED":
+      case "OPENED":
+        logger.info(`Email delivered to ${verifyMailData.recipient}`)
+        break
       case "UNSENT":
         logger.error(
           `Email to ${verifyMailData.recipient} not accepted: ${verifyMailData}`
@@ -82,7 +87,10 @@ class MailClient {
         )
         break
       default:
-        logger.info(`Email delivered to ${verifyMailData.recipient}`)
+        unknownMailStatus = mailStatus
+        logger.error(
+          `Email to ${verifyMailData.recipient} encounter unknown status: ${unknownMailStatus}`
+        )
         break
     }
   }

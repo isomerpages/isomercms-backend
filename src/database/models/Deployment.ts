@@ -67,4 +67,10 @@ export class Deployment extends Model {
     type: DataType.TEXT,
   })
   encryptionIv!: string
+
+  @Column({
+    allowNull: true,
+    type: DataType.DATE,
+  })
+  passwordDate!: Date
 }

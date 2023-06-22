@@ -185,7 +185,7 @@ const config = convict({
         doc: "Amazon Resource Name (ARN) of the Step Functions state machine",
         env: "STEP_FUNCTIONS_ARN",
         format: "required-string",
-        default: "SiteLaunchStepFunctions-dev",
+        default: "",
       },
     },
     sqs: {
@@ -206,7 +206,7 @@ const config = convict({
           doc: "Whether the queues are deprecated",
           env: "FF_DEPRECATE_SITE_QUEUES",
           format: "required-boolean",
-          default: false,
+          default: null,
         },
       },
     },

@@ -374,12 +374,7 @@ const config = convict({
 })
 
 // Perform validation
-// TODO: remove try-catch after prod deployment is successful to avoid blocking
-try {
-  config.validate({ allowed: "strict" })
-} catch (e: any) {
-  console.log(`Convict error: ${e}`)
-}
+config.validate({ allowed: "strict" })
 
 export default config
 export { config }

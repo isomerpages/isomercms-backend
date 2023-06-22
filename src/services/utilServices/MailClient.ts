@@ -55,7 +55,12 @@ class MailClient {
         Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
       },
     })
-    this.logEmailStatus(verifyMailResponse.data)
+    // NOTE: For tests where the main routine has already ended, mockAxios is terminated
+    // and will return undefined for verifyMailResponse. In order to pass the test, we
+    // need to check if it is a valid response. This should not happen in application.
+    if (verifyMailResponse) {
+      this.logEmailStatus(verifyMailResponse.data)
+    }
   }
 
   logEmailStatus(verifyMailData: MailData) {

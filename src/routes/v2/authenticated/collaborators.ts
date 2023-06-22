@@ -67,6 +67,7 @@ export class CollaboratorsRouter {
 
     // Check for error and throw
     if (resp instanceof BaseIsomerError) {
+      console.log("========", resp)
       throw resp
     }
     return res.sendStatus(200)

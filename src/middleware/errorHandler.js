@@ -1,11 +1,12 @@
-// Import dependencies
-const { IsomerError } = require("@root/errors/IsomerError")
-
 const _ = require("lodash")
 const { serializeError } = require("serialize-error")
 
 // Import logger
 const logger = require("@logger/logger").default
+
+const { IsomerError } = require("@root/errors/IsomerError")
+
+const { LegacyError } = require("../errors/IsomerError")
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()
@@ -32,18 +33,12 @@ function errorHandler(err, req, res, next) {
   // Error handling for custom errors
   if (err.isIsomerError) {
     logger.info(errMsg)
-    if (err.isV2Err) {
-      return res.status(err.status).json({
-        error: IsomerError.toExternalRepresentation(err),
-      })
+    const externalRepresentation = {
+      error: IsomerError.isIdentifiable(err)
+        ? IsomerError.toExternalRepresentation(err)
+        : LegacyError.toExternalRepresentation(err),
     }
-    return res.status(err.status).json({
-      error: {
-        name: err.name,
-        code: err.status,
-        message: err.message,
-      },
-    })
+    return res.status(err.status).json(externalRepresentation)
   }
   if (err.name === "PayloadTooLargeError") {
     // Error thrown by large payload is done by express

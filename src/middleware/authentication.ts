@@ -30,21 +30,25 @@ export class AuthenticationMiddleware {
     next: NextFunction
   ) {
     const { cookies, originalUrl: url, session } = req
-    const {
-      isomerUserId,
-      email,
-      ...rest
-    } = await this.authenticationMiddlewareService.verifyAccess({
-      cookies,
-      url,
-      userInfo: session.userInfo,
-    })
-    const userSessionData = new UserSessionData({
-      isomerUserId,
-      email,
-      ...rest,
-    })
-    res.locals.userSessionData = userSessionData
-    return next()
+    try {
+      const {
+        isomerUserId,
+        email,
+        ...rest
+      } = await this.authenticationMiddlewareService.verifyAccess({
+        cookies,
+        url,
+        userInfo: session.userInfo,
+      })
+      const userSessionData = new UserSessionData({
+        isomerUserId,
+        email,
+        ...rest,
+      })
+      res.locals.userSessionData = userSessionData
+      return next()
+    } catch (err) {
+      return next(err)
+    }
   }
 }

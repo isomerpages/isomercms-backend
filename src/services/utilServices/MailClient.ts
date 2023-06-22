@@ -7,11 +7,25 @@ import logger from "@logger/logger"
 const POSTMAN_API_URL = "https://api.postman.gov.sg/v1"
 const MAIL_VERIFICATION_DELAY = 60000 // 60 seconds
 
+const MailStatus = {
+  Unsent: "UNSENT",
+  Accepted: "ACCEPTED",
+  Sent: "SENT",
+  Bounced: "BOUNCED",
+  Delivered: "DELIVERED",
+  Opened: "OPENED",
+} as const
+
+type MailStatusKeys = typeof MailStatus[keyof typeof MailStatus]
+
 type MailData = {
   id: string
   recipient: string
-  status: "UNSENT" | "ACCEPTED" | "SENT" | "BOUNCED" | "DELIVERED" | "OPENED"
+  status: MailStatusKeys
+  error_code: string
 }
+
+const BLACKLISTED_RECIPIENT_ERROR_CODE = "Error 400: Blacklisted recipient"
 
 class MailClient {
   POSTMAN_API_KEY: string
@@ -67,26 +81,32 @@ class MailClient {
     const mailStatus = verifyMailData.status
     let unknownMailStatus: never
     switch (mailStatus) {
-      case "DELIVERED":
-      case "OPENED":
+      case MailStatus.Delivered:
+      case MailStatus.Opened:
         logger.info(`Email delivered to ${verifyMailData.recipient}`)
         break
-      case "UNSENT":
-        logger.error(
-          `Email to ${verifyMailData.recipient} not accepted: ${verifyMailData}`
-        )
+      case MailStatus.Unsent:
+        if (verifyMailData.error_code === BLACKLISTED_RECIPIENT_ERROR_CODE) {
+          logger.error(
+            `Email to blacklisted recipient ${verifyMailData.recipient} not accepted: ${verifyMailData}`
+          )
+        } else {
+          logger.error(
+            `Email to ${verifyMailData.recipient} not accepted: ${verifyMailData}`
+          )
+        }
         break
-      case "ACCEPTED":
+      case MailStatus.Accepted:
         logger.error(
           `Email to ${verifyMailData.recipient} not sent: ${verifyMailData}`
         )
         break
-      case "SENT":
+      case MailStatus.Sent:
         logger.error(
           `Email to ${verifyMailData.recipient} not delivered: ${verifyMailData}`
         )
         break
-      case "BOUNCED":
+      case MailStatus.Bounced:
         logger.error(
           `Email to ${verifyMailData.recipient} rejected by recipient's mail server: ${verifyMailData}`
         )

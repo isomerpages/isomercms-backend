@@ -6,7 +6,7 @@ describe("errors", () => {
     const err = new AuthError()
 
     // Assert
-    expect(err.code).toBe("AuthError")
+    expect(err.name).toBe("AuthError")
     expect(err.meta).toBeEmptyObject()
     expect(err.message).toBeString()
   })

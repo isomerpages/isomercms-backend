@@ -7,8 +7,6 @@ class BaseIsomerError extends Error implements IsomerInternalError {
 
   message: string
 
-  code = "BaseError" // name of the error
-
   isIsomerError = true
 
   meta: Record<string, unknown> // additional properties that provides context for the error
@@ -20,7 +18,6 @@ class BaseIsomerError extends Error implements IsomerInternalError {
     Error.captureStackTrace(this, this.constructor)
     this.name = this.constructor.name
     this.status = status
-    this.code = this.name
     this.message = message
     this.meta = meta
   }

@@ -28,7 +28,7 @@ export interface IsomerExternalError {
 
 /* Internal representation of Isomer errors - passed to log stream */
 export interface IsomerInternalError {
-  code: string
+  name: string
   message: string
   meta?: Record<string, unknown>
 }
@@ -49,7 +49,7 @@ export const IsomerError = {
   toExternalRepresentation: <E extends IsomerInternalError & IdentifiableError>(
     e: E
   ): IsomerExternalError => ({
-    code: getExternalCode(e.componentCode, e.fileCode, e.code),
+    code: getExternalCode(e.componentCode, e.fileCode, e.name),
     message: e.message,
   }),
   getLog: (error: IsomerInternalError): Record<string, unknown> => ({
@@ -62,7 +62,7 @@ export const IsomerError = {
     ((err as unknown) as IdentifiableError).fileCode !== undefined,
 }
 
-interface LegacyRepresentation {
+interface LegacyErrorRepresentation {
   name: string
   code: number
   message: string
@@ -73,7 +73,7 @@ export const LegacyError = {
     name,
     message,
     status,
-  }: BaseIsomerError): LegacyRepresentation => ({
+  }: BaseIsomerError): LegacyErrorRepresentation => ({
     name,
     code: status,
     message,

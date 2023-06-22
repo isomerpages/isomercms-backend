@@ -13,9 +13,6 @@ export default class BadRequestError
   fileCode: PossibleFileCodes
 
   constructor(
-    // NOTE: This is technically optional but we want to
-    // preserve argument ordering for back-compat
-    // with our JS files.
     message?: string | undefined,
     meta?: Record<string, unknown>,
     componentCode?: IdentifiableError["componentCode"],

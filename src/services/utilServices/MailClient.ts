@@ -87,33 +87,33 @@ class MailClient {
         break
       case MailStatus.Unsent:
         if (verifyMailData.error_code === BLACKLISTED_RECIPIENT_ERROR_CODE) {
-          logger.error(
+          logger.warn(
             `Email to blacklisted recipient ${verifyMailData.recipient} not accepted: ${verifyMailData}`
           )
         } else {
-          logger.error(
+          logger.warn(
             `Email to ${verifyMailData.recipient} not accepted: ${verifyMailData}`
           )
         }
         break
       case MailStatus.Accepted:
-        logger.error(
+        logger.warn(
           `Email to ${verifyMailData.recipient} not sent: ${verifyMailData}`
         )
         break
       case MailStatus.Sent:
-        logger.error(
+        logger.warn(
           `Email to ${verifyMailData.recipient} not delivered: ${verifyMailData}`
         )
         break
       case MailStatus.Bounced:
-        logger.error(
+        logger.warn(
           `Email to ${verifyMailData.recipient} rejected by recipient's mail server: ${verifyMailData}`
         )
         break
       default:
         unknownMailStatus = mailStatus
-        logger.error(
+        logger.warn(
           `Email to ${verifyMailData.recipient} encounter unknown status: ${unknownMailStatus}`
         )
         break

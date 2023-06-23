@@ -49,8 +49,9 @@ import {
   RawFileChangeInfo,
   ShaMappings,
 } from "@root/types/github"
-import { PathInfo, StagingPermalink } from "@root/types/pages"
+import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
+import { PathInfo } from "@root/types/util"
 import { extractPathInfo, getFileExt } from "@root/utils/files"
 import * as ReviewApi from "@services/db/review"
 

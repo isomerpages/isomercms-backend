@@ -6,8 +6,7 @@ import {
   HtmlConfigFileName,
   YmlConfigFileName,
 } from "@root/types/configYml"
-import { PathInfo } from "@root/types/pages"
-import { Brand } from "@root/types/util"
+import { PathInfo, Brand } from "@root/types/util"
 
 // eslint-disable-next-line import/prefer-default-export
 export class ConfigService {

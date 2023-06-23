@@ -24,9 +24,8 @@ import {
   SubcollectionPage,
   ResourceCategoryPage,
   UnlinkedPage,
-  PathInfo,
 } from "@root/types/pages"
-import { Brand } from "@root/types/util"
+import { Brand, PathInfo } from "@root/types/util"
 
 import { CollectionPageService } from "./CollectionPageService"
 import { ContactUsPageService } from "./ContactUsPageService"

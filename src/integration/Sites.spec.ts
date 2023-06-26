@@ -1,10 +1,8 @@
 import express from "express"
-import StatsDClient from "hot-shots"
 import mockAxios from "jest-mock-axios"
 import request from "supertest"
 
 import {
-  AccessToken,
   IsomerAdmin,
   Repo,
   Reviewer,

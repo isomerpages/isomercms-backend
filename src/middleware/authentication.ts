@@ -10,6 +10,7 @@ interface RequestWithSession extends Request {
   session: Session & SessionData
 }
 
+// eslint-disable-next-line import/prefer-default-export
 export class AuthenticationMiddleware {
   private readonly authenticationMiddlewareService: AuthenticationMiddlewareService
 
@@ -23,25 +24,31 @@ export class AuthenticationMiddleware {
     autoBind(this)
   }
 
-  verifyAccess(req: RequestWithSession, res: Response, next: NextFunction) {
+  async verifyAccess(
+    req: RequestWithSession,
+    res: Response,
+    next: NextFunction
+  ) {
     const { cookies, originalUrl: url, session } = req
-    const {
-      accessToken,
-      githubId,
-      isomerUserId,
-      email,
-    } = this.authenticationMiddlewareService.verifyAccess({
-      cookies,
-      url,
-      userInfo: session.userInfo,
-    })
-    const userSessionData = new UserSessionData({
-      accessToken,
-      githubId,
-      isomerUserId,
-      email,
-    })
-    res.locals.userSessionData = userSessionData
-    return next()
+    try {
+      const {
+        isomerUserId,
+        email,
+        ...rest
+      } = await this.authenticationMiddlewareService.verifyAccess({
+        cookies,
+        url,
+        userInfo: session.userInfo,
+      })
+      const userSessionData = new UserSessionData({
+        isomerUserId,
+        email,
+        ...rest,
+      })
+      res.locals.userSessionData = userSessionData
+      return next()
+    } catch (err) {
+      return next(err)
+    }
   }
 }

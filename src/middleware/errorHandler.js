@@ -1,4 +1,6 @@
 // Import dependencies
+const { IsomerError } = require("@root/errors/IsomerError")
+
 const _ = require("lodash")
 const { serializeError } = require("serialize-error")
 
@@ -30,6 +32,11 @@ function errorHandler(err, req, res, next) {
   // Error handling for custom errors
   if (err.isIsomerError) {
     logger.info(errMsg)
+    if (err.isV2Err) {
+      return res.status(err.status).json({
+        error: IsomerError.toExternalRepresentation(err),
+      })
+    }
     return res.status(err.status).json({
       error: {
         name: err.name,

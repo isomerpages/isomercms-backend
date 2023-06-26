@@ -210,7 +210,9 @@ const launchesService = new LaunchesService({
   launchClient,
 })
 const queueService = new QueueService()
-const stepFunctionsService = new StepFunctionsService()
+const stepFunctionsService = new StepFunctionsService(
+  config.get("aws.stepFunctions.stepFunctionsArn")
+)
 const dynamoDBService = new DynamoDBService({
   dynamoDBClient: new DynamoDBDocClient(),
 })

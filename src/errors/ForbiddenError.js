@@ -3,7 +3,11 @@ const { BaseIsomerError } = require("@errors/BaseError")
 
 class ForbiddenError extends BaseIsomerError {
   constructor(message) {
-    super(403, message || "Access forbidden")
+    super({
+      status: 403,
+      code: "ForbiddenError",
+      message: message || "Access forbidden",
+    })
   }
 }
 

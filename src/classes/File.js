@@ -52,7 +52,7 @@ class File {
     if (resp.status !== 200) {
       if (resp.status === 404)
         throw new NotFoundError("Directory does not exist")
-      throw new BaseIsomerError(resp)
+      throw new BaseIsomerError({ message: resp })
     }
 
     const files = resp.data

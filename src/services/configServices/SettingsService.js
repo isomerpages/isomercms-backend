@@ -165,7 +165,7 @@ class SettingsService {
     }
     const { id, isPrivate } = siteInfo.value
     if (isPrivate !== enablePassword) {
-      // For previously public repos, also need to set github repo to private
+      // For public -> private or private -> public, we also need to update the repo privacy on github
       const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(
         sessionData,
         enablePassword

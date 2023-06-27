@@ -101,12 +101,11 @@ class SettingsRouter {
     const { error } = UpdateRepoPasswordRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
 
-    const { encryptedPassword, iv, enablePassword } = body
+    const { password, enablePassword } = body
     const passwordRes = await this.settingsService.updatePassword(
       userWithSiteSessionData,
       {
-        encryptedPassword,
-        iv,
+        password,
         enablePassword,
       }
     )

@@ -8,7 +8,7 @@ import { Deployment, Repo, Site } from "@database/models"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
 import { Brand } from "@root/types/util"
-import { decryptPassword } from "@root/utils/crypto-utils"
+import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
 
 type deploymentsCreateParamsType = Partial<Deployment> & {
@@ -132,8 +132,7 @@ class DeploymentsService {
 
   updateAmplifyPassword = async (
     repoName: string,
-    encryptedPassword: string,
-    iv: string,
+    password: string,
     enablePassword: boolean
   ) => {
     const deploymentInfo = await this.repository.findOne({
@@ -163,10 +162,18 @@ class DeploymentsService {
         ""
       )
     } else {
-      const decryptedPassword = decryptPassword(encryptedPassword, iv)
+      const {
+        encryptedPassword: oldEncryptedPassword,
+        encryptionIv: oldIv,
+      } = deploymentInfo
+      if (
+        !!oldEncryptedPassword &&
+        decryptPassword(oldEncryptedPassword, oldIv) === oldEncryptedPassword
+      )
+        return okAsync("")
       updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
         appId,
-        decryptedPassword
+        password
       )
     }
     const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
@@ -184,6 +191,7 @@ class DeploymentsService {
         { where: { id } }
       )
     } else {
+      const { encryptedPassword, iv } = encryptPassword(password)
       await this.repository.update(
         {
           encryptedPassword,

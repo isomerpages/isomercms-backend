@@ -3,6 +3,8 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 const { okAsync, errAsync } = require("neverthrow")
 
+const { decryptPassword } = require("@root/utils/crypto-utils")
+
 class SettingsService {
   constructor({
     configYmlService,
@@ -56,16 +58,14 @@ class SettingsService {
     if (siteInfo.isErr()) {
       // Missing site indicating netlify site - return special result
       return okAsync({
-        encryptedPassword: "",
-        iv: "",
+        password: "",
         isAmplifySite: false,
       })
     }
     const { id, isPrivate } = siteInfo.value
     if (!isPrivate)
       return okAsync({
-        encryptedPassword: "",
-        iv: "",
+        password: "",
         isAmplifySite: true,
       })
 
@@ -74,9 +74,12 @@ class SettingsService {
     )
     if (deploymentInfo.isErr()) return deploymentInfo
 
+    const password = decryptPassword(
+      deploymentInfo.value.encryptedPassword,
+      deploymentInfo.value.encryptionIv
+    )
     return okAsync({
-      encryptedPassword: deploymentInfo.value.encryptedPassword,
-      iv: deploymentInfo.value.encryptionIv,
+      password,
       isAmplifySite: true,
     })
   }
@@ -154,7 +157,7 @@ class SettingsService {
     }
   }
 
-  async updatePassword(sessionData, { encryptedPassword, iv, enablePassword }) {
+  async updatePassword(sessionData, { password, enablePassword }) {
     const { siteName } = sessionData
     const siteInfo = await this.sitesService.getBySiteName(siteName)
     if (siteInfo.isErr()) {
@@ -179,8 +182,7 @@ class SettingsService {
     }
     return this.deploymentsService.updateAmplifyPassword(
       siteName,
-      encryptedPassword,
-      iv,
+      password,
       enablePassword
     )
   }

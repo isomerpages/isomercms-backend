@@ -130,6 +130,26 @@ class DeploymentsService {
     return okAsync(deploymentInfo)
   }
 
+  deletePassword = async (appId: string, deploymentId: number) => {
+    const updateAppInput = this.deploymentClient.generateDeletePasswordInput(
+      appId
+    )
+    const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
+
+    if (updateResp.isErr()) {
+      return updateResp
+    }
+    await this.repository.update(
+      {
+        encryptedPassword: null,
+        encryptionIv: null,
+        passwordDate: null,
+      },
+      { where: { id: deploymentId } }
+    )
+    return updateResp
+  }
+
   updateAmplifyPassword = async (
     repoName: string,
     password: string,
@@ -155,49 +175,38 @@ class DeploymentsService {
     if (!deploymentInfo)
       return errAsync(`Deployment for ${repoName} does not exist`)
     const { id, hostingId: appId } = deploymentInfo
-    let updateAppInput
-    if (!enablePassword) {
-      updateAppInput = this.deploymentClient.generateDeletePasswordInput(appId)
-    } else {
-      const {
-        encryptedPassword: oldEncryptedPassword,
-        encryptionIv: oldIv,
-      } = deploymentInfo
-      if (
-        !!oldEncryptedPassword &&
-        decryptPassword(oldEncryptedPassword, oldIv) === oldEncryptedPassword
-      )
-        return okAsync("")
-      updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
-        appId,
-        password
-      )
-    }
-    const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
 
+    if (!enablePassword) return this.deletePassword(appId, id)
+
+    const {
+      encryptedPassword: oldEncryptedPassword,
+      encryptionIv: oldIv,
+    } = deploymentInfo
+    if (
+      !!oldEncryptedPassword &&
+      decryptPassword(oldEncryptedPassword, oldIv) === oldEncryptedPassword
+    )
+      return okAsync("")
+    const updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
+      appId,
+      password
+    )
+
+    const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
     if (updateResp.isErr()) {
       return updateResp
     }
-    if (!enablePassword) {
-      await this.repository.update(
-        {
-          encryptedPassword: null,
-          encryptionIv: null,
-          passwordDate: null,
-        },
-        { where: { id } }
-      )
-    } else {
-      const { encryptedPassword, iv } = encryptPassword(password)
-      await this.repository.update(
-        {
-          encryptedPassword,
-          encryptionIv: iv,
-          passwordDate: new Date(),
-        },
-        { where: { id } }
-      )
-    }
+
+    const { encryptedPassword, iv } = encryptPassword(password)
+    await this.repository.update(
+      {
+        encryptedPassword,
+        encryptionIv: iv,
+        passwordDate: new Date(),
+      },
+      { where: { id } }
+    )
+
     return updateResp
   }
 }

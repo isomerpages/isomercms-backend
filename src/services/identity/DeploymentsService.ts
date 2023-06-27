@@ -119,10 +119,10 @@ class DeploymentsService {
       })
   }
 
-  getDeploymentInfoFromSiteId = async (repoId: string) => {
+  getDeploymentInfoFromSiteId = async (siteId: string) => {
     const deploymentInfo = await this.repository.findOne({
       where: {
-        siteId: repoId,
+        siteId,
       },
     })
     if (!deploymentInfo)

@@ -116,7 +116,7 @@ describe("Settings Service", () => {
     })
   })
 
-  describe("getEncryptedPassword", () => {
+  describe("getPassword", () => {
     it("retrieves password data successfully for private amplify repos", async () => {
       // Arrange
       mockSitesService.getBySiteName.mockResolvedValue(
@@ -127,9 +127,7 @@ describe("Settings Service", () => {
       )
 
       // Act
-      const resp = await service.getEncryptedPassword(
-        mockUserWithSiteSessionData
-      )
+      const resp = await service.getPassword(mockUserWithSiteSessionData)
 
       // Assert
       expect(resp.value).toMatchObject({
@@ -146,9 +144,7 @@ describe("Settings Service", () => {
       )
 
       // Act
-      const resp = await service.getEncryptedPassword(
-        mockUserWithSiteSessionData
-      )
+      const resp = await service.getPassword(mockUserWithSiteSessionData)
 
       // Assert
       expect(resp.value).toMatchObject({
@@ -165,9 +161,7 @@ describe("Settings Service", () => {
       )
 
       // Act
-      const resp = await service.getEncryptedPassword(
-        mockUserWithSiteSessionData
-      )
+      const resp = await service.getPassword(mockUserWithSiteSessionData)
 
       // Assert
       expect(resp.value).toMatchObject({

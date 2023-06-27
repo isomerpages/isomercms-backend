@@ -83,7 +83,7 @@ class SettingsRouter {
   async getRepoPassword(_req, res, _next) {
     const { userWithSiteSessionData } = res.locals
 
-    const passwordRes = await this.settingsService.getEncryptedPassword(
+    const passwordRes = await this.settingsService.getPassword(
       userWithSiteSessionData
     )
 

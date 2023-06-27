@@ -124,11 +124,11 @@ class SettingsRouter {
     router.get("/", attachReadRouteHandlerWrapper(this.readSettingsPage))
     router.post("/", attachRollbackRouteHandlerWrapper(this.updateSettingsPage))
     router.get(
-      "/repoPassword",
+      "/repo-password",
       attachReadRouteHandlerWrapper(this.getRepoPassword)
     )
     router.post(
-      "/repoPassword",
+      "/repo-password",
       attachRollbackRouteHandlerWrapper(this.updateRepoPassword)
     )
 

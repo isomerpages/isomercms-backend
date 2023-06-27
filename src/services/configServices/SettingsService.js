@@ -52,7 +52,7 @@ class SettingsService {
     }
   }
 
-  async getEncryptedPassword(sessionData) {
+  async getPassword(sessionData) {
     const { siteName } = sessionData
     const siteInfo = await this.sitesService.getBySiteName(siteName)
     if (siteInfo.isErr()) {

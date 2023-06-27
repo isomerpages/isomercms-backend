@@ -174,7 +174,7 @@ const config = convict({
       passwordSecretKey: {
         doc: "Secret key used to encrypt password",
         env: "SITE_PASSWORD_SECRET_KEY",
-        format: String,
+        format: "required-string",
         default: "",
       },
     },

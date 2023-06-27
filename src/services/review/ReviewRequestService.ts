@@ -29,6 +29,7 @@ import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
+import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
   BaseEditedItemDto,
@@ -38,6 +39,7 @@ import {
   EditedItemDto,
   EditedMediaDto,
   EditedPageDto,
+  EditedPlaceholderDto,
   GithubCommentData,
   ReviewRequestDto,
   WithEditMeta,
@@ -56,6 +58,7 @@ import { extractPathInfo, getFileExt } from "@root/utils/files"
 import * as ReviewApi from "@services/db/review"
 
 import { PageService } from "../fileServices/MdPageServices/PageService"
+import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
 
 const injectDefaultEditMeta = ({
@@ -171,6 +174,7 @@ export default class ReviewRequestService {
       const pathInfo = extractedPathResult.value
 
       return this.extractConfigInfo(pathInfo)
+        .orElse(() => this.extractPlaceholderInfo(pathInfo))
         .orElse(() => this.extractMediaInfo(pathInfo))
         .asyncMap<EditedItemDto>(async (item) => item)
         .orElse(() =>
@@ -266,6 +270,15 @@ export default class ReviewRequestService {
         type: isNav ? "nav" : "setting",
       }
     })
+
+  extractPlaceholderInfo = (
+    pathInfo: PathInfo
+  ): Result<EditedPlaceholderDto, PlaceholderParseError> =>
+    PlaceholderService.isPlaceholderFile(pathInfo).map(({ name, path }) => ({
+      name,
+      path: path.unwrapOr([""]),
+      type: "placeholder",
+    }))
 
   computeShaMappings = async (commits: Commit[]): Promise<ShaMappings> => {
     const mappings: ShaMappings = {}

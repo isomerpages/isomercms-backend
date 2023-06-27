@@ -157,10 +157,7 @@ class DeploymentsService {
     const { id, hostingId: appId } = deploymentInfo
     let updateAppInput
     if (!enablePassword) {
-      updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
-        appId,
-        ""
-      )
+      updateAppInput = this.deploymentClient.generateDeletePasswordInput(appId)
     } else {
       const {
         encryptedPassword: oldEncryptedPassword,

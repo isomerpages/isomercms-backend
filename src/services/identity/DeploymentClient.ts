@@ -90,27 +90,22 @@ class DeploymentClient {
     },
   })
 
+  generateDeletePasswordInput = (appId: string): UpdateBranchCommandInput => ({
+    appId,
+    branchName: "staging",
+    enableBasicAuth: false,
+    basicAuthCredentials: "",
+  })
+
   generateUpdatePasswordInput = (
     appId: string,
     password: string
-  ): UpdateBranchCommandInput => {
-    if (password) {
-      return {
-        appId,
-        branchName: "staging",
-        enableBasicAuth: true,
-        basicAuthCredentials: Buffer.from(`user:${password}`).toString(
-          "base64"
-        ),
-      }
-    }
-    return {
-      appId,
-      branchName: "staging",
-      enableBasicAuth: false,
-      basicAuthCredentials: "",
-    }
-  }
+  ): UpdateBranchCommandInput => ({
+    appId,
+    branchName: "staging",
+    enableBasicAuth: true,
+    basicAuthCredentials: Buffer.from(`user:${password}`).toString("base64"),
+  })
 }
 
 export default DeploymentClient

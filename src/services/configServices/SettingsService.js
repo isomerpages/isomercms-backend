@@ -164,6 +164,7 @@ class SettingsService {
       return siteInfo
     }
     const { id, isPrivate } = siteInfo.value
+    if (!isPrivate && !enablePassword) return okAsync("")
     if (isPrivate !== enablePassword) {
       // For public -> private or private -> public, we also need to update the repo privacy on github
       const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(

@@ -3,14 +3,29 @@ import {
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
-import { Err, err, Ok, ok } from "neverthrow"
+import { Err, err, errAsync, Ok, ok, okAsync, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launch, Repo, User, Redirection } from "@database/models"
-import { RedirectionTypes } from "@root/constants/constants"
+import {
+  Deployment,
+  Launch,
+  Repo,
+  User,
+  Redirection,
+  Site,
+} from "@database/models"
+import {
+  JobStatus,
+  REDIRECTION_SERVER_IP,
+  RedirectionTypes,
+  SiteStatus,
+} from "@root/constants/constants"
+import SiteLaunchError from "@root/errors/SiteLaunchError"
 import { AmplifyError } from "@root/types/index"
+import { DNSRecord, DnsResultsForSite } from "@root/types/siteInfo"
+import createErrorAndLog from "@root/utils/error-utils"
 import LaunchClient, {
   isAmplifyDomainNotFoundException,
 } from "@services/identity/LaunchClient"
@@ -32,6 +47,7 @@ interface LaunchesServiceProps {
   redirectionsRepository: ModelStatic<Redirection>
   repoRepository: ModelStatic<Repo>
   userRepository: ModelStatic<User>
+  siteRepository: ModelStatic<Site>
   launchClient: LaunchClient
 }
 
@@ -52,18 +68,22 @@ export class LaunchesService {
 
   private readonly launchClient: LaunchesServiceProps["launchClient"]
 
+  private readonly siteRepository: LaunchesServiceProps["siteRepository"]
+
   constructor({
     deploymentRepository,
     launchesRepository,
     repoRepository,
     redirectionsRepository,
     launchClient,
+    siteRepository,
   }: LaunchesServiceProps) {
     this.deploymentRepository = deploymentRepository
     this.launchClient = launchClient
     this.launchesRepository = launchesRepository
     this.repoRepository = repoRepository
     this.redirectionsRepository = redirectionsRepository
+    this.siteRepository = siteRepository
   }
 
   createOrUpdate = async (
@@ -144,6 +164,84 @@ export class LaunchesService {
       return err(error)
     }
     return ok(siteId)
+  }
+
+  getDNSRecords = (
+    repoName: string
+  ): ResultAsync<DnsResultsForSite, AmplifyError | SiteLaunchError> => {
+    let dnsRecords: DNSRecord[] = []
+    let siteUrl: string
+    return ResultAsync.fromPromise(this.getSiteId(repoName), () =>
+      createErrorAndLog(AmplifyError, `Failed to get siteId for ${repoName}`)
+    )
+      .andThen((siteId) => {
+        if (siteId.isOk()) {
+          return ResultAsync.fromPromise(
+            this.launchesRepository.findOne({
+              where: { siteId: siteId.value },
+            }),
+            () =>
+              createErrorAndLog(
+                AmplifyError,
+                `Failed to get launch record for ${repoName}`
+              )
+          )
+        }
+        return errAsync(
+          createErrorAndLog(
+            AmplifyError,
+            `Failed to get launch record for ${repoName}`
+          )
+        )
+      })
+      .andThen((launchRecord) => {
+        if (!launchRecord) {
+          return errAsync(
+            createErrorAndLog(SiteLaunchError, "Failed to get launch record")
+          )
+        }
+        siteUrl = launchRecord.primaryDomainSource
+        dnsRecords.push({
+          source: launchRecord.primaryDomainSource,
+          target: launchRecord.primaryDomainTarget,
+          type: "CNAME",
+        })
+        dnsRecords.push({
+          source: launchRecord.domainValidationSource,
+          target: launchRecord.domainValidationTarget,
+          type: "CNAME",
+        })
+        return okAsync(launchRecord)
+      })
+      .andThen((launchRecord) =>
+        ResultAsync.fromPromise(
+          this.redirectionsRepository.findOne({
+            where: { launchId: launchRecord.id },
+          }),
+          () =>
+            // There are legitimate cases where this error is thrown (ie the site has no redirection record)
+            new AmplifyError(`Failed to get redirection record for ${repoName}`)
+        ).andThen((redirectionRecord) => {
+          if (redirectionRecord) {
+            // NOTE: In the case where the redirection exists
+            // we need to append the `www` to the primary domain
+            // before displaying it to the user as the `source`
+            dnsRecords = dnsRecords.map((record) => {
+              const newRecord = record
+              if (record.source === launchRecord.primaryDomainSource) {
+                newRecord.source = `www.${record.source}`
+              }
+              return newRecord
+            })
+            dnsRecords.push({
+              source: redirectionRecord.source,
+              target: REDIRECTION_SERVER_IP,
+              type: "A",
+            })
+          }
+          return okAsync({ dnsRecords, siteUrl })
+        })
+      )
   }
 
   configureDomainInAmplify = async (
@@ -247,6 +345,31 @@ export class LaunchesService {
       where: { id: updateParams.id },
     })
   }
+
+  updateDbForLaunchStart = (siteName: string) =>
+    ResultAsync.fromPromise(
+      this.getSiteId(siteName),
+      () => new SiteLaunchError(`Failed to get site id for ${siteName}`)
+    ).andThen((siteId) => {
+      if (siteId.isErr()) {
+        return errAsync(
+          new SiteLaunchError(`Failed to get site id for ${siteName}`)
+        )
+      }
+      return ResultAsync.fromPromise(
+        this.siteRepository.update(
+          {
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
+          },
+          {
+            where: { id: siteId.value },
+          }
+        ),
+        () =>
+          new SiteLaunchError(`Failed to update site status for ${siteName}`)
+      )
+    })
 }
 
 export default LaunchesService

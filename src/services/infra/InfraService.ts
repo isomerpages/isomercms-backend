@@ -229,6 +229,16 @@ export default class InfraService {
     return ok(dnsRecord)
   }
 
+  getGeneratedDnsRecords = (
+    siteName: string
+  ): ResultAsync<
+    DnsResultsForSite,
+    MissingSiteError | AmplifyError | SiteLaunchError
+  > =>
+    this.sitesService
+      .getBySiteName(siteName)
+      .andThen(() => this.launchesService.getDNSRecords(siteName))
+
   launchSite = async (
     requestor: User,
     agency: User,

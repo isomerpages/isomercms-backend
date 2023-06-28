@@ -1,6 +1,6 @@
-import { AttributeValue } from "@aws-sdk/client-dynamodb"
 import { DeleteCommandOutput } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
+import { ResultAsync, errAsync, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
@@ -8,6 +8,9 @@ import {
   SiteLaunchMessage,
   isSiteLaunchMessage,
 } from "@root/../microservices/site-launch/shared/types"
+import DatabaseError from "@root/errors/DatabaseError"
+import MissingSiteError from "@root/errors/MissingSiteError"
+import createErrorAndLog from "@root/utils/error-utils"
 
 import DynamoDBClient from "./DynamoDBClient"
 
@@ -32,10 +35,38 @@ export default class DynamoDBService {
     await this.dynamoDBClient.createItem(this.TABLE_NAME, message)
   }
 
-  async getAllCompletedLaunches(): Promise<SiteLaunchMessage[]> {
+  async getAllLaunches(): Promise<SiteLaunchMessage[]> {
     const entries = ((
       await this.dynamoDBClient.getAllItems(this.TABLE_NAME)
     ).Items?.filter(isSiteLaunchMessage) as unknown) as SiteLaunchMessage[]
+    return entries
+  }
+
+  getLaunchStatus(
+    repoName: string
+  ): ResultAsync<
+    "success" | "failure" | "pending",
+    DatabaseError | MissingSiteError
+  > {
+    return ResultAsync.fromPromise(this.getAllLaunches(), (error) =>
+      createErrorAndLog(
+        DatabaseError,
+        `Something went wrong when querying DynamoDB: ${error}`
+      )
+    ).andThen((entries) => {
+      const entry = entries.find((e) => e.repoName === repoName)
+      if (entry) return okAsync(entry.status?.state ?? "pending")
+      return errAsync(
+        createErrorAndLog(
+          MissingSiteError,
+          `No site found for ${repoName} in DynamoDB`
+        ) // todo: reminder to self, ask for review feedback for excessive logging here
+      )
+    })
+  }
+
+  async getAllCompletedLaunches(): Promise<SiteLaunchMessage[]> {
+    const entries = await this.getAllLaunches()
 
     const completedEntries =
       entries?.filter(

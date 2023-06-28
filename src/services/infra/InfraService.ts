@@ -239,6 +239,87 @@ export default class InfraService {
       .getBySiteName(siteName)
       .andThen(() => this.launchesService.getDNSRecords(siteName))
 
+  getSiteLaunchStatus(
+    sessionData: UserWithSiteSessionData
+  ): ResultAsync<
+    SiteLaunchDto,
+    MissingSiteError | AmplifyError | SiteLaunchError
+  > {
+    const { siteName } = sessionData
+    // 1. Check if ddb entry for the site exists
+    return (
+      this.dynamoDBService
+        .getLaunchStatus(siteName)
+        // NOTE: as long as the entry exists, we treat it as launching
+        .andThen(() =>
+          this.getGeneratedDnsRecords(siteName).andThen((records) => {
+            if (records.dnsRecords.length === 0) {
+              // will not occur, as the function should not return
+              // an empty array but we defensively check for this
+              return errAsync(
+                new SiteLaunchError(`No DNS records found for ${siteName}`)
+              )
+            }
+            return okAsync({
+              siteStatus: "LAUNCHING",
+              dnsRecords: records.dnsRecords,
+              siteUrl: records.siteUrl,
+            } as SiteLaunchDto)
+          })
+        )
+
+        // 2. If not, get the source of truth from the db
+        .orElse(() =>
+          this.sitesService.getBySiteName(siteName).andThen((site) => {
+            if (!site) {
+              errAsync(
+                new MissingSiteError(
+                  `Site launch status for ${siteName} is unknown`
+                )
+              )
+            }
+            if (site.siteStatus !== SiteStatus.Launched) {
+              return okAsync({
+                siteStatus: "NOT_LAUNCHED",
+              } as SiteLaunchDto)
+            }
+
+            // 3. If site is either launched or in the
+            //    process of being launched, get the dns records
+            return (
+              this.getGeneratedDnsRecords(siteName)
+                .andThen((records) => {
+                  if (records.dnsRecords.length === 0) {
+                    // will not occur as the function should return an
+                    // error instead, but we defensively check for this
+                    return okAsync({
+                      siteStatus: "LAUNCHING",
+                    } as SiteLaunchDto)
+                  }
+                  return okAsync({
+                    siteStatus:
+                      // status is only successful iff job is ready
+                      site.jobStatus === JobStatus.Ready
+                        ? "LAUNCHED"
+                        : "LAUNCHING",
+                    dnsRecords: records.dnsRecords,
+                    siteUrl: records.siteUrl,
+                  } as SiteLaunchDto)
+                })
+
+                // 4. if no DNS records found, could be in the process
+                //    of generating, so just return status for now
+                .orElse(() =>
+                  okAsync({
+                    siteStatus: "LAUNCHING",
+                  } as SiteLaunchDto)
+                )
+            )
+          })
+        )
+    )
+  }
+
   launchSite = async (
     requestor: User,
     agency: User,

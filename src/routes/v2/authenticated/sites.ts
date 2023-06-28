@@ -10,15 +10,17 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 import type UserSessionData from "@root/classes/UserSessionData"
 import { attachSiteHandler } from "@root/middleware"
 import { StatsMiddleware } from "@root/middleware/stats"
+import InfraService from "@root/services/infra/InfraService"
 import type { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { RepositoryData } from "@root/types/repoInfo"
-import { SiteInfo } from "@root/types/siteInfo"
+import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
   sitesService: SitesService
+  infraService: InfraService
   authorizationMiddleware: AuthorizationMiddleware
   statsMiddleware: StatsMiddleware
 }
@@ -31,14 +33,18 @@ export class SitesRouter {
 
   private readonly statsMiddleware
 
+  private readonly infraService
+
   constructor({
     sitesService,
     authorizationMiddleware,
     statsMiddleware,
+    infraService,
   }: SitesRouterProps) {
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
     this.statsMiddleware = statsMiddleware
+    this.infraService = infraService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -97,6 +103,41 @@ export class SitesRouter {
       .mapErr((err) => res.status(404).json({ message: err.message }))
   }
 
+  getSiteLaunchInfo: RequestHandler<
+    { siteName: string },
+    SiteLaunchDto | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+
+    return this.infraService
+      .getSiteLaunchStatus(userWithSiteSessionData)
+      .map((siteStatus) => res.status(200).json(siteStatus))
+      .mapErr((err) => res.status(404).json({ message: err.message }))
+  }
+
+  launchSite: RequestHandler<
+    { siteName: string },
+    SiteLaunchDto | ResponseErrorBody,
+    { siteUrl: string; useWwwSubdomain: boolean },
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const { email } = userWithSiteSessionData
+    // Note, launching the site is an async operation,
+    // so we should not have any await here
+    this.infraService.launchSiteFromCms({
+      email,
+      siteName: req.params.siteName,
+      primaryDomain: req.body.siteUrl,
+      useWww: req.body.useWwwSubdomain,
+    })
+    return res.status(200).json({ message: `Site launch for started` })
+  }
+
   getSiteInfo: RequestHandler<
     { siteName: string },
     SiteInfo | ResponseErrorBody,
@@ -141,7 +182,18 @@ export class SitesRouter {
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getSiteInfo)
     )
-
+    router.get(
+      "/:siteName/launchInfo",
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.getSiteLaunchInfo)
+    )
+    router.post(
+      "/:siteName/launchSite",
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.launchSite)
+    )
     return router
   }
 }

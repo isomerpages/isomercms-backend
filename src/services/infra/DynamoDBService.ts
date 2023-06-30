@@ -60,7 +60,7 @@ export default class DynamoDBService {
         createErrorAndLog(
           MissingSiteError,
           `No site found for ${repoName} in DynamoDB`
-        ) // todo: reminder to self, ask for review feedback for excessive logging here
+        )
       )
     })
   }

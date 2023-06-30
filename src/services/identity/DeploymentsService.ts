@@ -173,7 +173,9 @@ class DeploymentsService {
       ],
     })
     if (!deploymentInfo)
-      return errAsync(`Deployment for ${repoName} does not exist`)
+      return errAsync(
+        new NotFoundError(`Deployment for site ${repoName} does not exist`)
+      )
     const { id, hostingId: appId } = deploymentInfo
 
     if (!enablePassword) return this.deletePassword(appId, id)

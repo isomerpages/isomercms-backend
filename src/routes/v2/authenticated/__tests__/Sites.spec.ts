@@ -12,6 +12,7 @@ import {
   mockUserWithSiteSessionData,
 } from "@fixtures/sessionData"
 import { StatsMiddleware } from "@root/middleware/stats"
+import InfraService from "@root/services/infra/InfraService"
 import type SitesService from "@services/identity/SitesService"
 
 import { SitesRouter } from "../sites"
@@ -23,6 +24,10 @@ describe("Sites Router", () => {
     getStagingUrl: jest.fn(),
     getSiteUrl: jest.fn(),
     getSiteInfo: jest.fn(),
+  }
+
+  const mockInfraService = {
+    launchSiteFromCms: jest.fn(),
   }
 
   const mockAuthorizationMiddleware = {
@@ -38,6 +43,7 @@ describe("Sites Router", () => {
     sitesService: (mockSitesService as unknown) as SitesService,
     authorizationMiddleware: (mockAuthorizationMiddleware as unknown) as AuthorizationMiddleware,
     statsMiddleware: (mockStatsMiddleware as unknown) as StatsMiddleware,
+    infraService: (mockInfraService as unknown) as InfraService,
   })
 
   const subrouter = express()

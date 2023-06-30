@@ -46,7 +46,6 @@ interface LaunchesServiceProps {
   deploymentRepository: ModelStatic<Deployment>
   redirectionsRepository: ModelStatic<Redirection>
   repoRepository: ModelStatic<Repo>
-  userRepository: ModelStatic<User>
   siteRepository: ModelStatic<Site>
   launchClient: LaunchClient
 }

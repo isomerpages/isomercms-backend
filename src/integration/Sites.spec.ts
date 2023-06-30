@@ -13,6 +13,9 @@ import {
   SiteMember,
   User,
   Whitelist,
+  Deployment,
+  Launch,
+  Redirection,
 } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
@@ -35,8 +38,17 @@ import { CollectionYmlService } from "@root/services/fileServices/YmlFileService
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+import DeploymentsService from "@root/services/identity/DeploymentsService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
+import LaunchClient from "@root/services/identity/LaunchClient"
+import LaunchesService from "@root/services/identity/LaunchesService"
+import QueueService from "@root/services/identity/QueueService"
+import ReposService from "@root/services/identity/ReposService"
 import SitesService from "@root/services/identity/SitesService"
+import DynamoDBDocClient from "@root/services/infra/DynamoDBClient"
+import DynamoDBService from "@root/services/infra/DynamoDBService"
+import InfraService from "@root/services/infra/InfraService"
+import StepFunctionsService from "@root/services/infra/StepFunctionsService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -122,10 +134,40 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   collaboratorsService,
 })
 
+const reposService = new ReposService({ repository: Repo })
+const deploymentsService = new DeploymentsService({ repository: Deployment })
+const launchClient = new LaunchClient()
+const launchesService = new LaunchesService({
+  launchesRepository: Launch,
+  repoRepository: Repo,
+  deploymentRepository: Deployment,
+  redirectionsRepository: Redirection,
+  siteRepository: Site,
+  launchClient,
+})
+const queueService = new QueueService()
+const stepFunctionsService = new StepFunctionsService("mockArn")
+const dynamoDBService = new DynamoDBService({
+  dynamoDBClient: new DynamoDBDocClient(),
+})
+
+const infraService = new InfraService({
+  sitesService,
+  reposService,
+  deploymentsService,
+  launchesService,
+  queueService,
+  collaboratorsService,
+  stepFunctionsService,
+  dynamoDBService,
+  usersService,
+})
+
 const SitesRouter = new _SitesRouter({
   sitesService,
   authorizationMiddleware,
   statsMiddleware,
+  infraService,
 })
 const sitesSubrouter = SitesRouter.getRouter()
 

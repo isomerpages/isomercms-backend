@@ -41,7 +41,7 @@ const mockFailureLaunch: SiteLaunchMessage = {
   },
 }
 
-const tableName = "site-launch"
+const tableName = "ddb-name"
 const mockDynamoDBClient = {
   createItem: jest.fn(),
   getAllItems: jest.fn(),

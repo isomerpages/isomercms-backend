@@ -1,3 +1,10 @@
+const MOCK_PASSWORD = "password"
+
+jest.mock("../../../utils/crypto-utils", () => ({
+  __esModule: true,
+  decryptPassword: jest.fn().mockReturnValue("password"),
+}))
+
 const { okAsync, errAsync } = require("neverthrow")
 
 const { configContent, configSha } = require("@fixtures/config")
@@ -131,8 +138,7 @@ describe("Settings Service", () => {
 
       // Assert
       expect(resp.value).toMatchObject({
-        encryptedPassword: MOCK_DEPLOYMENT_DBENTRY_TWO.encryptedPassword,
-        iv: MOCK_DEPLOYMENT_DBENTRY_TWO.encryptionIv,
+        password: MOCK_PASSWORD,
         isAmplifySite: true,
       })
     })
@@ -148,8 +154,7 @@ describe("Settings Service", () => {
 
       // Assert
       expect(resp.value).toMatchObject({
-        encryptedPassword: "",
-        iv: "",
+        password: "",
         isAmplifySite: true,
       })
     })
@@ -165,8 +170,7 @@ describe("Settings Service", () => {
 
       // Assert
       expect(resp.value).toMatchObject({
-        encryptedPassword: "",
-        iv: "",
+        password: "",
         isAmplifySite: false,
       })
     })
@@ -455,9 +459,8 @@ describe("Settings Service", () => {
     })
   })
 
-  describe.only("updatePassword", () => {
-    const encryptedPassword = "newPass"
-    const iv = "iv"
+  describe("updatePassword", () => {
+    const password = "newPass"
 
     it("updates password for private amplify repos", async () => {
       // Arrange
@@ -471,8 +474,7 @@ describe("Settings Service", () => {
 
       // Act
       await service.updatePassword(mockUserWithSiteSessionData, {
-        encryptedPassword,
-        iv,
+        password,
         enablePassword,
       })
 
@@ -483,10 +485,30 @@ describe("Settings Service", () => {
         mockDeploymentsService.updateAmplifyPassword
       ).toHaveBeenLastCalledWith(
         mockUserWithSiteSessionData.siteName,
-        encryptedPassword,
-        iv,
+        password,
         enablePassword
       )
+    })
+
+    it("does nothing if removing password for public amplify repos", async () => {
+      // Arrange
+      const enablePassword = false
+      mockSitesService.getBySiteName.mockResolvedValue(
+        okAsync(MOCK_SITE_DBENTRY_ONE)
+      )
+
+      // Act
+      await service.updatePassword(mockUserWithSiteSessionData, {
+        password: "",
+        enablePassword,
+      })
+
+      // Assert
+      expect(mockGitHubService.changeRepoPrivacy).not.toHaveBeenCalled()
+      expect(mockSitesService.update).not.toHaveBeenCalled()
+      expect(
+        mockDeploymentsService.updateAmplifyPassword
+      ).not.toHaveBeenCalled()
     })
 
     it("updates password for previously public amplify repos", async () => {
@@ -503,8 +525,7 @@ describe("Settings Service", () => {
 
       // Act
       await service.updatePassword(mockUserWithSiteSessionData, {
-        encryptedPassword,
-        iv,
+        password,
         enablePassword,
       })
 
@@ -521,8 +542,7 @@ describe("Settings Service", () => {
         mockDeploymentsService.updateAmplifyPassword
       ).toHaveBeenLastCalledWith(
         mockUserWithSiteSessionData.siteName,
-        encryptedPassword,
-        iv,
+        password,
         enablePassword
       )
     })
@@ -541,8 +561,7 @@ describe("Settings Service", () => {
 
       // Act
       await service.updatePassword(mockUserWithSiteSessionData, {
-        encryptedPassword,
-        iv,
+        password: "",
         enablePassword,
       })
 
@@ -559,8 +578,7 @@ describe("Settings Service", () => {
         mockDeploymentsService.updateAmplifyPassword
       ).toHaveBeenLastCalledWith(
         mockUserWithSiteSessionData.siteName,
-        encryptedPassword,
-        iv,
+        "",
         enablePassword
       )
     })
@@ -572,8 +590,7 @@ describe("Settings Service", () => {
 
       // Act
       const resp = await service.updatePassword(mockUserWithSiteSessionData, {
-        encryptedPassword,
-        iv,
+        password,
         enablePassword: true,
       })
 

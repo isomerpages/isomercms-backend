@@ -54,13 +54,20 @@ class DeploymentClient {
   }
 
   sendCreateApp = (options: CreateAppCommandInput) =>
-    wrap(this.amplifyClient.send(new CreateAppCommand(options)))
+    wrap(this.amplifyClient.send(new CreateAppCommand(options))) as ResultAsync<
+      CreateAppCommandOutput,
+      AmplifyError
+    >
 
   sendCreateBranch = (options: CreateBranchCommandInput) =>
-    wrap(this.amplifyClient.send(new CreateBranchCommand(options)))
+    wrap(
+      this.amplifyClient.send(new CreateBranchCommand(options))
+    ) as ResultAsync<CreateBranchCommandOutput, AmplifyError>
 
   sendUpdateApp = (options: UpdateBranchCommandInput) =>
-    wrap(this.amplifyClient.send(new UpdateBranchCommand(options)))
+    wrap(
+      this.amplifyClient.send(new UpdateBranchCommand(options))
+    ) as ResultAsync<UpdateBranchCommandOutput, AmplifyError>
 
   generateCreateAppInput = (
     repoName: string,

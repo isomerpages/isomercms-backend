@@ -135,7 +135,9 @@ export class SitesRouter {
       primaryDomain: req.body.siteUrl,
       useWww: req.body.useWwwSubdomain,
     })
-    return res.status(200).json({ message: `Site launch for started` })
+    return res
+      .status(200)
+      .json({ message: `Site launch for ${req.params.siteName} started` })
   }
 
   getSiteInfo: RequestHandler<

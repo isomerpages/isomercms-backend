@@ -465,5 +465,26 @@ describe("Password integration tests", () => {
       // Assert
       expect(actual.statusCode).toEqual(400)
     })
+
+    it("should return 400 if password is provided even though enablePassword is false", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
+      )
+      const mockPrivatisationRequest = {
+        password: "blahblah",
+        enablePassword: false,
+      }
+
+      // Act
+      const actual = await request(app)
+        .post(`/${MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD}/repo-password`)
+        .send(mockPrivatisationRequest)
+
+      // Assert
+      expect(actual.statusCode).toEqual(400)
+    })
   })
 })

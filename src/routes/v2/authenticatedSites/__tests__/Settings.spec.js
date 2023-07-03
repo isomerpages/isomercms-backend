@@ -25,7 +25,7 @@ describe("Settings Router", () => {
     updateSettingsFiles: jest.fn(),
     shouldUpdateHomepage: jest.fn(),
     mergeUpdatedData: jest.fn(),
-    getEncryptedPassword: jest.fn(),
+    getPassword: jest.fn(),
     updatePassword: jest.fn(),
     extractConfigFields: SettingsService.extractConfigFields,
     extractFooterFields: SettingsService.extractFooterFields,
@@ -46,11 +46,11 @@ describe("Settings Router", () => {
     attachReadRouteHandlerWrapper(router.updateSettingsPage)
   )
   subrouter.get(
-    "/:siteName/settings/repoPassword",
+    "/:siteName/settings/repo-password",
     attachReadRouteHandlerWrapper(router.getRepoPassword)
   )
   subrouter.post(
-    "/:siteName/settings/repoPassword",
+    "/:siteName/settings/repo-password",
     attachReadRouteHandlerWrapper(router.updateRepoPassword)
   )
   const app = generateRouter(subrouter)
@@ -74,8 +74,7 @@ describe("Settings Router", () => {
     sha: homepageSha,
   }
 
-  const ENCRYPTED_PASSWORD = "encrypted"
-  const ENCRYPTION_IV = "iv"
+  const PASSWORD = "password"
   const IS_AMPLIFY_SITE = true
 
   beforeEach(() => {
@@ -150,44 +149,38 @@ describe("Settings Router", () => {
     it("successfully retrieves repo password", async () => {
       // Arrange
       const expectedResponse = {
-        encryptedPassword: ENCRYPTED_PASSWORD,
-        iv: ENCRYPTION_IV,
+        password: PASSWORD,
         isAmplifySite: IS_AMPLIFY_SITE,
       }
-      mockSettingsService.getEncryptedPassword.mockResolvedValueOnce(
+      mockSettingsService.getPassword.mockResolvedValueOnce(
         okAsync(expectedResponse)
       )
 
       // Act
-      const resp = await request(app)
-        .get(`/${siteName}/settings/repoPassword`)
-        .expect(200)
+      const resp = await request(app).get(`/${siteName}/settings/repo-password`)
 
       // Assert
+      expect(resp.statusCode).toEqual(200)
       expect(resp.body).toStrictEqual(expectedResponse)
-      expect(mockSettingsService.getEncryptedPassword).toHaveBeenCalled()
+      expect(mockSettingsService.getPassword).toHaveBeenCalled()
     })
     it("throws error if getEncryptedPassword returns error", async () => {
       // Arrange
       const thrownErr = new NotFoundError()
-      mockSettingsService.getEncryptedPassword.mockResolvedValueOnce(
-        errAsync(thrownErr)
-      )
+      mockSettingsService.getPassword.mockResolvedValueOnce(errAsync(thrownErr))
 
       // Act
-      const resp = await request(app)
-        .get(`/${siteName}/settings/repoPassword`)
-        .expect(404)
+      const resp = await request(app).get(`/${siteName}/settings/repo-password`)
 
       // Assert
-      expect(mockSettingsService.getEncryptedPassword).toHaveBeenCalled()
+      expect(resp.statusCode).toEqual(404)
+      expect(mockSettingsService.getPassword).toHaveBeenCalled()
     })
   })
 
   describe("updateRepoPassword", () => {
     const requestObject = {
-      encryptedPassword: ENCRYPTED_PASSWORD,
-      iv: ENCRYPTION_IV,
+      password: PASSWORD,
       enablePassword: true,
     }
     it("successfully updates repo password", async () => {
@@ -196,11 +189,11 @@ describe("Settings Router", () => {
 
       // Act
       const resp = await request(app)
-        .post(`/${siteName}/settings/repoPassword`)
+        .post(`/${siteName}/settings/repo-password`)
         .send(requestObject)
-        .expect(200)
 
       // Assert
+      expect(resp.statusCode).toEqual(200)
       expect(mockSettingsService.updatePassword).toHaveBeenCalledWith(
         mockUserWithSiteSessionData,
         requestObject
@@ -215,11 +208,11 @@ describe("Settings Router", () => {
 
       // Act
       const resp = await request(app)
-        .post(`/${siteName}/settings/repoPassword`)
+        .post(`/${siteName}/settings/repo-password`)
         .send(requestObject)
-        .expect(404)
 
       // Assert
+      expect(resp.statusCode).toEqual(404)
       expect(mockSettingsService.updatePassword).toHaveBeenCalledWith(
         mockUserWithSiteSessionData,
         requestObject
@@ -229,16 +222,16 @@ describe("Settings Router", () => {
     it("throws error if request object is incorrect", async () => {
       // Arrange
       const badRequestObject = {
-        encryptedPassword: "",
+        password: "",
       }
 
       // Act
       const resp = await request(app)
-        .post(`/${siteName}/settings/repoPassword`)
+        .post(`/${siteName}/settings/repo-password`)
         .send(badRequestObject)
-        .expect(400)
 
       // Assert
+      expect(resp.statusCode).toEqual(400)
       expect(mockSettingsService.updatePassword).not.toHaveBeenCalled()
     })
   })

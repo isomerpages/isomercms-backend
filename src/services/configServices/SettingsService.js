@@ -3,6 +3,8 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 const { okAsync, errAsync } = require("neverthrow")
 
+const { config } = require("@config/config")
+
 const { decryptPassword } = require("@root/utils/crypto-utils")
 
 class SettingsService {
@@ -76,7 +78,8 @@ class SettingsService {
 
     const password = decryptPassword(
       deploymentInfo.value.encryptedPassword,
-      deploymentInfo.value.encryptionIv
+      deploymentInfo.value.encryptionIv,
+      config.get("aws.amplify.passwordSecretKey")
     )
     return okAsync({
       password,

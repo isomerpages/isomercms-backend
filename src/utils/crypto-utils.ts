@@ -1,23 +1,19 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto"
 
-import { config } from "@config/config"
-
 import { Brand } from "@root/types/util"
 
 const ENCRYPTION_ALGORITHM = "aes-256-cbc"
 
 export const encryptPassword = (
-  password: string
+  password: string,
+  key: string
 ): {
   encryptedPassword: string
   iv: string
 } => {
-  const SECRET_KEY = Buffer.from(
-    config.get("aws.amplify.passwordSecretKey"),
-    "hex"
-  )
+  const secretKey = Buffer.from(key, "hex")
   const iv = randomBytes(16)
-  const decipher = createCipheriv(ENCRYPTION_ALGORITHM, SECRET_KEY, iv)
+  const decipher = createCipheriv(ENCRYPTION_ALGORITHM, secretKey, iv)
   let encryptedPassword = decipher.update(password, "utf8", "hex")
   encryptedPassword += decipher.final("hex")
   return { encryptedPassword, iv: iv.toString("hex") }
@@ -28,15 +24,13 @@ type DecryptedPassword = Brand<string, "DecryptedPassword">
 
 export const decryptPassword = (
   encryptedPassword: string,
-  iv: string
+  iv: string,
+  key: string
 ): DecryptedPassword => {
-  const SECRET_KEY = Buffer.from(
-    config.get("aws.amplify.passwordSecretKey"),
-    "hex"
-  )
+  const secretKey = Buffer.from(key, "hex")
   const decipher = createDecipheriv(
     ENCRYPTION_ALGORITHM,
-    SECRET_KEY,
+    secretKey,
     Buffer.from(iv, "hex")
   )
   let decrypted = decipher.update(encryptedPassword, "hex", "utf8")

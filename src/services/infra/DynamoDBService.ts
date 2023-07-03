@@ -6,6 +6,7 @@ import { config } from "@config/config"
 
 import {
   SiteLaunchMessage,
+  SiteLaunchStatus,
   isSiteLaunchMessage,
 } from "@root/../microservices/site-launch/shared/types"
 import DatabaseError from "@root/errors/DatabaseError"
@@ -44,10 +45,7 @@ export default class DynamoDBService {
 
   getLaunchStatus(
     repoName: string
-  ): ResultAsync<
-    "success" | "failure" | "pending",
-    DatabaseError | MissingSiteError
-  > {
+  ): ResultAsync<SiteLaunchStatus["state"], DatabaseError | MissingSiteError> {
     return ResultAsync.fromPromise(this.getAllLaunches(), (error) =>
       createErrorAndLog(
         DatabaseError,

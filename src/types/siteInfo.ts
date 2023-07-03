@@ -32,6 +32,6 @@ export type SiteLaunchStatus = typeof SiteLaunchStatusObject[keyof typeof SiteLa
 
 export interface SiteLaunchDto {
   siteStatus: SiteLaunchStatus
-  dnsRecords?: DNSRecord[] // only present iff siteStatus is LAUNCHED
+  dnsRecords?: DNSRecord[]
   siteUrl?: string
 }

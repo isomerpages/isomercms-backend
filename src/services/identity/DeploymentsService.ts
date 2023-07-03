@@ -1,7 +1,8 @@
 import { errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
-import {} from "crypto"
+import { config } from "@config/config"
+
 import logger from "@logger/logger"
 
 import { Deployment, Repo, Site } from "@database/models"
@@ -155,6 +156,7 @@ class DeploymentsService {
     password: string,
     enablePassword: boolean
   ) => {
+    const SECRET_KEY = config.get("aws.amplify.passwordSecretKey")
     const deploymentInfo = await this.repository.findOne({
       include: [
         {
@@ -186,7 +188,8 @@ class DeploymentsService {
     } = deploymentInfo
     if (
       !!oldEncryptedPassword &&
-      decryptPassword(oldEncryptedPassword, oldIv) === oldEncryptedPassword
+      decryptPassword(oldEncryptedPassword, oldIv, SECRET_KEY) ===
+        oldEncryptedPassword
     )
       return okAsync("")
     const updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
@@ -199,7 +202,7 @@ class DeploymentsService {
       return updateResp
     }
 
-    const { encryptedPassword, iv } = encryptPassword(password)
+    const { encryptedPassword, iv } = encryptPassword(password, SECRET_KEY)
     await this.repository.update(
       {
         encryptedPassword,

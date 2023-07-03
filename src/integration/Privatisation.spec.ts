@@ -19,34 +19,7 @@ import {
 } from "@database/models"
 import { generateRouterForUserWithSite } from "@fixtures/app"
 import {
-  MOCK_GITHUB_COMMENT_BODY_ONE,
-  MOCK_GITHUB_COMMENT_BODY_TWO,
-  MOCK_GITHUB_COMMIT_ALPHA_ONE,
-  MOCK_GITHUB_COMMIT_ALPHA_THREE,
-  MOCK_GITHUB_COMMIT_ALPHA_TWO,
-  MOCK_GITHUB_COMMIT_DATE_ONE,
-  MOCK_GITHUB_COMMIT_DATE_THREE,
-  MOCK_GITHUB_FILENAME_ALPHA_ONE,
-  MOCK_GITHUB_FILENAME_ALPHA_TWO,
-  MOCK_GITHUB_FILEPATH_ALPHA_TWO,
-  MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
-  MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
-  MOCK_GITHUB_PULL_REQUEST_NUMBER,
-  MOCK_GITHUB_RAWCOMMENT_ONE,
-  MOCK_GITHUB_RAWCOMMENT_TWO,
-  MOCK_GITHUB_FRONTMATTER,
-  MOCK_PAGE_PERMALINK,
-} from "@fixtures/github"
-import { MOCK_GITHUB_DATE_ONE } from "@fixtures/identity"
-import {
-  MOCK_PULL_REQUEST_BODY_ONE,
-  MOCK_PULL_REQUEST_CHANGED_FILES_ONE,
-  MOCK_PULL_REQUEST_ONE,
-  MOCK_PULL_REQUEST_TITLE_ONE,
-} from "@fixtures/review"
-import {
   MOCK_USER_SESSION_DATA_ONE,
-  MOCK_USER_SESSION_DATA_THREE,
   MOCK_USER_SESSION_DATA_TWO,
 } from "@fixtures/sessionData"
 import {
@@ -67,14 +40,7 @@ import {
   MOCK_USER_DBENTRY_ONE,
   MOCK_USER_DBENTRY_THREE,
   MOCK_USER_DBENTRY_TWO,
-  MOCK_USER_EMAIL_ONE,
-  MOCK_USER_EMAIL_THREE,
-  MOCK_USER_EMAIL_TWO,
-  MOCK_USER_ID_ONE,
-  MOCK_USER_ID_TWO,
 } from "@fixtures/users"
-import UserSessionData from "@root/classes/UserSessionData"
-import { ReviewRequestStatus } from "@root/constants"
 import { SettingsRouter as _SettingsRouter } from "@root/routes/v2/authenticatedSites/settings"
 import { SettingsService } from "@root/services/configServices/SettingsService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
@@ -91,12 +57,10 @@ import { ConfigService } from "@root/services/fileServices/YmlFileServices/Confi
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { NavYmlService } from "@root/services/fileServices/YmlFileServices/NavYmlService"
 import DeploymentsService from "@root/services/identity/DeploymentsService"
-import { ReviewRequestDto } from "@root/types/dto/review"
 import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService } from "@services/identity"
-import DeploymentClient from "@services/identity/DeploymentClient"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
@@ -105,8 +69,6 @@ import { sequelize } from "@tests/database"
 const mockUpdateInput = "updateInput"
 const mockDeleteInput = "deleteInput"
 const MOCK_PASSWORD = "password"
-const MOCK_ENCRYPTED_PASSWORD = "enc_password"
-const MOCK_IV = "new_iv"
 
 jest.mock("../utils/crypto-utils", () => ({
   __esModule: true,
@@ -213,9 +175,6 @@ const mockGenericAxios = mockAxios.create()
 mockGenericAxios.patch.mockResolvedValue({
   data: [],
 })
-// const migrateSpy = jest
-//   .spyOn(ReviewsRouter, "checkIfSiteIsUnmigrated")
-//   .mockResolvedValue(true)
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
 

@@ -95,7 +95,7 @@ export const MOCK_DEPLOYMENT_DBENTRY_TWO: Attributes<Deployment> = {
   createdAt: MOCK_SITE_DATE_TWO,
   updatedAt: MOCK_SITE_DATE_TWO,
   hostingId: "1",
-  encryptionIv: "1234567890123456",
+  encryptionIv: "12345678901234561234567890123456",
   encryptedPassword:
     "1234567890123456789012345678901234567890123456789012345678901234",
 }

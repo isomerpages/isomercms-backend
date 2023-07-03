@@ -1,11 +1,21 @@
 import { BaseIsomerError } from "@root/errors/BaseError"
 
+import { ComponentTypes, FileCodes } from "./IsomerError"
+
 export default class SiteLaunchError extends BaseIsomerError {
-  constructor(siteName: string) {
+  constructor(
+    message: string,
+    meta = {},
+    componentCode = ComponentTypes.Service,
+    fileCode = FileCodes.InfraServiceError
+  ) {
     super({
-      status: 500,
-      code: "InfraError",
-      message: `The given file: ${siteName} was not a config file!`,
+      status: 400,
+      code: "Infra Error",
+      message,
+      meta,
+      componentCode,
+      fileCode,
     })
   }
 }

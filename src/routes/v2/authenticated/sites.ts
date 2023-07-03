@@ -1,6 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import autoBind from "auto-bind"
 import express from "express"
+import { fromPromise } from "neverthrow"
 
 import type { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
@@ -111,11 +112,13 @@ export class SitesRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-
-    return this.infraService
-      .getSiteLaunchStatus(userWithSiteSessionData)
-      .map((siteStatus) => res.status(200).json(siteStatus))
-      .mapErr((err) => res.status(404).json({ message: err.message }))
+    const result = await this.infraService.getSiteLaunchStatus(
+      userWithSiteSessionData
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(404).json({ message: result.error.message })
   }
 
   launchSite: RequestHandler<

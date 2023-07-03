@@ -3,7 +3,7 @@ import {
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
-import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
+import { err, errAsync, fromPromise, ok, Result, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
@@ -11,13 +11,12 @@ import logger from "@logger/logger"
 import { Deployment, Launch, Repo, Redirection, Site } from "@database/models"
 import {
   JobStatus,
-  REDIRECTION_SERVER_IP,
   RedirectionTypes,
   SiteStatus,
 } from "@root/constants/constants"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
 import { AmplifyError } from "@root/types/index"
-import { DNSRecord, DnsResultsForSite } from "@root/types/siteInfo"
+import { DnsResultsForSite } from "@root/types/siteInfo"
 import createErrorAndLog from "@root/utils/error-utils"
 import LaunchClient, {
   isAmplifyDomainNotFoundException,
@@ -154,82 +153,82 @@ export class LaunchesService {
     return ok(siteId)
   }
 
-  getDNSRecords = (
+  getDNSRecords = async (
     repoName: string
-  ): ResultAsync<DnsResultsForSite, AmplifyError | SiteLaunchError> => {
-    let dnsRecords: DNSRecord[] = []
-    let siteUrl: string
-    return ResultAsync.fromPromise(this.getSiteId(repoName), () =>
-      createErrorAndLog(AmplifyError, `Failed to get siteId for ${repoName}`)
-    )
-      .andThen((siteId) => {
-        if (siteId.isOk()) {
-          return ResultAsync.fromPromise(
-            this.launchesRepository.findOne({
-              where: { siteId: siteId.value },
-            }),
-            () =>
-              createErrorAndLog(
-                AmplifyError,
-                `Failed to get launch record for ${repoName}`
-              )
-          )
-        }
-        return errAsync(
-          createErrorAndLog(
-            AmplifyError,
-            `Failed to get launch record for ${repoName}`
-          )
+  ): Promise<Result<DnsResultsForSite, AmplifyError | SiteLaunchError>> => {
+    const siteId = await this.getSiteId(repoName)
+    if (siteId.isErr()) {
+      return err(
+        createErrorAndLog(
+          SiteLaunchError,
+          `Failed to get siteId for ${repoName}`
         )
-      })
-      .andThen((launchRecord) => {
-        if (!launchRecord) {
-          return errAsync(
-            createErrorAndLog(SiteLaunchError, "Failed to get launch record")
-          )
-        }
-        siteUrl = launchRecord.primaryDomainSource
-        dnsRecords.push({
-          source: launchRecord.primaryDomainSource,
-          target: launchRecord.primaryDomainTarget,
-          type: "CNAME",
-        })
-        dnsRecords.push({
-          source: launchRecord.domainValidationSource,
-          target: launchRecord.domainValidationTarget,
-          type: "CNAME",
-        })
-        return okAsync(launchRecord)
-      })
-      .andThen((launchRecord) =>
-        ResultAsync.fromPromise(
-          this.redirectionsRepository.findOne({
-            where: { launchId: launchRecord.id },
-          }),
-          () =>
-            // There are legitimate cases where this error is thrown (ie the site has no redirection record)
-            new AmplifyError(`Failed to get redirection record for ${repoName}`)
-        ).andThen((redirectionRecord) => {
-          if (redirectionRecord) {
-            // NOTE: In the case where the redirection exists
-            // we need to append the `www` to the primary domain
-            // before displaying it to the user as the `source`
-            dnsRecords = dnsRecords.map((record) => {
-              const newRecord = record
-              if (record.source === launchRecord.primaryDomainSource) {
-                newRecord.source = `www.${record.source}`
-              }
-              return newRecord
-            })
-            dnsRecords.push({
-              source: redirectionRecord.source,
-              target: REDIRECTION_SERVER_IP,
-              type: "A",
-            })
-          }
-          return okAsync({ dnsRecords, siteUrl })
-        })
       )
+    }
+
+    const launchRecord = await fromPromise(
+      this.launchesRepository.findOne({
+        where: { siteId: siteId.value },
+      }),
+      () =>
+        createErrorAndLog(
+          SiteLaunchError,
+          `Failed to get launch record for ${repoName}`
+        )
+    )
+
+    if (!launchRecord.isOk() || !launchRecord.value) {
+      return err(
+        createErrorAndLog(SiteLaunchError, "Failed to get launch record")
+      )
+    }
+
+    const redirectionRecord = await fromPromise(
+      this.redirectionsRepository.findOne({
+        where: { launchId: launchRecord.value.id },
+      }),
+      () =>
+        createErrorAndLog(
+          SiteLaunchError,
+          `Failed to get redirection record for ${repoName}`
+        )
+    )
+
+    const doesRedirectionRecordExist =
+      redirectionRecord.isOk() && redirectionRecord.value
+    if (!doesRedirectionRecordExist) {
+      logger.info(`No redirection record found for ${repoName}`)
+    }
+
+    return ok({
+      siteUrl: launchRecord.value.primaryDomainSource,
+      dnsRecords: [
+        {
+          // NOTE: In the case where the redirection exists
+          // we need to append the `www` to the primary domain
+          // before displaying it to the user as the `source`
+          source: doesRedirectionRecordExist
+            ? launchRecord.value.primaryDomainSource
+            : `www.${launchRecord.value.primaryDomainSource}`,
+          target: launchRecord.value.primaryDomainTarget,
+          type: RedirectionTypes.CNAME,
+        },
+        {
+          source: launchRecord.value.domainValidationSource,
+          target: launchRecord.value.domainValidationTarget,
+          type: RedirectionTypes.CNAME,
+        },
+        ...(doesRedirectionRecordExist
+          ? [
+              {
+                source: redirectionRecord.value.source,
+                target: redirectionRecord.value.target,
+                type: RedirectionTypes.CNAME,
+              },
+            ]
+          : []),
+      ],
+    })
   }
 
   configureDomainInAmplify = async (

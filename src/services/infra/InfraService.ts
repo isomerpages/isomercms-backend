@@ -4,6 +4,7 @@ import {
   Err,
   err,
   errAsync,
+  fromPromise,
   Ok,
   ok,
   okAsync,
@@ -326,66 +327,52 @@ export default class InfraService {
     })
   }
 
-  getGeneratedDnsRecords = (
+  getGeneratedDnsRecords = async (
     siteName: string
-  ): ResultAsync<
-    SiteDnsResults,
-    MissingSiteError | AmplifyError | SiteLaunchError
-  > =>
-    this.sitesService
-      .getBySiteName(siteName)
-      .andThen(() => this.launchesService.getDNSRecords(siteName))
+  ): Promise<
+    Result<SiteDnsResults, MissingSiteError | AmplifyError | SiteLaunchError>
+  > => {
+    const site = await this.sitesService.getBySiteName(siteName)
+    if (site.isErr()) {
+      return err(site.error)
+    }
+    const dnsRecords = await this.launchesService.getDNSRecords(siteName)
+    if (dnsRecords.isErr()) {
+      return err(dnsRecords.error)
+    }
+    return ok(dnsRecords.value)
+  }
 
-  getSiteLaunchStatus(
+  async getSiteLaunchStatus(
     sessionData: UserWithSiteSessionData
-  ): ResultAsync<
-    SiteLaunchDto,
-    MissingSiteError | AmplifyError | SiteLaunchError
+  ): Promise<
+    Result<SiteLaunchDto, MissingSiteError | SiteLaunchError | AmplifyError>
   > {
     const { siteName } = sessionData
-
-    return (
-      // 1. If not, get the source of truth from the db
-      this.sitesService.getBySiteName(siteName).andThen((site) => {
-        if (site.siteStatus !== SiteStatus.Launched) {
-          return okAsync({
-            siteStatus: SiteLaunchStatusObject.NotLaunched,
-          } as SiteLaunchDto)
-        }
-
-        // 2. If site is either launched or in the
-        //    process of being launched, get the dns records
-        return (
-          this.getGeneratedDnsRecords(siteName)
-            .andThen((records) => {
-              if (records.dnsRecords.length === 0) {
-                // will not occur as the function should return an
-                // error instead, but we defensively check for this
-                return okAsync<SiteLaunchDto>({
-                  siteStatus: SiteLaunchStatusObject.Launching,
-                })
-              }
-              return okAsync<SiteLaunchDto>({
-                siteStatus:
-                  // status is only successful iff job is ready
-                  site.jobStatus === JobStatus.Ready
-                    ? SiteLaunchStatusObject.Launched
-                    : SiteLaunchStatusObject.Launching,
-                dnsRecords: records.dnsRecords,
-                siteUrl: records.siteUrl,
-              })
-            })
-
-            // 3. if no DNS records found, could be in the process
-            //    of generating, so just return status for now
-            .orElse(() =>
-              okAsync<SiteLaunchDto>({
-                siteStatus: SiteLaunchStatusObject.Launching,
-              })
-            )
-        )
+    const site = await this.sitesService.getBySiteName(siteName)
+    if (site.isErr() && !site.isOk()) {
+      return errAsync(site.error)
+    }
+    if (site.value.siteStatus !== SiteStatus.Launched) {
+      return okAsync<SiteLaunchDto>({
+        siteStatus: SiteLaunchStatusObject.NotLaunched,
       })
-    )
+    }
+
+    const generatedDnsRecords = await this.getGeneratedDnsRecords(siteName)
+    if (generatedDnsRecords.isErr()) {
+      return errAsync(generatedDnsRecords.error)
+    }
+
+    return okAsync<SiteLaunchDto>({
+      siteStatus:
+        // status is only successful iff job is ready
+        site.value.jobStatus === JobStatus.Ready
+          ? SiteLaunchStatusObject.Launched
+          : SiteLaunchStatusObject.Launching,
+      dnsRecords: generatedDnsRecords.value.dnsRecords,
+      siteUrl: generatedDnsRecords.value.siteUrl,
+    })
   }
 
   launchSite = async (

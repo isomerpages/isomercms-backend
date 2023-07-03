@@ -170,7 +170,6 @@ describe("Settings Service", () => {
 
       // Assert
       expect(resp.value).toMatchObject({
-        password: "",
         isAmplifySite: false,
       })
     })

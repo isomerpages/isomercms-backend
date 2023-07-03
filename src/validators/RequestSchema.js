@@ -276,8 +276,8 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
 })
 
 const UpdateRepoPasswordRequestSchema = Joi.object().keys({
-  password: Joi.string(),
-  enablePassword: Joi.boolean(),
+  password: Joi.string().required().allow(""),
+  enablePassword: Joi.boolean().required(),
 })
 
 module.exports = {

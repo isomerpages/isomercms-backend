@@ -368,13 +368,6 @@ export default class InfraService {
         // 2. If not, get the source of truth from the db
         .orElse(() =>
           this.sitesService.getBySiteName(siteName).andThen((site) => {
-            if (!site) {
-              errAsync(
-                new MissingSiteError(
-                  `Site launch status for ${siteName} is unknown`
-                )
-              )
-            }
             if (site.siteStatus !== SiteStatus.Launched) {
               return okAsync({
                 siteStatus: SiteLaunchStatusObject.NotLaunched,

@@ -74,7 +74,7 @@ describe("Settings Router", () => {
     sha: homepageSha,
   }
 
-  const PASSWORD = "password"
+  const MOCK_PASSWORD = "password"
   const IS_AMPLIFY_SITE = true
 
   beforeEach(() => {
@@ -149,7 +149,7 @@ describe("Settings Router", () => {
     it("successfully retrieves repo password", async () => {
       // Arrange
       const expectedResponse = {
-        password: PASSWORD,
+        password: MOCK_PASSWORD,
         isAmplifySite: IS_AMPLIFY_SITE,
       }
       mockSettingsService.getPassword.mockResolvedValueOnce(
@@ -180,7 +180,7 @@ describe("Settings Router", () => {
 
   describe("updateRepoPassword", () => {
     const requestObject = {
-      password: PASSWORD,
+      password: MOCK_PASSWORD,
       enablePassword: true,
     }
     it("successfully updates repo password", async () => {

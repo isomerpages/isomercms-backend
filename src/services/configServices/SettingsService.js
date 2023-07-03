@@ -3,7 +3,7 @@ const Bluebird = require("bluebird")
 const _ = require("lodash")
 const { okAsync, errAsync } = require("neverthrow")
 
-const { config } = require("@config/config")
+const { config: convictConfig } = require("@config/config")
 
 const { decryptPassword } = require("@root/utils/crypto-utils")
 
@@ -60,7 +60,6 @@ class SettingsService {
     if (siteInfo.isErr()) {
       // Missing site indicating netlify site - return special result
       return okAsync({
-        password: "",
         isAmplifySite: false,
       })
     }
@@ -79,7 +78,7 @@ class SettingsService {
     const password = decryptPassword(
       deploymentInfo.value.encryptedPassword,
       deploymentInfo.value.encryptionIv,
-      config.get("aws.amplify.passwordSecretKey")
+      convictConfig.get("aws.amplify.passwordSecretKey")
     )
     return okAsync({
       password,

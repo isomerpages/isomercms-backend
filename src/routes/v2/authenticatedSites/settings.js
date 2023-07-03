@@ -7,6 +7,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 // Import middleware
 const {
   attachReadRouteHandlerWrapper,
+  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
@@ -129,7 +130,7 @@ class SettingsRouter {
     )
     router.post(
       "/repo-password",
-      attachRollbackRouteHandlerWrapper(this.updateRepoPassword)
+      attachWriteRouteHandlerWrapper(this.updateRepoPassword)
     )
 
     return router

@@ -1,10 +1,10 @@
 import logger from "@root/logger/logger"
 
 export default function createErrorAndLog<T extends Error>(
-  createError: (errorMessage: string, ...errorArgs: unknown[]) => T,
+  ErrorType: new (...params: any) => T,
   message: string,
-  ...args: unknown[]
+  args?: any
 ): T {
   logger.error(message)
-  return createError(message, ...args)
+  return new ErrorType(message, ...args)
 }

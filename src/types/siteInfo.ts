@@ -22,7 +22,7 @@ export interface DnsResultsForSite {
   siteUrl: string
 }
 
-const SiteLaunchStatusObject = {
+export const SiteLaunchStatusObject = {
   Launched: "LAUNCHED",
   NotLaunched: "NOT_LAUNCHED",
   Launching: "LAUNCHING",

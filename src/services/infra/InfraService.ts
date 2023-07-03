@@ -28,7 +28,11 @@ import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
-import { DnsResultsForSite, SiteLaunchDto } from "@root/types/siteInfo"
+import {
+  DnsResultsForSite,
+  SiteLaunchDto,
+  SiteLaunchStatusObject,
+} from "@root/types/siteInfo"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import {
   SiteLaunchCreateParams,
@@ -353,11 +357,11 @@ export default class InfraService {
                 new SiteLaunchError(`No DNS records found for ${siteName}`)
               )
             }
-            return okAsync({
-              siteStatus: "LAUNCHING",
+            return okAsync<SiteLaunchDto>({
+              siteStatus: SiteLaunchStatusObject.Launching,
               dnsRecords: records.dnsRecords,
               siteUrl: records.siteUrl,
-            } as SiteLaunchDto)
+            })
           })
         )
 
@@ -373,7 +377,7 @@ export default class InfraService {
             }
             if (site.siteStatus !== SiteStatus.Launched) {
               return okAsync({
-                siteStatus: "NOT_LAUNCHED",
+                siteStatus: SiteLaunchStatusObject.NotLaunched,
               } as SiteLaunchDto)
             }
 
@@ -386,15 +390,15 @@ export default class InfraService {
                     // will not occur as the function should return an
                     // error instead, but we defensively check for this
                     return okAsync({
-                      siteStatus: "LAUNCHING",
+                      siteStatus: SiteLaunchStatusObject.Launching,
                     } as SiteLaunchDto)
                   }
                   return okAsync({
                     siteStatus:
                       // status is only successful iff job is ready
                       site.jobStatus === JobStatus.Ready
-                        ? "LAUNCHED"
-                        : "LAUNCHING",
+                        ? SiteLaunchStatusObject.Launched
+                        : SiteLaunchStatusObject.Launching,
                     dnsRecords: records.dnsRecords,
                     siteUrl: records.siteUrl,
                   } as SiteLaunchDto)
@@ -404,7 +408,7 @@ export default class InfraService {
                 //    of generating, so just return status for now
                 .orElse(() =>
                   okAsync({
-                    siteStatus: "LAUNCHING",
+                    siteStatus: SiteLaunchStatusObject.Launching,
                   } as SiteLaunchDto)
                 )
             )

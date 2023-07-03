@@ -22,8 +22,16 @@ export interface DnsResultsForSite {
   siteUrl: string
 }
 
+const SiteLaunchStatusObject = {
+  Launched: "LAUNCHED",
+  NotLaunched: "NOT_LAUNCHED",
+  Launching: "LAUNCHING",
+} as const
+
+export type SiteLaunchStatus = typeof SiteLaunchStatusObject[keyof typeof SiteLaunchStatusObject]
+
 export interface SiteLaunchDto {
-  siteStatus: "LAUNCHED" | "NOT_LAUNCHED" | "LAUNCHING"
+  siteStatus: SiteLaunchStatus
   dnsRecords?: DNSRecord[] // only present iff siteStatus is LAUNCHED
   siteUrl?: string
 }

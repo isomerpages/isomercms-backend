@@ -29,7 +29,7 @@ import SiteLaunchError from "@root/errors/SiteLaunchError"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
 import {
-  DnsResultsForSite,
+  DnsResultsForSite as SiteDnsResults,
   SiteLaunchDto,
   SiteLaunchStatusObject,
 } from "@root/types/siteInfo"
@@ -329,7 +329,7 @@ export default class InfraService {
   getGeneratedDnsRecords = (
     siteName: string
   ): ResultAsync<
-    DnsResultsForSite,
+    SiteDnsResults,
     MissingSiteError | AmplifyError | SiteLaunchError
   > =>
     this.sitesService
@@ -343,70 +343,48 @@ export default class InfraService {
     MissingSiteError | AmplifyError | SiteLaunchError
   > {
     const { siteName } = sessionData
-    // 1. Check if ddb entry for the site exists
+
     return (
-      this.dynamoDBService
-        .getLaunchStatus(siteName)
-        // NOTE: as long as the entry exists, we treat it as launching
-        .andThen(() =>
-          this.getGeneratedDnsRecords(siteName).andThen((records) => {
-            if (records.dnsRecords.length === 0) {
-              // will not occur, as the function should not return
-              // an empty array but we defensively check for this
-              return errAsync(
-                new SiteLaunchError(`No DNS records found for ${siteName}`)
-              )
-            }
-            return okAsync<SiteLaunchDto>({
-              siteStatus: SiteLaunchStatusObject.Launching,
-              dnsRecords: records.dnsRecords,
-              siteUrl: records.siteUrl,
-            })
-          })
-        )
+      // 1. If not, get the source of truth from the db
+      this.sitesService.getBySiteName(siteName).andThen((site) => {
+        if (site.siteStatus !== SiteStatus.Launched) {
+          return okAsync({
+            siteStatus: SiteLaunchStatusObject.NotLaunched,
+          } as SiteLaunchDto)
+        }
 
-        // 2. If not, get the source of truth from the db
-        .orElse(() =>
-          this.sitesService.getBySiteName(siteName).andThen((site) => {
-            if (site.siteStatus !== SiteStatus.Launched) {
-              return okAsync({
-                siteStatus: SiteLaunchStatusObject.NotLaunched,
-              } as SiteLaunchDto)
-            }
-
-            // 3. If site is either launched or in the
-            //    process of being launched, get the dns records
-            return (
-              this.getGeneratedDnsRecords(siteName)
-                .andThen((records) => {
-                  if (records.dnsRecords.length === 0) {
-                    // will not occur as the function should return an
-                    // error instead, but we defensively check for this
-                    return okAsync({
-                      siteStatus: SiteLaunchStatusObject.Launching,
-                    } as SiteLaunchDto)
-                  }
-                  return okAsync({
-                    siteStatus:
-                      // status is only successful iff job is ready
-                      site.jobStatus === JobStatus.Ready
-                        ? SiteLaunchStatusObject.Launched
-                        : SiteLaunchStatusObject.Launching,
-                    dnsRecords: records.dnsRecords,
-                    siteUrl: records.siteUrl,
-                  } as SiteLaunchDto)
+        // 2. If site is either launched or in the
+        //    process of being launched, get the dns records
+        return (
+          this.getGeneratedDnsRecords(siteName)
+            .andThen((records) => {
+              if (records.dnsRecords.length === 0) {
+                // will not occur as the function should return an
+                // error instead, but we defensively check for this
+                return okAsync<SiteLaunchDto>({
+                  siteStatus: SiteLaunchStatusObject.Launching,
                 })
+              }
+              return okAsync<SiteLaunchDto>({
+                siteStatus:
+                  // status is only successful iff job is ready
+                  site.jobStatus === JobStatus.Ready
+                    ? SiteLaunchStatusObject.Launched
+                    : SiteLaunchStatusObject.Launching,
+                dnsRecords: records.dnsRecords,
+                siteUrl: records.siteUrl,
+              })
+            })
 
-                // 4. if no DNS records found, could be in the process
-                //    of generating, so just return status for now
-                .orElse(() =>
-                  okAsync({
-                    siteStatus: SiteLaunchStatusObject.Launching,
-                  } as SiteLaunchDto)
-                )
+            // 3. if no DNS records found, could be in the process
+            //    of generating, so just return status for now
+            .orElse(() =>
+              okAsync<SiteLaunchDto>({
+                siteStatus: SiteLaunchStatusObject.Launching,
+              })
             )
-          })
         )
+      })
     )
   }
 

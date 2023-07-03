@@ -11,7 +11,7 @@ export default class SiteLaunchError extends BaseIsomerError {
   ) {
     super({
       status: 400,
-      code: "Infra Error",
+      code: "Launch Error",
       message,
       meta,
       componentCode,

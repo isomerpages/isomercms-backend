@@ -23,18 +23,16 @@ import {
   MOCK_USER_SESSION_DATA_TWO,
 } from "@fixtures/sessionData"
 import {
-  MOCK_REPO_DBENTRY_ONE,
-  MOCK_SITEMEMBER_DBENTRY_ONE,
-  MOCK_SITEMEMBER_DBENTRY_TWO,
-  MOCK_SITE_DBENTRY_ONE,
-  MOCK_SITE_ID_ONE,
-  MOCK_REPO_NAME_ONE,
-  MOCK_REPO_NAME_TWO,
-  MOCK_SITE_ID_TWO,
-  MOCK_DEPLOYMENT_DBENTRY_ONE,
-  MOCK_DEPLOYMENT_DBENTRY_TWO,
-  MOCK_REPO_DBENTRY_TWO,
-  MOCK_SITE_DBENTRY_TWO,
+  MOCK_SITEMEMBER_DBENTRY_ONE as MOCK_SITEMEMBER_DBENTRY_WITHOUT_PASSWORD,
+  MOCK_SITEMEMBER_DBENTRY_TWO as MOCK_SITEMEMBER_DBENTRY_WITH_PASSWORD,
+  MOCK_REPO_NAME_ONE as MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD,
+  MOCK_REPO_NAME_TWO as MOCK_AMPLIFY_REPO_WITH_PASSWORD,
+  MOCK_DEPLOYMENT_DBENTRY_ONE as MOCK_DEPLOYMENT_DBENTRY_WITHOUT_PASSWORD,
+  MOCK_DEPLOYMENT_DBENTRY_TWO as MOCK_DEPLOYMENT_DBENTRY_WITH_PASSWORD,
+  MOCK_REPO_DBENTRY_ONE as MOCK_REPO_DBENTRY_WITHOUT_PASSWORD,
+  MOCK_REPO_DBENTRY_TWO as MOCK_REPO_DBENTRY_WITH_PASSWORD,
+  MOCK_SITE_DBENTRY_ONE as MOCK_SITE_DBENTRY_WITHOUT_PASSWORD,
+  MOCK_SITE_DBENTRY_TWO as MOCK_SITE_DBENTRY_WITH_PASSWORD,
 } from "@fixtures/sites"
 import {
   MOCK_USER_DBENTRY_ONE,
@@ -201,14 +199,14 @@ describe("Password integration tests", () => {
     await User.create(MOCK_USER_DBENTRY_ONE)
     await User.create(MOCK_USER_DBENTRY_TWO)
     await User.create(MOCK_USER_DBENTRY_THREE)
-    await Site.create(MOCK_SITE_DBENTRY_ONE)
-    await Site.create(MOCK_SITE_DBENTRY_TWO)
-    await Deployment.create(MOCK_DEPLOYMENT_DBENTRY_ONE)
-    await Deployment.create(MOCK_DEPLOYMENT_DBENTRY_TWO)
-    await Repo.create(MOCK_REPO_DBENTRY_ONE)
-    await Repo.create(MOCK_REPO_DBENTRY_TWO)
-    await SiteMember.create(MOCK_SITEMEMBER_DBENTRY_ONE)
-    await SiteMember.create(MOCK_SITEMEMBER_DBENTRY_TWO)
+    await Site.create(MOCK_SITE_DBENTRY_WITHOUT_PASSWORD)
+    await Site.create(MOCK_SITE_DBENTRY_WITH_PASSWORD)
+    await Deployment.create(MOCK_DEPLOYMENT_DBENTRY_WITHOUT_PASSWORD)
+    await Deployment.create(MOCK_DEPLOYMENT_DBENTRY_WITH_PASSWORD)
+    await Repo.create(MOCK_REPO_DBENTRY_WITHOUT_PASSWORD)
+    await Repo.create(MOCK_REPO_DBENTRY_WITH_PASSWORD)
+    await SiteMember.create(MOCK_SITEMEMBER_DBENTRY_WITHOUT_PASSWORD)
+    await SiteMember.create(MOCK_SITEMEMBER_DBENTRY_WITH_PASSWORD)
   })
 
   afterAll(async () => {
@@ -220,12 +218,12 @@ describe("Password integration tests", () => {
   })
 
   describe("GET /repo-password", () => {
-    it("should successfully retrieve password for an amplify site", async () => {
+    it("should successfully retrieve password for an amplify site with a password", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
-        MOCK_REPO_NAME_TWO
+        MOCK_AMPLIFY_REPO_WITH_PASSWORD
       )
 
       const expected = {
@@ -235,7 +233,7 @@ describe("Password integration tests", () => {
 
       // Act
       const actual = await request(app).get(
-        `/${MOCK_REPO_NAME_TWO}/repo-password`
+        `/${MOCK_AMPLIFY_REPO_WITH_PASSWORD}/repo-password`
       )
 
       // Assert
@@ -248,7 +246,7 @@ describe("Password integration tests", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_REPO_NAME_ONE
+        MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
       )
 
       const expected = {
@@ -258,7 +256,7 @@ describe("Password integration tests", () => {
 
       // Act
       const actual = await request(app).get(
-        `/${MOCK_REPO_NAME_ONE}/repo-password`
+        `/${MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD}/repo-password`
       )
 
       // Assert
@@ -276,7 +274,6 @@ describe("Password integration tests", () => {
       )
 
       const expected = {
-        password: "",
         isAmplifySite: false,
       }
 
@@ -302,7 +299,7 @@ describe("Password integration tests", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
-        MOCK_REPO_NAME_TWO
+        MOCK_AMPLIFY_REPO_WITH_PASSWORD
       )
       const mockPrivatisationRequest = {
         password: newPassword,
@@ -311,22 +308,24 @@ describe("Password integration tests", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_REPO_NAME_TWO}/repo-password`)
+        .post(`/${MOCK_AMPLIFY_REPO_WITH_PASSWORD}/repo-password`)
         .send(mockPrivatisationRequest)
 
       // Assert
       expect(actual.statusCode).toEqual(200)
       const actualDeployment = await Deployment.findOne({
         where: {
-          id: MOCK_DEPLOYMENT_DBENTRY_TWO.id,
+          id: MOCK_DEPLOYMENT_DBENTRY_WITH_PASSWORD.id,
         },
       })
       if (!actualDeployment) fail()
       const { encryptionIv, encryptedPassword } = actualDeployment
-      expect(encryptionIv).not.toEqual(MOCK_DEPLOYMENT_DBENTRY_TWO.encryptionIv)
+      expect(encryptionIv).not.toEqual(
+        MOCK_DEPLOYMENT_DBENTRY_WITH_PASSWORD.encryptionIv
+      )
       expect(encryptionIv).not.toEqual(null)
       expect(encryptedPassword).not.toEqual(
-        MOCK_DEPLOYMENT_DBENTRY_TWO.encryptedPassword
+        MOCK_DEPLOYMENT_DBENTRY_WITH_PASSWORD.encryptedPassword
       )
       expect(encryptedPassword).not.toEqual(null)
       expect(mockGenericAxios.patch).not.toHaveBeenCalled()
@@ -337,23 +336,22 @@ describe("Password integration tests", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
-        MOCK_REPO_NAME_TWO
+        MOCK_AMPLIFY_REPO_WITH_PASSWORD
       )
       const mockPrivatisationRequest = {
-        password: "",
         enablePassword: false,
       }
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_REPO_NAME_TWO}/repo-password`)
+        .post(`/${MOCK_AMPLIFY_REPO_WITH_PASSWORD}/repo-password`)
         .send(mockPrivatisationRequest)
 
       // Assert
       expect(actual.statusCode).toEqual(200)
       const actualDeployment = await Deployment.findOne({
         where: {
-          id: MOCK_DEPLOYMENT_DBENTRY_TWO.id,
+          id: MOCK_DEPLOYMENT_DBENTRY_WITH_PASSWORD.id,
         },
       })
       if (!actualDeployment) fail()
@@ -368,23 +366,22 @@ describe("Password integration tests", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_REPO_NAME_ONE
+        MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
       )
       const mockPrivatisationRequest = {
-        password: "",
         enablePassword: false,
       }
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_REPO_NAME_ONE}/repo-password`)
+        .post(`/${MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD}/repo-password`)
         .send(mockPrivatisationRequest)
 
       // Assert
       expect(actual.statusCode).toEqual(200)
       const actualDeployment = await Deployment.findOne({
         where: {
-          id: MOCK_DEPLOYMENT_DBENTRY_ONE.id,
+          id: MOCK_DEPLOYMENT_DBENTRY_WITHOUT_PASSWORD.id,
         },
       })
       if (!actualDeployment) fail()
@@ -400,7 +397,7 @@ describe("Password integration tests", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
-        MOCK_REPO_NAME_ONE
+        MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
       )
       const mockPrivatisationRequest = {
         password: newPassword,
@@ -409,14 +406,14 @@ describe("Password integration tests", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_REPO_NAME_ONE}/repo-password`)
+        .post(`/${MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD}/repo-password`)
         .send(mockPrivatisationRequest)
 
       // Assert
       expect(actual.statusCode).toEqual(200)
       const actualDeployment = await Deployment.findOne({
         where: {
-          id: MOCK_DEPLOYMENT_DBENTRY_ONE.id,
+          id: MOCK_DEPLOYMENT_DBENTRY_WITHOUT_PASSWORD.id,
         },
       })
       if (!actualDeployment) fail()
@@ -435,13 +432,12 @@ describe("Password integration tests", () => {
         FAKE_REPO_NAME
       )
       const mockPrivatisationRequest = {
-        password: "",
         enablePassword: false,
       }
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_REPO_NAME_TWO}/repo-password`)
+        .post(`/${MOCK_AMPLIFY_REPO_WITH_PASSWORD}/repo-password`)
         .send(mockPrivatisationRequest)
 
       // Assert
@@ -453,7 +449,7 @@ describe("Password integration tests", () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
-        MOCK_REPO_NAME_ONE
+        MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
       )
       const mockPrivatisationRequest = {
         password: "",
@@ -463,7 +459,7 @@ describe("Password integration tests", () => {
 
       // Act
       const actual = await request(app)
-        .post(`/${MOCK_REPO_NAME_ONE}/repo-password`)
+        .post(`/${MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD}/repo-password`)
         .send(mockPrivatisationRequest)
 
       // Assert

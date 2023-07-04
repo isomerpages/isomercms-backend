@@ -10,7 +10,7 @@ import {
 } from "@fixtures/identity"
 import _MailClient from "@services/utilServices/MailClient"
 
-const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/send"
+const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/"
 
 const MailClient = new _MailClient(config.get("postman.apiKey"))
 
@@ -24,10 +24,30 @@ const generateEmail = (recipient: string, subject: string, body: string) => ({
 
 describe("Mail Client", () => {
   afterEach(() => mockAxios.reset())
+  jest.useFakeTimers()
   it("should return the result successfully when all parameters are valid", async () => {
     // Arrange
     const generatedEmail = generateEmail(mockRecipient, mockSubject, mockBody)
-    mockAxios.post.mockResolvedValueOnce(200)
+    const sendMailResponse = {
+      data: {
+        id: 1,
+        recipient: mockRecipient,
+        status: "ACCEPTED",
+      },
+      status: 201,
+      statusText: "Created",
+    }
+    const verifyMailResponse = {
+      data: {
+        id: 1,
+        recipient: mockRecipient,
+        status: "DELIVERED",
+      },
+      status: 200,
+      statusText: "Ok",
+    }
+    mockAxios.post.mockResolvedValueOnce(sendMailResponse)
+    mockAxios.get.mockResolvedValueOnce(verifyMailResponse)
 
     // Act
     const actual = await MailClient.sendMail(
@@ -36,11 +56,17 @@ describe("Mail Client", () => {
       mockBody
     )
 
+    await jest.advanceTimersByTime(60000)
+
     // Assert
     expect(actual).toBeUndefined()
     expect(mockAxios.post).toHaveBeenCalledWith(
-      mockEndpoint,
+      `${mockEndpoint}send`,
       generatedEmail,
+      mockBearerTokenHeaders
+    )
+    expect(mockAxios.get).toHaveBeenCalledWith(
+      `${mockEndpoint}1`,
       mockBearerTokenHeaders
     )
   })
@@ -56,7 +82,7 @@ describe("Mail Client", () => {
     // Assert
     expect(actual).rejects.toThrowError("Failed to send email")
     expect(mockAxios.post).toHaveBeenCalledWith(
-      mockEndpoint,
+      `${mockEndpoint}send`,
       generatedEmail,
       mockBearerTokenHeaders
     )

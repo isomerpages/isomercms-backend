@@ -79,7 +79,6 @@ class MailClient {
 
   logEmailStatus(verifyMailData: MailData) {
     const mailStatus = verifyMailData.status
-    let unknownMailStatus: never
     switch (mailStatus) {
       case MailStatus.Delivered:
       case MailStatus.Opened:
@@ -111,12 +110,13 @@ class MailClient {
           `Email to ${verifyMailData.recipient} rejected by recipient's mail server: ${verifyMailData}`
         )
         break
-      default:
-        unknownMailStatus = mailStatus
+      default: {
+        const unknownMailStatus: never = mailStatus
         logger.warn(
           `Email to ${verifyMailData.recipient} encounter unknown status: ${unknownMailStatus}`
         )
         break
+      }
     }
   }
 }

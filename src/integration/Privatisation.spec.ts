@@ -295,7 +295,7 @@ describe("Password integration tests", () => {
 
     it("should successfully update a password for already private amplify sites", async () => {
       // Arrange
-      const newPassword = "blah"
+      const newPassword = "blahblahblahblahblahblahblahblahblahblahQ1!"
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,
@@ -393,7 +393,7 @@ describe("Password integration tests", () => {
 
     it("should successfully set a password for public amplify sites", async () => {
       // Arrange
-      const newPassword = "blah"
+      const newPassword = "Blahblahblahblahblahblahblahblah1!"
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
@@ -466,6 +466,27 @@ describe("Password integration tests", () => {
       expect(actual.statusCode).toEqual(400)
     })
 
+    it("should return 400 if password does not fulfill regex", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
+      )
+      const mockPrivatisationRequest = {
+        password: "blah",
+        enablePassword: false,
+      }
+
+      // Act
+      const actual = await request(app)
+        .post(`/${MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD}/repo-password`)
+        .send(mockPrivatisationRequest)
+
+      // Assert
+      expect(actual.statusCode).toEqual(400)
+    })
+
     it("should return 400 if password is provided even though enablePassword is false", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
@@ -474,7 +495,7 @@ describe("Password integration tests", () => {
         MOCK_AMPLIFY_REPO_WITHOUT_PASSWORD
       )
       const mockPrivatisationRequest = {
-        password: "blahblah",
+        password: "blahblahblahblahblahblahblahblahQ1!",
         enablePassword: false,
       }
 

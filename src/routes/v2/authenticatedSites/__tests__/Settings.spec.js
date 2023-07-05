@@ -74,7 +74,7 @@ describe("Settings Router", () => {
     sha: homepageSha,
   }
 
-  const MOCK_PASSWORD = "password"
+  const MOCK_PASSWORD = "passwordpasswordpasswordpasswordQ1!"
   const IS_AMPLIFY_SITE = true
 
   beforeEach(() => {
@@ -223,6 +223,23 @@ describe("Settings Router", () => {
       // Arrange
       const badRequestObject = {
         password: "",
+      }
+
+      // Act
+      const resp = await request(app)
+        .post(`/${siteName}/settings/repo-password`)
+        .send(badRequestObject)
+
+      // Assert
+      expect(resp.statusCode).toEqual(400)
+      expect(mockSettingsService.updatePassword).not.toHaveBeenCalled()
+    })
+
+    it("throws error if password does not match regex", async () => {
+      // Arrange
+      const badRequestObject = {
+        password: "blah",
+        enablePassword: true,
       }
 
       // Act

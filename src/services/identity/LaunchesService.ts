@@ -17,7 +17,6 @@ import {
 import SiteLaunchError from "@root/errors/SiteLaunchError"
 import { AmplifyError } from "@root/types/index"
 import { DnsResultsForSite } from "@root/types/siteInfo"
-import createErrorAndLog from "@root/utils/error-utils"
 import LaunchClient, {
   isAmplifyDomainNotFoundException,
 } from "@services/identity/LaunchClient"
@@ -158,40 +157,37 @@ export class LaunchesService {
   ): Promise<Result<DnsResultsForSite, AmplifyError | SiteLaunchError>> => {
     const siteId = await this.getSiteId(repoName)
     if (siteId.isErr()) {
-      return err(
-        createErrorAndLog(
-          SiteLaunchError,
-          `Failed to get siteId for ${repoName}`
-        )
-      )
+      logger.error(`Failed to find repo '${repoName}' site on Isomer`)
+      return err(new SiteLaunchError(`Failed to find repo '${repoName}'`))
     }
 
     const launchRecord = await fromPromise(
       this.launchesRepository.findOne({
         where: { siteId: siteId.value },
       }),
-      () =>
-        createErrorAndLog(
-          SiteLaunchError,
+      () => {
+        logger.error(`Failed to get launch record for ${repoName}`)
+        return new SiteLaunchError(
           `Failed to get launch record for ${repoName}`
         )
+      }
     )
 
     if (!launchRecord.isOk() || !launchRecord.value) {
-      return err(
-        createErrorAndLog(SiteLaunchError, "Failed to get launch record")
-      )
+      logger.error(`Failed to get launch record`)
+      return err(new SiteLaunchError("Failed to get launch record"))
     }
 
     const redirectionRecord = await fromPromise(
       this.redirectionsRepository.findOne({
         where: { launchId: launchRecord.value.id },
       }),
-      () =>
-        createErrorAndLog(
-          SiteLaunchError,
+      () => {
+        logger.error(`Failed to get redirection record for ${repoName}`)
+        return new SiteLaunchError(
           `Failed to get redirection record for ${repoName}`
         )
+      }
     )
 
     const doesRedirectionRecordExist =

@@ -11,7 +11,7 @@ import {
 } from "@root/../microservices/site-launch/shared/types"
 import DatabaseError from "@root/errors/DatabaseError"
 import MissingSiteError from "@root/errors/MissingSiteError"
-import createErrorAndLog from "@root/utils/error-utils"
+import logger from "@root/logger/logger"
 
 import DynamoDBClient from "./DynamoDBClient"
 
@@ -46,19 +46,17 @@ export default class DynamoDBService {
   getLaunchStatus(
     repoName: string
   ): ResultAsync<SiteLaunchStatus["state"], DatabaseError | MissingSiteError> {
-    return ResultAsync.fromPromise(this.getAllLaunches(), (error) =>
-      createErrorAndLog(
-        DatabaseError,
+    return ResultAsync.fromPromise(this.getAllLaunches(), (error) => {
+      logger.error(`Something went wrong when querying DynamoDB: ${error}`)
+      return new DatabaseError(
         `Something went wrong when querying DynamoDB: ${error}`
       )
-    ).andThen((entries) => {
+    }).andThen((entries) => {
       const entry = entries.find((e) => e.repoName === repoName)
       if (entry) return okAsync(entry.status?.state ?? "pending")
+      logger.error(`No site found for ${repoName} in DynamoDB`)
       return errAsync(
-        createErrorAndLog(
-          MissingSiteError,
-          `No site found for ${repoName} in DynamoDB`
-        )
+        new MissingSiteError(`No site found for ${repoName} in DynamoDB`)
       )
     })
   }

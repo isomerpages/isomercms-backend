@@ -920,7 +920,7 @@ describe("Github Service", () => {
       Authorization: "",
       "Content-Type": "application/json",
     }
-    it("should modify the repo privacy accordingly if changing to true", async () => {
+    it("should modify the repo privacy accordingly if making repo private", async () => {
       const shouldBePrivate = true
       mockAxiosInstance.patch.mockResolvedValueOnce("")
       const resp = await service.changeRepoPrivacy(sessionData, shouldBePrivate)
@@ -934,7 +934,7 @@ describe("Github Service", () => {
       expect(resp.isOk()).toEqual(true)
     })
 
-    it("should modify the repo privacy accordingly if changing to false", async () => {
+    it("should modify the repo privacy accordingly if making repo public", async () => {
       const shouldBePrivate = false
       mockAxiosInstance.patch.mockResolvedValueOnce("")
       const resp = await service.changeRepoPrivacy(sessionData, shouldBePrivate)

@@ -19,22 +19,22 @@ type deploymentsCreateParamsType = Partial<Deployment> & {
   siteId: Deployment["siteId"]
 }
 interface DeploymentsServiceProps {
-  repository: ModelStatic<Deployment>
+  deploymentsRepository: ModelStatic<Deployment>
 }
 
 class DeploymentsService {
-  private readonly repository: DeploymentsServiceProps["repository"]
+  private readonly deploymentsRepository: DeploymentsServiceProps["deploymentsRepository"]
 
   private readonly deploymentClient: DeploymentClient
 
-  constructor({ repository }: DeploymentsServiceProps) {
-    this.repository = repository
+  constructor({ deploymentsRepository }: DeploymentsServiceProps) {
+    this.deploymentsRepository = deploymentsRepository
     this.deploymentClient = new DeploymentClient()
   }
 
   create = async (
     createParams: deploymentsCreateParamsType
-  ): Promise<Deployment> => this.repository.create(createParams)
+  ): Promise<Deployment> => this.deploymentsRepository.create(createParams)
 
   setupAmplifyProject = async ({
     repoName,
@@ -121,7 +121,7 @@ class DeploymentsService {
   }
 
   getDeploymentInfoFromSiteId = async (siteId: string) => {
-    const deploymentInfo = await this.repository.findOne({
+    const deploymentInfo = await this.deploymentsRepository.findOne({
       where: {
         siteId,
       },
@@ -140,7 +140,7 @@ class DeploymentsService {
     if (updateResp.isErr()) {
       return updateResp
     }
-    await this.repository.update(
+    await this.deploymentsRepository.update(
       {
         encryptedPassword: null,
         encryptionIv: null,
@@ -157,7 +157,7 @@ class DeploymentsService {
     enablePassword: boolean
   ) => {
     const SECRET_KEY = config.get("aws.amplify.passwordSecretKey")
-    const deploymentInfo = await this.repository.findOne({
+    const deploymentInfo = await this.deploymentsRepository.findOne({
       include: [
         {
           model: Site,
@@ -203,7 +203,7 @@ class DeploymentsService {
     }
 
     const { encryptedPassword, iv } = encryptPassword(password, SECRET_KEY)
-    await this.repository.update(
+    await this.deploymentsRepository.update(
       {
         encryptedPassword,
         encryptionIv: iv,

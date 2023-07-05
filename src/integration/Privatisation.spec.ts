@@ -152,7 +152,7 @@ const homepagePageService = new HomepagePageService({
   gitHubService,
 })
 const deploymentsService = new DeploymentsService({
-  repository: Deployment,
+  deploymentsRepository: Deployment,
 })
 
 const settingsService = new SettingsService({

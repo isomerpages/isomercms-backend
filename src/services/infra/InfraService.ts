@@ -4,7 +4,6 @@ import {
   Err,
   err,
   errAsync,
-  fromPromise,
   Ok,
   ok,
   okAsync,
@@ -30,7 +29,7 @@ import SiteLaunchError from "@root/errors/SiteLaunchError"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
 import {
-  DnsResultsForSite as SiteDnsResults,
+  DnsResultsForSite,
   SiteLaunchDto,
   SiteLaunchStatusObject,
 } from "@root/types/siteInfo"
@@ -330,7 +329,7 @@ export default class InfraService {
   getGeneratedDnsRecords = async (
     siteName: string
   ): Promise<
-    Result<SiteDnsResults, MissingSiteError | AmplifyError | SiteLaunchError>
+    Result<DnsResultsForSite, MissingSiteError | AmplifyError | SiteLaunchError>
   > => {
     const site = await this.sitesService.getBySiteName(siteName)
     if (site.isErr()) {

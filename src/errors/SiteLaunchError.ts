@@ -7,7 +7,7 @@ export default class SiteLaunchError extends BaseIsomerError {
     message: string,
     meta = {},
     componentCode = ComponentTypes.Service,
-    fileCode = FileCodes.InfraServiceError
+    fileCode = FileCodes.LaunchesService
   ) {
     super({
       status: 400,

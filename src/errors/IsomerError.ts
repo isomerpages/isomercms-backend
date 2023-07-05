@@ -23,7 +23,7 @@ export const ComponentTypes = {
 }
 
 export const FileCodes = {
-  InfraServiceError: "002",
+  LaunchesService: "002",
   CollectionPageService: "001",
   Undefined: "000",
 }

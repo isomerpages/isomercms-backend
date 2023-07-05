@@ -1,15 +1,39 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
 import Joi from "joi"
-import { Err, err, errAsync, Ok, ok, okAsync, Result } from "neverthrow"
+import {
+  Err,
+  err,
+  errAsync,
+  fromPromise,
+  Ok,
+  ok,
+  okAsync,
+  Result,
+  ResultAsync,
+} from "neverthrow"
 
 import { config } from "@config/config"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
 import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
-import { SiteStatus, JobStatus, RedirectionTypes } from "@root/constants"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import {
+  SiteStatus,
+  JobStatus,
+  RedirectionTypes,
+  REDIRECTION_SERVER_IP,
+} from "@root/constants"
+import MissingSiteError from "@root/errors/MissingSiteError"
+import MissingUserEmailError from "@root/errors/MissingUserEmailError"
+import SiteLaunchError from "@root/errors/SiteLaunchError"
 import logger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
+import {
+  DnsResultsForSite as SiteDnsResults,
+  SiteLaunchDto,
+  SiteLaunchStatusObject,
+} from "@root/types/siteInfo"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import {
   SiteLaunchCreateParams,
@@ -21,12 +45,12 @@ import { mailer } from "@services/utilServices/MailClient"
 
 import CollaboratorsService from "../identity/CollaboratorsService"
 import QueueService from "../identity/QueueService"
+import UsersService from "../identity/UsersService"
 
 import DynamoDBService from "./DynamoDBService"
 import StepFunctionsService from "./StepFunctionsService"
 
 const SITE_LAUNCH_UPDATE_INTERVAL = 30000
-export const REDIRECTION_SERVER_IP = "18.136.36.203"
 
 interface InfraServiceProps {
   sitesService: SitesService
@@ -37,6 +61,7 @@ interface InfraServiceProps {
   collaboratorsService: CollaboratorsService
   stepFunctionsService: StepFunctionsService
   dynamoDBService: DynamoDBService
+  usersService: UsersService
 }
 
 interface dnsRecordDto {
@@ -45,13 +70,20 @@ interface dnsRecordDto {
   type: RedirectionTypes
 }
 
-type CreateSiteParams = {
+interface CreateSiteParams {
   creator: User
   // this is ok, since we don't need this for github login flow
   member: User | undefined
   siteName: string
   repoName: string
   isEmailLogin: boolean
+}
+
+interface LaunchSiteFromCMSParams {
+  siteName: string
+  primaryDomain: string
+  useWww: boolean
+  email: string
 }
 
 const DEPRECATE_SITE_QUEUES = config.get(
@@ -74,6 +106,8 @@ export default class InfraService {
 
   private readonly dynamoDBService: InfraServiceProps["dynamoDBService"]
 
+  private readonly usersService: InfraServiceProps["usersService"]
+
   constructor({
     sitesService,
     reposService,
@@ -83,6 +117,7 @@ export default class InfraService {
     collaboratorsService,
     stepFunctionsService,
     dynamoDBService,
+    usersService,
   }: InfraServiceProps) {
     this.sitesService = sitesService
     this.reposService = reposService
@@ -92,6 +127,7 @@ export default class InfraService {
     this.collaboratorsService = collaboratorsService
     this.stepFunctionsService = stepFunctionsService
     this.dynamoDBService = dynamoDBService
+    this.usersService = usersService
   }
 
   createSite = async ({
@@ -227,6 +263,116 @@ export default class InfraService {
       type: recordType,
     }
     return ok(dnsRecord)
+  }
+
+  launchSiteFromCms({
+    siteName,
+    primaryDomain,
+    useWww,
+    email,
+  }: LaunchSiteFromCMSParams): ResultAsync<
+    SiteLaunchCreateParams,
+    AmplifyError | SiteLaunchError | MissingUserEmailError
+  > {
+    // prepare site launch params
+    return ResultAsync.fromPromise(
+      this.usersService.findByEmail(email),
+      (error) =>
+        new MissingUserEmailError(
+          `User with email ${email} not found: ${error}`
+        )
+    ).andThen((requestor) => {
+      if (!requestor) {
+        return errAsync(
+          new MissingUserEmailError(`User with email ${email} not found`)
+        )
+      }
+
+      // since site launch in CMS is triggered by the users themselves, we
+      // treat requestor and agency as the same user
+      const user = requestor
+      const agency = requestor
+      const subDomainSettings = [
+        {
+          branchName: "master",
+          prefix: `${useWww ? "www" : ""}`,
+        },
+      ]
+
+      /**
+       * We update the database first to indicate that the user
+       * has started the site launch flow. This prevents users
+       * from retrying and abusing the system.
+       *
+       * The ability to retry after a failed launch is
+       * tracked in IS-273
+       */
+      return this.launchesService.updateDbForLaunchStart(siteName).andThen(() =>
+        ResultAsync.fromPromise(
+          this.launchSite(
+            user,
+            agency,
+            siteName,
+            primaryDomain,
+            subDomainSettings
+          ),
+          (error) => new SiteLaunchError(`Error launching site: ${error}`)
+        ).andThen((siteLaunch) => {
+          if (siteLaunch.isOk()) {
+            return okAsync(siteLaunch.value)
+          }
+          return errAsync(siteLaunch.error)
+        })
+      )
+    })
+  }
+
+  getGeneratedDnsRecords = async (
+    siteName: string
+  ): Promise<
+    Result<SiteDnsResults, MissingSiteError | AmplifyError | SiteLaunchError>
+  > => {
+    const site = await this.sitesService.getBySiteName(siteName)
+    if (site.isErr()) {
+      return err(site.error)
+    }
+    const dnsRecords = await this.launchesService.getDNSRecords(siteName)
+    if (dnsRecords.isErr()) {
+      return err(dnsRecords.error)
+    }
+    return ok(dnsRecords.value)
+  }
+
+  async getSiteLaunchStatus(
+    sessionData: UserWithSiteSessionData
+  ): Promise<
+    Result<SiteLaunchDto, MissingSiteError | SiteLaunchError | AmplifyError>
+  > {
+    const { siteName } = sessionData
+    const site = await this.sitesService.getBySiteName(siteName)
+    if (site.isErr() && !site.isOk()) {
+      return errAsync(site.error)
+    }
+    if (site.value.siteStatus !== SiteStatus.Launched) {
+      return okAsync<SiteLaunchDto>({
+        siteStatus: SiteLaunchStatusObject.NotLaunched,
+      })
+    }
+
+    const generatedDnsRecords = await this.getGeneratedDnsRecords(siteName)
+    if (generatedDnsRecords.isErr()) {
+      return errAsync(generatedDnsRecords.error)
+    }
+
+    return okAsync<SiteLaunchDto>({
+      siteStatus:
+        // status is only successful iff job is ready
+        site.value.jobStatus === JobStatus.Ready
+          ? SiteLaunchStatusObject.Launched
+          : SiteLaunchStatusObject.Launching,
+      dnsRecords: generatedDnsRecords.value.dnsRecords,
+      siteUrl: generatedDnsRecords.value.siteUrl,
+    })
   }
 
   launchSite = async (
@@ -422,7 +568,7 @@ export default class InfraService {
             updateSiteLaunchParams = {
               id: site.value.id,
               siteStatus: SiteStatus.Launched,
-              jobStatus: JobStatus.Running,
+              jobStatus: JobStatus.Ready,
             }
           } else {
             updateSiteLaunchParams = {

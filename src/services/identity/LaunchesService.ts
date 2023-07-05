@@ -3,14 +3,20 @@ import {
   GetDomainAssociationCommandOutput,
   SubDomainSetting,
 } from "@aws-sdk/client-amplify"
-import { Err, err, Ok, ok } from "neverthrow"
+import { err, errAsync, fromPromise, ok, Result, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import logger from "@logger/logger"
 
-import { Deployment, Launch, Repo, User, Redirection } from "@database/models"
-import { RedirectionTypes } from "@root/constants/constants"
+import { Deployment, Launch, Repo, Redirection, Site } from "@database/models"
+import {
+  JobStatus,
+  RedirectionTypes,
+  SiteStatus,
+} from "@root/constants/constants"
+import SiteLaunchError from "@root/errors/SiteLaunchError"
 import { AmplifyError } from "@root/types/index"
+import { DnsResultsForSite } from "@root/types/siteInfo"
 import LaunchClient, {
   isAmplifyDomainNotFoundException,
 } from "@services/identity/LaunchClient"
@@ -31,7 +37,7 @@ interface LaunchesServiceProps {
   deploymentRepository: ModelStatic<Deployment>
   redirectionsRepository: ModelStatic<Redirection>
   repoRepository: ModelStatic<Repo>
-  userRepository: ModelStatic<User>
+  siteRepository: ModelStatic<Site>
   launchClient: LaunchClient
 }
 
@@ -52,18 +58,22 @@ export class LaunchesService {
 
   private readonly launchClient: LaunchesServiceProps["launchClient"]
 
+  private readonly siteRepository: LaunchesServiceProps["siteRepository"]
+
   constructor({
     deploymentRepository,
     launchesRepository,
     repoRepository,
     redirectionsRepository,
     launchClient,
+    siteRepository,
   }: LaunchesServiceProps) {
     this.deploymentRepository = deploymentRepository
     this.launchClient = launchClient
     this.launchesRepository = launchesRepository
     this.repoRepository = repoRepository
     this.redirectionsRepository = redirectionsRepository
+    this.siteRepository = siteRepository
   }
 
   createOrUpdate = async (
@@ -105,9 +115,7 @@ export class LaunchesService {
     return launch
   }
 
-  getAppId = async (
-    repoName: string
-  ): Promise<Err<never, Error> | Ok<string, never>> => {
+  getAppId = async (repoName: string): Promise<Result<string, Error>> => {
     const siteId = await this.getSiteId(repoName)
     if (siteId.isErr()) {
       const error = Error(`Failed to find repo '${repoName}' site on Isomer`)
@@ -130,9 +138,7 @@ export class LaunchesService {
     return ok(hostingID)
   }
 
-  getSiteId = async (
-    repoName: string
-  ): Promise<Err<never, Error> | Ok<number, never>> => {
+  getSiteId = async (repoName: string): Promise<Result<number, Error>> => {
     const site = await this.repoRepository.findOne({
       where: { name: repoName },
     })
@@ -146,11 +152,86 @@ export class LaunchesService {
     return ok(siteId)
   }
 
+  getDNSRecords = async (
+    repoName: string
+  ): Promise<Result<DnsResultsForSite, AmplifyError | SiteLaunchError>> => {
+    const siteId = await this.getSiteId(repoName)
+    if (siteId.isErr()) {
+      logger.error(`Failed to find repo '${repoName}' site on Isomer`)
+      return err(new SiteLaunchError(`Failed to find repo '${repoName}'`))
+    }
+
+    const launchRecord = await fromPromise(
+      this.launchesRepository.findOne({
+        where: { siteId: siteId.value },
+      }),
+      () => {
+        logger.error(`Failed to get launch record for ${repoName}`)
+        return new SiteLaunchError(
+          `Failed to get launch record for ${repoName}`
+        )
+      }
+    )
+
+    if (!launchRecord.isOk() || !launchRecord.value) {
+      logger.error(`Failed to get launch record`)
+      return err(new SiteLaunchError("Failed to get launch record"))
+    }
+
+    const redirectionRecord = await fromPromise(
+      this.redirectionsRepository.findOne({
+        where: { launchId: launchRecord.value.id },
+      }),
+      () => {
+        logger.error(`Failed to get redirection record for ${repoName}`)
+        return new SiteLaunchError(
+          `Failed to get redirection record for ${repoName}`
+        )
+      }
+    )
+
+    const doesRedirectionRecordExist =
+      redirectionRecord.isOk() && redirectionRecord.value
+    if (!doesRedirectionRecordExist) {
+      logger.info(`No redirection record found for ${repoName}`)
+    }
+
+    return ok({
+      siteUrl: launchRecord.value.primaryDomainSource,
+      dnsRecords: [
+        {
+          // NOTE: In the case where the redirection exists
+          // we need to append the `www` to the primary domain
+          // before displaying it to the user as the `source`
+          source: doesRedirectionRecordExist
+            ? launchRecord.value.primaryDomainSource
+            : `www.${launchRecord.value.primaryDomainSource}`,
+          target: launchRecord.value.primaryDomainTarget,
+          type: RedirectionTypes.CNAME,
+        },
+        {
+          source: launchRecord.value.domainValidationSource,
+          target: launchRecord.value.domainValidationTarget,
+          type: RedirectionTypes.CNAME,
+        },
+        ...(doesRedirectionRecordExist
+          ? [
+              {
+                source: redirectionRecord.value.source,
+                target: redirectionRecord.value.target,
+                type: RedirectionTypes.CNAME,
+              },
+            ]
+          : []),
+      ],
+    })
+  }
+
   configureDomainInAmplify = async (
     repoName: string,
     domainName: string,
     subDomainSettings: SubDomainSetting[]
-  ): Promise<Err<never, AmplifyError> | Ok<DomainAssociationMeta, never>> => {
+  ): Promise<Result<DomainAssociationMeta, AmplifyError>> => {
     // Get appId, which is stored as hostingID in database table.
     const appIdResult = await this.getAppId(repoName)
     if (appIdResult.isErr()) {
@@ -247,6 +328,31 @@ export class LaunchesService {
       where: { id: updateParams.id },
     })
   }
+
+  updateDbForLaunchStart = (siteName: string) =>
+    ResultAsync.fromPromise(
+      this.getSiteId(siteName),
+      () => new SiteLaunchError(`Failed to get site id for ${siteName}`)
+    ).andThen((siteId) => {
+      if (siteId.isErr()) {
+        return errAsync(
+          new SiteLaunchError(`Failed to get site id for ${siteName}`)
+        )
+      }
+      return ResultAsync.fromPromise(
+        this.siteRepository.update(
+          {
+            siteStatus: SiteStatus.Launched,
+            jobStatus: JobStatus.Running,
+          },
+          {
+            where: { id: siteId.value },
+          }
+        ),
+        () =>
+          new SiteLaunchError(`Failed to update site status for ${siteName}`)
+      )
+    })
 }
 
 export default LaunchesService

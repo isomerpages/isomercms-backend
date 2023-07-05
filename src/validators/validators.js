@@ -1,6 +1,7 @@
 const specialCharactersRegexTest = /[~%^*_+\-./\\`;~{}[\]"<>]/
 const jekyllFirstCharacterRegexTest = /^[._#~]/
 const dateRegexTest = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
+const passwordRegexTest = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{12,}$/
 
 const mediaSpecialCharactersRegexTest = /[~%^#*+\./\\`;~{}[\]"<>]/ // Allows dashes
 // Allows only media root folders (/images or /files) and media subdirectories (/images/subdir or /files/subdir) with no banned characters
@@ -30,8 +31,11 @@ const isMediaPathValid = ({ path, isFile = false }) => {
   return mediaSubfolderRegexText.test(path)
 }
 
+const isPasswordValid = (password) => passwordRegexTest.test(password)
+
 module.exports = {
   hasSpecialCharInTitle,
   isDateValid,
   isMediaPathValid,
+  isPasswordValid,
 }

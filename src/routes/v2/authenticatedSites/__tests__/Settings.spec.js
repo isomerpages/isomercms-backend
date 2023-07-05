@@ -1,4 +1,5 @@
 const express = require("express")
+const { okAsync, errAsync } = require("neverthrow")
 const request = require("supertest")
 
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
@@ -12,6 +13,8 @@ const {
   navigationSha,
   navigationResponse,
 } = require("@fixtures/navigation")
+const { NotFoundError } = require("@root/errors/NotFoundError")
+const { mockUserWithSiteSessionData } = require("@root/fixtures/sessionData")
 const { SettingsService } = require("@services/configServices/SettingsService")
 
 const { SettingsRouter } = require("../settings")
@@ -22,6 +25,8 @@ describe("Settings Router", () => {
     updateSettingsFiles: jest.fn(),
     shouldUpdateHomepage: jest.fn(),
     mergeUpdatedData: jest.fn(),
+    getPassword: jest.fn(),
+    updatePassword: jest.fn(),
     extractConfigFields: SettingsService.extractConfigFields,
     extractFooterFields: SettingsService.extractFooterFields,
     extractNavFields: SettingsService.extractNavFields,
@@ -39,6 +44,14 @@ describe("Settings Router", () => {
   subrouter.post(
     "/:siteName/settings",
     attachReadRouteHandlerWrapper(router.updateSettingsPage)
+  )
+  subrouter.get(
+    "/:siteName/settings/repo-password",
+    attachReadRouteHandlerWrapper(router.getRepoPassword)
+  )
+  subrouter.post(
+    "/:siteName/settings/repo-password",
+    attachReadRouteHandlerWrapper(router.updateRepoPassword)
   )
   const app = generateRouter(subrouter)
 
@@ -60,6 +73,9 @@ describe("Settings Router", () => {
     content: homepageContent,
     sha: homepageSha,
   }
+
+  const MOCK_PASSWORD = "passwordpasswordpasswordpasswordQ1!"
+  const IS_AMPLIFY_SITE = true
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -126,6 +142,114 @@ describe("Settings Router", () => {
       // Assert
       expect(mockSettingsService.retrieveSettingsFiles).toHaveBeenCalled()
       expect(mockSettingsService.updateSettingsFiles).toHaveBeenCalled()
+    })
+  })
+
+  describe("getRepoPassword", () => {
+    it("successfully retrieves repo password", async () => {
+      // Arrange
+      const expectedResponse = {
+        password: MOCK_PASSWORD,
+        isAmplifySite: IS_AMPLIFY_SITE,
+      }
+      mockSettingsService.getPassword.mockResolvedValueOnce(
+        okAsync(expectedResponse)
+      )
+
+      // Act
+      const resp = await request(app).get(`/${siteName}/settings/repo-password`)
+
+      // Assert
+      expect(resp.statusCode).toEqual(200)
+      expect(resp.body).toStrictEqual(expectedResponse)
+      expect(mockSettingsService.getPassword).toHaveBeenCalled()
+    })
+    it("throws error if getEncryptedPassword returns error", async () => {
+      // Arrange
+      const thrownErr = new NotFoundError()
+      mockSettingsService.getPassword.mockResolvedValueOnce(errAsync(thrownErr))
+
+      // Act
+      const resp = await request(app).get(`/${siteName}/settings/repo-password`)
+
+      // Assert
+      expect(resp.statusCode).toEqual(404)
+      expect(mockSettingsService.getPassword).toHaveBeenCalled()
+    })
+  })
+
+  describe("updateRepoPassword", () => {
+    const requestObject = {
+      password: MOCK_PASSWORD,
+      enablePassword: true,
+    }
+    it("successfully updates repo password", async () => {
+      // Arrange
+      mockSettingsService.updatePassword.mockResolvedValueOnce(okAsync(""))
+
+      // Act
+      const resp = await request(app)
+        .post(`/${siteName}/settings/repo-password`)
+        .send(requestObject)
+
+      // Assert
+      expect(resp.statusCode).toEqual(200)
+      expect(mockSettingsService.updatePassword).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        requestObject
+      )
+    })
+    it("throws error if getEncryptedPassword returns error", async () => {
+      // Arrange
+      const thrownErr = new NotFoundError()
+      mockSettingsService.updatePassword.mockResolvedValueOnce(
+        errAsync(thrownErr)
+      )
+
+      // Act
+      const resp = await request(app)
+        .post(`/${siteName}/settings/repo-password`)
+        .send(requestObject)
+
+      // Assert
+      expect(resp.statusCode).toEqual(404)
+      expect(mockSettingsService.updatePassword).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        requestObject
+      )
+    })
+
+    it("throws error if request object is incorrect", async () => {
+      // Arrange
+      const badRequestObject = {
+        password: "",
+      }
+
+      // Act
+      const resp = await request(app)
+        .post(`/${siteName}/settings/repo-password`)
+        .send(badRequestObject)
+
+      // Assert
+      expect(resp.statusCode).toEqual(400)
+      expect(mockSettingsService.updatePassword).not.toHaveBeenCalled()
+    })
+
+    it("throws error if password does not match regex", async () => {
+      // Arrange
+      const badRequestObject = {
+        password: "blah",
+        enablePassword: true,
+      }
+
+      // Act
+      const resp = await request(app)
+        .post(`/${siteName}/settings/repo-password`)
+        .send(badRequestObject)
+
+      // Assert
+      expect(resp.statusCode).toEqual(400)
+      expect(mockSettingsService.updatePassword).not.toHaveBeenCalled()
     })
   })
 })

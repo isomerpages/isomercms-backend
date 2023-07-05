@@ -16,6 +16,7 @@ const {
   UpdateRepoPasswordRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { isPasswordValid } = require("@root/validators/validators")
 const { SettingsService } = require("@services/configServices/SettingsService")
 
 class SettingsRouter {
@@ -103,6 +104,8 @@ class SettingsRouter {
     if (error) throw new BadRequestError(error.message)
 
     const { password, enablePassword } = body
+    if (enablePassword && !isPasswordValid(password))
+      throw new BadRequestError("Password does not fulfill criteria!")
     const passwordRes = await this.settingsService.updatePassword(
       userWithSiteSessionData,
       {

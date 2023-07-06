@@ -371,15 +371,18 @@ const config = convict({
       default: false,
     },
   },
+  redirectionServer: {
+    elasticIp: {
+      doc: "Elastic IP of the redirection server",
+      env: "REDIRECTION_SERVER_ELASTIC_IP",
+      format: String,
+      default: "18.136.36.203",
+    },
+  },
 })
 
 // Perform validation
-// TODO: remove try-catch after prod deployment is successful to avoid blocking
-try {
-  config.validate({ allowed: "strict" })
-} catch (e: any) {
-  console.log(`Convict error: ${e}`)
-}
+config.validate({ allowed: "strict" })
 
 export default config
 export { config }

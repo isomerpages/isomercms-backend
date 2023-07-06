@@ -59,6 +59,32 @@ const extractEmailOtp = (emailBody: string): string => {
 const extractMobileOtp = (mobileBody: string): string =>
   mobileBody.slice(12, 12 + 6)
 
+const mockSendMailResponse = {
+  data: {
+    id: "1",
+    recipient: mockValidEmail,
+    status: "ACCEPTED",
+  },
+  status: 201,
+  statusText: "Created",
+}
+
+const mockVerifyMailResponse = {
+  data: {
+    id: "1",
+    recipient: mockValidEmail,
+    status: "DELIVERED",
+  },
+  status: 200,
+  statusText: "Ok",
+}
+
+// NOTE: This set of tests will encounter warnings for remaining asynchronous operations
+// after the tests are complete. This is because MailClient.ts has a separate routine
+// for verification of email statuses which has a delay of 1 minute. Waiting for that
+// long will cause the tests to timeout. useFakeTimers() have been experimented with,
+// but behaviour seem to be buggy and cause all tests to fail. Hence, currently sticking
+// with the warning and letting the tests pass.
 describe("Users Router", () => {
   beforeAll(async () => {
     // We need to force the relevant tables to start from a clean slate
@@ -89,7 +115,8 @@ describe("Users Router", () => {
     it("should return 200 when email sending is successful", async () => {
       // Arrange
       const expected = 200
-      mockAxios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
@@ -104,6 +131,7 @@ describe("Users Router", () => {
     it("should return 400 when there is no email in the request body", async () => {
       // Arrange
       const expected = 400
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
 
       // Act
       const actual = await request(app).post("/email/otp").send({})
@@ -115,6 +143,7 @@ describe("Users Router", () => {
     it("should return 400 when the email is empty", async () => {
       // Arrange
       const expected = 400
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
 
       // Act
       const actual = await request(app).post("/email/otp").send({ email: "" })
@@ -126,6 +155,8 @@ describe("Users Router", () => {
     it("should return 400 when the email is not in the whitelist", async () => {
       // Arrange
       const expected = 400
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
 
       // Act
@@ -139,6 +170,8 @@ describe("Users Router", () => {
     it("should return 400 when the email is of an invalid form", async () => {
       // Arrange
       const expected = 400
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
 
       // Act
       const actual = await request(app).post("/email/otp").send({
@@ -170,10 +203,14 @@ describe("Users Router", () => {
       // Arrange
       const expected = 200
       let otp = ""
-      mockAxios.post.mockImplementationOnce((_: any, email: any) => {
+      mockAxios.post.mockImplementationOnce((_, email) => {
         otp = extractEmailOtp(email.body)
-        return email
+        // NOTE: We are casting as `any` here because
+        // the underlying type used by `mockAxios` is
+        // not a promise and we do not have the type installed.
+        return mockSendMailResponse as any
       })
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
 
       await User.create({ id: mockIsomerUserId })
       await Whitelist.create({ email: mockWhitelistedDomain })
@@ -203,7 +240,8 @@ describe("Users Router", () => {
       // Arrange
       const expected = 400
       const wrongOtp = "123456"
-      mockAxios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
@@ -224,7 +262,8 @@ describe("Users Router", () => {
     it("should return 400 when there is no otp", async () => {
       // Arrange
       const expected = 400
-      mockAxios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
@@ -245,7 +284,8 @@ describe("Users Router", () => {
     it("should return 400 when otp is undefined", async () => {
       // Arrange
       const expected = 400
-      mockAxios.post.mockResolvedValueOnce(200)
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
@@ -269,8 +309,13 @@ describe("Users Router", () => {
       let otp
       mockAxios.post.mockImplementation((_: any, email: any) => {
         otp = extractEmailOtp(email.body)
-        return email
+        // NOTE: We are casting as `any` here because
+        // the underlying type used by `mockAxios` is
+        // not a promise and we do not have the type installed.
+        return mockSendMailResponse as any
       })
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
+
       await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
@@ -308,7 +353,8 @@ describe("Users Router", () => {
     it("should return 400 when max number of email otp attempts is reached with correct error message", async () => {
       // Arrange
       const expected = 400
-      mockAxios.post.mockResolvedValue(200)
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({
@@ -343,7 +389,8 @@ describe("Users Router", () => {
 
     it("should reset otp attempts when new email otp is requested", async () => {
       // Arrange
-      mockAxios.post.mockResolvedValue(200)
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
       await Whitelist.create({ email: mockWhitelistedDomain })
       await User.create({ id: mockIsomerUserId })
       await request(app).post("/email/otp").send({

@@ -56,3 +56,4 @@ export const ISOMER_ADMIN_REPOS = [
 
 export const INACTIVE_USER_THRESHOLD_DAYS = 60
 export const GITHUB_ORG_REPOS_ENDPOINT = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
+export const REDIRECTION_SERVER_IP = config.get("redirectionServer.elasticIp")

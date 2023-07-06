@@ -23,6 +23,7 @@ export const ComponentTypes = {
 }
 
 export const FileCodes = {
+  LaunchesService: "002",
   CollectionPageService: "001",
   Undefined: "000",
 }

@@ -207,6 +207,7 @@ const launchesService = new LaunchesService({
   repoRepository: Repo,
   deploymentRepository: Deployment,
   redirectionsRepository: Redirection,
+  siteRepository: Site,
   launchClient,
 })
 const queueService = new QueueService()
@@ -235,6 +236,7 @@ const infraService = new InfraService({
   collaboratorsService,
   stepFunctionsService,
   dynamoDBService,
+  usersService,
 })
 // poller site launch updates
 infraService.pollMessages()
@@ -285,6 +287,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authorizationMiddleware,
   reviewRouter,
   notificationsService,
+  infraService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({

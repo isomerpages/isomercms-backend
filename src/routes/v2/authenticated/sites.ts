@@ -70,7 +70,7 @@ export class SitesRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-    const lastUpdated = await this.sitesService.getLastUpdated(
+    const lastUpdated = this.sitesService.getLastUpdated(
       userWithSiteSessionData
     )
     return res.status(200).json({ lastUpdated })

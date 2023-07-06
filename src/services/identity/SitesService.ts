@@ -5,27 +5,16 @@ import { ModelStatic } from "sequelize"
 import { Deployment, Repo, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import {
-  ISOMERPAGES_REPO_PAGE_COUNT,
-  GH_MAX_REPO_COUNT,
-  ISOMER_ADMIN_REPOS,
-  GITHUB_ORG_REPOS_ENDPOINT,
-} from "@root/constants"
 import DatabaseError from "@root/errors/DatabaseError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import MissingUserError from "@root/errors/MissingUserError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
-import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
-import type {
-  GitHubRepositoryData,
-  RepositoryData,
-  SiteUrls,
-} from "@root/types/repoInfo"
+import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
 import { Brand } from "@root/types/util"
 import { safeJsonParse } from "@root/utils/json"
@@ -34,6 +23,10 @@ import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigY
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
+import {
+  getAllRepoData,
+  RepositoryDataCache,
+} from "@services/utilServices/RepoCache"
 
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
@@ -59,6 +52,8 @@ class SitesService {
 
   private readonly reviewRequestService: SitesServiceProps["reviewRequestService"]
 
+  private repoCache: RepositoryDataCache
+
   constructor({
     siteRepository,
     gitHubService,
@@ -73,6 +68,7 @@ class SitesService {
     this.usersService = usersService
     this.isomerAdminsService = isomerAdminsService
     this.reviewRequestService = reviewRequestService
+    this.repoCache = new RepositoryDataCache()
   }
 
   isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
@@ -322,15 +318,6 @@ class SitesService {
     const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
     const { accessToken } = sessionData
 
-    // Simultaneously retrieve all isomerpages repos
-    const paramsArr = _.fill(Array(ISOMERPAGES_REPO_PAGE_COUNT), null).map(
-      (__, idx) => ({
-        per_page: GH_MAX_REPO_COUNT,
-        sort: "full_name",
-        page: idx + 1,
-      })
-    )
-
     // get sites from DB for email login users
     if (!isAdminUser && isEmailUser) {
       const retrievedSitesByEmail = await this.getSitesForEmailUser(userId)
@@ -338,64 +325,22 @@ class SitesService {
 
       const repoData: RepositoryData[] = filteredValidSites.map((site) => ({
         repoName: site,
+        lastUpdated: this.repoCache.getLastUpdated(site),
       }))
       return repoData
     }
-
-    const allSites = await Promise.all(
-      paramsArr.map(async (params) => {
-        const {
-          data: respData,
-        }: {
-          data: GitHubRepositoryData[]
-        } = await genericGitHubAxiosInstance.get(GITHUB_ORG_REPOS_ENDPOINT, {
-          headers: { Authorization: `token ${accessToken}` },
-          params,
-        })
-
-        return respData
-          .map((gitHubRepoData) => {
-            const {
-              pushed_at: updatedAt,
-              permissions,
-              name,
-              private: isPrivate,
-            } = gitHubRepoData
-
-            return {
-              lastUpdated: updatedAt,
-              permissions,
-              repoName: name,
-              isPrivate,
-            } as RepositoryData
-          })
-          .filter((repoData) => {
-            if (!repoData || !repoData.permissions) {
-              return false
-            }
-            return (
-              repoData.permissions.push === true &&
-              !ISOMER_ADMIN_REPOS.includes(repoData.repoName)
-            )
-          })
-      })
-    )
-
-    const flattenedAllSites = _.flatten(allSites)
     // Github users are using their own access token, which already filters sites to only those they have write access to
     // Admin users should have access to all sites regardless
-    return flattenedAllSites
+
+    return getAllRepoData(accessToken)
   }
 
   async checkHasAccessForGitHubUser(sessionData: UserWithSiteSessionData) {
     await this.gitHubService.checkHasAccess(sessionData)
   }
 
-  async getLastUpdated(sessionData: UserWithSiteSessionData): Promise<string> {
-    const { pushed_at: updatedAt } = await this.gitHubService.getRepoInfo(
-      sessionData
-    )
-    return updatedAt
+  getLastUpdated(sessionData: UserWithSiteSessionData): string {
+    return this.repoCache.getLastUpdated(sessionData.siteName) || ""
   }
 
   getStagingUrl(

@@ -13,6 +13,7 @@ import {
   JobStatus,
   RedirectionTypes,
   SiteStatus,
+  REDIRECTION_SERVER_IP,
 } from "@root/constants/constants"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
 import { AmplifyError } from "@root/types/index"
@@ -204,8 +205,8 @@ export class LaunchesService {
           // we need to append the `www` to the primary domain
           // before displaying it to the user as the `source`
           source: doesRedirectionRecordExist
-            ? launchRecord.value.primaryDomainSource
-            : `www.${launchRecord.value.primaryDomainSource}`,
+            ? `www.${launchRecord.value.primaryDomainSource}`
+            : launchRecord.value.primaryDomainSource,
           target: launchRecord.value.primaryDomainTarget,
           type: RedirectionTypes.CNAME,
         },
@@ -218,8 +219,8 @@ export class LaunchesService {
           ? [
               {
                 source: redirectionRecord.value.source,
-                target: redirectionRecord.value.target,
-                type: RedirectionTypes.CNAME,
+                target: REDIRECTION_SERVER_IP,
+                type: RedirectionTypes.A,
               },
             ]
           : []),

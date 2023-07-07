@@ -11,6 +11,10 @@ import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import MissingUserError from "@root/errors/MissingUserError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
+import {
+  getAllRepoData,
+  SitesCacheService,
+} from "@root/services/identity/SitesCacheService"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
@@ -23,10 +27,6 @@ import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigY
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
-import {
-  getAllRepoData,
-  RepositoryDataCache,
-} from "@services/utilServices/RepoCache"
 
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
@@ -35,6 +35,7 @@ interface SitesServiceProps {
   usersService: UsersService
   isomerAdminsService: IsomerAdminsService
   reviewRequestService: ReviewRequestService
+  sitesCacheService: SitesCacheService
 }
 
 class SitesService {
@@ -52,7 +53,7 @@ class SitesService {
 
   private readonly reviewRequestService: SitesServiceProps["reviewRequestService"]
 
-  private repoCache: RepositoryDataCache
+  private readonly sitesCacheService: SitesServiceProps["sitesCacheService"]
 
   constructor({
     siteRepository,
@@ -61,6 +62,7 @@ class SitesService {
     usersService,
     isomerAdminsService,
     reviewRequestService,
+    sitesCacheService,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
@@ -68,7 +70,7 @@ class SitesService {
     this.usersService = usersService
     this.isomerAdminsService = isomerAdminsService
     this.reviewRequestService = reviewRequestService
-    this.repoCache = new RepositoryDataCache()
+    this.sitesCacheService = sitesCacheService
   }
 
   isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
@@ -325,7 +327,7 @@ class SitesService {
 
       const repoData: RepositoryData[] = filteredValidSites.map((site) => ({
         repoName: site,
-        lastUpdated: this.repoCache.getLastUpdated(site),
+        lastUpdated: this.sitesCacheService.getLastUpdated(site),
       }))
       return repoData
     }
@@ -340,7 +342,7 @@ class SitesService {
   }
 
   getLastUpdated(sessionData: UserWithSiteSessionData): string {
-    return this.repoCache.getLastUpdated(sessionData.siteName) || ""
+    return this.sitesCacheService.getLastUpdated(sessionData.siteName) || ""
   }
 
   getStagingUrl(

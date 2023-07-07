@@ -9,7 +9,12 @@ import {
 import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
 import type { GitHubRepositoryData, RepositoryData } from "@root/types/repoInfo"
 
-const CACHE_REFRESH_INTERVAL = 60 * 1000 // 1 minutes
+// The SitesCacheService is responsible for storing information about
+// sites that is not updated live such as lastUpdated and previewImage.
+// Changes are polled at fixed intervals, stored in cache, and served
+// to avoid long load time from live querying.
+
+const REPO_DATA_REFRESH_INTERVAL = 60 * 1000 // 1 minutes
 
 export async function getAllRepoData(
   accessToken: string | undefined
@@ -68,22 +73,21 @@ export async function getAllRepoData(
   return _.flatten(allSites)
 }
 
-export class RepositoryDataCache {
-  private allRepositoryDataCache: RepositoryData[]
+export class SitesCacheService {
+  private repoDataCache: RepositoryData[]
 
   constructor() {
-    this.allRepositoryDataCache = []
+    this.repoDataCache = []
     this.renewCache()
-    setInterval(() => this.renewCache(), CACHE_REFRESH_INTERVAL)
+    setInterval(() => this.renewCache(), REPO_DATA_REFRESH_INTERVAL)
   }
 
-  async renewCache() {
-    this.allRepositoryDataCache = await getAllRepoData(undefined)
+  private async renewCache() {
+    this.repoDataCache = await getAllRepoData(undefined)
   }
 
   getLastUpdated(repoName: string) {
-    return this.allRepositoryDataCache.find(
-      (repoData) => repoData.repoName === repoName
-    )?.lastUpdated
+    return this.repoDataCache.find((siteData) => siteData.repoName === repoName)
+      ?.lastUpdated
   }
 }

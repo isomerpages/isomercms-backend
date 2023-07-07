@@ -56,6 +56,7 @@ import {
 import DeploymentsService from "@services/identity/DeploymentsService"
 import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
+import { SitesCacheService } from "@services/identity/SitesCacheService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import { statsService } from "@services/infra/StatsService"
@@ -191,6 +192,8 @@ const reviewRequestService = new ReviewRequestService(
   pageService,
   new ConfigService()
 )
+const sitesCacheService = new SitesCacheService()
+
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -198,6 +201,7 @@ const sitesService = new SitesService({
   usersService,
   isomerAdminsService,
   reviewRequestService,
+  sitesCacheService,
 })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({

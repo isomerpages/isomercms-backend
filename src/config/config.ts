@@ -385,6 +385,14 @@ const config = convict({
       default: "18.136.36.203",
     },
   },
+  netlify: {
+    accessToken: {
+      doc: "Access token for netlify actions",
+      env: "NETLIFY_ACCESS_TOKEN",
+      format: "required-string",
+      default: "",
+    },
+  },
 })
 
 // Perform validation

@@ -6,6 +6,7 @@ const { okAsync, errAsync } = require("neverthrow")
 const { config: convictConfig } = require("@config/config")
 
 const { decryptPassword } = require("@root/utils/crypto-utils")
+const { privatiseNetlifySite } = require("@root/utils/netlify-utils")
 
 class SettingsService {
   constructor({
@@ -181,6 +182,10 @@ class SettingsService {
         })
       } catch (err) {
         return errAsync(err)
+      }
+      if (enablePassword) {
+        // Additionally, we perform an async operation here to swap the netlify repo to private and disable builds, if necessary
+        privatiseNetlifySite(siteName, password)
       }
     }
     return this.deploymentsService.updateAmplifyPassword(

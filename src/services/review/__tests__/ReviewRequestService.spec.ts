@@ -510,6 +510,13 @@ describe("ReviewRequestService", () => {
     // NOTE: We are only assuming one review request is returned
     it("should return an array of basic review request objects not viewed before", async () => {
       // Arrange
+      const mockCommitDiff = {
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      }
       const expected = [
         {
           id: MOCK_REVIEW_REQUEST_ONE.id,
@@ -517,7 +524,7 @@ describe("ReviewRequestService", () => {
           status: MOCK_REVIEW_REQUEST_ONE.reviewStatus,
           title: MOCK_PULL_REQUEST_ONE.title,
           description: MOCK_PULL_REQUEST_ONE.body,
-          changedFiles: MOCK_PULL_REQUEST_ONE.changed_files,
+          changedFiles: mockCommitDiff.files.length,
           createdAt: new Date(MOCK_PULL_REQUEST_ONE.created_at).getTime(),
           newComments: 2,
           firstView: true,
@@ -527,6 +534,7 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
+      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(0)
       MockReviewApi.getComments.mockResolvedValueOnce([
         MOCK_GITHUB_COMMENT_DATA_ONE,
@@ -569,6 +577,13 @@ describe("ReviewRequestService", () => {
 
     it("should return an array of basic review request objects with a mix of read and unread comments", async () => {
       // Arrange
+      const mockCommitDiff = {
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      }
       const expected = [
         {
           id: MOCK_REVIEW_REQUEST_ONE.id,
@@ -576,7 +591,7 @@ describe("ReviewRequestService", () => {
           status: MOCK_REVIEW_REQUEST_ONE.reviewStatus,
           title: MOCK_PULL_REQUEST_ONE.title,
           description: MOCK_PULL_REQUEST_ONE.body,
-          changedFiles: MOCK_PULL_REQUEST_ONE.changed_files,
+          changedFiles: mockCommitDiff.files.length,
           createdAt: new Date(MOCK_PULL_REQUEST_ONE.created_at).getTime(),
           newComments: 1,
           firstView: false,
@@ -586,6 +601,7 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
+      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
       MockReviewApi.getComments.mockResolvedValueOnce([
         MOCK_GITHUB_COMMENT_DATA_ONE,
@@ -630,6 +646,13 @@ describe("ReviewRequestService", () => {
 
     it("should return an array of basic review request objects with no comments", async () => {
       // Arrange
+      const mockCommitDiff = {
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      }
       const expected = [
         {
           id: MOCK_REVIEW_REQUEST_ONE.id,
@@ -637,7 +660,7 @@ describe("ReviewRequestService", () => {
           status: MOCK_REVIEW_REQUEST_ONE.reviewStatus,
           title: MOCK_PULL_REQUEST_ONE.title,
           description: MOCK_PULL_REQUEST_ONE.body,
-          changedFiles: MOCK_PULL_REQUEST_ONE.changed_files,
+          changedFiles: mockCommitDiff.files.length,
           createdAt: new Date(MOCK_PULL_REQUEST_ONE.created_at).getTime(),
           newComments: 0,
           firstView: false,
@@ -647,6 +670,7 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
+      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
       MockReviewApi.getComments.mockResolvedValueOnce([])
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(

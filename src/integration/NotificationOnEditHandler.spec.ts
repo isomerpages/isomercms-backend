@@ -23,6 +23,12 @@ import {
   mockIsomerUserId,
   mockSiteName,
 } from "@fixtures/sessionData"
+import {
+  MOCK_PULL_REQUEST_COMMIT_ONE,
+  MOCK_PULL_REQUEST_COMMIT_TWO,
+  MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+  MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+} from "@root/fixtures/review"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -51,6 +57,7 @@ const mockSiteMemberId = "1"
 const mockGithubService = {
   getPullRequest: jest.fn(),
   getComments: jest.fn(),
+  getCommitDiff: jest.fn(),
 }
 const usersService = getUsersService(sequelize)
 const footerYmlService = new FooterYmlService({
@@ -265,6 +272,13 @@ describe("Notifications Router", () => {
         reviewLink: "test",
       })
       mockGithubService.getComments.mockResolvedValueOnce([])
+      mockGithubService.getCommitDiff.mockResolvedValueOnce({
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      })
 
       // Act
       await request(app).get(`/${mockSiteName}/test`)

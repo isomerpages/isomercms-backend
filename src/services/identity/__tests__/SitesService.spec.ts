@@ -1033,14 +1033,16 @@ describe("SitesService", () => {
 
   describe("getLastUpdated", () => {
     it("Checks when site was last updated", async () => {
-      MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
+      MockSitesCacheService.getLastUpdated.mockResolvedValueOnce(
+        repoInfo.pushed_at
+      )
 
       await expect(
         SitesService.getLastUpdated(mockUserWithSiteSessionData)
       ).resolves.toEqual(repoInfo.pushed_at)
 
-      expect(MockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData
+      expect(MockSitesCacheService.getLastUpdated).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData.siteName
       )
     })
   })

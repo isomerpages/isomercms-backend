@@ -44,6 +44,7 @@ import LaunchClient from "@root/services/identity/LaunchClient"
 import LaunchesService from "@root/services/identity/LaunchesService"
 import QueueService from "@root/services/identity/QueueService"
 import ReposService from "@root/services/identity/ReposService"
+import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
 import DynamoDBDocClient from "@root/services/infra/DynamoDBClient"
 import DynamoDBService from "@root/services/infra/DynamoDBService"
@@ -111,6 +112,11 @@ const reviewRequestService = new ReviewRequestService(
   pageService,
   configService
 )
+// Using a mock SitesCacheService as the actual service has setInterval
+// which causes tests to not exit.
+const MockSitesCacheService = {
+  getLastUpdated: jest.fn(),
+}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -118,6 +124,7 @@ const sitesService = new SitesService({
   usersService,
   isomerAdminsService,
   reviewRequestService,
+  sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

@@ -407,9 +407,17 @@ export default class ReviewRequestService {
         const {
           title,
           body,
-          changed_files,
           created_at,
         } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
+        const { files } = await this.apiService.getCommitDiff(siteName)
+        const filterPlaceholderFiles = files
+          .filter((file) => {
+            const extractPlaceholderFileResult = extractPathInfo(
+              file.filename
+            ).andThen((pathInfo) => this.extractPlaceholderInfo(pathInfo))
+            return extractPlaceholderFileResult.isErr()
+          })
+          .map((file) => file.filename)
 
         // It is the user's first view if the review request views table
         // does not contain a record for the user and the review request
@@ -448,7 +456,7 @@ export default class ReviewRequestService {
           status: req.reviewStatus,
           title,
           description: body || "",
-          changedFiles: changed_files,
+          changedFiles: filterPlaceholderFiles.length,
           createdAt: new Date(created_at).getTime(),
           newComments: countNewComments,
           firstView: isFirstView,
@@ -725,10 +733,15 @@ export default class ReviewRequestService {
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
         this.compareDiff(userWithSiteSessionData, stagingLink).map(
-          (changedItems) => ({
-            ...rest,
-            changedItems,
-          })
+          (changedItems) => {
+            const filterPlaceholderFiles = changedItems.filter(
+              (changedItem) => changedItem.type !== "placeholder"
+            )
+            return {
+              ...rest,
+              changedItems: filterPlaceholderFiles,
+            }
+          }
         )
       )
   }

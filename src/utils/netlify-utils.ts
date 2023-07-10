@@ -19,7 +19,7 @@ type NetlifySiteDetails = {
 type UpdateNetlifySiteDetails = {
   password: string
   build_settings: {
-    stop_builds: boolean
+    stop_builds: true
   }
 }
 
@@ -87,7 +87,7 @@ export const privatiseNetlifySite = async (
       const { id } = netlifySite
       const updatedSettings = {
         build_settings: {
-          stop_builds: true,
+          stop_builds: true as const,
         },
         password,
       }

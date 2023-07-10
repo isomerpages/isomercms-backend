@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 
 import { config } from "@config/config"
 
@@ -43,7 +43,8 @@ const getNetlifySiteDetails = async (
         site.build_settings.repo_branch === "staging"
     )
     return relatedSites
-  } catch (err: any) {
+  } catch (_err: unknown) {
+    const err = _err as AxiosError
     if (err.message)
       logger.error(
         `Error occurred when retrieving netlify sites: ${err.message}`

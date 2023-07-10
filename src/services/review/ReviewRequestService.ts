@@ -35,6 +35,7 @@ import {
   BaseEditedItemDto,
   CommentItem,
   DashboardReviewRequestDto,
+  DisplayedEditedItemDto,
   EditedConfigDto,
   EditedItemDto,
   EditedMediaDto,
@@ -410,11 +411,13 @@ export default class ReviewRequestService {
           created_at,
         } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
         const { files } = await this.apiService.getCommitDiff(siteName)
-        const filterPlaceholderFiles = files
+        const displayedFiles = files
           .filter((file) => {
             const extractPlaceholderFileResult = extractPathInfo(
               file.filename
-            ).andThen((pathInfo) => this.extractPlaceholderInfo(pathInfo))
+            ).andThen((pathInfo) =>
+              PlaceholderService.isPlaceholderFile(pathInfo)
+            )
             return extractPlaceholderFileResult.isErr()
           })
           .map((file) => file.filename)
@@ -456,7 +459,7 @@ export default class ReviewRequestService {
           status: req.reviewStatus,
           title,
           description: body || "",
-          changedFiles: filterPlaceholderFiles.length,
+          changedFiles: displayedFiles.length,
           createdAt: new Date(created_at).getTime(),
           newComments: countNewComments,
           firstView: isFirstView,
@@ -734,12 +737,15 @@ export default class ReviewRequestService {
         // Note that we need a triple dot (...) between base and head refs
         this.compareDiff(userWithSiteSessionData, stagingLink).map(
           (changedItems) => {
-            const filterPlaceholderFiles = changedItems.filter(
-              (changedItem) => changedItem.type !== "placeholder"
+            const displayedFiles = changedItems.filter(
+              (
+                changedItem
+              ): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+                changedItem.type !== "placeholder"
             )
             return {
               ...rest,
-              changedItems: filterPlaceholderFiles,
+              changedItems: displayedFiles,
             }
           }
         )

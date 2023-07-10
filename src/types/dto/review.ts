@@ -45,6 +45,11 @@ export type EditedItemDto =
   | EditedMediaDto
   | EditedPlaceholderDto
 
+export type DisplayedEditedItemDto = Exclude<
+  EditedItemDto,
+  EditedPlaceholderDto
+>
+
 export interface UserDto {
   email: string
   role: CollaboratorRoles
@@ -71,7 +76,7 @@ export interface ReviewRequestDto {
   reviewers: string[]
   reviewRequestedTime: number
   status: ReviewRequestStatus
-  changedItems: WithEditMeta<EditedItemDto>[]
+  changedItems: WithEditMeta<DisplayedEditedItemDto>[]
 }
 
 export interface UpdateReviewRequestDto {

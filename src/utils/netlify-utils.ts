@@ -24,7 +24,9 @@ type UpdateNetlifySiteDetails = {
 }
 
 // Retrieves all netlify sites which build from the given repo's staging branch
-const getNetlifySiteDetails = async (repoName: string) => {
+const getNetlifySiteDetails = async (
+  repoName: string
+): Promise<NetlifySiteDetails[]> => {
   const endpoint = "https://api.netlify.com/api/v1/sites"
   const headers = {
     Authorization: `Bearer ${NETLIFY_ACCESS_TOKEN}`,

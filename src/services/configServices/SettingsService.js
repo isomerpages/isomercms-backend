@@ -168,6 +168,11 @@ class SettingsService {
     }
     const { id, isPrivate } = siteInfo.value
     if (!isPrivate && !enablePassword) return okAsync("")
+    if (!isPrivate && enablePassword) {
+      // Additionally, we perform an async operation here to swap the netlify repo to private and disable builds,
+      // only when changing from public to private
+      privatiseNetlifySite(siteName, password)
+    }
     if (isPrivate !== enablePassword) {
       // For public -> private or private -> public, we also need to update the repo privacy on github
       const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(
@@ -182,10 +187,6 @@ class SettingsService {
         })
       } catch (err) {
         return errAsync(err)
-      }
-      if (enablePassword) {
-        // Additionally, we perform an async operation here to swap the netlify repo to private and disable builds, if necessary
-        privatiseNetlifySite(siteName, password)
       }
     }
     return this.deploymentsService.updateAmplifyPassword(

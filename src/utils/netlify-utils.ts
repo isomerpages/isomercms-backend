@@ -16,6 +16,9 @@ type NetlifySiteDetails = {
   }
 }
 
+const isAxiosError = (err: unknown) =>
+  !(typeof err === "object" && !!err && "message" in err)
+
 type UpdateNetlifySiteDetails = {
   password: string
   build_settings: {
@@ -43,13 +46,20 @@ const getNetlifySiteDetails = async (
         site.build_settings.repo_branch === "staging"
     )
     return relatedSites
-  } catch (_err: unknown) {
-    const err = _err as AxiosError
-    if (err.message)
+  } catch (err: unknown) {
+    if (!isAxiosError(err))
       logger.error(
-        `Error occurred when retrieving netlify sites: ${err.message}`
+        `Error occurred when retrieving netlify sites: ${JSON.stringify(err)}`
       )
-    else logger.error("Error occurred when retrieving netlify sites")
+    const axiosErr = err as AxiosError
+    if (axiosErr.message)
+      logger.error(
+        `Error occurred when retrieving netlify sites: ${axiosErr.message}`
+      )
+    else
+      logger.error(
+        `Error occurred when retrieving netlify sites: ${JSON.stringify(err)}`
+      )
   }
   return []
 }
@@ -66,13 +76,24 @@ const updateNetlifySite = async (
   }
   try {
     await axios.patch(endpoint, settings, { headers })
-  } catch (err: any) {
-    if (err.message)
+  } catch (err: unknown) {
+    if (!isAxiosError(err))
       logger.error(
-        `Error occurred when updating password for site ${repoName}: ${err.message}`
+        `Error occurred when updating password for site ${repoName}: ${JSON.stringify(
+          err
+        )}`
+      )
+    const axiosErr = err as AxiosError
+    if (axiosErr.message)
+      logger.error(
+        `Error occurred when updating password for site ${repoName}: ${axiosErr.message}`
       )
     else
-      logger.error(`Error occurred when updating password for site ${repoName}`)
+      logger.error(
+        `Error occurred when updating password for site ${repoName}: ${JSON.stringify(
+          err
+        )}`
+      )
   }
 }
 

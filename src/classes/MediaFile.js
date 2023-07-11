@@ -1,3 +1,5 @@
+import { validateStatus } from "@root/utils/axios-utils"
+
 const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
@@ -6,7 +8,6 @@ const {
 const { MediaTypeError } = require("@errors/MediaTypeError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
-const validateStatus = require("@utils/axios-utils")
 const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
 const {

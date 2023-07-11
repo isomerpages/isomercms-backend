@@ -1,3 +1,5 @@
+import { validateStatus } from "@root/utils/axios-utils"
+
 const axios = require("axios")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
@@ -8,7 +10,6 @@ const { config } = require("@config/config")
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 
-const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const {

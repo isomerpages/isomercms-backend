@@ -1,6 +1,7 @@
 import { config } from "@config/config"
 
 import { isSecure } from "@root/utils/auth-utils"
+import { validateStatus } from "@root/utils/axios-utils"
 
 const axios = require("axios")
 const express = require("express")
@@ -16,7 +17,6 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const { authenticationMiddleware } = require("@root/middleware")

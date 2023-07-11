@@ -5,8 +5,8 @@ const { okAsync, errAsync } = require("neverthrow")
 
 const { config: convictConfig } = require("@config/config")
 
+const { privatiseNetlifySite } = require("@root/services/api/NetlifyService")
 const { decryptPassword } = require("@root/utils/crypto-utils")
-const { privatiseNetlifySite } = require("@root/utils/netlify-utils")
 
 class SettingsService {
   constructor({

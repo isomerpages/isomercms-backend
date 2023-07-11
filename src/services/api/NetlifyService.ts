@@ -1,8 +1,9 @@
-import axios, { AxiosError } from "axios"
+import axios from "axios"
 
 import { config } from "@config/config"
 
 import logger from "@root/logger/logger"
+import { isAxiosError } from "@root/utils/axios-utils"
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 const NETLIFY_ACCESS_TOKEN = config.get("netlify.accessToken")
@@ -15,9 +16,6 @@ type NetlifySiteDetails = {
     repo_branch: string
   }
 }
-
-const isAxiosError = (err: unknown) =>
-  !(typeof err === "object" && !!err && "message" in err)
 
 // Retrieves all netlify sites which build from the given repo's staging branch
 const getNetlifySiteDetails = async (
@@ -40,14 +38,15 @@ const getNetlifySiteDetails = async (
     )
     return relatedSites
   } catch (err: unknown) {
-    if (!isAxiosError(err))
+    if (!isAxiosError(err)) {
       logger.error(
         `Error occurred when retrieving netlify sites: ${JSON.stringify(err)}`
       )
-    const axiosErr = err as AxiosError
-    if (axiosErr.message)
+      return []
+    }
+    if (err.message)
       logger.error(
-        `Error occurred when retrieving netlify sites: ${axiosErr.message}`
+        `Error occurred when retrieving netlify sites: ${err.message}`
       )
     else
       logger.error(
@@ -76,16 +75,17 @@ const updateNetlifySite = async (
   try {
     await axios.patch(endpoint, settings, { headers })
   } catch (err: unknown) {
-    if (!isAxiosError(err))
+    if (!isAxiosError(err)) {
       logger.error(
         `Error occurred when updating password for site ${repoName}: ${JSON.stringify(
           err
         )}`
       )
-    const axiosErr = err as AxiosError
-    if (axiosErr.message)
+      return
+    }
+    if (err.message)
       logger.error(
-        `Error occurred when updating password for site ${repoName}: ${axiosErr.message}`
+        `Error occurred when updating password for site ${repoName}: ${err.message}`
       )
     else
       logger.error(

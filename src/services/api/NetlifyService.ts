@@ -19,13 +19,6 @@ type NetlifySiteDetails = {
 const isAxiosError = (err: unknown) =>
   !(typeof err === "object" && !!err && "message" in err)
 
-type UpdateNetlifySiteDetails = {
-  password: string
-  build_settings: {
-    stop_builds: true
-  }
-}
-
 // Retrieves all netlify sites which build from the given repo's staging branch
 const getNetlifySiteDetails = async (
   repoName: string
@@ -67,12 +60,18 @@ const getNetlifySiteDetails = async (
 const updateNetlifySite = async (
   repoName: string,
   repoId: string,
-  settings: UpdateNetlifySiteDetails
+  password: string
 ) => {
   const endpoint = `https://api.netlify.com/api/v1/sites/${repoId}`
   const headers = {
     Authorization: `Bearer ${NETLIFY_ACCESS_TOKEN}`,
     "Content-Type": "application/json",
+  }
+  const settings = {
+    password,
+    build_settings: {
+      stop_builds: true,
+    },
   }
   try {
     await axios.patch(endpoint, settings, { headers })
@@ -107,13 +106,7 @@ export const privatiseNetlifySite = async (
     netlifySiteDetails.map(async (netlifySite) => {
       // We always stop the builds - we're only using netlify as a backup for these amplify sites
       const { id } = netlifySite
-      const updatedSettings = {
-        build_settings: {
-          stop_builds: true as const,
-        },
-        password,
-      }
-      await updateNetlifySite(repoName, id, updatedSettings)
+      await updateNetlifySite(repoName, id, password)
     })
   )
 }

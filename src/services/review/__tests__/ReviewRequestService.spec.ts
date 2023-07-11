@@ -42,6 +42,7 @@ import {
   MOCK_PULL_REQUEST_COMMIT_TWO,
   MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
   MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+  MOCK_PULL_REQUEST_FILECHANGEINFO_PLACEHOLDER,
   MOCK_PULL_REQUEST_FILE_FILENAME_ONE,
   MOCK_PULL_REQUEST_FILE_FILENAME_TWO,
   MOCK_PULL_REQUEST_ONE,
@@ -703,6 +704,67 @@ describe("ReviewRequestService", () => {
       expect(SpyReviewRequestService.computeCommentData).toHaveBeenCalled()
       expect(MockUsersRepository.findByPk).not.toHaveBeenCalled()
     })
+
+    it("should filter out placeholder files from changedFiles", async () => {
+      // Arrange
+      const mockCommitDiff = {
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_PLACEHOLDER,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      }
+      const expected = [
+        {
+          id: MOCK_REVIEW_REQUEST_ONE.id,
+          author: MOCK_IDENTITY_EMAIL_ONE,
+          status: MOCK_REVIEW_REQUEST_ONE.reviewStatus,
+          title: MOCK_PULL_REQUEST_ONE.title,
+          description: MOCK_PULL_REQUEST_ONE.body,
+          changedFiles: mockCommitDiff.files.length - 1,
+          createdAt: new Date(MOCK_PULL_REQUEST_ONE.created_at).getTime(),
+          newComments: 0,
+          firstView: false,
+        },
+      ]
+      MockReviewRequestRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_ONE
+      )
+      MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
+      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
+      MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
+      MockReviewApi.getComments.mockResolvedValueOnce([])
+      MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_VIEW_ONE
+      )
+
+      // Act
+      const actual = await ReviewRequestService.listValidReviewRequests(
+        mockUserWithSiteSessionData,
+        mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
+      )
+
+      // Assert
+      expect(actual).toEqual(expected)
+      expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
+      expect(MockReviewApi.getPullRequest).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
+      )
+      expect(MockReviewRequestViewRepository.count).toHaveBeenCalled()
+      expect(SpyReviewRequestService.getComments).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData,
+        mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
+        MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
+      )
+      expect(MockReviewApi.getComments).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
+      )
+      expect(SpyReviewRequestService.computeCommentData).toHaveBeenCalled()
+      expect(MockUsersRepository.findByPk).not.toHaveBeenCalled()
+    })
   })
 
   describe("markAllReviewRequestsAsViewed", () => {
@@ -963,6 +1025,77 @@ describe("ReviewRequestService", () => {
       }
       MockReviewRequestRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_ONE
+      )
+      MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
+      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
+
+      // Act
+      const actual = await ReviewRequestService.getFullReviewRequest(
+        mockUserWithSiteSessionData,
+        mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
+        MOCK_REVIEW_REQUEST_ONE.id,
+        MOCK_STAGING_URL_GITHUB
+      )
+
+      // Assert
+      expect(actual).toEqual(ok(expected))
+      expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
+      expect(MockReviewApi.getPullRequest).toHaveBeenCalled()
+      expect(MockReviewApi.getCommitDiff).toHaveBeenCalled()
+    })
+
+    it("should filter out placeholder files from changedItems", async () => {
+      // Arrange
+      const mockCommitDiff = {
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_PLACEHOLDER,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      }
+      const expected = {
+        reviewUrl: MOCK_REVIEW_REQUEST_ONE.reviewMeta.reviewLink,
+        title: MOCK_PULL_REQUEST_ONE.title,
+        status: MOCK_REVIEW_REQUEST_ONE.reviewStatus,
+        requestor: MOCK_IDENTITY_EMAIL_ONE,
+        reviewers: [MOCK_IDENTITY_EMAIL_TWO, MOCK_IDENTITY_EMAIL_THREE],
+        reviewRequestedTime: new Date(
+          MOCK_PULL_REQUEST_ONE.created_at
+        ).getTime(),
+        changedItems: [
+          {
+            cmsFileUrl: "www.google.com",
+            lastEditedBy: MOCK_GITHUB_NAME_ONE,
+            lastEditedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
+            name: MOCK_PULL_REQUEST_FILE_FILENAME_ONE,
+            path: [],
+            stagingUrl: "www.google.com",
+            type: "page",
+          },
+          {
+            cmsFileUrl: "www.google.com",
+            lastEditedBy: MOCK_GITHUB_NAME_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
+            name: MOCK_PULL_REQUEST_FILE_FILENAME_TWO,
+            path: MOCK_COMMIT_FILEPATH_TWO.split("/"),
+            stagingUrl: "www.google.com",
+            type: "page",
+          },
+        ],
+      }
+
+      MockReviewRequestRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_ONE
+      )
+      MockConfigService.isConfigFile.mockReturnValueOnce(
+        err("not a config file")
+      )
+      MockConfigService.isConfigFile.mockReturnValueOnce(
+        err("not a config file")
+      )
+      MockConfigService.isConfigFile.mockReturnValueOnce(
+        err("not a config file")
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)

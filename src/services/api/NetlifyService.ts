@@ -57,7 +57,7 @@ const getNetlifySiteDetails = async (
   return []
 }
 
-const updateNetlifySite = async (
+const updatePasswordAndStopBuildNetlifySite = async (
   repoName: string,
   repoId: string,
   password: string
@@ -107,7 +107,7 @@ export const privatiseNetlifySite = async (
     netlifySiteDetails.map(async (netlifySite) => {
       // We always stop the builds - we're only using netlify as a backup for these amplify sites
       const { id } = netlifySite
-      await updateNetlifySite(repoName, id, password)
+      await updatePasswordAndStopBuildNetlifySite(repoName, id, password)
     })
   )
 }

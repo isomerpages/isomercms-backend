@@ -1,7 +1,5 @@
 import { config } from "@config/config"
 
-import { validateStatus } from "@root/utils/axios-utils"
-
 const _ = require("lodash")
 
 const {
@@ -18,6 +16,7 @@ const {
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
+const { validateStatus } = require("@root/utils/axios-utils")
 
 // Import error
 

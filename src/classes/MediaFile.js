@@ -1,5 +1,3 @@
-import { validateStatus } from "@root/utils/axios-utils"
-
 const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
@@ -13,6 +11,7 @@ const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
+const { validateStatus } = require("@root/utils/axios-utils")
 
 // Import error
 

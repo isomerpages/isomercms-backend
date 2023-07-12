@@ -1,4 +1,4 @@
-import { validateStatus } from "@root/utils/axios-utils"
+const { validateStatus } = require("@root/utils/axios-utils")
 
 const { Base64 } = require("js-base64")
 const { okAsync, errAsync } = require("neverthrow")

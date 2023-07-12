@@ -2,7 +2,7 @@ import { ConflictError } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
-import validateStatus from "@utils/axios-utils"
+import { validateStatus } from "@utils/axios-utils"
 
 import {
   mockUserWithSiteSessionData,

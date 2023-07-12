@@ -1,4 +1,4 @@
-import { validateStatus } from "@root/utils/axios-utils"
+const { validateStatus } = require("@root/utils/axios-utils")
 
 jest.mock("axios", () => ({
   get: jest.fn(),

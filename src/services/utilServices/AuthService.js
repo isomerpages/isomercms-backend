@@ -1,5 +1,3 @@
-import { validateStatus } from "@root/utils/axios-utils"
-
 const axios = require("axios")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
@@ -20,6 +18,7 @@ const {
 const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
 const { isError } = require("@root/types")
+const { validateStatus } = require("@root/utils/axios-utils")
 
 const CLIENT_ID = config.get("github.clientId")
 const CLIENT_SECRET = config.get("github.clientSecret")

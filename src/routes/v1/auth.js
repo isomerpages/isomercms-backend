@@ -1,7 +1,6 @@
 import { config } from "@config/config"
 
 import { isSecure } from "@root/utils/auth-utils"
-import { validateStatus } from "@root/utils/axios-utils"
 
 const axios = require("axios")
 const express = require("express")
@@ -21,6 +20,7 @@ const jwtUtils = require("@utils/jwt-utils")
 
 const { authenticationMiddleware } = require("@root/middleware")
 const { statsMiddleware } = require("@root/middleware/stats")
+const { validateStatus } = require("@root/utils/axios-utils")
 // Import services
 const identityServices = require("@services/identity")
 

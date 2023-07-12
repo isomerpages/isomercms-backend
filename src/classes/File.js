@@ -1,7 +1,5 @@
 import { config } from "@config/config"
 
-import { validateStatus } from "@root/utils/axios-utils"
-
 const { BaseIsomerError } = require("@errors/BaseError")
 const {
   ConflictError,
@@ -12,6 +10,7 @@ const { NotFoundError } = require("@errors/NotFoundError")
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
+const { validateStatus } = require("@root/utils/axios-utils")
 
 // Import error
 

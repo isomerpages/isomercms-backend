@@ -14,8 +14,6 @@ import type { GitHubRepositoryData, RepositoryData } from "@root/types/repoInfo"
 // Changes are polled at fixed intervals, stored in cache, and served
 // to avoid long load time from live querying.
 
-const REPO_DATA_REFRESH_INTERVAL = 60 * 1000 // 1 minutes
-
 export async function getAllRepoData(
   accessToken: string | undefined
 ): Promise<RepositoryData[]> {
@@ -76,10 +74,13 @@ export async function getAllRepoData(
 export class SitesCacheService {
   private repoDataCache: RepositoryData[]
 
-  constructor() {
+  private refreshInterval: number
+
+  constructor(refreshInterval: number) {
     this.repoDataCache = []
+    this.refreshInterval = refreshInterval
     this.renewCache()
-    setInterval(() => this.renewCache(), REPO_DATA_REFRESH_INTERVAL)
+    setInterval(() => this.renewCache(), this.refreshInterval)
   }
 
   private async renewCache() {

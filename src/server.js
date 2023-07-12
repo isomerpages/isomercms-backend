@@ -192,7 +192,8 @@ const reviewRequestService = new ReviewRequestService(
   pageService,
   new ConfigService()
 )
-const sitesCacheService = new SitesCacheService()
+const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
+const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
 
 const sitesService = new SitesService({
   siteRepository: Site,

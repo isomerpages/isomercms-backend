@@ -2,10 +2,11 @@ import { config } from "@config/config"
 
 const { NotFoundError } = require("@errors/NotFoundError")
 
+const { validateStatus } = require("@utils/axios-utils")
+
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 // Import error
 

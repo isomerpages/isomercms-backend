@@ -8,6 +8,7 @@ const { config } = require("@config/config")
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 
+const { validateStatus } = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const {
@@ -18,7 +19,6 @@ const {
 const { BadRequestError } = require("@root/errors/BadRequestError")
 const logger = require("@root/logger/logger")
 const { isError } = require("@root/types")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 const CLIENT_ID = config.get("github.clientId")
 const CLIENT_SECRET = config.get("github.clientSecret")

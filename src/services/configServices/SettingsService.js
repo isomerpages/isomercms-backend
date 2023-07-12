@@ -170,7 +170,7 @@ class SettingsService {
     if (!isPrivate && !enablePassword) return okAsync("")
     if (!isPrivate && enablePassword) {
       // Additionally, we perform an async operation here to swap the netlify repo to private and disable builds,
-      // only when changing from public to private
+      // only when changing from public to private - not awaited as this is slow and non-blocking
       privatiseNetlifySite(siteName, password)
     }
     if (isPrivate !== enablePassword) {

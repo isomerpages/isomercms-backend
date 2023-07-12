@@ -1,4 +1,4 @@
-const { validateStatus } = require("@root/utils/axios-utils")
+const { validateStatus } = require("@utils/axios-utils")
 
 const { Base64 } = require("js-base64")
 const { okAsync, errAsync } = require("neverthrow")

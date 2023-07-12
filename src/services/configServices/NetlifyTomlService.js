@@ -5,10 +5,11 @@ const { config } = require("@config/config")
 // Import error types
 const { NotFoundError } = require("@errors/NotFoundError")
 
+const { validateStatus } = require("@utils/axios-utils")
+
 const {
   genericGitHubAxiosInstance,
 } = require("@root/services/api/AxiosInstance")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 const GITHUB_BUILD_ORG_NAME = config.get("github.buildOrgName")
 const GITHUB_BUILD_REPO_NAME = config.get("github.buildRepo")

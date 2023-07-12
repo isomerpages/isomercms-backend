@@ -2,8 +2,9 @@ import axios from "axios"
 
 import { config } from "@config/config"
 
+import { isAxiosError } from "@utils/axios-utils"
+
 import logger from "@root/logger/logger"
-import { isAxiosError } from "@root/utils/axios-utils"
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 const NETLIFY_ACCESS_TOKEN = config.get("netlify.accessToken")

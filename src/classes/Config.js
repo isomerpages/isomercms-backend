@@ -8,6 +8,7 @@ const {
 } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
+const { validateStatus } = require("@utils/axios-utils")
 const {
   sanitizedYamlParse,
   sanitizedYamlStringify,
@@ -16,7 +17,6 @@ const {
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 // Import error
 

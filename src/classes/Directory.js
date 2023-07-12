@@ -5,10 +5,11 @@ const _ = require("lodash")
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
+const { validateStatus } = require("@utils/axios-utils")
+
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 const BRANCH_REF = config.get("github.branchRef")

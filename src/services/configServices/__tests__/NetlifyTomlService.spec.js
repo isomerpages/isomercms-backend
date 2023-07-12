@@ -2,6 +2,8 @@ const { Base64 } = require("js-base64")
 
 const { config } = require("@config/config")
 
+const { validateStatus } = require("@utils/axios-utils")
+
 const {
   mockUserWithSiteSessionData,
   mockAccessToken,
@@ -13,7 +15,6 @@ const {
 const {
   genericGitHubAxiosInstance,
 } = require("@root/services/api/AxiosInstance")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 const GITHUB_BUILD_ORG_NAME = config.get("github.buildOrgName")
 const GITHUB_BUILD_REPO_NAME = config.get("github.buildRepo")

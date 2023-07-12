@@ -1,4 +1,4 @@
-const { validateStatus } = require("@root/utils/axios-utils")
+const { validateStatus } = require("@utils/axios-utils")
 
 jest.mock("axios", () => ({
   get: jest.fn(),

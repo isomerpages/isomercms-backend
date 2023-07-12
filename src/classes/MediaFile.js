@@ -6,12 +6,12 @@ const {
 const { MediaTypeError } = require("@errors/MediaTypeError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
+const { validateStatus } = require("@utils/axios-utils")
 const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
 const {
   genericGitHubAxiosInstance: axios,
 } = require("@root/services/api/AxiosInstance")
-const { validateStatus } = require("@root/utils/axios-utils")
 
 // Import error
 

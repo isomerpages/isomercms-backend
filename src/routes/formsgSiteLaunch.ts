@@ -10,6 +10,7 @@ import InitializationError from "@errors/InitializationError"
 
 import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 
+import { ISOMER_ADMIN_EMAIL } from "@root/constants"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import {
@@ -31,8 +32,6 @@ export interface FormsgRouterProps {
   usersService: UsersService
   infraService: InfraService
 }
-
-const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"
 
 interface FormResponsesProps {
   submissionId: string

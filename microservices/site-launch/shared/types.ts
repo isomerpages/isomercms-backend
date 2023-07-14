@@ -1,3 +1,5 @@
+//! NOTE: Needs to be similar to https://github.com/isomerpages/isomer-infra/blob/main/src/lambdaFunctions/shared/model.ts
+//! Any changes to the types here should be reflected there as well
 export enum SiteLaunchLambdaType {
   GENERAL_DOMAIN_VALIDATION = "general-domain-validation",
   PRIMARY_DOMAIN_VALIDATION = "primary-domain-validation",

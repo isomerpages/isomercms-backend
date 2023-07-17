@@ -24,10 +24,10 @@
     "db:migrate:prod": "source .ssh/.env.prod && npx sequelize-cli db:migrate"
   },
   "dependencies": {
-    "@aws-sdk/client-amplify": "^3.348.0",
-    "@aws-sdk/client-cloudwatch-logs": "^3.348.0",
-    "@aws-sdk/client-dynamodb": "^3.316.0",
-    "@aws-sdk/client-secrets-manager": "^3.347.1",
+    "@aws-sdk/client-amplify": "^3.370.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.370.0",
+    "@aws-sdk/client-dynamodb": "^3.370.0",
+    "@aws-sdk/client-secrets-manager": "^3.370.0",
     "@aws-sdk/lib-dynamodb": "^3.316.0",
     "@octokit/rest": "^18.12.0",
     "@opengovsg/formsg-sdk": "^0.9.0",

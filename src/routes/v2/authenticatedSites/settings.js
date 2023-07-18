@@ -20,7 +20,8 @@ const { isPasswordValid } = require("@root/validators/validators")
 const { SettingsService } = require("@services/configServices/SettingsService")
 
 class SettingsRouter {
-  constructor({ settingsService }) {
+  constructor({ settingsService, authorizationMiddleware }) {
+    this.authorizationMiddleware = authorizationMiddleware
     this.settingsService = settingsService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
@@ -129,10 +130,12 @@ class SettingsRouter {
     router.post("/", attachRollbackRouteHandlerWrapper(this.updateSettingsPage))
     router.get(
       "/repo-password",
+      this.authorizationMiddleware.verifyIsEmailUser,
       attachReadRouteHandlerWrapper(this.getRepoPassword)
     )
     router.post(
       "/repo-password",
+      this.authorizationMiddleware.verifyIsEmailUser,
       attachWriteRouteHandlerWrapper(this.updateRepoPassword)
     )
 

@@ -32,8 +32,11 @@ describe("Settings Router", () => {
     extractNavFields: SettingsService.extractNavFields,
   }
 
+  const mockAuthorizationMiddleware = jest.fn()
+
   const router = new SettingsRouter({
     settingsService: mockSettingsService,
+    authorizationMiddleware: mockAuthorizationMiddleware,
   })
 
   const subrouter = express()

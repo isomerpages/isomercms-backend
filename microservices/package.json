@@ -20,13 +20,13 @@
     "octokit": "^2.0.10",
     "velocity": "^0.7.3",
     "winston": "^3.8.2",
-    "winston-cloudwatch": "^6.1.1"
+    "winston-cloudwatch": "^6.2.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.108",
     "aws-lambda": "^1.0.7",
-    "serverless": "^3.23.0",
+    "serverless": "^3.33.0",
     "serverless-plugin-typescript": "^2.1.4",
-    "serverless-step-functions": "^3.13.0"
+    "serverless-step-functions": "^3.14.0"
   }
 }

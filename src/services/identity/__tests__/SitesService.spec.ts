@@ -49,6 +49,7 @@ import { SiteInfo } from "@root/types/siteInfo"
 import { GitHubService } from "@services/db/GitHubService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
+import { SitesCacheService } from "@services/identity/SitesCacheService"
 import _SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
 
@@ -79,6 +80,10 @@ const MockReviewRequestService = {
   getLatestMergedReviewRequest: jest.fn(),
 }
 
+const MockSitesCacheService = {
+  getLastUpdated: jest.fn(),
+}
+
 const SitesService = new _SitesService({
   siteRepository: (MockRepository as unknown) as ModelStatic<Site>,
   gitHubService: (MockGithubService as unknown) as GitHubService,
@@ -86,6 +91,7 @@ const SitesService = new _SitesService({
   usersService: (MockUsersService as unknown) as UsersService,
   isomerAdminsService: (MockIsomerAdminsService as unknown) as IsomerAdminsService,
   reviewRequestService: (MockReviewRequestService as unknown) as ReviewRequestService,
+  sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
 })
 
 const SpySitesService = {
@@ -1027,14 +1033,16 @@ describe("SitesService", () => {
 
   describe("getLastUpdated", () => {
     it("Checks when site was last updated", async () => {
-      MockGithubService.getRepoInfo.mockResolvedValueOnce(repoInfo)
+      MockSitesCacheService.getLastUpdated.mockResolvedValueOnce(
+        repoInfo.pushed_at
+      )
 
       await expect(
         SitesService.getLastUpdated(mockUserWithSiteSessionData)
       ).resolves.toEqual(repoInfo.pushed_at)
 
-      expect(MockGithubService.getRepoInfo).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData
+      expect(MockSitesCacheService.getLastUpdated).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData.siteName
       )
     })
   })

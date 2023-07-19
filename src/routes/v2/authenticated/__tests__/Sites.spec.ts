@@ -89,7 +89,7 @@ describe("Sites Router", () => {
   describe("getLastUpdated", () => {
     it("returns the last updated time", async () => {
       const lastUpdated = "last-updated"
-      mockSitesService.getLastUpdated.mockResolvedValueOnce(lastUpdated)
+      mockSitesService.getLastUpdated.mockReturnValueOnce(lastUpdated)
 
       const resp = await request(app)
         .get(`/${mockSiteName}/lastUpdated`)

@@ -47,6 +47,7 @@ import { ConfigService } from "@root/services/fileServices/YmlFileServices/Confi
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import * as ReviewApi from "@services/db/review"
@@ -112,6 +113,11 @@ const reviewRequestService = new ReviewRequestService(
   pageService,
   configService
 )
+// Using a mock SitesCacheService as the actual service has setInterval
+// which causes tests to not exit.
+const MockSitesCacheService = {
+  getLastUpdated: jest.fn(),
+}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -119,6 +125,7 @@ const sitesService = new SitesService({
   usersService,
   isomerAdminsService,
   reviewRequestService,
+  sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

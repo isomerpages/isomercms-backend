@@ -16,6 +16,7 @@ import {
   Site,
   SiteMember,
   User,
+  Whitelist,
 } from "@database/models"
 import { generateRouterForUserWithSite } from "@fixtures/app"
 import {
@@ -39,6 +40,7 @@ import {
   MOCK_USER_DBENTRY_THREE,
   MOCK_USER_DBENTRY_TWO,
 } from "@fixtures/users"
+import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { SettingsRouter as _SettingsRouter } from "@root/routes/v2/authenticatedSites/settings"
 import { SettingsService } from "@root/services/configServices/SettingsService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
@@ -54,11 +56,13 @@ import { CollectionYmlService } from "@root/services/fileServices/YmlFileService
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import { NavYmlService } from "@root/services/fileServices/YmlFileServices/NavYmlService"
+import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import DeploymentsService from "@root/services/identity/DeploymentsService"
+import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
 import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
-import { getUsersService } from "@services/identity"
+import { getIdentityAuthService, getUsersService } from "@services/identity"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
@@ -155,6 +159,24 @@ const deploymentsService = new DeploymentsService({
   deploymentsRepository: Deployment,
 })
 
+const identityAuthService = getIdentityAuthService(gitHubService)
+const collaboratorsService = new CollaboratorsService({
+  siteRepository: Site,
+  siteMemberRepository: SiteMember,
+  sitesService,
+  usersService,
+  whitelist: Whitelist,
+})
+const authorizationMiddlewareService = new AuthorizationMiddlewareService({
+  identityAuthService,
+  usersService,
+  isomerAdminsService,
+  collaboratorsService,
+})
+const authorizationMiddleware = new AuthorizationMiddleware({
+  authorizationMiddlewareService,
+})
+
 const settingsService = new SettingsService({
   configYmlService,
   footerYmlService,
@@ -164,7 +186,10 @@ const settingsService = new SettingsService({
   deploymentsService,
   gitHubService,
 })
-const SettingsRouter = new _SettingsRouter({ settingsService })
+const SettingsRouter = new _SettingsRouter({
+  settingsService,
+  authorizationMiddleware,
+})
 const settingsSubrouter = SettingsRouter.getRouter()
 const subrouter = express()
 subrouter.use("/:siteName", settingsSubrouter)

@@ -1,3 +1,5 @@
+const { validateStatus } = require("@utils/axios-utils")
+
 const { Base64 } = require("js-base64")
 const { okAsync, errAsync } = require("neverthrow")
 
@@ -9,8 +11,6 @@ const {
 } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
 const { UnprocessableError } = require("@errors/UnprocessableError")
-
-const validateStatus = require("@utils/axios-utils")
 
 const logger = require("@root/logger/logger")
 

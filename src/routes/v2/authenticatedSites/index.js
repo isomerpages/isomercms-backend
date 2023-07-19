@@ -187,7 +187,10 @@ const getAuthenticatedSitesSubrouter = ({
   })
   const contactUsV2Router = new ContactUsRouter({ contactUsPageService })
   const homepageV2Router = new HomepageRouter({ homepagePageService })
-  const settingsV2Router = new SettingsRouter({ settingsService })
+  const settingsV2Router = new SettingsRouter({
+    settingsService,
+    authorizationMiddleware,
+  })
   const navigationV2Router = new NavigationRouter({
     navigationYmlService: navYmlService,
   })

@@ -5,6 +5,7 @@ const { okAsync, errAsync } = require("neverthrow")
 
 const { config: convictConfig } = require("@config/config")
 
+const { privatiseNetlifySite } = require("@root/services/api/NetlifyApi")
 const { decryptPassword } = require("@root/utils/crypto-utils")
 
 class SettingsService {
@@ -167,6 +168,11 @@ class SettingsService {
     }
     const { id, isPrivate } = siteInfo.value
     if (!isPrivate && !enablePassword) return okAsync("")
+    if (!isPrivate && enablePassword) {
+      // Additionally, we perform an async operation here to swap the netlify repo to private and disable builds,
+      // only when changing from public to private - not awaited as this is slow and non-blocking
+      privatiseNetlifySite(siteName, password)
+    }
     if (isPrivate !== enablePassword) {
       // For public -> private or private -> public, we also need to update the repo privacy on github
       const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(

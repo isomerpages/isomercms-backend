@@ -1,3 +1,5 @@
+const { validateStatus } = require("@utils/axios-utils")
+
 jest.mock("axios", () => ({
   get: jest.fn(),
   post: jest.fn(),
@@ -13,7 +15,6 @@ const { config } = require("@config/config")
 const { AuthError } = require("@errors/AuthError")
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const validateStatus = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const {

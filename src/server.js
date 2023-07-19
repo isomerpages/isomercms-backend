@@ -200,7 +200,9 @@ const sitesService = new SitesService({
   reviewRequestService,
 })
 const reposService = new ReposService({ repository: Repo })
-const deploymentsService = new DeploymentsService({ repository: Deployment })
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 const launchClient = new LaunchClient()
 const launchesService = new LaunchesService({
   launchesRepository: Launch,
@@ -296,8 +298,9 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   gitHubService,
   configYmlService,
   apiLogger,
-  notificationsService,
   notificationOnEditHandler,
+  sitesService,
+  deploymentsService,
 })
 const authV2Router = new AuthRouter({
   authenticationMiddleware,

@@ -1,6 +1,12 @@
 const autoBind = require("auto-bind")
 const Bluebird = require("bluebird")
 const _ = require("lodash")
+const { okAsync, errAsync } = require("neverthrow")
+
+const { config: convictConfig } = require("@config/config")
+
+const { privatiseNetlifySite } = require("@root/services/api/NetlifyApi")
+const { decryptPassword } = require("@root/utils/crypto-utils")
 
 class SettingsService {
   constructor({
@@ -8,11 +14,17 @@ class SettingsService {
     footerYmlService,
     navYmlService,
     homepagePageService,
+    sitesService,
+    deploymentsService,
+    gitHubService,
   }) {
     this.configYmlService = configYmlService
     this.footerYmlService = footerYmlService
     this.navYmlService = navYmlService
     this.homepagePageService = homepagePageService
+    this.sitesService = sitesService
+    this.deploymentsService = deploymentsService
+    this.gitHubService = gitHubService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -41,6 +53,38 @@ class SettingsService {
       navigation,
       homepage,
     }
+  }
+
+  async getPassword(sessionData) {
+    const { siteName } = sessionData
+    const siteInfo = await this.sitesService.getBySiteName(siteName)
+    if (siteInfo.isErr()) {
+      // Missing site indicating netlify site - return special result
+      return okAsync({
+        isAmplifySite: false,
+      })
+    }
+    const { id, isPrivate } = siteInfo.value
+    if (!isPrivate)
+      return okAsync({
+        password: "",
+        isAmplifySite: true,
+      })
+
+    const deploymentInfo = await this.deploymentsService.getDeploymentInfoFromSiteId(
+      id
+    )
+    if (deploymentInfo.isErr()) return deploymentInfo
+
+    const password = decryptPassword(
+      deploymentInfo.value.encryptedPassword,
+      deploymentInfo.value.encryptionIv,
+      convictConfig.get("aws.amplify.passwordSecretKey")
+    )
+    return okAsync({
+      password,
+      isAmplifySite: true,
+    })
   }
 
   async updateSettingsFiles(
@@ -114,6 +158,42 @@ class SettingsService {
         sha: navigation.sha,
       })
     }
+  }
+
+  async updatePassword(sessionData, { password, enablePassword }) {
+    const { siteName } = sessionData
+    const siteInfo = await this.sitesService.getBySiteName(siteName)
+    if (siteInfo.isErr()) {
+      return siteInfo
+    }
+    const { id, isPrivate } = siteInfo.value
+    if (!isPrivate && !enablePassword) return okAsync("")
+    if (!isPrivate && enablePassword) {
+      // Additionally, we perform an async operation here to swap the netlify repo to private and disable builds,
+      // only when changing from public to private - not awaited as this is slow and non-blocking
+      privatiseNetlifySite(siteName, password)
+    }
+    if (isPrivate !== enablePassword) {
+      // For public -> private or private -> public, we also need to update the repo privacy on github
+      const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(
+        sessionData,
+        enablePassword
+      )
+      if (privatiseRepoRes.isErr()) return privatiseRepoRes
+      try {
+        await this.sitesService.update({
+          id,
+          isPrivate: enablePassword,
+        })
+      } catch (err) {
+        return errAsync(err)
+      }
+    }
+    return this.deploymentsService.updateAmplifyPassword(
+      siteName,
+      password,
+      enablePassword
+    )
   }
 
   shouldUpdateHomepage(updatedConfigContent, configContent) {

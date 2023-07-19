@@ -5,7 +5,7 @@ const _ = require("lodash")
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
-const validateStatus = require("@utils/axios-utils")
+const { validateStatus } = require("@utils/axios-utils")
 
 const {
   genericGitHubAxiosInstance: axios,

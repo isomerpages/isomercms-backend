@@ -51,6 +51,13 @@ export class Site extends Model {
   })
   jobStatus!: JobStatus
 
+  @Column({
+    allowNull: false,
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  isPrivate!: boolean
+
   @CreatedAt
   createdAt!: Date
 

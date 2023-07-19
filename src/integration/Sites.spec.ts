@@ -135,7 +135,9 @@ const authorizationMiddleware = getAuthorizationMiddleware({
 })
 
 const reposService = new ReposService({ repository: Repo })
-const deploymentsService = new DeploymentsService({ repository: Deployment })
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 const launchClient = new LaunchClient()
 const launchesService = new LaunchesService({
   launchesRepository: Launch,

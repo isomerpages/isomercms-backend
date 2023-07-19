@@ -29,15 +29,18 @@ import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
+import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import {
   BaseEditedItemDto,
   CommentItem,
   DashboardReviewRequestDto,
+  DisplayedEditedItemDto,
   EditedConfigDto,
   EditedItemDto,
   EditedMediaDto,
   EditedPageDto,
+  EditedPlaceholderDto,
   GithubCommentData,
   ReviewRequestDto,
   WithEditMeta,
@@ -49,12 +52,14 @@ import {
   RawFileChangeInfo,
   ShaMappings,
 } from "@root/types/github"
-import { PathInfo, StagingPermalink } from "@root/types/pages"
+import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
+import { PathInfo } from "@root/types/util"
 import { extractPathInfo, getFileExt } from "@root/utils/files"
 import * as ReviewApi from "@services/db/review"
 
 import { PageService } from "../fileServices/MdPageServices/PageService"
+import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
 
 const injectDefaultEditMeta = ({
@@ -170,6 +175,7 @@ export default class ReviewRequestService {
       const pathInfo = extractedPathResult.value
 
       return this.extractConfigInfo(pathInfo)
+        .orElse(() => this.extractPlaceholderInfo(pathInfo))
         .orElse(() => this.extractMediaInfo(pathInfo))
         .asyncMap<EditedItemDto>(async (item) => item)
         .orElse(() =>
@@ -265,6 +271,15 @@ export default class ReviewRequestService {
         type: isNav ? "nav" : "setting",
       }
     })
+
+  extractPlaceholderInfo = (
+    pathInfo: PathInfo
+  ): Result<EditedPlaceholderDto, PlaceholderParseError> =>
+    PlaceholderService.isPlaceholderFile(pathInfo).map(({ name, path }) => ({
+      name,
+      path: path.unwrapOr([""]),
+      type: "placeholder",
+    }))
 
   computeShaMappings = async (commits: Commit[]): Promise<ShaMappings> => {
     const mappings: ShaMappings = {}
@@ -393,9 +408,19 @@ export default class ReviewRequestService {
         const {
           title,
           body,
-          changed_files,
           created_at,
         } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
+        const { files } = await this.apiService.getCommitDiff(siteName)
+        const displayedFiles = files
+          .filter((file) => {
+            const extractPlaceholderFileResult = extractPathInfo(
+              file.filename
+            ).andThen((pathInfo) =>
+              PlaceholderService.isPlaceholderFile(pathInfo)
+            )
+            return extractPlaceholderFileResult.isErr()
+          })
+          .map((file) => file.filename)
 
         // It is the user's first view if the review request views table
         // does not contain a record for the user and the review request
@@ -434,7 +459,7 @@ export default class ReviewRequestService {
           status: req.reviewStatus,
           title,
           description: body || "",
-          changedFiles: changed_files,
+          changedFiles: displayedFiles.length,
           createdAt: new Date(created_at).getTime(),
           newComments: countNewComments,
           firstView: isFirstView,
@@ -711,10 +736,18 @@ export default class ReviewRequestService {
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
         this.compareDiff(userWithSiteSessionData, stagingLink).map(
-          (changedItems) => ({
-            ...rest,
-            changedItems,
-          })
+          (changedItems) => {
+            const displayedFiles = changedItems.filter(
+              (
+                changedItem
+              ): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+                changedItem.type !== "placeholder"
+            )
+            return {
+              ...rest,
+              changedItems: displayedFiles,
+            }
+          }
         )
       )
   }

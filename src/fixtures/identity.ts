@@ -170,6 +170,19 @@ export const MOCK_COMMIT_MESSAGE_OBJECT_TWO = {
   userId: mockIsomerUserId,
 }
 
+export const MOCK_COMMIT_MESSAGE_PLACEHOLDER = "Create file: .keep"
+export const MOCK_COMMIT_FILENAME_PLACEHOLDER = ".keep"
+export const MOCK_COMMIT_FILEPATH_PLACEHOLDER = "test/path/placeholder/"
+export const MOCK_GITHUB_NAME_PLACEHOLDER = "testuserplaceholder"
+export const MOCK_GITHUB_EMAIL_ADDRESS_PLACEHOLDER =
+  "testplaceholder@example.com"
+export const MOCK_GITHUB_DATE_PLACEHOLDER = "2022-010-28T06:25:14Z"
+export const MOCK_COMMIT_MESSAGE_OBJECT_PLACEHOLDER = {
+  message: MOCK_COMMIT_MESSAGE_PLACEHOLDER,
+  fileName: MOCK_COMMIT_FILENAME_PLACEHOLDER,
+  userId: mockIsomerUserId,
+}
+
 export const MOCK_GITHUB_COMMIT_AUTHOR_ONE: Author = {
   name: MOCK_GITHUB_NAME_ONE,
   email: MOCK_GITHUB_EMAIL_ADDRESS_ONE,

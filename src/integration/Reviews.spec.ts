@@ -505,12 +505,28 @@ describe("Review Requests Integration Tests", () => {
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_ONE
       )
+      const mockGithubCommitDiff = {
+        data: {
+          files: [
+            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
+            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
+          ],
+          commits: [
+            MOCK_GITHUB_COMMIT_ALPHA_ONE,
+            MOCK_GITHUB_COMMIT_ALPHA_TWO,
+            MOCK_GITHUB_COMMIT_ALPHA_THREE,
+          ],
+        },
+      }
+
       mockGenericAxios.get.mockResolvedValueOnce({
         data: MOCK_PULL_REQUEST_ONE,
       })
+      mockGenericAxios.get.mockResolvedValueOnce(mockGithubCommitDiff)
       mockGenericAxios.get.mockResolvedValueOnce({
         data: [MOCK_GITHUB_RAWCOMMENT_ONE, MOCK_GITHUB_RAWCOMMENT_TWO],
       })
+
       const expected = {
         reviews: [
           {
@@ -519,7 +535,7 @@ describe("Review Requests Integration Tests", () => {
             status: ReviewRequestStatus.Open,
             title: MOCK_PULL_REQUEST_TITLE_ONE,
             description: MOCK_PULL_REQUEST_BODY_ONE,
-            changedFiles: MOCK_PULL_REQUEST_CHANGED_FILES_ONE,
+            changedFiles: mockGithubCommitDiff.data.files.length,
             createdAt: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
             newComments: 2,
             firstView: true,

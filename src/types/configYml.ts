@@ -1,5 +1,6 @@
-import { PathInfo, ProdPermalink, StagingPermalink } from "./pages"
-import { FileNameBrand } from "./util"
+import { PathInfo, FileNameBrand } from "@root/types/util"
+
+import { ProdPermalink, StagingPermalink } from "./pages"
 
 export type ConfigYmlData = {
   staging?: StagingPermalink

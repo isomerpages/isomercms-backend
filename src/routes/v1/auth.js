@@ -16,7 +16,7 @@ const { ForbiddenError } = require("@errors/ForbiddenError")
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
-const validateStatus = require("@utils/axios-utils")
+const { validateStatus } = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const { authenticationMiddleware } = require("@root/middleware")

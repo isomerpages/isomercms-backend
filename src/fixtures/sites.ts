@@ -43,6 +43,7 @@ export const MOCK_SITE_DBENTRY_ONE: Attributes<Site> = {
   creatorId: MOCK_USER_ID_ONE,
   createdAt: MOCK_SITE_DATE_ONE,
   updatedAt: MOCK_SITE_DATE_ONE,
+  isPrivate: false,
 }
 
 export const MOCK_SITE_DBENTRY_TWO: Attributes<Site> = {
@@ -53,6 +54,7 @@ export const MOCK_SITE_DBENTRY_TWO: Attributes<Site> = {
   creatorId: MOCK_USER_ID_TWO,
   createdAt: MOCK_SITE_DATE_TWO,
   updatedAt: MOCK_SITE_DATE_TWO,
+  isPrivate: true,
 }
 
 export const MOCK_REPO_DBENTRY_ONE: Attributes<Repo> = {
@@ -81,6 +83,8 @@ export const MOCK_DEPLOYMENT_DBENTRY_ONE = {
   createdAt: MOCK_SITE_DATE_ONE,
   updatedAt: MOCK_SITE_DATE_ONE,
   hostingId: "1",
+  encryptionIv: null,
+  encryptedPassword: null,
 }
 
 export const MOCK_DEPLOYMENT_DBENTRY_TWO: Attributes<Deployment> = {
@@ -91,6 +95,9 @@ export const MOCK_DEPLOYMENT_DBENTRY_TWO: Attributes<Deployment> = {
   createdAt: MOCK_SITE_DATE_TWO,
   updatedAt: MOCK_SITE_DATE_TWO,
   hostingId: "1",
+  encryptionIv: "12345678901234561234567890123456",
+  encryptedPassword:
+    "1234567890123456789012345678901234567890123456789012345678901234",
 }
 
 export const MOCK_SITEMEMBER_DBENTRY_ONE: Attributes<SiteMember> = {

@@ -1,7 +1,7 @@
 import { Result, err, ok } from "neverthrow"
 
 import EmptyStringError from "@root/errors/EmptyStringError"
-import { PathInfo } from "@root/types/pages"
+import { PathInfo } from "@root/types/util"
 
 export const getFileExt = (fileName: string): string =>
   // NOTE: will never be `undefined` as `fileName` is guaranteed to be a string

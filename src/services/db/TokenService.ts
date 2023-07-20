@@ -322,10 +322,10 @@ export class TokenService {
     if (this.initialized) {
       return okAsync(true)
     }
-    this.initialized = true
     return resetStrandedTokens(this.tokenDB).andThen(() =>
       queryActiveTokens(this.tokenDB).map((activeTokensData) => {
         this.activeTokensData = activeTokensData
+        this.initialized = true
         return false
       })
     )

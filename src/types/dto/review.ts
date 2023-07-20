@@ -2,7 +2,13 @@ import { CollaboratorRoles } from "@constants/constants"
 
 export type ReviewRequestStatus = "OPEN" | "APPROVED" | "MERGED" | "CLOSED"
 
-export type FileType = "page" | "nav" | "setting" | "file" | "image"
+export type FileType =
+  | "page"
+  | "nav"
+  | "setting"
+  | "file"
+  | "image"
+  | "placeholder"
 
 export interface BaseEditedItemDto {
   name: string
@@ -29,7 +35,20 @@ export interface EditedMediaDto extends BaseEditedItemDto {
   type: "file" | "image"
 }
 
-export type EditedItemDto = EditedPageDto | EditedConfigDto | EditedMediaDto
+export interface EditedPlaceholderDto extends BaseEditedItemDto {
+  type: "placeholder"
+}
+
+export type EditedItemDto =
+  | EditedPageDto
+  | EditedConfigDto
+  | EditedMediaDto
+  | EditedPlaceholderDto
+
+export type DisplayedEditedItemDto = Exclude<
+  EditedItemDto,
+  EditedPlaceholderDto
+>
 
 export interface UserDto {
   email: string
@@ -57,7 +76,7 @@ export interface ReviewRequestDto {
   reviewers: string[]
   reviewRequestedTime: number
   status: ReviewRequestStatus
-  changedItems: WithEditMeta<EditedItemDto>[]
+  changedItems: WithEditMeta<DisplayedEditedItemDto>[]
 }
 
 export interface UpdateReviewRequestDto {

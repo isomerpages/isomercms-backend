@@ -23,6 +23,12 @@ import {
   mockIsomerUserId,
   mockSiteName,
 } from "@fixtures/sessionData"
+import {
+  MOCK_PULL_REQUEST_COMMIT_ONE,
+  MOCK_PULL_REQUEST_COMMIT_TWO,
+  MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+  MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+} from "@root/fixtures/review"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -35,6 +41,7 @@ import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import { GitHubService } from "@services/db/GitHubService"
 import * as ReviewApi from "@services/db/review"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -51,6 +58,7 @@ const mockSiteMemberId = "1"
 const mockGithubService = {
   getPullRequest: jest.fn(),
   getComments: jest.fn(),
+  getCommitDiff: jest.fn(),
 }
 const usersService = getUsersService(sequelize)
 const footerYmlService = new FooterYmlService({
@@ -112,6 +120,11 @@ const reviewRequestService = new ReviewRequestService(
   pageService,
   configService
 )
+// Using a mock SitesCacheService as the actual service has setInterval
+// which causes tests to not exit.
+const MockSitesCacheService = {
+  getLastUpdated: jest.fn(),
+}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService: (mockGithubService as unknown) as GitHubService,
@@ -119,6 +132,7 @@ const sitesService = new SitesService({
   usersService,
   isomerAdminsService: (jest.fn() as unknown) as IsomerAdminsService,
   reviewRequestService,
+  sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
@@ -265,6 +279,13 @@ describe("Notifications Router", () => {
         reviewLink: "test",
       })
       mockGithubService.getComments.mockResolvedValueOnce([])
+      mockGithubService.getCommitDiff.mockResolvedValueOnce({
+        files: [
+          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
+          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
+        ],
+        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
+      })
 
       // Act
       await request(app).get(`/${mockSiteName}/test`)

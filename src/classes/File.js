@@ -7,7 +7,7 @@ const {
 } = require("@errors/ConflictError")
 const { NotFoundError } = require("@errors/NotFoundError")
 
-const validateStatus = require("@utils/axios-utils")
+const { validateStatus } = require("@utils/axios-utils")
 
 const {
   genericGitHubAxiosInstance: axios,

@@ -8,7 +8,7 @@ const { config } = require("@config/config")
 const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 
-const validateStatus = require("@utils/axios-utils")
+const { validateStatus } = require("@utils/axios-utils")
 const jwtUtils = require("@utils/jwt-utils")
 
 const {

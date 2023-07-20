@@ -1,7 +1,6 @@
 import { BadRequestError } from "@errors/BadRequestError"
 import { NotFoundError } from "@errors/NotFoundError"
 
-import { mockAccessToken, mockSiteName, mockUserId } from "@fixtures/identity"
 import { mockUserWithSiteSessionData } from "@fixtures/sessionData"
 import { GitHubService } from "@services/db/GitHubService"
 
@@ -15,11 +14,6 @@ const AuthService = new _AuthService({
 })
 
 describe("Auth Service", () => {
-  const mocksessionData = {
-    accessToken: mockAccessToken,
-    siteName: mockSiteName,
-  }
-  const mockParams = { userId: mockUserId }
   it("should call axios successfully and return true when the call is successful", async () => {
     // Arrange
     const expected = true
@@ -57,11 +51,8 @@ describe("Auth Service", () => {
 
   it("should call axios successfully and bubble the error when the status is not 403 or 404", async () => {
     // Arrange
-    const expected = {
-      response: { status: "400" },
-    }
     mockGitHubService.checkHasAccess.mockRejectedValueOnce(
-      new BadRequestError(expected)
+      new BadRequestError("")
     )
 
     // Act

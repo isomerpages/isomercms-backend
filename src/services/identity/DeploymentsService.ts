@@ -1,11 +1,15 @@
-import { errAsync } from "neverthrow"
+import { errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
+
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
-import { Deployment, Site } from "@database/models"
+import { Deployment, Repo, Site } from "@database/models"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
 import { Brand } from "@root/types/util"
+import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
 
 type deploymentsCreateParamsType = Partial<Deployment> & {
@@ -15,22 +19,22 @@ type deploymentsCreateParamsType = Partial<Deployment> & {
   siteId: Deployment["siteId"]
 }
 interface DeploymentsServiceProps {
-  repository: ModelStatic<Deployment>
+  deploymentsRepository: ModelStatic<Deployment>
 }
 
 class DeploymentsService {
-  private readonly repository: DeploymentsServiceProps["repository"]
+  private readonly deploymentsRepository: DeploymentsServiceProps["deploymentsRepository"]
 
   private readonly deploymentClient: DeploymentClient
 
-  constructor({ repository }: DeploymentsServiceProps) {
-    this.repository = repository
+  constructor({ deploymentsRepository }: DeploymentsServiceProps) {
+    this.deploymentsRepository = deploymentsRepository
     this.deploymentClient = new DeploymentClient()
   }
 
   create = async (
     createParams: deploymentsCreateParamsType
-  ): Promise<Deployment> => this.repository.create(createParams)
+  ): Promise<Deployment> => this.deploymentsRepository.create(createParams)
 
   setupAmplifyProject = async ({
     repoName,
@@ -114,6 +118,101 @@ class DeploymentsService {
           .sendCreateBranch(createStagingBranchInput)
           .map(() => amplifyInfo)
       })
+  }
+
+  getDeploymentInfoFromSiteId = async (siteId: string) => {
+    const deploymentInfo = await this.deploymentsRepository.findOne({
+      where: {
+        siteId,
+      },
+    })
+    if (!deploymentInfo)
+      return errAsync(new NotFoundError("Site has not been deployed!"))
+    return okAsync(deploymentInfo)
+  }
+
+  deletePassword = async (appId: string, deploymentId: number) => {
+    const updateAppInput = this.deploymentClient.generateDeletePasswordInput(
+      appId
+    )
+    const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
+
+    if (updateResp.isErr()) {
+      return updateResp
+    }
+    await this.deploymentsRepository.update(
+      {
+        encryptedPassword: null,
+        encryptionIv: null,
+        passwordDate: null,
+      },
+      { where: { id: deploymentId } }
+    )
+    return updateResp
+  }
+
+  updateAmplifyPassword = async (
+    repoName: string,
+    password: string,
+    enablePassword: boolean
+  ) => {
+    const SECRET_KEY = config.get("aws.amplify.passwordSecretKey")
+    const deploymentInfo = await this.deploymentsRepository.findOne({
+      include: [
+        {
+          model: Site,
+          required: true,
+          include: [
+            {
+              model: Repo,
+              required: true,
+              where: {
+                name: repoName,
+              },
+            },
+          ],
+        },
+      ],
+    })
+    if (!deploymentInfo)
+      return errAsync(
+        new NotFoundError(`Deployment for site ${repoName} does not exist`)
+      )
+    const { id, hostingId: appId } = deploymentInfo
+
+    if (!enablePassword) return this.deletePassword(appId, id)
+
+    const {
+      encryptedPassword: oldEncryptedPassword,
+      encryptionIv: oldIv,
+    } = deploymentInfo
+    if (
+      !!oldEncryptedPassword &&
+      decryptPassword(oldEncryptedPassword, oldIv, SECRET_KEY) ===
+        oldEncryptedPassword
+    )
+      return okAsync("")
+    const updateAppInput = this.deploymentClient.generateUpdatePasswordInput(
+      appId,
+      password
+    )
+
+    const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
+    if (updateResp.isErr()) {
+      return updateResp
+    }
+
+    const { encryptedPassword, iv } = encryptPassword(password, SECRET_KEY)
+    await this.deploymentsRepository.update(
+      {
+        encryptedPassword,
+        encryptionIv: iv,
+        passwordDate: new Date(),
+      },
+      { where: { id } }
+    )
+
+    return updateResp
   }
 }
 

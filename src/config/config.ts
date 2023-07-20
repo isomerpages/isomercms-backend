@@ -171,6 +171,12 @@ const config = convict({
         format: "required-boolean",
         default: true,
       },
+      passwordSecretKey: {
+        doc: "Secret key used to encrypt password",
+        env: "SITE_PASSWORD_SECRET_KEY",
+        format: "required-string",
+        default: "",
+      },
     },
     dynamodb: {
       siteLaunchTableName: {
@@ -377,6 +383,14 @@ const config = convict({
       env: "REDIRECTION_SERVER_ELASTIC_IP",
       format: String,
       default: "18.136.36.203",
+    },
+  },
+  netlify: {
+    accessToken: {
+      doc: "Access token for netlify actions",
+      env: "NETLIFY_ACCESS_TOKEN",
+      format: "required-string",
+      default: "",
     },
   },
 })

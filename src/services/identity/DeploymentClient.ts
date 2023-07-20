@@ -7,6 +7,9 @@ import {
   CreateBranchCommandInput,
   CreateBranchCommandOutput,
   Stage,
+  UpdateBranchCommand,
+  UpdateBranchCommandOutput,
+  UpdateBranchCommandInput,
 } from "@aws-sdk/client-amplify"
 import { ResultAsync } from "neverthrow"
 
@@ -61,6 +64,11 @@ class DeploymentClient {
       this.amplifyClient.send(new CreateBranchCommand(options))
     ) as ResultAsync<CreateBranchCommandOutput, AmplifyError>
 
+  sendUpdateApp = (options: UpdateBranchCommandInput) =>
+    wrap(
+      this.amplifyClient.send(new UpdateBranchCommand(options))
+    ) as ResultAsync<UpdateBranchCommandOutput, AmplifyError>
+
   generateCreateAppInput = (
     repoName: string,
     repoUrl: string
@@ -87,6 +95,23 @@ class DeploymentClient {
     environmentVariables: {
       JEKYLL_ENV: branchName === "master" ? "production" : "staging",
     },
+  })
+
+  generateDeletePasswordInput = (appId: string): UpdateBranchCommandInput => ({
+    appId,
+    branchName: "staging",
+    enableBasicAuth: false,
+    basicAuthCredentials: "",
+  })
+
+  generateUpdatePasswordInput = (
+    appId: string,
+    password: string
+  ): UpdateBranchCommandInput => ({
+    appId,
+    branchName: "staging",
+    enableBasicAuth: true,
+    basicAuthCredentials: Buffer.from(`user:${password}`).toString("base64"),
   })
 }
 

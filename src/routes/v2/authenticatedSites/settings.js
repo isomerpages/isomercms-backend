@@ -7,15 +7,21 @@ const { BadRequestError } = require("@errors/BadRequestError")
 // Import middleware
 const {
   attachReadRouteHandlerWrapper,
+  attachWriteRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
-const { UpdateSettingsRequestSchema } = require("@validators/RequestSchema")
+const {
+  UpdateSettingsRequestSchema,
+  UpdateRepoPasswordRequestSchema,
+} = require("@validators/RequestSchema")
 
+const { isPasswordValid } = require("@root/validators/validators")
 const { SettingsService } = require("@services/configServices/SettingsService")
 
 class SettingsRouter {
-  constructor({ settingsService }) {
+  constructor({ settingsService, authorizationMiddleware }) {
+    this.authorizationMiddleware = authorizationMiddleware
     this.settingsService = settingsService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
@@ -77,11 +83,61 @@ class SettingsRouter {
     return next()
   }
 
+  async getRepoPassword(_req, res, _next) {
+    const { userWithSiteSessionData } = res.locals
+
+    const passwordRes = await this.settingsService.getPassword(
+      userWithSiteSessionData
+    )
+
+    if (passwordRes.isErr()) {
+      throw passwordRes.error
+    }
+
+    return res.status(200).send(passwordRes.value)
+  }
+
+  async updateRepoPassword(req, res, next) {
+    const { body } = req
+    const { userWithSiteSessionData } = res.locals
+
+    const { error } = UpdateRepoPasswordRequestSchema.validate(req.body)
+    if (error) throw new BadRequestError(error.message)
+
+    const { password, enablePassword } = body
+    if (enablePassword && !isPasswordValid(password))
+      throw new BadRequestError("Password does not fulfill criteria!")
+    const passwordRes = await this.settingsService.updatePassword(
+      userWithSiteSessionData,
+      {
+        password,
+        enablePassword,
+      }
+    )
+
+    if (passwordRes.isErr()) {
+      throw passwordRes.error
+    }
+
+    res.status(200).send("OK")
+    return next()
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.readSettingsPage))
     router.post("/", attachRollbackRouteHandlerWrapper(this.updateSettingsPage))
+    router.get(
+      "/repo-password",
+      this.authorizationMiddleware.verifyIsEmailUser,
+      attachReadRouteHandlerWrapper(this.getRepoPassword)
+    )
+    router.post(
+      "/repo-password",
+      this.authorizationMiddleware.verifyIsEmailUser,
+      attachWriteRouteHandlerWrapper(this.updateRepoPassword)
+    )
 
     return router
   }

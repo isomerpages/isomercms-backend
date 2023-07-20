@@ -1,11 +1,11 @@
-// Import base error
-const { BaseIsomerError } = require("@errors/BaseError")
+import { BaseIsomerError } from "@errors/BaseError"
 
-const { ComponentTypes, FileCodes } = require("./IsomerError")
+import { ComponentTypes, FileCodes } from "./IsomerError"
 
-class BadRequestError extends BaseIsomerError {
+// eslint-disable-next-line import/prefer-default-export
+export class BadRequestError extends BaseIsomerError {
   constructor(
-    message,
+    message: string,
     meta = {},
     componentCode = ComponentTypes.Other,
     fileCode = FileCodes.Undefined
@@ -19,8 +19,4 @@ class BadRequestError extends BaseIsomerError {
       fileCode,
     })
   }
-}
-
-module.exports = {
-  BadRequestError,
 }

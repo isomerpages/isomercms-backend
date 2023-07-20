@@ -527,7 +527,6 @@ export class ReviewsRouter {
           stagingLink
         )
       )
-    console.log(possibleReviewRequest)
 
     // NOTE: This method call (`getFullReviewRequest`) should be
     // in the result also but as it returns a promise at the moment,

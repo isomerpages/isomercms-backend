@@ -42,6 +42,7 @@ import DeploymentsService from "@root/services/identity/DeploymentsService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import LaunchClient from "@root/services/identity/LaunchClient"
 import LaunchesService from "@root/services/identity/LaunchesService"
+import PreviewService from "@root/services/identity/PreviewService"
 import QueueService from "@root/services/identity/QueueService"
 import ReposService from "@root/services/identity/ReposService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
@@ -117,6 +118,8 @@ const reviewRequestService = new ReviewRequestService(
 const MockSitesCacheService = {
   getLastUpdated: jest.fn(),
 }
+
+const MockPreviewService = {}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -125,6 +128,7 @@ const sitesService = new SitesService({
   isomerAdminsService,
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
+  previewService: (MockPreviewService as unknown) as PreviewService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

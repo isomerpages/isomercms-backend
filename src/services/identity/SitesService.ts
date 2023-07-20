@@ -2,15 +2,18 @@ import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
+import PreviewParsingError from "@errors/PreviewParsingError"
+
 import { Deployment, Repo, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
-import type UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import DatabaseError from "@root/errors/DatabaseError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import MissingUserError from "@root/errors/MissingUserError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
+import PreviewService from "@root/services/identity/PreviewService"
 import {
   getAllRepoData,
   SitesCacheService,
@@ -18,6 +21,7 @@ import {
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
+import { PreviewInfo } from "@root/types/previewInfo"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
 import { Brand } from "@root/types/util"
@@ -36,6 +40,7 @@ interface SitesServiceProps {
   isomerAdminsService: IsomerAdminsService
   reviewRequestService: ReviewRequestService
   sitesCacheService: SitesCacheService
+  previewService: PreviewService
 }
 
 class SitesService {
@@ -55,6 +60,8 @@ class SitesService {
 
   private readonly sitesCacheService: SitesServiceProps["sitesCacheService"]
 
+  private readonly previewService: SitesServiceProps["previewService"]
+
   constructor({
     siteRepository,
     gitHubService,
@@ -63,6 +70,7 @@ class SitesService {
     isomerAdminsService,
     reviewRequestService,
     sitesCacheService,
+    previewService,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
@@ -71,6 +79,7 @@ class SitesService {
     this.isomerAdminsService = isomerAdminsService
     this.reviewRequestService = reviewRequestService
     this.sitesCacheService = sitesCacheService
+    this.previewService = previewService
   }
 
   isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
@@ -443,6 +452,27 @@ class SitesService {
         siteUrl: Brand.fromString(siteUrl),
         stagingUrl: Brand.fromString(stagingUrl),
       }))
+  }
+
+  async getSitesPreview(
+    siteNames: string[],
+    userSessionData: UserSessionData
+  ): Promise<PreviewInfo[]> {
+    return Promise.all(
+      siteNames.map(async (siteName) => {
+        const urls = await this.getUrlsOfSite(
+          new UserWithSiteSessionData({ siteName, ...userSessionData })
+        )
+        if (urls.isOk()) {
+          if (urls.value.prod) {
+            return await this.previewService.getPreviewInfo(urls.value.prod)
+          }
+        }
+        return {
+          imageUrl: undefined,
+        }
+      })
+    )
   }
 }
 

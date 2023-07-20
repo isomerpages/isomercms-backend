@@ -152,6 +152,9 @@ export default class ReviewRequestService {
           )
         )
       )
+      .andThen((items) =>
+        okAsync(items.filter((item) => item.type !== "placeholder"))
+      )
 
   private compareDiffWithMappings = (
     sessionData: UserWithSiteSessionData,
@@ -736,18 +739,10 @@ export default class ReviewRequestService {
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
         this.compareDiff(userWithSiteSessionData, stagingLink).map(
-          (changedItems) => {
-            const displayedFiles = changedItems.filter(
-              (
-                changedItem
-              ): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
-                changedItem.type !== "placeholder"
-            )
-            return {
-              ...rest,
-              changedItems: displayedFiles,
-            }
-          }
+          (changedItems) => ({
+            ...rest,
+            changedItems,
+          })
         )
       )
   }

@@ -125,7 +125,10 @@ export default class ReviewRequestService {
   compareDiff = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
-  ): ResultAsync<WithEditMeta<EditedItemDto>[], NetworkError | DatabaseError> =>
+  ): ResultAsync<
+    WithEditMeta<DisplayedEditedItemDto>[],
+    NetworkError | DatabaseError
+  > =>
     ResultAsync.fromPromise(
       this.apiService.getCommitDiff(userWithSiteSessionData.siteName),
       // TODO: Write a handler for github errors to our own internal errors
@@ -152,8 +155,11 @@ export default class ReviewRequestService {
           )
         )
       )
-      .andThen((items) =>
-        okAsync(items.filter((item) => item.type !== "placeholder"))
+      .map((changedItems) =>
+        changedItems.filter(
+          (changedItem): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+            changedItem.type !== "placeholder"
+        )
       )
 
   private compareDiffWithMappings = (

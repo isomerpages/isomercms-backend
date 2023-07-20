@@ -125,7 +125,10 @@ export default class ReviewRequestService {
   compareDiff = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
-  ): ResultAsync<WithEditMeta<EditedItemDto>[], NetworkError | DatabaseError> =>
+  ): ResultAsync<
+    WithEditMeta<DisplayedEditedItemDto>[],
+    NetworkError | DatabaseError
+  > =>
     ResultAsync.fromPromise(
       this.apiService.getCommitDiff(userWithSiteSessionData.siteName),
       // TODO: Write a handler for github errors to our own internal errors
@@ -150,6 +153,12 @@ export default class ReviewRequestService {
               .map<WithEditMeta<EditedItemDto>>(_.identity)
               .orElse((baseItem) => okAsync(injectDefaultEditMeta(baseItem)))
           )
+        )
+      )
+      .map((changedItems) =>
+        changedItems.filter(
+          (changedItem): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+            changedItem.type !== "placeholder"
         )
       )
 
@@ -736,18 +745,10 @@ export default class ReviewRequestService {
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
         this.compareDiff(userWithSiteSessionData, stagingLink).map(
-          (changedItems) => {
-            const displayedFiles = changedItems.filter(
-              (
-                changedItem
-              ): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
-                changedItem.type !== "placeholder"
-            )
-            return {
-              ...rest,
-              changedItems: displayedFiles,
-            }
-          }
+          (changedItems) => ({
+            ...rest,
+            changedItems,
+          })
         )
       )
   }

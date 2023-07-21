@@ -25,7 +25,10 @@ DOMPurify.addHook("uponSanitizeElement", (node, data) => {
     // Adapted from https://github.com/cure53/DOMPurify/blob/e0970d88053c1c564b6ccd633b4af7e7d9a10375/src/purify.js#L719-L736
     DOMPurify.removed.push({ element: node })
     try {
-      node.parentNode?.removeChild(node)
+      if (!node.parentNode) {
+        throw new Error()
+      }
+      node.parentNode.removeChild(node)
     } catch (e) {
       try {
         // eslint-disable-next-line no-param-reassign

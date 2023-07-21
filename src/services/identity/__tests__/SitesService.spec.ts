@@ -41,6 +41,7 @@ import MissingSiteError from "@root/errors/MissingSiteError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
+import PreviewService from "@root/services/identity/PreviewService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
@@ -84,6 +85,7 @@ const MockSitesCacheService = {
   getLastUpdated: jest.fn(),
 }
 
+const MockPreviewService = {}
 const SitesService = new _SitesService({
   siteRepository: (MockRepository as unknown) as ModelStatic<Site>,
   gitHubService: (MockGithubService as unknown) as GitHubService,
@@ -92,6 +94,7 @@ const SitesService = new _SitesService({
   isomerAdminsService: (MockIsomerAdminsService as unknown) as IsomerAdminsService,
   reviewRequestService: (MockReviewRequestService as unknown) as ReviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
+  previewService: (MockPreviewService as unknown) as PreviewService,
 })
 
 const SpySitesService = {

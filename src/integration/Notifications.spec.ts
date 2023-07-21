@@ -47,6 +47,7 @@ import { ConfigService } from "@root/services/fileServices/YmlFileServices/Confi
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
@@ -118,6 +119,7 @@ const reviewRequestService = new ReviewRequestService(
 const MockSitesCacheService = {
   getLastUpdated: jest.fn(),
 }
+const MockPreviewService = {}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -126,6 +128,7 @@ const sitesService = new SitesService({
   isomerAdminsService,
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
+  previewService: (MockPreviewService as unknown) as PreviewService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

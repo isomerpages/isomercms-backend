@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { Method } from "axios"
 import StatsDClient, { StatsD } from "hot-shots"
 import _ from "lodash"
 import { ModelStatic } from "sequelize"
@@ -103,6 +104,20 @@ export class StatsService {
   trackEmailLogins = () => {
     this.statsD.increment("users.email.login", {
       version: Versions.V2,
+    })
+  }
+
+  incrementGithubApiCall = (
+    method: Method,
+    site: string,
+    userType: "email" | "github"
+  ) => {
+    this.statsD.increment("users.github.api", {
+      site,
+      // NOTE: Allowed to pass in lowercase,
+      // standardised to uppercase for consistency
+      method: method.toUpperCase(),
+      userType,
     })
   }
 }

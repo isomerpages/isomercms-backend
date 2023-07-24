@@ -66,6 +66,7 @@ const E2E_USERS = {
   Email: {
     Admin: "Email admin",
     Contributor: "Email contributor",
+    Admin2: "Email admin 2",
   },
   Github: {
     User: "Github user",
@@ -79,6 +80,7 @@ type TestUserTypes =
 // NOTE: Precondition to use this function is that the user type is valid.
 const getUserType = (userType: string): TestUserTypes => {
   if (userType === E2E_USERS.Email.Admin) return userType
+  if (userType === E2E_USERS.Email.Admin2) return userType
   if (userType === E2E_USERS.Email.Contributor) return userType
   if (userType === E2E_USERS.Github.User) return userType
   throw new Error(`Invalid user type: ${userType}`)
@@ -146,6 +148,8 @@ export const extractE2eUserInfo = async (
 ): Promise<SessionDataProps> => {
   switch (userType) {
     case E2E_USERS.Email.Admin:
+      return generateE2eEmailUser(CollaboratorRoles.Admin, site, email)
+    case E2E_USERS.Email.Admin2:
       return generateE2eEmailUser(CollaboratorRoles.Admin, site, email)
     case E2E_USERS.Email.Contributor:
       return generateE2eEmailUser(CollaboratorRoles.Contributor, site, email)

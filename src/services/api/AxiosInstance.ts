@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { setupCache } from "axios-cache-interceptor"
-import { err } from "neverthrow"
 
 import { config } from "@config/config"
 
@@ -10,6 +9,15 @@ import tracer from "@utils/tracer"
 
 import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 import { tokenServiceInstance } from "@services/db/TokenService"
+
+import { statsService } from "../infra/StatsService"
+
+const GITHUB_EXPERIMENTAL_TRIAL_SITE = "pa-corp"
+
+const getIsEmailUserFromAuthMessage = (
+  authMessage?: string | number | boolean
+): boolean =>
+  !authMessage || authMessage === "token " || authMessage === "token undefined"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
@@ -22,10 +30,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   // If accessToken is missing, authMessage is `token `
   // NOTE: This also implies that the user has not provided
   // their own github token and hence, are email login users.
-  const isEmailLoginUser =
-    !authMessage ||
-    authMessage === "token " ||
-    authMessage === "token undefined"
+  const isEmailLoginUser = getIsEmailUserFromAuthMessage(authMessage)
 
   if (isEmailLoginUser) {
     const accessToken = await tokenServiceInstance.getAccessToken()
@@ -73,6 +78,25 @@ const respHandler = (response: AxiosResponse) => {
   return response
 }
 
+const githubApiInterceptor = (resp: AxiosResponse) => {
+  const isEmailUser = getIsEmailUserFromAuthMessage(
+    resp.config.headers?.Authorization
+  )
+
+  if (
+    resp.status !== 304 &&
+    resp.config.url?.includes(GITHUB_EXPERIMENTAL_TRIAL_SITE) &&
+    resp.config.method
+  ) {
+    statsService.incrementGithubApiCall(
+      resp.config.method,
+      GITHUB_EXPERIMENTAL_TRIAL_SITE,
+      isEmailUser ? "email" : "github"
+    )
+  }
+  return resp
+}
+
 const isomerRepoAxiosInstance = setupCache(
   axios.create({
     baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
@@ -85,9 +109,11 @@ const isomerRepoAxiosInstance = setupCache(
 )
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)
+isomerRepoAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
 const genericGitHubAxiosInstance = axios.create()
 genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
 genericGitHubAxiosInstance.interceptors.response.use(respHandler)
+genericGitHubAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
 export { isomerRepoAxiosInstance, genericGitHubAxiosInstance }

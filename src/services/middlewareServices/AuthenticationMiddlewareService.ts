@@ -65,7 +65,7 @@ export type VerifyAccessProps = UnverifiedSession & {
 const E2E_USERS = {
   Email: {
     Admin: "Email admin",
-    Collaborator: "Email collaborator",
+    Contributor: "Email contributor",
   },
   Github: {
     User: "Github user",
@@ -79,7 +79,7 @@ type TestUserTypes =
 // NOTE: Precondition to use this function is that the user type is valid.
 const getUserType = (userType: string): TestUserTypes => {
   if (userType === E2E_USERS.Email.Admin) return userType
-  if (userType === E2E_USERS.Email.Collaborator) return userType
+  if (userType === E2E_USERS.Email.Contributor) return userType
   if (userType === E2E_USERS.Github.User) return userType
   throw new Error(`Invalid user type: ${userType}`)
 }
@@ -147,7 +147,7 @@ export const extractE2eUserInfo = async (
   switch (userType) {
     case E2E_USERS.Email.Admin:
       return generateE2eEmailUser(CollaboratorRoles.Admin, site, email)
-    case E2E_USERS.Email.Collaborator:
+    case E2E_USERS.Email.Contributor:
       return generateE2eEmailUser(CollaboratorRoles.Contributor, site, email)
     case E2E_USERS.Github.User:
       return generateGithubUser()
@@ -188,7 +188,7 @@ export default class AuthenticationMiddlewareService {
     const isEmailE2eAccess =
       (repo === E2E_EMAIL_TEST_SITE.repo || repo === E2E_TEST_REPO) &&
       (userType === E2E_USERS.Email.Admin ||
-        userType === E2E_USERS.Email.Collaborator)
+        userType === E2E_USERS.Email.Contributor)
     const isGithubE2eAccess =
       repo === E2E_TEST_REPO && userType === "Github user"
 

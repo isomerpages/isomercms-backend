@@ -19,7 +19,7 @@ const {
 } = auth
 
 const E2E_EMAIL_ADMIN_ISOMER_ID = "1"
-const E2E_EMAIL_COLLAB_ISOMER_ID = "2"
+const E2E_EMAIL_CONTRI_ISOMER_ID = "2"
 
 const MOCK_E2E_EMAIL = "MOCK@TEST.GOV.SG"
 
@@ -70,13 +70,13 @@ const E2E_EMAIL_COLLAB_PROPS: VerifyAccessProps = {
   // NOTE: Actual users won't have cookies - instead, they will use our session
   cookies: {
     isomercmsE2E: config.get("cypress.e2eTestSecret"),
-    e2eUserType: "Email collaborator",
+    e2eUserType: "Email contributor",
     site: "",
     email: "",
   },
   userInfo: {
     // NOTE: email users won't have github related fields
-    isomerUserId: E2E_EMAIL_COLLAB_ISOMER_ID,
+    isomerUserId: E2E_EMAIL_CONTRI_ISOMER_ID,
     email: MOCK_E2E_EMAIL,
   },
   url: E2E_EMAIL_REPO_URL,

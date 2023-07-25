@@ -1,8 +1,15 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto"
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  randomUUID,
+} from "crypto"
 
 import { Brand } from "@root/types/util"
 
 const ENCRYPTION_ALGORITHM = "aes-256-cbc"
+
+export const generateUuid = () => randomUUID()
 
 export const encryptPassword = (
   password: string,

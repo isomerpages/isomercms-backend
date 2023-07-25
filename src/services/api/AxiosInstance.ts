@@ -79,10 +79,6 @@ const respHandler = (response: AxiosResponse) => {
 }
 
 const githubApiInterceptor = (resp: AxiosResponse) => {
-  const isEmailUser = getIsEmailUserFromAuthMessage(
-    resp.config.headers?.Authorization
-  )
-
   if (
     resp.status !== 304 &&
     resp.config.url?.includes(GITHUB_EXPERIMENTAL_TRIAL_SITE) &&
@@ -90,8 +86,7 @@ const githubApiInterceptor = (resp: AxiosResponse) => {
   ) {
     statsService.incrementGithubApiCall(
       resp.config.method,
-      GITHUB_EXPERIMENTAL_TRIAL_SITE,
-      isEmailUser ? "email" : "github"
+      GITHUB_EXPERIMENTAL_TRIAL_SITE
     )
   }
   return resp

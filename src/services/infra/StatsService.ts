@@ -107,17 +107,12 @@ export class StatsService {
     })
   }
 
-  incrementGithubApiCall = (
-    method: Method,
-    site: string,
-    userType: "email" | "github"
-  ) => {
+  incrementGithubApiCall = (method: Method, site: string) => {
     this.statsD.increment("users.github.api", {
       site,
       // NOTE: Allowed to pass in lowercase,
       // standardised to uppercase for consistency
       method: method.toUpperCase(),
-      userType,
     })
   }
 }

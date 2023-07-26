@@ -512,7 +512,7 @@ export default class ReviewRequestService {
       // Using map here to allow creations to be done concurrently
       // But we do not actually need the result of the view creation
       requestIdsToMarkAsViewed.map(async (requestId) =>
-        this.reviewRequestView.create({
+        this.reviewRequestView.upsert({
           reviewRequestId: requestId,
           siteId: site.id,
           userId,

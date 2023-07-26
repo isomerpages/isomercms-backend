@@ -774,7 +774,7 @@ describe("ReviewRequestService", () => {
       MockReviewRequestRepository.findAll.mockResolvedValueOnce([
         MOCK_REVIEW_REQUEST_ONE,
       ])
-      MockReviewRequestViewRepository.create.mockResolvedValueOnce(undefined)
+      MockReviewRequestViewRepository.upsert.mockResolvedValueOnce(undefined)
 
       // Act
       await ReviewRequestService.markAllReviewRequestsAsViewed(
@@ -785,7 +785,7 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
       expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
-      expect(MockReviewRequestViewRepository.create).toHaveBeenCalledWith({
+      expect(MockReviewRequestViewRepository.upsert).toHaveBeenCalledWith({
         reviewRequestId: MOCK_REVIEW_REQUEST_ONE.id,
         siteId: mockSiteOrmResponseWithAllCollaborators.id,
         userId: mockUserWithSiteSessionData.isomerUserId,
@@ -801,7 +801,7 @@ describe("ReviewRequestService", () => {
       MockReviewRequestRepository.findAll.mockResolvedValueOnce([
         MOCK_REVIEW_REQUEST_ONE,
       ])
-      MockReviewRequestViewRepository.create.mockResolvedValueOnce(undefined)
+      MockReviewRequestViewRepository.upsert.mockResolvedValueOnce(undefined)
 
       // Act
       await ReviewRequestService.markAllReviewRequestsAsViewed(
@@ -812,7 +812,7 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
       expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
-      expect(MockReviewRequestViewRepository.create).not.toHaveBeenCalled()
+      expect(MockReviewRequestViewRepository.upsert).not.toHaveBeenCalled()
     })
   })
 

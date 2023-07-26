@@ -2,8 +2,6 @@ import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
-import PreviewParsingError from "@errors/PreviewParsingError"
-
 import { Deployment, Repo, Site } from "@database/models"
 import type UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
@@ -463,10 +461,8 @@ class SitesService {
         const urls = await this.getUrlsOfSite(
           new UserWithSiteSessionData({ siteName, ...userSessionData })
         )
-        if (urls.isOk()) {
-          if (urls.value.prod) {
-            return await this.previewService.getPreviewInfo(urls.value.prod)
-          }
+        if (urls.isOk() && urls.value.prod) {
+          return this.previewService.getPreviewInfo(urls.value.prod)
         }
         return {
           imageUrl: undefined,

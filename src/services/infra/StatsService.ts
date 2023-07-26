@@ -9,6 +9,14 @@ import { Versions, VersionNumber } from "@constants/index"
 
 import { AccessToken, Site, User } from "@root/database/models"
 
+const getNpsVariant = (
+  rating: number
+): "promoter" | "passive" | "detractor" => {
+  if (rating >= 9) return "promoter"
+  if (rating >= 7) return "passive"
+  return "detractor"
+}
+
 export class StatsService {
   private readonly statsD: StatsD
 
@@ -68,8 +76,12 @@ export class StatsService {
     })
   }
 
-  trackNpsRating = (rating: number, tags: Tags) => {
-    this.statsD.distribution("users.feedback.nps", rating, 1, tags)
+  trackNpsRating = (rating: number, tags: Record<string, string>) => {
+    const npsVariant = getNpsVariant(rating)
+    this.statsD.distribution("users.feedback.nps", rating, 1, {
+      ...tags,
+      npsVariant,
+    })
   }
 
   trackEmailLogins = () => {

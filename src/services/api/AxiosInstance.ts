@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { setupCache } from "axios-cache-interceptor"
+import _ from "lodash"
 
 import { config } from "@config/config"
 
@@ -12,7 +13,19 @@ import { tokenServiceInstance } from "@services/db/TokenService"
 
 import { statsService } from "../infra/StatsService"
 
-const GITHUB_EXPERIMENTAL_TRIAL_SITE = "pa-corp"
+const GITHUB_EXPERIMENTAL_TRIAL_SITES = ["pa-corp"]
+
+const REPOS_SUBSTRING = "repos/isomerpages"
+const extractRepoNameFromGithubUrl = (url: string): string => {
+  const idx = url.search(REPOS_SUBSTRING)
+  // NOTE: Should not hit here because we check that the url contains the site already
+  if (idx === -1) return ""
+  const ignoredLength = REPOS_SUBSTRING.length
+  return _.takeWhile(
+    url.slice(idx + ignoredLength + 1),
+    (char) => char !== "/"
+  ).join("")
+}
 
 const getIsEmailUserFromAuthMessage = (
   authMessage?: string | number | boolean
@@ -79,14 +92,15 @@ const respHandler = (response: AxiosResponse) => {
 }
 
 const githubApiInterceptor = (resp: AxiosResponse) => {
+  const fullUrl = `${resp.config.baseURL || ""}${resp.config.url || ""}`
   if (
     resp.status !== 304 &&
-    resp.config.url?.includes(GITHUB_EXPERIMENTAL_TRIAL_SITE) &&
+    _.some(GITHUB_EXPERIMENTAL_TRIAL_SITES, (site) => fullUrl.includes(site)) &&
     resp.config.method
   ) {
     statsService.incrementGithubApiCall(
       resp.config.method,
-      GITHUB_EXPERIMENTAL_TRIAL_SITE
+      extractRepoNameFromGithubUrl(fullUrl)
     )
   }
   return resp

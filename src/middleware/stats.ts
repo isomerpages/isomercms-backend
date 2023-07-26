@@ -37,10 +37,6 @@ export class StatsMiddleware {
 
   countDbUsers = wrapAsRequestHandler(() => this.statsService.countDbUsers())
 
-  countGithubSites = wrapAsRequestHandler(() =>
-    this.statsService.countGithubSites()
-  )
-
   countMigratedSites = wrapAsRequestHandler(() =>
     this.statsService.countMigratedSites()
   )

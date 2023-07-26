@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { Method } from "axios"
-import StatsDClient, { StatsD } from "hot-shots"
+import StatsDClient, { StatsD, Tags } from "hot-shots"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -66,6 +66,10 @@ export class StatsService {
     this.statsD.increment("users.github.login", {
       version,
     })
+  }
+
+  trackNpsRating = (rating: number, tags: Tags) => {
+    this.statsD.distribution("users.feedback.nps", rating, 1, tags)
   }
 
   trackEmailLogins = () => {

@@ -9,7 +9,7 @@
 
 1. Ensure pre-commit hooks are setup for safe commits. See below section on "Setting up Git Guardian"
 2. Ensure node 14 is installed. Install and use nvm to manage multiple node versions.
-3. Run `npm i` to install required packages
+3. Run `npm i` to install required packages.
 4. Ensure [Docker](https://www.docker.com/products/docker-desktop/) is installed
 5. Run `npm run dev:services` to bring up the docker containers
 6. Run `npm run dev` to start the server

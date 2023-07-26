@@ -37,9 +37,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
           },
         },
       })
-      const requestMethod = axiosConfig.method
-        ? axiosConfig.method
-        : "undefined method"
+      const requestMethod = axiosConfig.method ?? "undefined method"
       logger.info(
         `Email login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
       )
@@ -60,9 +58,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
       },
     },
   })
-  const requestMethod = axiosConfig.method
-    ? axiosConfig.method
-    : "undefined method"
+  const requestMethod = axiosConfig.method ?? "undefined method"
   logger.info(
     `Github login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
   )

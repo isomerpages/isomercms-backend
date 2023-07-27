@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ENV_TYPE=$(/opt/elasticbeanstalk/bin/get-config environment -k SSM_PREFIX)
-ENV_VARS=("CLIENT_ID" "AWS_REGION") # Add any additional env vars to this array
+ENV_VARS=("CLIENT_ID" "AWS_REGION" "DB_MAX_POOL") # Add any additional env vars to this array
 
 echo "Set AWS region"
 aws configure set default.region ap-southeast-1

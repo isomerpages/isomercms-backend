@@ -393,6 +393,32 @@ const config = convict({
       default: "",
     },
   },
+  sgid: {
+    clientId: {
+      doc: "sgID client ID provided during client registration",
+      env: "SGID_CLIENT_ID",
+      format: "required-string",
+      default: "",
+    },
+    clientSecret: {
+      doc: "sgID client secret provided during client registration",
+      env: "SGID_CLIENT_SECRET",
+      format: "required-string",
+      default: "",
+    },
+    privateKey: {
+      doc: "sgID client private key provided during client registration",
+      env: "SGID_PRIVATE_KEY",
+      format: "required-string",
+      default: "",
+    },
+    redirectUri: {
+      doc: "URL to redirect to after authentication with sgID",
+      env: "SGID_REDIRECT_URI",
+      format: "required-string",
+      default: "",
+    },
+  },
 })
 
 // Perform validation

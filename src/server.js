@@ -194,7 +194,8 @@ const reviewRequestService = new ReviewRequestService(
   ReviewMeta,
   ReviewRequestView,
   pageService,
-  new ConfigService()
+  new ConfigService(),
+  sequelize
 )
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)

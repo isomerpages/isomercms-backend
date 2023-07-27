@@ -17,10 +17,13 @@ import {
 } from "@root/errors/SgidErrors"
 import { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
+import { isSecure } from "@root/utils/auth-utils"
+import { generateUuid } from "@root/utils/crypto-utils"
 import UsersService from "@services/identity/UsersService"
 import SgidAuthService from "@services/utilServices/SgidAuthService"
 
 const FRONTEND_URL = config.get("app.frontendUrl")
+const SGID_COOKIE_NAME = "isomer-sgid"
 
 interface SgidAuthRouterProps {
   usersService: UsersService
@@ -46,10 +49,19 @@ export class SgidAuthRouter {
     never,
     never
   > = async (req, res) => {
+    // Generate a unique identifier for the request
+    const sessionId = generateUuid()
+
     this.sgidAuthService
-      .createSgidRedirectUrl()
+      .createSgidRedirectUrl(sessionId)
       .map((url) => {
-        res.json({ redirectUrl: url })
+        const cookieSettings = {
+          httpOnly: true,
+          secure: isSecure,
+        }
+        res
+          .cookie(SGID_COOKIE_NAME, { sessionId }, cookieSettings)
+          .json({ redirectUrl: url })
       })
       .mapErr((err) => {
         if (
@@ -71,13 +83,13 @@ export class SgidAuthRouter {
   > = async (req, res) => {
     // Retrieve the authorization code and session ID
     const authCode = String(req.query.code)
-    const state = String(req.query.state)
+    const sessionId = String(req.cookies[SGID_COOKIE_NAME].sessionId)
 
     let loginStatusCode = "500"
 
     // Exchange the authorization code and code verifier for the access token, then use the access token to retrieve user's email
     await this.sgidAuthService
-      .retrieveSgidAccessToken(authCode, state)
+      .retrieveSgidAccessToken(authCode, sessionId)
       .andThen(({ accessToken, sub }) =>
         // We can immediately process the access token - we only need to retrieve the email from sgid
         this.sgidAuthService.retrieveSgidUserEmail(accessToken, sub)

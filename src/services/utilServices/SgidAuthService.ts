@@ -10,7 +10,6 @@ import {
   SgidFetchUserInfoError,
 } from "@root/errors/SgidErrors"
 import logger from "@root/logger/logger"
-import { generateUuid } from "@root/utils/crypto-utils"
 
 const SGID_WORK_EMAIL_SCOPE = "ogpofficerinfo.work_email"
 
@@ -29,24 +28,21 @@ export default class SgidAuthService {
     this.sgidLoginRepository = sgidLoginRepository
   }
 
-  createSgidRedirectUrl() {
-    // Generate a unique identifier for the request
-    const state = generateUuid()
-
+  createSgidRedirectUrl(sessionId: string) {
     // Generate a PKCE pair
     const { codeChallenge, codeVerifier } = generatePkcePair()
 
     // Generate an authorization URL
     try {
       const { url, nonce } = this.sgidClient.authorizationUrl({
-        state,
+        state: "",
         codeChallenge,
         scope: ["openid", SGID_WORK_EMAIL_SCOPE],
       })
 
       return ResultAsync.fromPromise(
         this.sgidLoginRepository.create({
-          state,
+          state: sessionId,
           nonce,
           codeVerifier,
         }),

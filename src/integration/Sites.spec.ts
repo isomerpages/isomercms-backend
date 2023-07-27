@@ -111,7 +111,8 @@ const reviewRequestService = new ReviewRequestService(
   ReviewMeta,
   ReviewRequestView,
   pageService,
-  configService
+  configService,
+  sequelize
 )
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.

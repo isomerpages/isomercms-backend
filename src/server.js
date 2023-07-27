@@ -56,6 +56,7 @@ import {
   notificationsService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
+import PreviewService from "@services/identity/PreviewService"
 import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
@@ -197,7 +198,7 @@ const reviewRequestService = new ReviewRequestService(
 )
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
-
+const previewService = new PreviewService()
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -206,6 +207,7 @@ const sitesService = new SitesService({
   isomerAdminsService,
   reviewRequestService,
   sitesCacheService,
+  previewService,
 })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({

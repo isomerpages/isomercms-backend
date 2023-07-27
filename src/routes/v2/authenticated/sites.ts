@@ -15,6 +15,7 @@ import InfraService from "@root/services/infra/InfraService"
 import type { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
+import { PreviewInfo } from "@root/types/previewInfo"
 import { RepositoryData } from "@root/types/repoInfo"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
 import type SitesService from "@services/identity/SitesService"
@@ -158,6 +159,17 @@ export class SitesRouter {
       .mapErr(({ message }) => res.status(400).json({ message }))
   }
 
+  getPreviewInfo: RequestHandler<
+    { siteName: string },
+    PreviewInfo[] | ResponseErrorBody,
+    { sites: string[]; email: string },
+    never,
+    { userSessionData: UserSessionData }
+  > = async (req, res) =>
+    this.sitesService
+      .getSitesPreview(req.body.sites, res.locals.userSessionData)
+      .then((previews) => res.status(200).json(previews))
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
@@ -199,6 +211,17 @@ export class SitesRouter {
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.launchSite)
     )
+
+    // The /sites/preview is a POST endpoint as the frontend sends
+    // a list of sites to obtain previews for. This is to support
+    // GitHub login users who we don't have the list of sites for
+    // users in the db. However, using GET endpoint without sending
+    // a list of sites is ideal for caching of responses. Should all
+    // users be migrated to email based login in the future, a db
+    // query with session data can be used to obtain list of sites
+    // and endpoint can be changed to GET.
+    router.post("/preview", attachReadRouteHandlerWrapper(this.getPreviewInfo))
+
     return router
   }
 }

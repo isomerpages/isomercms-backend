@@ -1,5 +1,5 @@
-import { Sequelize } from "sequelize-typescript"
 import { ModelStatic } from "sequelize/types"
+import { Sequelize } from "sequelize-typescript"
 
 import { Otp, User, Whitelist } from "@root/database/models"
 import SmsClient from "@services/identity/SmsClient"

@@ -456,6 +456,18 @@ class SitesService {
     siteNames: string[],
     userSessionData: UserSessionData
   ): Promise<PreviewInfo[]> {
+    const { isomerUserId: userId } = userSessionData
+    const isAdminUser = !!(await this.isomerAdminsService.getByUserId(userId))
+
+    // As fetching preview images is expensive and incurs high latency,
+    // we want to deny the request for admin users who don't require
+    // this feature and has hundreds of sites. We also deny requests
+    // with more than the limit number of sites as they are most likely
+    // admin users.
+    const SITES_NUMBER_LIMIT = 50
+    if (isAdminUser || siteNames.length > SITES_NUMBER_LIMIT) {
+      return []
+    }
     return Promise.all(
       siteNames.map(async (siteName) => {
         const urls = await this.getUrlsOfSite(

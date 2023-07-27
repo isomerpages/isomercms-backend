@@ -1,6 +1,7 @@
 import express from "express"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { ISOMER_ADMIN_EMAIL } from "@root/constants"
 import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import MailClient, { mailer } from "@root/services/utilServices/MailClient"
 import { RequestHandler } from "@root/types"
@@ -17,8 +18,7 @@ const getFeedbackHtml = ({
     <p><b>UserType: </b>${userType}</p>
     <p><b>Email: </b>${email}</p>
     <p><b>Rating: </b>${rating}</p>
-    <p><b>Feedback: </b>${feedback}</p>
-    
+    <p><b>Feedback: </b>${feedback}</p>    
 `
 
 export interface MetricsRouterProps {
@@ -44,7 +44,7 @@ export class MetricsRouter {
   > = (req, res) => {
     const { userType } = req.body
     mailer.sendMail(
-      "admin@isomer.gov.sg",
+      ISOMER_ADMIN_EMAIL,
       "[METRICS] User feedback",
       getFeedbackHtml(req.body)
     )

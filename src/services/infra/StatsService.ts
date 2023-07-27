@@ -9,9 +9,15 @@ import { Versions, VersionNumber } from "@constants/index"
 
 import { AccessToken, Site, User } from "@root/database/models"
 
-const getNpsVariant = (
-  rating: number
-): "promoter" | "passive" | "detractor" => {
+const NPS_VARIANTS = {
+  Promoter: "promoter",
+  Passive: "passive",
+  Detractor: "detractor",
+} as const
+
+type NpsVariant = typeof NPS_VARIANTS[keyof typeof NPS_VARIANTS]
+
+const getNpsVariant = (rating: number): NpsVariant => {
   if (rating >= 9) return "promoter"
   if (rating >= 7) return "passive"
   return "detractor"

@@ -2,6 +2,7 @@ import SgidClient, { generatePkcePair } from "@opengovsg/sgid-client"
 import { ResultAsync, err, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
+import { SGID_STATE } from "@root/constants"
 import { SgidLogin } from "@root/database/models/SgidLogin"
 import DatabaseError from "@root/errors/DatabaseError"
 import {
@@ -35,14 +36,15 @@ export default class SgidAuthService {
     // Generate an authorization URL
     try {
       const { url, nonce } = this.sgidClient.authorizationUrl({
-        state: "",
+        state: SGID_STATE,
         codeChallenge,
         scope: ["openid", SGID_WORK_EMAIL_SCOPE],
       })
 
       return ResultAsync.fromPromise(
         this.sgidLoginRepository.create({
-          state: sessionId,
+          id: sessionId,
+          state: SGID_STATE,
           nonce,
           codeVerifier,
         }),
@@ -57,10 +59,10 @@ export default class SgidAuthService {
     }
   }
 
-  retrieveSgidAccessToken(authCode: string, state: string) {
+  retrieveSgidAccessToken(authCode: string, id: string) {
     return ResultAsync.fromPromise(
       this.sgidLoginRepository.findOne({
-        where: { state },
+        where: { id },
       }),
       (error) => {
         logger.error(`Error while querying sgid login database: ${error}`)
@@ -76,12 +78,13 @@ export default class SgidAuthService {
         // Try to clean up db regardless of success/failure of callback
         ResultAsync.fromPromise(
           this.sgidLoginRepository.destroy({
-            where: { state },
+            where: { id },
           }),
           (error) => {
             logger.error(`Error while cleaning up sgid login db: ${error}`)
           }
         )
+        console.log(authCode, loginDetails)
         return ResultAsync.fromPromise(
           this.sgidClient.callback({
             code: authCode,

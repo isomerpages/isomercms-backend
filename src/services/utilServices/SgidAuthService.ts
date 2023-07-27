@@ -1,5 +1,5 @@
 import SgidClient, { generatePkcePair } from "@opengovsg/sgid-client"
-import { ResultAsync, err, errAsync } from "neverthrow"
+import { ResultAsync, err, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { SgidLogin } from "@root/database/models/SgidLogin"
@@ -66,24 +66,35 @@ export default class SgidAuthService {
         logger.error(`Error while querying sgid login database: ${error}`)
         return new DatabaseError()
       }
-    ).andThen((loginDetails) => {
-      if (!loginDetails) {
-        logger.error(`Unable to find sgid login details`)
-        return errAsync(new DatabaseError())
-      }
-
-      return ResultAsync.fromPromise(
-        this.sgidClient.callback({
-          code: authCode,
-          nonce: loginDetails.nonce,
-          codeVerifier: loginDetails.codeVerifier,
-        }),
-        (error) => {
-          logger.error(`Error while retrieving sgid redirect url: ${error}`)
-          return new SgidFetchAccessTokenError()
+    )
+      .andThen((loginDetails) => {
+        if (!loginDetails) {
+          logger.error(`Unable to find sgid login details`)
+          return errAsync(new DatabaseError())
         }
-      )
-    })
+
+        // Try to clean up db regardless of success/failure of callback
+        ResultAsync.fromPromise(
+          this.sgidLoginRepository.destroy({
+            where: { state },
+          }),
+          (error) => {
+            logger.error(`Error while cleaning up sgid login db: ${error}`)
+          }
+        )
+        return ResultAsync.fromPromise(
+          this.sgidClient.callback({
+            code: authCode,
+            nonce: loginDetails.nonce,
+            codeVerifier: loginDetails.codeVerifier,
+          }),
+          (error) => {
+            logger.error(`Error while retrieving sgid redirect url: ${error}`)
+            return new SgidFetchAccessTokenError()
+          }
+        )
+      })
+      .andThen((res) => okAsync(res))
   }
 
   retrieveSgidUserEmail(

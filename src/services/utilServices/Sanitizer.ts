@@ -26,7 +26,7 @@ DOMPurify.addHook("uponSanitizeElement", (node, data) => {
     DOMPurify.removed.push({ element: node })
     try {
       if (!node.parentNode) {
-        throw new Error()
+        throw new Error("parent node is not defined")
       }
       node.parentNode.removeChild(node)
     } catch (e) {

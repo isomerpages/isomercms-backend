@@ -8,7 +8,6 @@ import logger from "@logger/logger"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
-import { SGID_STATE } from "@root/constants"
 import { AuthError } from "@root/errors/AuthError"
 import DatabaseError from "@root/errors/DatabaseError"
 import {
@@ -19,11 +18,9 @@ import {
 import { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { isSecure } from "@root/utils/auth-utils"
-import { generateUuid } from "@root/utils/crypto-utils"
 import UsersService from "@services/identity/UsersService"
 import SgidAuthService from "@services/utilServices/SgidAuthService"
 
-const FRONTEND_URL = config.get("app.frontendUrl")
 const SGID_COOKIE_NAME = "isomer-sgid"
 
 interface SgidAuthRouterProps {
@@ -50,26 +47,20 @@ export class SgidAuthRouter {
     never,
     never
   > = async (req, res) => {
-    // Generate a unique identifier for the request
-    const sessionId = generateUuid()
-
     this.sgidAuthService
-      .createSgidRedirectUrl(sessionId)
-      .map((url) => {
+      .createSgidRedirectUrl()
+      .map(({ cookieData, url }) => {
         const cookieSettings = {
           httpOnly: true,
           secure: isSecure,
           sameSite: "strict" as const,
         }
         res
-          .cookie(SGID_COOKIE_NAME, { sessionId }, cookieSettings)
+          .cookie(SGID_COOKIE_NAME, cookieData, cookieSettings)
           .json({ redirectUrl: url })
       })
       .mapErr((err) => {
-        if (
-          err instanceof SgidCreateRedirectUrlError ||
-          err instanceof DatabaseError
-        ) {
+        if (err instanceof SgidCreateRedirectUrlError) {
           return res.status(500).json({ message: err.message })
         }
         return res.status(500).json({ message: err })
@@ -85,24 +76,19 @@ export class SgidAuthRouter {
   > = async (req, res) => {
     // Retrieve the authorization code and session ID
     const authCode = String(req.query.code)
-    const state = String(req.query.state)
 
     const cookieData = req.cookies[SGID_COOKIE_NAME]
 
-    if (!state || state !== SGID_STATE) {
-      logger.error("Invalid state provided for sgid login")
-      return res.status(500).send()
-    }
-    if (!cookieData || !cookieData.sessionId) {
+    if (!cookieData || !cookieData.nonce || !cookieData.codeVerifier) {
       logger.error("Invalid cookie provided for sgid login")
       return res.status(500).send()
     }
 
-    const { sessionId } = cookieData
+    const { nonce, codeVerifier } = cookieData
 
     // Exchange the authorization code and code verifier for the access token, then use the access token to retrieve user's email
     await this.sgidAuthService
-      .retrieveSgidAccessToken(authCode, sessionId)
+      .retrieveSgidAccessToken({ authCode, nonce, codeVerifier })
       .andThen(({ accessToken, sub }) =>
         // We can immediately process the access token - we only need to retrieve the email from sgid
         this.sgidAuthService.retrieveSgidUserEmail(accessToken, sub)

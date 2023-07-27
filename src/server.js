@@ -29,7 +29,6 @@ import {
   ReviewMeta,
   Reviewer,
   ReviewRequestView,
-  SgidLogin,
 } from "@database/models"
 import bootstrap from "@root/bootstrap"
 import {
@@ -62,7 +61,6 @@ import ReposService from "@services/identity/ReposService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
-import { statsService } from "@services/infra/StatsService"
 import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
@@ -105,7 +103,6 @@ const sequelize = initSequelize([
   Reviewer,
   ReviewRequest,
   ReviewRequestView,
-  SgidLogin,
 ])
 const usersService = getUsersService(sequelize)
 
@@ -248,7 +245,6 @@ const sgidClient = new SgidClient({
 })
 const sgidAuthService = new SgidAuthService({
   sgidClient,
-  sgidLoginRepository: SgidLogin,
 })
 
 const infraService = new InfraService({

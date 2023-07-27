@@ -1,6 +1,8 @@
 // NOTE: the import for tracer doesn't resolve with path aliasing
 import "./utils/tracer"
 import "module-alias/register"
+
+import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
 import nocache from "nocache"
@@ -59,7 +61,6 @@ import ReposService from "@services/identity/ReposService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
 import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
-import { statsService } from "@services/infra/StatsService"
 import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
@@ -70,6 +71,7 @@ import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+import { SgidAuthRouter } from "./routes/v2/sgidAuth"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
@@ -77,6 +79,7 @@ import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
+import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
 
 const path = require("path")
@@ -234,6 +237,16 @@ const collaboratorsService = new CollaboratorsService({
   whitelist: Whitelist,
 })
 
+const sgidClient = new SgidClient({
+  clientId: config.get("sgid.clientId"),
+  clientSecret: config.get("sgid.clientSecret"),
+  redirectUri: config.get("sgid.redirectUri"),
+  privateKey: config.get("sgid.privateKey"),
+})
+const sgidAuthService = new SgidAuthService({
+  sgidClient,
+})
+
 const infraService = new InfraService({
   sitesService,
   reposService,
@@ -307,12 +320,17 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   sitesService,
   deploymentsService,
 })
+const sgidAuthRouter = new SgidAuthRouter({
+  usersService,
+  sgidAuthService,
+})
 const authV2Router = new AuthRouter({
   authenticationMiddleware,
   authService,
   apiLogger,
   rateLimiter,
   statsMiddleware,
+  sgidAuthRouter,
 })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({

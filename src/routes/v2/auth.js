@@ -22,12 +22,14 @@ class AuthRouter {
     statsMiddleware,
     apiLogger,
     rateLimiter,
+    sgidAuthRouter,
   }) {
     this.authService = authService
     this.authenticationMiddleware = authenticationMiddleware
     this.statsMiddleware = statsMiddleware
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
+    this.sgidAuthRouter = sgidAuthRouter
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -118,6 +120,7 @@ class AuthRouter {
     router.use(this.apiLogger)
 
     router.use(this.rateLimiter)
+    router.use("/sgid", this.sgidAuthRouter.getRouter())
     router.get(
       "/github-redirect",
       attachReadRouteHandlerWrapper(this.authRedirect)

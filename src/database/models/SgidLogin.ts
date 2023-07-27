@@ -10,16 +10,15 @@ import {
 @Table({ tableName: "sgid_login" })
 export class SgidLogin extends Model {
   @Column({
-    autoIncrement: true,
     primaryKey: true,
     allowNull: false,
-    type: DataType.BIGINT,
+    type: DataType.TEXT,
   })
-  id!: number
+  id!: string
 
   @Column({
     allowNull: false,
-    type: DataType.STRING,
+    type: DataType.TEXT,
   })
   state!: string
 

@@ -8,6 +8,7 @@ import logger from "@logger/logger"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
+import { SGID_STATE } from "@root/constants"
 import { AuthError } from "@root/errors/AuthError"
 import DatabaseError from "@root/errors/DatabaseError"
 import {
@@ -58,6 +59,7 @@ export class SgidAuthRouter {
         const cookieSettings = {
           httpOnly: true,
           secure: isSecure,
+          sameSite: "strict" as const,
         }
         res
           .cookie(SGID_COOKIE_NAME, { sessionId }, cookieSettings)
@@ -83,9 +85,20 @@ export class SgidAuthRouter {
   > = async (req, res) => {
     // Retrieve the authorization code and session ID
     const authCode = String(req.query.code)
-    const sessionId = String(req.cookies[SGID_COOKIE_NAME].sessionId)
+    const state = String(req.query.state)
 
-    let loginStatusCode = "500"
+    const cookieData = req.cookies[SGID_COOKIE_NAME]
+
+    if (!state || state !== SGID_STATE) {
+      logger.error("Invalid state provided for sgid login")
+      return res.status(500).send()
+    }
+    if (!cookieData || !cookieData.sessionId) {
+      logger.error("Invalid cookie provided for sgid login")
+      return res.status(500).send()
+    }
+
+    const { sessionId } = cookieData
 
     // Exchange the authorization code and code verifier for the access token, then use the access token to retrieve user's email
     await this.sgidAuthService
@@ -95,12 +108,13 @@ export class SgidAuthRouter {
         this.sgidAuthService.retrieveSgidUserEmail(accessToken, sub)
       )
       .andThen((email) => {
-        if (!email)
+        if (!email || !email.endsWith("@open.gov.sg")) {
           return errAsync(
             new AuthError(
               "Your email has not been whitelisted to use sgID login. Please use another method of login."
             )
           )
+        }
         return okAsync(email)
       })
       .andThen((email) =>
@@ -121,7 +135,7 @@ export class SgidAuthRouter {
           email: user.email,
         }
         Object.assign(req.session, { userInfo })
-        loginStatusCode = "200"
+        return res.status(200).send()
       })
       .mapErr((err) => {
         if (
@@ -129,15 +143,13 @@ export class SgidAuthRouter {
           err instanceof SgidFetchUserInfoError ||
           err instanceof DatabaseError
         ) {
-          loginStatusCode = "500"
-        } else if (err instanceof AuthError) {
-          loginStatusCode = "401"
-        } else {
-          loginStatusCode = "500"
+          return res.status(500).send()
         }
+        if (err instanceof AuthError) {
+          return res.status(401).send()
+        }
+        return res.status(500).send()
       })
-
-    return res.redirect(`${FRONTEND_URL}/ogp-login?status=${loginStatusCode}`)
   }
 
   getRouter() {
@@ -148,7 +160,7 @@ export class SgidAuthRouter {
       attachReadRouteHandlerWrapper(this.createSgidRedirectUrl)
     )
     router.get(
-      "/auth-redirect",
+      "/verify-login",
       attachReadRouteHandlerWrapper(this.handleSgidLogin)
     )
 

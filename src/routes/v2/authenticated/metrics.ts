@@ -2,11 +2,10 @@ import express from "express"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { ISOMER_ADMIN_EMAIL } from "@root/constants"
-import { AuthorizationMiddleware } from "@root/middleware/authorization"
-import MailClient, { mailer } from "@root/services/utilServices/MailClient"
+import { mailer } from "@root/services/utilServices/MailClient"
 import { RequestHandler } from "@root/types"
 import { FeedbackDto } from "@root/types/dto/feedback"
-import { StatsService, statsService } from "@services/infra/StatsService"
+import { statsService } from "@services/infra/StatsService"
 
 const getFeedbackHtml = ({
   rating,
@@ -21,20 +20,8 @@ const getFeedbackHtml = ({
     <p><b>Feedback: </b>${feedback}</p>    
 `
 
-export interface MetricsRouterProps {
-  statsService: StatsService
-
-  mailClient: MailClient
-  authorizationMiddleware: AuthorizationMiddleware
-}
-
+// eslint-disable-next-line import/prefer-default-export
 export class MetricsRouter {
-  private readonly authorizationMiddleware
-
-  constructor({ authorizationMiddleware }: MetricsRouterProps) {
-    this.authorizationMiddleware = authorizationMiddleware
-  }
-
   collateUserFeedback: RequestHandler<
     never,
     unknown,

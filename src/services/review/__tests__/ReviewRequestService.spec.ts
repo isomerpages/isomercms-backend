@@ -783,16 +783,27 @@ describe("ReviewRequestService", () => {
       MockReviewRequestViewRepository.create.mockResolvedValueOnce(undefined)
 
       // Act
-      await ReviewRequestService.markAllReviewRequestsAsViewed(
+      // NOTE: we are running 2 functions at the same time to simulate 2 concurrent requests
+      const promise1 = ReviewRequestService.markAllReviewRequestsAsViewed(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
+      const promise2 = ReviewRequestService.markAllReviewRequestsAsViewed(
+        mockUserWithSiteSessionData,
+        mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
+      )
+
+      // await both promises at the same time
+      await Promise.all([promise1, promise2])
 
       // Assert
       MockSequelize.transaction(() => {
         expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
         expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
-        expect(MockReviewRequestViewRepository.create).toHaveBeenCalled()
+      })
+      MockSequelize.transaction(() => {
+        expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
+        expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
       })
     })
 

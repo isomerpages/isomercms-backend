@@ -191,7 +191,7 @@ const config = convict({
         doc: "Path to the EFS volume for storing the Git repositories",
         env: "EFS_VOL_PATH",
         format: "required-string",
-        default: "/mnt/efs/repos",
+        default: "/efs/repos",
       },
     },
     stepFunctions: {

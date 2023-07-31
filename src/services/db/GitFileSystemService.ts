@@ -17,6 +17,7 @@ import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
  */
 
 const EFS_VOL_PATH = config.get("aws.efs.volPath")
+const BRANCH_REF = config.get("github.branchRef")
 
 export default class GitFileSystemService {
   private readonly git: SimpleGit
@@ -89,6 +90,7 @@ export default class GitFileSystemService {
     try {
       const hash = await this.git
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .checkout(BRANCH_REF)
         .revparse([`HEAD:${filePath}`])
       return okAsync(hash)
     } catch (error: unknown) {
@@ -129,6 +131,7 @@ export default class GitFileSystemService {
       await this.git
         .clone(originUrl, `${EFS_VOL_PATH}/${repoName}`)
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .checkout(BRANCH_REF)
       return okAsync(`${EFS_VOL_PATH}/${repoName}`)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error"
@@ -154,7 +157,7 @@ export default class GitFileSystemService {
 
     try {
       await this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).pull()
-      return okAsync(`${EFS_VOL_PATH}/${repoName}`)
+      return okAsync(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error"
       return errAsync(new GitFileSystemError(message))

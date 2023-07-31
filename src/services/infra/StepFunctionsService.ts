@@ -1,8 +1,7 @@
 import { StepFunctions } from "aws-sdk"
 
 import config from "@root/config/config"
-
-import { SiteLaunchMessage } from "../../../microservices/site-launch/shared/types"
+import { SiteLaunchMessage } from "@root/types/siteLaunch"
 
 export default class StepFunctionsService {
   private client: StepFunctions

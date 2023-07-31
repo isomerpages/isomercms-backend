@@ -9,9 +9,9 @@ import {
 } from "@aws-sdk/lib-dynamodb"
 import autoBind from "auto-bind"
 
-import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
 import config from "@root/config/config"
 import logger from "@root/logger/logger"
+import { SiteLaunchMessage } from "@root/types/siteLaunch"
 
 export interface UpdateParams {
   TableName: string

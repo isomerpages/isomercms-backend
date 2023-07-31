@@ -4,14 +4,14 @@ import { ResultAsync, errAsync, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
-import {
-  SiteLaunchMessage,
-  SiteLaunchStatus,
-  isSiteLaunchMessage,
-} from "@root/../microservices/site-launch/shared/types"
 import DatabaseError from "@root/errors/DatabaseError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import logger from "@root/logger/logger"
+import {
+  SiteLaunchMessage,
+  isSiteLaunchMessage,
+  SiteLaunchStatus,
+} from "@root/types/siteLaunch"
 
 import DynamoDBClient from "./DynamoDBClient"
 

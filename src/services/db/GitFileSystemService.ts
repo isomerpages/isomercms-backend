@@ -155,7 +155,7 @@ export default class GitFileSystemService {
     return okAsync(null)
   }
 
-  // Creates either directory or file
+  // TODO: Creates either directory or file
   // ResourceDirectoryService used this to create a directory + file at the same time
   async create() {}
 
@@ -267,12 +267,12 @@ export default class GitFileSystemService {
     }
   }
 
-  // Update the contents of a file
+  // TODO: Update the contents of a file
   async update() {}
 
-  // Delete a file
+  // TODO: Delete a file
   async delete() {}
 
-  // Get the latest commit of branch
+  // TODO: Get the latest commit of branch
   async getLatestCommitOfBranch() {}
 }

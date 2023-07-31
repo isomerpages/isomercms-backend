@@ -25,33 +25,56 @@ export default class GitFileSystemService {
     this.git = git
   }
 
+  private async isGitInitialized(
+    repoName: string
+  ): Promise<ResultAsync<boolean, GitFileSystemError>> {
+    try {
+      const isGitRepo = await this.git
+        .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .checkIsRepo()
+
+      return okAsync(isGitRepo)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
+    }
+  }
+
+  private async isOriginRemoteCorrect(
+    repoName: string
+  ): Promise<ResultAsync<boolean, GitFileSystemError>> {
+    try {
+      const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
+      const remoteUrl = await this.git
+        .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .remote(["get-url", "origin"])
+
+      return okAsync(!remoteUrl || remoteUrl.trim() !== originUrl)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
+    }
+  }
+
   // Determine if the folder is a valid Git repository
   async isValidGitRepo(
     repoName: string
-  ): Promise<Result<boolean, GitFileSystemError | unknown>> {
-    const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-
+  ): Promise<ResultAsync<boolean, GitFileSystemError>> {
     try {
-      // Check if an existing folder exists
-      if (!fs.existsSync(`${EFS_VOL_PATH}/${repoName}`)) {
+      const isFolderExisting = fs.existsSync(`${EFS_VOL_PATH}/${repoName}`)
+      if (!isFolderExisting) {
         return okAsync(false)
       }
 
-      // Check if the folder is a Git repo
-      await this.git.cwd(`${EFS_VOL_PATH}/${repoName}`)
-      const isGitRepo = await this.git.checkIsRepo()
-
-      if (!isGitRepo) {
+      const isGitInitialized = await this.isGitInitialized(repoName)
+      if (isGitInitialized.isErr() || !isGitInitialized.value) {
         return okAsync(false)
       }
 
-      // Check if the Git repo is the correct one
-      const remoteUrl = await this.git.remote(["get-url", "origin"])
-      if (!remoteUrl || remoteUrl.trim() !== originUrl) {
-        return okAsync(false)
-      }
-
-      return okAsync(true)
+      const isOriginRemoteCorrect = await this.isOriginRemoteCorrect(repoName)
+      return okAsync(
+        isOriginRemoteCorrect.isOk() && isOriginRemoteCorrect.value
+      )
     } catch (error: unknown) {
       if (error instanceof GitError) {
         return errAsync(new GitFileSystemError(error.message))
@@ -85,13 +108,9 @@ export default class GitFileSystemService {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
 
     try {
-      // Check if an existing folder exists
       if (fs.existsSync(`${EFS_VOL_PATH}/${repoName}`)) {
-        // Check if the folder is a Git repo
-        await this.git.cwd(`${EFS_VOL_PATH}/${repoName}`)
-        const isGitRepo = await this.git.checkIsRepo()
-
-        if (!isGitRepo) {
+        const isGitInitialized = await this.isGitInitialized(repoName)
+        if (isGitInitialized.isErr() || !isGitInitialized.value) {
           return errAsync(
             new GitFileSystemError(
               `An existing folder "${repoName}" exists but is not a Git repo`
@@ -99,9 +118,8 @@ export default class GitFileSystemService {
           )
         }
 
-        // Check if the Git repo is the correct one
-        const remoteUrl = await this.git.remote(["get-url", "origin"])
-        if (!remoteUrl || remoteUrl.trim() !== originUrl) {
+        const isOriginRemoteCorrect = await this.isOriginRemoteCorrect(repoName)
+        if (isOriginRemoteCorrect.isErr() || !isOriginRemoteCorrect.value) {
           return errAsync(
             new GitFileSystemError(
               `An existing folder "${repoName}" exists but is not the correct Git repo`

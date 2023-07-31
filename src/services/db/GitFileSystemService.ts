@@ -1,7 +1,7 @@
 import fs from "fs"
 
-import { errAsync, okAsync, Result } from "neverthrow"
-import { GitError, SimpleGit } from "simple-git"
+import { errAsync, okAsync, ResultAsync } from "neverthrow"
+import { SimpleGit } from "simple-git"
 
 import { config } from "@config/config"
 
@@ -76,10 +76,8 @@ export default class GitFileSystemService {
         isOriginRemoteCorrect.isOk() && isOriginRemoteCorrect.value
       )
     } catch (error: unknown) {
-      if (error instanceof GitError) {
-        return errAsync(new GitFileSystemError(error.message))
-      }
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
   }
 
@@ -87,24 +85,22 @@ export default class GitFileSystemService {
   async getGitBlobHash(
     repoName: string,
     filePath: string
-  ): Promise<Result<string, GitFileSystemError | unknown>> {
+  ): Promise<ResultAsync<string, GitFileSystemError>> {
     try {
       const hash = await this.git
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
         .revparse([`HEAD:${filePath}`])
       return okAsync(hash)
     } catch (error: unknown) {
-      if (error instanceof GitError) {
-        return errAsync(new GitFileSystemError(error.message))
-      }
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
   }
 
   // Clone repository from upstream Git hosting provider
   async clone(
     repoName: string
-  ): Promise<Result<null, GitFileSystemError | unknown>> {
+  ): Promise<ResultAsync<string, GitFileSystemError>> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
 
     try {
@@ -127,28 +123,24 @@ export default class GitFileSystemService {
           )
         }
 
-        return okAsync(null)
+        return okAsync(`${EFS_VOL_PATH}/${repoName}`)
       }
 
       await this.git
         .clone(originUrl, `${EFS_VOL_PATH}/${repoName}`)
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
+      return okAsync(`${EFS_VOL_PATH}/${repoName}`)
     } catch (error: unknown) {
-      if (error instanceof GitError) {
-        return errAsync(new GitFileSystemError(error.message))
-      }
-
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
-
-    return okAsync(null)
   }
 
   // Pull the latest changes from upstream Git hosting provider
   // TODO: Pulling is a very expensive operation, should find a way to optimise
   async pull(
     repoName: string
-  ): Promise<Result<null, GitFileSystemError | unknown>> {
+  ): Promise<ResultAsync<string, GitFileSystemError>> {
     const isValid = await this.isValidGitRepo(repoName)
 
     if (isValid.isOk() && !isValid.value) {
@@ -162,15 +154,11 @@ export default class GitFileSystemService {
 
     try {
       await this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).pull()
+      return okAsync(`${EFS_VOL_PATH}/${repoName}`)
     } catch (error: unknown) {
-      if (error instanceof GitError) {
-        return errAsync(new GitFileSystemError(error.message))
-      }
-
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
-
-    return okAsync(null)
   }
 
   // TODO: Creates either directory or file
@@ -181,7 +169,7 @@ export default class GitFileSystemService {
   async read(
     repoName: string,
     filePath: string
-  ): Promise<Result<GitFile, GitFileSystemError | unknown>> {
+  ): Promise<ResultAsync<GitFile, GitFileSystemError>> {
     // Ensure that the repository is up-to-date first
     const isUpdated = await this.pull(repoName)
 
@@ -210,11 +198,8 @@ export default class GitFileSystemService {
 
       return okAsync(result)
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        return errAsync(new GitFileSystemError(error.message))
-      }
-
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
   }
 
@@ -222,7 +207,7 @@ export default class GitFileSystemService {
   async listDirectoryContents(
     repoName: string,
     directoryPath: string
-  ): Promise<Result<GitDirectoryItem[], GitFileSystemError | unknown>> {
+  ): Promise<ResultAsync<GitDirectoryItem[], GitFileSystemError>> {
     // Check that the directory path provided exists and is a directory
     try {
       const stats = await fs.promises.stat(
@@ -237,12 +222,8 @@ export default class GitFileSystemService {
         )
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        // Likely the path does not exist
-        return errAsync(new GitFileSystemError(error.message))
-      }
-
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
 
     // Read the directory contents
@@ -277,11 +258,8 @@ export default class GitFileSystemService {
 
       return okAsync(gitTrackedResults)
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        return errAsync(new GitFileSystemError(error.message))
-      }
-
-      return errAsync(error)
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return errAsync(new GitFileSystemError(message))
     }
   }
 

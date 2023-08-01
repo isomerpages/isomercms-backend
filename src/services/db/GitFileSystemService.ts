@@ -77,21 +77,23 @@ export default class GitFileSystemService {
     return safeExistsSync(`${EFS_VOL_PATH}/${repoName}`)
       .andThen((isFolderExisting) => {
         if (!isFolderExisting) {
-          return err(false)
+          // Return as an error to prevent further processing
+          // The function will eventually return false
+          return err<never, false>(false)
         }
         return ok(true)
       })
       .asyncAndThen(() => this.isGitInitialized(repoName))
       .andThen((isGitInitialized) => {
         if (!isGitInitialized) {
-          return err(false)
+          return err<never, false>(false)
         }
         return ok(true)
       })
       .andThen(() => this.isOriginRemoteCorrect(repoName))
       .andThen((isOriginRemoteCorrect) => {
         if (!isOriginRemoteCorrect) {
-          return err(false)
+          return err<never, false>(false)
         }
         return ok(true)
       })

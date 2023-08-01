@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { Method } from "axios"
-import StatsDClient, { StatsD, Tags } from "hot-shots"
+import StatsDClient, { StatsD } from "hot-shots"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"

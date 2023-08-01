@@ -1,113 +1,138 @@
-// NOTE: the import for tracer doesn't resolve with path aliasing
-import "./utils/tracer"
-import "module-alias/register"
-import SequelizeStoreFactory from "connect-session-sequelize"
-import session from "express-session"
-import nocache from "nocache"
-
-import { config } from "@config/config"
-
-import logger from "@logger/logger"
-
-import initSequelize from "@database/index"
-import {
-  Site,
-  SiteMember,
-  User,
-  Whitelist,
-  AccessToken,
-  Repo,
-  Otp,
-  Deployment,
-  Launch,
-  Redirection,
-  IsomerAdmin,
-  Notification,
-  ReviewRequest,
-  ReviewMeta,
-  Reviewer,
-  ReviewRequestView,
-} from "@database/models"
-import bootstrap from "@root/bootstrap"
-import {
-  getAuthenticationMiddleware,
-  getAuthorizationMiddleware,
-} from "@root/middleware"
-import { statsMiddleware } from "@root/middleware/stats"
-import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
-import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
-import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
-import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
-import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
-import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
-import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
-import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
-import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
-import DynamoDBService from "@root/services/infra/DynamoDBService"
-import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
-import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
-import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
-import {
-  getIdentityAuthService,
-  getUsersService,
-  isomerAdminsService,
-  notificationsService,
-} from "@services/identity"
-import DeploymentsService from "@services/identity/DeploymentsService"
-import QueueService from "@services/identity/QueueService"
-import ReposService from "@services/identity/ReposService"
-import { SitesCacheService } from "@services/identity/SitesCacheService"
-import SitesService from "@services/identity/SitesService"
-import InfraService from "@services/infra/InfraService"
-import { statsService } from "@services/infra/StatsService"
-import StepFunctionsService from "@services/infra/StepFunctionsService"
-import ReviewRequestService from "@services/review/ReviewRequestService"
-
-import { apiLogger } from "./middleware/apiLogger"
-import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
-import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
-import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
-import getAuthenticatedSubrouter from "./routes/v2/authenticated"
-import { ReviewsRouter } from "./routes/v2/authenticated/review"
-import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
-import { PageService } from "./services/fileServices/MdPageServices/PageService"
-import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
-import CollaboratorsService from "./services/identity/CollaboratorsService"
-import LaunchClient from "./services/identity/LaunchClient"
-import LaunchesService from "./services/identity/LaunchesService"
-import DynamoDBDocClient from "./services/infra/DynamoDBClient"
-import { rateLimiter } from "./services/utilServices/RateLimiter"
-import { isSecure } from "./utils/auth-utils"
-
-const path = require("path")
-
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
-
-const sequelize = initSequelize([
-  Site,
-  SiteMember,
-  User,
-  Whitelist,
-  AccessToken,
-  Otp,
-  Repo,
-  Deployment,
-  Launch,
-  Redirection,
-  IsomerAdmin,
-  Notification,
-  ReviewMeta,
-  Reviewer,
-  ReviewRequest,
-  ReviewRequestView,
-])
-const usersService = getUsersService(sequelize)
-
-const cookieParser = require("cookie-parser")
-const cors = require("cors")
 const express = require("express")
-const helmet = require("helmet")
-const createError = require("http-errors")
+const simpleGit = require("simple-git")
+
+async function cloneRepo(repoPath, localPath) {
+  const git = simpleGit()
+
+  try {
+    await git.clone(repoPath, localPath)
+    console.log(`Repository cloned from ${repoPath} to ${localPath}`)
+  } catch (err) {
+    console.error("Failed to clone repository:")
+    console.log(err)
+  }
+}
+
+const app = express()
+app.get("/", (req, res) => {
+  res.send("Hello World MVP!")
+})
+
+app.listen(8081, () => {
+  console.log(`Example app listening on port ${8081}`)
+  cloneRepo("git@github.com:harishv7/ggs-mvp-test.git", "/efs/repos")
+})
+
+// NOTE: the import for tracer doesn't resolve with path aliasing
+// import "./utils/tracer"
+// import "module-alias/register"
+// import SequelizeStoreFactory from "connect-session-sequelize"
+// import session from "express-session"
+// import nocache from "nocache"
+
+// import { config } from "@config/config"
+
+// import logger from "@logger/logger"
+
+// import initSequelize from "@database/index"
+// import {
+//   Site,
+//   SiteMember,
+//   User,
+//   Whitelist,
+//   AccessToken,
+//   Repo,
+//   Otp,
+//   Deployment,
+//   Launch,
+//   Redirection,
+//   IsomerAdmin,
+//   Notification,
+//   ReviewRequest,
+//   ReviewMeta,
+//   Reviewer,
+//   ReviewRequestView,
+// } from "@database/models"
+// import bootstrap from "@root/bootstrap"
+// import {
+//   getAuthenticationMiddleware,
+//   getAuthorizationMiddleware,
+// } from "@root/middleware"
+// import { statsMiddleware } from "@root/middleware/stats"
+// import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+// import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
+// import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
+// import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
+// import { ResourcePageService } from "@root/services/fileServices/MdPageServices/ResourcePageService"
+// import { SubcollectionPageService } from "@root/services/fileServices/MdPageServices/SubcollectionPageService"
+// import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/UnlinkedPageService"
+// import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
+// import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+// import DynamoDBService from "@root/services/infra/DynamoDBService"
+// import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+// import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
+// import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
+// import {
+//   getIdentityAuthService,
+//   getUsersService,
+//   isomerAdminsService,
+//   notificationsService,
+// } from "@services/identity"
+// import DeploymentsService from "@services/identity/DeploymentsService"
+// import QueueService from "@services/identity/QueueService"
+// import ReposService from "@services/identity/ReposService"
+// import { SitesCacheService } from "@services/identity/SitesCacheService"
+// import SitesService from "@services/identity/SitesService"
+// import InfraService from "@services/infra/InfraService"
+// import { statsService } from "@services/infra/StatsService"
+// import StepFunctionsService from "@services/infra/StepFunctionsService"
+// import ReviewRequestService from "@services/review/ReviewRequestService"
+
+// import { apiLogger } from "./middleware/apiLogger"
+// import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
+// import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
+// import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
+// import getAuthenticatedSubrouter from "./routes/v2/authenticated"
+// import { ReviewsRouter } from "./routes/v2/authenticated/review"
+// import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
+// import { PageService } from "./services/fileServices/MdPageServices/PageService"
+// import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
+// import CollaboratorsService from "./services/identity/CollaboratorsService"
+// import LaunchClient from "./services/identity/LaunchClient"
+// import LaunchesService from "./services/identity/LaunchesService"
+// import DynamoDBDocClient from "./services/infra/DynamoDBClient"
+// import { rateLimiter } from "./services/utilServices/RateLimiter"
+// import { isSecure } from "./utils/auth-utils"
+
+// const path = require("path")
+
+// const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
+
+// const sequelize = initSequelize([
+//   Site,
+//   SiteMember,
+//   User,
+//   Whitelist,
+//   AccessToken,
+//   Otp,
+//   Repo,
+//   Deployment,
+//   Launch,
+//   Redirection,
+//   IsomerAdmin,
+//   Notification,
+//   ReviewMeta,
+//   Reviewer,
+//   ReviewRequest,
+//   ReviewRequestView,
+// ])
+// const usersService = getUsersService(sequelize)
+
+// const cookieParser = require("cookie-parser")
+// const cors = require("cors")
+// const express = require("express")
+// const helmet = require("helmet")
+// const createError = require("http-errors")
 
 // const SESSION_SECRET = config.get("auth.sessionSecret")
 
@@ -131,11 +156,10 @@ const createError = require("http-errors")
 // })
 
 // Env vars
-const FRONTEND_URL = config.get("app.frontendUrl")
+// const FRONTEND_URL = config.get("app.frontendUrl")
 // Import middleware
 
 // Import routes
-const simpleGit = require("simple-git")
 
 // const { errorHandler } = require("@middleware/errorHandler")
 
@@ -145,28 +169,6 @@ const simpleGit = require("simple-git")
 
 // const { GitHubService } = require("@services/db/GitHubService")
 // const { AuthService } = require("@services/utilServices/AuthService")
-
-async function cloneRepo(repoPath, localPath) {
-  const git = simpleGit()
-
-  try {
-    await git.clone(repoPath, localPath)
-    console.log(`Repository cloned from ${repoPath} to ${localPath}`)
-  } catch (err) {
-    console.error("Failed to clone repository:")
-    console.log(err)
-  }
-}
-
-const app = express()
-app.get("/", (req, res) => {
-  res.send("Hello World MVP!")
-})
-
-app.listen(8081, () => {
-  console.log(`Example app listening on port ${8081}`)
-  cloneRepo("git@github.com:harishv7/ggs-mvp-test.git", "/efs/repos")
-})
 
 // const authService = new AuthService({ usersService })
 // const gitHubService = new GitHubService({

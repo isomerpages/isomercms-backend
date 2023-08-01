@@ -13,6 +13,8 @@ import { GitError, SimpleGit } from "simple-git"
 
 import { config } from "@config/config"
 
+import logger from "@logger/logger"
+
 import GitFileSystemError from "@errors/GitFileSystemError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
@@ -42,6 +44,9 @@ export default class GitFileSystemService {
           return new GitFileSystemError(error.message)
         }
 
+        logger.error(
+          `Error when checking if ${repoName} is a Git repo: ${error}`
+        )
         return new GitFileSystemError("An unknown error occurred")
       }
     )
@@ -59,6 +64,7 @@ export default class GitFileSystemService {
           return new GitFileSystemError(error.message)
         }
 
+        logger.error(`Error when checking origin remote URL: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     ).map((remoteUrl) => !!remoteUrl && remoteUrl.trim() === originUrl)
@@ -71,6 +77,7 @@ export default class GitFileSystemService {
         return new GitFileSystemError(error.message)
       }
 
+      logger.error(`Error when checking if ${repoName} exists: ${error}`)
       return new GitFileSystemError("An unknown error occurred")
     })
 
@@ -120,6 +127,7 @@ export default class GitFileSystemService {
           return new GitFileSystemError(error.message)
         }
 
+        logger.error(`Error when getting Git blob hash: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     )
@@ -133,6 +141,7 @@ export default class GitFileSystemService {
         return new GitFileSystemError(error.message)
       }
 
+      logger.error(`Error when checking if ${repoName} exists: ${error}`)
       return new GitFileSystemError("An unknown error occurred")
     })
 
@@ -149,6 +158,7 @@ export default class GitFileSystemService {
                 return new GitFileSystemError(error.message)
               }
 
+              logger.error(`Error when cloning ${repoName}: ${error}`)
               return new GitFileSystemError("An unknown error occurred")
             }
           ).map(() => `${EFS_VOL_PATH}/${repoName}`)
@@ -197,6 +207,7 @@ export default class GitFileSystemService {
             return new GitFileSystemError(error.message)
           }
 
+          logger.error(`Error when pulling ${repoName}: ${error}`)
           return new GitFileSystemError("An unknown error occurred")
         }
       ).map(() => `${EFS_VOL_PATH}/${repoName}`)
@@ -224,6 +235,7 @@ export default class GitFileSystemService {
               return new GitFileSystemError(error.message)
             }
 
+            logger.error(`Error when reading ${filePath}: ${error}`)
             return new GitFileSystemError("An unknown error occurred")
           }
         ),
@@ -251,6 +263,7 @@ export default class GitFileSystemService {
           return new GitFileSystemError(error.message)
         }
 
+        logger.error(`Error when getting ${directoryPath} stats: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     )
@@ -274,6 +287,7 @@ export default class GitFileSystemService {
               return new GitFileSystemError(error.message)
             }
 
+            logger.error(`Error when reading ${directoryPath}: ${error}`)
             return new GitFileSystemError("An unknown error occurred")
           }
         )

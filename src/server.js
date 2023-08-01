@@ -135,6 +135,8 @@ const FRONTEND_URL = config.get("app.frontendUrl")
 // Import middleware
 
 // Import routes
+const simpleGit = require("simple-git")
+
 const { errorHandler } = require("@middleware/errorHandler")
 
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
@@ -143,6 +145,19 @@ const { AuthRouter } = require("@routes/v2/auth")
 
 const { GitHubService } = require("@services/db/GitHubService")
 const { AuthService } = require("@services/utilServices/AuthService")
+
+async function cloneRepo(repoPath, localPath) {
+  const git = simpleGit()
+
+  try {
+    await git.clone(repoPath, localPath)
+    console.log(`Repository cloned from ${repoPath} to ${localPath}`)
+  } catch (err) {
+    console.error("Failed to clone repository:", err)
+  }
+}
+
+cloneRepo("git@github.com:harishv7/ggs-mvp-test.git", "/efs/repos")
 
 const authService = new AuthService({ usersService })
 const gitHubService = new GitHubService({

@@ -54,7 +54,7 @@
     "express": "~4.17.3",
     "express-rate-limit": "^6.7.0",
     "express-session": "^1.17.3",
-    "file-type": "^16.5.4",
+    "file-type": "^18.5.0",
     "helmet": "^4.6.0",
     "hot-shots": "^10.0.0",
     "http-errors": "~1.8.0",

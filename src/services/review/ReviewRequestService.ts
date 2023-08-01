@@ -10,6 +10,7 @@ import {
   combine,
 } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
+import { Sequelize } from "sequelize-typescript"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
@@ -31,6 +32,7 @@ import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
 import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
+import logger from "@root/logger/logger"
 import {
   BaseEditedItemDto,
   CommentItem,
@@ -102,6 +104,8 @@ export default class ReviewRequestService {
 
   private readonly configService: ConfigService
 
+  private readonly sequelize: Sequelize
+
   constructor(
     apiService: typeof ReviewApi,
     users: ModelStatic<User>,
@@ -110,7 +114,8 @@ export default class ReviewRequestService {
     reviewMeta: ModelStatic<ReviewMeta>,
     reviewRequestView: ModelStatic<ReviewRequestView>,
     pageService: PageService,
-    configService: ConfigService
+    configService: ConfigService,
+    sequelize: Sequelize
   ) {
     this.apiService = apiService
     this.users = users
@@ -120,6 +125,7 @@ export default class ReviewRequestService {
     this.reviewRequestView = reviewRequestView
     this.pageService = pageService
     this.configService = configService
+    this.sequelize = sequelize
   }
 
   compareDiff = (
@@ -481,47 +487,57 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     site: Site
   ): Promise<void> => {
-    const { isomerUserId: userId } = sessionData
-
-    const requestsViewed = await this.reviewRequestView.findAll({
-      where: {
-        siteId: site.id,
-        userId,
-      },
-    })
-
-    const allActiveRequests = await this.repository.findAll({
-      where: {
-        siteId: site.id,
-        // NOTE: Closed and merged review requests would not have an
-        // entry in the review request views table
-        reviewStatus: ["OPEN", "APPROVED"],
-      },
-    })
-
-    const requestIdsViewed = requestsViewed.map(
-      (request) => request.reviewRequestId
-    )
-    const allActiveRequestIds = allActiveRequests.map((request) => request.id)
-    const requestIdsToMarkAsViewed = _.difference(
-      allActiveRequestIds,
-      requestIdsViewed
-    )
-
-    await Promise.all(
-      // Using map here to allow creations to be done concurrently
-      // But we do not actually need the result of the view creation
-      requestIdsToMarkAsViewed.map(async (requestId) =>
-        this.reviewRequestView.create({
-          reviewRequestId: requestId,
-          siteId: site.id,
-          userId,
-          // This field represents the user opening the review request
-          // itself, which the user has not done so yet at this stage.
-          lastViewedAt: null,
+    try {
+      const { isomerUserId: userId } = sessionData
+      await this.sequelize.transaction(async (transaction) => {
+        const requestsViewed = await this.reviewRequestView.findAll({
+          where: {
+            siteId: site.id,
+            userId,
+          },
+          transaction,
         })
-      )
-    )
+
+        const allActiveRequests = await this.repository.findAll({
+          where: {
+            siteId: site.id,
+            reviewStatus: ["OPEN", "APPROVED"],
+          },
+          transaction,
+        })
+
+        const requestIdsViewed = requestsViewed.map(
+          (request) => request.reviewRequestId
+        )
+        const allActiveRequestIds = allActiveRequests.map(
+          (request) => request.id
+        )
+        const requestIdsToMarkAsViewed = _.difference(
+          allActiveRequestIds,
+          requestIdsViewed
+        )
+
+        await Promise.all(
+          requestIdsToMarkAsViewed.map(async (requestId) =>
+            this.reviewRequestView.create(
+              {
+                reviewRequestId: requestId,
+                siteId: site.id,
+                userId,
+                lastViewedAt: null,
+              },
+              { transaction }
+            )
+          )
+        )
+      })
+    } catch (error) {
+      // NOTE: If execution reaches this line, the transaction has already rolled back
+      logger.info({
+        message: "Failed to mark all review requests as viewed",
+        error,
+      })
+    }
   }
 
   updateReviewRequestLastViewedAt = async (

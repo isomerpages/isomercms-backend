@@ -1,6 +1,7 @@
 import _ from "lodash"
 import { err, ok, okAsync } from "neverthrow"
 import { Attributes, ModelStatic } from "sequelize"
+import { Sequelize } from "sequelize-typescript"
 
 import {
   ReviewRequest,
@@ -52,7 +53,7 @@ import {
 import { mockUserWithSiteSessionData } from "@root/fixtures/sessionData"
 import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
-import { EditedPageDto, GithubCommentData } from "@root/types/dto/review"
+import { GithubCommentData } from "@root/types/dto/review"
 import { Commit } from "@root/types/github"
 import * as ReviewApi from "@services/db/review"
 import _ReviewRequestService from "@services/review/ReviewRequestService"
@@ -114,6 +115,10 @@ const MockConfigService = {
   isConfigFile: jest.fn(),
 }
 
+const MockSequelize = {
+  transaction: jest.fn((transaction) => transaction()),
+}
+
 const ReviewRequestService = new _ReviewRequestService(
   (MockReviewApi as unknown) as typeof ReviewApi,
   (MockUsersRepository as unknown) as ModelStatic<User>,
@@ -122,7 +127,8 @@ const ReviewRequestService = new _ReviewRequestService(
   (MockReviewMetaRepository as unknown) as ModelStatic<ReviewMeta>,
   (MockReviewRequestViewRepository as unknown) as ModelStatic<ReviewRequestView>,
   (MockPageService as unknown) as PageService,
-  (MockConfigService as unknown) as ConfigService
+  (MockConfigService as unknown) as ConfigService,
+  (MockSequelize as unknown) as Sequelize
 )
 
 const SpyReviewRequestService = {
@@ -777,19 +783,27 @@ describe("ReviewRequestService", () => {
       MockReviewRequestViewRepository.create.mockResolvedValueOnce(undefined)
 
       // Act
-      await ReviewRequestService.markAllReviewRequestsAsViewed(
+      // NOTE: we are running 2 functions at the same time to simulate 2 concurrent requests
+      const promise1 = ReviewRequestService.markAllReviewRequestsAsViewed(
+        mockUserWithSiteSessionData,
+        mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
+      )
+      const promise2 = ReviewRequestService.markAllReviewRequestsAsViewed(
         mockUserWithSiteSessionData,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>
       )
 
+      // await both promises at the same time
+      await Promise.all([promise1, promise2])
+
       // Assert
-      expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
-      expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
-      expect(MockReviewRequestViewRepository.create).toHaveBeenCalledWith({
-        reviewRequestId: MOCK_REVIEW_REQUEST_ONE.id,
-        siteId: mockSiteOrmResponseWithAllCollaborators.id,
-        userId: mockUserWithSiteSessionData.isomerUserId,
-        lastViewedAt: null,
+      MockSequelize.transaction(() => {
+        expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
+        expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
+      })
+      MockSequelize.transaction(() => {
+        expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
+        expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
       })
     })
 
@@ -801,7 +815,7 @@ describe("ReviewRequestService", () => {
       MockReviewRequestRepository.findAll.mockResolvedValueOnce([
         MOCK_REVIEW_REQUEST_ONE,
       ])
-      MockReviewRequestViewRepository.create.mockResolvedValueOnce(undefined)
+      MockReviewRequestViewRepository.upsert.mockResolvedValueOnce(undefined)
 
       // Act
       await ReviewRequestService.markAllReviewRequestsAsViewed(
@@ -812,7 +826,7 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(MockReviewRequestViewRepository.findAll).toHaveBeenCalled()
       expect(MockReviewRequestRepository.findAll).toHaveBeenCalled()
-      expect(MockReviewRequestViewRepository.create).not.toHaveBeenCalled()
+      expect(MockReviewRequestViewRepository.upsert).not.toHaveBeenCalled()
     })
   })
 

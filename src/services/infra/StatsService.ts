@@ -9,6 +9,20 @@ import { Versions, VersionNumber } from "@constants/index"
 
 import { AccessToken, Site, User } from "@root/database/models"
 
+const NPS_VARIANTS = {
+  Promoter: "promoter",
+  Passive: "passive",
+  Detractor: "detractor",
+} as const
+
+type NpsVariant = typeof NPS_VARIANTS[keyof typeof NPS_VARIANTS]
+
+const getNpsVariant = (rating: number): NpsVariant => {
+  if (rating >= 9) return "promoter"
+  if (rating >= 7) return "passive"
+  return "detractor"
+}
+
 export class StatsService {
   private readonly statsD: StatsD
 
@@ -65,6 +79,14 @@ export class StatsService {
   trackGithubLogins = (version: VersionNumber) => {
     this.statsD.increment("users.github.login", {
       version,
+    })
+  }
+
+  trackNpsRating = (rating: number, tags: Record<string, string>) => {
+    const npsVariant = getNpsVariant(rating)
+    this.statsD.distribution("users.feedback.nps", rating, 1, {
+      ...tags,
+      npsVariant,
     })
   }
 

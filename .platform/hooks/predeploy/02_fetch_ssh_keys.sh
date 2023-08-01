@@ -6,14 +6,16 @@ ENV_TYPE=$(/opt/elasticbeanstalk/bin/get-config environment -k SSM_PREFIX)
 SSH_PUBLIC_KEY_PARAM_NAME="${ENV_TYPE}_SSH_PUBLIC_KEY"
 SSH_PRIVATE_KEY_PARAM_NAME="${ENV_TYPE}_SSH_PRIVATE_KEY"
 
-AWS_REGION="ap-southeast-1"
-SSH_PUBLIC_KEY=$(aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text)
-SSH_PRIVATE_KEY=$(aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text)
+echo "Set AWS region"
+aws configure set default.region ap-southeast-1
 
-# Write the key to the authorized_keys file
-echo "$SSH_PUBLIC_KEY" > .ssh/github.pub
-echo "$SSH_PRIVATE_KEY" > .ssh/github
+echo "Fetching keys"
+aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/ec2-user/.ssh/github.pub
+aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/ec2-user/.ssh/github
 
 # Set the permissions for the keys
-chmod 600 .ssh/github.pub
-chmod 600 .ssh/github
+echo "Setting permissions"
+chmod 600 /home/ec2-user/.ssh/github.pub
+chmod 600 /home/ec2-user/.ssh/github
+
+echo "Fetching keys complete"

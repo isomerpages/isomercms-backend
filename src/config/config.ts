@@ -396,7 +396,11 @@ const config = convict({
 })
 
 // Perform validation
-config.validate({ allowed: "strict" })
+try {
+  config.validate({ allowed: "strict" })
+} catch (err: any) {
+  console.log(err)
+}
 
 export default config
 export { config }

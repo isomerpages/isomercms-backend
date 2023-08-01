@@ -57,7 +57,6 @@ import {
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import PreviewService from "@services/identity/PreviewService"
-import QueueService from "@services/identity/QueueService"
 import ReposService from "@services/identity/ReposService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
 import SitesService from "@services/identity/SitesService"
@@ -222,7 +221,6 @@ const launchesService = new LaunchesService({
   siteRepository: Site,
   launchClient,
 })
-const queueService = new QueueService()
 const stepFunctionsService = new StepFunctionsService(
   config.get("aws.stepFunctions.stepFunctionsArn")
 )
@@ -254,7 +252,6 @@ const infraService = new InfraService({
   reposService,
   deploymentsService,
   launchesService,
-  queueService,
   collaboratorsService,
   stepFunctionsService,
   dynamoDBService,

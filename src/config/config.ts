@@ -194,28 +194,6 @@ const config = convict({
         default: "",
       },
     },
-    sqs: {
-      incomingQueueUrl: {
-        doc: "URL of the incoming SQS queue",
-        env: "INCOMING_QUEUE_URL",
-        format: "required-string",
-        default: "",
-      },
-      outgoingQueueUrl: {
-        doc: "URL of the outgoing SQS queue",
-        env: "OUTGOING_QUEUE_URL",
-        format: "required-string",
-        default: "",
-      },
-      featureFlags: {
-        shouldDeprecateSiteQueues: {
-          doc: "Whether the queues are deprecated",
-          env: "FF_DEPRECATE_SITE_QUEUES",
-          format: "required-boolean",
-          default: false,
-        },
-      },
-    },
   },
   github: {
     orgName: {

@@ -1,21 +1,13 @@
 /* eslint-disable import/prefer-default-export */
+import { Method } from "axios"
 import StatsDClient, { StatsD } from "hot-shots"
-import _ from "lodash"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
 
-import {
-  Versions,
-  GH_MAX_REPO_COUNT,
-  GITHUB_ORG_REPOS_ENDPOINT,
-  ISOMERPAGES_REPO_PAGE_COUNT,
-  VersionNumber,
-} from "@constants/index"
+import { Versions, VersionNumber } from "@constants/index"
 
 import { AccessToken, Site, User } from "@root/database/models"
-
-import { genericGitHubAxiosInstance } from "../api/AxiosInstance"
 
 export class StatsService {
   private readonly statsD: StatsD
@@ -60,30 +52,6 @@ export class StatsService {
     })
   }
 
-  countGithubSites = async () => {
-    const accessToken = await this.accessTokenRepo.findOne()
-    // NOTE: Cannot submit metrics if we are unable to get said metric
-    if (!accessToken) return
-
-    const sitesArr = await Promise.all(
-      _.fill(Array(ISOMERPAGES_REPO_PAGE_COUNT), null)
-        .map((__, idx) => ({
-          per_page: GH_MAX_REPO_COUNT,
-          sort: "full_name",
-          page: idx + 1,
-        }))
-        .map((params) =>
-          genericGitHubAxiosInstance
-            .get<unknown[]>(GITHUB_ORG_REPOS_ENDPOINT, {
-              params,
-            })
-            .then(({ data }) => data)
-        )
-    )
-
-    this.statsD.distribution("sites.github.all", sitesArr.flat().length, 1)
-  }
-
   countMigratedSites = async () => {
     const numMigratedSites = await this.sitesRepo.count({
       where: {
@@ -103,6 +71,15 @@ export class StatsService {
   trackEmailLogins = () => {
     this.statsD.increment("users.email.login", {
       version: Versions.V2,
+    })
+  }
+
+  incrementGithubApiCall = (method: Method, site: string) => {
+    this.statsD.increment("users.github.api", {
+      site,
+      // NOTE: Allowed to pass in lowercase,
+      // standardised to uppercase for consistency
+      method: method.toUpperCase(),
     })
   }
 }

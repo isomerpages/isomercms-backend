@@ -58,6 +58,7 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import { NavYmlService } from "@root/services/fileServices/YmlFileServices/NavYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import DeploymentsService from "@root/services/identity/DeploymentsService"
+import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
 import { GitHubService } from "@services/db/GitHubService"
@@ -140,13 +141,15 @@ const reviewRequestService = new ReviewRequestService(
   ReviewMeta,
   ReviewRequestView,
   pageService,
-  configService
+  configService,
+  sequelize
 )
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
   getLastUpdated: jest.fn(),
 }
+const MockPreviewService = {}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -155,6 +158,7 @@ const sitesService = new SitesService({
   isomerAdminsService,
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
+  previewService: (MockPreviewService as unknown) as PreviewService,
 })
 const navYmlService = new NavYmlService({
   gitHubService,

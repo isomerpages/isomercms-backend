@@ -1,2 +1,0 @@
-name: SiteLaunch${self:service}${opt:stage, 'dev'}
-definition: ${file(./site-launch/step-function-workflows/site-launch.asl.yaml)}

@@ -35,7 +35,6 @@ describe("Sites Router", () => {
   }
 
   const mockStatsMiddleware = {
-    countGithubSites: jest.fn(),
     countMigratedSites: jest.fn(),
   }
 

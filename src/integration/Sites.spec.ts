@@ -42,7 +42,7 @@ import DeploymentsService from "@root/services/identity/DeploymentsService"
 import IsomerAdminsService from "@root/services/identity/IsomerAdminsService"
 import LaunchClient from "@root/services/identity/LaunchClient"
 import LaunchesService from "@root/services/identity/LaunchesService"
-import QueueService from "@root/services/identity/QueueService"
+import PreviewService from "@root/services/identity/PreviewService"
 import ReposService from "@root/services/identity/ReposService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
@@ -110,13 +110,16 @@ const reviewRequestService = new ReviewRequestService(
   ReviewMeta,
   ReviewRequestView,
   pageService,
-  configService
+  configService,
+  sequelize
 )
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
   getLastUpdated: jest.fn(),
 }
+
+const MockPreviewService = {}
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -125,6 +128,7 @@ const sitesService = new SitesService({
   isomerAdminsService,
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
+  previewService: (MockPreviewService as unknown) as PreviewService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
@@ -154,7 +158,7 @@ const launchesService = new LaunchesService({
   siteRepository: Site,
   launchClient,
 })
-const queueService = new QueueService()
+
 const stepFunctionsService = new StepFunctionsService("mockArn")
 const dynamoDBService = new DynamoDBService({
   dynamoDBClient: new DynamoDBDocClient(),
@@ -165,7 +169,6 @@ const infraService = new InfraService({
   reposService,
   deploymentsService,
   launchesService,
-  queueService,
   collaboratorsService,
   stepFunctionsService,
   dynamoDBService,

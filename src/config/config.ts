@@ -186,6 +186,14 @@ const config = convict({
         default: "site-launch",
       },
     },
+    efs: {
+      volPath: {
+        doc: "Path to the EFS volume for storing the Git repositories",
+        env: "EFS_VOL_PATH",
+        format: "required-string",
+        default: "/efs/repos",
+      },
+    },
     stepFunctions: {
       stepFunctionsArn: {
         doc: "Amazon Resource Name (ARN) of the Step Functions state machine",

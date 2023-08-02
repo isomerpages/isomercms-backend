@@ -1,5 +1,6 @@
 import express from "express"
 import mockAxios from "jest-mock-axios"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import {
@@ -24,7 +25,6 @@ import { getAuthorizationMiddleware } from "@root/middleware"
 import { statsMiddleware } from "@root/middleware/stats"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { isomerRepoAxiosInstance } from "@root/services/api/AxiosInstance"
-import { GitHubService } from "@root/services/db/GitHubService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -51,6 +51,8 @@ import DynamoDBService from "@root/services/infra/DynamoDBService"
 import InfraService from "@root/services/infra/InfraService"
 import StepFunctionsService from "@root/services/infra/StepFunctionsService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import GitFileSystemService from "@services/db/GitFileSystemService"
+import RepoService from "@services/db/RepoService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import { sequelize } from "@tests/database"
@@ -62,9 +64,11 @@ const mockUpdatedAt = "now"
 const mockPermissions = { push: true }
 const mockPrivate = true
 
-const gitHubService = new GitHubService({
-  axiosInstance: isomerRepoAxiosInstance,
-})
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitHubService = new RepoService(
+  isomerRepoAxiosInstance,
+  gitFileSystemService
+)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })

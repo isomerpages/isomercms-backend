@@ -62,7 +62,7 @@ import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
 import { GitHubService } from "@services/db/GitHubService"
-import * as ReviewApi from "@services/db/review"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
@@ -134,7 +134,7 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (gitHubService as unknown) as typeof ReviewApi,
+  (gitHubService as unknown) as RepoService,
   User,
   ReviewRequest,
   Reviewer,

@@ -10,17 +10,11 @@ echo "Set AWS region"
 aws configure set default.region ap-southeast-1
 
 echo "Fetching keys"
-aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/ec2-user/.ssh/github.pub
-aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/ec2-user/.ssh/github
-
 aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github.pub
 aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github
 
 # Set the permissions for the keys
 echo "Setting permissions"
-chmod 600 /home/ec2-user/.ssh/github.pub
-chmod 600 /home/ec2-user/.ssh/github
-
 chmod 600 /home/webapp/.ssh/github.pub
 chmod 600 /home/webapp/.ssh/github
 

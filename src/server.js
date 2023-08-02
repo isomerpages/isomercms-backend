@@ -23,7 +23,10 @@ app.get("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
 app.listen(8081, () => {
   console.log(`Example app listening on port ${8081}`)
-  cloneRepo("git@github.com:harishv7/ggs-mvp-test.git", "/efs/repos")
+  cloneRepo(
+    "git@github.com:harishv7/ggs-mvp-test.git",
+    "/efs/repos/ggs-mvp-test"
+  )
 })
 
 // NOTE: the import for tracer doesn't resolve with path aliasing

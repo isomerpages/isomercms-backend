@@ -30,5 +30,5 @@ echo "" >> /home/webapp/.bashrc
 echo "# SSH agent settings" >> /home/webapp/.bashrc
 echo "if [ -z \"\$SSH_AUTH_SOCK\" ] ; then" >> /home/webapp/.bashrc
 echo "  eval \`ssh-agent -s\`" >> /home/webapp/.bashrc
-echo "  ssh-add $SSH_PRIVATE_KEY_PATH" >> /home/webapp/.bashrc
+echo "  ssh-add /home/webapp/.ssh/github" >> /home/webapp/.bashrc
 echo "fi" >> /home/webapp/.bashrc

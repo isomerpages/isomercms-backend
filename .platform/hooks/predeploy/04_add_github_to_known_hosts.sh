@@ -30,3 +30,6 @@ fi
 # Remove the temporary public key file
 rm github_rsa.pub
 echo "Successfully added github to known_hosts"
+
+# allow webapp user to access so that it can add to the known_hosts etc.
+chown -R webapp:webapp /home/webapp/.ssh

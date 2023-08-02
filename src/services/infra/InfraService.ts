@@ -265,11 +265,6 @@ export default class InfraService {
     SiteLaunchCreateParams,
     AmplifyError | SiteLaunchError | MissingUserEmailError
   > {
-    const isAdmin = email.endsWith(".gov.sg")
-
-    if (!isAdmin) {
-      return errAsync(new SiteLaunchError("Not authorized to launch site"))
-    }
     // prepare site launch params
     return ResultAsync.fromPromise(
       this.usersService.findByEmail(email),

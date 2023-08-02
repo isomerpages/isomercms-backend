@@ -208,7 +208,7 @@ export class SitesRouter {
     router.post(
       "/:siteName/launchSite",
       attachSiteHandler,
-      this.authorizationMiddleware.verifySiteMember,
+      this.authorizationMiddleware.verifySiteAdmin,
       attachReadRouteHandlerWrapper(this.launchSite)
     )
 

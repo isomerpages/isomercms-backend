@@ -10,6 +10,7 @@ echo "Set AWS region"
 aws configure set default.region ap-southeast-1
 
 echo "Fetching keys"
+# Note we write to webapp user directory which runs our app
 aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github.pub
 aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github
 

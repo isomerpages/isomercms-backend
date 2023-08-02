@@ -24,3 +24,11 @@ echo "if [ -z \"\$SSH_AUTH_SOCK\" ] ; then" >> /root/.bashrc
 echo "  eval \`ssh-agent -s\`" >> /root/.bashrc
 echo "  ssh-add $SSH_PRIVATE_KEY_PATH" >> /root/.bashrc
 echo "fi" >> /root/.bashrc
+
+# Add the commands to the end of webapp .bashrc
+echo "" >> /home/webapp/.bashrc
+echo "# SSH agent settings" >> /home/webapp/.bashrc
+echo "if [ -z \"\$SSH_AUTH_SOCK\" ] ; then" >> /home/webapp/.bashrc
+echo "  eval \`ssh-agent -s\`" >> /home/webapp/.bashrc
+echo "  ssh-add $SSH_PRIVATE_KEY_PATH" >> /home/webapp/.bashrc
+echo "fi" >> /home/webapp/.bashrc

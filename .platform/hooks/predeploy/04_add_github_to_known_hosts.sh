@@ -16,7 +16,8 @@ OFFICIAL_FINGERPRINT="SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s"
 # Note: This check is important to prevent any MITM attacks
 if [ "$SERVER_FINGERPRINT" = "$OFFICIAL_FINGERPRINT" ]; then
     # If the fingerprints match, add the public key to the known_hosts file
-    cat github_rsa.pub >> /home/ec2-user/.ssh/known_hosts
+    cat github_rsa.pub > /home/ec2-user/.ssh/known_hosts
+    cat github_rsa.pub > /home/webapp/.ssh/known_hosts
     echo "GitHub's public key added to known_hosts."
     echo "GitHub's public key added to known_hosts." >> /tmp/setup-github-known-hosts.txt
 else
@@ -27,5 +28,5 @@ else
 fi
 
 # Remove the temporary public key file
-# rm github_rsa.pub
+rm github_rsa.pub
 echo "Successfully added github to known_hosts"

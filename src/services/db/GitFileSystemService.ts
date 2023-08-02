@@ -112,24 +112,56 @@ export default class GitFileSystemService {
       })
   }
 
-  // Obtain the Git blob hash of a file or directory
-  getGitBlobHash(
-    repoName: string,
-    filePath: string
-  ): ResultAsync<string, GitFileSystemError> {
+  // Ensure that the repository is in the BRANCH_REF branch
+  ensureCorrectBranch(repoName: string): ResultAsync<true, GitFileSystemError> {
     return ResultAsync.fromPromise(
-      this.git
-        .cwd(`${EFS_VOL_PATH}/${repoName}`)
-        .checkout(BRANCH_REF)
-        .revparse([`HEAD:${filePath}`]),
+      this.git.revparse(["--abbrev-ref", "HEAD"]),
       (error) => {
         if (error instanceof GitError) {
           return new GitFileSystemError(error.message)
         }
 
-        logger.error(`Error when getting Git blob hash: ${error}`)
+        logger.error(`Error when getting current branch: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
+    ).andThen((currentBranch) => {
+      if (currentBranch !== BRANCH_REF) {
+        return ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF),
+          (error) => {
+            if (error instanceof GitError) {
+              return new GitFileSystemError(error.message)
+            }
+
+            logger.error(`Error when checking out ${BRANCH_REF}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        ).andThen(() => okAsync<true, never>(true))
+      }
+
+      return okAsync<true, never>(true)
+    })
+  }
+
+  // Obtain the Git blob hash of a file or directory
+  getGitBlobHash(
+    repoName: string,
+    filePath: string
+  ): ResultAsync<string, GitFileSystemError> {
+    return this.ensureCorrectBranch(repoName).andThen(() =>
+      ResultAsync.fromPromise(
+        this.git
+          .cwd(`${EFS_VOL_PATH}/${repoName}`)
+          .revparse([`HEAD:${filePath}`]),
+        (error) => {
+          if (error instanceof GitError) {
+            return new GitFileSystemError(error.message)
+          }
+
+          logger.error(`Error when getting Git blob hash: ${error}`)
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      )
     )
   }
 
@@ -200,17 +232,38 @@ export default class GitFileSystemService {
         )
       }
 
-      return ResultAsync.fromPromise(
-        this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF).pull(),
-        (error) => {
-          if (error instanceof GitError) {
-            return new GitFileSystemError(error.message)
-          }
+      return this.ensureCorrectBranch(repoName).andThen(() =>
+        ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).pull(),
+          (error) => {
+            // Full error message:
+            // Your configuration specifies to merge with the ref
+            // 'refs/heads/staging' from the remote, but no such ref
+            // was fetched.
+            // This is a known error that can be safely ignored
+            if (
+              error instanceof GitError &&
+              error.message.includes("but no such ref was fetched.")
+            ) {
+              return false
+            }
+            if (error instanceof GitError) {
+              return new GitFileSystemError(error.message)
+            }
 
-          logger.error(`Error when pulling ${repoName}: ${error}`)
-          return new GitFileSystemError("An unknown error occurred")
-        }
-      ).map(() => `${EFS_VOL_PATH}/${repoName}`)
+            logger.error(`Error when pulling ${repoName}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        )
+          .map(() => true)
+          .orElse((error) => {
+            if (typeof error === "boolean") {
+              return okAsync(true)
+            }
+            return errAsync(error)
+          })
+          .map(() => `${EFS_VOL_PATH}/${repoName}`)
+      )
     })
   }
 

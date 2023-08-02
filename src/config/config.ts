@@ -74,6 +74,12 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    whitelistRepos: {
+      doc: "Comma-separated list of whitelisted repos for local Git service",
+      env: "WHITELISTED_GIT_SERVICE_REPOS",
+      format: String,
+      default: "",
+    },
   },
   mutexTableName: {
     doc: "Name of the DynamoDB table used for mutexes",

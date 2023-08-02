@@ -240,10 +240,10 @@ export default class GitFileSystemService {
           }
         ),
         this.getGitBlobHash(repoName, filePath),
-      ]).map((contentsAndHash) => {
-        const [contents, sha] = contentsAndHash
+      ]).map((contentAndHash) => {
+        const [content, sha] = contentAndHash
         const result: GitFile = {
-          contents,
+          content,
           sha,
         }
         return result

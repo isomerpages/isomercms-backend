@@ -380,7 +380,7 @@ describe("GitFileSystemService", () => {
       })
 
       const expected: GitFile = {
-        contents: "fake content",
+        content: "fake content",
         sha: "fake-hash",
       }
       const actual = await GitFileSystemService.read(

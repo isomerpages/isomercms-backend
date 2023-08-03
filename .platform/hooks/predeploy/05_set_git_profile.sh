@@ -14,9 +14,9 @@ GIT_USER_NAME=$(aws ssm get-parameter --name $GIT_USER_NAME_PARAM_NAME --with-de
 GIT_USER_EMAIL=$(aws ssm get-parameter --name $GIT_USER_EMAIL_PARAM_NAME --with-decryption --query "Parameter.Value" --output text)
 
 # Write the configuration to .gitconfig
-echo "[user]" >> ~/.gitconfig
-echo "  name = $GIT_USER_NAME" >> ~/.gitconfig
-echo "  email = $GIT_USER_EMAIL" >> ~/.gitconfig
+echo "[user]" >> /home/webapp/.gitconfig
+echo "  name = $GIT_USER_NAME" >> /home/webapp/.gitconfig
+echo "  email = $GIT_USER_EMAIL" >> /home/webapp/.gitconfig
 
 echo "Git global config has been set with the following values:"
 echo "User name: $GIT_USER_NAME" > /tmp/setup-git-profile.txt

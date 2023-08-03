@@ -1,18 +1,23 @@
 #!/bin/bash
 
-# AWS region
-AWS_REGION="ap-southeast-1"
-
-# Set AWS region
-aws configure set default.region $AWS_REGION
-
 # Get the env type from EB
 ENV_TYPE=$(/opt/elasticbeanstalk/bin/get-config environment -k SSM_PREFIX)
 
-# Fetch git username and email from SSM Parameter Store
-GIT_USERNAME=$(aws ssm get-parameter --name "${ENV_TYPE}_GIT_USERNAME" --query "Parameter.Value" --output text --region $AWS_REGION)
-GIT_EMAIL=$(aws ssm get-parameter --name "${ENV_TYPE}_GIT_EMAIL" --query "Parameter.Value" --output text --region $AWS_REGION)
+GIT_USER_NAME_PARAM_NAME="${ENV_TYPE}_GIT_USER_NAME"
+GIT_USER_EMAIL_PARAM_NAME="${ENV_TYPE}_GIT_USER_EMAIL"
 
-# Set Git global configuration
-git config --global user.name "$GIT_USERNAME"
-git config --global user.email "$GIT_EMAIL"
+# Set AWS region
+aws configure set default.region ap-southeast-1
+
+# Fetch git user's name and email from SSM
+GIT_USER_NAME=$(aws ssm get-parameter --name $GIT_USER_NAME_PARAM_NAME --with-decryption --query "Parameter.Value" --output text)
+GIT_USER_EMAIL=$(aws ssm get-parameter --name $GIT_USER_EMAIL_PARAM_NAME --with-decryption --query "Parameter.Value" --output text)
+
+# Write the configuration to .gitconfig
+echo "[user]" >> ~/.gitconfig
+echo "  name = $GIT_USER_NAME" >> ~/.gitconfig
+echo "  email = $GIT_USER_EMAIL" >> ~/.gitconfig
+
+echo "Git global config has been set with the following values:"
+echo "User name: $GIT_USER_NAME" > /tmp/setup-git-profile.txt
+echo "User email: $GIT_USER_EMAIL" >> /tmp/setup-git-profile.txt

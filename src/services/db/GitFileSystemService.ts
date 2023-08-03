@@ -115,7 +115,9 @@ export default class GitFileSystemService {
   // Ensure that the repository is in the BRANCH_REF branch
   ensureCorrectBranch(repoName: string): ResultAsync<true, GitFileSystemError> {
     return ResultAsync.fromPromise(
-      this.git.revparse(["--abbrev-ref", "HEAD"]),
+      this.git
+        .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .revparse(["--abbrev-ref", "HEAD"]),
       (error) => {
         if (error instanceof GitError) {
           return new GitFileSystemError(error.message)

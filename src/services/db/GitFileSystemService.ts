@@ -238,14 +238,16 @@ export default class GitFileSystemService {
         ResultAsync.fromPromise(
           this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).pull(),
           (error) => {
-            // Full error message:
-            // Your configuration specifies to merge with the ref
-            // 'refs/heads/staging' from the remote, but no such ref
-            // was fetched.
-            // This is a known error that can be safely ignored
+            // Full error message 1: Your configuration specifies to merge
+            // with the ref 'refs/heads/staging' from the remote, but no
+            // such ref was fetched.
+            // Full error message 2: error: cannot lock ref
+            // 'refs/remotes/origin/staging': is at <new sha> but expected <old sha>
+            // These are known errors that can be safely ignored
             if (
               error instanceof GitError &&
-              error.message.includes("but no such ref was fetched.")
+              (error.message.includes("but no such ref was fetched.") ||
+                error.message.includes("error: cannot lock ref"))
             ) {
               return false
             }

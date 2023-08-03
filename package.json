@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "node --unhandled-rejections=warn -r ts-node/register/transpile-only -r tsconfig-paths/register build/src/server.js",
+    "start": "node --unhandled-rejections=warn -r ts-node/register/transpile-only -r tsconfig-paths/register build/server.js",
     "dev:services": "docker compose up -d",
     "dev:server": "source .env && ts-node-dev --unhandled-rejections=warn --respawn src/server.js",
     "dev": "npm run dev:services && npm run dev:server",

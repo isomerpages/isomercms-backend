@@ -200,6 +200,63 @@ describe("GitFileSystemService", () => {
     })
   })
 
+  describe("ensureCorrectBranch", () => {
+    it("should perform a branch change if the current branch is not the correct branch", async () => {
+      const revparseMock = jest.fn().mockResolvedValueOnce("incorrect-branch")
+      const checkoutMock = jest.fn().mockResolvedValueOnce(undefined)
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: revparseMock,
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkout: checkoutMock,
+      })
+
+      const result = await GitFileSystemService.ensureCorrectBranch("fake-repo")
+
+      expect(revparseMock).toHaveBeenCalledWith(["--abbrev-ref", "HEAD"])
+      expect(checkoutMock).toHaveBeenCalledWith(BRANCH_REF)
+      expect(result._unsafeUnwrap()).toBeTrue()
+    })
+
+    it("should not perform a branch change if the current branch is the correct branch", async () => {
+      const revparseMock = jest.fn().mockResolvedValueOnce(BRANCH_REF)
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: revparseMock,
+      })
+
+      const result = await GitFileSystemService.ensureCorrectBranch("fake-repo")
+
+      expect(revparseMock).toHaveBeenCalledWith(["--abbrev-ref", "HEAD"])
+      expect(MockSimpleGit.cwd).toHaveBeenCalledTimes(1)
+      expect(result._unsafeUnwrap()).toBeTrue()
+    })
+
+    it("should return an error if an error occurred when checking the current branch", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.ensureCorrectBranch("fake-repo")
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return an error if an error occurred when changing the branch", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("incorrect-branch"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkout: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.ensureCorrectBranch("fake-repo")
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
   describe("getGitBlobHash", () => {
     it("should return the correct hash for a tracked file", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({

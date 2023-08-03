@@ -11,7 +11,7 @@ import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
 import * as ReviewApi from "./review"
 
-const WHITELISTED_GIT_SERVICE_REPOS = config.get("app.whitelistRepos")
+const WHITELISTED_GIT_SERVICE_REPOS = config.get("featureFlags.whitelistRepos")
 
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService

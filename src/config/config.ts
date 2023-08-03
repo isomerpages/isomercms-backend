@@ -74,12 +74,6 @@ const config = convict({
       format: "required-string",
       default: "",
     },
-    whitelistRepos: {
-      doc: "Comma-separated list of whitelisted repos for local Git service",
-      env: "WHITELISTED_GIT_SERVICE_REPOS",
-      format: String,
-      default: "",
-    },
   },
   mutexTableName: {
     doc: "Name of the DynamoDB table used for mutexes",
@@ -408,6 +402,14 @@ const config = convict({
       doc: "URL to redirect to after authentication with sgID",
       env: "SGID_REDIRECT_URI",
       format: "required-string",
+      default: "",
+    },
+  },
+  featureFlags: {
+    whitelistRepos: {
+      doc: "Comma-separated list of whitelisted repos for local Git service",
+      env: "WHITELISTED_GIT_SERVICE_REPOS",
+      format: String,
       default: "",
     },
   },

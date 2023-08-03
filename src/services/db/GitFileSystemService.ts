@@ -243,11 +243,13 @@ export default class GitFileSystemService {
             // such ref was fetched.
             // Full error message 2: error: cannot lock ref
             // 'refs/remotes/origin/staging': is at <new sha> but expected <old sha>
+            // Full error message 3: Cannot fast-forward your working tree.
             // These are known errors that can be safely ignored
             if (
               error instanceof GitError &&
               (error.message.includes("but no such ref was fetched.") ||
-                error.message.includes("error: cannot lock ref"))
+                error.message.includes("error: cannot lock ref") ||
+                error.message.includes("Cannot fast-forward your working tree"))
             ) {
               return false
             }

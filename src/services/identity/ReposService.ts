@@ -159,6 +159,7 @@ export default class ReposService {
       org: ISOMER_GITHUB_ORGANIZATION_NAME,
       name: repoName,
       private: false,
+      allow_squash_merge: false,
     })
 
   setRepoAndTeamPermissions = async (

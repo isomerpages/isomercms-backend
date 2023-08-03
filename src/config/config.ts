@@ -186,34 +186,20 @@ const config = convict({
         default: "site-launch",
       },
     },
+    efs: {
+      volPath: {
+        doc: "Path to the EFS volume for storing the Git repositories",
+        env: "EFS_VOL_PATH",
+        format: "required-string",
+        default: "/efs/repos",
+      },
+    },
     stepFunctions: {
       stepFunctionsArn: {
         doc: "Amazon Resource Name (ARN) of the Step Functions state machine",
         env: "STEP_FUNCTIONS_ARN",
         format: "required-string",
         default: "",
-      },
-    },
-    sqs: {
-      incomingQueueUrl: {
-        doc: "URL of the incoming SQS queue",
-        env: "INCOMING_QUEUE_URL",
-        format: "required-string",
-        default: "",
-      },
-      outgoingQueueUrl: {
-        doc: "URL of the outgoing SQS queue",
-        env: "OUTGOING_QUEUE_URL",
-        format: "required-string",
-        default: "",
-      },
-      featureFlags: {
-        shouldDeprecateSiteQueues: {
-          doc: "Whether the queues are deprecated",
-          env: "FF_DEPRECATE_SITE_QUEUES",
-          format: "required-boolean",
-          default: false,
-        },
       },
     },
   },

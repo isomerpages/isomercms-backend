@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { setupCache } from "axios-cache-interceptor"
-import { err } from "neverthrow"
+import _ from "lodash"
 
 import { config } from "@config/config"
 
@@ -10,6 +10,27 @@ import tracer from "@utils/tracer"
 
 import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 import { tokenServiceInstance } from "@services/db/TokenService"
+
+import { statsService } from "../infra/StatsService"
+
+const GITHUB_EXPERIMENTAL_TRIAL_SITES = ["pa-corp"]
+
+const REPOS_SUBSTRING = "repos/isomerpages"
+const extractRepoNameFromGithubUrl = (url: string): string => {
+  const idx = url.search(REPOS_SUBSTRING)
+  // NOTE: Should not hit here because we check that the url contains the site already
+  if (idx === -1) return ""
+  const ignoredLength = REPOS_SUBSTRING.length
+  return _.takeWhile(
+    url.slice(idx + ignoredLength + 1),
+    (char) => char !== "/"
+  ).join("")
+}
+
+const getIsEmailUserFromAuthMessage = (
+  authMessage?: string | number | boolean
+): boolean =>
+  !authMessage || authMessage === "token " || authMessage === "token undefined"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
@@ -22,10 +43,7 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   // If accessToken is missing, authMessage is `token `
   // NOTE: This also implies that the user has not provided
   // their own github token and hence, are email login users.
-  const isEmailLoginUser =
-    !authMessage ||
-    authMessage === "token " ||
-    authMessage === "token undefined"
+  const isEmailLoginUser = getIsEmailUserFromAuthMessage(authMessage)
 
   if (isEmailLoginUser) {
     const accessToken = await tokenServiceInstance.getAccessToken()
@@ -77,6 +95,21 @@ const respHandler = (response: AxiosResponse) => {
   return response
 }
 
+const githubApiInterceptor = (resp: AxiosResponse) => {
+  const fullUrl = `${resp.config.baseURL || ""}${resp.config.url || ""}`
+  if (
+    resp.status !== 304 &&
+    _.some(GITHUB_EXPERIMENTAL_TRIAL_SITES, (site) => fullUrl.includes(site)) &&
+    resp.config.method
+  ) {
+    statsService.incrementGithubApiCall(
+      resp.config.method,
+      extractRepoNameFromGithubUrl(fullUrl)
+    )
+  }
+  return resp
+}
+
 const isomerRepoAxiosInstance = setupCache(
   axios.create({
     baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
@@ -89,9 +122,11 @@ const isomerRepoAxiosInstance = setupCache(
 )
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)
+isomerRepoAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
 const genericGitHubAxiosInstance = axios.create()
 genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
 genericGitHubAxiosInstance.interceptors.response.use(respHandler)
+genericGitHubAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
 export { isomerRepoAxiosInstance, genericGitHubAxiosInstance }

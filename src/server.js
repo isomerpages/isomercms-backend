@@ -56,7 +56,7 @@ import {
   notificationsService,
 } from "@services/identity"
 import DeploymentsService from "@services/identity/DeploymentsService"
-import QueueService from "@services/identity/QueueService"
+import PreviewService from "@services/identity/PreviewService"
 import ReposService from "@services/identity/ReposService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
 import SitesService from "@services/identity/SitesService"
@@ -193,11 +193,12 @@ const reviewRequestService = new ReviewRequestService(
   ReviewMeta,
   ReviewRequestView,
   pageService,
-  new ConfigService()
+  new ConfigService(),
+  sequelize
 )
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
-
+const previewService = new PreviewService()
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -206,6 +207,7 @@ const sitesService = new SitesService({
   isomerAdminsService,
   reviewRequestService,
   sitesCacheService,
+  previewService,
 })
 const reposService = new ReposService({ repository: Repo })
 const deploymentsService = new DeploymentsService({
@@ -220,7 +222,6 @@ const launchesService = new LaunchesService({
   siteRepository: Site,
   launchClient,
 })
-const queueService = new QueueService()
 const stepFunctionsService = new StepFunctionsService(
   config.get("aws.stepFunctions.stepFunctionsArn")
 )
@@ -252,7 +253,6 @@ const infraService = new InfraService({
   reposService,
   deploymentsService,
   launchesService,
-  queueService,
   collaboratorsService,
   stepFunctionsService,
   dynamoDBService,

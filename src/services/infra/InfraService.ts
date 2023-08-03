@@ -15,7 +15,6 @@ import { config } from "@config/config"
 
 import { Site } from "@database/models"
 import { User } from "@database/models/User"
-import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
   SiteStatus,
@@ -34,6 +33,7 @@ import {
   SiteLaunchDto,
   SiteLaunchStatusObject,
 } from "@root/types/siteInfo"
+import { SiteLaunchMessage } from "@root/types/siteLaunch"
 import DeploymentsService from "@services/identity/DeploymentsService"
 import {
   SiteLaunchCreateParams,
@@ -44,7 +44,6 @@ import SitesService from "@services/identity/SitesService"
 import { mailer } from "@services/utilServices/MailClient"
 
 import CollaboratorsService from "../identity/CollaboratorsService"
-import QueueService from "../identity/QueueService"
 import UsersService from "../identity/UsersService"
 
 import DynamoDBService from "./DynamoDBService"
@@ -57,7 +56,6 @@ interface InfraServiceProps {
   reposService: ReposService
   deploymentsService: DeploymentsService
   launchesService: LaunchesService
-  queueService: QueueService
   collaboratorsService: CollaboratorsService
   stepFunctionsService: StepFunctionsService
   dynamoDBService: DynamoDBService
@@ -86,9 +84,6 @@ interface LaunchSiteFromCMSParams {
   email: string
 }
 
-const DEPRECATE_SITE_QUEUES = config.get(
-  "aws.sqs.featureFlags.shouldDeprecateSiteQueues"
-)
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
 
@@ -97,8 +92,6 @@ export default class InfraService {
   private readonly deploymentsService: InfraServiceProps["deploymentsService"]
 
   private readonly launchesService: InfraServiceProps["launchesService"]
-
-  private readonly queueService: InfraServiceProps["queueService"]
 
   private readonly collaboratorsService: InfraServiceProps["collaboratorsService"]
 
@@ -113,7 +106,6 @@ export default class InfraService {
     reposService,
     deploymentsService,
     launchesService,
-    queueService,
     collaboratorsService,
     stepFunctionsService,
     dynamoDBService,
@@ -123,7 +115,6 @@ export default class InfraService {
     this.reposService = reposService
     this.deploymentsService = deploymentsService
     this.launchesService = launchesService
-    this.queueService = queueService
     this.collaboratorsService = collaboratorsService
     this.stepFunctionsService = stepFunctionsService
     this.dynamoDBService = dynamoDBService
@@ -532,12 +523,8 @@ export default class InfraService {
         message.redirectionDomain = [redirectionDomainObject]
       }
 
-      if (DEPRECATE_SITE_QUEUES) {
-        await this.dynamoDBService.createItem(message)
-        await this.stepFunctionsService.triggerFlow(message)
-      } else {
-        await this.queueService.sendMessage(message)
-      }
+      await this.dynamoDBService.createItem(message)
+      await this.stepFunctionsService.triggerFlow(message)
       return okAsync(newLaunchParams)
     } catch (error) {
       return errAsync(
@@ -551,9 +538,8 @@ export default class InfraService {
 
   siteUpdate = async () => {
     try {
-      const messages = DEPRECATE_SITE_QUEUES
-        ? await this.dynamoDBService.getAllCompletedLaunches()
-        : await this.queueService.pollMessages()
+      const messages = await this.dynamoDBService.getAllCompletedLaunches()
+
       await Promise.all(
         messages.map(async (message) => {
           const site = await this.sitesService.getBySiteName(message.repoName)

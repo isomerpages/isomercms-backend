@@ -1,5 +1,6 @@
 import { attachSiteHandler } from "@root/middleware"
 
+import { MetricsRouter } from "./metrics"
 import { NotificationsRouter } from "./notifications"
 
 const express = require("express")
@@ -43,6 +44,7 @@ const getAuthenticatedSubrouter = ({
     authorizationMiddleware,
     notificationsService,
   })
+  const metricsRouter = new MetricsRouter({ authorizationMiddleware })
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
@@ -50,7 +52,7 @@ const getAuthenticatedSubrouter = ({
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
   // which is only available after verifying that the jwt is valid
   authenticatedSubrouter.use(apiLogger)
-
+  authenticatedSubrouter.use("/metrics", metricsRouter.getRouter())
   authenticatedSubrouter.use(
     "/sites/:siteName/collaborators",
     collaboratorsRouter.getRouter()

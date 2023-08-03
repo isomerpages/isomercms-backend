@@ -1,6 +1,6 @@
 import { ScanCommandOutput } from "@aws-sdk/lib-dynamodb"
 
-import { SiteLaunchMessage } from "@root/../microservices/site-launch/shared/types"
+import { SiteLaunchMessage } from "@root/types/siteLaunch"
 import DynamoDBClient from "@services/infra/DynamoDBClient"
 import DynamoDBService from "@services/infra/DynamoDBService"
 

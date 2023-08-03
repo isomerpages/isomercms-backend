@@ -544,6 +544,22 @@ describe("GitFileSystemService", () => {
   describe("listDirectoryContents", () => {
     it("should return the contents of a directory successfully", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        pull: jest.fn().mockResolvedValueOnce(undefined),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({

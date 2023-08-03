@@ -315,69 +315,75 @@ export default class GitFileSystemService {
     repoName: string,
     directoryPath: string
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError> {
-    return ResultAsync.fromPromise(
-      fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
-      (error) => {
-        if (error instanceof Error) {
-          return new GitFileSystemError(error.message)
-        }
-
-        logger.error(`Error when getting ${directoryPath} stats: ${error}`)
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    )
-      .andThen((stats) => {
-        if (!stats.isDirectory()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${directoryPath}" is not a directory in repo "${repoName}"`
-            )
-          )
-        }
-        return okAsync(true)
-      })
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          fs.promises.readdir(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`, {
-            withFileTypes: true,
-          }),
-          (error) => {
-            if (error instanceof Error) {
-              return new GitFileSystemError(error.message)
-            }
-
-            logger.error(`Error when reading ${directoryPath}: ${error}`)
-            return new GitFileSystemError("An unknown error occurred")
+    return this.pull(repoName).andThen(() =>
+      ResultAsync.fromPromise(
+        fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
+        (error) => {
+          if (error instanceof Error) {
+            return new GitFileSystemError(error.message)
           }
-        )
-      )
-      .andThen((directoryContents) => {
-        const resultAsyncs = directoryContents.map((directoryItem) => {
-          const isDirectory = directoryItem.isDirectory()
-          const { name } = directoryItem
-          const path = directoryPath === "" ? name : `${directoryPath}/${name}`
-          const type = isDirectory ? "dir" : "file"
 
-          return this.getGitBlobHash(repoName, path)
-            .orElse(() => okAsync(""))
-            .andThen((sha) => {
-              const result: GitDirectoryItem = {
-                name,
-                type,
-                sha,
-                path,
+          logger.error(`Error when getting ${directoryPath} stats: ${error}`)
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      )
+        .andThen((stats) => {
+          if (!stats.isDirectory()) {
+            return errAsync(
+              new GitFileSystemError(
+                `Path "${directoryPath}" is not a directory in repo "${repoName}"`
+              )
+            )
+          }
+          return okAsync(true)
+        })
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            fs.promises.readdir(
+              `${EFS_VOL_PATH}/${repoName}/${directoryPath}`,
+              {
+                withFileTypes: true,
+              }
+            ),
+            (error) => {
+              if (error instanceof Error) {
+                return new GitFileSystemError(error.message)
               }
 
-              return okAsync(result)
-            })
-        })
+              logger.error(`Error when reading ${directoryPath}: ${error}`)
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .andThen((directoryContents) => {
+          const resultAsyncs = directoryContents.map((directoryItem) => {
+            const isDirectory = directoryItem.isDirectory()
+            const { name } = directoryItem
+            const path =
+              directoryPath === "" ? name : `${directoryPath}/${name}`
+            const type = isDirectory ? "dir" : "file"
 
-        return combine(resultAsyncs)
-      })
-      .andThen((directoryItems) =>
-        // Note: The sha is empty if the file is not tracked by Git
-        okAsync(directoryItems.filter((item) => item.sha !== ""))
-      )
+            return this.getGitBlobHash(repoName, path)
+              .orElse(() => okAsync(""))
+              .andThen((sha) => {
+                const result: GitDirectoryItem = {
+                  name,
+                  type,
+                  sha,
+                  path,
+                }
+
+                return okAsync(result)
+              })
+          })
+
+          return combine(resultAsyncs)
+        })
+        .andThen((directoryItems) =>
+          // Note: The sha is empty if the file is not tracked by Git
+          okAsync(directoryItems.filter((item) => item.sha !== ""))
+        )
+    )
   }
 
   // TODO: Update the contents of a file

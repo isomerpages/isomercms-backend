@@ -59,7 +59,7 @@
     "hot-shots": "^10.0.0",
     "http-errors": "~1.8.0",
     "is-svg": "^4.4.0",
-    "isomorphic-dompurify": "^0.24.0",
+    "isomorphic-dompurify": "^0.27.0",
     "isomorphic-git": "^1.18.2",
     "joi": "^17.4.0",
     "js-base64": "^2.6.4",

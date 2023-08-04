@@ -6,6 +6,7 @@ import config from "@config/config"
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import GitFileSystemError from "@root/errors/GitFileSystemError"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import _GitFileSystemService from "@services/db/GitFileSystemService"
 
@@ -456,7 +457,7 @@ describe("GitFileSystemService", () => {
       expect(actual._unsafeUnwrap()).toEqual(expected)
     })
 
-    it("should return a GitFileSystemError if the file does not exist", async () => {
+    it("should return a NotFoundError if the file does not exist", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
@@ -482,7 +483,7 @@ describe("GitFileSystemService", () => {
         "fake-dir/non-existent-file"
       )
 
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
     })
 
     it("should return a error if an error occurred when getting the Git blob hash", async () => {
@@ -767,7 +768,7 @@ describe("GitFileSystemService", () => {
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
 
-    it("should return a GitFileSystemError if the path does not exist", async () => {
+    it("should return a NotFoundError if the path does not exist", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
@@ -789,7 +790,7 @@ describe("GitFileSystemService", () => {
         "non-existent-dir"
       )
 
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
     })
   })
 })

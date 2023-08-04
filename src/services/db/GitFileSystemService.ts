@@ -19,6 +19,7 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
+import { NotFoundError } from "@root/errors/NotFoundError"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 
 /**
@@ -281,7 +282,7 @@ export default class GitFileSystemService {
   read(
     repoName: string,
     filePath: string
-  ): ResultAsync<GitFile, GitFileSystemError> {
+  ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     return this.pull(repoName).andThen(() =>
       combine([
         ResultAsync.fromPromise(
@@ -290,6 +291,9 @@ export default class GitFileSystemService {
             "utf-8"
           ),
           (error) => {
+            if (error instanceof Error && error.message.includes("ENOENT")) {
+              return new NotFoundError("File does not exist")
+            }
             if (error instanceof Error) {
               return new GitFileSystemError(error.message)
             }
@@ -314,11 +318,14 @@ export default class GitFileSystemService {
   listDirectoryContents(
     repoName: string,
     directoryPath: string
-  ): ResultAsync<GitDirectoryItem[], GitFileSystemError> {
+  ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
     return this.pull(repoName).andThen(() =>
       ResultAsync.fromPromise(
         fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
         (error) => {
+          if (error instanceof Error && error.message.includes("ENOENT")) {
+            return new NotFoundError("Directory does not exist")
+          }
           if (error instanceof Error) {
             return new GitFileSystemError(error.message)
           }

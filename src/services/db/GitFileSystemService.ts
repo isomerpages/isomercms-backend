@@ -245,12 +245,18 @@ export default class GitFileSystemService {
             // Full error message 2: error: cannot lock ref
             // 'refs/remotes/origin/staging': is at <new sha> but expected <old sha>
             // Full error message 3: Cannot fast-forward your working tree.
+            // Full error message 4: Need to specify how to reconcile divergent branches.
             // These are known errors that can be safely ignored
             if (
               error instanceof GitError &&
               (error.message.includes("but no such ref was fetched.") ||
                 error.message.includes("error: cannot lock ref") ||
-                error.message.includes("Cannot fast-forward your working tree"))
+                error.message.includes(
+                  "Cannot fast-forward your working tree"
+                ) ||
+                error.message.includes(
+                  "Need to specify how to reconcile divergent branches"
+                ))
             ) {
               return false
             }

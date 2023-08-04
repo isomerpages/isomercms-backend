@@ -139,10 +139,10 @@ export default class GitFileSystemService {
             logger.error(`Error when checking out ${BRANCH_REF}: ${error}`)
             return new GitFileSystemError("An unknown error occurred")
           }
-        ).andThen(() => okAsync<true, never>(true))
+        ).andThen(() => okAsync<true>(true))
       }
 
-      return okAsync<true, never>(true)
+      return okAsync<true>(true)
     })
   }
 

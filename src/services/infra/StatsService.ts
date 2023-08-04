@@ -96,7 +96,7 @@ export class StatsService {
     })
   }
 
-  incrementGithubApiCall = (method: Method, site: string) => {
+  incrementGithubApiCall = (method: string, site: string) => {
     this.statsD.increment("users.github.api", {
       site,
       // NOTE: Allowed to pass in lowercase,

@@ -29,4 +29,5 @@ rm github_rsa.pub
 
 # all the above would have been performed as root
 # so we need to allow webapp user to access so that it can add to the known_hosts etc.
+# this is a recursive command to update all files under .ssh/ folder to webapp user's ownership
 chown -R webapp:webapp /home/webapp/.ssh

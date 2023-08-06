@@ -24,6 +24,11 @@ echo "[user]" > /home/webapp/.gitconfig
 echo "  name = $GIT_USER_NAME" >> /home/webapp/.gitconfig
 echo "  email = $GIT_USER_EMAIL" >> /home/webapp/.gitconfig
 
-echo "Git global config has been set with the following values:"
-echo "User name: $GIT_USER_NAME" > /tmp/setup-git-profile.txt
+# Change ownership of .gitconfig to webapp user
+chown webapp:webapp /home/webapp/.gitconfig
+
+echo "Git global config has been set with the following values:" > /tmp/setup-git-profile.txt
+echo "User name: $GIT_USER_NAME" >> /tmp/setup-git-profile.txt
 echo "User email: $GIT_USER_EMAIL" >> /tmp/setup-git-profile.txt
+
+echo "Setup complete." >> /tmp/setup-git-profile.txt

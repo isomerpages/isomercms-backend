@@ -20,6 +20,7 @@ if [ "$SERVER_FINGERPRINT" = "$OFFICIAL_FINGERPRINT" ]; then
 else
     # If the fingerprints don't match, output a warning and exit with an error
     echo "WARNING: The server's SSH key fingerprint doesn't match the official GitHub fingerprint." >> /tmp/setup-github-known-hosts.txt
+    rm github_rsa.pub
     exit 1
 fi
 

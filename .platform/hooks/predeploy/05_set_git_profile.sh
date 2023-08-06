@@ -20,7 +20,7 @@ if [[ -z $GIT_USER_NAME || -z $GIT_USER_EMAIL ]]; then
 fi
 
 # Write the configuration to .gitconfig
-echo "[user]" >> /home/webapp/.gitconfig
+echo "[user]" > /home/webapp/.gitconfig
 echo "  name = $GIT_USER_NAME" >> /home/webapp/.gitconfig
 echo "  email = $GIT_USER_EMAIL" >> /home/webapp/.gitconfig
 

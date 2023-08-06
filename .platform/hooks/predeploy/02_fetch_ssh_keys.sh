@@ -11,8 +11,8 @@ aws configure set default.region ap-southeast-1
 
 echo "Fetching keys"
 # Note we write to webapp user directory which runs our app
-aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github.pub
-aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github
+aws ssm get-parameter --name $SSH_PUBLIC_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github.pub || { echo "Failed to fetch SSH public key"; exit 1; }
+aws ssm get-parameter --name $SSH_PRIVATE_KEY_PARAM_NAME --with-decryption --query "Parameter.Value" --output text > /home/webapp/.ssh/github || { echo "Failed to fetch SSH private key"; exit 1; }
 
 # Set the permissions for the keys
 echo "Setting permissions"

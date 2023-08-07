@@ -261,9 +261,6 @@ describe("GitFileSystemService", () => {
   describe("getGitBlobHash", () => {
     it("should return the correct hash for a tracked file", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
       })
 
@@ -276,9 +273,6 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return an error for an untracked file", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
       })
@@ -423,25 +417,6 @@ describe("GitFileSystemService", () => {
   describe("read", () => {
     it("should read the contents of a file successfully", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
       })
 
@@ -459,22 +434,6 @@ describe("GitFileSystemService", () => {
 
     it("should return a NotFoundError if the file does not exist", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
@@ -488,49 +447,7 @@ describe("GitFileSystemService", () => {
 
     it("should return a error if an error occurred when getting the Git blob hash", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
-      })
-
-      const result = await GitFileSystemService.read(
-        "fake-repo",
-        "fake-dir/fake-file"
-      )
-
-      expect(result.isErr()).toBeTrue()
-    })
-
-    it("should return an error if an error occurred when pulling the repo", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
       const result = await GitFileSystemService.read(
@@ -544,31 +461,6 @@ describe("GitFileSystemService", () => {
 
   describe("listDirectoryContents", () => {
     it("should return the contents of a directory successfully", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
@@ -615,31 +507,6 @@ describe("GitFileSystemService", () => {
 
     it("should return only results of files that are tracked by Git", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -676,31 +543,6 @@ describe("GitFileSystemService", () => {
 
     it("should return an empty result if the directory contain files that are all untracked", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -719,22 +561,6 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return an empty result if the directory is empty", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
       const actual = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
         "fake-empty-dir"
@@ -744,22 +570,6 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return a GitFileSystemError if the path is not a directory", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
       const result = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
         "fake-dir/fake-file"
@@ -769,22 +579,6 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return a NotFoundError if the path does not exist", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        pull: jest.fn().mockResolvedValueOnce(undefined),
-      })
       const result = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
         "non-existent-dir"

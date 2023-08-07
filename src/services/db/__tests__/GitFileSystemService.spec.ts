@@ -7,6 +7,11 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import {
+  MOCK_GITHUB_FILENAME_ALPHA_ONE,
+  MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
+} from "@root/fixtures/github"
+import { MOCK_USER_ID_ONE } from "@root/fixtures/users"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import _GitFileSystemService from "@services/db/GitFileSystemService"
 
@@ -380,7 +385,7 @@ describe("GitFileSystemService", () => {
       expect(result.isOk()).toBeTrue()
     })
 
-    it("should return a GitFileSystemError if a Git error occurs", async () => {
+    it("should return a GitFileSystemError if a Git error occurs when pulling", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
@@ -409,6 +414,194 @@ describe("GitFileSystemService", () => {
       })
 
       const result = await GitFileSystemService.pull("fake-repo")
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("push", () => {
+    it("should push successfully for a valid Git repo", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        push: jest.fn().mockResolvedValueOnce(undefined),
+      })
+
+      const result = await GitFileSystemService.push("fake-repo")
+
+      expect(result.isOk()).toBeTrue()
+    })
+
+    it("should return a GitFileSystemError if a Git error occurs when pushing", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        push: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.push("fake-repo")
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return a GitFileSystemError if an existing folder exists but is not a valid Git repo", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(false),
+      })
+
+      const result = await GitFileSystemService.push("fake-repo")
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("commit", () => {
+    it("should commit successfully for a valid Git repo and with valid inputs", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      const mockCommitFn = jest.fn().mockResolvedValueOnce(undefined)
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: mockCommitFn,
+        }),
+      })
+
+      const fakePath = `fake-dir/${MOCK_GITHUB_FILENAME_ALPHA_ONE}`
+      const expectedCommitMessage = JSON.stringify({
+        message: MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
+        userId: MOCK_USER_ID_ONE.toString(),
+        fileName: MOCK_GITHUB_FILENAME_ALPHA_ONE,
+      })
+
+      const result = await GitFileSystemService.commit(
+        "fake-repo",
+        [fakePath],
+        MOCK_USER_ID_ONE.toString(),
+        MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE
+      )
+
+      expect(result.isOk()).toBeTrue()
+      expect(mockCommitFn).toHaveBeenCalledWith(expectedCommitMessage)
+    })
+
+    it("should return a GitFileSystemError if a Git error occurs when committing", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockRejectedValueOnce(new GitError()),
+        }),
+      })
+
+      const result = await GitFileSystemService.commit(
+        "fake-repo",
+        ["fake-dir/fake-file"],
+        "fake-hash",
+        "fake message"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return a GitFileSystemError if no pathspecs were provided", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+
+      const result = await GitFileSystemService.commit(
+        "fake-repo",
+        [],
+        "fake-hash",
+        "fake message"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return a GitFileSystemError if more than 2 pathspecs were provided", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+
+      const result = await GitFileSystemService.commit(
+        "fake-repo",
+        ["one", "two", "fake-dir/three"],
+        "fake-hash",
+        "fake message"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return a GitFileSystemError if an existing folder exists but is not a valid Git repo", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(false),
+      })
+
+      const result = await GitFileSystemService.commit(
+        "fake-repo",
+        ["one", "two", "fake-dir/three"],
+        "fake-hash",
+        "fake message"
+      )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })

@@ -19,8 +19,10 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
+import { SessionDataProps } from "@root/classes"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
+import { IsomerCommitMessage } from "@root/types/github"
 
 /**
  * Some notes:
@@ -151,20 +153,18 @@ export default class GitFileSystemService {
     repoName: string,
     filePath: string
   ): ResultAsync<string, GitFileSystemError> {
-    return this.ensureCorrectBranch(repoName).andThen(() =>
-      ResultAsync.fromPromise(
-        this.git
-          .cwd(`${EFS_VOL_PATH}/${repoName}`)
-          .revparse([`HEAD:${filePath}`]),
-        (error) => {
-          if (error instanceof GitError) {
-            return new GitFileSystemError(error.message)
-          }
-
-          logger.error(`Error when getting Git blob hash: ${error}`)
-          return new GitFileSystemError("An unknown error occurred")
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .revparse([`HEAD:${filePath}`]),
+      (error) => {
+        if (error instanceof GitError) {
+          return new GitFileSystemError(error.message)
         }
-      )
+
+        logger.error(`Error when getting Git blob hash: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
     )
   }
 
@@ -280,6 +280,88 @@ export default class GitFileSystemService {
     })
   }
 
+  // Push the latest changes to upstream Git hosting provider
+  push(repoName: string): ResultAsync<string, GitFileSystemError> {
+    return this.isValidGitRepo(repoName).andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+        )
+      }
+
+      return this.ensureCorrectBranch(repoName).andThen(() =>
+        ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+          (error) => {
+            if (error instanceof GitError) {
+              return new GitFileSystemError(error.message)
+            }
+
+            logger.error(`Error when pushing ${repoName}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        ).map(() => `${EFS_VOL_PATH}/${repoName}`)
+      )
+    })
+  }
+
+  // Commit changes to the local Git repository
+  commit(
+    repoName: string,
+    pathSpec: string[],
+    userId: SessionDataProps["isomerUserId"],
+    message: string
+  ): ResultAsync<string, GitFileSystemError> {
+    return this.isValidGitRepo(repoName).andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+        )
+      }
+
+      // Note: We only accept commits that change 1 file at once (pathSpec.length == 1)
+      // Or commits that move/rename files (pathSpec.length == 2)
+      if (pathSpec.length < 1 || pathSpec.length > 2) {
+        return errAsync(
+          new GitFileSystemError(
+            `Invalid pathSpec length: ${pathSpec.length}. Expected 1 or 2`
+          )
+        )
+      }
+
+      const commitMessageObj: Omit<IsomerCommitMessage, "fileName"> &
+        Partial<Pick<IsomerCommitMessage, "fileName">> = {
+        message,
+        userId,
+      }
+
+      if (pathSpec.length === 1) {
+        commitMessageObj.fileName = pathSpec[0].split("/").pop()
+      }
+
+      const commitMessage = JSON.stringify(commitMessageObj)
+
+      return this.ensureCorrectBranch(repoName)
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git
+              .cwd(`${EFS_VOL_PATH}/${repoName}`)
+              .add(pathSpec)
+              .commit(commitMessage),
+            (error) => {
+              if (error instanceof GitError) {
+                return new GitFileSystemError(error.message)
+              }
+
+              logger.error(`Error when committing ${repoName}: ${error}`)
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .map(() => `${EFS_VOL_PATH}/${repoName}`)
+    })
+  }
+
   // TODO: Creates either directory or file
   // ResourceDirectoryService used this to create a directory + file at the same time
   create() {}
@@ -289,35 +371,33 @@ export default class GitFileSystemService {
     repoName: string,
     filePath: string
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
-    return this.pull(repoName).andThen(() =>
-      combine([
-        ResultAsync.fromPromise(
-          fs.promises.readFile(
-            `${EFS_VOL_PATH}/${repoName}/${filePath}`,
-            "utf-8"
-          ),
-          (error) => {
-            if (error instanceof Error && error.message.includes("ENOENT")) {
-              return new NotFoundError("File does not exist")
-            }
-            if (error instanceof Error) {
-              return new GitFileSystemError(error.message)
-            }
-
-            logger.error(`Error when reading ${filePath}: ${error}`)
-            return new GitFileSystemError("An unknown error occurred")
-          }
+    return combine([
+      ResultAsync.fromPromise(
+        fs.promises.readFile(
+          `${EFS_VOL_PATH}/${repoName}/${filePath}`,
+          "utf-8"
         ),
-        this.getGitBlobHash(repoName, filePath),
-      ]).map((contentAndHash) => {
-        const [content, sha] = contentAndHash
-        const result: GitFile = {
-          content,
-          sha,
+        (error) => {
+          if (error instanceof Error && error.message.includes("ENOENT")) {
+            return new NotFoundError("File does not exist")
+          }
+          if (error instanceof Error) {
+            return new GitFileSystemError(error.message)
+          }
+
+          logger.error(`Error when reading ${filePath}: ${error}`)
+          return new GitFileSystemError("An unknown error occurred")
         }
-        return result
-      })
-    )
+      ),
+      this.getGitBlobHash(repoName, filePath),
+    ]).map((contentAndHash) => {
+      const [content, sha] = contentAndHash
+      const result: GitFile = {
+        content,
+        sha,
+      }
+      return result
+    })
   }
 
   // Read the contents of a directory
@@ -325,78 +405,72 @@ export default class GitFileSystemService {
     repoName: string,
     directoryPath: string
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
-    return this.pull(repoName).andThen(() =>
-      ResultAsync.fromPromise(
-        fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
-        (error) => {
-          if (error instanceof Error && error.message.includes("ENOENT")) {
-            return new NotFoundError("Directory does not exist")
-          }
-          if (error instanceof Error) {
-            return new GitFileSystemError(error.message)
-          }
-
-          logger.error(`Error when getting ${directoryPath} stats: ${error}`)
-          return new GitFileSystemError("An unknown error occurred")
+    return ResultAsync.fromPromise(
+      fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
+      (error) => {
+        if (error instanceof Error && error.message.includes("ENOENT")) {
+          return new NotFoundError("Directory does not exist")
         }
-      )
-        .andThen((stats) => {
-          if (!stats.isDirectory()) {
-            return errAsync(
-              new GitFileSystemError(
-                `Path "${directoryPath}" is not a directory in repo "${repoName}"`
-              )
-            )
-          }
-          return okAsync(true)
-        })
-        .andThen(() =>
-          ResultAsync.fromPromise(
-            fs.promises.readdir(
-              `${EFS_VOL_PATH}/${repoName}/${directoryPath}`,
-              {
-                withFileTypes: true,
-              }
-            ),
-            (error) => {
-              if (error instanceof Error) {
-                return new GitFileSystemError(error.message)
-              }
+        if (error instanceof Error) {
+          return new GitFileSystemError(error.message)
+        }
 
-              logger.error(`Error when reading ${directoryPath}: ${error}`)
-              return new GitFileSystemError("An unknown error occurred")
-            }
-          )
-        )
-        .andThen((directoryContents) => {
-          const resultAsyncs = directoryContents.map((directoryItem) => {
-            const isDirectory = directoryItem.isDirectory()
-            const { name } = directoryItem
-            const path =
-              directoryPath === "" ? name : `${directoryPath}/${name}`
-            const type = isDirectory ? "dir" : "file"
-
-            return this.getGitBlobHash(repoName, path)
-              .orElse(() => okAsync(""))
-              .andThen((sha) => {
-                const result: GitDirectoryItem = {
-                  name,
-                  type,
-                  sha,
-                  path,
-                }
-
-                return okAsync(result)
-              })
-          })
-
-          return combine(resultAsyncs)
-        })
-        .andThen((directoryItems) =>
-          // Note: The sha is empty if the file is not tracked by Git
-          okAsync(directoryItems.filter((item) => item.sha !== ""))
-        )
+        logger.error(`Error when getting ${directoryPath} stats: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
     )
+      .andThen((stats) => {
+        if (!stats.isDirectory()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${directoryPath}" is not a directory in repo "${repoName}"`
+            )
+          )
+        }
+        return okAsync(true)
+      })
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          fs.promises.readdir(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`, {
+            withFileTypes: true,
+          }),
+          (error) => {
+            if (error instanceof Error) {
+              return new GitFileSystemError(error.message)
+            }
+
+            logger.error(`Error when reading ${directoryPath}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        )
+      )
+      .andThen((directoryContents) => {
+        const resultAsyncs = directoryContents.map((directoryItem) => {
+          const isDirectory = directoryItem.isDirectory()
+          const { name } = directoryItem
+          const path = directoryPath === "" ? name : `${directoryPath}/${name}`
+          const type = isDirectory ? "dir" : "file"
+
+          return this.getGitBlobHash(repoName, path)
+            .orElse(() => okAsync(""))
+            .andThen((sha) => {
+              const result: GitDirectoryItem = {
+                name,
+                type,
+                sha,
+                path,
+              }
+
+              return okAsync(result)
+            })
+        })
+
+        return combine(resultAsyncs)
+      })
+      .andThen((directoryItems) =>
+        // Note: The sha is empty if the file is not tracked by Git
+        okAsync(directoryItems.filter((item) => item.sha !== ""))
+      )
   }
 
   // TODO: Update the contents of a file

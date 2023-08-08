@@ -44,7 +44,7 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import { GitHubService } from "@services/db/GitHubService"
-import * as ReviewApi from "@services/db/review"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -112,7 +112,7 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (mockGithubService as unknown) as typeof ReviewApi,
+  (mockGithubService as unknown) as RepoService,
   User,
   ReviewRequest,
   Reviewer,

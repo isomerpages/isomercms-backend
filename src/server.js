@@ -6,6 +6,7 @@ import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
 import nocache from "nocache"
+import simpleGit from "simple-git"
 
 import { config } from "@config/config"
 
@@ -72,6 +73,8 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
+import GitFileSystemService from "./services/db/GitFileSystemService"
+import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
@@ -144,13 +147,14 @@ const { FormsgRouter } = require("@routes/formsgSiteCreation")
 const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
-const { GitHubService } = require("@services/db/GitHubService")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 const authService = new AuthService({ usersService })
-const gitHubService = new GitHubService({
-  axiosInstance: isomerRepoAxiosInstance,
-})
+const gitFileSystemService = new GitFileSystemService(new simpleGit())
+const gitHubService = new RepoService(
+  isomerRepoAxiosInstance,
+  gitFileSystemService
+)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })

@@ -51,7 +51,7 @@ import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
-import * as ReviewApi from "@services/db/review"
+import RepoService from "@services/db/RepoService"
 import {
   getIdentityAuthService,
   getUsersService,
@@ -105,7 +105,7 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (gitHubService as unknown) as typeof ReviewApi,
+  (gitHubService as unknown) as RepoService,
   User,
   ReviewRequest,
   Reviewer,

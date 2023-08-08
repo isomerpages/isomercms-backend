@@ -55,7 +55,7 @@ import { PageService } from "@root/services/fileServices/MdPageServices/PageServ
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { GithubCommentData } from "@root/types/dto/review"
 import { Commit } from "@root/types/github"
-import * as ReviewApi from "@services/db/review"
+import RepoService from "@services/db/RepoService"
 import _ReviewRequestService from "@services/review/ReviewRequestService"
 
 const MockPageService: {
@@ -120,7 +120,7 @@ const MockSequelize = {
 }
 
 const ReviewRequestService = new _ReviewRequestService(
-  (MockReviewApi as unknown) as typeof ReviewApi,
+  (MockReviewApi as unknown) as RepoService,
   (MockUsersRepository as unknown) as ModelStatic<User>,
   (MockReviewRequestRepository as unknown) as ModelStatic<ReviewRequest>,
   (MockReviewersRepository as unknown) as ModelStatic<Reviewer>,

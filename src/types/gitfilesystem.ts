@@ -1,5 +1,5 @@
 export type GitFile = {
-  contents: string
+  content: string
   sha: string
 }
 

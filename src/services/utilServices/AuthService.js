@@ -17,7 +17,7 @@ const {
   E2E_TEST_EMAIL,
 } = require("@root/constants")
 const { BadRequestError } = require("@root/errors/BadRequestError")
-const logger = require("@root/logger/logger")
+const logger = require("@root/logger/logger").default
 const { isError } = require("@root/types")
 
 const CLIENT_ID = config.get("github.clientId")

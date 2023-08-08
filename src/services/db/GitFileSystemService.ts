@@ -358,7 +358,7 @@ export default class GitFileSystemService {
             }
           )
         )
-        .map(() => `${EFS_VOL_PATH}/${repoName}`)
+        .map((commitResult) => commitResult.commit)
     })
   }
 

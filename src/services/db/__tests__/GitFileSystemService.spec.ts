@@ -492,7 +492,10 @@ describe("GitFileSystemService", () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
       })
-      const mockCommitFn = jest.fn().mockResolvedValueOnce(undefined)
+      const mockCommitSha = "fake-commit-sha"
+      const mockCommitFn = jest
+        .fn()
+        .mockResolvedValueOnce({ commit: mockCommitSha })
       MockSimpleGit.cwd.mockReturnValueOnce({
         add: jest.fn().mockReturnValueOnce({
           commit: mockCommitFn,
@@ -513,7 +516,7 @@ describe("GitFileSystemService", () => {
         MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE
       )
 
-      expect(result.isOk()).toBeTrue()
+      expect(result._unsafeUnwrap()).toBe(mockCommitSha)
       expect(mockCommitFn).toHaveBeenCalledWith(expectedCommitMessage)
     })
 

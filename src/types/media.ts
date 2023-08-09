@@ -29,7 +29,7 @@ export interface MediaDirOutput {
   type: ItemType
 }
 
-export type MediaDirectoryOutput = (MediaDirOutput | MediaFileOutput)[]
+export type ReadMediaDirectoryOutput = (MediaDirOutput | MediaFileOutput)[]
 
 export interface ReadMediaDirectoryFromDisk {
   readFromGithub: false

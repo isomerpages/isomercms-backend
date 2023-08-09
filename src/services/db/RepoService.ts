@@ -7,9 +7,9 @@ import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
-  MediaDirectoryOutput,
   MediaType,
   ReadMediaDirectoryInput,
+  ReadMediaDirectoryOutput,
 } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
@@ -185,7 +185,7 @@ export default class RepoService extends GitHubService {
     const directoryData = await super.readDirectory(sessionData, {
       directoryName,
     })
-    logger.debug(`Directory data: ${JSON.stringify(directoryData)}`)
+
     const mediaType = directoryName.split("/")[0]
     const targetFile = directoryData.find(
       // TODO: fix any
@@ -230,12 +230,10 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  filterFilesAndDir(directoryContents: any) {}
-
   async readMediaDirectory(
     sessionData: UserWithSiteSessionData,
     readMediaInput: ReadMediaDirectoryInput
-  ): Promise<MediaDirectoryOutput[]> {
+  ): Promise<ReadMediaDirectoryOutput[]> {
     const { directoryName } = readMediaInput.directoryInfo
 
     logger.debug(`Reading media directory: ${directoryName}`)

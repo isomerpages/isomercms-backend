@@ -294,7 +294,7 @@ describe("RepoService", () => {
       const actual = await RepoService.readMediaFile(
         mockUserWithSiteSessionData,
         {
-          directoyName: "test",
+          directoryName: "test",
           fileName: "test content",
         }
       )

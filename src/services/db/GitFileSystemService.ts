@@ -475,44 +475,6 @@ export default class GitFileSystemService {
     })
   }
 
-  // getMediaFileInfo({
-  //   file,
-  //   siteName,
-  //   directoryName,
-  //   mediaType,
-  //   isPrivate,
-  // }: MediaFileInput): ResultAsync<
-  //   MediaFileOutput,
-  //   GitFileSystemError | NotFoundError
-  // > {
-  //   const baseFileData = {
-  //     name: file.name,
-  //     sha: file.sha,
-  //     mediaPath: `${directoryName}/${file.name}`,
-  //     type: file.type,
-  //   }
-  //   return ResultAsync.fromPromise(fs.promises.readFile(file.path), (error) => {
-  //     if (error instanceof Error && error.message.includes("ENOENT")) {
-  //       return new NotFoundError("Media file does not exist")
-  //     }
-  //     if (error instanceof Error) {
-  //       return new GitFileSystemError(error.message)
-  //     }
-
-  //     logger.error(`Error when reading media from ${file.path}: ${error}`)
-  //     return new GitFileSystemError("An unknown error occurred")
-  //   })
-  //     .andThen((data) => {
-  //       return okAsync(data.toString("base64"))
-  //     })
-  //     .andThen((dataAsBase64) => {
-  //       return okAsync({
-  //         ...baseFileData,
-  //         mediaUrl: dataAsBase64,
-  //       })
-  //     })
-  // }
-
   getFileExtension(fileName: string): string {
     const parts = fileName.split(".")
     if (parts.length > 1) {

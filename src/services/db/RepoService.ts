@@ -158,7 +158,7 @@ export default class RepoService extends GitHubService {
 
   async readMediaFile(
     sessionData: UserWithSiteSessionData,
-    { fileName, directoryName }: any // TODO: add type
+    { fileName, directoryName }: { fileName: string; directoryName: string }
   ): Promise<any> {
     logger.debug(`Reading media file: ${fileName}`)
     logger.debug(`Reading directoryName: ${directoryName}`)
@@ -186,10 +186,9 @@ export default class RepoService extends GitHubService {
       directoryName,
     })
 
-    const mediaType = directoryName.split("/")[0]
+    const mediaType = directoryName.split("/")[0] as MediaType
     const targetFile = directoryData.find(
-      // TODO: fix any
-      (fileOrDir: any) => fileOrDir.name === fileName
+      (fileOrDir: { name: string }) => fileOrDir.name === fileName
     )
     const { private: isPrivate } = await super.getRepoInfo(sessionData)
 

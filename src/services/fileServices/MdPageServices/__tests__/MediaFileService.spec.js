@@ -26,6 +26,7 @@ describe("Media File Service", () => {
     delete: jest.fn(),
     getRepoInfo: jest.fn(),
     readMedia: jest.fn(),
+    readMediaFile: jest.fn(),
     readDirectory: jest.fn(),
     getTree: jest.fn(),
     updateTree: jest.fn(),
@@ -113,10 +114,10 @@ describe("Media File Service", () => {
         sha: "file2sha",
       },
     ]
-    mockGithubService.readDirectory.mockResolvedValueOnce(imageDirResp)
-    mockGithubService.getRepoInfo.mockResolvedValueOnce({
-      private: false,
-    })
+
+    // mockGithubService.getRepoInfo.mockResolvedValueOnce({
+    //   private: false,
+    // })
     mockGithubService.readMedia.mockResolvedValueOnce({
       content: mockContent,
     })
@@ -126,38 +127,33 @@ describe("Media File Service", () => {
         name: imageName,
         sha,
       }
+
+      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
       await expect(
         service.read(sessionData, {
           fileName: imageName,
           directoryName,
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+      expect(mockGithubService.readMediaFile).toHaveBeenCalledWith(
         sessionData,
         {
+          fileName: imageName,
           directoryName,
         }
       )
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
+      // expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
     const svgName = "image.svg"
-    mockGithubService.readDirectory.mockResolvedValueOnce([
-      ...imageDirResp,
-      {
-        sha,
-        path: `${directoryName}/${svgName}`,
-        name: svgName,
-      },
-    ])
-    mockGithubService.getRepoInfo.mockResolvedValueOnce({
-      private: false,
-    })
+
     it("Reading svg files in public repos adds sanitisation", async () => {
       const expectedResp = {
         mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${svgName}?sanitize=true`,
         name: svgName,
         sha,
       }
+
+      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
       await expect(
         service.read(sessionData, {
           fileName: svgName,
@@ -165,20 +161,6 @@ describe("Media File Service", () => {
           mediaType: "images",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
-        sessionData,
-        {
-          directoryName,
-        }
-      )
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
-    })
-    mockGithubService.readDirectory.mockResolvedValueOnce(fileDirResp)
-    mockGithubService.getRepoInfo.mockResolvedValueOnce({
-      private: false,
-    })
-    mockGithubService.readMedia.mockResolvedValueOnce({
-      content: mockContent,
     })
     it("Reading files in public repos works correctly", async () => {
       const expectedResp = {
@@ -186,6 +168,9 @@ describe("Media File Service", () => {
         name: fileName,
         sha,
       }
+
+      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+
       await expect(
         service.read(sessionData, {
           fileName,
@@ -193,13 +178,13 @@ describe("Media File Service", () => {
           mediaType: "files",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readDirectory).toHaveBeenCalledWith(
+      expect(mockGithubService.readMediaFile).toHaveBeenCalledWith(
         sessionData,
         {
+          fileName,
           directoryName,
         }
       )
-      expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
   })
 

@@ -156,7 +156,7 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  async readMedia(
+  async readMediaFile(
     sessionData: UserWithSiteSessionData,
     { fileName, directoryName }: any // TODO: add type
   ): Promise<any> {
@@ -203,9 +203,9 @@ export default class RepoService extends GitHubService {
   }
 
   // TODO: This is no longer used, remove it
-  // async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
-  //   return await super.readMedia(sessionData, { fileSha })
-  // }
+  async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
+    return await super.readMedia(sessionData, { fileSha })
+  }
 
   async readDirectory(
     sessionData: UserWithSiteSessionData,
@@ -273,7 +273,7 @@ export default class RepoService extends GitHubService {
         }
 
         if (this.isRepoWhitelisted(siteName)) {
-          return this.readMedia(sessionData, {
+          return this.readMediaFile(sessionData, {
             fileName: curr.name,
             directoryName,
           })

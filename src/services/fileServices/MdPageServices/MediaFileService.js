@@ -55,33 +55,10 @@ class MediaFileService {
   }
 
   async read(sessionData, { fileName, directoryName }) {
-    // delegate to RepoService
-    return this.gitHubService.readMedia(sessionData, {
+    return this.gitHubService.readMediaFile(sessionData, {
       fileName,
       directoryName,
     })
-
-    // const directoryData = await this.gitHubService.readDirectory(sessionData, {
-    //   directoryName,
-    // })
-    // const mediaType = directoryName.split("/")[0]
-
-    // const targetFile = directoryData.find(
-    //   (fileOrDir) => fileOrDir.name === fileName
-    // )
-    // const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-    //   sessionData
-    // )
-
-    // const fileData = await getMediaFileInfo({
-    //   file: targetFile,
-    //   siteName,
-    //   directoryName,
-    //   mediaType,
-    //   isPrivate,
-    // })
-
-    // return fileData
   }
 
   async update(sessionData, { fileName, directoryName, content, sha }) {

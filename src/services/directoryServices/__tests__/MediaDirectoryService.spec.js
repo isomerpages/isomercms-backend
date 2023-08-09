@@ -39,6 +39,7 @@ describe("Media Directory Service", () => {
     create: jest.fn(),
     readMedia: jest.fn(),
     getRepoInfo: jest.fn(),
+    readMediaDirectory: jest.fn(),
   }
 
   const {
@@ -118,20 +119,30 @@ describe("Media Directory Service", () => {
           type: dir.type,
         },
       ]
+      mockGitHubService.readMediaDirectory.mockResolvedValueOnce(expectedResp)
       await expect(
         service.listFiles(sessionData, {
           mediaType: "images",
           directoryName: imageDirectoryName,
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGitHubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
+      expect(mockGitHubService.readMediaDirectory).toHaveBeenCalledWith(
+        sessionData,
+        {
+          readFromGithub: true,
+          directoryInfo: {
+            directoryName: imageDirectoryName,
+            files: readImgDirResp,
+            mediaType: "images",
+            isPrivate: false,
+          },
+        }
+      )
       expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
         directoryName: imageDirectoryName,
       })
     })
-    mockGitHubService.getRepoInfo.mockResolvedValueOnce({
-      private: false,
-    })
+    mockGitHubService.getRepoInfo.mockResolvedValueOnce({ private: false })
     mockBaseDirectoryService.list.mockResolvedValueOnce(readFileDirResp)
     it("ListFiles for a file directory in a public repo returns all files properly formatted", async () => {
       const expectedResp = [
@@ -152,6 +163,7 @@ describe("Media Directory Service", () => {
           type: dir.type,
         },
       ]
+      mockGitHubService.readMediaDirectory.mockResolvedValueOnce(expectedResp)
       await expect(
         service.listFiles(sessionData, {
           mediaType: "files",

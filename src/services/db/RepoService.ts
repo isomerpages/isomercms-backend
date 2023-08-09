@@ -8,8 +8,8 @@ import logger from "@logger/logger"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import {
   MediaDirectoryOutput,
-  MediaFileInput,
-  MediaFileOutput,
+  MediaType,
+  ReadMediaDirectoryInput,
 } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
@@ -27,7 +27,6 @@ const WHITELISTED_GIT_SERVICE_REPOS = config.get(
   "featureFlags.ggsWhitelistedRepos"
 )
 const PLACEHOLDER_FILE_NAME = ".keep"
-
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
@@ -233,44 +232,36 @@ export default class RepoService extends GitHubService {
 
   filterFilesAndDir(directoryContents: any) {}
 
-  // export interface ReadMediaDirectoryFromDisk  {
-  //   sessionData: UserWithSiteSessionData
-  //   directoryInfo: {
-  //     directoryName: string
-  //   }
-  // }
-
-  // export interface ReadMediaDirectoryFromGithub {
-  //   sessionData: UserWithSiteSessionData
-  //   directoryInfo: {
-  //     directoryName: string
-  //   }
-  //   mediaType: string
-  //   isPrivate: boolean
-  // }
-
   async readMediaDirectory(
     sessionData: UserWithSiteSessionData,
-    { directoryName }: { directoryName: string }
+    readMediaInput: ReadMediaDirectoryInput
   ): Promise<MediaDirectoryOutput[]> {
+    const { directoryName } = readMediaInput.directoryInfo
+
     logger.debug(`Reading media directory: ${directoryName}`)
     const { siteName } = sessionData
 
-    if (this.isRepoWhitelisted(siteName)) {
-    }
+    // making as any to support incoming data from MediaDirectoryService
+    let filteredResult: any[] = []
 
-    const result = await this.gitFileSystemService.listDirectoryContents(
-      siteName,
-      directoryName
-    )
-    if (result.isErr()) {
-      throw result.error
+    const filterLogic = (file: any) =>
+      (file.type === "file" || file.type === "dir") &&
+      file.name !== PLACEHOLDER_FILE_NAME
+
+    if (this.isRepoWhitelisted(siteName)) {
+      const result = await this.gitFileSystemService.listDirectoryContents(
+        siteName,
+        directoryName
+      )
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      filteredResult = result.value.filter(filterLogic)
+    } else if (readMediaInput.readFromGithub) {
+      filteredResult = readMediaInput.directoryInfo.files.filter(filterLogic)
     }
-    const filteredResult = result.value.filter(
-      (file) =>
-        (file.type === "file" || file.type === "dir") &&
-        file.name !== PLACEHOLDER_FILE_NAME
-    )
 
     const response = Promise.all(
       filteredResult.map((curr) => {
@@ -287,13 +278,15 @@ export default class RepoService extends GitHubService {
             directoryName,
           })
         }
-        // return getMediaFileInfo({
-        //   file: curr,
-        //   siteName,
-        //   directoryName,
-        //   mediaType,
-        //   isPrivate,
-        // })
+        if (readMediaInput.readFromGithub) {
+          return getMediaFileInfo({
+            file: curr,
+            siteName,
+            directoryName,
+            mediaType: readMediaInput.directoryInfo.mediaType as MediaType,
+            isPrivate: readMediaInput.directoryInfo.isPrivate,
+          })
+        }
       })
     )
 

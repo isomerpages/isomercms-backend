@@ -39,40 +39,29 @@ class MediaDirectoryService {
 
     if (isGGSWhitelistedRepo(siteName)) {
       return await this.gitHubService.readMediaDirectory(sessionData, {
-        directoryName,
+        readFromGithub: false,
+        directoryInfo: {
+          directoryName,
+        },
       })
     }
 
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       sessionData
     )
-    const files = (
-      await this.listWithDefault(sessionData, { directoryName })
-    ).filter(
-      (file) =>
-        (file.type === "file" || file.type === "dir") &&
-        file.name !== PLACEHOLDER_FILE_NAME
-    )
+    const files = await this.listWithDefault(sessionData, {
+      directoryName,
+    })
 
-    const resp = await Promise.all(
-      files.map((curr) => {
-        if (curr.type === "dir") {
-          return {
-            name: curr.name,
-            type: "dir",
-          }
-        }
-        return getMediaFileInfo({
-          file: curr,
-          siteName,
-          directoryName,
-          mediaType,
-          isPrivate,
-        })
-      })
-    )
-
-    return resp
+    return await this.gitHubService.readMediaDirectory(sessionData, {
+      readFromGithub: true,
+      directoryInfo: {
+        directoryName,
+        files,
+        mediaType,
+        isPrivate,
+      },
+    })
   }
 
   async createMediaDirectory(

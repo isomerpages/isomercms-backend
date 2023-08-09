@@ -30,3 +30,24 @@ export interface MediaDirOutput {
 }
 
 export type MediaDirectoryOutput = (MediaDirOutput | MediaFileOutput)[]
+
+export interface ReadMediaDirectoryFromDisk {
+  readFromGithub: false
+  directoryInfo: {
+    directoryName: string
+  }
+}
+
+export interface ReadMediaDirectoryFromGithub {
+  readFromGithub: true
+  directoryInfo: {
+    directoryName: string
+    files: any[]
+    mediaType: string
+    isPrivate: boolean
+  }
+}
+
+export type ReadMediaDirectoryInput =
+  | ReadMediaDirectoryFromDisk
+  | ReadMediaDirectoryFromGithub

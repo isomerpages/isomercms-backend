@@ -12,6 +12,7 @@ const {
 const { isMediaPathValid } = require("@validators/validators")
 
 const { getFileExt } = require("@root/utils/files")
+const { isGGSWhitelistedRepo } = require("@root/utils/ggs-utils")
 const { getMediaFileInfo } = require("@root/utils/media-utils")
 
 class MediaFileService {
@@ -54,27 +55,33 @@ class MediaFileService {
   }
 
   async read(sessionData, { fileName, directoryName }) {
-    const { siteName } = sessionData
-    const directoryData = await this.gitHubService.readDirectory(sessionData, {
+    // delegate to RepoService
+    return this.gitHubService.readMedia(sessionData, {
+      fileName,
       directoryName,
     })
-    const mediaType = directoryName.split("/")[0]
 
-    const targetFile = directoryData.find(
-      (fileOrDir) => fileOrDir.name === fileName
-    )
-    const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-      sessionData
-    )
-    const fileData = await getMediaFileInfo({
-      file: targetFile,
-      siteName,
-      directoryName,
-      mediaType,
-      isPrivate,
-    })
+    // const directoryData = await this.gitHubService.readDirectory(sessionData, {
+    //   directoryName,
+    // })
+    // const mediaType = directoryName.split("/")[0]
 
-    return fileData
+    // const targetFile = directoryData.find(
+    //   (fileOrDir) => fileOrDir.name === fileName
+    // )
+    // const { private: isPrivate } = await this.gitHubService.getRepoInfo(
+    //   sessionData
+    // )
+
+    // const fileData = await getMediaFileInfo({
+    //   file: targetFile,
+    //   siteName,
+    //   directoryName,
+    //   mediaType,
+    //   isPrivate,
+    // })
+
+    // return fileData
   }
 
   async update(sessionData, { fileName, directoryName, content, sha }) {

@@ -1,16 +1,23 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
+import { directory, file } from "mock-fs/lib/filesystem"
 
 import config from "@config/config"
 
 import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import {
+  MediaDirectoryOutput,
+  MediaFileInput,
+  MediaFileOutput,
+} from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   GitCommitResult,
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
+import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
@@ -19,6 +26,7 @@ import * as ReviewApi from "./review"
 const WHITELISTED_GIT_SERVICE_REPOS = config.get(
   "featureFlags.ggsWhitelistedRepos"
 )
+const PLACEHOLDER_FILE_NAME = ".keep"
 
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
@@ -149,10 +157,56 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  // TODO: This is no longer used, remove it
-  async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
-    return await super.readMedia(sessionData, { fileSha })
+  async readMedia(
+    sessionData: UserWithSiteSessionData,
+    { fileName, directoryName }: any // TODO: add type
+  ): Promise<any> {
+    logger.debug(`Reading media file: ${fileName}`)
+    logger.debug(`Reading directoryName: ${directoryName}`)
+    const { siteName } = sessionData
+
+    // fetch from local disk
+    if (this.isRepoWhitelisted(siteName)) {
+      logger.info(
+        `Reading media file from disk. Sitname: ${siteName}, directory name: ${directoryName}, fileName: ${fileName},`
+      )
+      const result = await this.gitFileSystemService.readMedia(
+        siteName,
+        directoryName,
+        fileName
+      )
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      return result.value
+    }
+
+    // fetch from Github
+    const directoryData = await super.readDirectory(sessionData, {
+      directoryName,
+    })
+    logger.debug(`Directory data: ${JSON.stringify(directoryData)}`)
+    const mediaType = directoryName.split("/")[0]
+    const targetFile = directoryData.find(
+      // TODO: fix any
+      (fileOrDir: any) => fileOrDir.name === fileName
+    )
+    const { private: isPrivate } = await super.getRepoInfo(sessionData)
+
+    return await getMediaFileInfo({
+      file: targetFile,
+      siteName,
+      directoryName,
+      mediaType,
+      isPrivate,
+    })
   }
+
+  // TODO: This is no longer used, remove it
+  // async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
+  //   return await super.readMedia(sessionData, { fileSha })
+  // }
 
   async readDirectory(
     sessionData: UserWithSiteSessionData,
@@ -175,6 +229,75 @@ export default class RepoService extends GitHubService {
     return await super.readDirectory(sessionData, {
       directoryName,
     })
+  }
+
+  filterFilesAndDir(directoryContents: any) {}
+
+  // export interface ReadMediaDirectoryFromDisk  {
+  //   sessionData: UserWithSiteSessionData
+  //   directoryInfo: {
+  //     directoryName: string
+  //   }
+  // }
+
+  // export interface ReadMediaDirectoryFromGithub {
+  //   sessionData: UserWithSiteSessionData
+  //   directoryInfo: {
+  //     directoryName: string
+  //   }
+  //   mediaType: string
+  //   isPrivate: boolean
+  // }
+
+  async readMediaDirectory(
+    sessionData: UserWithSiteSessionData,
+    { directoryName }: { directoryName: string }
+  ): Promise<MediaDirectoryOutput[]> {
+    logger.debug(`Reading media directory: ${directoryName}`)
+    const { siteName } = sessionData
+
+    if (this.isRepoWhitelisted(siteName)) {
+    }
+
+    const result = await this.gitFileSystemService.listDirectoryContents(
+      siteName,
+      directoryName
+    )
+    if (result.isErr()) {
+      throw result.error
+    }
+    const filteredResult = result.value.filter(
+      (file) =>
+        (file.type === "file" || file.type === "dir") &&
+        file.name !== PLACEHOLDER_FILE_NAME
+    )
+
+    const response = Promise.all(
+      filteredResult.map((curr) => {
+        if (curr.type === "dir") {
+          return {
+            name: curr.name,
+            type: curr.type,
+          }
+        }
+
+        if (this.isRepoWhitelisted(siteName)) {
+          return this.readMedia(sessionData, {
+            fileName: curr.name,
+            directoryName,
+          })
+        }
+        // return getMediaFileInfo({
+        //   file: curr,
+        //   siteName,
+        //   directoryName,
+        //   mediaType,
+        //   isPrivate,
+        // })
+      })
+    )
+
+    return response
   }
 
   async update(

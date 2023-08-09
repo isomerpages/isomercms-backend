@@ -24,6 +24,7 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { GitHubCommitData } from "@root/types/commitData"
+import { MediaFileInput, MediaFileOutput } from "@root/types"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
 
@@ -440,13 +441,14 @@ export default class GitFileSystemService {
   // Read the contents of a file
   read(
     repoName: string,
-    filePath: string
+    filePath: string,
+    encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     return combine([
       ResultAsync.fromPromise(
         fs.promises.readFile(
           `${EFS_VOL_PATH}/${repoName}/${filePath}`,
-          "utf-8"
+          encoding
         ),
         (error) => {
           if (error instanceof Error && error.message.includes("ENOENT")) {
@@ -470,6 +472,87 @@ export default class GitFileSystemService {
         sha,
       }
       return result
+    })
+  }
+
+  // getMediaFileInfo({
+  //   file,
+  //   siteName,
+  //   directoryName,
+  //   mediaType,
+  //   isPrivate,
+  // }: MediaFileInput): ResultAsync<
+  //   MediaFileOutput,
+  //   GitFileSystemError | NotFoundError
+  // > {
+  //   const baseFileData = {
+  //     name: file.name,
+  //     sha: file.sha,
+  //     mediaPath: `${directoryName}/${file.name}`,
+  //     type: file.type,
+  //   }
+  //   return ResultAsync.fromPromise(fs.promises.readFile(file.path), (error) => {
+  //     if (error instanceof Error && error.message.includes("ENOENT")) {
+  //       return new NotFoundError("Media file does not exist")
+  //     }
+  //     if (error instanceof Error) {
+  //       return new GitFileSystemError(error.message)
+  //     }
+
+  //     logger.error(`Error when reading media from ${file.path}: ${error}`)
+  //     return new GitFileSystemError("An unknown error occurred")
+  //   })
+  //     .andThen((data) => {
+  //       return okAsync(data.toString("base64"))
+  //     })
+  //     .andThen((dataAsBase64) => {
+  //       return okAsync({
+  //         ...baseFileData,
+  //         mediaUrl: dataAsBase64,
+  //       })
+  //     })
+  // }
+
+  getFileExtension(fileName: string): string {
+    const parts = fileName.split(".")
+    if (parts.length > 1) {
+      return parts[parts.length - 1]
+    }
+    return "" // No extension found
+  }
+
+  getMimeType(fileExtension: string): string {
+    switch (fileExtension) {
+      case "svg":
+        return "image/svg+xml"
+      case "ico":
+        return "image/vnd.microsoft.icon"
+      default:
+        return `image/${fileExtension}`
+    }
+  }
+
+  readMedia(
+    siteName: string,
+    directoryName: string,
+    fileName: string
+  ): ResultAsync<MediaFileOutput, GitFileSystemError | NotFoundError> {
+    return this.read(
+      siteName,
+      `${directoryName}/${fileName}`,
+      "base64"
+    ).andThen((file) => {
+      const fileType = "file" as const
+      const fileExt = this.getFileExtension(fileName)
+      const mimeType = this.getMimeType(fileExt)
+      const dataUrlPrefix = `data:${mimeType};base64`
+      return okAsync({
+        name: fileName,
+        sha: file.sha,
+        mediaUrl: `${dataUrlPrefix},${file.content}`,
+        mediaPath: `${directoryName}/${fileName}`,
+        type: fileType,
+      })
     })
   }
 

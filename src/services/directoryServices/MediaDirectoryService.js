@@ -2,6 +2,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const { isMediaPathValid } = require("@validators/validators")
 
+const { isGGSWhitelistedRepo } = require("@root/utils/ggs-utils")
 const { getMediaFileInfo } = require("@root/utils/media-utils")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
@@ -35,6 +36,13 @@ class MediaDirectoryService {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
     const mediaType = directoryName.split("/")[0]
+
+    if (isGGSWhitelistedRepo(siteName)) {
+      return await this.gitHubService.readMediaDirectory(sessionData, {
+        directoryName,
+      })
+    }
+
     const { private: isPrivate } = await this.gitHubService.getRepoInfo(
       sessionData
     )

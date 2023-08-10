@@ -1,5 +1,4 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
-import mock from "mock-fs"
 import { okAsync } from "neverthrow"
 
 import {
@@ -108,18 +107,21 @@ describe("RepoService", () => {
           type: "file",
           sha: "test-sha1",
           path: "test/fake-file.md",
+          size: 100,
         },
         {
           name: "another-fake-file.md",
           type: "file",
           sha: "test-sha2",
           path: "another-fake-file.md",
+          size: 100,
         },
         {
           name: "fake-dir",
           type: "dir",
           sha: "test-sha3",
           path: "fake-dir",
+          size: 0,
         },
       ]
       MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
@@ -150,18 +152,21 @@ describe("RepoService", () => {
           type: "file",
           sha: "test-sha1",
           path: "test/fake-file.md",
+          size: 100,
         },
         {
           name: "another-fake-file.md",
           type: "file",
           sha: "test-sha2",
           path: "another-fake-file.md",
+          size: 100,
         },
         {
           name: "fake-dir",
           type: "dir",
           sha: "test-sha3",
           path: "fake-dir",
+          size: 0,
         },
       ]
       const gitHubServiceReadDirectory = jest.spyOn(

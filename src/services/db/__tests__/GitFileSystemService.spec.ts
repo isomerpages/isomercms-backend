@@ -739,18 +739,21 @@ describe("GitFileSystemService", () => {
         type: "dir",
         sha: "fake-dir-hash",
         path: "fake-dir",
+        size: 0,
       }
       const expectedFakeEmptyDir: GitDirectoryItem = {
         name: "fake-empty-dir",
         type: "dir",
         sha: "fake-empty-dir-hash",
         path: "fake-empty-dir",
+        size: 0,
       }
       const expectedAnotherFakeFile: GitDirectoryItem = {
         name: "another-fake-file",
         type: "file",
         sha: "another-fake-file-hash",
         path: "another-fake-file",
+        size: "Another fake content".length,
       }
 
       const result = await GitFileSystemService.listDirectoryContents(
@@ -784,12 +787,14 @@ describe("GitFileSystemService", () => {
         type: "dir",
         sha: "fake-dir-hash",
         path: "fake-dir",
+        size: 0,
       }
       const expectedAnotherFakeFile: GitDirectoryItem = {
         name: "another-fake-file",
         type: "file",
         sha: "another-fake-file-hash",
         path: "another-fake-file",
+        size: "Another fake content".length,
       }
 
       const result = await GitFileSystemService.listDirectoryContents(

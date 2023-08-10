@@ -488,12 +488,17 @@ export default class GitFileSystemService {
 
           return this.getGitBlobHash(repoName, path)
             .orElse(() => okAsync(""))
-            .andThen((sha) => {
+            .andThen((sha) =>
+              combine([okAsync(sha), this.getFilePathStats(repoName, path)])
+            )
+            .andThen((shaAndStats) => {
+              const [sha, stats] = shaAndStats as [string, fs.Stats]
               const result: GitDirectoryItem = {
                 name,
                 type,
                 sha,
                 path,
+                size: type === "dir" ? 0 : stats.size,
               }
 
               return okAsync(result)

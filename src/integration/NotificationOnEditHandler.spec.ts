@@ -43,7 +43,6 @@ import { ConfigService } from "@root/services/fileServices/YmlFileServices/Confi
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
-import { GitHubService } from "@services/db/GitHubService"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
@@ -130,7 +129,7 @@ const MockSitesCacheService = {
 const MockPreviewService = {}
 const sitesService = new SitesService({
   siteRepository: Site,
-  gitHubService: (mockGithubService as unknown) as GitHubService,
+  gitHubService: (mockGithubService as unknown) as RepoService,
   configYmlService: (jest.fn() as unknown) as ConfigYmlService,
   usersService,
   isomerAdminsService: (jest.fn() as unknown) as IsomerAdminsService,

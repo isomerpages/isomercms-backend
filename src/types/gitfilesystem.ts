@@ -9,3 +9,7 @@ export type GitDirectoryItem = {
   sha: string
   path: string
 }
+
+export type GitCommitResult = {
+  newSha: string
+}

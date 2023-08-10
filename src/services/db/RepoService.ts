@@ -6,7 +6,11 @@ import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitHubCommitData } from "@root/types/commitData"
-import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
+import type {
+  GitCommitResult,
+  GitDirectoryItem,
+  GitFile,
+} from "@root/types/gitfilesystem"
 
 import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
@@ -174,9 +178,37 @@ export default class RepoService extends GitHubService {
   }
 
   async update(
-    sessionData: any,
-    { fileContent, sha, fileName, directoryName }: any
-  ): Promise<any> {
+    sessionData: UserWithSiteSessionData,
+    {
+      fileContent,
+      sha,
+      fileName,
+      directoryName,
+    }: {
+      fileContent: string
+      sha: string
+      fileName: string
+      directoryName?: string
+    }
+  ): Promise<GitCommitResult> {
+    if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info("Updating file in local Git file system")
+      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+      const result = await this.gitFileSystemService.update(
+        sessionData.siteName,
+        filePath,
+        fileContent,
+        sha,
+        sessionData.isomerUserId
+      )
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      return { newSha: result.value }
+    }
+
     return await super.update(sessionData, {
       fileContent,
       sha,

@@ -29,6 +29,7 @@ const MockAxiosInstance = {
 const MockGitFileSystemService = {
   read: jest.fn(),
   listDirectoryContents: jest.fn(),
+  update: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
 }
 
@@ -173,6 +174,46 @@ describe("RepoService", () => {
       })
 
       expect(actual).toEqual(expected)
+    })
+  })
+
+  describe("update", () => {
+    it("should update the local Git file system if the repo is whitelisted", async () => {
+      const expectedSha = "fake-commit-sha"
+      MockGitFileSystemService.update.mockResolvedValueOnce(
+        okAsync(expectedSha)
+      )
+
+      const actual = await RepoService.update(mockUserWithSiteSessionData, {
+        fileContent: "test content",
+        sha: "fake-original-sha",
+        fileName: "test.md",
+        directoryName: "pages",
+      })
+
+      expect(actual).toEqual({ newSha: expectedSha })
+    })
+
+    it("should update GitHub directly if the repo is not whitelisted", async () => {
+      const expectedSha = "fake-commit-sha"
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+      const gitHubServiceUpdate = jest.spyOn(GitHubService.prototype, "update")
+      gitHubServiceUpdate.mockResolvedValueOnce({ newSha: expectedSha })
+
+      const actual = await RepoService.update(sessionData, {
+        fileContent: "test content",
+        sha: "fake-original-sha",
+        fileName: "test.md",
+        directoryName: "pages",
+      })
+
+      expect(actual).toEqual({ newSha: expectedSha })
     })
   })
 

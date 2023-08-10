@@ -169,6 +169,28 @@ export default class GitFileSystemService {
     )
   }
 
+  // Reset the state of the local Git repository to a specific commit
+  rollback(
+    repoName: string,
+    commitSha: string
+  ): ResultAsync<true, GitFileSystemError> {
+    logger.warn(`Rolling repo ${repoName} back to ${commitSha}`)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .reset(["--hard", commitSha])
+        .clean("f"),
+      (error) => {
+        if (error instanceof GitError) {
+          return new GitFileSystemError(error.message)
+        }
+
+        logger.error(`Error when rolling back to ${commitSha}: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).andThen(() => okAsync<true>(true))
+  }
+
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`

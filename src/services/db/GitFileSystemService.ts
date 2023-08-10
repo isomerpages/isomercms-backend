@@ -9,7 +9,7 @@ import {
   Result,
   ResultAsync,
 } from "neverthrow"
-import { GitError, SimpleGit, DefaultLogFields } from "simple-git"
+import { CleanOptions, GitError, SimpleGit, DefaultLogFields } from "simple-git"
 
 import { config } from "@config/config"
 
@@ -202,7 +202,7 @@ export default class GitFileSystemService {
       this.git
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
         .reset(["--hard", commitSha])
-        .clean("f"),
+        .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE),
       (error) => {
         if (error instanceof GitError) {
           return new GitFileSystemError(error.message)

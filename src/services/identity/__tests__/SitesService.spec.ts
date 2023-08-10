@@ -47,7 +47,7 @@ import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
-import { GitHubService } from "@services/db/GitHubService"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
@@ -88,7 +88,7 @@ const MockSitesCacheService = {
 const MockPreviewService = {}
 const SitesService = new _SitesService({
   siteRepository: (MockRepository as unknown) as ModelStatic<Site>,
-  gitHubService: (MockGithubService as unknown) as GitHubService,
+  gitHubService: (MockGithubService as unknown) as RepoService,
   configYmlService: (MockConfigYmlService as unknown) as ConfigYmlService,
   usersService: (MockUsersService as unknown) as UsersService,
   isomerAdminsService: (MockIsomerAdminsService as unknown) as IsomerAdminsService,

@@ -115,9 +115,6 @@ describe("Media File Service", () => {
       },
     ]
 
-    // mockGithubService.getRepoInfo.mockResolvedValueOnce({
-    //   private: false,
-    // })
     mockGithubService.readMedia.mockResolvedValueOnce({
       content: mockContent,
     })
@@ -142,7 +139,6 @@ describe("Media File Service", () => {
           directoryName,
         }
       )
-      // expect(mockGithubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
     })
     const svgName = "image.svg"
 

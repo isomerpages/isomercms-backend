@@ -494,7 +494,7 @@ export default class GitFileSystemService {
     }
   }
 
-  readMedia(
+  readMediaFile(
     siteName: string,
     directoryName: string,
     fileName: string

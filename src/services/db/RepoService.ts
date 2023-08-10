@@ -169,7 +169,7 @@ export default class RepoService extends GitHubService {
       logger.info(
         `Reading media file from disk. Sitname: ${siteName}, directory name: ${directoryName}, fileName: ${fileName},`
       )
-      const result = await this.gitFileSystemService.readMedia(
+      const result = await this.gitFileSystemService.readMediaFile(
         siteName,
         directoryName,
         fileName

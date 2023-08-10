@@ -15,16 +15,17 @@ import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
+import { ConflictError } from "@errors/ConflictError"
 import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedRollbackError from "@errors/GitFileSystemNeedRollbackError"
+import { NotFoundError } from "@errors/NotFoundError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
-import { NotFoundError } from "@root/errors/NotFoundError"
 import { GitHubCommitData } from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
-import { IsomerCommitMessage } from "@root/types/github"
+import type { IsomerCommitMessage } from "@root/types/github"
 
 /**
  * Some notes:
@@ -499,8 +500,78 @@ export default class GitFileSystemService {
       )
   }
 
-  // TODO: Update the contents of a file
-  async update() {}
+  // Update the contents of a file
+  update(
+    repoName: string,
+    filePath: string,
+    fileContent: string,
+    oldSha: string,
+    userId: SessionDataProps["isomerUserId"]
+  ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
+    return ResultAsync.fromPromise(
+      fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${filePath}`),
+      (error) => {
+        if (error instanceof Error && error.message.includes("ENOENT")) {
+          return new NotFoundError("File does not exist")
+        }
+        if (error instanceof Error) {
+          return new GitFileSystemError(error.message)
+        }
+
+        logger.error(`Error when getting ${filePath} stats: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    )
+      .andThen(() =>
+        this.getGitBlobHash(repoName, filePath).andThen((sha) => {
+          if (sha !== oldSha) {
+            return errAsync(
+              new ConflictError(
+                "File has been changed recently, please try again"
+              )
+            )
+          }
+          return okAsync(sha)
+        })
+      )
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          fs.promises.writeFile(
+            `${EFS_VOL_PATH}/${repoName}/${filePath}`,
+            fileContent,
+            "utf-8"
+          ),
+          (error) => {
+            if (error instanceof Error) {
+              return new GitFileSystemNeedRollbackError(error.message)
+            }
+
+            logger.error(`Error when updating ${filePath}: ${error}`)
+            return new GitFileSystemNeedRollbackError(
+              "An unknown error occurred"
+            )
+          }
+        )
+      )
+      .andThen(() => {
+        const fileName = filePath.split("/").pop()
+        return this.commit(
+          repoName,
+          [filePath],
+          userId,
+          `Update file: ${fileName}`
+        )
+      })
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedRollbackError) {
+          return this.rollback(repoName, oldSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
 
   // TODO: Delete a file
   async delete() {}

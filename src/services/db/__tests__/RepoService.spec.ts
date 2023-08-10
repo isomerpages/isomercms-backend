@@ -27,8 +27,9 @@ const MockAxiosInstance = {
 }
 
 const MockGitFileSystemService = {
-  read: jest.fn(),
   listDirectoryContents: jest.fn(),
+  push: jest.fn(),
+  read: jest.fn(),
   update: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
 }

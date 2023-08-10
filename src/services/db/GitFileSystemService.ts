@@ -45,6 +45,18 @@ export default class GitFileSystemService {
     this.git = git
   }
 
+  private safeExistsSync(path: string): Result<boolean, GitFileSystemError> {
+    const res = Result.fromThrowable(fs.existsSync, (error) => {
+      if (error instanceof GitError || error instanceof Error) {
+        return new GitFileSystemError(error.message)
+      }
+
+      logger.error(`Error when checking if ${path} exists: ${error}`)
+      return new GitFileSystemError("An unknown error occurred")
+    })
+    return res(path)
+  }
+
   isGitInitialized(repoName: string): ResultAsync<boolean, GitFileSystemError> {
     return ResultAsync.fromPromise(
       this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkIsRepo(),
@@ -85,17 +97,7 @@ export default class GitFileSystemService {
 
   // Determine if the folder is a valid Git repository
   isValidGitRepo(repoName: string): ResultAsync<boolean, GitFileSystemError> {
-    const safeExistsSync = Result.fromThrowable(fs.existsSync, (error) => {
-      logger.error(`Error when checking if ${repoName} exists: ${error}`)
-
-      if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError("Unable to determine if directory exists")
-      }
-
-      return new GitFileSystemError("An unknown error occurred")
-    })
-
-    return safeExistsSync(`${EFS_VOL_PATH}/${repoName}`)
+    return this.safeExistsSync(`${EFS_VOL_PATH}/${repoName}`)
       .andThen((isFolderExisting) => {
         if (!isFolderExisting) {
           // Return as an error to prevent further processing
@@ -231,17 +233,8 @@ export default class GitFileSystemService {
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-    const safeExistsSync = Result.fromThrowable(fs.existsSync, (error) => {
-      logger.error(`Error when checking if ${repoName} exists: ${error}`)
 
-      if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError("Unable to determine if directory exists")
-      }
-
-      return new GitFileSystemError("An unknown error occurred")
-    })
-
-    return safeExistsSync(`${EFS_VOL_PATH}/${repoName}`).asyncAndThen(
+    return this.safeExistsSync(`${EFS_VOL_PATH}/${repoName}`).asyncAndThen(
       (isFolderExisting) => {
         if (!isFolderExisting) {
           return ResultAsync.fromPromise(

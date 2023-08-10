@@ -3,15 +3,18 @@ import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"
 
+import { ConflictError } from "@errors/ConflictError"
+import GitFileSystemError from "@errors/GitFileSystemError"
+import GitFileSystemNeedRollbackError from "@errors/GitFileSystemNeedRollbackError"
+import { NotFoundError } from "@errors/NotFoundError"
+
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
-import GitFileSystemError from "@root/errors/GitFileSystemError"
-import { NotFoundError } from "@root/errors/NotFoundError"
 import {
   MOCK_GITHUB_FILENAME_ALPHA_ONE,
   MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
-} from "@root/fixtures/github"
-import { MOCK_USER_ID_ONE } from "@root/fixtures/users"
+} from "@fixtures/github"
+import { MOCK_USER_ID_ONE } from "@fixtures/users"
 import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import _GitFileSystemService from "@services/db/GitFileSystemService"
@@ -292,6 +295,38 @@ describe("GitFileSystemService", () => {
     })
   })
 
+  describe("rollback", () => {
+    it("should rollback successfully for a valid Git repo", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        reset: jest.fn().mockReturnValueOnce({
+          clean: jest.fn().mockResolvedValueOnce(undefined),
+        }),
+      })
+
+      const result = await GitFileSystemService.rollback(
+        "fake-repo",
+        "fake-commit-sha"
+      )
+
+      expect(result.isOk()).toBeTrue()
+    })
+
+    it("should return a GitFileSystemError if a Git error occurs when rolling back", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        reset: jest.fn().mockReturnValueOnce({
+          clean: jest.fn().mockRejectedValueOnce(new GitError()),
+        }),
+      })
+
+      const result = await GitFileSystemService.rollback(
+        "fake-repo",
+        "fake-commit-sha"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
   describe("clone", () => {
     it("should clone a Git repo if it does not already exist", async () => {
       MockSimpleGit.clone.mockReturnValueOnce({
@@ -521,7 +556,7 @@ describe("GitFileSystemService", () => {
       expect(mockCommitFn).toHaveBeenCalledWith(expectedCommitMessage)
     })
 
-    it("should return a GitFileSystemError if a Git error occurs when committing", async () => {
+    it("should return a GitFileSystemNeedRollbackError if a Git error occurs when committing", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
@@ -548,7 +583,9 @@ describe("GitFileSystemService", () => {
         "fake message"
       )
 
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(
+        GitFileSystemNeedRollbackError
+      )
     })
 
     it("should return a GitFileSystemError if no pathspecs were provided", async () => {
@@ -782,6 +819,111 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+  })
+
+  describe("update", () => {
+    it("should update the contents of a file successfully", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockResolvedValueOnce({ commit: "fake-new-hash" }),
+        }),
+      })
+
+      const actual = await GitFileSystemService.update(
+        "fake-repo",
+        "fake-dir/fake-file",
+        "fake new content",
+        "fake-old-hash",
+        "fake-user-id"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
+    })
+
+    it("should rollback changes if an error occurred when committing", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockRejectedValueOnce(new GitError()),
+        }),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        reset: jest.fn().mockReturnValueOnce({
+          clean: jest.fn().mockResolvedValueOnce(undefined),
+        }),
+      })
+      const spyRollback = jest.spyOn(GitFileSystemService, "rollback")
+
+      const actual = await GitFileSystemService.update(
+        "fake-repo",
+        "fake-dir/fake-file",
+        "fake new content",
+        "fake-old-hash",
+        "fake-user-id"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "fake-old-hash")
+    })
+
+    it("should return ConflictError if the old SHA provided does not match the current SHA", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
+      })
+
+      const actual = await GitFileSystemService.update(
+        "fake-repo",
+        "fake-dir/fake-file",
+        "fake new content",
+        "fake-some-other-hash",
+        "fake-user-id"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
+    })
+
+    it("should return a NotFoundError if the file does not exist", async () => {
+      const actual = await GitFileSystemService.update(
+        "fake-repo",
+        "fake-dir/non-existent-file",
+        "fake new content",
+        "fake-old-hash",
+        "fake-user-id"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
     })
   })
 

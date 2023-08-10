@@ -929,7 +929,7 @@ describe("GitFileSystemService", () => {
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "fake-old-hash")
+      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")
     })
 
     it("should return ConflictError if the old SHA provided does not match the current SHA", async () => {

@@ -521,7 +521,14 @@ export default class GitFileSystemService {
     oldSha: string,
     userId: SessionDataProps["isomerUserId"]
   ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
-    return this.getFilePathStats(repoName, filePath)
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        oldStateSha = latestCommit
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, filePath))
       .andThen((stats) => {
         if (!stats.isFile()) {
           return errAsync(
@@ -574,7 +581,7 @@ export default class GitFileSystemService {
       })
       .orElse((error) => {
         if (error instanceof GitFileSystemNeedRollbackError) {
-          return this.rollback(repoName, oldSha).andThen(() =>
+          return this.rollback(repoName, oldStateSha).andThen(() =>
             errAsync(new GitFileSystemError(error.message))
           )
         }

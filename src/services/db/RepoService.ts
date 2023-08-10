@@ -206,6 +206,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
+      this.gitFileSystemService.push(sessionData.siteName)
       return { newSha: result.value }
     }
 

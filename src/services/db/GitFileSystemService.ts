@@ -318,11 +318,11 @@ export default class GitFileSystemService {
         ResultAsync.fromPromise(
           this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
           (error) => {
+            logger.error(`Error when pushing ${repoName}: ${error}`)
             if (error instanceof GitError) {
               return new GitFileSystemError(error.message)
             }
 
-            logger.error(`Error when pushing ${repoName}: ${error}`)
             return new GitFileSystemError("An unknown error occurred")
           }
         ).map(() => `${EFS_VOL_PATH}/${repoName}`)

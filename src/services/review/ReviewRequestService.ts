@@ -58,8 +58,8 @@ import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
 import { PathInfo } from "@root/types/util"
 import { extractPathInfo, getFileExt } from "@root/utils/files"
-import * as ReviewApi from "@services/db/review"
 
+import RepoService from "../db/RepoService"
 import { PageService } from "../fileServices/MdPageServices/PageService"
 import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
@@ -88,7 +88,7 @@ const injectDefaultEditMeta = ({
  * Separately, this also allows us to add typings into this service.
  */
 export default class ReviewRequestService {
-  private readonly apiService: typeof ReviewApi
+  private readonly apiService: RepoService
 
   private readonly repository: ModelStatic<ReviewRequest>
 
@@ -107,7 +107,7 @@ export default class ReviewRequestService {
   private readonly sequelize: Sequelize
 
   constructor(
-    apiService: typeof ReviewApi,
+    apiService: RepoService,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,

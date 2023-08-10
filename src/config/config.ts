@@ -405,6 +405,14 @@ const config = convict({
       default: "",
     },
   },
+  featureFlags: {
+    ggsWhitelistedRepos: {
+      doc: "Comma-separated list of whitelisted repos for local Git service",
+      env: "WHITELISTED_GIT_SERVICE_REPOS",
+      format: String,
+      default: "",
+    },
+  },
 })
 
 // Perform validation

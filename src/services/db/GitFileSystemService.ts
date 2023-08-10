@@ -19,7 +19,10 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
+import { SessionDataProps } from "@root/classes"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
+import { IsomerCommitMessage } from "@root/types/github"
 
 /**
  * Some notes:
@@ -112,6 +115,39 @@ export default class GitFileSystemService {
       })
   }
 
+  // Ensure that the repository is in the BRANCH_REF branch
+  ensureCorrectBranch(repoName: string): ResultAsync<true, GitFileSystemError> {
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd(`${EFS_VOL_PATH}/${repoName}`)
+        .revparse(["--abbrev-ref", "HEAD"]),
+      (error) => {
+        if (error instanceof GitError) {
+          return new GitFileSystemError(error.message)
+        }
+
+        logger.error(`Error when getting current branch: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).andThen((currentBranch) => {
+      if (currentBranch !== BRANCH_REF) {
+        return ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF),
+          (error) => {
+            if (error instanceof GitError) {
+              return new GitFileSystemError(error.message)
+            }
+
+            logger.error(`Error when checking out ${BRANCH_REF}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        ).andThen(() => okAsync<true>(true))
+      }
+
+      return okAsync<true>(true)
+    })
+  }
+
   // Obtain the Git blob hash of a file or directory
   getGitBlobHash(
     repoName: string,
@@ -120,7 +156,6 @@ export default class GitFileSystemService {
     return ResultAsync.fromPromise(
       this.git
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
-        .checkout(BRANCH_REF)
         .revparse([`HEAD:${filePath}`]),
       (error) => {
         if (error instanceof GitError) {
@@ -200,17 +235,130 @@ export default class GitFileSystemService {
         )
       }
 
-      return ResultAsync.fromPromise(
-        this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF).pull(),
-        (error) => {
-          if (error instanceof GitError) {
-            return new GitFileSystemError(error.message)
-          }
+      return this.ensureCorrectBranch(repoName).andThen(() =>
+        ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).pull(),
+          (error) => {
+            // Full error message 1: Your configuration specifies to merge
+            // with the ref 'refs/heads/staging' from the remote, but no
+            // such ref was fetched.
+            // Full error message 2: error: cannot lock ref
+            // 'refs/remotes/origin/staging': is at <new sha> but expected <old sha>
+            // Full error message 3: Cannot fast-forward your working tree.
+            // Full error message 4: Need to specify how to reconcile divergent branches.
+            // These are known errors that can be safely ignored
+            if (
+              error instanceof GitError &&
+              (error.message.includes("but no such ref was fetched.") ||
+                error.message.includes("error: cannot lock ref") ||
+                error.message.includes(
+                  "Cannot fast-forward your working tree"
+                ) ||
+                error.message.includes(
+                  "Need to specify how to reconcile divergent branches"
+                ))
+            ) {
+              return false
+            }
+            if (error instanceof GitError) {
+              return new GitFileSystemError(error.message)
+            }
 
-          logger.error(`Error when pulling ${repoName}: ${error}`)
-          return new GitFileSystemError("An unknown error occurred")
-        }
-      ).map(() => `${EFS_VOL_PATH}/${repoName}`)
+            logger.error(`Error when pulling ${repoName}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        )
+          .map(() => true)
+          .orElse((error) => {
+            if (typeof error === "boolean") {
+              return okAsync(true)
+            }
+            return errAsync(error)
+          })
+          .map(() => `${EFS_VOL_PATH}/${repoName}`)
+      )
+    })
+  }
+
+  // Push the latest changes to upstream Git hosting provider
+  push(repoName: string): ResultAsync<string, GitFileSystemError> {
+    return this.isValidGitRepo(repoName).andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+        )
+      }
+
+      return this.ensureCorrectBranch(repoName).andThen(() =>
+        ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+          (error) => {
+            if (error instanceof GitError) {
+              return new GitFileSystemError(error.message)
+            }
+
+            logger.error(`Error when pushing ${repoName}: ${error}`)
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        ).map(() => `${EFS_VOL_PATH}/${repoName}`)
+      )
+    })
+  }
+
+  // Commit changes to the local Git repository
+  commit(
+    repoName: string,
+    pathSpec: string[],
+    userId: SessionDataProps["isomerUserId"],
+    message: string
+  ): ResultAsync<string, GitFileSystemError> {
+    return this.isValidGitRepo(repoName).andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+        )
+      }
+
+      // Note: We only accept commits that change 1 file at once (pathSpec.length == 1)
+      // Or commits that move/rename files (pathSpec.length == 2)
+      if (pathSpec.length < 1 || pathSpec.length > 2) {
+        return errAsync(
+          new GitFileSystemError(
+            `Invalid pathSpec length: ${pathSpec.length}. Expected 1 or 2`
+          )
+        )
+      }
+
+      const commitMessageObj: Omit<IsomerCommitMessage, "fileName"> &
+        Partial<Pick<IsomerCommitMessage, "fileName">> = {
+        message,
+        userId,
+      }
+
+      if (pathSpec.length === 1) {
+        commitMessageObj.fileName = pathSpec[0].split("/").pop()
+      }
+
+      const commitMessage = JSON.stringify(commitMessageObj)
+
+      return this.ensureCorrectBranch(repoName)
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git
+              .cwd(`${EFS_VOL_PATH}/${repoName}`)
+              .add(pathSpec)
+              .commit(commitMessage),
+            (error) => {
+              if (error instanceof GitError) {
+                return new GitFileSystemError(error.message)
+              }
+
+              logger.error(`Error when committing ${repoName}: ${error}`)
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .map((commitResult) => commitResult.commit)
     })
   }
 
@@ -222,43 +370,47 @@ export default class GitFileSystemService {
   read(
     repoName: string,
     filePath: string
-  ): ResultAsync<GitFile, GitFileSystemError> {
-    return this.pull(repoName).andThen(() =>
-      combine([
-        ResultAsync.fromPromise(
-          fs.promises.readFile(
-            `${EFS_VOL_PATH}/${repoName}/${filePath}`,
-            "utf-8"
-          ),
-          (error) => {
-            if (error instanceof Error) {
-              return new GitFileSystemError(error.message)
-            }
-
-            logger.error(`Error when reading ${filePath}: ${error}`)
-            return new GitFileSystemError("An unknown error occurred")
-          }
+  ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
+    return combine([
+      ResultAsync.fromPromise(
+        fs.promises.readFile(
+          `${EFS_VOL_PATH}/${repoName}/${filePath}`,
+          "utf-8"
         ),
-        this.getGitBlobHash(repoName, filePath),
-      ]).map((contentsAndHash) => {
-        const [contents, sha] = contentsAndHash
-        const result: GitFile = {
-          contents,
-          sha,
+        (error) => {
+          if (error instanceof Error && error.message.includes("ENOENT")) {
+            return new NotFoundError("File does not exist")
+          }
+          if (error instanceof Error) {
+            return new GitFileSystemError(error.message)
+          }
+
+          logger.error(`Error when reading ${filePath}: ${error}`)
+          return new GitFileSystemError("An unknown error occurred")
         }
-        return result
-      })
-    )
+      ),
+      this.getGitBlobHash(repoName, filePath),
+    ]).map((contentAndHash) => {
+      const [content, sha] = contentAndHash
+      const result: GitFile = {
+        content,
+        sha,
+      }
+      return result
+    })
   }
 
   // Read the contents of a directory
   listDirectoryContents(
     repoName: string,
     directoryPath: string
-  ): ResultAsync<GitDirectoryItem[], GitFileSystemError> {
+  ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
     return ResultAsync.fromPromise(
       fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
       (error) => {
+        if (error instanceof Error && error.message.includes("ENOENT")) {
+          return new NotFoundError("Directory does not exist")
+        }
         if (error instanceof Error) {
           return new GitFileSystemError(error.message)
         }

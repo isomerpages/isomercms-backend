@@ -29,7 +29,7 @@ const MockAxiosInstance = {
 
 const MockGitFileSystemService = {
   read: jest.fn(),
-  readMedia: jest.fn(),
+  readMediaFile: jest.fn(),
   listDirectoryContents: jest.fn(),
   push: jest.fn(),
   read: jest.fn(),
@@ -287,7 +287,7 @@ describe("RepoService", () => {
         mediaPath: "images/test-img.jpeg",
         type: "image" as ItemType,
       }
-      MockGitFileSystemService.readMedia.mockResolvedValueOnce(
+      MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
         okAsync(expected)
       )
 
@@ -389,7 +389,9 @@ describe("RepoService", () => {
           },
         ])
       )
-      MockGitFileSystemService.readMedia.mockResolvedValueOnce(okAsync(image))
+      MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
+        okAsync(image)
+      )
 
       const actual = await RepoService.readMediaDirectory(
         mockUserWithSiteSessionData,

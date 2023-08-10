@@ -16,6 +16,7 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import GitFileSystemError from "@errors/GitFileSystemError"
+import GitFileSystemNeedRollbackError from "@errors/GitFileSystemNeedRollbackError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
@@ -334,7 +335,7 @@ export default class GitFileSystemService {
     pathSpec: string[],
     userId: SessionDataProps["isomerUserId"],
     message: string
-  ): ResultAsync<string, GitFileSystemError> {
+  ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedRollbackError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -373,11 +374,13 @@ export default class GitFileSystemService {
               .commit(commitMessage),
             (error) => {
               if (error instanceof GitError) {
-                return new GitFileSystemError(error.message)
+                return new GitFileSystemNeedRollbackError(error.message)
               }
 
               logger.error(`Error when committing ${repoName}: ${error}`)
-              return new GitFileSystemError("An unknown error occurred")
+              return new GitFileSystemNeedRollbackError(
+                "An unknown error occurred"
+              )
             }
           )
         )

@@ -171,6 +171,27 @@ export default class GitFileSystemService {
     )
   }
 
+  // Get filesystem stats of a file or directory
+  getFilePathStats(
+    repoName: string,
+    filePath: string
+  ): ResultAsync<fs.Stats, NotFoundError | GitFileSystemError> {
+    return ResultAsync.fromPromise(
+      fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${filePath}`),
+      (error) => {
+        if (error instanceof Error && error.message.includes("ENOENT")) {
+          return new NotFoundError("File/Directory does not exist")
+        }
+        if (error instanceof Error) {
+          return new GitFileSystemError(error.message)
+        }
+
+        logger.error(`Error when reading ${filePath}: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    )
+  }
+
   // Reset the state of the local Git repository to a specific commit
   rollback(
     repoName: string,
@@ -432,25 +453,12 @@ export default class GitFileSystemService {
     repoName: string,
     directoryPath: string
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
-    return ResultAsync.fromPromise(
-      fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`),
-      (error) => {
-        if (error instanceof Error && error.message.includes("ENOENT")) {
-          return new NotFoundError("Directory does not exist")
-        }
-        if (error instanceof Error) {
-          return new GitFileSystemError(error.message)
-        }
-
-        logger.error(`Error when getting ${directoryPath} stats: ${error}`)
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    )
+    return this.getFilePathStats(repoName, directoryPath)
       .andThen((stats) => {
         if (!stats.isDirectory()) {
           return errAsync(
             new GitFileSystemError(
-              `Path "${directoryPath}" is not a directory in repo "${repoName}"`
+              `Path "${directoryPath}" is not a valid directory in repo "${repoName}"`
             )
           )
         }
@@ -508,20 +516,17 @@ export default class GitFileSystemService {
     oldSha: string,
     userId: SessionDataProps["isomerUserId"]
   ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
-    return ResultAsync.fromPromise(
-      fs.promises.stat(`${EFS_VOL_PATH}/${repoName}/${filePath}`),
-      (error) => {
-        if (error instanceof Error && error.message.includes("ENOENT")) {
-          return new NotFoundError("File does not exist")
+    return this.getFilePathStats(repoName, filePath)
+      .andThen((stats) => {
+        if (!stats.isFile()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${filePath}" is not a valid file in repo "${repoName}"`
+            )
+          )
         }
-        if (error instanceof Error) {
-          return new GitFileSystemError(error.message)
-        }
-
-        logger.error(`Error when getting ${filePath} stats: ${error}`)
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    )
+        return okAsync(true)
+      })
       .andThen(() =>
         this.getGitBlobHash(repoName, filePath).andThen((sha) => {
           if (sha !== oldSha) {

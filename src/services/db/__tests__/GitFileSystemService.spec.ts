@@ -295,6 +295,35 @@ describe("GitFileSystemService", () => {
     })
   })
 
+  describe("getFilePathStats", () => {
+    it("should return the filesystem stats for a valid file", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrap().isFile()).toBeTrue()
+    })
+
+    it("should return the filesystem stats for a valid directory", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "fake-empty-dir"
+      )
+
+      expect(result._unsafeUnwrap().isDirectory()).toBeTrue()
+    })
+
+    it("should return a NotFoundError for a non-existent path", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "non-existent"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+  })
+
   describe("rollback", () => {
     it("should rollback successfully for a valid Git repo", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -912,6 +941,18 @@ describe("GitFileSystemService", () => {
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
+    })
+
+    it("should return a GitFileSystemError if the file path is not a file", async () => {
+      const actual = await GitFileSystemService.update(
+        "fake-repo",
+        "fake-dir",
+        "fake new content",
+        "fake-old-hash",
+        "fake-user-id"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
 
     it("should return a NotFoundError if the file does not exist", async () => {

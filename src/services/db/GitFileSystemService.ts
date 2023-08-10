@@ -21,6 +21,10 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import {
+  GitLocalDiskCommitData,
+  GitLocalDiskRawCommitData,
+} from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import { IsomerCommitMessage } from "@root/types/github"
 
@@ -479,6 +483,50 @@ export default class GitFileSystemService {
   // TODO: Delete a file
   async delete() {}
 
-  // TODO: Get the latest commit of branch
-  async getLatestCommitOfBranch() {}
+  isGitLocalDiskRawCommitData(
+    commit: unknown
+  ): commit is GitLocalDiskRawCommitData {
+    return (
+      !!commit &&
+      (commit as GitLocalDiskRawCommitData).author_name !== undefined &&
+      (commit as GitLocalDiskRawCommitData).author_email !== undefined &&
+      (commit as GitLocalDiskRawCommitData).date !== undefined &&
+      (commit as GitLocalDiskRawCommitData).message !== undefined &&
+      (commit as GitLocalDiskRawCommitData).hash !== undefined
+    )
+  }
+
+  getLatestCommitOfBranch(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<GitLocalDiskCommitData, GitFileSystemError> {
+    return ResultAsync.fromPromise(
+      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(branchName).log(),
+      (error) => {
+        if (error instanceof GitError) {
+          return new GitFileSystemError(error.message)
+        }
+        logger.error(`Error when getting latest commit of branch: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).andThen((logSummary) => {
+      const possibleCommit = logSummary.latest
+      if (this.isGitLocalDiskRawCommitData(possibleCommit)) {
+        return okAsync({
+          author: {
+            name: possibleCommit.author_name,
+            email: possibleCommit.author_email,
+            date: possibleCommit.date,
+          },
+          message: possibleCommit.message,
+          sha: possibleCommit.hash,
+        })
+      }
+      return errAsync(
+        new GitFileSystemError(
+          "Unable to retrieve latest commit info from disk"
+        )
+      )
+    })
+  }
 }

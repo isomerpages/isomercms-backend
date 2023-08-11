@@ -12,6 +12,7 @@ import {
   MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
 } from "@root/fixtures/github"
 import { MOCK_USER_ID_ONE } from "@root/fixtures/users"
+import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import _GitFileSystemService from "@services/db/GitFileSystemService"
 
@@ -781,6 +782,64 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+  })
+
+  describe("getLatestCommitOfBranch", () => {
+    it("should return the latest commit data from branch", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            hash: "fake-hash",
+            date: "fake-date",
+            message: "fake-message",
+            author_name: "fake-author",
+            author_email: "fake-email",
+          },
+        }),
+      })
+      const expected: GitHubCommitData = {
+        sha: "fake-hash",
+        message: "fake-message",
+        author: {
+          date: "fake-date",
+          name: "fake-author",
+          email: "fake-email",
+        },
+      }
+
+      const actual = await GitFileSystemService.getLatestCommitOfBranch(
+        "fake-repo-2",
+        "master"
+      )
+
+      expect(actual._unsafeUnwrap()).toStrictEqual(expected)
+    })
+
+    it("should throw error when simple-git throws error", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfBranch(
+        "fake-repo-2",
+        "master"
+      )
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should throw error when commit returned by simple-git is not as expected", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {},
+        }),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfBranch(
+        "fake-repo-2",
+        "master"
+      )
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
   })
 })

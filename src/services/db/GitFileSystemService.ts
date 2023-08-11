@@ -480,14 +480,14 @@ export default class GitFileSystemService {
   // TODO: Delete a file
   async delete() {}
 
-  isDefaultLogFields(commit: unknown): commit is DefaultLogFields {
+  isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     return (
-      !!commit &&
-      (commit as DefaultLogFields).author_name !== undefined &&
-      (commit as DefaultLogFields).author_email !== undefined &&
-      (commit as DefaultLogFields).date !== undefined &&
-      (commit as DefaultLogFields).message !== undefined &&
-      (commit as DefaultLogFields).hash !== undefined
+      !!logFields &&
+      (logFields as DefaultLogFields).author_name !== undefined &&
+      (logFields as DefaultLogFields).author_email !== undefined &&
+      (logFields as DefaultLogFields).date !== undefined &&
+      (logFields as DefaultLogFields).message !== undefined &&
+      (logFields as DefaultLogFields).hash !== undefined
     )
   }
 

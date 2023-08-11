@@ -9,7 +9,7 @@ import {
   Result,
   ResultAsync,
 } from "neverthrow"
-import { GitError, SimpleGit } from "simple-git"
+import { GitError, SimpleGit, DefaultLogFields } from "simple-git"
 
 import { config } from "@config/config"
 
@@ -21,10 +21,7 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { NotFoundError } from "@root/errors/NotFoundError"
-import {
-  GitHubCommitData,
-  GitLocalDiskRawCommitData,
-} from "@root/types/commitData"
+import { GitHubCommitData } from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import { IsomerCommitMessage } from "@root/types/github"
 
@@ -483,16 +480,14 @@ export default class GitFileSystemService {
   // TODO: Delete a file
   async delete() {}
 
-  isGitLocalDiskRawCommitData(
-    commit: unknown
-  ): commit is GitLocalDiskRawCommitData {
+  isDefaultLogFields(commit: unknown): commit is DefaultLogFields {
     return (
       !!commit &&
-      (commit as GitLocalDiskRawCommitData).author_name !== undefined &&
-      (commit as GitLocalDiskRawCommitData).author_email !== undefined &&
-      (commit as GitLocalDiskRawCommitData).date !== undefined &&
-      (commit as GitLocalDiskRawCommitData).message !== undefined &&
-      (commit as GitLocalDiskRawCommitData).hash !== undefined
+      (commit as DefaultLogFields).author_name !== undefined &&
+      (commit as DefaultLogFields).author_email !== undefined &&
+      (commit as DefaultLogFields).date !== undefined &&
+      (commit as DefaultLogFields).message !== undefined &&
+      (commit as DefaultLogFields).hash !== undefined
     )
   }
 
@@ -511,8 +506,7 @@ export default class GitFileSystemService {
       }
     ).andThen((logSummary) => {
       const possibleCommit = logSummary.latest
-      console.log(`POSSIBLE COMMIT`, possibleCommit)
-      if (this.isGitLocalDiskRawCommitData(possibleCommit)) {
+      if (this.isDefaultLogFields(possibleCommit)) {
         return okAsync({
           author: {
             name: possibleCommit.author_name,

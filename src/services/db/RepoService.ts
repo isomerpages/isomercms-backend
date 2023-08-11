@@ -206,7 +206,7 @@ export default class RepoService extends GitHubService {
 
   async getLatestCommitOfBranch(
     sessionData: UserWithSiteSessionData,
-    branchName: any
+    branchName: string
   ): Promise<GitHubCommitData> {
     const { siteName } = sessionData
     if (this.isRepoWhitelisted(siteName)) {

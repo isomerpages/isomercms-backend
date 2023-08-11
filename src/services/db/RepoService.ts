@@ -115,9 +115,35 @@ export default class RepoService extends GitHubService {
   }
 
   async create(
-    sessionData: any,
-    { content, fileName, directoryName, isMedia = false }: any
-  ): Promise<any> {
+    sessionData: UserWithSiteSessionData,
+    {
+      content,
+      fileName,
+      directoryName,
+      isMedia = false,
+    }: {
+      content: string
+      fileName: string
+      directoryName: string
+      isMedia?: boolean
+    }
+  ): Promise<{ sha: string }> {
+    if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info("Writing file to local Git file system")
+      const result = await this.gitFileSystemService.create({
+        repoName: sessionData.siteName,
+        userId: sessionData.isomerUserId,
+        content,
+        directoryName,
+        fileName,
+      })
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      return result.value
+    }
     return await super.create(sessionData, {
       content,
       fileName,

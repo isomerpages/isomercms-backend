@@ -1,5 +1,6 @@
 import fs from "fs"
 
+import { Base64 } from "js-base64"
 import {
   combine,
   err,
@@ -431,7 +432,93 @@ export default class GitFileSystemService {
 
   // TODO: Creates either directory or file
   // ResourceDirectoryService used this to create a directory + file at the same time
-  create() {}
+  create({
+    repoName,
+    userId,
+    content,
+    directoryName,
+    fileName,
+  }: {
+    repoName: string
+    userId: string
+    content: string
+    directoryName?: string
+    fileName: string
+  }): ResultAsync<
+    { sha: string },
+    ConflictError | GitFileSystemError | NotFoundError
+  > {
+    const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+    const pathToEfsDir = `${EFS_VOL_PATH}/${repoName}/${directoryName}/`
+    const pathToEfsFile = `${EFS_VOL_PATH}/${repoName}/${filePath}`
+    // Validation and sanitisation of media already done
+    const encodedContent = content
+    const createDirectoryAsync = (): ResultAsync<void, GitFileSystemError> => {
+      if (directoryName && !fs.existsSync(pathToEfsDir)) {
+        return ResultAsync.fromPromise(
+          fs.promises.mkdir(pathToEfsDir),
+          (error) => {
+            logger.error(
+              `Error occurred while creating ${pathToEfsDir} directory: ${error}`
+            )
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        )
+      }
+      return okAsync(undefined)
+    }
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        oldStateSha = latestCommit
+        return okAsync(true)
+      })
+      .andThen(() => createDirectoryAsync())
+      .andThen(() => this.safeExistsSync(pathToEfsFile))
+      .andThen((hasFile) => {
+        if (hasFile)
+          return err(
+            new ConflictError(
+              `File ${filePath} already exists in repo ${repoName}`
+            )
+          )
+        return ok("")
+      })
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          fs.promises.writeFile(pathToEfsFile, encodedContent),
+          (error) => {
+            logger.error(`Error when creating ${filePath}: ${error}`)
+            if (error instanceof Error) {
+              return new GitFileSystemError(error.message)
+            }
+            return new GitFileSystemError("An unknown error occurred")
+          }
+        )
+          .map((res) => res)
+          .mapErr((error) => error)
+      )
+      .andThen(() =>
+        this.commit(
+          repoName,
+          [pathToEfsFile],
+          userId,
+          `Create file: ${filePath}`
+        )
+      )
+      .map((commit) => ({ sha: commit }))
+      .orElse((error) => {
+        if (false) {
+          // TODO: replace with unique rollback error
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
 
   // Read the contents of a file
   read(

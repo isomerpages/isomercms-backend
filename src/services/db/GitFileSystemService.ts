@@ -481,14 +481,15 @@ export default class GitFileSystemService {
   async delete() {}
 
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
+    const c = logFields as DefaultLogFields
     return (
       !!logFields &&
       typeof logFields === "object" &&
-      (logFields as DefaultLogFields).author_name !== undefined &&
-      (logFields as DefaultLogFields).author_email !== undefined &&
-      (logFields as DefaultLogFields).date !== undefined &&
-      (logFields as DefaultLogFields).message !== undefined &&
-      (logFields as DefaultLogFields).hash !== undefined
+      typeof c.author_name === "string" &&
+      typeof c.author_email === "string" &&
+      typeof c.date === "string" &&
+      typeof c.message === "string" &&
+      typeof c.hash === "string"
     )
   }
 

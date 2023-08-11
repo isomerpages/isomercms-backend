@@ -525,7 +525,8 @@ export default class GitFileSystemService {
 
     return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
       .andThen((latestCommit) => {
-        oldStateSha = latestCommit
+        // It is guaranteed that the latest commit contains the SHA hash
+        oldStateSha = latestCommit.sha as string
         return okAsync(true)
       })
       .andThen(() => this.getFilePathStats(repoName, filePath))

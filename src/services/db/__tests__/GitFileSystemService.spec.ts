@@ -859,6 +859,17 @@ describe("GitFileSystemService", () => {
   describe("update", () => {
     it("should update the contents of a file successfully", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -892,6 +903,17 @@ describe("GitFileSystemService", () => {
     })
 
     it("should rollback changes if an error occurred when committing", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
       })
@@ -934,6 +956,17 @@ describe("GitFileSystemService", () => {
 
     it("should return ConflictError if the old SHA provided does not match the current SHA", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
       })
 
@@ -949,6 +982,18 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return a GitFileSystemError if the file path is not a file", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
+
       const actual = await GitFileSystemService.update(
         "fake-repo",
         "fake-dir",
@@ -961,6 +1006,18 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return a NotFoundError if the file does not exist", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
+
       const actual = await GitFileSystemService.update(
         "fake-repo",
         "fake-dir/non-existent-file",

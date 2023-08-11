@@ -1,10 +1,10 @@
 import { BaseIsomerError } from "./BaseError"
 
-export default class GitFileSystemNeedRollbackError extends BaseIsomerError {
+export default class GitFileSystemNeedsRollbackError extends BaseIsomerError {
   constructor(message: string) {
     super({
       status: 500,
-      code: "GitFileSystemNeedRollbackError",
+      code: "GitFileSystemNeedsRollbackError",
       message,
     })
   }

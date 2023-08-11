@@ -17,7 +17,7 @@ import logger from "@logger/logger"
 
 import { ConflictError } from "@errors/ConflictError"
 import GitFileSystemError from "@errors/GitFileSystemError"
-import GitFileSystemNeedRollbackError from "@errors/GitFileSystemNeedRollbackError"
+import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
@@ -357,7 +357,7 @@ export default class GitFileSystemService {
     pathSpec: string[],
     userId: SessionDataProps["isomerUserId"],
     message: string
-  ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedRollbackError> {
+  ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedsRollbackError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -396,11 +396,11 @@ export default class GitFileSystemService {
               .commit(commitMessage),
             (error) => {
               if (error instanceof GitError) {
-                return new GitFileSystemNeedRollbackError(error.message)
+                return new GitFileSystemNeedsRollbackError(error.message)
               }
 
               logger.error(`Error when committing ${repoName}: ${error}`)
-              return new GitFileSystemNeedRollbackError(
+              return new GitFileSystemNeedsRollbackError(
                 "An unknown error occurred"
               )
             }
@@ -560,11 +560,11 @@ export default class GitFileSystemService {
           ),
           (error) => {
             if (error instanceof Error) {
-              return new GitFileSystemNeedRollbackError(error.message)
+              return new GitFileSystemNeedsRollbackError(error.message)
             }
 
             logger.error(`Error when updating ${filePath}: ${error}`)
-            return new GitFileSystemNeedRollbackError(
+            return new GitFileSystemNeedsRollbackError(
               "An unknown error occurred"
             )
           }
@@ -580,7 +580,7 @@ export default class GitFileSystemService {
         )
       })
       .orElse((error) => {
-        if (error instanceof GitFileSystemNeedRollbackError) {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
           return this.rollback(repoName, oldStateSha).andThen(() =>
             errAsync(new GitFileSystemError(error.message))
           )

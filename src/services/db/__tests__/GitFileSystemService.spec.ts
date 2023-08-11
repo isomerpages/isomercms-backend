@@ -5,7 +5,7 @@ import config from "@config/config"
 
 import { ConflictError } from "@errors/ConflictError"
 import GitFileSystemError from "@errors/GitFileSystemError"
-import GitFileSystemNeedRollbackError from "@errors/GitFileSystemNeedRollbackError"
+import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
@@ -585,7 +585,7 @@ describe("GitFileSystemService", () => {
       expect(mockCommitFn).toHaveBeenCalledWith(expectedCommitMessage)
     })
 
-    it("should return a GitFileSystemNeedRollbackError if a Git error occurs when committing", async () => {
+    it("should return a GitFileSystemNeedsRollbackError if a Git error occurs when committing", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
@@ -613,7 +613,7 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(
-        GitFileSystemNeedRollbackError
+        GitFileSystemNeedsRollbackError
       )
     })
 

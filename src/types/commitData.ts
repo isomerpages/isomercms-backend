@@ -5,11 +5,8 @@ export type GitHubCommitData = {
     date: string
   }
   message: string
+  sha?: string
 }
-
-export type GitLocalDiskCommitData = {
-  sha: string
-} & GitHubCommitData
 
 // returned by Simple Git
 export type GitLocalDiskRawCommitData = {

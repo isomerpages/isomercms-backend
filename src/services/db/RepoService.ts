@@ -5,6 +5,7 @@ import config from "@config/config"
 import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 
 import GitFileSystemService from "./GitFileSystemService"
@@ -204,9 +205,9 @@ export default class RepoService extends GitHubService {
   }
 
   async getLatestCommitOfBranch(
-    sessionData: any,
+    sessionData: UserWithSiteSessionData,
     branchName: any
-  ): Promise<any> {
+  ): Promise<GitHubCommitData> {
     const { siteName } = sessionData
     if (this.isRepoWhitelisted(siteName)) {
       logger.info(

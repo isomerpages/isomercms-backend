@@ -22,7 +22,7 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 import { SessionDataProps } from "@root/classes"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import {
-  GitLocalDiskCommitData,
+  GitHubCommitData,
   GitLocalDiskRawCommitData,
 } from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
@@ -499,7 +499,7 @@ export default class GitFileSystemService {
   getLatestCommitOfBranch(
     repoName: string,
     branchName: string
-  ): ResultAsync<GitLocalDiskCommitData, GitFileSystemError> {
+  ): ResultAsync<GitHubCommitData, GitFileSystemError> {
     return ResultAsync.fromPromise(
       this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
       (error) => {

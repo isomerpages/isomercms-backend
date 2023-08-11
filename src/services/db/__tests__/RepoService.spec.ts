@@ -11,10 +11,7 @@ import {
   mockUserWithSiteSessionData,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import {
-  GitHubCommitData,
-  GitLocalDiskCommitData,
-} from "@root/types/commitData"
+import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
@@ -181,7 +178,7 @@ describe("RepoService", () => {
 
   describe("getLatestCommitOfBranch", () => {
     it("should read the latest commit data from the local Git file system if the repo is whitelisted", async () => {
-      const expected: GitLocalDiskCommitData = {
+      const expected: GitHubCommitData = {
         author: {
           name: "test author",
           email: "test@email.com",

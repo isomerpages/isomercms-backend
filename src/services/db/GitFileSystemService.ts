@@ -501,7 +501,7 @@ export default class GitFileSystemService {
     branchName: string
   ): ResultAsync<GitLocalDiskCommitData, GitFileSystemError> {
     return ResultAsync.fromPromise(
-      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(branchName).log(),
+      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
       (error) => {
         if (error instanceof GitError) {
           return new GitFileSystemError(error.message)
@@ -511,6 +511,7 @@ export default class GitFileSystemService {
       }
     ).andThen((logSummary) => {
       const possibleCommit = logSummary.latest
+      console.log(`POSSIBLE COMMIT`, possibleCommit)
       if (this.isGitLocalDiskRawCommitData(possibleCommit)) {
         return okAsync({
           author: {

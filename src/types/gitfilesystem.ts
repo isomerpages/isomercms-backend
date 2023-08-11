@@ -8,4 +8,9 @@ export type GitDirectoryItem = {
   type: "file" | "dir"
   sha: string
   path: string
+  size: number
+}
+
+export type GitCommitResult = {
+  newSha: string
 }

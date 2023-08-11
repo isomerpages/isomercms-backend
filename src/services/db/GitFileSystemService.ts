@@ -483,6 +483,7 @@ export default class GitFileSystemService {
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     return (
       !!logFields &&
+      typeof logFields === "object" &&
       (logFields as DefaultLogFields).author_name !== undefined &&
       (logFields as DefaultLogFields).author_email !== undefined &&
       (logFields as DefaultLogFields).date !== undefined &&

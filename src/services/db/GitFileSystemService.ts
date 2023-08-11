@@ -46,13 +46,16 @@ export default class GitFileSystemService {
     return ResultAsync.fromPromise(
       this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkIsRepo(),
       (error) => {
-        if (error instanceof GitError) {
-          return new GitFileSystemError(error.message)
-        }
-
         logger.error(
           `Error when checking if ${repoName} is a Git repo: ${error}`
         )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to determine if directory is Git repo"
+          )
+        }
+
         return new GitFileSystemError("An unknown error occurred")
       }
     )
@@ -66,11 +69,12 @@ export default class GitFileSystemService {
     return ResultAsync.fromPromise(
       this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).remote(["get-url", "origin"]),
       (error) => {
+        logger.error(`Error when checking origin remote URL: ${error}`)
+
         if (error instanceof GitError) {
-          return new GitFileSystemError(error.message)
+          return new GitFileSystemError("Unable to determine origin remote URL")
         }
 
-        logger.error(`Error when checking origin remote URL: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     ).map((remoteUrl) => !!remoteUrl && remoteUrl.trim() === originUrl)
@@ -79,11 +83,12 @@ export default class GitFileSystemService {
   // Determine if the folder is a valid Git repository
   isValidGitRepo(repoName: string): ResultAsync<boolean, GitFileSystemError> {
     const safeExistsSync = Result.fromThrowable(fs.existsSync, (error) => {
+      logger.error(`Error when checking if ${repoName} exists: ${error}`)
+
       if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError(error.message)
+        return new GitFileSystemError("Unable to determine if directory exists")
       }
 
-      logger.error(`Error when checking if ${repoName} exists: ${error}`)
       return new GitFileSystemError("An unknown error occurred")
     })
 
@@ -125,11 +130,12 @@ export default class GitFileSystemService {
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
         .revparse(["--abbrev-ref", "HEAD"]),
       (error) => {
+        logger.error(`Error when getting current branch: ${error}`)
+
         if (error instanceof GitError) {
-          return new GitFileSystemError(error.message)
+          return new GitFileSystemError("Unable to determine current branch")
         }
 
-        logger.error(`Error when getting current branch: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     ).andThen((currentBranch) => {
@@ -137,11 +143,12 @@ export default class GitFileSystemService {
         return ResultAsync.fromPromise(
           this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF),
           (error) => {
+            logger.error(`Error when checking out ${BRANCH_REF}: ${error}`)
+
             if (error instanceof GitError) {
-              return new GitFileSystemError(error.message)
+              return new GitFileSystemError("Unable to checkout branch")
             }
 
-            logger.error(`Error when checking out ${BRANCH_REF}: ${error}`)
             return new GitFileSystemError("An unknown error occurred")
           }
         ).andThen(() => okAsync<true>(true))
@@ -161,11 +168,12 @@ export default class GitFileSystemService {
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
         .revparse([`HEAD:${filePath}`]),
       (error) => {
+        logger.error(`Error when getting Git blob hash: ${error}`)
+
         if (error instanceof GitError) {
-          return new GitFileSystemError(error.message)
+          return new GitFileSystemError("Unable to determine Git blob hash")
         }
 
-        logger.error(`Error when getting Git blob hash: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     )
@@ -182,11 +190,13 @@ export default class GitFileSystemService {
         if (error instanceof Error && error.message.includes("ENOENT")) {
           return new NotFoundError("File/Directory does not exist")
         }
-        if (error instanceof Error) {
-          return new GitFileSystemError(error.message)
-        }
 
         logger.error(`Error when reading ${filePath}: ${error}`)
+
+        if (error instanceof Error) {
+          return new GitFileSystemError("Unable to read file/directory")
+        }
+
         return new GitFileSystemError("An unknown error occurred")
       }
     )
@@ -204,11 +214,12 @@ export default class GitFileSystemService {
         .reset(["--hard", commitSha])
         .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE),
       (error) => {
+        logger.error(`Error when rolling back to ${commitSha}: ${error}`)
+
         if (error instanceof GitError) {
-          return new GitFileSystemError(error.message)
+          return new GitFileSystemError("Unable to rollback to original state")
         }
 
-        logger.error(`Error when rolling back to ${commitSha}: ${error}`)
         return new GitFileSystemError("An unknown error occurred")
       }
     ).andThen(() => okAsync<true>(true))
@@ -218,11 +229,12 @@ export default class GitFileSystemService {
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
     const safeExistsSync = Result.fromThrowable(fs.existsSync, (error) => {
+      logger.error(`Error when checking if ${repoName} exists: ${error}`)
+
       if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError(error.message)
+        return new GitFileSystemError("Unable to determine if directory exists")
       }
 
-      logger.error(`Error when checking if ${repoName} exists: ${error}`)
       return new GitFileSystemError("An unknown error occurred")
     })
 
@@ -235,11 +247,12 @@ export default class GitFileSystemService {
               .cwd(`${EFS_VOL_PATH}/${repoName}`)
               .checkout(BRANCH_REF),
             (error) => {
+              logger.error(`Error when cloning ${repoName}: ${error}`)
+
               if (error instanceof GitError) {
-                return new GitFileSystemError(error.message)
+                return new GitFileSystemError("Unable to clone repo")
               }
 
-              logger.error(`Error when cloning ${repoName}: ${error}`)
               return new GitFileSystemError("An unknown error occurred")
             }
           ).map(() => `${EFS_VOL_PATH}/${repoName}`)
@@ -306,11 +319,15 @@ export default class GitFileSystemService {
             ) {
               return false
             }
-            if (error instanceof GitError) {
-              return new GitFileSystemError(error.message)
-            }
 
             logger.error(`Error when pulling ${repoName}: ${error}`)
+
+            if (error instanceof GitError) {
+              return new GitFileSystemError(
+                "Unable to pull latest changes of repo"
+              )
+            }
+
             return new GitFileSystemError("An unknown error occurred")
           }
         )
@@ -340,8 +357,11 @@ export default class GitFileSystemService {
           this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
           (error) => {
             logger.error(`Error when pushing ${repoName}: ${error}`)
+
             if (error instanceof GitError) {
-              return new GitFileSystemError(error.message)
+              return new GitFileSystemError(
+                "Unable to push latest changes of repo"
+              )
             }
 
             return new GitFileSystemError("An unknown error occurred")
@@ -395,11 +415,14 @@ export default class GitFileSystemService {
               .add(pathSpec)
               .commit(commitMessage),
             (error) => {
+              logger.error(`Error when committing ${repoName}: ${error}`)
+
               if (error instanceof GitError) {
-                return new GitFileSystemNeedsRollbackError(error.message)
+                return new GitFileSystemNeedsRollbackError(
+                  "Unable to commit changes"
+                )
               }
 
-              logger.error(`Error when committing ${repoName}: ${error}`)
               return new GitFileSystemNeedsRollbackError(
                 "An unknown error occurred"
               )
@@ -429,11 +452,13 @@ export default class GitFileSystemService {
           if (error instanceof Error && error.message.includes("ENOENT")) {
             return new NotFoundError("File does not exist")
           }
-          if (error instanceof Error) {
-            return new GitFileSystemError(error.message)
-          }
 
           logger.error(`Error when reading ${filePath}: ${error}`)
+
+          if (error instanceof Error) {
+            return new GitFileSystemError("Unable to read file")
+          }
+
           return new GitFileSystemError("An unknown error occurred")
         }
       ),
@@ -470,11 +495,12 @@ export default class GitFileSystemService {
             withFileTypes: true,
           }),
           (error) => {
+            logger.error(`Error when reading ${directoryPath}: ${error}`)
+
             if (error instanceof Error) {
-              return new GitFileSystemError(error.message)
+              return new GitFileSystemError("Unable to read directory")
             }
 
-            logger.error(`Error when reading ${directoryPath}: ${error}`)
             return new GitFileSystemError("An unknown error occurred")
           }
         )
@@ -560,11 +586,14 @@ export default class GitFileSystemService {
             "utf-8"
           ),
           (error) => {
+            logger.error(`Error when updating ${filePath}: ${error}`)
+
             if (error instanceof Error) {
-              return new GitFileSystemNeedsRollbackError(error.message)
+              return new GitFileSystemNeedsRollbackError(
+                "Unable to update file on disk"
+              )
             }
 
-            logger.error(`Error when updating ${filePath}: ${error}`)
             return new GitFileSystemNeedsRollbackError(
               "An unknown error occurred"
             )
@@ -614,10 +643,14 @@ export default class GitFileSystemService {
     return ResultAsync.fromPromise(
       this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
       (error) => {
-        if (error instanceof GitError) {
-          return new GitFileSystemError(error.message)
-        }
         logger.error(`Error when getting latest commit of branch: ${error}`)
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to retrieve branch log info from disk"
+          )
+        }
+
         return new GitFileSystemError("An unknown error occurred")
       }
     ).andThen((logSummary) => {

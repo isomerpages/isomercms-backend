@@ -9,7 +9,7 @@ import {
   Result,
   ResultAsync,
 } from "neverthrow"
-import { GitError, SimpleGit } from "simple-git"
+import { GitError, SimpleGit, DefaultLogFields } from "simple-git"
 
 import { config } from "@config/config"
 
@@ -21,6 +21,7 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { NotFoundError } from "@root/errors/NotFoundError"
+import { GitHubCommitData } from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import { IsomerCommitMessage } from "@root/types/github"
 
@@ -479,6 +480,50 @@ export default class GitFileSystemService {
   // TODO: Delete a file
   async delete() {}
 
-  // TODO: Get the latest commit of branch
-  async getLatestCommitOfBranch() {}
+  isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
+    const c = logFields as DefaultLogFields
+    return (
+      !!logFields &&
+      typeof logFields === "object" &&
+      typeof c.author_name === "string" &&
+      typeof c.author_email === "string" &&
+      typeof c.date === "string" &&
+      typeof c.message === "string" &&
+      typeof c.hash === "string"
+    )
+  }
+
+  getLatestCommitOfBranch(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<GitHubCommitData, GitFileSystemError> {
+    return ResultAsync.fromPromise(
+      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
+      (error) => {
+        if (error instanceof GitError) {
+          return new GitFileSystemError(error.message)
+        }
+        logger.error(`Error when getting latest commit of branch: ${error}`)
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).andThen((logSummary) => {
+      const possibleCommit = logSummary.latest
+      if (this.isDefaultLogFields(possibleCommit)) {
+        return okAsync({
+          author: {
+            name: possibleCommit.author_name,
+            email: possibleCommit.author_email,
+            date: possibleCommit.date,
+          },
+          message: possibleCommit.message,
+          sha: possibleCommit.hash,
+        })
+      }
+      return errAsync(
+        new GitFileSystemError(
+          "Unable to retrieve latest commit info from disk"
+        )
+      )
+    })
+  }
 }

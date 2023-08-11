@@ -5,6 +5,7 @@ import config from "@config/config"
 import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 
 import GitFileSystemService from "./GitFileSystemService"
@@ -203,8 +204,25 @@ export default class RepoService extends GitHubService {
     return await super.getRepoState(sessionData)
   }
 
-  async getLatestCommitOfBranch(sessionData: any, branch: any): Promise<any> {
-    return await super.getLatestCommitOfBranch(sessionData, branch)
+  async getLatestCommitOfBranch(
+    sessionData: UserWithSiteSessionData,
+    branchName: string
+  ): Promise<GitHubCommitData> {
+    const { siteName } = sessionData
+    if (this.isRepoWhitelisted(siteName)) {
+      logger.info(
+        `Getting latest commit of branch ${branchName} for site ${siteName} from local Git file system`
+      )
+      const result = await this.gitFileSystemService.getLatestCommitOfBranch(
+        siteName,
+        branchName
+      )
+      if (result.isErr()) {
+        throw result.error
+      }
+      return result.value
+    }
+    return await super.getLatestCommitOfBranch(sessionData, branchName)
   }
 
   async getTree(

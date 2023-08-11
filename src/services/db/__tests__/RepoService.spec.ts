@@ -11,6 +11,7 @@ import {
   mockUserWithSiteSessionData,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
@@ -28,6 +29,7 @@ const MockAxiosInstance = {
 const MockGitFileSystemService = {
   read: jest.fn(),
   listDirectoryContents: jest.fn(),
+  getLatestCommitOfBranch: jest.fn(),
 }
 
 const RepoService = new _RepoService(
@@ -170,6 +172,57 @@ describe("RepoService", () => {
         directoryName: "test",
       })
 
+      expect(actual).toEqual(expected)
+    })
+  })
+
+  describe("getLatestCommitOfBranch", () => {
+    it("should read the latest commit data from the local Git file system if the repo is whitelisted", async () => {
+      const expected: GitHubCommitData = {
+        author: {
+          name: "test author",
+          email: "test@email.com",
+          date: "2023-07-20T11:25:05+08:00",
+        },
+        sha: "test-sha",
+        message: "test message",
+      }
+      MockGitFileSystemService.getLatestCommitOfBranch.mockResolvedValueOnce(
+        okAsync(expected)
+      )
+
+      const actual = await RepoService.getLatestCommitOfBranch(
+        mockUserWithSiteSessionData,
+        "master"
+      )
+      expect(actual).toEqual(expected)
+    })
+
+    it("should read latest commit data from GitHub if the repo is not whitelisted", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+      const expected: GitHubCommitData = {
+        author: {
+          name: "test author",
+          email: "test@email.com",
+          date: "2023-07-20T11:25:05+08:00",
+        },
+        message: "test message",
+      }
+      const gitHubServiceReadDirectory = jest.spyOn(
+        GitHubService.prototype,
+        "getLatestCommitOfBranch"
+      )
+      gitHubServiceReadDirectory.mockResolvedValueOnce(expected)
+      const actual = await RepoService.getLatestCommitOfBranch(
+        sessionData,
+        "master"
+      )
       expect(actual).toEqual(expected)
     })
   })

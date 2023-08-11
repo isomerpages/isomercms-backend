@@ -31,6 +31,7 @@ import { AmplifyError } from "@root/types/amplify"
 import {
   DnsResultsForSite,
   SiteLaunchDto,
+  SiteLaunchStatus,
   SiteLaunchStatusObject,
 } from "@root/types/siteInfo"
 import { SiteLaunchMessage } from "@root/types/siteLaunch"
@@ -355,12 +356,17 @@ export default class InfraService {
       return errAsync(generatedDnsRecords.error)
     }
 
+    let jobStatus: SiteLaunchStatus
+    if (site.value.jobStatus === JobStatus.Ready) {
+      jobStatus = SiteLaunchStatusObject.Launched
+    } else if (site.value.jobStatus === JobStatus.Failed) {
+      jobStatus = SiteLaunchStatusObject.Failure
+    } else {
+      jobStatus = SiteLaunchStatusObject.Launching
+    }
+
     return okAsync<SiteLaunchDto>({
-      siteStatus:
-        // status is only successful iff job is ready
-        site.value.jobStatus === JobStatus.Ready
-          ? SiteLaunchStatusObject.Launched
-          : SiteLaunchStatusObject.Launching,
+      siteStatus: jobStatus,
       dnsRecords: generatedDnsRecords.value.dnsRecords,
       siteUrl: generatedDnsRecords.value.siteUrl,
     })

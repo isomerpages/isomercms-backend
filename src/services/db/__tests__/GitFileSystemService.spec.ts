@@ -1,4 +1,5 @@
 import mockFs from "mock-fs"
+import { okAsync } from "neverthrow"
 import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"
@@ -674,6 +675,99 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("create", () => {
+    it("should create a file successfully", async () => {
+      const expectedSha = "fake-hash"
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkout: jest.fn().mockResolvedValueOnce(undefined),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockResolvedValueOnce({ commit: expectedSha }),
+        }),
+      })
+
+      const expected = {
+        sha: expectedSha,
+      }
+      const actual = await GitFileSystemService.create({
+        repoName: "fake-repo",
+        userId: "fake-user-id",
+        content: "fake content",
+        directoryName: "fake-dir",
+        fileName: "create-file",
+      })
+
+      expect(actual._unsafeUnwrap()).toEqual(expected)
+    })
+
+    it("should create a directory and a file if the directory doesn't already exist", async () => {
+      const expectedSha = "fake-hash"
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockRejectedValueOnce(new GitError()),
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkout: jest.fn().mockResolvedValueOnce(undefined),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockResolvedValueOnce({ commit: expectedSha }),
+        }),
+      })
+
+      const expected = {
+        sha: expectedSha,
+      }
+      const actual = await GitFileSystemService.create({
+        repoName: "fake-repo",
+        userId: "fake-user-id",
+        content: "fake content",
+        directoryName: "fake-create-dir",
+        fileName: "create-file",
+      })
+
+      expect(actual._unsafeUnwrap()).toEqual(expected)
+    })
+
+    it("should return an error if the file already exists", async () => {
+      const actual = await GitFileSystemService.create({
+        repoName: "fake-repo",
+        userId: "fake-user-id",
+        content: "fake content",
+        directoryName: "fake-dir",
+        fileName: "fake-file",
+      })
+
+      expect(actual.isErr()).toBeTrue()
     })
   })
 

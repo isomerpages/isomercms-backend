@@ -394,49 +394,40 @@ describe("RepoService", () => {
 
       const actual = await RepoService.readMediaDirectory(
         mockUserWithSiteSessionData,
-        {
-          readFromGithub: false,
-          directoryInfo: {
-            directoryName: "images",
-          },
-        }
+        "images"
       )
 
       expect(actual).toEqual(expected)
     })
-  })
 
-  it("should return an array of files and directories from GitHub if repo is not whitelisted", async () => {
-    const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-      githubId: mockGithubId,
-      accessToken: mockAccessToken,
-      isomerUserId: mockIsomerUserId,
-      email: mockEmail,
-      siteName: "not-whitelisted",
-    })
+    it("should return an array of files and directories from GitHub if repo is not whitelisted", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
 
-    const image: MediaFileOutput = {
-      name: "image-name",
-      sha: "test-sha",
-      mediaUrl: "base64ofimage",
-      mediaPath: "images/image-name.jpg",
-      type: "file",
-    }
-    const dir: MediaDirOutput = {
-      name: "imageDir",
-      type: "dir",
-    }
-    const expected = [image, dir]
+      const image: MediaFileOutput = {
+        name: "image-name",
+        sha: "test-sha",
+        mediaUrl: "base64ofimage",
+        mediaPath: "images/image-name.jpg",
+        type: "file",
+      }
+      const dir: MediaDirOutput = {
+        name: "imageDir",
+        type: "dir",
+      }
+      const expected = [image, dir]
 
-    const getMediaFileInfo = jest
-      .spyOn(mediaUtils, "getMediaFileInfo")
-      .mockResolvedValueOnce(image)
-
-    const actual = await RepoService.readMediaDirectory(sessionData, {
-      readFromGithub: true,
-      directoryInfo: {
-        directoryName: "images",
-        files: [
+      const gitHubServiceGetRepoInfo = jest
+        .spyOn(GitHubService.prototype, "getRepoInfo")
+        .mockResolvedValueOnce({ private: false })
+      const gitHubServiceReadDirectory = jest
+        .spyOn(GitHubService.prototype, "readDirectory")
+        .mockResolvedValueOnce([
           {
             name: "image-name",
             type: "file",
@@ -455,13 +446,18 @@ describe("RepoService", () => {
             sha: "test-sha",
             path: "images/.keep",
           },
-        ],
-        mediaType: "string",
-        isPrivate: false,
-      },
-    })
+        ])
 
-    expect(actual).toEqual(expected)
-    expect(getMediaFileInfo).toBeCalledTimes(1)
+      const repoServiceReadMediaFile = jest
+        .spyOn(_RepoService.prototype, "readMediaFile")
+        .mockResolvedValueOnce(image)
+
+      const actual = await RepoService.readMediaDirectory(sessionData, "images")
+
+      expect(actual).toEqual(expected)
+      expect(gitHubServiceGetRepoInfo).toBeCalledTimes(1)
+      expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
+      expect(repoServiceReadMediaFile).toBeCalledTimes(1)
+    })
   })
 })

@@ -6,11 +6,7 @@ import config from "@config/config"
 import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import {
-  MediaType,
-  ReadMediaDirectoryInput,
-  ReadMediaDirectoryOutput,
-} from "@root/types"
+import { MediaType, ReadMediaDirectoryOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   GitCommitResult,
@@ -232,7 +228,7 @@ export default class RepoService extends GitHubService {
   async readMediaDirectory(
     sessionData: UserWithSiteSessionData,
     directoryName: string
-  ): Promise<any> {
+  ): Promise<ReadMediaDirectoryOutput[]> {
     const { siteName } = sessionData
     logger.debug(`Reading media directory: ${directoryName}`)
 
@@ -271,22 +267,9 @@ export default class RepoService extends GitHubService {
           }
         }
 
-        // GGS flow
-        if (this.isRepoWhitelisted(siteName)) {
-          return this.readMediaFile(sessionData, {
-            fileName: curr.name,
-            directoryName,
-          })
-        }
-
-        // GitHub flow
-        const mediaType = directoryName.split("/")[0]
-        return getMediaFileInfo({
-          file: curr,
-          siteName,
+        return this.readMediaFile(sessionData, {
+          fileName: curr.name,
           directoryName,
-          mediaType: mediaType as MediaType,
-          isPrivate,
         })
       })
     )

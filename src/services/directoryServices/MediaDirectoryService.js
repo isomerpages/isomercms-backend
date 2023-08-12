@@ -2,9 +2,6 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const { isMediaPathValid } = require("@validators/validators")
 
-const { isGGSWhitelistedRepo } = require("@root/utils/ggs-utils")
-const { getMediaFileInfo } = require("@root/utils/media-utils")
-
 const PLACEHOLDER_FILE_NAME = ".keep"
 
 class MediaDirectoryService {

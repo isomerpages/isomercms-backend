@@ -12,8 +12,6 @@ const {
 const { isMediaPathValid } = require("@validators/validators")
 
 const { getFileExt } = require("@root/utils/files")
-const { isGGSWhitelistedRepo } = require("@root/utils/ggs-utils")
-const { getMediaFileInfo } = require("@root/utils/media-utils")
 
 class MediaFileService {
   constructor({ gitHubService }) {

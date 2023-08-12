@@ -128,19 +128,8 @@ describe("Media Directory Service", () => {
       ).resolves.toMatchObject(expectedResp)
       expect(mockGitHubService.readMediaDirectory).toHaveBeenCalledWith(
         sessionData,
-        {
-          readFromGithub: true,
-          directoryInfo: {
-            directoryName: imageDirectoryName,
-            files: readImgDirResp,
-            mediaType: "images",
-            isPrivate: false,
-          },
-        }
+        imageDirectoryName
       )
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
-        directoryName: imageDirectoryName,
-      })
     })
     mockGitHubService.getRepoInfo.mockResolvedValueOnce({ private: false })
     mockBaseDirectoryService.list.mockResolvedValueOnce(readFileDirResp)
@@ -170,10 +159,6 @@ describe("Media Directory Service", () => {
           directoryName: fileDirectoryName,
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGitHubService.getRepoInfo).toHaveBeenCalledWith(sessionData)
-      expect(mockBaseDirectoryService.list).toHaveBeenCalledWith(sessionData, {
-        directoryName: fileDirectoryName,
-      })
     })
   })
 

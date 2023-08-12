@@ -10,8 +10,8 @@ import {
   mockUserWithSiteSessionData,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { GitHubCommitData } from "@root/types/commitData"
 import { ItemType, MediaFileOutput, MediaDirOutput } from "@root/types"
+import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import * as mediaUtils from "@root/utils/media-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
@@ -32,7 +32,6 @@ const MockGitFileSystemService = {
   readMediaFile: jest.fn(),
   listDirectoryContents: jest.fn(),
   push: jest.fn(),
-  read: jest.fn(),
   update: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
 }

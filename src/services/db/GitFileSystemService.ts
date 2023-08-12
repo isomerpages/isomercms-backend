@@ -46,18 +46,6 @@ export default class GitFileSystemService {
     this.git = git
   }
 
-  private safeExistsSync(path: string): Result<boolean, GitFileSystemError> {
-    const res = Result.fromThrowable(fs.existsSync, (error) => {
-      if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError(error.message)
-      }
-
-      logger.error(`Error when checking if ${path} exists: ${error}`)
-      return new GitFileSystemError("An unknown error occurred")
-    })
-    return res(path)
-  }
-
   isGitInitialized(repoName: string): ResultAsync<boolean, GitFileSystemError> {
     return ResultAsync.fromPromise(
       this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkIsRepo(),
@@ -98,16 +86,22 @@ export default class GitFileSystemService {
 
   // Determine if the folder is a valid Git repository
   isValidGitRepo(repoName: string): ResultAsync<boolean, GitFileSystemError> {
-    return this.safeExistsSync(`${EFS_VOL_PATH}/${repoName}`)
-      .andThen((isFolderExisting) => {
-        if (!isFolderExisting) {
+    return this.getFilePathStats(repoName, "")
+      .andThen((stats) => {
+        if (!stats.isDirectory()) {
           // Return as an error to prevent further processing
           // The function will eventually return false
-          return err<never, false>(false)
+          return errAsync(false)
         }
-        return ok(true)
+        return okAsync(true)
       })
-      .asyncAndThen(() => this.isGitInitialized(repoName))
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return err(false)
+        }
+        return err(error)
+      })
+      .andThen(() => this.isGitInitialized(repoName))
       .andThen((isGitInitialized) => {
         if (!isGitInitialized) {
           return err<never, false>(false)
@@ -235,9 +229,16 @@ export default class GitFileSystemService {
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
 
-    return this.safeExistsSync(`${EFS_VOL_PATH}/${repoName}`).asyncAndThen(
-      (isFolderExisting) => {
-        if (!isFolderExisting) {
+    return this.getFilePathStats(repoName, "")
+      .andThen((stats) => ok(stats.isDirectory()))
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return ok(false)
+        }
+        return err(error)
+      })
+      .andThen((isDirectory) => {
+        if (!isDirectory) {
           return ResultAsync.fromPromise(
             this.git
               .clone(originUrl, `${EFS_VOL_PATH}/${repoName}`)
@@ -277,8 +278,7 @@ export default class GitFileSystemService {
             }
             return okAsync(`${EFS_VOL_PATH}/${repoName}`)
           })
-      }
-    )
+      })
   }
 
   // Pull the latest changes from upstream Git hosting provider
@@ -430,8 +430,7 @@ export default class GitFileSystemService {
     })
   }
 
-  // TODO: Creates either directory or file
-  // ResourceDirectoryService used this to create a directory + file at the same time
+  // Creates a file and the associated directory if it doesn't exist
   create({
     repoName,
     userId,
@@ -442,7 +441,7 @@ export default class GitFileSystemService {
     repoName: string
     userId: string
     content: string
-    directoryName?: string
+    directoryName: string
     fileName: string
   }): ResultAsync<
     { sha: string },
@@ -451,39 +450,50 @@ export default class GitFileSystemService {
     const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
     const pathToEfsDir = `${EFS_VOL_PATH}/${repoName}/${directoryName}/`
     const pathToEfsFile = `${EFS_VOL_PATH}/${repoName}/${filePath}`
-    // Validation and sanitisation of media already done
     const encodedContent = content
-    const createDirectoryAsync = (): ResultAsync<void, GitFileSystemError> => {
-      if (directoryName && !fs.existsSync(pathToEfsDir)) {
-        return ResultAsync.fromPromise(
-          fs.promises.mkdir(pathToEfsDir),
-          (error) => {
-            logger.error(
-              `Error occurred while creating ${pathToEfsDir} directory: ${error}`
-            )
-            return new GitFileSystemError("An unknown error occurred")
-          }
-        )
-      }
-      return okAsync(undefined)
-    }
     let oldStateSha = ""
 
     return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
       .andThen((latestCommit) => {
-        oldStateSha = latestCommit
+        const { sha } = latestCommit
+        if (!sha) {
+          return errAsync(new GitFileSystemError("An unknown error occurred"))
+        }
+        oldStateSha = sha
         return okAsync(true)
       })
-      .andThen(() => createDirectoryAsync())
-      .andThen(() => this.safeExistsSync(pathToEfsFile))
-      .andThen((hasFile) => {
-        if (hasFile)
+      .andThen(() => this.getFilePathStats(repoName, directoryName))
+      .andThen(() => ok(""))
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          // Create directory if it does not already exist
+          try {
+            fs.promises.mkdir(pathToEfsDir)
+            return ok("")
+          } catch (mkdirErr) {
+            logger.error(
+              `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`
+            )
+            return err(new GitFileSystemError("An unknown error occurred"))
+          }
+        }
+        return err(error)
+      })
+      .andThen(() => this.getFilePathStats(repoName, filePath))
+      .andThen((stats) => {
+        if (stats.isFile())
           return err(
             new ConflictError(
               `File ${filePath} already exists in repo ${repoName}`
             )
           )
         return ok("")
+      })
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return ok("")
+        }
+        return err(error)
       })
       .andThen(() =>
         ResultAsync.fromPromise(

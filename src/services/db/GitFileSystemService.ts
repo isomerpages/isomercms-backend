@@ -512,7 +512,7 @@ export default class GitFileSystemService {
       siteName,
       `${directoryName}/${fileName}`,
       "base64"
-    ).andThen((file) => {
+    ).andThen((file: GitFile) => {
       const fileType = "file" as const
       const fileExtResult = this.getFileExtension(fileName)
       if (fileExtResult.isErr()) return errAsync(fileExtResult.error)

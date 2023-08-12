@@ -28,5 +28,3 @@ export interface MediaDirOutput {
   name: string
   type: ItemType
 }
-
-export type ReadMediaDirectoryOutput = (MediaDirOutput | MediaFileOutput)[]

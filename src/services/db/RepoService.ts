@@ -6,7 +6,7 @@ import config from "@config/config"
 import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { MediaType, ReadMediaDirectoryOutput } from "@root/types"
+import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   GitCommitResult,
@@ -155,7 +155,7 @@ export default class RepoService extends GitHubService {
   async readMediaFile(
     sessionData: UserWithSiteSessionData,
     { fileName, directoryName }: { fileName: string; directoryName: string }
-  ): Promise<any> {
+  ): Promise<MediaFileOutput> {
     logger.debug(`Reading media file: ${fileName}`)
     logger.debug(`Reading directoryName: ${directoryName}`)
     const { siteName } = sessionData
@@ -228,7 +228,7 @@ export default class RepoService extends GitHubService {
   async readMediaDirectory(
     sessionData: UserWithSiteSessionData,
     directoryName: string
-  ): Promise<ReadMediaDirectoryOutput[]> {
+  ): Promise<(MediaDirOutput | MediaFileOutput)[]> {
     const { siteName } = sessionData
     logger.debug(`Reading media directory: ${directoryName}`)
 

@@ -23,10 +23,12 @@ import { NotFoundError } from "@errors/NotFoundError"
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
-import { GitHubCommitData } from "@root/types/commitData"
+import { MediaTypeError } from "@root/errors/MediaTypeError"
 import { MediaFileInput, MediaFileOutput } from "@root/types"
+import { GitHubCommitData } from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
+import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
 /**
  * Some notes:
@@ -475,22 +477,29 @@ export default class GitFileSystemService {
     })
   }
 
-  getFileExtension(fileName: string): string {
+  getFileExtension(fileName: string): Result<string, MediaTypeError> {
     const parts = fileName.split(".")
     if (parts.length > 1) {
-      return parts[parts.length - 1]
+      return ok(parts[parts.length - 1])
     }
-    return "" // No extension found
+    return err(new MediaTypeError("Unable to find file extension")) // No extension found
   }
 
-  getMimeType(fileExtension: string): string {
+  getMimeType(fileExtension: string): Result<string, MediaTypeError> {
+    if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
+      err(new MediaTypeError("Unsupported file extension found"))
+    }
     switch (fileExtension) {
       case "svg":
-        return "image/svg+xml"
+        return ok("image/svg+xml")
       case "ico":
-        return "image/vnd.microsoft.icon"
+        return ok("image/vnd.microsoft.icon")
+      case "jpg":
+        return ok("image/jpeg")
+      case "tif":
+        return ok("image/tiff")
       default:
-        return `image/${fileExtension}`
+        return ok(`image/${fileExtension}`)
     }
   }
 
@@ -498,16 +507,20 @@ export default class GitFileSystemService {
     siteName: string,
     directoryName: string,
     fileName: string
-  ): ResultAsync<MediaFileOutput, GitFileSystemError | NotFoundError> {
+  ): ResultAsync<MediaFileOutput, GitFileSystemError | MediaTypeError> {
     return this.read(
       siteName,
       `${directoryName}/${fileName}`,
       "base64"
     ).andThen((file) => {
       const fileType = "file" as const
-      const fileExt = this.getFileExtension(fileName)
-      const mimeType = this.getMimeType(fileExt)
-      const dataUrlPrefix = `data:${mimeType};base64`
+      const fileExtResult = this.getFileExtension(fileName)
+      if (fileExtResult.isErr()) return errAsync(fileExtResult.error)
+
+      const mimeTypeResult = this.getMimeType(fileExtResult.value)
+      if (mimeTypeResult.isErr()) return errAsync(mimeTypeResult.error)
+
+      const dataUrlPrefix = `data:${mimeTypeResult.value};base64`
       return okAsync({
         name: fileName,
         sha: file.sha,

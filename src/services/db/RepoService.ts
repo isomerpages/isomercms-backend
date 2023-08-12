@@ -163,7 +163,7 @@ export default class RepoService extends GitHubService {
     // fetch from local disk
     if (this.isRepoWhitelisted(siteName)) {
       logger.info(
-        `Reading media file from disk. Sitname: ${siteName}, directory name: ${directoryName}, fileName: ${fileName},`
+        `Reading media file from disk. Site name: ${siteName}, directory name: ${directoryName}, file name: ${fileName},`
       )
       const result = await this.gitFileSystemService.readMediaFile(
         siteName,

@@ -934,6 +934,58 @@ describe("GitFileSystemService", () => {
 
       expect(actual.isErr()).toBeTrue()
     })
+
+    it("should rollback changes if an error occurred when committing", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkout: jest.fn().mockResolvedValueOnce(undefined),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockRejectedValueOnce(new GitError()),
+        }),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        reset: jest.fn().mockReturnValueOnce({
+          clean: jest.fn().mockResolvedValueOnce(undefined),
+        }),
+      })
+      const spyRollback = jest.spyOn(GitFileSystemService, "rollback")
+
+      const actual = await GitFileSystemService.create({
+        repoName: "fake-repo",
+        userId: "fake-user-id",
+        content: "fake content",
+        directoryName: "fake-dir",
+        fileName: "create-file-rollback",
+      })
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")
+    })
   })
 
   describe("read", () => {

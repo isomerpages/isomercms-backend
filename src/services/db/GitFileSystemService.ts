@@ -519,8 +519,7 @@ export default class GitFileSystemService {
       )
       .map((commit) => ({ sha: commit }))
       .orElse((error) => {
-        if (false) {
-          // TODO: replace with unique rollback error
+        if (error instanceof GitFileSystemNeedsRollbackError) {
           return this.rollback(repoName, oldStateSha).andThen(() =>
             errAsync(new GitFileSystemError(error.message))
           )

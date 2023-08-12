@@ -232,7 +232,7 @@ export default class RepoService extends GitHubService {
     const { siteName } = sessionData
     logger.debug(`Reading media directory: ${directoryName}`)
 
-    let filteredResult: any[] = []
+    let filteredResult: GitDirectoryItem[] = []
     let isPrivate = false
     const filterLogic = (file: any) =>
       (file.type === "file" || file.type === "dir") &&

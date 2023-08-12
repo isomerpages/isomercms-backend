@@ -231,16 +231,13 @@ export default class RepoService extends GitHubService {
 
   async readMediaDirectory(
     sessionData: UserWithSiteSessionData,
-    readMediaInput: ReadMediaDirectoryInput
-  ): Promise<ReadMediaDirectoryOutput[]> {
-    const { directoryName } = readMediaInput.directoryInfo
-
-    logger.debug(`Reading media directory: ${directoryName}`)
+    directoryName: string
+  ): Promise<any> {
     const { siteName } = sessionData
+    logger.debug(`Reading media directory: ${directoryName}`)
 
-    // making as any to support incoming data from MediaDirectoryService
     let filteredResult: any[] = []
-
+    let isPrivate = false
     const filterLogic = (file: any) =>
       (file.type === "file" || file.type === "dir") &&
       file.name !== PLACEHOLDER_FILE_NAME
@@ -256,11 +253,16 @@ export default class RepoService extends GitHubService {
       }
 
       filteredResult = result.value.filter(filterLogic)
-    } else if (readMediaInput.readFromGithub) {
-      filteredResult = readMediaInput.directoryInfo.files.filter(filterLogic)
+    } else {
+      const repoInfo = await super.getRepoInfo(sessionData)
+      isPrivate = repoInfo.private
+      const files = await super.readDirectory(sessionData, {
+        directoryName,
+      })
+      filteredResult = files.filter(filterLogic)
     }
 
-    const response = Promise.all(
+    return Promise.all(
       filteredResult.map((curr) => {
         if (curr.type === "dir") {
           return {
@@ -269,25 +271,25 @@ export default class RepoService extends GitHubService {
           }
         }
 
+        // GGS flow
         if (this.isRepoWhitelisted(siteName)) {
           return this.readMediaFile(sessionData, {
             fileName: curr.name,
             directoryName,
           })
         }
-        if (readMediaInput.readFromGithub) {
-          return getMediaFileInfo({
-            file: curr,
-            siteName,
-            directoryName,
-            mediaType: readMediaInput.directoryInfo.mediaType as MediaType,
-            isPrivate: readMediaInput.directoryInfo.isPrivate,
-          })
-        }
+
+        // GitHub flow
+        const mediaType = directoryName.split("/")[0]
+        return getMediaFileInfo({
+          file: curr,
+          siteName,
+          directoryName,
+          mediaType: mediaType as MediaType,
+          isPrivate,
+        })
       })
     )
-
-    return response
   }
 
   async update(

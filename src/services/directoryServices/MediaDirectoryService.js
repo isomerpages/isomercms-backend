@@ -32,36 +32,13 @@ class MediaDirectoryService {
   }
 
   async listFiles(sessionData, { directoryName }) {
-    const { siteName } = sessionData
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
-    const mediaType = directoryName.split("/")[0]
 
-    if (isGGSWhitelistedRepo(siteName)) {
-      return await this.gitHubService.readMediaDirectory(sessionData, {
-        readFromGithub: false,
-        directoryInfo: {
-          directoryName,
-        },
-      })
-    }
-
-    const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-      sessionData
+    return await this.gitHubService.readMediaDirectory(
+      sessionData,
+      directoryName
     )
-    const files = await this.listWithDefault(sessionData, {
-      directoryName,
-    })
-
-    return await this.gitHubService.readMediaDirectory(sessionData, {
-      readFromGithub: true,
-      directoryInfo: {
-        directoryName,
-        files,
-        mediaType,
-        isPrivate,
-      },
-    })
   }
 
   async createMediaDirectory(

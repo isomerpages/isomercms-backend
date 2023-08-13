@@ -33,6 +33,7 @@ const MockGitFileSystemService = {
   listDirectoryContents: jest.fn(),
   push: jest.fn(),
   update: jest.fn(),
+  delete: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
 }
 
@@ -458,6 +459,58 @@ describe("RepoService", () => {
       expect(gitHubServiceGetRepoInfo).toBeCalledTimes(1)
       expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
       expect(repoServiceReadMediaFile).toBeCalledTimes(1)
+    })
+  })
+
+  describe("delete", () => {
+    it("should delete a file from Git file system when repo is whitelisted", async () => {
+      MockGitFileSystemService.delete.mockResolvedValueOnce(
+        okAsync("some-fake-sha")
+      )
+
+      await RepoService.delete(mockUserWithSiteSessionData, {
+        sha: "fake-original-sha",
+        fileName: "test.md",
+        directoryName: "pages",
+      })
+
+      expect(MockGitFileSystemService.delete).toBeCalledTimes(1)
+      expect(MockGitFileSystemService.delete).toBeCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        "pages/test.md",
+        "fake-original-sha",
+        mockUserWithSiteSessionData.isomerUserId,
+        false
+      )
+      expect(MockGitFileSystemService.push).toBeCalledTimes(1)
+      expect(MockGitFileSystemService.push).toBeCalledWith(
+        mockUserWithSiteSessionData.siteName
+      )
+    })
+
+    it("should delete a file from GitHub when repo is not whitelisted", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+
+      const gitHubServiceDelete = jest.spyOn(GitHubService.prototype, "delete")
+
+      await RepoService.delete(sessionData, {
+        sha: "fake-original-sha",
+        fileName: "test.md",
+        directoryName: "pages",
+      })
+
+      expect(gitHubServiceDelete).toBeCalledTimes(1)
+      expect(gitHubServiceDelete).toBeCalledWith(sessionData, {
+        sha: "fake-original-sha",
+        fileName: "test.md",
+        directoryName: "pages",
+      })
     })
   })
 })

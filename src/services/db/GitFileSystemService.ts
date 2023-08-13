@@ -754,6 +754,72 @@ export default class GitFileSystemService {
       })
   }
 
+  // Delete a directory
+  deleteDirectory(
+    repoName: string,
+    directoryPath: string,
+    userId: SessionDataProps["isomerUserId"]
+  ): ResultAsync<string, GitFileSystemError | NotFoundError> {
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        // It is guaranteed that the latest commit contains the SHA hash
+        oldStateSha = latestCommit.sha as string
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, directoryPath))
+      .andThen((stats) => {
+        if (!stats.isDirectory()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${directoryPath}" is not a valid  directory in repo "${repoName}"`
+            )
+          )
+        }
+        return okAsync(true)
+      })
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          // equivalent to rm -rf
+          fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`, {
+            recursive: true,
+            force: true,
+          }),
+          (error) => {
+            logger.error(
+              `Error when deleting directory: ${directoryPath} from Git file system: ${error}`
+            )
+            if (error instanceof Error) {
+              return new GitFileSystemNeedsRollbackError(
+                "Unable to delete directory on disk"
+              )
+            }
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
+          }
+        )
+      )
+      .andThen(() =>
+        this.commit(
+          repoName,
+          [directoryPath],
+          userId,
+          `Deleted directory: ${directoryPath}`
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
+
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     const c = logFields as DefaultLogFields
     return (

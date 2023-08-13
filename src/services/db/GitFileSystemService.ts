@@ -678,8 +678,81 @@ export default class GitFileSystemService {
       })
   }
 
-  // TODO: Delete a file
-  async delete() {}
+  // Delete a file
+  delete(
+    repoName: string,
+    filePath: string,
+    oldSha: string,
+    userId: SessionDataProps["isomerUserId"]
+  ): ResultAsync<string, GitFileSystemError | NotFoundError> {
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        // It is guaranteed that the latest commit contains the SHA hash
+        oldStateSha = latestCommit.sha as string
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, filePath))
+      .andThen((stats) => {
+        if (!stats.isFile()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${filePath}" is not a valid file or directory in repo "${repoName}"`
+            )
+          )
+        }
+        return okAsync(true)
+      })
+      .andThen(() =>
+        this.getGitBlobHash(repoName, filePath).andThen((sha) => {
+          if (sha !== oldSha) {
+            return errAsync(
+              new ConflictError(
+                "File has been changed recently, please try again"
+              )
+            )
+          }
+          return okAsync(sha)
+        })
+      )
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${filePath}`),
+          (error) => {
+            logger.error(
+              `Error when deleting ${filePath} from Git file system: ${error}`
+            )
+            if (error instanceof Error) {
+              return new GitFileSystemNeedsRollbackError(
+                "Unable to delete file on disk"
+              )
+            }
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
+          }
+        )
+      )
+      .andThen(() => {
+        const fileName = filePath.split("/").pop()
+        return this.commit(
+          repoName,
+          [filePath],
+          userId,
+          `Delete file: ${fileName}`
+        )
+      })
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
 
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     const c = logFields as DefaultLogFields

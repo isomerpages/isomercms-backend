@@ -303,7 +303,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      // this.gitFileSystemService.push(sessionData.siteName)
       return { newSha: result.value }
     }
 
@@ -315,10 +315,28 @@ export default class RepoService extends GitHubService {
     })
   }
 
+  // deletes a file
   async delete(
-    sessionData: any,
+    sessionData: UserWithSiteSessionData,
     { sha, fileName, directoryName }: any
   ): Promise<any> {
+    if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info("Deleting file in local Git file system")
+      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+      const result = await this.gitFileSystemService.delete(
+        sessionData.siteName,
+        filePath,
+        sha,
+        sessionData.isomerUserId
+      )
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      this.gitFileSystemService.push(sessionData.siteName)
+      return { newSha: result.value }
+    }
     return await super.delete(sessionData, {
       sha,
       fileName,

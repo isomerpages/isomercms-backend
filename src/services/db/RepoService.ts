@@ -319,23 +319,16 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  // deletes a file or directory
-  async delete(
+  async deleteDirectory(
     sessionData: UserWithSiteSessionData,
     {
-      sha,
-      fileName,
       directoryName,
-      isDir = false, // default behaviour is to delete file
-      message = "",
-      githubSessionData = { currentCommitSha: "", treeSha: "" },
+      message,
+      githubSessionData,
     }: {
-      sha: string // empty string for delete dir
-      fileName: string // empty string for delete dir
       directoryName: string
-      isDir: boolean // true for delete dir
-      message: string // exists for delete dir only
-      githubSessionData?: GithubSessionDataProps // exists for delete dir only
+      message: string
+      githubSessionData: GithubSessionDataProps
     }
   ): Promise<any> {
     // helper function for delete directory
@@ -365,45 +358,72 @@ export default class RepoService extends GitHubService {
     }
 
     if (this.isRepoWhitelisted(sessionData.siteName)) {
-      logger.info(
-        `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}, isDir: ${isDir}`
-      )
-      let filePath = directoryName
-
-      if (!isDir) {
-        filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-      }
       const result = await this.gitFileSystemService.delete(
         sessionData.siteName,
-        filePath,
-        sha,
+        directoryName,
+        "",
         sessionData.isomerUserId,
-        isDir
+        true
       )
 
       if (result.isErr()) {
         throw result.error
       }
-      // TODO: uncomment at last
-      // this.gitFileSystemService.push(sessionData.siteName)
+
+      this.gitFileSystemService.push(sessionData.siteName)
 
       // TODO: The below functions are pending (getTree, updateTree and updateRepoState)
-      if (isDir) {
-        await updateTreeAndRepoState()
+      await updateTreeAndRepoState()
+
+      return { newSha: result.value }
+    }
+
+    await updateTreeAndRepoState()
+  }
+
+  // deletes a file
+  async delete(
+    sessionData: UserWithSiteSessionData,
+    {
+      sha,
+      fileName,
+      directoryName,
+    }: {
+      sha: string
+      fileName: string
+      directoryName: string
+    }
+  ): Promise<any> {
+    if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info(
+        `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
+      )
+
+      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+
+      const result = await this.gitFileSystemService.delete(
+        sessionData.siteName,
+        filePath,
+        sha,
+        sessionData.isomerUserId,
+        false
+      )
+
+      if (result.isErr()) {
+        throw result.error
       }
+
+      this.gitFileSystemService.push(sessionData.siteName)
 
       return { newSha: result.value }
     }
 
     // GitHub flow
-    if (!isDir) {
-      return await super.delete(sessionData, {
-        sha,
-        fileName,
-        directoryName,
-      })
-    }
-    await updateTreeAndRepoState()
+    return await super.delete(sessionData, {
+      sha,
+      fileName,
+      directoryName,
+    })
   }
 
   async getRepoInfo(sessionData: any): Promise<any> {

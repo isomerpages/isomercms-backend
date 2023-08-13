@@ -77,11 +77,8 @@ class BaseDirectoryService {
   }
 
   async delete(sessionData, githubSessionData, { directoryName, message }) {
-    await this.gitHubService.delete(sessionData, {
-      sha: "",
-      fileName: "",
+    await this.gitHubService.deleteDirectory(sessionData, {
       directoryName,
-      isDir: true,
       message,
       githubSessionData,
     })

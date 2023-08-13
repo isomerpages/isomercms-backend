@@ -678,12 +678,13 @@ export default class GitFileSystemService {
       })
   }
 
-  // Delete a file
+  // Delete a file or directory
   delete(
     repoName: string,
-    filePath: string,
+    path: string,
     oldSha: string,
-    userId: SessionDataProps["isomerUserId"]
+    userId: SessionDataProps["isomerUserId"],
+    isDir: boolean
   ): ResultAsync<string, GitFileSystemError | NotFoundError> {
     let oldStateSha = ""
 
@@ -693,19 +694,29 @@ export default class GitFileSystemService {
         oldStateSha = latestCommit.sha as string
         return okAsync(true)
       })
-      .andThen(() => this.getFilePathStats(repoName, filePath))
+      .andThen(() => this.getFilePathStats(repoName, path))
       .andThen((stats) => {
-        if (!stats.isFile()) {
+        if (isDir && !stats.isDirectory()) {
           return errAsync(
             new GitFileSystemError(
-              `Path "${filePath}" is not a valid file or directory in repo "${repoName}"`
+              `Path "${path}" is not a valid directory in repo "${repoName}"`
+            )
+          )
+        }
+        if (!isDir && !stats.isFile()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${path}" is not a valid file in repo "${repoName}"`
             )
           )
         }
         return okAsync(true)
       })
-      .andThen(() =>
-        this.getGitBlobHash(repoName, filePath).andThen((sha) => {
+      .andThen(() => {
+        if (isDir) {
+          return okAsync(true) // If it's a directory, skip the blob hash verification
+        }
+        return this.getGitBlobHash(repoName, path).andThen((sha) => {
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(
@@ -715,98 +726,37 @@ export default class GitFileSystemService {
           }
           return okAsync(sha)
         })
-      )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${filePath}`),
-          (error) => {
-            logger.error(
-              `Error when deleting ${filePath} from Git file system: ${error}`
-            )
-            if (error instanceof Error) {
-              return new GitFileSystemNeedsRollbackError(
-                "Unable to delete file on disk"
-              )
-            }
-            return new GitFileSystemNeedsRollbackError(
-              "An unknown error occurred"
-            )
-          }
-        )
-      )
+      })
       .andThen(() => {
-        const fileName = filePath.split("/").pop()
-        return this.commit(
-          repoName,
-          [filePath],
-          userId,
-          `Delete file: ${fileName}`
-        )
-      })
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
+        const deletePromise = isDir
+          ? fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${path}`, {
+              recursive: true,
+              force: true,
+            })
+          : fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${path}`)
+
+        return ResultAsync.fromPromise(deletePromise, (error) => {
+          logger.error(
+            `Error when deleting ${path} from Git file system: ${error}`
           )
-        }
-
-        return errAsync(error)
-      })
-  }
-
-  // Delete a directory
-  deleteDirectory(
-    repoName: string,
-    directoryPath: string,
-    userId: SessionDataProps["isomerUserId"]
-  ): ResultAsync<string, GitFileSystemError | NotFoundError> {
-    let oldStateSha = ""
-
-    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
-      .andThen((latestCommit) => {
-        // It is guaranteed that the latest commit contains the SHA hash
-        oldStateSha = latestCommit.sha as string
-        return okAsync(true)
-      })
-      .andThen(() => this.getFilePathStats(repoName, directoryPath))
-      .andThen((stats) => {
-        if (!stats.isDirectory()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${directoryPath}" is not a valid  directory in repo "${repoName}"`
-            )
-          )
-        }
-        return okAsync(true)
-      })
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          // equivalent to rm -rf
-          fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${directoryPath}`, {
-            recursive: true,
-            force: true,
-          }),
-          (error) => {
-            logger.error(
-              `Error when deleting directory: ${directoryPath} from Git file system: ${error}`
-            )
-            if (error instanceof Error) {
-              return new GitFileSystemNeedsRollbackError(
-                "Unable to delete directory on disk"
-              )
-            }
+          if (error instanceof Error) {
             return new GitFileSystemNeedsRollbackError(
-              "An unknown error occurred"
+              `Unable to delete ${isDir ? "directory" : "file"} on disk`
             )
           }
-        )
-      )
+          return new GitFileSystemNeedsRollbackError(
+            "An unknown error occurred"
+          )
+        })
+      })
       .andThen(() =>
         this.commit(
           repoName,
-          [directoryPath],
+          [path],
           userId,
-          `Deleted directory: ${directoryPath}`
+          `Delete  ${
+            isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
+          }`
         )
       )
       .orElse((error) => {

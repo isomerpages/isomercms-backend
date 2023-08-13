@@ -4,15 +4,19 @@ import config from "@config/config"
 
 import logger from "@logger/logger"
 
+import { GithubSessionDataProps } from "@root/classes"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
+  DeleteDirInput,
+  DeleteFileInput,
   GitCommitResult,
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
+import { RawGitTreeEntry } from "@root/types/github"
 
 import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
@@ -315,33 +319,91 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  // deletes a file
+  // deletes a file or directory
   async delete(
     sessionData: UserWithSiteSessionData,
-    { sha, fileName, directoryName }: any
+    {
+      sha,
+      fileName,
+      directoryName,
+      isDir = false, // default behaviour is to delete file
+      message = "",
+      githubSessionData = { currentCommitSha: "", treeSha: "" },
+    }: {
+      sha: string // empty string for delete dir
+      fileName: string // empty string for delete dir
+      directoryName: string
+      isDir: boolean // true for delete dir
+      message: string // exists for delete dir only
+      githubSessionData?: GithubSessionDataProps // exists for delete dir only
+    }
   ): Promise<any> {
+    // helper function for delete directory
+    const updateTreeAndRepoState = async () => {
+      const gitTree = await this.getTree(sessionData, githubSessionData, {
+        isRecursive: true,
+      })
+      // Retrieve removed items and set their sha to null
+      const newGitTree = gitTree
+        .filter(
+          (item) =>
+            item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
+        )
+        .map((item) => ({
+          ...item,
+          sha: null,
+        }))
+
+      const newCommitSha = this.updateTree(sessionData, githubSessionData, {
+        gitTree: newGitTree,
+        message,
+      })
+
+      await this.updateRepoState(sessionData, {
+        commitSha: newCommitSha,
+      })
+    }
+
     if (this.isRepoWhitelisted(sessionData.siteName)) {
-      logger.info("Deleting file in local Git file system")
-      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+      logger.info(
+        `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}, isDir: ${isDir}`
+      )
+      let filePath = directoryName
+
+      if (!isDir) {
+        filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+      }
       const result = await this.gitFileSystemService.delete(
         sessionData.siteName,
         filePath,
         sha,
-        sessionData.isomerUserId
+        sessionData.isomerUserId,
+        isDir
       )
 
       if (result.isErr()) {
         throw result.error
       }
+      // TODO: uncomment at last
+      // this.gitFileSystemService.push(sessionData.siteName)
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      // TODO: The below functions are pending (getTree, updateTree and updateRepoState)
+      if (isDir) {
+        await updateTreeAndRepoState()
+      }
+
       return { newSha: result.value }
     }
-    return await super.delete(sessionData, {
-      sha,
-      fileName,
-      directoryName,
-    })
+
+    // GitHub flow
+    if (!isDir) {
+      return await super.delete(sessionData, {
+        sha,
+        fileName,
+        directoryName,
+      })
+    }
+    await updateTreeAndRepoState()
   }
 
   async getRepoInfo(sessionData: any): Promise<any> {
@@ -377,7 +439,7 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     githubSessionData: any,
     { isRecursive }: any
-  ): Promise<any> {
+  ): Promise<RawGitTreeEntry[]> {
     return await super.getTree(sessionData, githubSessionData, {
       isRecursive,
     })

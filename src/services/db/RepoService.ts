@@ -8,8 +8,6 @@ import { GithubSessionDataProps } from "@root/classes"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
-  DeleteDirInput,
-  DeleteFileInput,
   GitCommitResult,
   GitDirectoryItem,
   GitFile,

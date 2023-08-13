@@ -328,7 +328,7 @@ export default class RepoService extends GitHubService {
       message: string
       githubSessionData: GithubSessionDataProps
     }
-  ): Promise<any> {
+  ): Promise<void> {
     // helper function for delete directory
     const updateTreeAndRepoState = async () => {
       const gitTree = await this.getTree(sessionData, githubSessionData, {
@@ -350,7 +350,7 @@ export default class RepoService extends GitHubService {
         message,
       })
 
-      await this.updateRepoState(sessionData, {
+      return await this.updateRepoState(sessionData, {
         commitSha: newCommitSha,
       })
     }
@@ -373,10 +373,10 @@ export default class RepoService extends GitHubService {
       // TODO: The below functions are pending (getTree, updateTree and updateRepoState)
       await updateTreeAndRepoState()
 
-      return { newSha: result.value }
+      return
     }
 
-    await updateTreeAndRepoState()
+    return await updateTreeAndRepoState()
   }
 
   // deletes a file
@@ -391,7 +391,7 @@ export default class RepoService extends GitHubService {
       fileName: string
       directoryName: string
     }
-  ): Promise<any> {
+  ): Promise<void> {
     if (this.isRepoWhitelisted(sessionData.siteName)) {
       logger.info(
         `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
@@ -412,8 +412,7 @@ export default class RepoService extends GitHubService {
       }
 
       this.gitFileSystemService.push(sessionData.siteName)
-
-      return { newSha: result.value }
+      return
     }
 
     // GitHub flow

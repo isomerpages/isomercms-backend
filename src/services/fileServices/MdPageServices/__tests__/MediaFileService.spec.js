@@ -28,6 +28,7 @@ describe("Media File Service", () => {
     readMedia: jest.fn(),
     readMediaFile: jest.fn(),
     readDirectory: jest.fn(),
+    renameSinglePath: jest.fn(),
     getTree: jest.fn(),
     updateTree: jest.fn(),
     updateRepoState: jest.fn(),
@@ -231,33 +232,6 @@ describe("Media File Service", () => {
 
   describe("Rename", () => {
     const oldFileName = "test old file.pdf"
-    const treeSha = "treesha"
-    const mockedTree = [
-      {
-        type: "file",
-        path: `${directoryName}/${oldFileName}`,
-        sha,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/file.md`,
-        sha: "sha1",
-      },
-    ]
-    const mockedMovedTree = [
-      {
-        type: "file",
-        path: `${directoryName}/${oldFileName}`,
-        sha: null,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/${fileName}`,
-        sha,
-      },
-    ]
-    mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
-    mockGithubService.updateTree.mockResolvedValueOnce(treeSha)
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(
@@ -270,6 +244,10 @@ describe("Media File Service", () => {
       ).rejects.toThrowError(BadRequestError)
     })
     it("Renaming pages works correctly", async () => {
+      mockRepoService.renameSinglePath.mockResolvedValueOnce({
+        newSha: sha,
+      })
+
       await expect(
         service.rename(sessionData, mockGithubSessionData, {
           oldFileName,
@@ -283,26 +261,13 @@ describe("Media File Service", () => {
         oldSha: sha,
         sha,
       })
-      expect(mockGithubService.getTree).toHaveBeenCalledWith(
+
+      expect(mockRepoService.renameSinglePath).toHaveBeenCalledWith(
         sessionData,
         mockGithubSessionData,
-        {
-          isRecursive: true,
-        }
-      )
-      expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        sessionData,
-        mockGithubSessionData,
-        {
-          gitTree: mockedMovedTree,
-          message: `Renamed ${oldFileName} to ${fileName}`,
-        }
-      )
-      expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        sessionData,
-        {
-          commitSha: treeSha,
-        }
+        `${directoryName}/${oldFileName}`,
+        `${directoryName}/${fileName}`,
+        `Renamed ${oldFileName} to ${fileName}`
       )
     })
   })

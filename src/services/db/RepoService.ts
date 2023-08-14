@@ -329,32 +329,6 @@ export default class RepoService extends GitHubService {
       githubSessionData: GithubSessionDataProps
     }
   ): Promise<void> {
-    // helper function for delete directory
-    const updateTreeAndRepoState = async () => {
-      const gitTree = await this.getTree(sessionData, githubSessionData, {
-        isRecursive: true,
-      })
-      // Retrieve removed items and set their sha to null
-      const newGitTree = gitTree
-        .filter(
-          (item) =>
-            item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
-        )
-        .map((item) => ({
-          ...item,
-          sha: null,
-        }))
-
-      const newCommitSha = this.updateTree(sessionData, githubSessionData, {
-        gitTree: newGitTree,
-        message,
-      })
-
-      return await this.updateRepoState(sessionData, {
-        commitSha: newCommitSha,
-      })
-    }
-
     if (this.isRepoWhitelisted(sessionData.siteName)) {
       const result = await this.gitFileSystemService.delete(
         sessionData.siteName,
@@ -369,14 +343,33 @@ export default class RepoService extends GitHubService {
       }
 
       this.gitFileSystemService.push(sessionData.siteName)
-
-      // TODO: The below functions are pending (getTree, updateTree and updateRepoState)
-      await updateTreeAndRepoState()
-
       return
     }
 
-    return await updateTreeAndRepoState()
+    // GitHub flow
+    const gitTree = await this.getTree(sessionData, githubSessionData, {
+      isRecursive: true,
+    })
+
+    // Retrieve removed items and set their sha to null
+    const newGitTree = gitTree
+      .filter(
+        (item) =>
+          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
+      )
+      .map((item) => ({
+        ...item,
+        sha: null,
+      }))
+
+    const newCommitSha = this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message,
+    })
+
+    return await this.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
   }
 
   // deletes a file

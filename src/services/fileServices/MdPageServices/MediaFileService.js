@@ -14,8 +14,8 @@ const { isMediaPathValid } = require("@validators/validators")
 const { getFileExt } = require("@root/utils/files")
 
 class MediaFileService {
-  constructor({ gitHubService }) {
-    this.gitHubService = gitHubService
+  constructor({ repoService }) {
+    this.repoService = repoService
   }
 
   mediaNameChecks({ directoryName, fileName }) {
@@ -43,7 +43,7 @@ class MediaFileService {
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    const { sha } = await this.gitHubService.create(sessionData, {
+    const { sha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
       fileName,
       directoryName,
@@ -65,12 +65,12 @@ class MediaFileService {
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    await this.gitHubService.delete(sessionData, {
+    await this.repoService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
     })
-    const { sha: newSha } = await this.gitHubService.create(sessionData, {
+    const { sha: newSha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
       fileName,
       directoryName,
@@ -86,7 +86,7 @@ class MediaFileService {
 
   async delete(sessionData, { fileName, directoryName, sha }) {
     this.mediaNameChecks({ directoryName, fileName })
-    return this.gitHubService.delete(sessionData, {
+    return this.repoService.delete(sessionData, {
       sha,
       fileName,
       directoryName,

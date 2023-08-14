@@ -4,12 +4,12 @@ const { ConflictError } = require("@errors/ConflictError")
 
 // Job is to deal with directory level operations to and from GitHub
 class BaseDirectoryService {
-  constructor({ gitHubService }) {
-    this.gitHubService = gitHubService
+  constructor({ repoService }) {
+    this.repoService = repoService
   }
 
   async list(sessionData, { directoryName }) {
-    const directoryData = await this.gitHubService.readDirectory(sessionData, {
+    const directoryData = await this.repoService.readDirectory(sessionData, {
       directoryName,
     })
 

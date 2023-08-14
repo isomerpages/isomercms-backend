@@ -19,7 +19,7 @@ describe("Media File Service", () => {
 
   const sessionData = { siteName, accessToken }
 
-  const mockGithubService = {
+  const mockRepoService = {
     create: jest.fn(),
     read: jest.fn(),
     update: jest.fn(),
@@ -46,7 +46,7 @@ describe("Media File Service", () => {
   } = require("@services/fileServices/MdPageServices/MediaFileService")
 
   const service = new MediaFileService({
-    gitHubService: mockGithubService,
+    repoService: mockRepoService,
   })
   const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
@@ -65,7 +65,7 @@ describe("Media File Service", () => {
       ).rejects.toThrowError(BadRequestError)
     })
 
-    mockGithubService.create.mockResolvedValueOnce({ sha })
+    mockRepoService.create.mockResolvedValueOnce({ sha })
     it("Creating pages works correctly", async () => {
       await expect(
         service.create(sessionData, {
@@ -78,7 +78,7 @@ describe("Media File Service", () => {
         content: mockContent,
         sha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.create).toHaveBeenCalledWith(sessionData, {
         content: mockSanitizedContent,
         fileName,
         directoryName,
@@ -186,7 +186,7 @@ describe("Media File Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.create.mockResolvedValueOnce({ sha })
+    mockRepoService.create.mockResolvedValueOnce({ sha })
     it("Updating media file content works correctly", async () => {
       await expect(
         service.update(sessionData, {
@@ -201,12 +201,12 @@ describe("Media File Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.create).toHaveBeenCalledWith(sessionData, {
         content: mockSanitizedContent,
         fileName,
         directoryName,
@@ -221,7 +221,7 @@ describe("Media File Service", () => {
       await expect(
         service.delete(sessionData, { fileName, directoryName, sha })
       ).resolves.not.toThrow()
-      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha,

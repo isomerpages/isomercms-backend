@@ -1338,6 +1338,68 @@ describe("GitFileSystemService", () => {
         expect(spyGetFilePathStats).toBeCalledTimes(1)
         expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
       })
+
+      it("should rollback changes if an error occurred when committing", async () => {
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          log: jest.fn().mockResolvedValueOnce({
+            latest: {
+              author_name: "fake-author",
+              author_email: "fake-email",
+              date: "fake-date",
+              message: "fake-message",
+              hash: "test-commit-sha",
+            },
+          }),
+        })
+        const mockStats = new Stats()
+        jest
+          .spyOn(GitFileSystemService, "getFilePathStats")
+          .mockResolvedValueOnce(
+            okAsync({
+              ...mockStats,
+              isFile: () => false,
+              isDirectory: () => true,
+            })
+          )
+
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+        })
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          remote: jest
+            .fn()
+            .mockResolvedValueOnce(
+              `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+            ),
+        })
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+        })
+
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          add: jest.fn().mockReturnValueOnce({
+            commit: jest.fn().mockRejectedValueOnce(new GitError()),
+          }),
+        })
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          reset: jest.fn().mockReturnValueOnce({
+            clean: jest.fn().mockResolvedValueOnce(undefined),
+          }),
+        })
+
+        const spyRollback = jest.spyOn(GitFileSystemService, "rollback")
+
+        const actual = await GitFileSystemService.delete(
+          "fake-repo",
+          "fake-dir",
+          "fake new content",
+          "fake-user-id",
+          true
+        )
+
+        expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+        expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")
+      })
     })
   })
 })

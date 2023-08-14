@@ -5,13 +5,13 @@ import config from "@config/config"
 import logger from "@logger/logger"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   GitCommitResult,
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
+import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileSystemService from "./GitFileSystemService"

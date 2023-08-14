@@ -257,7 +257,7 @@ export default class RepoService extends GitHubService {
       filteredResult = files.filter(filterLogic)
     }
 
-    return Promise.all(
+    return await Promise.all(
       filteredResult.map((curr) => {
         if (curr.type === "dir") {
           return {

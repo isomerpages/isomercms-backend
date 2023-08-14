@@ -142,6 +142,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
+      this.gitFileSystemService.push(sessionData.siteName)
       return result.value
     }
     return await super.create(sessionData, {

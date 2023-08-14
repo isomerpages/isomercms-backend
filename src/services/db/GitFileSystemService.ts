@@ -431,19 +431,13 @@ export default class GitFileSystemService {
   }
 
   // Creates a file and the associated directory if it doesn't exist
-  create({
-    repoName,
-    userId,
-    content,
-    directoryName,
-    fileName,
-  }: {
-    repoName: string
-    userId: string
-    content: string
-    directoryName: string
+  create(
+    repoName: string,
+    userId: string,
+    content: string,
+    directoryName: string,
     fileName: string
-  }): ResultAsync<
+  ): ResultAsync<
     { sha: string },
     ConflictError | GitFileSystemError | NotFoundError
   > {

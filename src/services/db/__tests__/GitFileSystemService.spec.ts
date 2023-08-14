@@ -852,13 +852,13 @@ describe("GitFileSystemService", () => {
       const expected = {
         sha: expectedSha,
       }
-      const actual = await GitFileSystemService.create({
-        repoName: "fake-repo",
-        userId: "fake-user-id",
-        content: "fake content",
-        directoryName: "fake-dir",
-        fileName: "create-file",
-      })
+      const actual = await GitFileSystemService.create(
+        "fake-repo",
+        "fake-user-id",
+        "fake content",
+        "fake-dir",
+        "create-file"
+      )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
     })
@@ -901,13 +901,13 @@ describe("GitFileSystemService", () => {
       const expected = {
         sha: expectedSha,
       }
-      const actual = await GitFileSystemService.create({
-        repoName: "fake-repo",
-        userId: "fake-user-id",
-        content: "fake content",
-        directoryName: "fake-create-dir",
-        fileName: "create-file",
-      })
+      const actual = await GitFileSystemService.create(
+        "fake-repo",
+        "fake-user-id",
+        "fake content",
+        "fake-create-dir",
+        "create-file"
+      )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
     })
@@ -924,13 +924,13 @@ describe("GitFileSystemService", () => {
           },
         }),
       })
-      const actual = await GitFileSystemService.create({
-        repoName: "fake-repo",
-        userId: "fake-user-id",
-        content: "fake content",
-        directoryName: "fake-dir",
-        fileName: "fake-file",
-      })
+      const actual = await GitFileSystemService.create(
+        "fake-repo",
+        "fake-user-id",
+        "fake content",
+        "fake-dir",
+        "fake-file"
+      )
 
       expect(actual.isErr()).toBeTrue()
     })
@@ -975,13 +975,13 @@ describe("GitFileSystemService", () => {
       })
       const spyRollback = jest.spyOn(GitFileSystemService, "rollback")
 
-      const actual = await GitFileSystemService.create({
-        repoName: "fake-repo",
-        userId: "fake-user-id",
-        content: "fake content",
-        directoryName: "fake-dir",
-        fileName: "create-file-rollback",
-      })
+      const actual = await GitFileSystemService.create(
+        "fake-repo",
+        "fake-user-id",
+        "fake content",
+        "fake-dir",
+        "create-file-rollback"
+      )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
       expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")

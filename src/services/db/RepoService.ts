@@ -1,5 +1,4 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
-import { directory, file } from "mock-fs/lib/filesystem"
 
 import config from "@config/config"
 

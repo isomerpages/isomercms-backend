@@ -886,7 +886,7 @@ export default class GitFileSystemService {
     newPath: string,
     userId: string,
     message?: string
-  ): ResultAsync<string, GitFileSystemError | ConflictError> {
+  ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
     let oldStateSha = ""
 
     return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
@@ -917,7 +917,7 @@ export default class GitFileSystemService {
           (error) => {
             logger.error(`Error when moving ${oldPath} to ${newPath}: ${error}`)
 
-            if (error instanceof Error) {
+            if (error instanceof GitError) {
               return new GitFileSystemNeedsRollbackError(
                 `Unable to rename ${oldPath} to ${newPath}`
               )
@@ -956,7 +956,7 @@ export default class GitFileSystemService {
     userId: string,
     targetFiles: string[],
     message?: string
-  ): ResultAsync<string, GitFileSystemError | ConflictError> {
+  ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
     let oldStateSha = ""
 
     return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
@@ -1013,7 +1013,7 @@ export default class GitFileSystemService {
                       `Error when moving ${targetFile} in ${oldPath}: ${error}`
                     )
 
-                    if (error instanceof Error) {
+                    if (error instanceof GitError) {
                       return new GitFileSystemNeedsRollbackError(
                         `Unable to move ${targetFile} to ${newPath}`
                       )

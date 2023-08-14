@@ -690,7 +690,13 @@ export default class GitFileSystemService {
 
     return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
       .andThen((latestCommit) => {
-        // It is guaranteed that the latest commit contains the SHA hash
+        if (!latestCommit.sha) {
+          return errAsync(
+            new GitFileSystemError(
+              `Unable to find latest commit of repo: ${repoName} on branch "${BRANCH_REF}"`
+            )
+          )
+        }
         oldStateSha = latestCommit.sha as string
         return okAsync(true)
       })

@@ -1092,6 +1092,29 @@ describe("GitFileSystemService", () => {
   })
 
   describe("delete", () => {
+    it("should return a error if latest commit sha is not found", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: undefined,
+          },
+        }),
+      })
+
+      const actual = await GitFileSystemService.delete(
+        "fake-repo",
+        "fake-dir/fake-file",
+        "fake-old-hash",
+        "fake-user-id",
+        false
+      )
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
     describe("deleteFile", () => {
       it("should delete a file successfully", async () => {
         // getLatestCommitOfBranch

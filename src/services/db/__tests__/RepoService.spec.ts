@@ -5,6 +5,7 @@ import {
   mockAccessToken,
   mockEmail,
   mockGithubId,
+  mockGithubSessionData,
   mockIsomerUserId,
   mockSiteName,
   mockUserWithSiteSessionData,
@@ -296,6 +297,7 @@ describe("RepoService", () => {
       MockGitFileSystemService.update.mockResolvedValueOnce(
         okAsync(expectedSha)
       )
+      MockGitFileSystemService.push.mockReturnValueOnce(undefined)
 
       const actual = await RepoService.update(mockUserWithSiteSessionData, {
         fileContent: "test content",
@@ -327,6 +329,190 @@ describe("RepoService", () => {
       })
 
       expect(actual).toEqual({ newSha: expectedSha })
+    })
+  })
+
+  describe("renameSinglePath", () => {
+    it("should rename using the local Git file system if the repo is whitelisted", async () => {
+      const expectedSha = "fake-commit-sha"
+      MockGitFileSystemService.renameSinglePath.mockResolvedValueOnce(
+        okAsync(expectedSha)
+      )
+      MockGitFileSystemService.push.mockReturnValueOnce(undefined)
+
+      const actual = await RepoService.renameSinglePath(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        "fake-old-path",
+        "fake-new-path",
+        "fake-commit-message"
+      )
+
+      expect(actual).toEqual({ newSha: expectedSha })
+    })
+
+    it("should rename file using GitHub directly if the repo is not whitelisted", async () => {
+      const expectedSha = "fake-commit-sha"
+      const fakeCommitMessage = "fake-commit-message"
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+      const mockedTree = [
+        {
+          type: "file",
+          path: "fake-path/old-fake-file.md",
+          sha: "fake-original-sha",
+        },
+        {
+          type: "tree",
+          path: `fake-path`,
+          sha: "sha1",
+        },
+      ]
+      const expectedMovedTree = [
+        {
+          type: "file",
+          path: "fake-path/new-fake-file.md",
+          sha: "fake-original-sha",
+        },
+        {
+          type: "file",
+          path: "fake-path/old-fake-file.md",
+          sha: null,
+        },
+      ]
+      const gitHubServiceGetTree = jest.spyOn(
+        GitHubService.prototype,
+        "getTree"
+      )
+      gitHubServiceGetTree.mockResolvedValueOnce(mockedTree)
+      const gitHubServiceUpdateTree = jest.spyOn(
+        GitHubService.prototype,
+        "updateTree"
+      )
+      gitHubServiceUpdateTree.mockResolvedValueOnce(expectedSha)
+      const gitHubServiceUpdateRepoState = jest.spyOn(
+        GitHubService.prototype,
+        "updateRepoState"
+      )
+      gitHubServiceUpdateRepoState.mockResolvedValueOnce(undefined)
+
+      const actual = await RepoService.renameSinglePath(
+        sessionData,
+        mockGithubSessionData,
+        "fake-path/old-fake-file.md",
+        "fake-path/new-fake-file.md",
+        fakeCommitMessage
+      )
+
+      expect(actual).toEqual({ newSha: expectedSha })
+      expect(gitHubServiceUpdateTree).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        { gitTree: expectedMovedTree, message: fakeCommitMessage }
+      )
+    })
+  })
+
+  describe("moveFiles", () => {
+    it("should move files using the Git local file system if the repo is whitelisted", async () => {
+      const expectedSha = "fake-commit-sha"
+      MockGitFileSystemService.moveFiles.mockResolvedValueOnce(
+        okAsync(expectedSha)
+      )
+      MockGitFileSystemService.push.mockReturnValueOnce(undefined)
+
+      const actual = await RepoService.moveFiles(
+        mockUserWithSiteSessionData,
+        mockGithubSessionData,
+        "fake-old-path",
+        "fake-new-path",
+        ["fake-file1", "fake-file2"],
+        "fake-commit-message"
+      )
+
+      expect(actual).toEqual({ newSha: expectedSha })
+    })
+
+    it("should move files using GitHub directly if the repo is not whitelisted", async () => {
+      const expectedSha = "fake-commit-sha"
+      const fakeCommitMessage = "fake-commit-message"
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+      const mockedTree = [
+        {
+          type: "file",
+          path: "fake-path/old-fake-file.md",
+          sha: "fake-original-sha",
+        },
+        {
+          type: "file",
+          path: `fake-path/old-fake-file-two.md`,
+          sha: "fake-original-sha-two",
+        },
+      ]
+      const expectedMovedTree = [
+        {
+          type: "file",
+          path: "fake-new-path/old-fake-file.md",
+          sha: "fake-original-sha",
+        },
+        {
+          type: "file",
+          path: "fake-path/old-fake-file.md",
+          sha: null,
+        },
+        {
+          type: "file",
+          path: "fake-new-path/old-fake-file-two.md",
+          sha: "fake-original-sha-two",
+        },
+        {
+          type: "file",
+          path: `fake-path/old-fake-file-two.md`,
+          sha: null,
+        },
+      ]
+      const gitHubServiceGetTree = jest.spyOn(
+        GitHubService.prototype,
+        "getTree"
+      )
+      gitHubServiceGetTree.mockResolvedValueOnce(mockedTree)
+      const gitHubServiceUpdateTree = jest.spyOn(
+        GitHubService.prototype,
+        "updateTree"
+      )
+      gitHubServiceUpdateTree.mockResolvedValueOnce(expectedSha)
+      const gitHubServiceUpdateRepoState = jest.spyOn(
+        GitHubService.prototype,
+        "updateRepoState"
+      )
+      gitHubServiceUpdateRepoState.mockResolvedValueOnce(undefined)
+
+      const actual = await RepoService.moveFiles(
+        sessionData,
+        mockGithubSessionData,
+        "fake-path",
+        "fake-new-path",
+        ["old-fake-file.md", "old-fake-file-two.md"],
+        fakeCommitMessage
+      )
+
+      expect(actual).toEqual({ newSha: expectedSha })
+      expect(gitHubServiceUpdateTree).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        { gitTree: expectedMovedTree, message: fakeCommitMessage }
+      )
     })
   })
 

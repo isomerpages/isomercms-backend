@@ -115,7 +115,7 @@
     "auto-changelog": "^2.4.0",
     "concurrently": "^7.4.0",
     "cz-conventional-changelog": "^3.3.0",
-    "eslint": "^7.21.0",
+    "eslint": "^8.47.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-alias": "^1.1.2",

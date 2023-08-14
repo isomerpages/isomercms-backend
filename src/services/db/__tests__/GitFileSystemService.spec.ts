@@ -1092,221 +1092,229 @@ describe("GitFileSystemService", () => {
   })
 
   describe("delete", () => {
-    it("should delete a file successfully", async () => {
-      // getLatestCommitOfBranch
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({
-          latest: {
-            author_name: "fake-author",
-            author_email: "fake-email",
-            date: "fake-date",
-            message: "fake-message",
-            hash: "test-commit-sha",
-          },
-        }),
+    describe("deleteFile", () => {
+      it("should delete a file successfully", async () => {
+        // getLatestCommitOfBranch
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          log: jest.fn().mockResolvedValueOnce({
+            latest: {
+              author_name: "fake-author",
+              author_email: "fake-email",
+              date: "fake-date",
+              message: "fake-message",
+              hash: "test-commit-sha",
+            },
+          }),
+        })
+
+        // getGitBlobHash
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          remote: jest
+            .fn()
+            .mockResolvedValueOnce(
+              `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+            ),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          add: jest.fn().mockReturnValueOnce({
+            commit: jest
+              .fn()
+              .mockResolvedValueOnce({ commit: "fake-new-hash" }),
+          }),
+        })
+
+        const actual = await GitFileSystemService.delete(
+          "fake-repo",
+          "fake-dir/fake-file",
+          "fake-old-hash",
+          "fake-user-id",
+          false
+        )
+
+        expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
       })
 
-      // getGitBlobHash
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce("fake-old-hash"),
-      })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
+      it("should return a error if the file is not valid", async () => {
+        // getLatestCommitOfBranch
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          log: jest.fn().mockResolvedValueOnce({
+            latest: {
+              author_name: "fake-author",
+              author_email: "fake-email",
+              date: "fake-date",
+              message: "fake-message",
+              hash: "test-commit-sha",
+            },
+          }),
+        })
+        const mockStats = new Stats()
+        const spyGetFilePathStats = jest
+          .spyOn(GitFileSystemService, "getFilePathStats")
           .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
+            okAsync({
+              ...mockStats,
+              isFile: () => false,
+              isDirectory: () => true,
+            })
+          )
 
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        add: jest.fn().mockReturnValueOnce({
-          commit: jest.fn().mockResolvedValueOnce({ commit: "fake-new-hash" }),
-        }),
-      })
-
-      const actual = await GitFileSystemService.delete(
-        "fake-repo",
-        "fake-dir/fake-file",
-        "fake-old-hash",
-        "fake-user-id",
-        false
-      )
-
-      expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
-    })
-
-    it("should return a error if the file is not valid", async () => {
-      // getLatestCommitOfBranch
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({
-          latest: {
-            author_name: "fake-author",
-            author_email: "fake-email",
-            date: "fake-date",
-            message: "fake-message",
-            hash: "test-commit-sha",
-          },
-        }),
-      })
-      const mockStats = new Stats()
-      const spyGetFilePathStats = jest
-        .spyOn(GitFileSystemService, "getFilePathStats")
-        .mockResolvedValueOnce(
-          okAsync({
-            ...mockStats,
-            isFile: () => false,
-            isDirectory: () => true,
-          })
+        const actual = await GitFileSystemService.delete(
+          "fake-repo",
+          "fake-dir",
+          "fake-old-hash",
+          "fake-user-id",
+          false
         )
-
-      const actual = await GitFileSystemService.delete(
-        "fake-repo",
-        "fake-dir",
-        "fake-old-hash",
-        "fake-user-id",
-        false
-      )
-      expect(spyGetFilePathStats).toBeCalledTimes(1)
-      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-    })
-
-    it("should return a error if the file hash does not match", async () => {
-      // getLatestCommitOfBranch
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({
-          latest: {
-            author_name: "fake-author",
-            author_email: "fake-email",
-            date: "fake-date",
-            message: "fake-message",
-            hash: "wrong-sha",
-          },
-        }),
+        expect(spyGetFilePathStats).toBeCalledTimes(1)
+        expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
       })
 
-      const mockStats = new Stats()
-      jest
-        .spyOn(GitFileSystemService, "getFilePathStats")
-        .mockResolvedValueOnce(
-          okAsync({
-            ...mockStats,
-            isFile: () => true,
-            isDirectory: () => false,
-          })
-        )
+      it("should return a error if the file hash does not match", async () => {
+        // getLatestCommitOfBranch
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          log: jest.fn().mockResolvedValueOnce({
+            latest: {
+              author_name: "fake-author",
+              author_email: "fake-email",
+              date: "fake-date",
+              message: "fake-message",
+              hash: "wrong-sha",
+            },
+          }),
+        })
 
-      const spyGetGitBlobHash = jest
-        .spyOn(GitFileSystemService, "getGitBlobHash")
-        .mockReturnValueOnce(okAsync("correct-sha"))
-
-      const actual = await GitFileSystemService.delete(
-        "fake-repo",
-        "fake-dir",
-        "fake-old-hash",
-        "fake-user-id",
-        false
-      )
-      expect(spyGetGitBlobHash).toBeCalledTimes(1)
-      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
-    })
-
-    it("should delete a directory successfully", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({
-          latest: {
-            author_name: "fake-author",
-            author_email: "fake-email",
-            date: "fake-date",
-            message: "fake-message",
-            hash: "test-commit-sha",
-          },
-        }),
-      })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
+        const mockStats = new Stats()
+        jest
+          .spyOn(GitFileSystemService, "getFilePathStats")
           .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
+            okAsync({
+              ...mockStats,
+              isFile: () => true,
+              isDirectory: () => false,
+            })
+          )
+
+        const spyGetGitBlobHash = jest
+          .spyOn(GitFileSystemService, "getGitBlobHash")
+          .mockReturnValueOnce(okAsync("correct-sha"))
+
+        const actual = await GitFileSystemService.delete(
+          "fake-repo",
+          "fake-dir",
+          "fake-old-hash",
+          "fake-user-id",
+          false
+        )
+        expect(spyGetGitBlobHash).toBeCalledTimes(1)
+        expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
       })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
-      })
-
-      // commit
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        add: jest.fn().mockReturnValueOnce({
-          commit: jest.fn().mockResolvedValueOnce({ commit: "fake-new-hash" }),
-        }),
-      })
-
-      const actual = await GitFileSystemService.delete(
-        "fake-repo",
-        "fake-dir",
-        "",
-        "fake-user-id",
-        true
-      )
-      console.log(`ACTUAL`, actual)
-
-      expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
     })
 
-    it("should return a error if the directory is not valid", async () => {
-      // getLatestCommitOfBranch
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({
-          latest: {
-            author_name: "fake-author",
-            author_email: "fake-email",
-            date: "fake-date",
-            message: "fake-message",
-            hash: "test-commit-sha",
-          },
-        }),
-      })
-      const mockStats = new Stats()
-      const spyGetFilePathStats = jest
-        .spyOn(GitFileSystemService, "getFilePathStats")
-        .mockResolvedValueOnce(
-          okAsync({
-            ...mockStats,
-            isFile: () => true,
-            isDirectory: () => false,
-          })
-        )
+    describe("deleteDirectory", () => {
+      it("should delete a directory successfully", async () => {
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          log: jest.fn().mockResolvedValueOnce({
+            latest: {
+              author_name: "fake-author",
+              author_email: "fake-email",
+              date: "fake-date",
+              message: "fake-message",
+              hash: "test-commit-sha",
+            },
+          }),
+        })
 
-      const actual = await GitFileSystemService.delete(
-        "fake-repo",
-        "fake-dir",
-        "",
-        "fake-user-id",
-        true
-      )
-      expect(spyGetFilePathStats).toBeCalledTimes(1)
-      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          remote: jest
+            .fn()
+            .mockResolvedValueOnce(
+              `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+            ),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          revparse: jest.fn().mockResolvedValueOnce(BRANCH_REF),
+        })
+
+        // commit
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          add: jest.fn().mockReturnValueOnce({
+            commit: jest
+              .fn()
+              .mockResolvedValueOnce({ commit: "fake-new-hash" }),
+          }),
+        })
+
+        const actual = await GitFileSystemService.delete(
+          "fake-repo",
+          "fake-dir",
+          "",
+          "fake-user-id",
+          true
+        )
+        console.log(`ACTUAL`, actual)
+
+        expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
+      })
+
+      it("should return a error if the directory is not valid", async () => {
+        // getLatestCommitOfBranch
+        MockSimpleGit.cwd.mockReturnValueOnce({
+          log: jest.fn().mockResolvedValueOnce({
+            latest: {
+              author_name: "fake-author",
+              author_email: "fake-email",
+              date: "fake-date",
+              message: "fake-message",
+              hash: "test-commit-sha",
+            },
+          }),
+        })
+        const mockStats = new Stats()
+        const spyGetFilePathStats = jest
+          .spyOn(GitFileSystemService, "getFilePathStats")
+          .mockResolvedValueOnce(
+            okAsync({
+              ...mockStats,
+              isFile: () => true,
+              isDirectory: () => false,
+            })
+          )
+
+        const actual = await GitFileSystemService.delete(
+          "fake-repo",
+          "fake-dir",
+          "",
+          "fake-user-id",
+          true
+        )
+        expect(spyGetFilePathStats).toBeCalledTimes(1)
+        expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+      })
     })
   })
 })

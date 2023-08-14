@@ -330,6 +330,9 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info(
+        `Deleting directory in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}`
+      )
       const result = await this.gitFileSystemService.delete(
         sessionData.siteName,
         directoryName,

@@ -65,10 +65,16 @@ describe("RepoService", () => {
 
   describe("create", () => {
     it("should create using the local Git file system if the repo is whitelisted", async () => {
-      const expected = {
-        sha: "test-sha",
+      const returnedSha = "test-sha"
+      const createOutput = {
+        newSha: returnedSha,
       }
-      MockGitFileSystemService.create.mockResolvedValueOnce(okAsync(expected))
+      const expected = {
+        sha: returnedSha,
+      }
+      MockGitFileSystemService.create.mockResolvedValueOnce(
+        okAsync(createOutput)
+      )
 
       const actual = await RepoService.create(mockUserWithSiteSessionData, {
         content: "content",

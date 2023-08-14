@@ -27,7 +27,11 @@ import { SessionDataProps } from "@root/classes"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
 import { MediaFileInput, MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
-import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
+import type {
+  GitCommitResult,
+  GitDirectoryItem,
+  GitFile,
+} from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
@@ -438,7 +442,7 @@ export default class GitFileSystemService {
     directoryName: string,
     fileName: string
   ): ResultAsync<
-    { sha: string },
+    GitCommitResult,
     ConflictError | GitFileSystemError | NotFoundError
   > {
     const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
@@ -511,7 +515,7 @@ export default class GitFileSystemService {
           `Create file: ${filePath}`
         )
       )
-      .map((commit) => ({ sha: commit }))
+      .map((commit) => ({ newSha: commit }))
       .orElse((error) => {
         if (error instanceof GitFileSystemNeedsRollbackError) {
           return this.rollback(repoName, oldStateSha).andThen(() =>

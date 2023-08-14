@@ -850,7 +850,7 @@ describe("GitFileSystemService", () => {
       })
 
       const expected = {
-        sha: expectedSha,
+        newSha: expectedSha,
       }
       const actual = await GitFileSystemService.create(
         "fake-repo",
@@ -899,7 +899,7 @@ describe("GitFileSystemService", () => {
       })
 
       const expected = {
-        sha: expectedSha,
+        newSha: expectedSha,
       }
       const actual = await GitFileSystemService.create(
         "fake-repo",

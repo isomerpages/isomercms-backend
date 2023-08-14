@@ -143,7 +143,7 @@ export default class RepoService extends GitHubService {
       }
 
       this.gitFileSystemService.push(sessionData.siteName)
-      return result.value
+      return { sha: result.value.newSha }
     }
     return await super.create(sessionData, {
       content,

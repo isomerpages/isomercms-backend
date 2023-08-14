@@ -1,14 +1,6 @@
 import fs from "fs"
 
-import {
-  combine,
-  err,
-  errAsync,
-  ok,
-  okAsync,
-  Result,
-  ResultAsync,
-} from "neverthrow"
+import { combine, err, errAsync, ok, okAsync, ResultAsync } from "neverthrow"
 import { CleanOptions, GitError, SimpleGit, DefaultLogFields } from "simple-git"
 
 import { config } from "@config/config"
@@ -344,7 +336,10 @@ export default class GitFileSystemService {
   }
 
   // Push the latest changes to upstream Git hosting provider
-  push(repoName: string): ResultAsync<string, GitFileSystemError> {
+  push(
+    repoName: string,
+    isForce?: boolean
+  ): ResultAsync<string, GitFileSystemError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -354,7 +349,9 @@ export default class GitFileSystemService {
 
       return this.ensureCorrectBranch(repoName).andThen(() =>
         ResultAsync.fromPromise(
-          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+          isForce
+            ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
+            : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
           (error) => {
             logger.error(`Error when pushing ${repoName}: ${error}`)
 

@@ -504,8 +504,6 @@ export default class GitFileSystemService {
             return new GitFileSystemError("An unknown error occurred")
           }
         )
-          .map((res) => res)
-          .mapErr((error) => error)
       )
       .andThen(() =>
         this.commit(

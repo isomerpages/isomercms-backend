@@ -499,9 +499,11 @@ export default class GitFileSystemService {
           (error) => {
             logger.error(`Error when creating ${filePath}: ${error}`)
             if (error instanceof Error) {
-              return new GitFileSystemError(error.message)
+              return new GitFileSystemNeedsRollbackError(error.message)
             }
-            return new GitFileSystemError("An unknown error occurred")
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
           }
         )
       )

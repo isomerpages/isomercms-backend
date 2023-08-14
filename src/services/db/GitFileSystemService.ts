@@ -913,10 +913,7 @@ export default class GitFileSystemService {
       )
       .andThen(() =>
         ResultAsync.fromPromise(
-          fs.promises.rename(
-            `${EFS_VOL_PATH}/${repoName}/${oldPath}`,
-            `${EFS_VOL_PATH}/${repoName}/${newPath}`
-          ),
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).mv(oldPath, newPath),
           (error) => {
             logger.error(`Error when moving ${oldPath} to ${newPath}: ${error}`)
 
@@ -1008,10 +1005,9 @@ export default class GitFileSystemService {
               })
               .andThen(() =>
                 ResultAsync.fromPromise(
-                  fs.promises.rename(
-                    `${EFS_VOL_PATH}/${repoName}/${oldPath}/${targetFile}`,
-                    `${EFS_VOL_PATH}/${repoName}/${newPath}/${targetFile}`
-                  ),
+                  this.git
+                    .cwd(`${EFS_VOL_PATH}/${repoName}`)
+                    .mv(`${oldPath}/${targetFile}`, `${newPath}/${targetFile}`),
                   (error) => {
                     logger.error(
                       `Error when moving ${targetFile} in ${oldPath}: ${error}`

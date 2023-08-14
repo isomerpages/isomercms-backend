@@ -114,48 +114,18 @@ class MediaFileService {
       )
     }
 
-    const gitTree = await this.gitHubService.getTree(
+    const { newSha: newCommitSha } = await this.repoService.renameSinglePath(
       sessionData,
       githubSessionData,
-      {
-        isRecursive: true,
-      }
+      `${directoryName}/${oldFileName}`,
+      `${directoryName}/${newFileName}`,
+      `Renamed ${oldFileName} to ${newFileName}`
     )
-    const newGitTree = []
-    gitTree.forEach((item) => {
-      if (item.path.startsWith(`${directoryName}/`) && item.type !== "tree") {
-        const fileName = item.path.split(`${directoryName}/`)[1]
-        if (fileName === oldFileName) {
-          // Delete old file
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-          // Add file to target directory
-          newGitTree.push({
-            ...item,
-            path: `${directoryName}/${newFileName}`,
-          })
-        }
-      }
-    })
-
-    const newCommitSha = await this.gitHubService.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message: `Renamed ${oldFileName} to ${newFileName}`,
-      }
-    )
-    await this.gitHubService.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
 
     return {
       name: newFileName,
       oldSha: sha,
-      sha,
+      sha: newCommitSha,
     }
   }
 }

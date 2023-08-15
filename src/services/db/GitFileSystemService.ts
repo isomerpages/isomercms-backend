@@ -346,7 +346,7 @@ export default class GitFileSystemService {
   // Push the latest changes to upstream Git hosting provider
   push(
     repoName: string,
-    isForce?: boolean
+    isForce = false
   ): ResultAsync<string, GitFileSystemError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {

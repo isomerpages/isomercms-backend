@@ -1,6 +1,14 @@
 import fs from "fs"
 
-import { combine, err, errAsync, ok, okAsync, ResultAsync } from "neverthrow"
+import {
+  combine,
+  err,
+  errAsync,
+  ok,
+  okAsync,
+  Result,
+  ResultAsync,
+} from "neverthrow"
 import { CleanOptions, GitError, SimpleGit, DefaultLogFields } from "simple-git"
 
 import { config } from "@config/config"

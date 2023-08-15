@@ -356,21 +356,21 @@ export default class InfraService {
       return errAsync(generatedDnsRecords.error)
     }
 
-    let jobStatus: SiteLaunchStatus
+    let siteLaunchStatus: SiteLaunchStatus
     switch (site.value.jobStatus) {
       case JobStatus.Ready:
-        jobStatus = SiteLaunchStatusObject.Launched
+        siteLaunchStatus = SiteLaunchStatusObject.Launched
         break
       case JobStatus.Failed:
-        jobStatus = SiteLaunchStatusObject.Failure
+        siteLaunchStatus = SiteLaunchStatusObject.Failure
         break
       default:
-        jobStatus = SiteLaunchStatusObject.Launching
+        siteLaunchStatus = SiteLaunchStatusObject.Launching
         break
     }
 
     return okAsync<SiteLaunchDto>({
-      siteLaunchStatus: jobStatus,
+      siteLaunchStatus,
       dnsRecords: generatedDnsRecords.value.dnsRecords,
       siteUrl: generatedDnsRecords.value.siteUrl,
     })

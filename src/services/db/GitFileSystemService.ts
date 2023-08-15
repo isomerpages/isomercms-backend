@@ -392,24 +392,45 @@ export default class GitFileSystemService {
         )
       }
 
-      return this.ensureCorrectBranch(repoName).andThen(() =>
-        ResultAsync.fromPromise(
-          isForce
-            ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
-            : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
-          (error) => {
-            logger.error(`Error when pushing ${repoName}: ${error}`)
+      return this.ensureCorrectBranch(repoName)
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            isForce
+              ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
+              : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+            (error) => {
+              logger.error(`Error when pushing ${repoName}: ${error}`)
 
-            if (error instanceof GitError) {
-              return new GitFileSystemError(
-                "Unable to push latest changes of repo"
-              )
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to push latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
             }
+          )
+        )
+        .orElse(() =>
+          // Retry push once
+          ResultAsync.fromPromise(
+            isForce
+              ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
+              : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+            (error) => {
+              logger.error(`Error when pushing ${repoName}: ${error}`)
 
-            return new GitFileSystemError("An unknown error occurred")
-          }
-        ).map(() => `${EFS_VOL_PATH}/${repoName}`)
-      )
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to push latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .map(() => `${EFS_VOL_PATH}/${repoName}`)
     })
   }
 
@@ -915,7 +936,7 @@ export default class GitFileSystemService {
           repoName,
           [path],
           userId,
-          `Delete  ${
+          `Delete ${
             isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
           }`
         )

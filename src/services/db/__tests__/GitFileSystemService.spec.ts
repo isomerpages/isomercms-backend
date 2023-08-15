@@ -932,7 +932,7 @@ describe("GitFileSystemService", () => {
         "fake-file"
       )
 
-      expect(actual.isErr()).toBeTrue()
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
     })
 
     it("should rollback changes if an error occurred when committing", async () => {

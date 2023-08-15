@@ -26,7 +26,11 @@ import { SessionDataProps } from "@root/classes"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
 import { MediaFileInput, MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
-import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
+import type {
+  GitCommitResult,
+  GitDirectoryItem,
+  GitFile,
+} from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
@@ -85,26 +89,22 @@ export default class GitFileSystemService {
 
   // Determine if the folder is a valid Git repository
   isValidGitRepo(repoName: string): ResultAsync<boolean, GitFileSystemError> {
-    const safeExistsSync = Result.fromThrowable(fs.existsSync, (error) => {
-      logger.error(`Error when checking if ${repoName} exists: ${error}`)
-
-      if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError("Unable to determine if directory exists")
-      }
-
-      return new GitFileSystemError("An unknown error occurred")
-    })
-
-    return safeExistsSync(`${EFS_VOL_PATH}/${repoName}`)
-      .andThen((isFolderExisting) => {
-        if (!isFolderExisting) {
+    return this.getFilePathStats(repoName, "")
+      .andThen((stats) => {
+        if (!stats.isDirectory()) {
           // Return as an error to prevent further processing
           // The function will eventually return false
-          return err<never, false>(false)
+          return errAsync(false)
         }
-        return ok(true)
+        return okAsync(true)
       })
-      .asyncAndThen(() => this.isGitInitialized(repoName))
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return err(false)
+        }
+        return err(error)
+      })
+      .andThen(() => this.isGitInitialized(repoName))
       .andThen((isGitInitialized) => {
         if (!isGitInitialized) {
           return err<never, false>(false)
@@ -231,19 +231,17 @@ export default class GitFileSystemService {
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-    const safeExistsSync = Result.fromThrowable(fs.existsSync, (error) => {
-      logger.error(`Error when checking if ${repoName} exists: ${error}`)
 
-      if (error instanceof GitError || error instanceof Error) {
-        return new GitFileSystemError("Unable to determine if directory exists")
-      }
-
-      return new GitFileSystemError("An unknown error occurred")
-    })
-
-    return safeExistsSync(`${EFS_VOL_PATH}/${repoName}`).asyncAndThen(
-      (isFolderExisting) => {
-        if (!isFolderExisting) {
+    return this.getFilePathStats(repoName, "")
+      .andThen((stats) => ok(stats.isDirectory()))
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return ok(false)
+        }
+        return err(error)
+      })
+      .andThen((isDirectory) => {
+        if (!isDirectory) {
           return ResultAsync.fromPromise(
             this.git
               .clone(originUrl, `${EFS_VOL_PATH}/${repoName}`)
@@ -283,8 +281,7 @@ export default class GitFileSystemService {
             }
             return okAsync(`${EFS_VOL_PATH}/${repoName}`)
           })
-      }
-    )
+      })
   }
 
   // Pull the latest changes from upstream Git hosting provider
@@ -436,9 +433,101 @@ export default class GitFileSystemService {
     })
   }
 
-  // TODO: Creates either directory or file
-  // ResourceDirectoryService used this to create a directory + file at the same time
-  create() {}
+  // Creates a file and the associated directory if it doesn't exist
+  create(
+    repoName: string,
+    userId: string,
+    content: string,
+    directoryName: string,
+    fileName: string
+  ): ResultAsync<
+    GitCommitResult,
+    ConflictError | GitFileSystemError | NotFoundError
+  > {
+    const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+    const pathToEfsDir = `${EFS_VOL_PATH}/${repoName}/${directoryName}/`
+    const pathToEfsFile = `${EFS_VOL_PATH}/${repoName}/${filePath}`
+    const encodedContent = content
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        const { sha } = latestCommit
+        if (!sha) {
+          return errAsync(new GitFileSystemError("An unknown error occurred"))
+        }
+        oldStateSha = sha
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, directoryName))
+      .andThen((stats) => {
+        if (stats.isDirectory()) return ok(true)
+        return err(new NotFoundError())
+      })
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          // Create directory if it does not already exist
+          try {
+            fs.promises.mkdir(pathToEfsDir)
+            return ok(true)
+          } catch (mkdirErr) {
+            logger.error(
+              `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`
+            )
+            return err(new GitFileSystemError("An unknown error occurred"))
+          }
+        }
+        return err(error)
+      })
+      .andThen(() => this.getFilePathStats(repoName, filePath))
+      .andThen((stats) => {
+        if (stats.isFile())
+          return err(
+            new ConflictError(
+              `File ${filePath} already exists in repo ${repoName}`
+            )
+          )
+        return ok(true)
+      })
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return ok(true)
+        }
+        return err(error)
+      })
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          fs.promises.writeFile(pathToEfsFile, encodedContent),
+          (error) => {
+            logger.error(`Error when creating ${filePath}: ${error}`)
+            if (error instanceof Error) {
+              return new GitFileSystemNeedsRollbackError(error.message)
+            }
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
+          }
+        )
+      )
+      .andThen(() =>
+        this.commit(
+          repoName,
+          [pathToEfsFile],
+          userId,
+          `Create file: ${filePath}`
+        )
+      )
+      .map((commit) => ({ newSha: commit }))
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
 
   // Read the contents of a file
   read(

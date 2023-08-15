@@ -30,6 +30,7 @@ const MockAxiosInstance = {
 const MockGitFileSystemService = {
   read: jest.fn(),
   readMediaFile: jest.fn(),
+  create: jest.fn(),
   listDirectoryContents: jest.fn(),
   push: jest.fn(),
   update: jest.fn(),
@@ -60,6 +61,56 @@ describe("RepoService", () => {
     it("should indicate non-whitelisted repos as non-whitelisted correctly", () => {
       const actual = RepoService.isRepoWhitelisted("not-whitelisted")
       expect(actual).toBe(false)
+    })
+  })
+
+  describe("create", () => {
+    it("should create using the local Git file system if the repo is whitelisted", async () => {
+      const returnedSha = "test-sha"
+      const createOutput = {
+        newSha: returnedSha,
+      }
+      const expected = {
+        sha: returnedSha,
+      }
+      MockGitFileSystemService.create.mockResolvedValueOnce(
+        okAsync(createOutput)
+      )
+
+      const actual = await RepoService.create(mockUserWithSiteSessionData, {
+        content: "content",
+        fileName: "test.md",
+        directoryName: "",
+        isMedia: false,
+      })
+
+      expect(actual).toEqual(expected)
+      expect(MockGitFileSystemService.create).toHaveBeenCalled()
+    })
+
+    it("should create files on GitHub directly if the repo is not whitelisted", async () => {
+      const sessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+      const expected = {
+        sha: "test-sha",
+      }
+      const gitHubServiceCreate = jest.spyOn(GitHubService.prototype, "create")
+      gitHubServiceCreate.mockResolvedValueOnce(expected)
+
+      const actual = await RepoService.create(sessionData, {
+        content: "content",
+        fileName: "test.md",
+        directoryName: "",
+        isMedia: false,
+      })
+
+      expect(actual).toEqual(expected)
+      expect(gitHubServiceCreate).toHaveBeenCalled()
     })
   })
 

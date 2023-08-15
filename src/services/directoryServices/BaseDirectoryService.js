@@ -1,7 +1,5 @@
 const _ = require("lodash")
 
-const { ConflictError } = require("@errors/ConflictError")
-
 // Job is to deal with directory level operations to and from GitHub
 class BaseDirectoryService {
   constructor({ repoService }) {
@@ -28,7 +26,7 @@ class BaseDirectoryService {
   }
 
   async delete(sessionData, githubSessionData, { directoryName, message }) {
-    await this.gitHubService.deleteDirectory(sessionData, {
+    await this.repoService.deleteDirectory(sessionData, {
       directoryName,
       message,
       githubSessionData,

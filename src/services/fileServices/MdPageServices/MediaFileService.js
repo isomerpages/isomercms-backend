@@ -53,7 +53,7 @@ class MediaFileService {
   }
 
   async read(sessionData, { fileName, directoryName }) {
-    return this.gitHubService.readMediaFile(sessionData, {
+    return this.repoService.readMediaFile(sessionData, {
       fileName,
       directoryName,
     })

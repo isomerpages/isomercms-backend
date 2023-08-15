@@ -91,34 +91,6 @@ describe("Media File Service", () => {
 
   describe("Read", () => {
     // TODO: file tests when file handling is implemented
-    const imageDirResp = [
-      {
-        name: imageName,
-        path: `${directoryName}/${imageName}`,
-        sha,
-      },
-      {
-        name: "image2.png",
-        path: `${directoryName}/image2.png`,
-        sha: "image2sha",
-      },
-    ]
-    const fileDirResp = [
-      {
-        name: fileName,
-        path: `${directoryName}/${fileName}`,
-        sha,
-      },
-      {
-        name: "file2.pdf",
-        path: `${directoryName}/file2.pdf`,
-        sha: "file2sha",
-      },
-    ]
-
-    mockGithubService.readMedia.mockResolvedValueOnce({
-      content: mockContent,
-    })
     it("Reading image files in public repos works correctly", async () => {
       const expectedResp = {
         mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${imageEncodedName}`,
@@ -126,20 +98,17 @@ describe("Media File Service", () => {
         sha,
       }
 
-      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+      mockRepoService.readMediaFile.mockResolvedValueOnce(expectedResp)
       await expect(
         service.read(sessionData, {
           fileName: imageName,
           directoryName,
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readMediaFile).toHaveBeenCalledWith(
-        sessionData,
-        {
-          fileName: imageName,
-          directoryName,
-        }
-      )
+      expect(mockRepoService.readMediaFile).toHaveBeenCalledWith(sessionData, {
+        fileName: imageName,
+        directoryName,
+      })
     })
     const svgName = "image.svg"
 
@@ -150,7 +119,7 @@ describe("Media File Service", () => {
         sha,
       }
 
-      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+      mockRepoService.readMediaFile.mockResolvedValueOnce(expectedResp)
       await expect(
         service.read(sessionData, {
           fileName: svgName,
@@ -166,7 +135,7 @@ describe("Media File Service", () => {
         sha,
       }
 
-      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+      mockRepoService.readMediaFile.mockResolvedValueOnce(expectedResp)
 
       await expect(
         service.read(sessionData, {
@@ -175,13 +144,10 @@ describe("Media File Service", () => {
           mediaType: "files",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readMediaFile).toHaveBeenCalledWith(
-        sessionData,
-        {
-          fileName,
-          directoryName,
-        }
-      )
+      expect(mockRepoService.readMediaFile).toHaveBeenCalledWith(sessionData, {
+        fileName,
+        directoryName,
+      })
     })
   })
 

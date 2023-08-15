@@ -4,7 +4,7 @@ import config from "@config/config"
 
 import logger from "@logger/logger"
 
-import { GithubSessionDataProps } from "@root/classes"
+import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitHubCommitData } from "@root/types/commitData"
@@ -357,7 +357,7 @@ export default class RepoService extends GitHubService {
     }: {
       directoryName: string
       message: string
-      githubSessionData: GithubSessionDataProps
+      githubSessionData: GithubSessionData
     }
   ): Promise<void> {
     if (this.isRepoWhitelisted(sessionData.siteName)) {

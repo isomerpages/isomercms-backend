@@ -12,49 +12,6 @@ describe("Base Directory Service", () => {
   const treeSha = "00000"
   const mockGithubSessionData = "mockData"
 
-  const mockedTree = [
-    {
-      type: "tree",
-      path: "_normal",
-    },
-    {
-      type: "tree",
-      path: `${directoryName}`,
-    },
-    {
-      type: "tree",
-      path: `${directoryName}/${subcollectionName}`,
-    },
-    {
-      type: "tree",
-      path: `_to-keep/${directoryName}/${subcollectionName}`,
-    },
-    {
-      type: "file",
-      path: "_normal/file.md",
-    },
-    {
-      type: "file",
-      path: `${directoryName}/file.md`,
-    },
-    {
-      type: "file",
-      path: `${directoryName}/${subcollectionName}/file.md`,
-    },
-    {
-      type: "file",
-      path: `${directoryName}/${subcollectionName}/file2.md`,
-    },
-    {
-      type: "file",
-      path: `${directoryName}/${subcollectionName}/file3.md`,
-    },
-    {
-      type: "file",
-      path: `_to-keep/${directoryName}/${subcollectionName}/file.md`,
-    },
-  ]
-
   const sessionData = { siteName, accessToken, currentCommitSha, treeSha }
 
   const mockRepoService = {
@@ -136,8 +93,6 @@ describe("Base Directory Service", () => {
         message
       )
     })
-    mockRepoService.getTree.mockResolvedValueOnce(mockedTree)
-    mockRepoService.updateTree.mockResolvedValueOnce(sha)
 
     it("Renaming directories works correctly", async () => {
       mockRepoService.renameSinglePath.mockResolvedValueOnce({
@@ -163,38 +118,17 @@ describe("Base Directory Service", () => {
   })
 
   describe("Delete", () => {
-    const mockedDeletedTree = [
-      {
-        type: "file",
-        path: `${directoryName}/file.md`,
-        sha: null,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/${subcollectionName}/file.md`,
-        sha: null,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/${subcollectionName}/file2.md`,
-        sha: null,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/${subcollectionName}/file3.md`,
-        sha: null,
-      },
-    ]
-    mockRepoService.getTree.mockResolvedValueOnce(mockedTree)
-    mockRepoService.updateTree.mockResolvedValueOnce(sha)
     it("Deleting directories works correctly", async () => {
+      mockRepoService.deleteDirectory.mockResolvedValueOnce(undefined)
+
       await expect(
         service.delete(sessionData, mockGithubSessionData, {
           directoryName,
           message,
         })
       ).resolves.not.toThrow()
-      expect(mockGithubService.deleteDirectory).toHaveBeenCalledWith(
+
+      expect(mockRepoService.deleteDirectory).toHaveBeenCalledWith(
         sessionData,
         {
           directoryName,

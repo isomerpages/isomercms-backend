@@ -63,6 +63,9 @@ describe("GitFileSystemService", () => {
   describe("listDirectoryContents", () => {
     it("should return the contents of a directory successfully", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("another-fake-dir-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -77,6 +80,13 @@ describe("GitFileSystemService", () => {
         type: "dir",
         sha: "fake-dir-hash",
         path: "fake-dir",
+        size: 0,
+      }
+      const expectedAnotherFakeDir: GitDirectoryItem = {
+        name: "another-fake-dir",
+        type: "dir",
+        sha: "another-fake-dir-hash",
+        path: "another-fake-dir",
         size: 0,
       }
       const expectedFakeEmptyDir: GitDirectoryItem = {
@@ -103,6 +113,7 @@ describe("GitFileSystemService", () => {
         .sort((a, b) => a.name.localeCompare(b.name))
 
       expect(actual).toMatchObject([
+        expectedAnotherFakeDir,
         expectedAnotherFakeFile,
         expectedFakeDir,
         expectedFakeEmptyDir,
@@ -110,6 +121,9 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return only results of files that are tracked by Git", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
@@ -148,6 +162,9 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return an empty result if the directory contain files that are all untracked", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
       })

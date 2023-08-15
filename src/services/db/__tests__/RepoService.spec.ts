@@ -37,6 +37,8 @@ const MockGitFileSystemService = {
   update: jest.fn(),
   delete: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
+  renameSinglePath: jest.fn(),
+  moveFiles: jest.fn(),
 }
 
 const RepoService = new _RepoService(

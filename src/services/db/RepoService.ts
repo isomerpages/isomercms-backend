@@ -4,6 +4,7 @@ import config from "@config/config"
 
 import logger from "@logger/logger"
 
+import { GithubSessionDataProps } from "@root/classes"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
@@ -13,6 +14,7 @@ import type {
 } from "@root/types/gitfilesystem"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
+import { RawGitTreeEntry } from "@root/types/github"
 
 import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
@@ -344,10 +346,101 @@ export default class RepoService extends GitHubService {
     })
   }
 
+  async deleteDirectory(
+    sessionData: UserWithSiteSessionData,
+    {
+      directoryName,
+      message,
+      githubSessionData,
+    }: {
+      directoryName: string
+      message: string
+      githubSessionData: GithubSessionDataProps
+    }
+  ): Promise<void> {
+    if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info(
+        `Deleting directory in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}`
+      )
+      const result = await this.gitFileSystemService.delete(
+        sessionData.siteName,
+        directoryName,
+        "",
+        sessionData.isomerUserId,
+        true
+      )
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      this.gitFileSystemService.push(sessionData.siteName)
+      return
+    }
+
+    // GitHub flow
+    const gitTree = await this.getTree(sessionData, githubSessionData, {
+      isRecursive: true,
+    })
+
+    // Retrieve removed items and set their sha to null
+    const newGitTree = gitTree
+      .filter(
+        (item) =>
+          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
+      )
+      .map((item) => ({
+        ...item,
+        sha: null,
+      }))
+
+    const newCommitSha = this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message,
+    })
+
+    return await this.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
+  }
+
+  // deletes a file
   async delete(
-    sessionData: any,
-    { sha, fileName, directoryName }: any
-  ): Promise<any> {
+    sessionData: UserWithSiteSessionData,
+    {
+      sha,
+      fileName,
+      directoryName,
+    }: {
+      sha: string
+      fileName: string
+      directoryName: string
+    }
+  ): Promise<void> {
+    if (this.isRepoWhitelisted(sessionData.siteName)) {
+      logger.info(
+        `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
+      )
+
+      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+
+      const result = await this.gitFileSystemService.delete(
+        sessionData.siteName,
+        filePath,
+        sha,
+        sessionData.isomerUserId,
+        false
+      )
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      this.gitFileSystemService.push(sessionData.siteName)
+      return
+    }
+
+    // GitHub flow
     return await super.delete(sessionData, {
       sha,
       fileName,
@@ -388,7 +481,7 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     githubSessionData: any,
     { isRecursive }: any
-  ): Promise<any> {
+  ): Promise<RawGitTreeEntry[]> {
     return await super.getTree(sessionData, githubSessionData, {
       isRecursive,
     })

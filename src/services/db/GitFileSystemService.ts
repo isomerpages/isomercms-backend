@@ -482,7 +482,7 @@ export default class GitFileSystemService {
         if (error instanceof NotFoundError) {
           // Create directory if it does not already exist
           try {
-            fs.promises.mkdir(pathToEfsDir)
+            fs.mkdirSync(pathToEfsDir)
             return ok(true)
           } catch (mkdirErr) {
             logger.error(

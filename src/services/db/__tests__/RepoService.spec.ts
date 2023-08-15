@@ -10,8 +10,10 @@ import {
   mockUserWithSiteSessionData,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { ItemType, MediaFileOutput, MediaDirOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
+import * as mediaUtils from "@root/utils/media-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
 
@@ -26,9 +28,10 @@ const MockAxiosInstance = {
 }
 
 const MockGitFileSystemService = {
+  read: jest.fn(),
+  readMediaFile: jest.fn(),
   listDirectoryContents: jest.fn(),
   push: jest.fn(),
-  read: jest.fn(),
   update: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
 }
@@ -271,6 +274,190 @@ describe("RepoService", () => {
         "master"
       )
       expect(actual).toEqual(expected)
+    })
+  })
+
+  describe("readMediaFile", () => {
+    it("should read image from the local Git file system for whitelisted repos", async () => {
+      const expected: MediaFileOutput = {
+        name: "test content",
+        sha: "test-sha",
+        mediaUrl: "sampleBase64Img",
+        mediaPath: "images/test-img.jpeg",
+        type: "image" as ItemType,
+      }
+      MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
+        okAsync(expected)
+      )
+
+      const actual = await RepoService.readMediaFile(
+        mockUserWithSiteSessionData,
+        {
+          directoryName: "test",
+          fileName: "test content",
+        }
+      )
+
+      expect(actual).toEqual(expected)
+    })
+
+    it("should read image from GitHub for whitelisted repos", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+
+      const expected: MediaFileOutput = {
+        name: "test-image",
+        sha: "test-sha",
+        mediaUrl: "http://some-cdn.com/image",
+        mediaPath: "images/test-img.jpeg",
+        type: "image" as ItemType,
+      }
+
+      const gitHubServiceReadDirectory = jest.spyOn(
+        GitHubService.prototype,
+        "readDirectory"
+      )
+      const gitHubServiceGetRepoInfo = jest.spyOn(
+        GitHubService.prototype,
+        "getRepoInfo"
+      )
+      gitHubServiceReadDirectory.mockResolvedValueOnce([
+        {
+          name: ".keep",
+        },
+        {
+          name: "test-image",
+        },
+        {
+          name: "fake-dir",
+        },
+      ])
+      gitHubServiceGetRepoInfo.mockResolvedValueOnce({ private: false })
+      const getMediaFileInfo = jest
+        .spyOn(mediaUtils, "getMediaFileInfo")
+        .mockResolvedValueOnce(expected)
+
+      const actual = await RepoService.readMediaFile(sessionData, {
+        directoryName: "images",
+        fileName: "test-image",
+      })
+
+      expect(actual).toEqual(expected)
+      expect(getMediaFileInfo).toBeCalledTimes(1)
+    })
+  })
+
+  describe("readMediaDirectory", () => {
+    it("should return an array of files and directories from disk if repo is whitelisted", async () => {
+      const image: MediaFileOutput = {
+        name: "image-name",
+        sha: "test-sha",
+        mediaUrl: "base64ofimage",
+        mediaPath: "images/image-name.jpg",
+        type: "file",
+      }
+      const dir: MediaDirOutput = {
+        name: "imageDir",
+        type: "dir",
+      }
+      const expected = [image, dir]
+      MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
+        okAsync([
+          {
+            name: "image-name",
+            type: "file",
+            sha: "test-sha",
+            path: "images/image-name.jpg",
+          },
+          {
+            name: "imageDir",
+            type: "dir",
+            sha: "test-sha",
+            path: "images/imageDir",
+          },
+          {
+            name: ".keep",
+            type: "file",
+            sha: "test-sha",
+            path: "images/.keep",
+          },
+        ])
+      )
+      MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
+        okAsync(image)
+      )
+
+      const actual = await RepoService.readMediaDirectory(
+        mockUserWithSiteSessionData,
+        "images"
+      )
+
+      expect(actual).toEqual(expected)
+    })
+
+    it("should return an array of files and directories from GitHub if repo is not whitelisted", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+
+      const image: MediaFileOutput = {
+        name: "image-name",
+        sha: "test-sha",
+        mediaUrl: "base64ofimage",
+        mediaPath: "images/image-name.jpg",
+        type: "file",
+      }
+      const dir: MediaDirOutput = {
+        name: "imageDir",
+        type: "dir",
+      }
+      const expected = [image, dir]
+
+      const gitHubServiceGetRepoInfo = jest
+        .spyOn(GitHubService.prototype, "getRepoInfo")
+        .mockResolvedValueOnce({ private: false })
+      const gitHubServiceReadDirectory = jest
+        .spyOn(GitHubService.prototype, "readDirectory")
+        .mockResolvedValueOnce([
+          {
+            name: "image-name",
+            type: "file",
+            sha: "test-sha",
+            path: "images/image-name.jpg",
+          },
+          {
+            name: "imageDir",
+            type: "dir",
+            sha: "test-sha",
+            path: "images/imageDir",
+          },
+          {
+            name: ".keep",
+            type: "file",
+            sha: "test-sha",
+            path: "images/.keep",
+          },
+        ])
+
+      const repoServiceReadMediaFile = jest
+        .spyOn(_RepoService.prototype, "readMediaFile")
+        .mockResolvedValueOnce(image)
+
+      const actual = await RepoService.readMediaDirectory(sessionData, "images")
+
+      expect(actual).toEqual(expected)
+      expect(gitHubServiceGetRepoInfo).toBeCalledTimes(1)
+      expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
+      expect(repoServiceReadMediaFile).toBeCalledTimes(1)
     })
   })
 })

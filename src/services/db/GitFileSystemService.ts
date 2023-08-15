@@ -23,9 +23,12 @@ import { NotFoundError } from "@errors/NotFoundError"
 import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
+import { MediaTypeError } from "@root/errors/MediaTypeError"
+import { MediaFileInput, MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
+import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
 /**
  * Some notes:
@@ -440,13 +443,14 @@ export default class GitFileSystemService {
   // Read the contents of a file
   read(
     repoName: string,
-    filePath: string
+    filePath: string,
+    encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     return combine([
       ResultAsync.fromPromise(
         fs.promises.readFile(
           `${EFS_VOL_PATH}/${repoName}/${filePath}`,
-          "utf-8"
+          encoding
         ),
         (error) => {
           if (error instanceof Error && error.message.includes("ENOENT")) {
@@ -470,6 +474,60 @@ export default class GitFileSystemService {
         sha,
       }
       return result
+    })
+  }
+
+  getFileExtension(fileName: string): Result<string, MediaTypeError> {
+    const parts = fileName.split(".")
+    if (parts.length > 1) {
+      return ok(parts[parts.length - 1])
+    }
+    return err(new MediaTypeError("Unable to find file extension")) // No extension found
+  }
+
+  getMimeType(fileExtension: string): Result<string, MediaTypeError> {
+    if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
+      err(new MediaTypeError("Unsupported file extension found"))
+    }
+    switch (fileExtension) {
+      case "svg":
+        return ok("image/svg+xml")
+      case "ico":
+        return ok("image/vnd.microsoft.icon")
+      case "jpg":
+        return ok("image/jpeg")
+      case "tif":
+        return ok("image/tiff")
+      default:
+        return ok(`image/${fileExtension}`)
+    }
+  }
+
+  readMediaFile(
+    siteName: string,
+    directoryName: string,
+    fileName: string
+  ): ResultAsync<MediaFileOutput, GitFileSystemError | MediaTypeError> {
+    return this.read(
+      siteName,
+      `${directoryName}/${fileName}`,
+      "base64"
+    ).andThen((file: GitFile) => {
+      const fileType = "file" as const
+      const fileExtResult = this.getFileExtension(fileName)
+      if (fileExtResult.isErr()) return errAsync(fileExtResult.error)
+
+      const mimeTypeResult = this.getMimeType(fileExtResult.value)
+      if (mimeTypeResult.isErr()) return errAsync(mimeTypeResult.error)
+
+      const dataUrlPrefix = `data:${mimeTypeResult.value};base64`
+      return okAsync({
+        name: fileName,
+        sha: file.sha,
+        mediaUrl: `${dataUrlPrefix},${file.content}`,
+        mediaPath: `${directoryName}/${fileName}`,
+        type: fileType,
+      })
     })
   }
 

@@ -11,6 +11,8 @@ import type {
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
+import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
+import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
@@ -19,7 +21,7 @@ import * as ReviewApi from "./review"
 const WHITELISTED_GIT_SERVICE_REPOS = config.get(
   "featureFlags.ggsWhitelistedRepos"
 )
-
+const PLACEHOLDER_FILE_NAME = ".keep"
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
@@ -149,6 +151,51 @@ export default class RepoService extends GitHubService {
     })
   }
 
+  async readMediaFile(
+    sessionData: UserWithSiteSessionData,
+    { fileName, directoryName }: { fileName: string; directoryName: string }
+  ): Promise<MediaFileOutput> {
+    logger.debug(`Reading media file: ${fileName}`)
+    logger.debug(`Reading directoryName: ${directoryName}`)
+    const { siteName } = sessionData
+
+    // fetch from local disk
+    if (this.isRepoWhitelisted(siteName)) {
+      logger.info(
+        `Reading media file from disk. Site name: ${siteName}, directory name: ${directoryName}, file name: ${fileName},`
+      )
+      const result = await this.gitFileSystemService.readMediaFile(
+        siteName,
+        directoryName,
+        fileName
+      )
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      return result.value
+    }
+
+    // fetch from Github
+    const directoryData = await super.readDirectory(sessionData, {
+      directoryName,
+    })
+
+    const mediaType = directoryName.split("/")[0] as MediaType
+    const targetFile = directoryData.find(
+      (fileOrDir: { name: string }) => fileOrDir.name === fileName
+    )
+    const { private: isPrivate } = await super.getRepoInfo(sessionData)
+
+    return await getMediaFileInfo({
+      file: targetFile,
+      siteName,
+      directoryName,
+      mediaType,
+      isPrivate,
+    })
+  }
+
   // TODO: This is no longer used, remove it
   async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
     return await super.readMedia(sessionData, { fileSha })
@@ -175,6 +222,56 @@ export default class RepoService extends GitHubService {
     return await super.readDirectory(sessionData, {
       directoryName,
     })
+  }
+
+  async readMediaDirectory(
+    sessionData: UserWithSiteSessionData,
+    directoryName: string
+  ): Promise<(MediaDirOutput | MediaFileOutput)[]> {
+    const { siteName } = sessionData
+    logger.debug(`Reading media directory: ${directoryName}`)
+
+    let filteredResult: GitDirectoryItem[] = []
+    let isPrivate = false
+    const filterLogic = (file: any) =>
+      (file.type === "file" || file.type === "dir") &&
+      file.name !== PLACEHOLDER_FILE_NAME
+
+    if (this.isRepoWhitelisted(siteName)) {
+      const result = await this.gitFileSystemService.listDirectoryContents(
+        siteName,
+        directoryName
+      )
+
+      if (result.isErr()) {
+        throw result.error
+      }
+
+      filteredResult = result.value.filter(filterLogic)
+    } else {
+      const repoInfo = await super.getRepoInfo(sessionData)
+      isPrivate = repoInfo.private
+      const files = await super.readDirectory(sessionData, {
+        directoryName,
+      })
+      filteredResult = files.filter(filterLogic)
+    }
+
+    return await Promise.all(
+      filteredResult.map((curr) => {
+        if (curr.type === "dir") {
+          return {
+            name: curr.name,
+            type: curr.type,
+          }
+        }
+
+        return this.readMediaFile(sessionData, {
+          fileName: curr.name,
+          directoryName,
+        })
+      })
+    )
   }
 
   async update(

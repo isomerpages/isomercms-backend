@@ -487,11 +487,11 @@ export default class GitFileSystemService {
               `File ${filePath} already exists in repo ${repoName}`
             )
           )
-        return ok("")
+        return ok(true)
       })
       .orElse((error) => {
         if (error instanceof NotFoundError) {
-          return ok("")
+          return ok(true)
         }
         return err(error)
       })

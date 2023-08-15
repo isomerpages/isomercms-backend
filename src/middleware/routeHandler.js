@@ -1,9 +1,22 @@
 const { backOff } = require("exponential-backoff")
+const SimpleGit = require("simple-git")
+
+const { config } = require("@config/config")
 
 const { default: GithubSessionData } = require("@classes/GithubSessionData")
 
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
+
+const GitFileSystemError = require("@root/errors/GitFileSystemError")
+const {
+  default: GitFileSystemService,
+} = require("@services/db/GitFileSystemService")
+
+const WHITELISTED_GIT_SERVICE_REPOS = config.get(
+  "featureFlags.ggsWhitelistedRepos"
+)
+const BRANCH_REF = config.get("github.branchRef")
 
 // Used when there are no write API calls to the repo on GitHub
 const attachReadRouteHandlerWrapper = (routeHandler) => async (
@@ -31,6 +44,8 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   await unlock(siteName)
 }
 
+const gitFileSystemService = new GitFileSystemService(new SimpleGit())
+
 const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   req,
   res,
@@ -40,32 +55,72 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { siteName } = req.params
 
   const { accessToken } = userSessionData
+  const isRepoWhitelisted = WHITELISTED_GIT_SERVICE_REPOS.split(",").includes(
+    siteName
+  )
 
   await lock(siteName)
 
   let originalCommitSha
-  try {
-    const { currentCommitSha, treeSha } = await getCommitAndTreeSha(
+  if (isRepoWhitelisted) {
+    const result = await gitFileSystemService.getLatestCommitOfBranch(
       siteName,
-      accessToken
+      BRANCH_REF
     )
+    if (result.isErr()) {
+      await unlock(siteName)
+      next(result.err)
+    } else {
+      originalCommitSha = result.value.sha
+      if (!originalCommitSha) {
+        await unlock(siteName)
+        next(result.err)
+      }
+      // Unused for git file system, but to maintain existing structure
+      res.locals.githubSessionData = new GithubSessionData({
+        currentCommitSha: "",
+        treeSha: "",
+      })
+    }
+  } else {
+    try {
+      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(
+        siteName,
+        accessToken
+      )
 
-    const githubSessionData = new GithubSessionData({
-      currentCommitSha,
-      treeSha,
-    })
-    res.locals.githubSessionData = githubSessionData
+      const githubSessionData = new GithubSessionData({
+        currentCommitSha,
+        treeSha,
+      })
+      res.locals.githubSessionData = githubSessionData
 
-    originalCommitSha = currentCommitSha
-  } catch (err) {
-    await unlock(siteName)
-    next(err)
+      originalCommitSha = currentCommitSha
+    } catch (err) {
+      await unlock(siteName)
+      next(err)
+    }
   }
   routeHandler(req, res, next).catch(async (err) => {
     try {
-      await backOff(() =>
-        revertCommit(originalCommitSha, siteName, accessToken)
-      )
+      if (isRepoWhitelisted) {
+        await backOff(() => {
+          const rollbackRes = gitFileSystemService
+            .rollback(siteName, originalCommitSha)
+            .unwrapOr(false)
+          if (!rollbackRes) throw new GitFileSystemError("Rollback failure")
+        })
+        await backOff(() => {
+          const pushRes = gitFileSystemService
+            .push(siteName, true)
+            .unwrapOr(false)
+          if (!pushRes) throw new GitFileSystemError("Push failure")
+        })
+      } else {
+        await backOff(() => {
+          revertCommit(originalCommitSha, siteName, accessToken)
+        })
+      }
     } catch (retryErr) {
       await unlock(siteName)
       next(retryErr)

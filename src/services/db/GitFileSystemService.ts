@@ -344,7 +344,10 @@ export default class GitFileSystemService {
   }
 
   // Push the latest changes to upstream Git hosting provider
-  push(repoName: string): ResultAsync<string, GitFileSystemError> {
+  push(
+    repoName: string,
+    isForce = false
+  ): ResultAsync<string, GitFileSystemError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -354,7 +357,9 @@ export default class GitFileSystemService {
 
       return this.ensureCorrectBranch(repoName).andThen(() =>
         ResultAsync.fromPromise(
-          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+          isForce
+            ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
+            : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
           (error) => {
             logger.error(`Error when pushing ${repoName}: ${error}`)
 

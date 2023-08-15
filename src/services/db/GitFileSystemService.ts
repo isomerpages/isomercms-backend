@@ -418,7 +418,8 @@ export default class GitFileSystemService {
     repoName: string,
     pathSpec: string[],
     userId: SessionDataProps["isomerUserId"],
-    message: string
+    message: string,
+    skipGitAdd?: boolean
   ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedsRollbackError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {
@@ -450,12 +451,34 @@ export default class GitFileSystemService {
       const commitMessage = JSON.stringify(commitMessageObj)
 
       return this.ensureCorrectBranch(repoName)
+        .andThen(() => {
+          if (skipGitAdd) {
+            // This is necessary when we have performed a git mv
+            return okAsync(true)
+          }
+
+          return ResultAsync.fromPromise(
+            this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).add(pathSpec),
+            (error) => {
+              logger.error(
+                `Error when Git adding files to ${repoName}: ${error}`
+              )
+
+              if (error instanceof GitError) {
+                return new GitFileSystemNeedsRollbackError(
+                  "Unable to commit changes"
+                )
+              }
+
+              return new GitFileSystemNeedsRollbackError(
+                "An unknown error occurred"
+              )
+            }
+          )
+        })
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git
-              .cwd(`${EFS_VOL_PATH}/${repoName}`)
-              .add(pathSpec)
-              .commit(commitMessage),
+            this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).commit(commitMessage),
             (error) => {
               logger.error(`Error when committing ${repoName}: ${error}`)
 
@@ -963,7 +986,8 @@ export default class GitFileSystemService {
           repoName,
           [oldPath, newPath],
           userId,
-          message || `Renamed ${oldPath} to ${newPath}`
+          message || `Renamed ${oldPath} to ${newPath}`,
+          true
         )
       )
       .orElse((error) => {
@@ -1042,16 +1066,12 @@ export default class GitFileSystemService {
 
                 return errAsync(error)
               })
-              .andThen(() => {
-                const oldFilePath =
-                  oldPath === "" ? targetFile : `${oldPath}/${targetFile}`
-                const newFilePath =
-                  newPath === "" ? targetFile : `${newPath}/${targetFile}`
-
-                return ResultAsync.fromPromise(
-                  this.git
-                    .cwd(`${EFS_VOL_PATH}/${repoName}`)
-                    .mv(`${oldFilePath}`, `${newFilePath}`),
+              .andThen(() =>
+                ResultAsync.fromPromise(
+                  fs.promises.rename(
+                    `${EFS_VOL_PATH}/${repoName}/${oldPath}/${targetFile}`,
+                    `${EFS_VOL_PATH}/${repoName}/${newPath}/${targetFile}`
+                  ),
                   (error) => {
                     logger.error(
                       `Error when moving ${targetFile} in ${oldPath} to ${newPath}: ${error}`
@@ -1068,7 +1088,7 @@ export default class GitFileSystemService {
                     )
                   }
                 )
-              })
+              )
           )
         )
       )

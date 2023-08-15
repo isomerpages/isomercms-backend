@@ -1015,7 +1015,7 @@ export default class GitFileSystemService {
                     .mv(`${oldFilePath}`, `${newFilePath}`),
                   (error) => {
                     logger.error(
-                      `Error when moving ${targetFile} in ${oldPath}: ${error}`
+                      `Error when moving ${targetFile} in ${oldPath} to ${newPath}: ${error}`
                     )
 
                     if (error instanceof GitError) {

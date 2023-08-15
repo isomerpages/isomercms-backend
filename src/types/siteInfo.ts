@@ -26,7 +26,7 @@ export const SiteLaunchStatusObject = {
   Launched: "LAUNCHED",
   NotLaunched: "NOT_LAUNCHED",
   Launching: "LAUNCHING",
-  Failure: "FAILURE",
+  Failure: "FAILED",
 } as const
 
 export type SiteLaunchStatus = typeof SiteLaunchStatusObject[keyof typeof SiteLaunchStatusObject]

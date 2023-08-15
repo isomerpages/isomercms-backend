@@ -129,7 +129,9 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<{ sha: string }> {
     if (this.isRepoWhitelisted(sessionData.siteName)) {
-      logger.info("Writing file to local Git file system")
+      logger.info(
+        `Writing file to local Git file system - Site name: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
+      )
       const result = await this.gitFileSystemService.create(
         sessionData.siteName,
         sessionData.isomerUserId,

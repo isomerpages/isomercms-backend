@@ -9,7 +9,13 @@ import {
   Result,
   ResultAsync,
 } from "neverthrow"
-import { CleanOptions, GitError, SimpleGit, DefaultLogFields } from "simple-git"
+import {
+  CleanOptions,
+  GitError,
+  SimpleGit,
+  DefaultLogFields,
+  LogResult,
+} from "simple-git"
 
 import { config } from "@config/config"
 
@@ -24,7 +30,7 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
-import { MediaFileInput, MediaFileOutput } from "@root/types"
+import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   GitCommitResult,
@@ -206,6 +212,29 @@ export default class GitFileSystemService {
 
         if (error instanceof Error) {
           return new GitFileSystemError("Unable to read file/directory")
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    )
+  }
+
+  // Get the Git log of a particular branch
+  getGitLog(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
+    return ResultAsync.fromPromise(
+      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
+      (error) => {
+        logger.error(
+          `Error when getting latest commit of "${branchName}" branch: ${error}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to retrieve branch log info from disk"
+          )
         }
 
         return new GitFileSystemError("An unknown error occurred")
@@ -1066,37 +1095,26 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<GitHubCommitData, GitFileSystemError> {
-    return ResultAsync.fromPromise(
-      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
-      (error) => {
-        logger.error(`Error when getting latest commit of branch: ${error}`)
-
-        if (error instanceof GitError) {
-          return new GitFileSystemError(
-            "Unable to retrieve branch log info from disk"
-          )
+    return this.getGitLog(repoName, branchName)
+      .orElse(() => this.getGitLog(repoName, `origin/${branchName}`))
+      .andThen((logSummary) => {
+        const possibleCommit = logSummary.latest
+        if (this.isDefaultLogFields(possibleCommit)) {
+          return okAsync({
+            author: {
+              name: possibleCommit.author_name,
+              email: possibleCommit.author_email,
+              date: possibleCommit.date,
+            },
+            message: possibleCommit.message,
+            sha: possibleCommit.hash,
+          })
         }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    ).andThen((logSummary) => {
-      const possibleCommit = logSummary.latest
-      if (this.isDefaultLogFields(possibleCommit)) {
-        return okAsync({
-          author: {
-            name: possibleCommit.author_name,
-            email: possibleCommit.author_email,
-            date: possibleCommit.date,
-          },
-          message: possibleCommit.message,
-          sha: possibleCommit.hash,
-        })
-      }
-      return errAsync(
-        new GitFileSystemError(
-          "Unable to retrieve latest commit info from disk"
+        return errAsync(
+          new GitFileSystemError(
+            "Unable to retrieve latest commit info from disk"
+          )
         )
-      )
-    })
+      })
   }
 }

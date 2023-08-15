@@ -478,6 +478,34 @@ describe("GitFileSystemService", () => {
     })
   })
 
+  describe("getGitLog", () => {
+    it("should return the Git log for a valid branch", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce(undefined),
+      })
+
+      const result = await GitFileSystemService.getGitLog(
+        "fake-repo",
+        "fake-commit-sha"
+      )
+
+      expect(result.isOk()).toBeTrue()
+    })
+
+    it("should return GitFileSystemError if an error occurred when getting the Git log", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.getGitLog(
+        "fake-repo",
+        "fake-commit-sha"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
   describe("rollback", () => {
     it("should rollback successfully for a valid Git repo", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -1818,9 +1846,47 @@ describe("GitFileSystemService", () => {
       )
 
       expect(actual._unsafeUnwrap()).toStrictEqual(expected)
+      expect(MockSimpleGit.cwd).toHaveBeenCalledTimes(1)
+    })
+
+    it("should retry with origin prefix if simple-git throws error the first time", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            hash: "fake-hash",
+            date: "fake-date",
+            message: "fake-message",
+            author_name: "fake-author",
+            author_email: "fake-email",
+          },
+        }),
+      })
+      const expected: GitHubCommitData = {
+        sha: "fake-hash",
+        message: "fake-message",
+        author: {
+          date: "fake-date",
+          name: "fake-author",
+          email: "fake-email",
+        },
+      }
+
+      const actual = await GitFileSystemService.getLatestCommitOfBranch(
+        "fake-repo-2",
+        "master"
+      )
+
+      expect(actual._unsafeUnwrap()).toStrictEqual(expected)
+      expect(MockSimpleGit.cwd).toHaveBeenCalledTimes(2)
     })
 
     it("should throw error when simple-git throws error", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
       MockSimpleGit.cwd.mockReturnValueOnce({
         log: jest.fn().mockRejectedValueOnce(new GitError()),
       })

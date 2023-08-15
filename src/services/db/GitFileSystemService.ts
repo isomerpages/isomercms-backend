@@ -966,6 +966,16 @@ export default class GitFileSystemService {
         return okAsync(true)
       })
       .andThen(() => this.getFilePathStats(repoName, oldPath))
+      .andThen((stats) => {
+        if (!stats.isDirectory()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${oldPath}" is not a valid directory in repo "${repoName}"`
+            )
+          )
+        }
+        return okAsync(true)
+      })
       .andThen(() =>
         // Ensure that the new path exists
         ResultAsync.fromPromise(

@@ -1721,6 +1721,31 @@ describe("GitFileSystemService", () => {
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
     })
 
+    it("should return GitFileSystemError if the oldPath is not a directory", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            hash: "fake-hash",
+            date: "fake-date",
+            message: "fake-message",
+            author_name: "fake-author",
+            author_email: "fake-email",
+          },
+        }),
+      })
+
+      const actual = await GitFileSystemService.moveFiles(
+        "fake-repo",
+        "another-fake-file",
+        "another-fake-dir",
+        "fake-user-id",
+        ["fake-file"],
+        "fake-message"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
     it("should return NotFoundError if the oldPath does not exist", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         log: jest.fn().mockResolvedValueOnce({

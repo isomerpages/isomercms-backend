@@ -357,12 +357,16 @@ export default class InfraService {
     }
 
     let jobStatus: SiteLaunchStatus
-    if (site.value.jobStatus === JobStatus.Ready) {
-      jobStatus = SiteLaunchStatusObject.Launched
-    } else if (site.value.jobStatus === JobStatus.Failed) {
-      jobStatus = SiteLaunchStatusObject.Failure
-    } else {
-      jobStatus = SiteLaunchStatusObject.Launching
+    switch (site.value.jobStatus) {
+      case JobStatus.Ready:
+        jobStatus = SiteLaunchStatusObject.Launched
+        break
+      case JobStatus.Failed:
+        jobStatus = SiteLaunchStatusObject.Failure
+        break
+      default:
+        jobStatus = SiteLaunchStatusObject.Launching
+        break
     }
 
     return okAsync<SiteLaunchDto>({

@@ -62,6 +62,7 @@ describe("Base Directory Service", () => {
     getTree: jest.fn(),
     updateTree: jest.fn(),
     updateRepoState: jest.fn(),
+    deleteDirectory: jest.fn(),
   }
 
   const {
@@ -229,25 +230,12 @@ describe("Base Directory Service", () => {
           message,
         })
       ).resolves.not.toThrow()
-      expect(mockGithubService.getTree).toHaveBeenCalledWith(
+      expect(mockGithubService.deleteDirectory).toHaveBeenCalledWith(
         sessionData,
-        mockGithubSessionData,
         {
-          isRecursive: true,
-        }
-      )
-      expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        sessionData,
-        mockGithubSessionData,
-        {
-          gitTree: mockedDeletedTree,
+          directoryName,
           message,
-        }
-      )
-      expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        sessionData,
-        {
-          commitSha: sha,
+          githubSessionData: mockGithubSessionData,
         }
       )
     })

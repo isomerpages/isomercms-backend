@@ -678,8 +678,103 @@ export default class GitFileSystemService {
       })
   }
 
-  // TODO: Delete a file
-  async delete() {}
+  // Delete a file or directory
+  delete(
+    repoName: string,
+    path: string,
+    oldSha: string,
+    userId: SessionDataProps["isomerUserId"],
+    isDir: boolean
+  ): ResultAsync<string, GitFileSystemError | NotFoundError> {
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        if (!latestCommit.sha) {
+          return errAsync(
+            new GitFileSystemError(
+              `Unable to find latest commit of repo: ${repoName} on branch "${BRANCH_REF}"`
+            )
+          )
+        }
+        oldStateSha = latestCommit.sha as string
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, path))
+      .andThen((stats) => {
+        if (isDir && !stats.isDirectory()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${path}" is not a valid directory in repo "${repoName}"`
+            )
+          )
+        }
+        if (!isDir && !stats.isFile()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${path}" is not a valid file in repo "${repoName}"`
+            )
+          )
+        }
+        return okAsync(true)
+      })
+      .andThen(() => {
+        if (isDir) {
+          return okAsync(true) // If it's a directory, skip the blob hash verification
+        }
+        return this.getGitBlobHash(repoName, path).andThen((sha) => {
+          if (sha !== oldSha) {
+            return errAsync(
+              new ConflictError(
+                "File has been changed recently, please try again"
+              )
+            )
+          }
+          return okAsync(sha)
+        })
+      })
+      .andThen(() => {
+        const deletePromise = isDir
+          ? fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${path}`, {
+              recursive: true,
+              force: true,
+            })
+          : fs.promises.rm(`${EFS_VOL_PATH}/${repoName}/${path}`)
+
+        return ResultAsync.fromPromise(deletePromise, (error) => {
+          logger.error(
+            `Error when deleting ${path} from Git file system: ${error}`
+          )
+          if (error instanceof Error) {
+            return new GitFileSystemNeedsRollbackError(
+              `Unable to delete ${isDir ? "directory" : "file"} on disk`
+            )
+          }
+          return new GitFileSystemNeedsRollbackError(
+            "An unknown error occurred"
+          )
+        })
+      })
+      .andThen(() =>
+        this.commit(
+          repoName,
+          [path],
+          userId,
+          `Delete  ${
+            isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
+          }`
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
 
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     const c = logFields as DefaultLogFields

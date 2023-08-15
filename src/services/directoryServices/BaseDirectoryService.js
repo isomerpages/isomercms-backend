@@ -77,35 +77,10 @@ class BaseDirectoryService {
   }
 
   async delete(sessionData, githubSessionData, { directoryName, message }) {
-    const gitTree = await this.gitHubService.getTree(
-      sessionData,
+    await this.gitHubService.deleteDirectory(sessionData, {
+      directoryName,
+      message,
       githubSessionData,
-      {
-        isRecursive: true,
-      }
-    )
-
-    // Retrieve removed items and set their sha to null
-    const newGitTree = gitTree
-      .filter(
-        (item) =>
-          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
-      )
-      .map((item) => ({
-        ...item,
-        sha: null,
-      }))
-
-    const newCommitSha = await this.gitHubService.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      }
-    )
-    await this.gitHubService.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
     })
   }
 

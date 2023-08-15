@@ -460,13 +460,16 @@ export default class GitFileSystemService {
         return okAsync(true)
       })
       .andThen(() => this.getFilePathStats(repoName, directoryName))
-      .andThen(() => ok(""))
+      .andThen((stats) => {
+        if (stats.isDirectory()) return ok(true)
+        return err(new NotFoundError())
+      })
       .orElse((error) => {
         if (error instanceof NotFoundError) {
           // Create directory if it does not already exist
           try {
             fs.promises.mkdir(pathToEfsDir)
-            return ok("")
+            return ok(true)
           } catch (mkdirErr) {
             logger.error(
               `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`

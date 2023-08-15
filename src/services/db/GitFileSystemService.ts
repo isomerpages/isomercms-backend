@@ -481,15 +481,15 @@ export default class GitFileSystemService {
       .orElse((error) => {
         if (error instanceof NotFoundError) {
           // Create directory if it does not already exist
-          try {
-            fs.promises.mkdir(pathToEfsDir)
-            return ok(true)
-          } catch (mkdirErr) {
-            logger.error(
-              `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`
-            )
-            return err(new GitFileSystemError("An unknown error occurred"))
-          }
+          return ResultAsync.fromPromise(
+            fs.promises.mkdir(pathToEfsDir),
+            (mkdirErr) => {
+              logger.error(
+                `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`
+              )
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          ).map((_) => true)
         }
         return err(error)
       })

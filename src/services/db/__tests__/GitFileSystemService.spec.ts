@@ -815,7 +815,7 @@ describe("GitFileSystemService", () => {
   })
 
   describe("create", () => {
-    it("should create a file successfully", async () => {
+    it("should create a non-media file successfully", async () => {
       const expectedSha = "fake-hash"
 
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -859,7 +859,59 @@ describe("GitFileSystemService", () => {
         "fake-user-id",
         "fake content",
         "fake-dir",
-        "create-file"
+        "create-file",
+        "utf-8"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual(expected)
+    })
+
+    it("should create a media file successfully", async () => {
+      const expectedSha = "fake-hash"
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: {
+            author_name: "fake-author",
+            author_email: "fake-email",
+            date: "fake-date",
+            message: "fake-message",
+            hash: "test-commit-sha",
+          },
+        }),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkout: jest.fn().mockResolvedValueOnce(undefined),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        add: jest.fn().mockReturnValueOnce({
+          commit: jest.fn().mockResolvedValueOnce({ commit: expectedSha }),
+        }),
+      })
+
+      const expected = {
+        newSha: expectedSha,
+      }
+      const actual = await GitFileSystemService.create(
+        "fake-repo",
+        "fake-user-id",
+        "fake content",
+        "fake-dir",
+        "create-media-file",
+        "base64"
       )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
@@ -908,7 +960,8 @@ describe("GitFileSystemService", () => {
         "fake-user-id",
         "fake content",
         "fake-create-dir",
-        "create-file"
+        "create-file",
+        "utf-8"
       )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
@@ -931,7 +984,8 @@ describe("GitFileSystemService", () => {
         "fake-user-id",
         "fake content",
         "fake-dir",
-        "fake-file"
+        "fake-file",
+        "utf-8"
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
@@ -982,7 +1036,8 @@ describe("GitFileSystemService", () => {
         "fake-user-id",
         "fake content",
         "fake-dir",
-        "create-file-rollback"
+        "create-file-rollback",
+        "utf-8"
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)

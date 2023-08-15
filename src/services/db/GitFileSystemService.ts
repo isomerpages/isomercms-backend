@@ -444,7 +444,8 @@ export default class GitFileSystemService {
     userId: string,
     content: string,
     directoryName: string,
-    fileName: string
+    fileName: string,
+    encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<
     GitCommitResult,
     ConflictError | GitFileSystemError | NotFoundError
@@ -502,7 +503,7 @@ export default class GitFileSystemService {
       })
       .andThen(() =>
         ResultAsync.fromPromise(
-          fs.promises.writeFile(pathToEfsFile, encodedContent),
+          fs.promises.writeFile(pathToEfsFile, encodedContent, encoding),
           (error) => {
             logger.error(`Error when creating ${filePath}: ${error}`)
             if (error instanceof Error) {

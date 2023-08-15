@@ -12,9 +12,9 @@ import type {
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
+import { RawGitTreeEntry } from "@root/types/github"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
-import { RawGitTreeEntry } from "@root/types/github"
 
 import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
@@ -139,7 +139,8 @@ export default class RepoService extends GitHubService {
         sessionData.isomerUserId,
         content,
         directoryName,
-        fileName
+        fileName,
+        isMedia ? "base64" : "utf-8"
       )
 
       if (result.isErr()) {

@@ -65,8 +65,11 @@ describe("RepoService", () => {
   })
 
   describe("create", () => {
-    it("should create using the local Git file system if the repo is whitelisted", async () => {
+    it("should create using the local Git file system using utf-8 for non-media files if the repo is whitelisted", async () => {
       const returnedSha = "test-sha"
+      const mockContent = "content"
+      const mockFileName = "test.md"
+      const mockDirectoryName = ""
       const createOutput = {
         newSha: returnedSha,
       }
@@ -78,17 +81,61 @@ describe("RepoService", () => {
       )
 
       const actual = await RepoService.create(mockUserWithSiteSessionData, {
-        content: "content",
-        fileName: "test.md",
-        directoryName: "",
+        content: mockContent,
+        fileName: mockFileName,
+        directoryName: mockDirectoryName,
         isMedia: false,
       })
 
       expect(actual).toEqual(expected)
-      expect(MockGitFileSystemService.create).toHaveBeenCalled()
+      expect(MockGitFileSystemService.create).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        mockUserWithSiteSessionData.isomerUserId,
+        mockContent,
+        mockDirectoryName,
+        mockFileName,
+        "utf-8"
+      )
+    })
+
+    it("should create using the local Git file system using base64 for media files if the repo is whitelisted", async () => {
+      const returnedSha = "test-sha"
+      const mockContent = "content"
+      const mockFileName = "test.md"
+      const mockDirectoryName = ""
+      const createOutput = {
+        newSha: returnedSha,
+      }
+      const expected = {
+        sha: returnedSha,
+      }
+      MockGitFileSystemService.create.mockResolvedValueOnce(
+        okAsync(createOutput)
+      )
+
+      const actual = await RepoService.create(mockUserWithSiteSessionData, {
+        content: mockContent,
+        fileName: mockFileName,
+        directoryName: mockDirectoryName,
+        isMedia: true,
+      })
+
+      expect(actual).toEqual(expected)
+      expect(MockGitFileSystemService.create).toHaveBeenCalledWith(
+        mockUserWithSiteSessionData.siteName,
+        mockUserWithSiteSessionData.isomerUserId,
+        mockContent,
+        mockDirectoryName,
+        mockFileName,
+        "base64"
+      )
     })
 
     it("should create files on GitHub directly if the repo is not whitelisted", async () => {
+      const mockContent = "content"
+      const mockFileName = "test.md"
+      const mockDirectoryName = ""
+      const isMedia = false
       const sessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -106,11 +153,16 @@ describe("RepoService", () => {
         content: "content",
         fileName: "test.md",
         directoryName: "",
-        isMedia: false,
+        isMedia,
       })
 
       expect(actual).toEqual(expected)
-      expect(gitHubServiceCreate).toHaveBeenCalled()
+      expect(gitHubServiceCreate).toHaveBeenCalledWith(sessionData, {
+        content: mockContent,
+        fileName: mockFileName,
+        directoryName: mockDirectoryName,
+        isMedia,
+      })
     })
   })
 

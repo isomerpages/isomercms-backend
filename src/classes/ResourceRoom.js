@@ -21,6 +21,8 @@ const {
 const RESOURCE_ROOM_INDEX_PATH = "index.html"
 const NAV_FILE_NAME = "navigation.yml"
 
+const { Base64 } = require("js-base64")
+
 class ResourceRoom {
   constructor(accessToken, siteName) {
     this.accessToken = accessToken

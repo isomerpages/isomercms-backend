@@ -4,6 +4,7 @@ import { statsMiddleware } from "@root/middleware/stats"
 
 const Bluebird = require("bluebird")
 const express = require("express")
+const { Base64 } = require("js-base64")
 const _ = require("lodash")
 
 // Import errors

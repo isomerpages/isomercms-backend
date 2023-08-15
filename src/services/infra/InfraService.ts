@@ -347,7 +347,7 @@ export default class InfraService {
     }
     if (site.value.siteStatus !== SiteStatus.Launched) {
       return okAsync<SiteLaunchDto>({
-        siteStatus: SiteLaunchStatusObject.NotLaunched,
+        siteLaunchStatus: SiteLaunchStatusObject.NotLaunched,
       })
     }
 
@@ -370,7 +370,7 @@ export default class InfraService {
     }
 
     return okAsync<SiteLaunchDto>({
-      siteStatus: jobStatus,
+      siteLaunchStatus: jobStatus,
       dnsRecords: generatedDnsRecords.value.dnsRecords,
       siteUrl: generatedDnsRecords.value.siteUrl,
     })

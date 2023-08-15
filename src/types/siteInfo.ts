@@ -32,7 +32,7 @@ export const SiteLaunchStatusObject = {
 export type SiteLaunchStatus = typeof SiteLaunchStatusObject[keyof typeof SiteLaunchStatusObject]
 
 export interface SiteLaunchDto {
-  siteStatus: SiteLaunchStatus
+  siteLaunchStatus: SiteLaunchStatus
   dnsRecords?: DNSRecord[]
   siteUrl?: string
 }

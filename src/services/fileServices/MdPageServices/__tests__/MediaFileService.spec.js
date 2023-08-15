@@ -19,7 +19,7 @@ describe("Media File Service", () => {
 
   const sessionData = { siteName, accessToken }
 
-  const mockGithubService = {
+  const mockRepoService = {
     create: jest.fn(),
     read: jest.fn(),
     update: jest.fn(),
@@ -28,6 +28,7 @@ describe("Media File Service", () => {
     readMedia: jest.fn(),
     readMediaFile: jest.fn(),
     readDirectory: jest.fn(),
+    renameSinglePath: jest.fn(),
     getTree: jest.fn(),
     updateTree: jest.fn(),
     updateRepoState: jest.fn(),
@@ -46,7 +47,7 @@ describe("Media File Service", () => {
   } = require("@services/fileServices/MdPageServices/MediaFileService")
 
   const service = new MediaFileService({
-    gitHubService: mockGithubService,
+    repoService: mockRepoService,
   })
   const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
@@ -65,7 +66,7 @@ describe("Media File Service", () => {
       ).rejects.toThrowError(BadRequestError)
     })
 
-    mockGithubService.create.mockResolvedValueOnce({ sha })
+    mockRepoService.create.mockResolvedValueOnce({ sha })
     it("Creating pages works correctly", async () => {
       await expect(
         service.create(sessionData, {
@@ -78,7 +79,7 @@ describe("Media File Service", () => {
         content: mockContent,
         sha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.create).toHaveBeenCalledWith(sessionData, {
         content: mockSanitizedContent,
         fileName,
         directoryName,
@@ -90,34 +91,6 @@ describe("Media File Service", () => {
 
   describe("Read", () => {
     // TODO: file tests when file handling is implemented
-    const imageDirResp = [
-      {
-        name: imageName,
-        path: `${directoryName}/${imageName}`,
-        sha,
-      },
-      {
-        name: "image2.png",
-        path: `${directoryName}/image2.png`,
-        sha: "image2sha",
-      },
-    ]
-    const fileDirResp = [
-      {
-        name: fileName,
-        path: `${directoryName}/${fileName}`,
-        sha,
-      },
-      {
-        name: "file2.pdf",
-        path: `${directoryName}/file2.pdf`,
-        sha: "file2sha",
-      },
-    ]
-
-    mockGithubService.readMedia.mockResolvedValueOnce({
-      content: mockContent,
-    })
     it("Reading image files in public repos works correctly", async () => {
       const expectedResp = {
         mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${directoryName}/${imageEncodedName}`,
@@ -125,20 +98,17 @@ describe("Media File Service", () => {
         sha,
       }
 
-      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+      mockRepoService.readMediaFile.mockResolvedValueOnce(expectedResp)
       await expect(
         service.read(sessionData, {
           fileName: imageName,
           directoryName,
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readMediaFile).toHaveBeenCalledWith(
-        sessionData,
-        {
-          fileName: imageName,
-          directoryName,
-        }
-      )
+      expect(mockRepoService.readMediaFile).toHaveBeenCalledWith(sessionData, {
+        fileName: imageName,
+        directoryName,
+      })
     })
     const svgName = "image.svg"
 
@@ -149,7 +119,7 @@ describe("Media File Service", () => {
         sha,
       }
 
-      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+      mockRepoService.readMediaFile.mockResolvedValueOnce(expectedResp)
       await expect(
         service.read(sessionData, {
           fileName: svgName,
@@ -165,7 +135,7 @@ describe("Media File Service", () => {
         sha,
       }
 
-      mockGithubService.readMediaFile.mockResolvedValueOnce(expectedResp)
+      mockRepoService.readMediaFile.mockResolvedValueOnce(expectedResp)
 
       await expect(
         service.read(sessionData, {
@@ -174,19 +144,16 @@ describe("Media File Service", () => {
           mediaType: "files",
         })
       ).resolves.toMatchObject(expectedResp)
-      expect(mockGithubService.readMediaFile).toHaveBeenCalledWith(
-        sessionData,
-        {
-          fileName,
-          directoryName,
-        }
-      )
+      expect(mockRepoService.readMediaFile).toHaveBeenCalledWith(sessionData, {
+        fileName,
+        directoryName,
+      })
     })
   })
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockGithubService.create.mockResolvedValueOnce({ sha })
+    mockRepoService.create.mockResolvedValueOnce({ sha })
     it("Updating media file content works correctly", async () => {
       await expect(
         service.update(sessionData, {
@@ -201,12 +168,12 @@ describe("Media File Service", () => {
         oldSha,
         newSha: sha,
       })
-      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha: oldSha,
       })
-      expect(mockGithubService.create).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.create).toHaveBeenCalledWith(sessionData, {
         content: mockSanitizedContent,
         fileName,
         directoryName,
@@ -221,7 +188,7 @@ describe("Media File Service", () => {
       await expect(
         service.delete(sessionData, { fileName, directoryName, sha })
       ).resolves.not.toThrow()
-      expect(mockGithubService.delete).toHaveBeenCalledWith(sessionData, {
+      expect(mockRepoService.delete).toHaveBeenCalledWith(sessionData, {
         fileName,
         directoryName,
         sha,
@@ -231,33 +198,6 @@ describe("Media File Service", () => {
 
   describe("Rename", () => {
     const oldFileName = "test old file.pdf"
-    const treeSha = "treesha"
-    const mockedTree = [
-      {
-        type: "file",
-        path: `${directoryName}/${oldFileName}`,
-        sha,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/file.md`,
-        sha: "sha1",
-      },
-    ]
-    const mockedMovedTree = [
-      {
-        type: "file",
-        path: `${directoryName}/${oldFileName}`,
-        sha: null,
-      },
-      {
-        type: "file",
-        path: `${directoryName}/${fileName}`,
-        sha,
-      },
-    ]
-    mockGithubService.getTree.mockResolvedValueOnce(mockedTree)
-    mockGithubService.updateTree.mockResolvedValueOnce(treeSha)
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(
@@ -270,6 +210,10 @@ describe("Media File Service", () => {
       ).rejects.toThrowError(BadRequestError)
     })
     it("Renaming pages works correctly", async () => {
+      mockRepoService.renameSinglePath.mockResolvedValueOnce({
+        newSha: sha,
+      })
+
       await expect(
         service.rename(sessionData, mockGithubSessionData, {
           oldFileName,
@@ -283,26 +227,13 @@ describe("Media File Service", () => {
         oldSha: sha,
         sha,
       })
-      expect(mockGithubService.getTree).toHaveBeenCalledWith(
+
+      expect(mockRepoService.renameSinglePath).toHaveBeenCalledWith(
         sessionData,
         mockGithubSessionData,
-        {
-          isRecursive: true,
-        }
-      )
-      expect(mockGithubService.updateTree).toHaveBeenCalledWith(
-        sessionData,
-        mockGithubSessionData,
-        {
-          gitTree: mockedMovedTree,
-          message: `Renamed ${oldFileName} to ${fileName}`,
-        }
-      )
-      expect(mockGithubService.updateRepoState).toHaveBeenCalledWith(
-        sessionData,
-        {
-          commitSha: treeSha,
-        }
+        `${directoryName}/${oldFileName}`,
+        `${directoryName}/${fileName}`,
+        `Renamed ${oldFileName} to ${fileName}`
       )
     })
   })

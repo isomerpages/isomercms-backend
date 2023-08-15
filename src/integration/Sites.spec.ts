@@ -89,7 +89,9 @@ const contactUsService = new ContactUsPageService({
   gitHubService,
   footerYmlService,
 })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 const resourcePageService = new ResourcePageService({ gitHubService })
 const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
   baseDirectoryService,

@@ -68,7 +68,7 @@ const collectionYmlService = new CollectionYmlService({
   gitHubService: mockGithubService,
 })
 const baseDirectoryService = new BaseDirectoryService({
-  gitHubService: mockGithubService,
+  repoService: mockGithubService,
 })
 
 const contactUsService = new ContactUsPageService({

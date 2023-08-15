@@ -34,11 +34,6 @@ import type {
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
-/**
- * Some notes:
- * - Seems like getTree, updateTree and updateRepoState is always used together
- */
-
 const EFS_VOL_PATH = config.get("aws.efs.volPath")
 const BRANCH_REF = config.get("github.branchRef")
 
@@ -47,6 +42,19 @@ export default class GitFileSystemService {
 
   constructor(git: SimpleGit) {
     this.git = git
+  }
+
+  isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
+    const c = logFields as DefaultLogFields
+    return (
+      !!logFields &&
+      typeof logFields === "object" &&
+      typeof c.author_name === "string" &&
+      typeof c.author_email === "string" &&
+      typeof c.date === "string" &&
+      typeof c.message === "string" &&
+      typeof c.hash === "string"
+    )
   }
 
   isGitInitialized(repoName: string): ResultAsync<boolean, GitFileSystemError> {
@@ -871,17 +879,187 @@ export default class GitFileSystemService {
       })
   }
 
-  isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
-    const c = logFields as DefaultLogFields
-    return (
-      !!logFields &&
-      typeof logFields === "object" &&
-      typeof c.author_name === "string" &&
-      typeof c.author_email === "string" &&
-      typeof c.date === "string" &&
-      typeof c.message === "string" &&
-      typeof c.hash === "string"
-    )
+  // Rename a single file or directory
+  renameSinglePath(
+    repoName: string,
+    oldPath: string,
+    newPath: string,
+    userId: string,
+    message?: string
+  ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        // It is guaranteed that the latest commit contains the SHA hash
+        oldStateSha = latestCommit.sha as string
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, oldPath))
+      .andThen(() =>
+        // We expect to see an error here, since the new path should not exist
+        this.getFilePathStats(repoName, newPath)
+          .andThen(() =>
+            errAsync(new ConflictError("File path already exists"))
+          )
+          .map(() => true)
+          .orElse((error) => {
+            if (error instanceof NotFoundError) {
+              return okAsync(true)
+            }
+
+            return errAsync(error)
+          })
+      )
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).mv(oldPath, newPath),
+          (error) => {
+            logger.error(`Error when moving ${oldPath} to ${newPath}: ${error}`)
+
+            if (error instanceof GitError) {
+              return new GitFileSystemNeedsRollbackError(
+                `Unable to rename ${oldPath} to ${newPath}`
+              )
+            }
+
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
+          }
+        )
+      )
+      .andThen(() =>
+        this.commit(
+          repoName,
+          [oldPath, newPath],
+          userId,
+          message || `Renamed ${oldPath} to ${newPath}`
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
+
+  // Move multiple files from oldPath to newPath without renaming them
+  moveFiles(
+    repoName: string,
+    oldPath: string,
+    newPath: string,
+    userId: string,
+    targetFiles: string[],
+    message?: string
+  ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
+    let oldStateSha = ""
+
+    return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
+      .andThen((latestCommit) => {
+        // It is guaranteed that the latest commit contains the SHA hash
+        oldStateSha = latestCommit.sha as string
+        return okAsync(true)
+      })
+      .andThen(() => this.getFilePathStats(repoName, oldPath))
+      .andThen((stats) => {
+        if (!stats.isDirectory()) {
+          return errAsync(
+            new GitFileSystemError(
+              `Path "${oldPath}" is not a valid directory in repo "${repoName}"`
+            )
+          )
+        }
+        return okAsync(true)
+      })
+      .andThen(() =>
+        // Ensure that the new path exists
+        ResultAsync.fromPromise(
+          fs.promises.mkdir(`${EFS_VOL_PATH}/${repoName}/${newPath}`, {
+            recursive: true,
+          }),
+          (error) => {
+            logger.error(`Error when creating ${newPath} during move: ${error}`)
+
+            if (error instanceof Error) {
+              return new GitFileSystemNeedsRollbackError(
+                `Unable to create ${newPath}`
+              )
+            }
+
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
+          }
+        )
+      )
+      .andThen(() =>
+        combine(
+          targetFiles.map((targetFile) =>
+            // We expect to see an error here, since the new path should not exist
+            this.getFilePathStats(repoName, `${newPath}/${targetFile}`)
+              .andThen(() =>
+                errAsync(new ConflictError("File path already exists"))
+              )
+              .map(() => true)
+              .orElse((error) => {
+                if (error instanceof NotFoundError) {
+                  return okAsync(true)
+                }
+
+                return errAsync(error)
+              })
+              .andThen(() => {
+                const oldFilePath =
+                  oldPath === "" ? targetFile : `${oldPath}/${targetFile}`
+                const newFilePath =
+                  newPath === "" ? targetFile : `${newPath}/${targetFile}`
+
+                return ResultAsync.fromPromise(
+                  this.git
+                    .cwd(`${EFS_VOL_PATH}/${repoName}`)
+                    .mv(`${oldFilePath}`, `${newFilePath}`),
+                  (error) => {
+                    logger.error(
+                      `Error when moving ${targetFile} in ${oldPath} to ${newPath}: ${error}`
+                    )
+
+                    if (error instanceof GitError) {
+                      return new GitFileSystemNeedsRollbackError(
+                        `Unable to move ${targetFile} to ${newPath}`
+                      )
+                    }
+
+                    return new GitFileSystemNeedsRollbackError(
+                      "An unknown error occurred"
+                    )
+                  }
+                )
+              })
+          )
+        )
+      )
+      .andThen(() =>
+        this.commit(
+          repoName,
+          [oldPath, newPath],
+          userId,
+          message || `Moved selected files from ${oldPath} to ${newPath}`
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
   }
 
   getLatestCommitOfBranch(

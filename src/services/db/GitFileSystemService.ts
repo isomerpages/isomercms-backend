@@ -9,7 +9,13 @@ import {
   Result,
   ResultAsync,
 } from "neverthrow"
-import { CleanOptions, GitError, SimpleGit, DefaultLogFields } from "simple-git"
+import {
+  CleanOptions,
+  GitError,
+  SimpleGit,
+  DefaultLogFields,
+  LogResult,
+} from "simple-git"
 
 import { config } from "@config/config"
 
@@ -24,7 +30,7 @@ import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
-import { MediaFileInput, MediaFileOutput } from "@root/types"
+import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   GitCommitResult,
@@ -213,6 +219,29 @@ export default class GitFileSystemService {
     )
   }
 
+  // Get the Git log of a particular branch
+  getGitLog(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
+    return ResultAsync.fromPromise(
+      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
+      (error) => {
+        logger.error(
+          `Error when getting latest commit of "${branchName}" branch: ${error}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to retrieve branch log info from disk"
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    )
+  }
+
   // Reset the state of the local Git repository to a specific commit
   rollback(
     repoName: string,
@@ -363,24 +392,45 @@ export default class GitFileSystemService {
         )
       }
 
-      return this.ensureCorrectBranch(repoName).andThen(() =>
-        ResultAsync.fromPromise(
-          isForce
-            ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
-            : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
-          (error) => {
-            logger.error(`Error when pushing ${repoName}: ${error}`)
+      return this.ensureCorrectBranch(repoName)
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            isForce
+              ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
+              : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+            (error) => {
+              logger.error(`Error when pushing ${repoName}: ${error}`)
 
-            if (error instanceof GitError) {
-              return new GitFileSystemError(
-                "Unable to push latest changes of repo"
-              )
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to push latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
             }
+          )
+        )
+        .orElse(() =>
+          // Retry push once
+          ResultAsync.fromPromise(
+            isForce
+              ? this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(["--force"])
+              : this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).push(),
+            (error) => {
+              logger.error(`Error when pushing ${repoName}: ${error}`)
 
-            return new GitFileSystemError("An unknown error occurred")
-          }
-        ).map(() => `${EFS_VOL_PATH}/${repoName}`)
-      )
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to push latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .map(() => `${EFS_VOL_PATH}/${repoName}`)
     })
   }
 
@@ -389,7 +439,8 @@ export default class GitFileSystemService {
     repoName: string,
     pathSpec: string[],
     userId: SessionDataProps["isomerUserId"],
-    message: string
+    message: string,
+    skipGitAdd?: boolean
   ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedsRollbackError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
       if (!isValid) {
@@ -421,12 +472,34 @@ export default class GitFileSystemService {
       const commitMessage = JSON.stringify(commitMessageObj)
 
       return this.ensureCorrectBranch(repoName)
+        .andThen(() => {
+          if (skipGitAdd) {
+            // This is necessary when we have performed a git mv
+            return okAsync(true)
+          }
+
+          return ResultAsync.fromPromise(
+            this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).add(pathSpec),
+            (error) => {
+              logger.error(
+                `Error when Git adding files to ${repoName}: ${error}`
+              )
+
+              if (error instanceof GitError) {
+                return new GitFileSystemNeedsRollbackError(
+                  "Unable to commit changes"
+                )
+              }
+
+              return new GitFileSystemNeedsRollbackError(
+                "An unknown error occurred"
+              )
+            }
+          )
+        })
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git
-              .cwd(`${EFS_VOL_PATH}/${repoName}`)
-              .add(pathSpec)
-              .commit(commitMessage),
+            this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).commit(commitMessage),
             (error) => {
               logger.error(`Error when committing ${repoName}: ${error}`)
 
@@ -489,7 +562,7 @@ export default class GitFileSystemService {
               )
               return new GitFileSystemError("An unknown error occurred")
             }
-          ).map((_) => true)
+          ).map(() => true)
         }
         return err(error)
       })
@@ -863,7 +936,7 @@ export default class GitFileSystemService {
           repoName,
           [path],
           userId,
-          `Delete  ${
+          `Delete ${
             isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
           }`
         )
@@ -934,7 +1007,8 @@ export default class GitFileSystemService {
           repoName,
           [oldPath, newPath],
           userId,
-          message || `Renamed ${oldPath} to ${newPath}`
+          message || `Renamed ${oldPath} to ${newPath}`,
+          true
         )
       )
       .orElse((error) => {
@@ -1013,16 +1087,12 @@ export default class GitFileSystemService {
 
                 return errAsync(error)
               })
-              .andThen(() => {
-                const oldFilePath =
-                  oldPath === "" ? targetFile : `${oldPath}/${targetFile}`
-                const newFilePath =
-                  newPath === "" ? targetFile : `${newPath}/${targetFile}`
-
-                return ResultAsync.fromPromise(
-                  this.git
-                    .cwd(`${EFS_VOL_PATH}/${repoName}`)
-                    .mv(`${oldFilePath}`, `${newFilePath}`),
+              .andThen(() =>
+                ResultAsync.fromPromise(
+                  fs.promises.rename(
+                    `${EFS_VOL_PATH}/${repoName}/${oldPath}/${targetFile}`,
+                    `${EFS_VOL_PATH}/${repoName}/${newPath}/${targetFile}`
+                  ),
                   (error) => {
                     logger.error(
                       `Error when moving ${targetFile} in ${oldPath} to ${newPath}: ${error}`
@@ -1039,7 +1109,7 @@ export default class GitFileSystemService {
                     )
                   }
                 )
-              })
+              )
           )
         )
       )
@@ -1066,37 +1136,26 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<GitHubCommitData, GitFileSystemError> {
-    return ResultAsync.fromPromise(
-      this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).log([branchName]),
-      (error) => {
-        logger.error(`Error when getting latest commit of branch: ${error}`)
-
-        if (error instanceof GitError) {
-          return new GitFileSystemError(
-            "Unable to retrieve branch log info from disk"
-          )
+    return this.getGitLog(repoName, branchName)
+      .orElse(() => this.getGitLog(repoName, `origin/${branchName}`))
+      .andThen((logSummary) => {
+        const possibleCommit = logSummary.latest
+        if (this.isDefaultLogFields(possibleCommit)) {
+          return okAsync({
+            author: {
+              name: possibleCommit.author_name,
+              email: possibleCommit.author_email,
+              date: possibleCommit.date,
+            },
+            message: possibleCommit.message,
+            sha: possibleCommit.hash,
+          })
         }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    ).andThen((logSummary) => {
-      const possibleCommit = logSummary.latest
-      if (this.isDefaultLogFields(possibleCommit)) {
-        return okAsync({
-          author: {
-            name: possibleCommit.author_name,
-            email: possibleCommit.author_email,
-            date: possibleCommit.date,
-          },
-          message: possibleCommit.message,
-          sha: possibleCommit.hash,
-        })
-      }
-      return errAsync(
-        new GitFileSystemError(
-          "Unable to retrieve latest commit info from disk"
+        return errAsync(
+          new GitFileSystemError(
+            "Unable to retrieve latest commit info from disk"
+          )
         )
-      )
-    })
+      })
   }
 }

@@ -53,8 +53,8 @@ export default class GitFileSystemService {
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     const c = logFields as DefaultLogFields
     return (
-      !!c &&
-      typeof c === "object" &&
+      !!logFields &&
+      typeof logFields === "object" &&
       typeof c.author_name === "string" &&
       typeof c.author_email === "string" &&
       typeof c.date === "string" &&
@@ -562,7 +562,7 @@ export default class GitFileSystemService {
               )
               return new GitFileSystemError("An unknown error occurred")
             }
-          ).map((_) => true)
+          ).map(() => true)
         }
         return err(error)
       })

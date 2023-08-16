@@ -36,12 +36,21 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   next
 ) => {
   const { siteName } = req.params
-  await lock(siteName)
+  try {
+    await lock(siteName)
+  } catch (err) {
+    next(err)
+  }
+
   routeHandler(req, res, next).catch(async (err) => {
     await unlock(siteName)
     next(err)
   })
-  await unlock(siteName)
+  try {
+    await unlock(siteName)
+  } catch (err) {
+    next(err)
+  }
 }
 
 const gitFileSystemService = new GitFileSystemService(new SimpleGit())
@@ -59,7 +68,11 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     siteName
   )
 
-  await lock(siteName)
+  try {
+    await lock(siteName)
+  } catch (err) {
+    next(err)
+  }
 
   let originalCommitSha
   if (isRepoWhitelisted) {
@@ -129,7 +142,11 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     next(err)
   })
 
-  await unlock(siteName)
+  try {
+    await unlock(siteName)
+  } catch (err) {
+    next(err)
+  }
 }
 
 module.exports = {

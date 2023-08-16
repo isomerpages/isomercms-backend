@@ -396,7 +396,7 @@ export default class RepoService extends GitHubService {
         sha: null,
       }))
 
-    const newCommitSha = this.updateTree(sessionData, githubSessionData, {
+    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
       gitTree: newGitTree,
       message,
     })

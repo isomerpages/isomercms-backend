@@ -1,6 +1,7 @@
 import { Versions } from "@constants"
 
 const express = require("express")
+const { Base64 } = require("js-base64")
 
 // Import middleware
 const {

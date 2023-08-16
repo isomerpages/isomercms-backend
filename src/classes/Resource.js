@@ -1,4 +1,5 @@
 const Bluebird = require("bluebird")
+const { Base64 } = require("js-base64")
 const _ = require("lodash")
 
 // Import classes

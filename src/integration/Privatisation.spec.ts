@@ -1,6 +1,7 @@
 import express from "express"
 import mockAxios from "jest-mock-axios"
 import { ok, okAsync } from "neverthrow"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import { SitesRouter as _SitesRouter } from "@routes/v2/authenticated/sites"
@@ -61,7 +62,8 @@ import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
-import { GitHubService } from "@services/db/GitHubService"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import GitFileSystemService from "@services/db/GitFileSystemService"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
@@ -94,14 +96,19 @@ jest.mock("../services/identity/DeploymentClient", () =>
       .mockImplementation(() => ok(mockDeleteInput)),
   }))
 )
-
-const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitHubService = new RepoService(
+  isomerRepoAxiosInstance,
+  gitFileSystemService
+)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,

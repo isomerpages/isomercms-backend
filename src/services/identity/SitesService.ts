@@ -24,7 +24,7 @@ import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
 import { Brand } from "@root/types/util"
 import { safeJsonParse } from "@root/utils/json"
-import { GitHubService } from "@services/db/GitHubService"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
@@ -32,7 +32,7 @@ import ReviewRequestService from "@services/review/ReviewRequestService"
 
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
-  gitHubService: GitHubService
+  gitHubService: RepoService
   configYmlService: ConfigYmlService
   usersService: UsersService
   isomerAdminsService: IsomerAdminsService

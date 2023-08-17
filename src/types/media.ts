@@ -23,3 +23,8 @@ export interface MediaFileOutput {
   mediaPath: string
   type: ItemType
 }
+
+export interface MediaDirOutput {
+  name: string
+  type: ItemType
+}

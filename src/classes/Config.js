@@ -1,5 +1,6 @@
 import { config } from "@config/config"
 
+const { Base64 } = require("js-base64")
 const _ = require("lodash")
 
 const {

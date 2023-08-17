@@ -12,11 +12,10 @@ const {
 const { isMediaPathValid } = require("@validators/validators")
 
 const { getFileExt } = require("@root/utils/files")
-const { getMediaFileInfo } = require("@root/utils/media-utils")
 
 class MediaFileService {
-  constructor({ gitHubService }) {
-    this.gitHubService = gitHubService
+  constructor({ repoService }) {
+    this.repoService = repoService
   }
 
   mediaNameChecks({ directoryName, fileName }) {
@@ -44,7 +43,7 @@ class MediaFileService {
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    const { sha } = await this.gitHubService.create(sessionData, {
+    const { sha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
       fileName,
       directoryName,
@@ -54,27 +53,10 @@ class MediaFileService {
   }
 
   async read(sessionData, { fileName, directoryName }) {
-    const { siteName } = sessionData
-    const directoryData = await this.gitHubService.readDirectory(sessionData, {
+    return this.repoService.readMediaFile(sessionData, {
+      fileName,
       directoryName,
     })
-    const mediaType = directoryName.split("/")[0]
-
-    const targetFile = directoryData.find(
-      (fileOrDir) => fileOrDir.name === fileName
-    )
-    const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-      sessionData
-    )
-    const fileData = await getMediaFileInfo({
-      file: targetFile,
-      siteName,
-      directoryName,
-      mediaType,
-      isPrivate,
-    })
-
-    return fileData
   }
 
   async update(sessionData, { fileName, directoryName, content, sha }) {
@@ -83,12 +65,12 @@ class MediaFileService {
     if (!sanitizedContent) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    await this.gitHubService.delete(sessionData, {
+    await this.repoService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
     })
-    const { sha: newSha } = await this.gitHubService.create(sessionData, {
+    const { sha: newSha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
       fileName,
       directoryName,
@@ -104,7 +86,7 @@ class MediaFileService {
 
   async delete(sessionData, { fileName, directoryName, sha }) {
     this.mediaNameChecks({ directoryName, fileName })
-    return this.gitHubService.delete(sessionData, {
+    return this.repoService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -132,48 +114,18 @@ class MediaFileService {
       )
     }
 
-    const gitTree = await this.gitHubService.getTree(
+    const { newSha: newCommitSha } = await this.repoService.renameSinglePath(
       sessionData,
       githubSessionData,
-      {
-        isRecursive: true,
-      }
+      `${directoryName}/${oldFileName}`,
+      `${directoryName}/${newFileName}`,
+      `Renamed ${oldFileName} to ${newFileName}`
     )
-    const newGitTree = []
-    gitTree.forEach((item) => {
-      if (item.path.startsWith(`${directoryName}/`) && item.type !== "tree") {
-        const fileName = item.path.split(`${directoryName}/`)[1]
-        if (fileName === oldFileName) {
-          // Delete old file
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-          // Add file to target directory
-          newGitTree.push({
-            ...item,
-            path: `${directoryName}/${newFileName}`,
-          })
-        }
-      }
-    })
-
-    const newCommitSha = await this.gitHubService.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message: `Renamed ${oldFileName} to ${newFileName}`,
-      }
-    )
-    await this.gitHubService.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
 
     return {
       name: newFileName,
       oldSha: sha,
-      sha,
+      sha: newCommitSha,
     }
   }
 }

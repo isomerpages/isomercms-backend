@@ -3,6 +3,8 @@ const {
   sanitizedYamlStringify,
 } = require("@utils/yaml-utils")
 
+const { Base64 } = require("js-base64")
+
 require("bluebird")
 require("lodash")
 const {

@@ -107,13 +107,15 @@ const getAuthenticatedSitesSubrouter = ({
   })
   const unlinkedPageService = new UnlinkedPageService({ gitHubService })
   const resourcePageService = new ResourcePageService({ gitHubService })
-  const mediaFileService = new MediaFileService({ gitHubService })
+  const mediaFileService = new MediaFileService({ repoService: gitHubService })
   const moverService = new MoverService({
     unlinkedPageService,
     collectionPageService,
     subcollectionPageService,
   })
-  const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+  const baseDirectoryService = new BaseDirectoryService({
+    repoService: gitHubService,
+  })
   const unlinkedPagesDirectoryService = new UnlinkedPagesDirectoryService({
     baseDirectoryService,
     moverService,

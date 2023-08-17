@@ -3,6 +3,7 @@ import { Versions } from "@constants"
 import { statsMiddleware } from "@root/middleware/stats"
 
 const express = require("express")
+const { Base64 } = require("js-base64")
 
 const router = express.Router({ mergeParams: true })
 

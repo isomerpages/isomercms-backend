@@ -1,4 +1,5 @@
 import express from "express"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import {
@@ -31,8 +32,6 @@ import {
 } from "@root/fixtures/sessionData"
 import { getAuthorizationMiddleware } from "@root/middleware"
 import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
-import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
-import { GitHubService } from "@root/services/db/GitHubService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -51,6 +50,8 @@ import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import GitFileSystemService from "@services/db/GitFileSystemService"
 import RepoService from "@services/db/RepoService"
 import {
   getIdentityAuthService,
@@ -64,15 +65,19 @@ const MOCK_SITE = "mockSite"
 const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
-const gitHubService = new GitHubService({
-  axiosInstance: genericGitHubAxiosInstance,
-})
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitHubService = new RepoService(
+  isomerRepoAxiosInstance,
+  gitFileSystemService
+)
 const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,

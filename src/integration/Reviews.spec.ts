@@ -1,5 +1,6 @@
 import express from "express"
 import mockAxios from "jest-mock-axios"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import { ReviewsRouter as _ReviewsRouter } from "@routes/v2/authenticated/review"
@@ -88,7 +89,8 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import { ReviewRequestDto } from "@root/types/dto/review"
-import { GitHubService } from "@services/db/GitHubService"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import GitFileSystemService from "@services/db/GitFileSystemService"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
@@ -98,13 +100,19 @@ import SitesService from "@services/identity/SitesService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { sequelize } from "@tests/database"
 
-const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitHubService = new RepoService(
+  isomerRepoAxiosInstance,
+  gitFileSystemService
+)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,

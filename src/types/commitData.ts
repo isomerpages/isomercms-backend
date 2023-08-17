@@ -5,4 +5,5 @@ export type GitHubCommitData = {
     date: string
   }
   message: string
+  sha?: string
 }

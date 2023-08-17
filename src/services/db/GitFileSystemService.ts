@@ -53,7 +53,7 @@ export default class GitFileSystemService {
   hasGitFileLock(repoName: string): ResultAsync<boolean, GitFileSystemError> {
     const gitFileLockPath = ".git/index.lock"
     return this.getFilePathStats(repoName, gitFileLockPath)
-      .andThen((stats) => ok(stats.isFile()))
+      .andThen(() => ok(true))
       .orElse((error) => {
         if (error instanceof NotFoundError) {
           return ok(false)

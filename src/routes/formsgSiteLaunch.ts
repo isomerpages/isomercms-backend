@@ -10,7 +10,7 @@ import InitializationError from "@errors/InitializationError"
 
 import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 
-import { ISOMER_ADMIN_EMAIL } from "@root/constants"
+import { ISOMER_SUPPORT_EMAIL } from "@root/constants"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import {
@@ -204,7 +204,7 @@ export class FormsgSiteLaunchRouter {
   ) => {
     if (failureResults.length === 0) return
     const { requesterEmail } = failureResults[0]
-    const email = requesterEmail || ISOMER_ADMIN_EMAIL
+    const email = requesterEmail || ISOMER_SUPPORT_EMAIL
     const subject = `[Isomer] Launch site FAILURE`
     const html = getErrorEmailBody(submissionId, failureResults)
     await mailer.sendMail(email, subject, html)

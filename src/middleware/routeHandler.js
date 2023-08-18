@@ -42,7 +42,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
     next(err)
   }
 
-  routeHandler(req, res, next).catch(async (err) => {
+  await routeHandler(req, res, next).catch(async (err) => {
     await unlock(siteName)
     next(err)
   })
@@ -114,7 +114,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       next(err)
     }
   }
-  routeHandler(req, res, next).catch(async (err) => {
+  await routeHandler(req, res, next).catch(async (err) => {
     try {
       if (isRepoWhitelisted) {
         await backOff(() => {

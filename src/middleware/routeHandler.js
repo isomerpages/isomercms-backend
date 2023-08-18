@@ -40,6 +40,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
     await lock(siteName)
   } catch (err) {
     next(err)
+    return
   }
 
   await routeHandler(req, res, next).catch(async (err) => {
@@ -72,6 +73,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     await lock(siteName)
   } catch (err) {
     next(err)
+    return
   }
 
   let originalCommitSha
@@ -83,18 +85,19 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     if (result.isErr()) {
       await unlock(siteName)
       next(result.err)
-    } else {
-      originalCommitSha = result.value.sha
-      if (!originalCommitSha) {
-        await unlock(siteName)
-        next(result.err)
-      }
-      // Unused for git file system, but to maintain existing structure
-      res.locals.githubSessionData = new GithubSessionData({
-        currentCommitSha: "",
-        treeSha: "",
-      })
+      return
     }
+    originalCommitSha = result.value.sha
+    if (!originalCommitSha) {
+      await unlock(siteName)
+      next(result.err)
+      return
+    }
+    // Unused for git file system, but to maintain existing structure
+    res.locals.githubSessionData = new GithubSessionData({
+      currentCommitSha: "",
+      treeSha: "",
+    })
   } else {
     try {
       const { currentCommitSha, treeSha } = await getCommitAndTreeSha(
@@ -112,6 +115,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     } catch (err) {
       await unlock(siteName)
       next(err)
+      return
     }
   }
   await routeHandler(req, res, next).catch(async (err) => {
@@ -137,6 +141,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     } catch (retryErr) {
       await unlock(siteName)
       next(retryErr)
+      return
     }
     await unlock(siteName)
     next(err)

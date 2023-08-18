@@ -37,6 +37,7 @@ class SmsClient {
       await this.axiosClient.post(endpoint, sms)
     } catch (err) {
       if (isAxiosError(err) && err.code === "500") {
+        // NOTE: Do not change the copy of this string below as it is used for alarms
         logger.error(`Postman is returning 500 error for sending sms: ${err}`)
       }
       logger.error(`Failed to send SMS to ${recipient}: ${err}`)

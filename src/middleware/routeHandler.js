@@ -27,9 +27,12 @@ const isRepoWhitelisted = (siteName) =>
   WHITELISTED_GIT_SERVICE_REPOS.split(",").includes(siteName)
 
 const handleGitFileLock = async (repoName, next) => {
-  if (!isRepoWhitelisted(repoName)) return
+  if (!isRepoWhitelisted(repoName)) return true
   const result = await gitFileSystemService.hasGitFileLock(repoName)
-  if (result.isErr()) next(result.err)
+  if (result.isErr()) {
+    next(result.err)
+    return false
+  }
   const isGitLocked = result.value
   if (isGitLocked) {
     logger.error(`Failed to lock repo ${repoName}: git file system in use`)
@@ -38,7 +41,9 @@ const handleGitFileLock = async (repoName, next) => {
         `Someone else is currently modifying repo ${repoName}. Please try again later.`
       )
     )
+    return false
   }
+  return true
 }
 
 // Used when there are no write API calls to the repo on GitHub
@@ -60,7 +65,8 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
 ) => {
   const { siteName } = req.params
 
-  await handleGitFileLock(siteName, next)
+  const isGitAvailable = await handleGitFileLock(siteName, next)
+  if (!isGitAvailable) return
   try {
     await lock(siteName)
   } catch (err) {
@@ -90,7 +96,8 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { accessToken } = userSessionData
   const shouldUseGitFileSystem = isRepoWhitelisted(siteName)
 
-  await handleGitFileLock(siteName, next)
+  const isGitAvailable = await handleGitFileLock(siteName, next)
+  if (!isGitAvailable) return
   try {
     await lock(siteName)
   } catch (err) {

@@ -5,6 +5,7 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import { AxiosClient } from "@root/types"
+import { isAxiosError } from "@root/utils/axios-utils"
 
 const POSTMAN_SMS_CRED_NAME = config.get("postman.smsCredName")
 
@@ -35,6 +36,9 @@ class SmsClient {
     try {
       await this.axiosClient.post(endpoint, sms)
     } catch (err) {
+      if (isAxiosError(err) && err.code === "500") {
+        logger.error(`Postman is returning 500 error for sending sms: ${err}`)
+      }
       logger.error(`Failed to send SMS to ${recipient}: ${err}`)
       throw new Error("Failed to send SMS.")
     }

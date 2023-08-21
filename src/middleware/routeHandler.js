@@ -8,8 +8,10 @@ const { default: GithubSessionData } = require("@classes/GithubSessionData")
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
-const { ConflictError } = require("@root/errors/ConflictError")
-const GitFileSystemError = require("@root/errors/GitFileSystemError")
+const GitFileSystemError = require("@root/errors/GitFileSystemError").default
+
+const LockedError = require("@root/errors/LockedError").default
+
 const {
   default: GitFileSystemService,
 } = require("@services/db/GitFileSystemService")
@@ -37,7 +39,7 @@ const handleGitFileLock = async (repoName, next) => {
   if (isGitLocked) {
     logger.error(`Failed to lock repo ${repoName}: git file system in use`)
     next(
-      new ConflictError(
+      new LockedError(
         `Someone else is currently modifying repo ${repoName}. Please try again later.`
       )
     )

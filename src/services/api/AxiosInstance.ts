@@ -13,7 +13,9 @@ import { tokenServiceInstance } from "@services/db/TokenService"
 
 import { statsService } from "../infra/StatsService"
 
-const GITHUB_EXPERIMENTAL_TRIAL_SITES = ["pa-corp"]
+const GGS_EXPERIMENTAL_TRACKING_SITES = config
+  .get("featureFlags.ggsTrackedSites")
+  .split(",")
 
 const REPOS_SUBSTRING = "repos/isomerpages"
 const extractRepoNameFromGithubUrl = (url: string): string => {
@@ -99,7 +101,7 @@ const githubApiInterceptor = (resp: AxiosResponse) => {
   const fullUrl = `${resp.config.baseURL || ""}${resp.config.url || ""}`
   if (
     resp.status !== 304 &&
-    _.some(GITHUB_EXPERIMENTAL_TRIAL_SITES, (site) => fullUrl.includes(site)) &&
+    _.some(GGS_EXPERIMENTAL_TRACKING_SITES, (site) => fullUrl.includes(site)) &&
     resp.config.method
   ) {
     statsService.incrementGithubApiCall(

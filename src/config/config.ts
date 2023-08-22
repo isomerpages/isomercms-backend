@@ -412,6 +412,12 @@ const config = convict({
       format: String,
       default: "",
     },
+    ggsTrackedSites: {
+      doc: "Comma-separated list of tracked sites for GitHub API hits",
+      env: "GGS_EXPERIMENTAL_TRACKING_SITES",
+      format: String,
+      default: "",
+    },
   },
 })
 

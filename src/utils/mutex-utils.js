@@ -5,7 +5,7 @@ const { config } = require("@config/config")
 
 const logger = require("@logger/logger").default
 
-const LockedError = require("@root/errors/LockedError")
+const LockedError = require("@root/errors/LockedError").default
 
 // Env vars
 const NODE_ENV = config.get("env")

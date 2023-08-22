@@ -50,6 +50,21 @@ export default class GitFileSystemService {
     this.git = git
   }
 
+  hasGitFileLock(repoName: string): ResultAsync<boolean, GitFileSystemError> {
+    const gitFileLockPath = ".git/index.lock"
+    return this.getFilePathStats(repoName, gitFileLockPath)
+      .andThen(() => ok(true))
+      .orElse((error) => {
+        if (error instanceof NotFoundError) {
+          return ok(false)
+        }
+        logger.error(
+          `Error when checking for git file lock for ${repoName}: ${error}`
+        )
+        return err(error)
+      })
+  }
+
   isDefaultLogFields(logFields: unknown): logFields is DefaultLogFields {
     const c = logFields as DefaultLogFields
     return (

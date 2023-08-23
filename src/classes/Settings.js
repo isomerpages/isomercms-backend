@@ -108,7 +108,6 @@ class Settings {
       shareicon: configContent.shareicon,
       is_government: configContent.is_government,
       facebook_pixel: configContent["facebook-pixel"],
-      google_analytics: configContent.google_analytics,
       google_analytics_ga4: configContent.google_analytics_ga4,
       linkedin_insights: configContent["linkedin-insights"],
       resources_name: configContent.resources_name,

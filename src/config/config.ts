@@ -405,6 +405,14 @@ const config = convict({
       default: "mock-redirect-uri",
     },
   },
+  growthbook: {
+    clientKey: {
+      doc: "GrowthBook SDK client key",
+      env: "GROWTHBOOK_CLIENT_KEY",
+      format: "required-string",
+      default: "",
+    },
+  },
   featureFlags: {
     ggsWhitelistedRepos: {
       doc: "Comma-separated list of whitelisted repos for local Git service",

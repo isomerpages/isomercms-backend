@@ -719,6 +719,23 @@ describe("Review Requests Integration Tests", () => {
       // Assert
       expect(actual.statusCode).toEqual(404)
     })
+
+    it("should not throw an error if two sub-sequent calls are being made", async () => {
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      // Act
+      const promises = await Promise.all([
+        request(app).post(`/${MOCK_REPO_NAME_ONE}/viewed`),
+        request(app).post(`/${MOCK_REPO_NAME_ONE}/viewed`),
+      ])
+      // Assert
+      expect(promises[0].statusCode).toEqual(200)
+      expect(promises[1].statusCode).toEqual(200)
+    })
   })
 
   describe("/:requestId GET", () => {

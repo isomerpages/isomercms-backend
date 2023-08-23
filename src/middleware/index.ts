@@ -16,6 +16,8 @@ import AuthenticationMiddlewareService from "@services/middlewareServices/Authen
 import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
 
+import { featureFlagMiddleware } from "./featureFlag"
+
 const getAuthenticationMiddleware = () => {
   const authenticationMiddlewareService = new AuthenticationMiddlewareService()
   const authenticationMiddleware = new AuthenticationMiddleware({
@@ -95,4 +97,5 @@ export {
   getAuthorizationMiddleware,
   attachFormSGHandler,
   attachSiteHandler,
+  featureFlagMiddleware,
 }

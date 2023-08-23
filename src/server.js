@@ -35,6 +35,7 @@ import bootstrap from "@root/bootstrap"
 import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
+  featureFlagMiddleware,
 } from "@root/middleware"
 import { statsMiddleware } from "@root/middleware/stats"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
@@ -84,6 +85,7 @@ import DynamoDBDocClient from "./services/infra/DynamoDBClient"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
+import { setBrowserPolyfills } from "./utils/growthbook-utils"
 
 const path = require("path")
 
@@ -148,6 +150,9 @@ const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { AuthService } = require("@services/utilServices/AuthService")
+
+// growthbook polyfills
+setBrowserPolyfills()
 
 const authService = new AuthService({ usersService })
 const gitFileSystemService = new GitFileSystemService(new simpleGit())
@@ -352,6 +357,9 @@ if (isSecure) {
   app.set("trust proxy", true)
 }
 app.use(helmet())
+
+// use growthbook across routes
+app.use(featureFlagMiddleware)
 
 app.use(
   cors({

@@ -720,7 +720,7 @@ describe("Review Requests Integration Tests", () => {
       expect(actual.statusCode).toEqual(404)
     })
 
-    it("should not throw an error if two seb-sequent calls are being made", async () => {
+    it("should not throw an error if two sub-sequent calls are being made", async () => {
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_TWO,

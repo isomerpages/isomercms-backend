@@ -8,15 +8,43 @@ const { default: GithubSessionData } = require("@classes/GithubSessionData")
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
-const GitFileSystemError = require("@root/errors/GitFileSystemError")
+const GitFileSystemError = require("@root/errors/GitFileSystemError").default
+const LockedError = require("@root/errors/LockedError").default
 const {
   default: GitFileSystemService,
 } = require("@services/db/GitFileSystemService")
+
+const logger = require("@logger/logger").default
 
 const WHITELISTED_GIT_SERVICE_REPOS = config.get(
   "featureFlags.ggsWhitelistedRepos"
 )
 const BRANCH_REF = config.get("github.branchRef")
+
+const gitFileSystemService = new GitFileSystemService(new SimpleGit())
+
+const isRepoWhitelisted = (siteName) =>
+  WHITELISTED_GIT_SERVICE_REPOS.split(",").includes(siteName)
+
+const handleGitFileLock = async (repoName, next) => {
+  if (!isRepoWhitelisted(repoName)) return true
+  const result = await gitFileSystemService.hasGitFileLock(repoName)
+  if (result.isErr()) {
+    next(result.err)
+    return false
+  }
+  const isGitLocked = result.value
+  if (isGitLocked) {
+    logger.error(`Failed to lock repo ${repoName}: git file system in use.`)
+    next(
+      new LockedError(
+        `Someone else is currently modifying repo ${repoName}. Please try again later.`
+      )
+    )
+    return false
+  }
+  return true
+}
 
 // Used when there are no write API calls to the repo on GitHub
 const attachReadRouteHandlerWrapper = (routeHandler) => async (
@@ -36,13 +64,17 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   next
 ) => {
   const { siteName } = req.params
+
+  const isGitAvailable = await handleGitFileLock(siteName, next)
+  if (!isGitAvailable) return
   try {
     await lock(siteName)
   } catch (err) {
     next(err)
+    return
   }
 
-  routeHandler(req, res, next).catch(async (err) => {
+  await routeHandler(req, res, next).catch(async (err) => {
     await unlock(siteName)
     next(err)
   })
@@ -53,8 +85,6 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   }
 }
 
-const gitFileSystemService = new GitFileSystemService(new SimpleGit())
-
 const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   req,
   res,
@@ -64,18 +94,19 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { siteName } = req.params
 
   const { accessToken } = userSessionData
-  const isRepoWhitelisted = WHITELISTED_GIT_SERVICE_REPOS.split(",").includes(
-    siteName
-  )
+  const shouldUseGitFileSystem = isRepoWhitelisted(siteName)
 
+  const isGitAvailable = await handleGitFileLock(siteName, next)
+  if (!isGitAvailable) return
   try {
     await lock(siteName)
   } catch (err) {
     next(err)
+    return
   }
 
   let originalCommitSha
-  if (isRepoWhitelisted) {
+  if (shouldUseGitFileSystem) {
     const result = await gitFileSystemService.getLatestCommitOfBranch(
       siteName,
       BRANCH_REF
@@ -83,18 +114,19 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     if (result.isErr()) {
       await unlock(siteName)
       next(result.err)
-    } else {
-      originalCommitSha = result.value.sha
-      if (!originalCommitSha) {
-        await unlock(siteName)
-        next(result.err)
-      }
-      // Unused for git file system, but to maintain existing structure
-      res.locals.githubSessionData = new GithubSessionData({
-        currentCommitSha: "",
-        treeSha: "",
-      })
+      return
     }
+    originalCommitSha = result.value.sha
+    if (!originalCommitSha) {
+      await unlock(siteName)
+      next(result.err)
+      return
+    }
+    // Unused for git file system, but to maintain existing structure
+    res.locals.githubSessionData = new GithubSessionData({
+      currentCommitSha: "",
+      treeSha: "",
+    })
   } else {
     try {
       const { currentCommitSha, treeSha } = await getCommitAndTreeSha(
@@ -112,11 +144,12 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     } catch (err) {
       await unlock(siteName)
       next(err)
+      return
     }
   }
-  routeHandler(req, res, next).catch(async (err) => {
+  await routeHandler(req, res, next).catch(async (err) => {
     try {
-      if (isRepoWhitelisted) {
+      if (shouldUseGitFileSystem) {
         await backOff(() => {
           const rollbackRes = gitFileSystemService
             .rollback(siteName, originalCommitSha)
@@ -137,6 +170,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     } catch (retryErr) {
       await unlock(siteName)
       next(retryErr)
+      return
     }
     await unlock(siteName)
     next(err)

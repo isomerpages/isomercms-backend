@@ -5,7 +5,7 @@ const { config } = require("@config/config")
 
 const logger = require("@logger/logger").default
 
-const { ConflictError } = require("@errors/ConflictError")
+const LockedError = require("@root/errors/LockedError").default
 
 // Env vars
 const NODE_ENV = config.get("env")
@@ -52,7 +52,7 @@ const lock = async (siteName) => {
     logger.error(
       `Failed to lock repo ${siteName}: ${JSON.stringify(serializeError(err))}`
     )
-    throw new ConflictError(
+    throw new LockedError(
       `Someone else is currently modifying repo ${siteName}. Please try again later.`
     )
   }

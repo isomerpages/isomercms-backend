@@ -252,7 +252,6 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
   "facebook-pixel": Joi.string()
     .regex(/^[0-9]{15,16}$/)
     .allow(""),
-  google_analytics: Joi.string().allow(""),
   google_analytics_ga4: Joi.string().allow(""),
   "linkedin-insights": Joi.string().allow(""),
   is_government: Joi.boolean(),

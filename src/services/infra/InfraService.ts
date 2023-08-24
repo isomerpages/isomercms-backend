@@ -21,7 +21,7 @@ import {
   JobStatus,
   RedirectionTypes,
   REDIRECTION_SERVER_IP,
-  ISOMER_ADMIN_EMAIL,
+  ISOMER_SUPPORT_EMAIL,
 } from "@root/constants"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
@@ -611,7 +611,9 @@ export default class InfraService {
       emailDetails = failureEmailDetails
     }
 
-    const targetEmail = isSuccess ? message.requestorEmail : ISOMER_ADMIN_EMAIL
+    const targetEmail = isSuccess
+      ? message.requestorEmail
+      : ISOMER_SUPPORT_EMAIL
 
     await mailer.sendMail(targetEmail, emailDetails.subject, emailDetails.body)
   }

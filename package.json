@@ -26,7 +26,7 @@
     "db:migrate:prod": "source .ssh/.env.prod && npx sequelize-cli db:migrate"
   },
   "dependencies": {
-    "@aws-sdk/client-amplify": "^3.370.0",
+    "@aws-sdk/client-amplify": "^3.382.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.370.0",
     "@aws-sdk/client-dynamodb": "^3.370.0",
     "@aws-sdk/client-secrets-manager": "^3.533.0",

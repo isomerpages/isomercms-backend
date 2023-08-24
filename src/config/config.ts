@@ -81,20 +81,6 @@ const config = convict({
     format: "required-string",
     default: "isomer-mutexes",
   },
-  dnsIndirection: {
-    domain: {
-      doc: "Domain used for the DNS indirection layer",
-      env: "DNS_INDIRECTION_DOMAIN",
-      format: "required-string",
-      default: "hostedon.isomer.gov.sg",
-    },
-    repo: {
-      doc: "Name of the GitHub repository used for the DNS indirection layer",
-      env: "DNS_INDIRECTION_REPO",
-      format: "required-string",
-      default: "isomer-indirection",
-    },
-  },
   sites: {
     pageCount: {
       doc: "Number of pages of repos to retrieve from GitHub API",

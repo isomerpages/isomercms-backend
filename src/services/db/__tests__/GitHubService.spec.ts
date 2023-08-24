@@ -697,7 +697,7 @@ describe("Github Service", () => {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      ref: BRANCH_REF,
+      sha: BRANCH_REF,
     }
 
     it("should get a repo state works correctly", async () => {

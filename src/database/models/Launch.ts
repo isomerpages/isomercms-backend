@@ -74,6 +74,11 @@ export class Launch extends Model {
   })
   domainValidationTarget!: string
 
+  @Column({
+    type: DataType.TEXT,
+  })
+  indirectionDomain!: string
+
   @CreatedAt
   createdAt!: Date
 

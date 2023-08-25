@@ -15,7 +15,7 @@ async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
     `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/commits`,
     {
       params: {
-        ref: branchRef,
+        sha: branchRef,
       },
       headers,
     }

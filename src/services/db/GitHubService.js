@@ -351,7 +351,7 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      ref: BRANCH_REF,
+      sha: BRANCH_REF,
     }
     // Get the commits of the repo
     const { data: commits } = await this.axiosInstance.get(endpoint, {

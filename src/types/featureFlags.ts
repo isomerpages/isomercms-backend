@@ -11,3 +11,12 @@ export type GrowthBookAttributes = {
   githubId?: string
   siteName?: string
 }
+
+// List of attributes we set in GrowthBook Instance in auth middleware
+export type GrowthBookAttributes = {
+  isomerUserId: string
+  email: string
+  githubId?: string
+  siteName?: string
+  role?: "email" | "admin"
+}

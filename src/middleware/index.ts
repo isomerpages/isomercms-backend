@@ -9,6 +9,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import { RequestHandler } from "@root/types"
+import { GrowthBookAttributes } from "@root/types/featureFlags"
 import IdentityAuthService from "@services/identity/AuthService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
@@ -89,6 +90,17 @@ const attachSiteHandler: RequestHandler<
     siteName,
   })
   res.locals.userWithSiteSessionData = userWithSiteSessionData
+
+  // populate growthbook
+  const { isomerUserId, email, githubId } = userSessionData
+  const gbAttributes: GrowthBookAttributes = {
+    isomerUserId,
+    email,
+    siteName,
+  }
+  if (githubId) gbAttributes.githubId = githubId
+  req.growthbook.setAttributes(gbAttributes)
+
   return next()
 }
 

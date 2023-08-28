@@ -19,7 +19,7 @@ export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
 
   // Wait for features to load (will be cached in-memory for future requests)
   req.growthbook
-    .loadFeatures()
+    .loadFeatures({ autoRefresh: true })
     .then(() => next())
     .catch((e: unknown) => {
       console.error("Failed to load features from GrowthBook", e)

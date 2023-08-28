@@ -14,7 +14,7 @@ export type RequestHandler<
   Locals extends Record<string, unknown> = Record<string, unknown>
 > = ExpressHandler<P, ResBody, ReqBody, ReqQuery, Locals>
 
-interface GrowthBookRequest extends ExpressRequest {
+export interface RequestWithGrowthBook extends ExpressRequest {
   growthbook: GrowthBook
 }
 
@@ -34,7 +34,7 @@ export type RequestHandlerWithGrowthbook<
   ReqQuery = unknown,
   Locals extends Record<string, unknown> = Record<string, unknown>
 > = (
-  req: GrowthBookRequest & {
+  req: RequestWithGrowthBook & {
     params: P
     body: ReqBody
     query: ReqQuery

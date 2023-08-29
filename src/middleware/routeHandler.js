@@ -20,8 +20,15 @@ const BRANCH_REF = config.get("github.branchRef")
 
 const gitFileSystemService = new GitFileSystemService(new SimpleGit())
 
-const isRepoWhitelisted = (siteName, ggsWhitelistedRepos) =>
+const isRepoWhitelisted = (siteName, ggsWhitelistedRepos) => {
+  // TODO: adding log to simplify debugging, to be removed after stabilising
+  logger.info(
+    `Checking if ${siteName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
+      siteName
+    )}`
+  )
   ggsWhitelistedRepos.includes(siteName)
+}
 
 const handleGitFileLock = async (repoName, next) => {
   const result = await gitFileSystemService.hasGitFileLock(repoName)

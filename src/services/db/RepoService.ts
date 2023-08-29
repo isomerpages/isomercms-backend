@@ -47,7 +47,7 @@ export default class RepoService extends GitHubService {
 
     // TODO: Adding for initial debugging if required. Remove once stabilised
     logger.info(
-      `Evaluating if ${repoName} is whitelisted: ${ggsWhitelistedRepos.repos.includes(
+      `Evaluating if ${repoName} is GGS whitelisted: ${ggsWhitelistedRepos.repos.includes(
         repoName
       )}`
     )

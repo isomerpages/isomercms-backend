@@ -6,6 +6,8 @@ import {
   NextFunction,
 } from "express"
 
+import { FeatureFlags } from "./featureFlags"
+
 export type RequestHandler<
   P = unknown,
   ResBody = unknown,
@@ -15,7 +17,7 @@ export type RequestHandler<
 > = ExpressHandler<P, ResBody, ReqBody, ReqQuery, Locals>
 
 export interface RequestWithGrowthBook extends ExpressRequest {
-  growthbook?: GrowthBook
+  growthbook?: GrowthBook<FeatureFlags>
 }
 
 /**

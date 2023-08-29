@@ -2,7 +2,8 @@ import { GrowthBook } from "@growthbook/growthbook"
 
 import { FeatureFlags } from "@root/types/featureFlags"
 
-// to make the file a module and avoid the TypeScript error
+// Empty export to make this file a module therefore allow
+// global augmentation (avoiding the related error)
 export {}
 
 declare global {

@@ -1,8 +1,6 @@
-import { GrowthBook } from "@growthbook/growthbook"
+import { GrowthBook, setPolyfills } from "@growthbook/growthbook"
 
 import { FeatureFlags } from "@root/types/featureFlags"
-
-const { setPolyfills } = require("@growthbook/growthbook")
 
 const GROWTHBOOK_API_HOST = "https://cdn.growthbook.io"
 

@@ -69,10 +69,9 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
     })
   }
 
-  let isGitAvailable = false
-  if (!isRepoWhitelisted(siteName, ggsWhitelistedRepos.repos)) {
-    isGitAvailable = true
-  } else {
+  let isGitAvailable = true
+  // only check git file lock if the repo is whitelisted
+  if (isRepoWhitelisted(siteName, ggsWhitelistedRepos.repos)) {
     isGitAvailable = await handleGitFileLock(siteName, next)
   }
 

@@ -21,9 +21,6 @@ import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
 import * as ReviewApi from "./review"
 
-const WHITELISTED_GIT_SERVICE_REPOS = config.get(
-  "featureFlags.ggsWhitelistedRepos"
-)
 const PLACEHOLDER_FILE_NAME = ".keep"
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
@@ -47,6 +44,14 @@ export default class RepoService extends GitHubService {
     } = sessionData.growthbook.getFeatureValue("ggs_whitelisted_repos", {
       repos: [],
     })
+
+    console.log(
+      `I RECEIVED: ${JSON.stringify(
+        ggsWhitelistedRepos
+      )} to compare with ${repoName}. Returning ${ggsWhitelistedRepos.repos.includes(
+        repoName
+      )}`
+    )
 
     return ggsWhitelistedRepos.repos.includes(repoName)
   }

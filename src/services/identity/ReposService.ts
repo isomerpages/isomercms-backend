@@ -5,6 +5,7 @@ import { Octokit } from "@octokit/rest"
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
 import git from "isomorphic-git"
 import http from "isomorphic-git/http/node"
+import { ResultAsync, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -12,6 +13,9 @@ import { config } from "@config/config"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
 import { Repo, Site } from "@database/models"
+import { DNS_INDIRECTION_REPO } from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
+import logger from "@root/logger/logger"
 
 const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 const octokit = new Octokit({ auth: SYSTEM_GITHUB_TOKEN })
@@ -261,5 +265,112 @@ export default class ReposService {
       ...repoPushConfig,
       remoteRef: "master",
     })
+  }
+
+  createDnsIndirectionFile = (
+    indirectionSubdomain: string,
+    primaryDomain: string,
+    primaryDomainTarget: string
+  ): ResultAsync<void, GitHubApiError> => {
+    const template = `import { Record } from "@pulumi/aws/route53";
+import { CLOUDFRONT_HOSTED_ZONE_ID } from "../constants";
+
+export const createRecords = (zoneId: string): Record[] => {
+  const records = [
+    new Record("${primaryDomain} A", {
+      name: "${indirectionSubdomain}",
+      type: "A",
+      zoneId: zoneId,
+      aliases: [
+        {
+          name: "${primaryDomainTarget}",
+          zoneId: CLOUDFRONT_HOSTED_ZONE_ID,
+          evaluateTargetHealth: false,
+        },
+      ],
+    }),
+
+    new Record("${primaryDomain} AAAA", {
+      name: "${indirectionSubdomain}",
+      type: "AAAA",
+      zoneId: zoneId,
+      aliases: [
+        {
+          name: "${primaryDomainTarget}",
+          zoneId: CLOUDFRONT_HOSTED_ZONE_ID,
+          evaluateTargetHealth: false,
+        },
+      ],
+    }),
+  ];
+
+  return records;
+};
+`
+
+    return ResultAsync.fromPromise(
+      octokit.repos.getContent({
+        owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+        repo: DNS_INDIRECTION_REPO,
+        path: `dns/${primaryDomain}.ts`,
+      }),
+      () => errAsync<true>(true)
+    )
+      .andThen((response) => {
+        if (Array.isArray(response.data)) {
+          logger.error(
+            `Error creating DNS indirection file for ${primaryDomain}`
+          )
+
+          return errAsync(
+            new GitHubApiError("Unable to create DNS indirection file")
+          )
+        }
+
+        const { sha } = response.data
+        return okAsync(sha)
+      })
+      .andThen((sha) =>
+        ResultAsync.fromPromise(
+          octokit.repos.createOrUpdateFileContents({
+            owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+            repo: DNS_INDIRECTION_REPO,
+            path: `dns/${primaryDomain}.ts`,
+            message: `Update ${primaryDomain}.ts`,
+            content: Buffer.from(template).toString("base64"),
+            sha,
+          }),
+          (error) => {
+            logger.error(
+              `Error creating DNS indirection file for ${primaryDomain}: ${error}`
+            )
+
+            return new GitHubApiError("Unable to create DNS indirection file")
+          }
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitHubApiError) {
+          return errAsync(error)
+        }
+
+        return ResultAsync.fromPromise(
+          octokit.repos.createOrUpdateFileContents({
+            owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+            repo: DNS_INDIRECTION_REPO,
+            path: `dns/${primaryDomain}.ts`,
+            message: `Create ${primaryDomain}.ts`,
+            content: Buffer.from(template).toString("base64"),
+          }),
+          (error) => {
+            logger.error(
+              `Error creating DNS indirection file for ${primaryDomain}: ${error}`
+            )
+
+            return new GitHubApiError("Unable to create DNS indirection file")
+          }
+        )
+      })
+      .map(() => undefined)
   }
 }

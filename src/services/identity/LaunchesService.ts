@@ -31,6 +31,7 @@ export type SiteLaunchCreateParams = {
   domainValidationTarget: string
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
+  indirectionDomain: string
 }
 
 interface LaunchesServiceProps {

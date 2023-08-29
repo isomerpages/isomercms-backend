@@ -15,6 +15,7 @@ export interface DnsRecordsEmailProps {
   domainValidationTarget: string
   primaryDomainSource: string
   primaryDomainTarget: string
+  indirectionDomain: string
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
   quadARecords?: QuadARecord[]
@@ -87,7 +88,7 @@ export function getDNSRecordsEmailBody(
           ? `www.${dnsRecords.primaryDomainSource}`
           : dnsRecords.primaryDomainSource
       }</td>
-          <td style="${tdStyle}">${dnsRecords.primaryDomainTarget}</td>
+          <td style="${tdStyle}">${dnsRecords.indirectionDomain}</td>
           <td style="${tdStyle}">CNAME</td>
         </tr>`
 

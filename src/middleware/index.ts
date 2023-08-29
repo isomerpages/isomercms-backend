@@ -85,11 +85,6 @@ const attachSiteHandler: RequestHandler<
     params: { siteName },
   } = req
   const { userSessionData } = res.locals
-  const userWithSiteSessionData = new UserWithSiteSessionData({
-    ...userSessionData.getGithubParams(),
-    siteName,
-  })
-  res.locals.userWithSiteSessionData = userWithSiteSessionData
 
   // populate growthbook
   const { isomerUserId, email, githubId } = userSessionData
@@ -100,6 +95,13 @@ const attachSiteHandler: RequestHandler<
   }
   if (githubId) gbAttributes.githubId = githubId
   req.growthbook.setAttributes(gbAttributes)
+
+  const userWithSiteSessionData = new UserWithSiteSessionData({
+    ...userSessionData.getGithubParams(),
+    siteName,
+    growthbook: req.growthbook, // inject into session
+  })
+  res.locals.userWithSiteSessionData = userWithSiteSessionData
 
   return next()
 }

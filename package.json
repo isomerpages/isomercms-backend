@@ -34,7 +34,7 @@
     "@opengovsg/sgid-client": "^2.0.0",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
-    "aws-sdk": "^2.1416.0",
+    "aws-sdk": "^2.1428.0",
     "axios": "~0.27.2",
     "axios-cache-interceptor": "^0.10.7",
     "base-64": "^0.1.0",

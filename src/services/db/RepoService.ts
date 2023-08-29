@@ -45,10 +45,9 @@ export default class RepoService extends GitHubService {
       repos: [],
     })
 
-    console.log(
-      `I RECEIVED: ${JSON.stringify(
-        ggsWhitelistedRepos
-      )} to compare with ${repoName}. Returning ${ggsWhitelistedRepos.repos.includes(
+    // TODO: Adding for initial debugging if required. Remove once stabilised
+    logger.info(
+      `Evaluating if ${repoName} is whitelisted: ${ggsWhitelistedRepos.repos.includes(
         repoName
       )}`
     )

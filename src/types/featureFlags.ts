@@ -10,5 +10,4 @@ export type GrowthBookAttributes = {
   email: string
   githubId?: string
   siteName?: string
-  role?: "email" | "admin"
 }

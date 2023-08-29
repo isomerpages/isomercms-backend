@@ -1,11 +1,13 @@
 import { GrowthBook } from "@growthbook/growthbook"
 
+import { FeatureFlags } from "@root/types/featureFlags"
+
 const { setPolyfills } = require("@growthbook/growthbook")
 
 const GROWTHBOOK_API_HOST = "https://cdn.growthbook.io"
 
 export const getNewGrowthbookInstance = (clientKey: string, isDev = false) =>
-  new GrowthBook({
+  new GrowthBook<FeatureFlags>({
     apiHost: GROWTHBOOK_API_HOST,
     clientKey,
     enableDevMode: isDev,

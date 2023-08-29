@@ -14,7 +14,7 @@ export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
 
   // Clean up at the end of the request
   res.on("close", () => {
-    req.growthbook.destroy()
+    if (req.growthbook) req.growthbook.destroy()
   })
 
   // Wait for features to load (will be cached in-memory for future requests)

@@ -87,14 +87,16 @@ const attachSiteHandler: RequestHandler<
   const { userSessionData } = res.locals
 
   // populate growthbook
-  const { isomerUserId, email, githubId } = userSessionData
-  const gbAttributes: GrowthBookAttributes = {
-    isomerUserId,
-    email,
-    siteName,
+  if (req.growthbook) {
+    const { isomerUserId, email, githubId } = userSessionData
+    const gbAttributes: GrowthBookAttributes = {
+      isomerUserId,
+      email,
+      siteName,
+    }
+    if (githubId) gbAttributes.githubId = githubId
+    req.growthbook.setAttributes(gbAttributes)
   }
-  if (githubId) gbAttributes.githubId = githubId
-  req.growthbook.setAttributes(gbAttributes)
 
   const userWithSiteSessionData = new UserWithSiteSessionData({
     ...userSessionData.getGithubParams(),

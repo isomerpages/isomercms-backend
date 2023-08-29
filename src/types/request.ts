@@ -15,7 +15,7 @@ export type RequestHandler<
 > = ExpressHandler<P, ResBody, ReqBody, ReqQuery, Locals>
 
 export interface RequestWithGrowthBook extends ExpressRequest {
-  growthbook: GrowthBook
+  growthbook?: GrowthBook
 }
 
 /**

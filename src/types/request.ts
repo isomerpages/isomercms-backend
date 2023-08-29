@@ -42,4 +42,4 @@ export type RequestHandlerWithGrowthbook<
   },
   res: Response<ResBody, Locals>,
   next: NextFunction
-) => any
+) => void

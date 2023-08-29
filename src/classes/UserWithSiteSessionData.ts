@@ -1,5 +1,7 @@
 import { GrowthBook } from "@growthbook/growthbook"
 
+import { FeatureFlags } from "@root/types/featureFlags"
+
 import UserSessionData, { SessionDataProps } from "./UserSessionData"
 
 export type UserWithSiteSessionDataProps = SessionDataProps & {
@@ -14,7 +16,7 @@ export type UserWithSiteSessionDataProps = SessionDataProps & {
 class UserWithSiteSessionData extends UserSessionData {
   readonly siteName: string
 
-  readonly growthbook?: GrowthBook
+  readonly growthbook?: GrowthBook<FeatureFlags>
 
   constructor(props: UserWithSiteSessionDataProps) {
     super(props)

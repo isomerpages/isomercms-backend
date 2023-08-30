@@ -1,12 +1,14 @@
 import autoBind from "auto-bind"
-import { NextFunction, Request, Response } from "express"
+import { NextFunction, Response } from "express"
 import { Session } from "express-session"
 
 import UserSessionData from "@root/classes/UserSessionData"
 import AuthenticationMiddlewareService from "@root/services/middlewareServices/AuthenticationMiddlewareService"
 import { SessionData } from "@root/types/express/session"
+import { GrowthBookAttributes } from "@root/types/featureFlags"
+import { RequestWithGrowthBook } from "@root/types/request"
 
-interface RequestWithSession extends Request {
+interface RequestWithSession extends RequestWithGrowthBook {
   session: Session & SessionData
 }
 
@@ -30,6 +32,7 @@ export class AuthenticationMiddleware {
     next: NextFunction
   ) {
     const { cookies, originalUrl: url, session } = req
+
     try {
       const {
         isomerUserId,
@@ -46,6 +49,19 @@ export class AuthenticationMiddleware {
         ...rest,
       })
       res.locals.userSessionData = userSessionData
+
+      // populate growthbook
+      if (req.growthbook) {
+        const gbAttributes: GrowthBookAttributes = {
+          isomerUserId,
+          email,
+        }
+        if (session.userInfo.githubId) {
+          gbAttributes.githubId = session.userInfo.githubId
+        }
+        req.growthbook.setAttributes(gbAttributes)
+      }
+
       return next()
     } catch (err) {
       return next(err)

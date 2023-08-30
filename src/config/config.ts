@@ -414,12 +414,6 @@ const config = convict({
     },
   },
   featureFlags: {
-    ggsWhitelistedRepos: {
-      doc: "Comma-separated list of whitelisted repos for local Git service",
-      env: "WHITELISTED_GIT_SERVICE_REPOS",
-      format: String,
-      default: "",
-    },
     ggsTrackedSites: {
       doc: "Comma-separated list of tracked sites for GitHub API hits",
       env: "GGS_EXPERIMENTAL_TRACKING_SITES",

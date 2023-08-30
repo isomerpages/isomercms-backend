@@ -1,6 +1,9 @@
+import { GrowthBook } from "@growthbook/growthbook"
+
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { FeatureFlags } from "@root/types/featureFlags"
 
 import {
   MOCK_USER_EMAIL_ONE,
@@ -20,6 +23,7 @@ export const mockEmail = "mockEmail"
 export const mockTreeSha = "mockTreeSha"
 export const mockCurrentCommitSha = "mockCurrentCommitSha"
 export const mockSiteName = "mockSiteName"
+export const mockGrowthBook = new GrowthBook<FeatureFlags>()
 
 export const mockGithubState = {
   treeSha: mockTreeSha,
@@ -40,6 +44,17 @@ export const mockUserWithSiteSessionData = new UserWithSiteSessionData({
   email: mockEmail,
   siteName: mockSiteName,
 })
+
+export const mockUserWithSiteSessionDataAndGrowthBook = new UserWithSiteSessionData(
+  {
+    githubId: mockGithubId,
+    accessToken: mockAccessToken,
+    isomerUserId: mockIsomerUserId,
+    email: mockEmail,
+    siteName: mockSiteName,
+    growthbook: mockGrowthBook,
+  }
+)
 
 export const mockGithubSessionData = new GithubSessionData({
   treeSha: mockTreeSha,

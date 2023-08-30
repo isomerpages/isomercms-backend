@@ -3,31 +3,35 @@ const SimpleGit = require("simple-git")
 
 const { config } = require("@config/config")
 
+const logger = require("@logger/logger").default
+
 const { default: GithubSessionData } = require("@classes/GithubSessionData")
 
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
+const { FEATURE_FLAGS } = require("@root/constants/featureFlags")
 const GitFileSystemError = require("@root/errors/GitFileSystemError").default
 const LockedError = require("@root/errors/LockedError").default
 const {
   default: GitFileSystemService,
 } = require("@services/db/GitFileSystemService")
 
-const logger = require("@logger/logger").default
-
-const WHITELISTED_GIT_SERVICE_REPOS = config.get(
-  "featureFlags.ggsWhitelistedRepos"
-)
 const BRANCH_REF = config.get("github.branchRef")
 
 const gitFileSystemService = new GitFileSystemService(new SimpleGit())
 
-const isRepoWhitelisted = (siteName) =>
-  WHITELISTED_GIT_SERVICE_REPOS.split(",").includes(siteName)
+const isRepoWhitelisted = (siteName, ggsWhitelistedRepos) => {
+  // TODO: adding log to simplify debugging, to be removed after stabilising
+  logger.info(
+    `Checking if ${siteName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
+      siteName
+    )}`
+  )
+  ggsWhitelistedRepos.includes(siteName)
+}
 
 const handleGitFileLock = async (repoName, next) => {
-  if (!isRepoWhitelisted(repoName)) return true
   const result = await gitFileSystemService.hasGitFileLock(repoName)
   if (result.isErr()) {
     next(result.err)
@@ -64,8 +68,24 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   next
 ) => {
   const { siteName } = req.params
+  const { growthbook } = req
 
-  const isGitAvailable = await handleGitFileLock(siteName, next)
+  let ggsWhitelistedRepos = { repos: [] }
+  if (growthbook) {
+    ggsWhitelistedRepos = growthbook.getFeatureValue(
+      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
+      {
+        repos: [],
+      }
+    )
+  }
+
+  let isGitAvailable = true
+  // only check git file lock if the repo is whitelisted
+  if (isRepoWhitelisted(siteName, ggsWhitelistedRepos.repos)) {
+    isGitAvailable = await handleGitFileLock(siteName, next)
+  }
+
   if (!isGitAvailable) return
   try {
     await lock(siteName)
@@ -94,7 +114,22 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { siteName } = req.params
 
   const { accessToken } = userSessionData
-  const shouldUseGitFileSystem = isRepoWhitelisted(siteName)
+  const { growthbook } = req
+
+  let ggsWhitelistedRepos = { repos: [] }
+  if (growthbook) {
+    ggsWhitelistedRepos = growthbook.getFeatureValue(
+      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
+      {
+        repos: [],
+      }
+    )
+  }
+
+  const shouldUseGitFileSystem = isRepoWhitelisted(
+    siteName,
+    ggsWhitelistedRepos.repos
+  )
 
   const isGitAvailable = await handleGitFileLock(siteName, next)
   if (!isGitAvailable) return

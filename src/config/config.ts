@@ -405,13 +405,15 @@ const config = convict({
       default: "mock-redirect-uri",
     },
   },
-  featureFlags: {
-    ggsWhitelistedRepos: {
-      doc: "Comma-separated list of whitelisted repos for local Git service",
-      env: "WHITELISTED_GIT_SERVICE_REPOS",
-      format: String,
+  growthbook: {
+    clientKey: {
+      doc: "GrowthBook SDK client key",
+      env: "GROWTHBOOK_CLIENT_KEY",
+      format: "required-string",
       default: "",
     },
+  },
+  featureFlags: {
     ggsTrackedSites: {
       doc: "Comma-separated list of tracked sites for GitHub API hits",
       env: "GGS_EXPERIMENTAL_TRACKING_SITES",

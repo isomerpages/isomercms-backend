@@ -9,7 +9,7 @@ export {}
 declare global {
   namespace Express {
     export interface Request {
-      growthbook: GrowthBook<FeatureFlags>
+      growthbook?: GrowthBook<FeatureFlags>
     }
   }
 }

@@ -51,14 +51,16 @@ export class AuthenticationMiddleware {
       res.locals.userSessionData = userSessionData
 
       // populate growthbook
-      const gbAttributes: GrowthBookAttributes = {
-        isomerUserId,
-        email,
+      if (req.growthbook) {
+        const gbAttributes: GrowthBookAttributes = {
+          isomerUserId,
+          email,
+        }
+        if (session.userInfo.githubId) {
+          gbAttributes.githubId = session.userInfo.githubId
+        }
+        req.growthbook.setAttributes(gbAttributes)
       }
-      if (session.userInfo.githubId) {
-        gbAttributes.githubId = session.userInfo.githubId
-      }
-      req.growthbook.setAttributes(gbAttributes)
 
       return next()
     } catch (err) {

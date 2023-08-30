@@ -1,5 +1,6 @@
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import config from "@root/config/config"
+import logger from "@root/logger/logger"
 import { RequestHandlerWithGrowthbook } from "@root/types"
 import { getNewGrowthbookInstance } from "@root/utils/growthbook-utils"
 
@@ -22,7 +23,9 @@ export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
     .loadFeatures({ autoRefresh: true })
     .then(() => next())
     .catch((e: unknown) => {
-      console.error("Failed to load features from GrowthBook", e)
+      logger.error(
+        `Failed to load features from GrowthBook: ${JSON.stringify(e)}`
+      )
       next()
     })
 }

@@ -56,7 +56,7 @@ export class AuthenticationMiddleware {
           isomerUserId,
           email,
         }
-        if (session.userInfo.githubId) {
+        if (session.userInfo && session.userInfo.githubId) {
           gbAttributes.githubId = session.userInfo.githubId
         }
         req.growthbook.setAttributes(gbAttributes)

@@ -3,18 +3,19 @@ const SimpleGit = require("simple-git")
 
 const { config } = require("@config/config")
 
+const logger = require("@logger/logger").default
+
 const { default: GithubSessionData } = require("@classes/GithubSessionData")
 
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
+const { FEATURE_FLAGS } = require("@root/constants/featureFlags")
 const GitFileSystemError = require("@root/errors/GitFileSystemError").default
 const LockedError = require("@root/errors/LockedError").default
 const {
   default: GitFileSystemService,
 } = require("@services/db/GitFileSystemService")
-
-const logger = require("@logger/logger").default
 
 const BRANCH_REF = config.get("github.branchRef")
 
@@ -71,9 +72,12 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
 
   let ggsWhitelistedRepos = { repos: [] }
   if (growthbook) {
-    ggsWhitelistedRepos = growthbook.getFeatureValue("ggs_whitelisted_repos", {
-      repos: [],
-    })
+    ggsWhitelistedRepos = growthbook.getFeatureValue(
+      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
+      {
+        repos: [],
+      }
+    )
   }
 
   let isGitAvailable = true
@@ -114,9 +118,12 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
 
   let ggsWhitelistedRepos = { repos: [] }
   if (growthbook) {
-    ggsWhitelistedRepos = growthbook.getFeatureValue("ggs_whitelisted_repos", {
-      repos: [],
-    })
+    ggsWhitelistedRepos = growthbook.getFeatureValue(
+      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
+      {
+        repos: [],
+      }
+    )
   }
 
   const shouldUseGitFileSystem = isRepoWhitelisted(

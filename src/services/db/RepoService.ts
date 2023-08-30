@@ -7,8 +7,10 @@ import logger from "@logger/logger"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { FEATURE_FLAGS } from "@root/constants"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitHubCommitData } from "@root/types/commitData"
+import { FeatureFlags } from "@root/types/featureFlags"
 import type {
   GitCommitResult,
   GitDirectoryItem,
@@ -34,11 +36,13 @@ export default class RepoService extends GitHubService {
     this.gitFileSystemService = gitFileSystemService
   }
 
-  getGgsWhitelistedRepos(growthbook: GrowthBook | undefined): string[] {
+  getGgsWhitelistedRepos(
+    growthbook: GrowthBook<FeatureFlags> | undefined
+  ): string[] {
     if (!growthbook) return []
 
     const whitelistedRepos = growthbook.getFeatureValue(
-      "ggs_whitelisted_repos",
+      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
       { repos: [] }
     )
     return whitelistedRepos.repos

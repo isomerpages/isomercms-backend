@@ -6,9 +6,10 @@ import {
   mockEmail,
   mockGithubId,
   mockGithubSessionData,
+  mockGrowthBook,
   mockIsomerUserId,
   mockSiteName,
-  mockUserWithSiteSessionData,
+  mockUserWithSiteSessionDataAndGrowthBook,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { ItemType, MediaFileOutput, MediaDirOutput } from "@root/types"
@@ -52,17 +53,43 @@ describe("RepoService", () => {
     jest.clearAllMocks()
   })
 
+  // load whitelisted sites into growthbook
+  beforeAll(() => {
+    mockGrowthBook.setFeatures({
+      ggs_whitelisted_repos: {
+        defaultValue: {
+          repos: ["fake-repo", mockSiteName],
+        },
+      },
+    })
+  })
+
   describe("isRepoWhitelisted", () => {
     it("should indicate whitelisted repos as whitelisted correctly", () => {
-      const actual1 = RepoService.isRepoWhitelisted("fake-repo")
+      const actual1 = RepoService.isRepoWhitelisted(
+        "fake-repo",
+        RepoService.getGgsWhitelistedRepos(
+          mockUserWithSiteSessionDataAndGrowthBook.growthbook
+        )
+      )
       expect(actual1).toBe(true)
 
-      const actual2 = RepoService.isRepoWhitelisted(mockSiteName)
+      const actual2 = RepoService.isRepoWhitelisted(
+        mockSiteName,
+        RepoService.getGgsWhitelistedRepos(
+          mockUserWithSiteSessionDataAndGrowthBook.growthbook
+        )
+      )
       expect(actual2).toBe(true)
     })
 
     it("should indicate non-whitelisted repos as non-whitelisted correctly", () => {
-      const actual = RepoService.isRepoWhitelisted("not-whitelisted")
+      const actual = RepoService.isRepoWhitelisted(
+        "not-whitelisted",
+        RepoService.getGgsWhitelistedRepos(
+          mockUserWithSiteSessionDataAndGrowthBook.growthbook
+        )
+      )
       expect(actual).toBe(false)
     })
   })
@@ -83,17 +110,20 @@ describe("RepoService", () => {
         okAsync(createOutput)
       )
 
-      const actual = await RepoService.create(mockUserWithSiteSessionData, {
-        content: mockContent,
-        fileName: mockFileName,
-        directoryName: mockDirectoryName,
-        isMedia: false,
-      })
+      const actual = await RepoService.create(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          content: mockContent,
+          fileName: mockFileName,
+          directoryName: mockDirectoryName,
+          isMedia: false,
+        }
+      )
 
       expect(actual).toEqual(expected)
       expect(MockGitFileSystemService.create).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData.siteName,
-        mockUserWithSiteSessionData.isomerUserId,
+        mockUserWithSiteSessionDataAndGrowthBook.siteName,
+        mockUserWithSiteSessionDataAndGrowthBook.isomerUserId,
         mockContent,
         mockDirectoryName,
         mockFileName,
@@ -116,17 +146,20 @@ describe("RepoService", () => {
         okAsync(createOutput)
       )
 
-      const actual = await RepoService.create(mockUserWithSiteSessionData, {
-        content: mockContent,
-        fileName: mockFileName,
-        directoryName: mockDirectoryName,
-        isMedia: true,
-      })
+      const actual = await RepoService.create(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          content: mockContent,
+          fileName: mockFileName,
+          directoryName: mockDirectoryName,
+          isMedia: true,
+        }
+      )
 
       expect(actual).toEqual(expected)
       expect(MockGitFileSystemService.create).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData.siteName,
-        mockUserWithSiteSessionData.isomerUserId,
+        mockUserWithSiteSessionDataAndGrowthBook.siteName,
+        mockUserWithSiteSessionDataAndGrowthBook.isomerUserId,
         mockContent,
         mockDirectoryName,
         mockFileName,
@@ -177,10 +210,13 @@ describe("RepoService", () => {
       }
       MockGitFileSystemService.read.mockResolvedValueOnce(okAsync(expected))
 
-      const actual = await RepoService.read(mockUserWithSiteSessionData, {
-        fileName: "test.md",
-        directoryName: "",
-      })
+      const actual = await RepoService.read(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          fileName: "test.md",
+          directoryName: "",
+        }
+      )
 
       expect(actual).toEqual(expected)
     })
@@ -239,7 +275,7 @@ describe("RepoService", () => {
       )
 
       const actual = await RepoService.readDirectory(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         {
           directoryName: "test",
         }
@@ -301,12 +337,15 @@ describe("RepoService", () => {
       )
       MockGitFileSystemService.push.mockReturnValueOnce(undefined)
 
-      const actual = await RepoService.update(mockUserWithSiteSessionData, {
-        fileContent: "test content",
-        sha: "fake-original-sha",
-        fileName: "test.md",
-        directoryName: "pages",
-      })
+      const actual = await RepoService.update(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          fileContent: "test content",
+          sha: "fake-original-sha",
+          fileName: "test.md",
+          directoryName: "pages",
+        }
+      )
 
       expect(actual).toEqual({ newSha: expectedSha })
     })
@@ -343,7 +382,7 @@ describe("RepoService", () => {
       MockGitFileSystemService.push.mockReturnValueOnce(undefined)
 
       const actual = await RepoService.renameSinglePath(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockGithubSessionData,
         "fake-old-path",
         "fake-new-path",
@@ -429,7 +468,7 @@ describe("RepoService", () => {
       MockGitFileSystemService.push.mockReturnValueOnce(undefined)
 
       const actual = await RepoService.moveFiles(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockGithubSessionData,
         "fake-old-path",
         "fake-new-path",
@@ -534,7 +573,7 @@ describe("RepoService", () => {
       )
 
       const actual = await RepoService.getLatestCommitOfBranch(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         "master"
       )
       expect(actual).toEqual(expected)
@@ -583,7 +622,7 @@ describe("RepoService", () => {
       )
 
       const actual = await RepoService.readMediaFile(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         {
           directoryName: "test",
           fileName: "test content",
@@ -685,7 +724,7 @@ describe("RepoService", () => {
       )
 
       const actual = await RepoService.readMediaDirectory(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         "images"
       )
 
@@ -759,7 +798,7 @@ describe("RepoService", () => {
         okAsync("some-fake-sha")
       )
 
-      await RepoService.delete(mockUserWithSiteSessionData, {
+      await RepoService.delete(mockUserWithSiteSessionDataAndGrowthBook, {
         sha: "fake-original-sha",
         fileName: "test.md",
         directoryName: "pages",
@@ -767,15 +806,15 @@ describe("RepoService", () => {
 
       expect(MockGitFileSystemService.delete).toBeCalledTimes(1)
       expect(MockGitFileSystemService.delete).toBeCalledWith(
-        mockUserWithSiteSessionData.siteName,
+        mockUserWithSiteSessionDataAndGrowthBook.siteName,
         "pages/test.md",
         "fake-original-sha",
-        mockUserWithSiteSessionData.isomerUserId,
+        mockUserWithSiteSessionDataAndGrowthBook.isomerUserId,
         false
       )
       expect(MockGitFileSystemService.push).toBeCalledTimes(1)
       expect(MockGitFileSystemService.push).toBeCalledWith(
-        mockUserWithSiteSessionData.siteName
+        mockUserWithSiteSessionDataAndGrowthBook.siteName
       )
     })
 

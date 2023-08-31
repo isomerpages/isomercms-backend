@@ -1,3 +1,4 @@
+import { GrowthBook } from "@growthbook/growthbook"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 
 import config from "@config/config"
@@ -6,8 +7,10 @@ import logger from "@logger/logger"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { FEATURE_FLAGS } from "@root/constants"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitHubCommitData } from "@root/types/commitData"
+import { FeatureFlags } from "@root/types/featureFlags"
 import type {
   GitCommitResult,
   GitDirectoryItem,
@@ -21,9 +24,6 @@ import GitFileSystemService from "./GitFileSystemService"
 import { GitHubService } from "./GitHubService"
 import * as ReviewApi from "./review"
 
-const WHITELISTED_GIT_SERVICE_REPOS = config.get(
-  "featureFlags.ggsWhitelistedRepos"
-)
 const PLACEHOLDER_FILE_NAME = ".keep"
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
@@ -36,8 +36,27 @@ export default class RepoService extends GitHubService {
     this.gitFileSystemService = gitFileSystemService
   }
 
-  isRepoWhitelisted(repoName: string): boolean {
-    return WHITELISTED_GIT_SERVICE_REPOS.split(",").includes(repoName)
+  getGgsWhitelistedRepos(
+    growthbook: GrowthBook<FeatureFlags> | undefined
+  ): string[] {
+    if (!growthbook) return []
+
+    const whitelistedRepos = growthbook.getFeatureValue(
+      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
+      { repos: [] }
+    )
+    return whitelistedRepos.repos
+  }
+
+  isRepoWhitelisted(repoName: string, ggsWhitelistedRepos: string[]): boolean {
+    // TODO: Adding for initial debugging if required. Remove once stabilised
+    logger.info(
+      `Evaluating if ${repoName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
+        repoName
+      )}`
+    )
+
+    return ggsWhitelistedRepos.includes(repoName)
   }
 
   getCommitDiff(siteName: string, base?: string, head?: string) {
@@ -131,7 +150,12 @@ export default class RepoService extends GitHubService {
       isMedia?: boolean
     }
   ): Promise<{ sha: string }> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info(
         `Writing file to local Git file system - Site name: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
       )
@@ -163,7 +187,12 @@ export default class RepoService extends GitHubService {
     sessionData: UserWithSiteSessionData,
     { fileName, directoryName }: { fileName: string; directoryName?: string }
   ): Promise<GitFile> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info("Reading file from local Git file system")
       const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
       const result = await this.gitFileSystemService.read(
@@ -193,7 +222,12 @@ export default class RepoService extends GitHubService {
     const { siteName } = sessionData
 
     // fetch from local disk
-    if (this.isRepoWhitelisted(siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info(
         `Reading media file from disk. Site name: ${siteName}, directory name: ${directoryName}, file name: ${fileName},`
       )
@@ -238,7 +272,12 @@ export default class RepoService extends GitHubService {
     sessionData: UserWithSiteSessionData,
     { directoryName }: { directoryName: string }
   ): Promise<GitDirectoryItem[]> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info("Reading directory from local Git file system")
       const result = await this.gitFileSystemService.listDirectoryContents(
         sessionData.siteName,
@@ -270,7 +309,12 @@ export default class RepoService extends GitHubService {
       (file.type === "file" || file.type === "dir") &&
       file.name !== PLACEHOLDER_FILE_NAME
 
-    if (this.isRepoWhitelisted(siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       const result = await this.gitFileSystemService.listDirectoryContents(
         siteName,
         directoryName
@@ -321,7 +365,12 @@ export default class RepoService extends GitHubService {
       directoryName?: string
     }
   ): Promise<GitCommitResult> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info("Updating file in local Git file system")
       const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
       const result = await this.gitFileSystemService.update(
@@ -360,7 +409,12 @@ export default class RepoService extends GitHubService {
       githubSessionData: GithubSessionData
     }
   ): Promise<void> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info(
         `Deleting directory in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}`
       )
@@ -419,7 +473,12 @@ export default class RepoService extends GitHubService {
       directoryName: string
     }
   ): Promise<void> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info(
         `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
       )
@@ -457,7 +516,12 @@ export default class RepoService extends GitHubService {
     newPath: string,
     message?: string
   ): Promise<GitCommitResult> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info("Renaming file/directory in local Git file system")
       const result = await this.gitFileSystemService.renameSinglePath(
         sessionData.siteName,
@@ -542,7 +606,12 @@ export default class RepoService extends GitHubService {
     targetFiles: string[],
     message?: string
   ): Promise<GitCommitResult> {
-    if (this.isRepoWhitelisted(sessionData.siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        sessionData.siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info("Moving files in local Git file system")
       const result = await this.gitFileSystemService.moveFiles(
         sessionData.siteName,
@@ -626,7 +695,12 @@ export default class RepoService extends GitHubService {
     branchName: string
   ): Promise<GitHubCommitData> {
     const { siteName } = sessionData
-    if (this.isRepoWhitelisted(siteName)) {
+    if (
+      this.isRepoWhitelisted(
+        siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
       logger.info(
         `Getting latest commit of branch ${branchName} for site ${siteName} from local Git file system`
       )

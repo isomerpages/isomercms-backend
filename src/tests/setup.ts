@@ -12,10 +12,6 @@ import { Umzug, SequelizeStorage } from "umzug"
 
 import { sequelize } from "@tests/database"
 
-const setupEnvVars = () => {
-  process.env.WHITELISTED_GIT_SERVICE_REPOS = "fake-repo,mockSiteName"
-}
-
 const setupDb = async () => {
   const migrator = new Umzug({
     migrations: {
@@ -47,7 +43,6 @@ const setupDb = async () => {
 
 const setup = async () => {
   console.log("setting up environment variables")
-  setupEnvVars()
 
   console.log("setting up database for testing")
   return await setupDb()

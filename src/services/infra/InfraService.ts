@@ -22,7 +22,9 @@ import {
   RedirectionTypes,
   REDIRECTION_SERVER_IP,
   ISOMER_SUPPORT_EMAIL,
+  DNS_INDIRECTION_DOMAIN,
 } from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
@@ -207,6 +209,8 @@ export default class InfraService {
     return url
   }
 
+  convertDotsToDashes = (url: string) => url.replace(/\./g, "-")
+
   isValidUrl(url: string): boolean {
     const schema = Joi.string().domain()
     // joi reports initial "_" for certificates as as an invalid url WRONGLY,
@@ -317,6 +321,22 @@ export default class InfraService {
         })
       )
     })
+  }
+
+  getIndirectionDomain(
+    primaryDomain: string,
+    primaryDomainTarget: string
+  ): ResultAsync<string, GitHubApiError> {
+    const indirectionSubdomain = this.convertDotsToDashes(primaryDomain)
+    const indirectionDomain = `${indirectionSubdomain}.${DNS_INDIRECTION_DOMAIN}`
+
+    return this.reposService
+      .createDnsIndirectionFile(
+        indirectionSubdomain,
+        primaryDomain,
+        primaryDomainTarget
+      )
+      .map(() => indirectionDomain)
   }
 
   getGeneratedDnsRecords = async (
@@ -486,6 +506,23 @@ export default class InfraService {
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
 
+      // Indirection domain should look something like this:
+      // blah-gov-sg.hostedon.isomer.gov.sg
+      const indirectionDomain = await this.getIndirectionDomain(
+        primaryDomain,
+        primaryDomainTarget
+      )
+
+      if (indirectionDomain.isErr()) {
+        return errAsync(
+          new AmplifyError(
+            `Error creating indirection domain: ${indirectionDomain.error}`,
+            repoName,
+            appId
+          )
+        )
+      }
+
       /**
        * Amplify only stores the prefix.
        * ie: if I wanted to have a www.blah.gov.sg -> gibberish.cloudfront.net,
@@ -500,6 +537,7 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        indirectionDomain: indirectionDomain.value,
       }
 
       if (redirectionDomainList?.length) {
@@ -520,6 +558,7 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        indirectionDomain: indirectionDomain.value,
         requestorEmail: requestor.email ? requestor.email : "",
         agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
       }

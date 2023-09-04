@@ -36,7 +36,8 @@ const lock = async (siteName) => {
     const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME =
       Math.floor(new Date().valueOf() / 1000) + 60
 
-    if (!IS_DEV && !isE2eTestRepo(siteName)) {
+    if (isE2eTestRepo(siteName)) return
+    if (!IS_DEV) {
       const params = {
         TableName: MUTEX_TABLE_NAME,
         Item: {
@@ -62,7 +63,8 @@ const lock = async (siteName) => {
 }
 
 const unlock = async (siteName) => {
-  if (IS_DEV || isE2eTestRepo(siteName)) return mockUnlock(siteName)
+  if (isE2eTestRepo(siteName)) return
+  if (IS_DEV) return mockUnlock(siteName)
 
   try {
     const params = {

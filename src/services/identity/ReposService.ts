@@ -1,5 +1,6 @@
 import fs from "fs"
 
+import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
@@ -19,6 +20,11 @@ import logger from "@root/logger/logger"
 
 const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 const octokit = new Octokit({ auth: SYSTEM_GITHUB_TOKEN })
+const OctokitRetry = Octokit.plugin(retry as any)
+const octokitWithRetry = new OctokitRetry({
+  auth: SYSTEM_GITHUB_TOKEN,
+  request: { retries: 5 },
+})
 
 // Constants
 const SITE_CREATION_BASE_REPO_URL =
@@ -332,7 +338,7 @@ export const createRecords = (zoneId: string): Record[] => {
       })
       .andThen((sha) =>
         ResultAsync.fromPromise(
-          octokit.repos.createOrUpdateFileContents({
+          octokitWithRetry.repos.createOrUpdateFileContents({
             owner: ISOMER_GITHUB_ORGANIZATION_NAME,
             repo: DNS_INDIRECTION_REPO,
             path: `dns/${primaryDomain}.ts`,
@@ -355,7 +361,7 @@ export const createRecords = (zoneId: string): Record[] => {
         }
 
         return ResultAsync.fromPromise(
-          octokit.repos.createOrUpdateFileContents({
+          octokitWithRetry.repos.createOrUpdateFileContents({
             owner: ISOMER_GITHUB_ORGANIZATION_NAME,
             repo: DNS_INDIRECTION_REPO,
             path: `dns/${primaryDomain}.ts`,

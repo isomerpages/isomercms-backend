@@ -12,6 +12,8 @@ import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
+import { MAX_CONCURRENT_GIT_PROCESSES } from "@constants/constants"
+
 import initSequelize from "@database/index"
 import {
   Site,
@@ -155,7 +157,9 @@ const { AuthService } = require("@services/utilServices/AuthService")
 setBrowserPolyfills()
 
 const authService = new AuthService({ usersService })
-const gitFileSystemService = new GitFileSystemService(new simpleGit())
+const gitFileSystemService = new GitFileSystemService(
+  new simpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
+)
 const gitHubService = new RepoService(
   isomerRepoAxiosInstance,
   gitFileSystemService

@@ -10,6 +10,8 @@ const { default: GithubSessionData } = require("@classes/GithubSessionData")
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
+const { MAX_CONCURRENT_GIT_PROCESSES } = require("@constants/constants")
+
 const { FEATURE_FLAGS } = require("@root/constants/featureFlags")
 const GitFileSystemError = require("@root/errors/GitFileSystemError").default
 const LockedError = require("@root/errors/LockedError").default
@@ -19,7 +21,9 @@ const {
 
 const BRANCH_REF = config.get("github.branchRef")
 
-const gitFileSystemService = new GitFileSystemService(new SimpleGit())
+const gitFileSystemService = new GitFileSystemService(
+  new SimpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
+)
 
 const isRepoWhitelisted = (siteName, ggsWhitelistedRepos) => {
   // TODO: adding log to simplify debugging, to be removed after stabilising

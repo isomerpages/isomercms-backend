@@ -12,12 +12,15 @@ const NODE_ENV = config.get("env")
 const MUTEX_TABLE_NAME = config.get("mutexTableName")
 
 const IS_DEV = NODE_ENV === "dev" || NODE_ENV === "test" || NODE_ENV === "vapt"
+const E2E_TEST_REPOS = ["e2e-email-test-repo", "e2e-test-repo"]
 const mockMutexObj = {}
 
 // Dynamodb constants
 const AWS_REGION_NAME = config.get("aws.region")
 AWS.config.update({ region: AWS_REGION_NAME })
 const docClient = new AWS.DynamoDB.DocumentClient()
+
+const isE2eTestRepo = (siteName) => E2E_TEST_REPOS.includes(siteName)
 
 const mockLock = (siteName) => {
   if (mockMutexObj[siteName]) throw new Error("Mock lock error")
@@ -33,6 +36,7 @@ const lock = async (siteName) => {
     const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME =
       Math.floor(new Date().valueOf() / 1000) + 60
 
+    if (isE2eTestRepo(siteName)) return
     if (!IS_DEV) {
       const params = {
         TableName: MUTEX_TABLE_NAME,
@@ -59,6 +63,7 @@ const lock = async (siteName) => {
 }
 
 const unlock = async (siteName) => {
+  if (isE2eTestRepo(siteName)) return
   if (IS_DEV) return mockUnlock(siteName)
 
   try {

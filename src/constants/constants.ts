@@ -61,3 +61,5 @@ export const DNS_INDIRECTION_DOMAIN = "hostedon.isomer.gov.sg"
 export const DNS_INDIRECTION_REPO = "isomer-indirection"
 export const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"
 export const ISOMER_SUPPORT_EMAIL = "support@isomer.gov.sg"
+
+export const MAX_CONCURRENT_GIT_PROCESSES = 150

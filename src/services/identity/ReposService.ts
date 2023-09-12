@@ -31,6 +31,8 @@ const SITE_CREATION_BASE_REPO_URL =
   "https://github.com/isomerpages/site-creation-base"
 const ISOMER_GITHUB_ORGANIZATION_NAME = "isomerpages"
 
+const EFS_VOL_PATH = config.get("aws.efs.volPath")
+
 interface ReposServiceProps {
   repository: ModelStatic<Repo>
 }
@@ -59,7 +61,7 @@ export default class ReposService {
     this.repository = repository
   }
 
-  getLocalRepoPath = (repoName: string) => `/tmp/${repoName}`
+  getLocalRepoPath = (repoName: string) => `${EFS_VOL_PATH}/${repoName}`
 
   create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)
@@ -79,7 +81,8 @@ export default class ReposService {
     if (!isEmailLogin) {
       await this.createTeamOnGitHub(repoName)
     }
-    await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
+    const sshRepoUrl = `git@github.com:${ISOMER_GITHUB_ORGANIZATION_NAME}/${repoName}.git`
+    await this.generateRepoAndPublishToGitHub(repoName, sshRepoUrl)
     return this.create({
       name: repoName,
       url: repoUrl,

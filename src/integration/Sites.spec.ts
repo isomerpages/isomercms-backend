@@ -151,7 +151,10 @@ const authorizationMiddleware = getAuthorizationMiddleware({
   collaboratorsService,
 })
 
-const reposService = new ReposService({ repository: Repo })
+const reposService = new ReposService({
+  repository: Repo,
+  simpleGit: simpleGit(),
+})
 const deploymentsService = new DeploymentsService({
   deploymentsRepository: Deployment,
 })

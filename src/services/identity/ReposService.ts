@@ -4,10 +4,9 @@ import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
-import git from "isomorphic-git"
-import http from "isomorphic-git/http/node"
 import { ResultAsync, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
+import { SimpleGit } from "simple-git"
 
 import { config } from "@config/config"
 
@@ -30,9 +29,13 @@ const octokitWithRetry = new OctokitRetry({
 const SITE_CREATION_BASE_REPO_URL =
   "https://github.com/isomerpages/site-creation-base"
 const ISOMER_GITHUB_ORGANIZATION_NAME = "isomerpages"
+const ISOMER_GITHUB_EMAIL = "isomeradmin@users.noreply.github.com"
+
+const EFS_VOL_PATH = config.get("aws.efs.volPath")
 
 interface ReposServiceProps {
   repository: ModelStatic<Repo>
+  simpleGit: SimpleGit
 }
 
 type octokitCreateTeamResponseType = GetResponseTypeFromEndpointMethod<
@@ -55,11 +58,14 @@ export default class ReposService {
   // but having this seems to help navigation in some editors.
   private readonly repository: ReposServiceProps["repository"]
 
-  constructor({ repository }: ReposServiceProps) {
+  private readonly simpleGit: SimpleGit
+
+  constructor({ repository, simpleGit }: ReposServiceProps) {
     this.repository = repository
+    this.simpleGit = simpleGit
   }
 
-  getLocalRepoPath = (repoName: string) => `/tmp/${repoName}`
+  getLocalRepoPath = (repoName: string) => `${EFS_VOL_PATH}/${repoName}`
 
   create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)
@@ -79,7 +85,8 @@ export default class ReposService {
     if (!isEmailLogin) {
       await this.createTeamOnGitHub(repoName)
     }
-    await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
+    const sshRepoUrl = `git@github.com:${ISOMER_GITHUB_ORGANIZATION_NAME}/${repoName}.git`
+    await this.generateRepoAndPublishToGitHub(repoName, sshRepoUrl)
     return this.create({
       name: repoName,
       url: repoUrl,
@@ -108,37 +115,25 @@ export default class ReposService {
     this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
 
     // 2. Commit changes in local repo
-    await git.add({ fs, dir, filepath: "." })
-    await git.commit({
-      fs,
-      dir,
-      message: "Set URLs",
-      author: {
-        name: ISOMER_GITHUB_ORGANIZATION_NAME,
-        email: "isomeradmin@users.noreply.github.com",
-      },
-    })
+    await this.simpleGit
+      .cwd(dir)
+      .checkout("staging") // ensure on staging branch
+      .add(".")
+      .addConfig("user.name", ISOMER_GITHUB_ORGANIZATION_NAME)
+      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
+      .commit("Set URLs")
 
     // 3. Push changes to staging branch
-    const remote = "origin"
-    await git.push({
-      fs,
-      http,
-      dir,
-      remote,
-      remoteRef: "staging",
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    })
+    await this.simpleGit.cwd(dir).push("origin", "staging")
 
-    // 4. Push changes to master branch
-    await git.push({
-      fs,
-      http,
-      dir,
-      remote,
-      remoteRef: "master",
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    })
+    // 4. Merge these changes into master branch
+    await this.simpleGit.cwd(dir).checkout("master").merge(["staging"])
+
+    // 5. Push changes to master branch
+    await this.simpleGit.cwd(dir).push("origin", "master")
+
+    // 6. Checkout back to staging branch
+    await this.simpleGit.cwd(dir).checkout("staging")
   }
 
   private setUrlsInLocalConfig(
@@ -219,58 +214,39 @@ export default class ReposService {
     fs.rmSync(`${dir}`, { recursive: true, force: true })
 
     // Clone base repo locally
-    await git.clone({
-      fs,
-      http,
-      dir,
-      ref: "staging",
-      singleBranch: true,
-      url: SITE_CREATION_BASE_REPO_URL,
-      depth: 1,
-    })
+    fs.mkdirSync(dir)
+    await this.simpleGit
+      .cwd(dir)
+      .clone(SITE_CREATION_BASE_REPO_URL, dir, ["-b", "staging"])
 
     // Clear git
     fs.rmSync(`${dir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
-    await git.init({ fs, dir, defaultBranch: "staging" })
-    await git.add({ fs, dir, filepath: "." })
-    await git.commit({
-      fs,
-      dir,
-      message: "Initial commit",
-      author: {
-        name: "isomeradmin",
-        email: "isomeradmin@users.noreply.github.com",
-      },
-    })
+    await this.simpleGit
+      .cwd(dir)
+      .init(["--initial-branch=staging"])
+      .checkoutLocalBranch("staging")
 
-    const remote = "origin"
-    const addRemoteConfig = {
-      fs,
-      dir,
-      remote,
-      url: repoUrl,
-    }
-    await git.addRemote(addRemoteConfig)
+    // Add all the changes
+    await this.simpleGit.cwd(dir).add(".")
 
-    // Push contents, staging first then master,
-    // so that staging is default branch
-    const repoPushConfig = {
-      fs,
-      http,
-      dir,
-      remote,
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    }
-    await git.push({
-      ...repoPushConfig,
-      remoteRef: "staging",
-    })
-    await git.push({
-      ...repoPushConfig,
-      remoteRef: "master",
-    })
+    // Commit
+    await this.simpleGit
+      .cwd(dir)
+      .addConfig("user.name", "isomeradmin")
+      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
+      .commit("Initial commit")
+
+    // Push to origin
+    await this.simpleGit
+      .cwd(dir)
+      .addRemote("origin", repoUrl)
+      .checkout("staging")
+      .push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub
+      .checkoutLocalBranch("master")
+      .push(["-u", "origin", "master"])
+      .checkout("staging") // reset local branch back to staging
   }
 
   createDnsIndirectionFile = (

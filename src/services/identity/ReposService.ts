@@ -4,8 +4,6 @@ import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
-import git from "isomorphic-git"
-import http from "isomorphic-git/http/node"
 import { ResultAsync, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 import { SimpleGit } from "simple-git"
@@ -31,6 +29,7 @@ const octokitWithRetry = new OctokitRetry({
 const SITE_CREATION_BASE_REPO_URL =
   "https://github.com/isomerpages/site-creation-base"
 const ISOMER_GITHUB_ORGANIZATION_NAME = "isomerpages"
+const ISOMER_GITHUB_EMAIL = "isomeradmin@users.noreply.github.com"
 
 const EFS_VOL_PATH = config.get("aws.efs.volPath")
 
@@ -116,37 +115,25 @@ export default class ReposService {
     this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
 
     // 2. Commit changes in local repo
-    await git.add({ fs, dir, filepath: "." })
-    await git.commit({
-      fs,
-      dir,
-      message: "Set URLs",
-      author: {
-        name: ISOMER_GITHUB_ORGANIZATION_NAME,
-        email: "isomeradmin@users.noreply.github.com",
-      },
-    })
+    await this.simpleGit
+      .cwd(dir)
+      .checkout("staging") // ensure on staging branch
+      .add(".")
+      .addConfig("user.name", ISOMER_GITHUB_ORGANIZATION_NAME)
+      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
+      .commit("Set URLs")
 
     // 3. Push changes to staging branch
-    const remote = "origin"
-    await git.push({
-      fs,
-      http,
-      dir,
-      remote,
-      remoteRef: "staging",
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    })
+    await this.simpleGit.push("origin", "staging")
 
-    // 4. Push changes to master branch
-    await git.push({
-      fs,
-      http,
-      dir,
-      remote,
-      remoteRef: "master",
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    })
+    // 4. Merge these changes into master branch
+    await this.simpleGit.checkout("master").merge(["staging"])
+
+    // 5. Push changes to master branch
+    await this.simpleGit.push("origin", "master")
+
+    // 6. Checkout back to staging branch
+    await this.simpleGit.checkout("staging")
   }
 
   private setUrlsInLocalConfig(
@@ -247,7 +234,7 @@ export default class ReposService {
     // Commit
     await this.simpleGit
       .addConfig("user.name", "isomeradmin")
-      .addConfig("user.email", "isomeradmin@users.noreply.github.com")
+      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
       .commit("Initial commit")
 
     // Push to origin

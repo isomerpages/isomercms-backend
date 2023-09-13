@@ -82,7 +82,7 @@ export default class ReposService {
   }): Promise<Repo> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
 
-    // await this.createRepoOnGithub(repoName)
+    await this.createRepoOnGithub(repoName)
     if (!isEmailLogin) {
       await this.createTeamOnGitHub(repoName)
     }

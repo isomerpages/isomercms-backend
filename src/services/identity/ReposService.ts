@@ -124,16 +124,16 @@ export default class ReposService {
       .commit("Set URLs")
 
     // 3. Push changes to staging branch
-    await this.simpleGit.push("origin", "staging")
+    await this.simpleGit.cwd(dir).push("origin", "staging")
 
     // 4. Merge these changes into master branch
-    await this.simpleGit.checkout("master").merge(["staging"])
+    await this.simpleGit.cwd(dir).checkout("master").merge(["staging"])
 
     // 5. Push changes to master branch
-    await this.simpleGit.push("origin", "master")
+    await this.simpleGit.cwd(dir).push("origin", "master")
 
     // 6. Checkout back to staging branch
-    await this.simpleGit.checkout("staging")
+    await this.simpleGit.cwd(dir).checkout("staging")
   }
 
   private setUrlsInLocalConfig(
@@ -229,16 +229,18 @@ export default class ReposService {
       .checkoutLocalBranch("staging")
 
     // Add all the changes
-    await this.simpleGit.add(".")
+    await this.simpleGit.cwd(dir).add(".")
 
     // Commit
     await this.simpleGit
+      .cwd(dir)
       .addConfig("user.name", "isomeradmin")
       .addConfig("user.email", ISOMER_GITHUB_EMAIL)
       .commit("Initial commit")
 
     // Push to origin
     await this.simpleGit
+      .cwd(dir)
       .addRemote("origin", repoUrl)
       .checkout("staging")
       .push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub

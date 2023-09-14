@@ -157,9 +157,10 @@ const { AuthService } = require("@services/utilServices/AuthService")
 setBrowserPolyfills()
 
 const authService = new AuthService({ usersService })
-const gitFileSystemService = new GitFileSystemService(
-  new simpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
-)
+const simpleGitInstance = new simpleGit({
+  maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES,
+})
+const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
 const gitHubService = new RepoService(
   isomerRepoAxiosInstance,
   gitFileSystemService
@@ -224,7 +225,10 @@ const sitesService = new SitesService({
   sitesCacheService,
   previewService,
 })
-const reposService = new ReposService({ repository: Repo })
+const reposService = new ReposService({
+  repository: Repo,
+  simpleGit: simpleGitInstance,
+})
 const deploymentsService = new DeploymentsService({
   deploymentsRepository: Deployment,
 })

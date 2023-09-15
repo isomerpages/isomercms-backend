@@ -6,15 +6,15 @@ set -e
 # Make sure the local directory exists
 mkdir -p /tmp/isomer
 
+# If the temp .isomer.env file exists, remove it
+if [ -f "/tmp/isomer/.isomer.env" ]; then
+    rm /tmp/isomer/.isomer.env
+fi
+
 # Create EFS directory if it does not exist
 if [ ! -d "/efs/isomer" ]; then
     mkdir -p /efs/isomer
     chown webapp:webapp /efs/isomer
-fi
-
-# If the .isomer.env file exists, remove it
-if [ -f "/efs/isomer/.isomer.env" ]; then
-    rm /efs/isomer/.isomer.env
 fi
 
 ENV_TYPE=$(/opt/elasticbeanstalk/bin/get-config environment -k SSM_PREFIX)
@@ -87,7 +87,7 @@ aws configure set default.region ap-southeast-1
 for ENV_VAR in "${ENV_VARS[@]}"; do
   echo "Fetching ${ENV_VAR} from SSM"
   VALUE=$(aws ssm get-parameter --name "${ENV_TYPE}_${ENV_VAR}" --with-decryption --query "Parameter.Value" --output text)
-  echo "${ENV_VAR}=${VALUE}" >> /efs/isomer/.isomer.env
+  echo "${ENV_VAR}=${VALUE}" >> /tmp/isomer/.isomer.env
   echo "Saved ${ENV_VAR}"
 done
 

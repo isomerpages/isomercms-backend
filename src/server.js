@@ -420,6 +420,8 @@ app.use((req, res, next) => {
 // error handler
 app.use(errorHandler)
 
+logger.info(`PRINTING OUT TEST VAR: ${config.get("testVar")}`)
+
 logger.info("Connecting to Sequelize")
 sequelize
   .authenticate()

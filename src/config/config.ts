@@ -421,6 +421,12 @@ const config = convict({
       default: "",
     },
   },
+  testVar: {
+    doc: "Test variable",
+    env: "TEST_VAR",
+    format: "required-string",
+    default: "",
+  },
 })
 
 // Perform validation

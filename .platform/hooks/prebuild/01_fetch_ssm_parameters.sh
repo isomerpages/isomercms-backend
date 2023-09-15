@@ -70,6 +70,7 @@ ENV_VARS=(
   "SSM_PREFIX"
   "STEP_FUNCTIONS_ARN"
   "SYSTEM_GITHUB_TOKEN"
+  "TEST_VAR"
 )
 
 echo "Set AWS region"

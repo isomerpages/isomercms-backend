@@ -3,7 +3,10 @@
 # Exit on first error
 set -e
 
-# Create directory if it does not exist
+# Make sure the local directory exists
+mkdir -p /tmp/isomer
+
+# Create EFS directory if it does not exist
 if [ ! -d "/efs/isomer" ]; then
     mkdir -p /efs/isomer
     chown webapp:webapp /efs/isomer
@@ -88,5 +91,26 @@ for ENV_VAR in "${ENV_VARS[@]}"; do
   echo "Saved ${ENV_VAR}"
 done
 
-# Ensure the file is owned by webapp so it has access
-chown webapp:webapp /efs/isomer/.isomer.env
+# Use flock to ensure that the EFS file is locked during the copy operation
+(
+  flock -n 200 || exit 1
+
+  # Copy the local file to EFS
+  echo "Copying local env file to EFS"
+  cp /tmp/isomer/.isomer.env /efs/isomer/.isomer.env
+
+  # Ensure the file on EFS is owned by webapp so it has access
+  chown webapp:webapp /efs/isomer/.isomer.env
+
+) 200>/efs/isomer/.isomer.lock
+
+# Check the exit code of the last command (flock in this case)
+if [ $? != 1 ]; then
+    echo "Lock acquired and data copied successfully."
+    # Remove the temp file
+    rm /tmp/isomer/.isomer.env
+else
+    echo "Couldn't acquire the lock. Another instance might be writing to the file."
+fi
+
+echo "Operation completed."

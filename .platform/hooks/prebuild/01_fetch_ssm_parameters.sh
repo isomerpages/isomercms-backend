@@ -9,6 +9,11 @@ if [ ! -d "/etc/isomer" ]; then
     chown webapp:webapp /etc/isomer
 fi
 
+# If the .isomer.env file exists, remove it
+if [ -f "/etc/isomer/.isomer.env" ]; then
+    rm /etc/isomer/.isomer.env
+fi
+
 ENV_TYPE=$(/opt/elasticbeanstalk/bin/get-config environment -k SSM_PREFIX)
 echo "ENV TYPE: $ENV_TYPE" >> /tmp/ssm-type.txt
 
@@ -82,3 +87,6 @@ for ENV_VAR in "${ENV_VARS[@]}"; do
   echo "${ENV_VAR}=${VALUE}" >> /etc/isomer/.isomer.env
   echo "Saved ${ENV_VAR}"
 done
+
+# Ensure the file is owned by webapp so it has access
+chown webapp:webapp /etc/isomer/.isomer.env

@@ -38,6 +38,7 @@ ENV_VARS=(
   "DD_AGENT_MAJOR_VERSION"
   "DD_ENV"
   "DD_LOGS_INJECTION"
+  "TEST_VAR3"
   "DD_SERVICE"
   "DD_TAGS"
   "DD_TRACE_STARTUP_LOGS"
@@ -85,19 +86,24 @@ ENV_VARS=(
 echo "Set AWS region"
 aws configure set default.region ap-southeast-1
 
-for ENV_VAR in "${ENV_VARS[@]}"; do
-  echo "Fetching ${ENV_VAR} from SSM"
-  
-  VALUE=$(aws ssm get-parameter --name "${ENV_TYPE}_${ENV_VAR}" --with-decryption --query "Parameter.Value" --output text 2>/dev/null)
-  
-  if [ $? -ne 0 ]; then
-      echo "Failed to fetch ${ENV_VAR}. Skipping."
-      continue
-  fi
+set +e  # Do not exit if a command fails
 
-  echo "${ENV_VAR}=${VALUE}" >> /tmp/isomer/.isomer.env
-  echo "Saved ${ENV_VAR}"
+for ENV_VAR in "${ENV_VARS[@]}"; do
+    echo "Fetching ${ENV_VAR} from SSM"
+    
+    VALUE=$(aws ssm get-parameter --name "${ENV_TYPE}_${ENV_VAR}" --with-decryption --query "Parameter.Value" --output text 2>/dev/null)
+    STATUS=$?  # Capture exit status of the aws ssm command
+    
+    if [ $STATUS -ne 0 ]; then
+        echo "Failed to fetch ${ENV_VAR}. Skipping."
+        continue
+    fi
+    
+    echo "${ENV_VAR}=${VALUE}" >> /tmp/isomer/.isomer.env
+    echo "Saved ${ENV_VAR}"
 done
+
+set -e  # Exit on command failure from this point onwards
 
 # Use flock to ensure that the EFS file is locked during the copy operation
 (

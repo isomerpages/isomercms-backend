@@ -86,7 +86,15 @@ aws configure set default.region ap-southeast-1
 
 for ENV_VAR in "${ENV_VARS[@]}"; do
   echo "Fetching ${ENV_VAR} from SSM"
+  
+  # Attempt to fetch the parameter; if it fails, skip to the next iteration of the loop
   VALUE=$(aws ssm get-parameter --name "${ENV_TYPE}_${ENV_VAR}" --with-decryption --query "Parameter.Value" --output text)
+  
+  if [ $? -ne 0 ]; then
+      echo "Failed to fetch ${ENV_VAR}. Skipping."
+      continue
+  fi
+
   echo "${ENV_VAR}=${VALUE}" >> /tmp/isomer/.isomer.env
   echo "Saved ${ENV_VAR}"
 done

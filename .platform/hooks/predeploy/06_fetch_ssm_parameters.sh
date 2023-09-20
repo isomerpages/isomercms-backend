@@ -22,6 +22,7 @@ echo "ENV TYPE: $ENV_TYPE" >> /tmp/ssm-type.txt
 
 # List of all env vars to fetch
 ENV_VARS=(
+  "TEST_VAR2"
   "AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS"
   "AWS_BACKEND_EB_ENV_NAME"
   "AWS_REGION"

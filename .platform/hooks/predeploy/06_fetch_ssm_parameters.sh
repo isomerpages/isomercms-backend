@@ -18,7 +18,9 @@ if [ ! -d "/efs/isomer" ]; then
 fi
 
 ENV_TYPE=$(/opt/elasticbeanstalk/bin/get-config environment -k SSM_PREFIX)
-echo "ENV TYPE: $ENV_TYPE" >> /tmp/ssm-type.txt
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+echo "Timestamp: $TIMESTAMP - ENV TYPE: $ENV_TYPE" > /tmp/ssm-type.txt
 
 # List of all env vars to fetch
 ENV_VARS=(

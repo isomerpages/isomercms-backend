@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "node --unhandled-rejections=warn -r ts-node/register/transpile-only -r tsconfig-paths/register build/server.js",
+    "start": "node --unhandled-rejections=warn -r ts-node/register/transpile-only -r tsconfig-paths/register -r dotenv/config build/server.js dotenv_config_path=/efs/isomer/.isomer.env",
     "dev:services": "docker compose up -d",
     "dev:server": "source .env && ts-node-dev --unhandled-rejections=warn --respawn src/server.js",
     "dev": "npm run dev:services && npm run dev:server",
@@ -53,6 +53,7 @@
     "crypto-js": "^4.1.1",
     "dd-trace": "^4.7.0",
     "debug": "~2.6.9",
+    "dotenv": "^16.3.1",
     "eventsource": "^2.0.2",
     "exponential-backoff": "^3.1.0",
     "express": "~4.17.3",

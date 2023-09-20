@@ -22,7 +22,6 @@ echo "ENV TYPE: $ENV_TYPE" >> /tmp/ssm-type.txt
 
 # List of all env vars to fetch
 ENV_VARS=(
-  "TEST_VAR2"
   "AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS"
   "AWS_BACKEND_EB_ENV_NAME"
   "AWS_REGION"
@@ -38,7 +37,6 @@ ENV_VARS=(
   "DD_AGENT_MAJOR_VERSION"
   "DD_ENV"
   "DD_LOGS_INJECTION"
-  "TEST_VAR3"
   "DD_SERVICE"
   "DD_TAGS"
   "DD_TRACE_STARTUP_LOGS"
@@ -80,7 +78,6 @@ ENV_VARS=(
   "SSM_PREFIX"
   "STEP_FUNCTIONS_ARN"
   "SYSTEM_GITHUB_TOKEN"
-  "TEST_VAR"
 )
 
 echo "Set AWS region"

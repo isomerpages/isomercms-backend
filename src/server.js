@@ -147,6 +147,7 @@ const FRONTEND_URL = config.get("app.frontendUrl")
 // Import routes
 const { errorHandler } = require("@middleware/errorHandler")
 
+const { FileStorageRouter } = require("@routes/fileStorage")
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
 const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
@@ -352,6 +353,7 @@ const authV2Router = new AuthRouter({
   sgidAuthRouter,
 })
 const formsgRouter = new FormsgRouter({ usersService, infraService })
+const fileStorageRouter = new FileStorageRouter({})
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
   infraService,
@@ -403,6 +405,7 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 // FormSG Backend handler routes
 app.use("/formsg", formsgRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
+app.use("/assets", fileStorageRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

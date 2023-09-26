@@ -351,7 +351,11 @@ const authV2Router = new AuthRouter({
   statsMiddleware,
   sgidAuthRouter,
 })
-const formsgRouter = new FormsgRouter({ usersService, infraService })
+const formsgRouter = new FormsgRouter({
+  usersService,
+  infraService,
+  gitFileSystemService,
+})
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
   infraService,

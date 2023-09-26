@@ -11,6 +11,15 @@ function getRepoNameFromId(id: string) {
   })
 }
 
+// this is a mock func for now to simulate the delay in getting the staging url
+function getStagingUrlFromId(repoName: string) {
+  return new Promise<string>((resolve) => {
+    setTimeout(() => {
+      resolve("staging-lite.d29mduhmdpzk5f.amplifyapp.com")
+    }, 1000)
+  })
+}
+
 export class FileStorageRouter {
   getRouter() {
     const router = express.Router({ mergeParams: true })
@@ -26,7 +35,15 @@ export class FileStorageRouter {
     console.log(req.params.imageName)
     console.log(req.params.id)
     const repoName = await getRepoNameFromId(req.params.id)
+    const stagingUrl = await getStagingUrlFromId(repoName)
+    console.log(stagingUrl)
+    console.log(req.headers["x-forwarded-host"])
+    if (req.headers["x-forwarded-host"] !== stagingUrl) {
+      res.status(403).send("Unauthorized")
+      return
+    }
     console.log({ repoName })
+    console.log("authorized")
     const url = `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/images/${req.params.imageName}`
     let mimeType = req.params.imageName.split(".").pop()
     if (mimeType === "svg") {
@@ -51,8 +68,14 @@ export class FileStorageRouter {
   }
 
   async handleGetFileRequest(req: any, res: any) {
-    const repoName = getRepoNameFromId(req.params.id)
-    console.log(repoName)
+    console.log(req.headers["x-forwarded-host"])
+    const repoName = await getRepoNameFromId(req.params.id)
+    const stagingUrl = await getStagingUrlFromId(repoName)
+    if (req.headers["x-forwarded-host"] !== stagingUrl) {
+      res.status(403).send("Unauthorized")
+      return
+    }
+    console.log("authorized")
     const url = `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/files/${req.params.fileName}`
     try {
       const response = await axios.get(url, {
@@ -66,7 +89,7 @@ export class FileStorageRouter {
       })
       res.end(base64Content)
     } catch (error) {
-      console.error(error)
+      // console.error(error)
       res.status(500).send("Error fetching image")
     }
   }

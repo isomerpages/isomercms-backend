@@ -1,6 +1,8 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { okAsync } from "neverthrow"
 
+import config from "@config/config"
+
 import {
   mockAccessToken,
   mockEmail,
@@ -21,6 +23,8 @@ import _RepoService from "@services/db/RepoService"
 
 import { GitHubService } from "../GitHubService"
 
+const BRANCH_REF = config.get("github.branchRef")
+
 const MockAxiosInstance = {
   put: jest.fn(),
   get: jest.fn(),
@@ -40,6 +44,7 @@ const MockGitFileSystemService = {
   getLatestCommitOfBranch: jest.fn(),
   renameSinglePath: jest.fn(),
   moveFiles: jest.fn(),
+  updateRepoState: jest.fn(),
 }
 
 const RepoService = new _RepoService(
@@ -579,7 +584,8 @@ describe("RepoService", () => {
       )
       expect(MockGitFileSystemService.push).toBeCalledTimes(1)
       expect(MockGitFileSystemService.push).toBeCalledWith(
-        mockUserWithSiteSessionDataAndGrowthBook.siteName
+        mockUserWithSiteSessionDataAndGrowthBook.siteName,
+        BRANCH_REF
       )
     })
 
@@ -841,6 +847,46 @@ describe("RepoService", () => {
         "master"
       )
       expect(actual).toEqual(expected)
+    })
+  })
+
+  describe("updateRepoState", () => {
+    it("should update the repo state on the local Git file system if the repo is whitelisted", async () => {
+      MockGitFileSystemService.updateRepoState.mockResolvedValueOnce(
+        okAsync(undefined)
+      )
+
+      await RepoService.updateRepoState(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          commitSha: "fake-sha",
+          branchName: "master",
+        }
+      )
+
+      expect(MockGitFileSystemService.updateRepoState).toBeCalledTimes(1)
+    })
+
+    it("should update the repo state on GitHub if the repo is not whitelisted", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+      const gitHubServiceUpdateRepoState = jest.spyOn(
+        GitHubService.prototype,
+        "updateRepoState"
+      )
+      gitHubServiceUpdateRepoState.mockResolvedValueOnce(undefined)
+
+      await RepoService.updateRepoState(sessionData, {
+        commitSha: "fake-sha",
+        branchName: "master",
+      })
+
+      expect(gitHubServiceUpdateRepoState).toBeCalledTimes(1)
     })
   })
 })

@@ -455,10 +455,10 @@ class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState(sessionData, { commitSha }) {
+  async updateRepoState(sessionData, { commitSha, branchName = BRANCH_REF }) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
+    const refEndpoint = `${siteName}/git/refs/heads/${branchName}`
     const headers = {
       Authorization: `token ${accessToken}`,
     }

@@ -21,6 +21,7 @@ import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
+import { BadRequestError } from "@errors/BadRequestError"
 import { ConflictError } from "@errors/ConflictError"
 import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
@@ -155,8 +156,11 @@ export default class GitFileSystemService {
       })
   }
 
-  // Ensure that the repository is in the BRANCH_REF branch
-  ensureCorrectBranch(repoName: string): ResultAsync<true, GitFileSystemError> {
+  // Ensure that the repository is in the specified branch
+  ensureCorrectBranch(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<true, GitFileSystemError> {
     return ResultAsync.fromPromise(
       this.git
         .cwd(`${EFS_VOL_PATH}/${repoName}`)
@@ -171,11 +175,11 @@ export default class GitFileSystemService {
         return new GitFileSystemError("An unknown error occurred")
       }
     ).andThen((currentBranch) => {
-      if (currentBranch !== BRANCH_REF) {
+      if (currentBranch !== branchName) {
         return ResultAsync.fromPromise(
-          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(BRANCH_REF),
+          this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).checkout(branchName),
           (error) => {
-            logger.error(`Error when checking out ${BRANCH_REF}: ${error}`)
+            logger.error(`Error when checking out ${branchName}: ${error}`)
 
             if (error instanceof GitError) {
               return new GitFileSystemError("Unable to checkout branch")
@@ -346,7 +350,7 @@ export default class GitFileSystemService {
         )
       }
 
-      return this.ensureCorrectBranch(repoName).andThen(() =>
+      return this.ensureCorrectBranch(repoName, BRANCH_REF).andThen(() =>
         ResultAsync.fromPromise(
           this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).pull(),
           (error) => {
@@ -398,6 +402,7 @@ export default class GitFileSystemService {
   // Push the latest changes to upstream Git hosting provider
   push(
     repoName: string,
+    branchName: string,
     isForce = false
   ): ResultAsync<string, GitFileSystemError> {
     return this.isValidGitRepo(repoName).andThen((isValid) => {
@@ -407,7 +412,7 @@ export default class GitFileSystemService {
         )
       }
 
-      return this.ensureCorrectBranch(repoName)
+      return this.ensureCorrectBranch(repoName, branchName)
         .andThen(() =>
           ResultAsync.fromPromise(
             isForce
@@ -486,7 +491,7 @@ export default class GitFileSystemService {
 
       const commitMessage = JSON.stringify(commitMessageObj)
 
-      return this.ensureCorrectBranch(repoName)
+      return this.ensureCorrectBranch(repoName, BRANCH_REF)
         .andThen(() => {
           if (skipGitAdd) {
             // This is necessary when we have performed a git mv
@@ -1172,5 +1177,52 @@ export default class GitFileSystemService {
           )
         )
       })
+  }
+
+  updateRepoState(
+    repoName: string,
+    branchName: string,
+    sha: string
+  ): ResultAsync<void, GitFileSystemError> {
+    return this.isValidGitRepo(repoName).andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+        )
+      }
+
+      return this.ensureCorrectBranch(repoName, branchName)
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).catFile(["-t", sha]),
+            (error) => {
+              // An error is thrown if the SHA does not exist in the branch
+              if (error instanceof GitError) {
+                return new BadRequestError("The provided SHA is invalid")
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git.cwd(`${EFS_VOL_PATH}/${repoName}`).reset(["--hard", sha]),
+            (error) => {
+              logger.error(`Error when updating repo state: ${error}`)
+
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  `Unable to update repo state to commit SHA ${sha}`
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .andThen(() => this.push(repoName, branchName, true))
+        .map(() => undefined)
+    })
   }
 }

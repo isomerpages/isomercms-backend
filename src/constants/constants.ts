@@ -40,6 +40,7 @@ export const ISOMER_ADMIN_REPOS = [
   "isomercms-backend",
   "isomercms-frontend",
   "isomer-redirection",
+  "isomer-indirection",
   "isomerpages-template",
   "isomer-conversion-scripts",
   "isomer-wysiwyg",
@@ -52,6 +53,11 @@ export const ISOMER_ADMIN_REPOS = [
   "ci-test",
   "infra",
   "markdown-helper",
+]
+export const ISOMER_E2E_TEST_REPOS = [
+  "e2e-test-repo",
+  "e2e-email-test-repo",
+  "e2e-notggs-test-repo",
 ]
 
 export const INACTIVE_USER_THRESHOLD_DAYS = 60

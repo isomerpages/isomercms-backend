@@ -25,6 +25,8 @@ import { GitHubService } from "./GitHubService"
 import * as ReviewApi from "./review"
 
 const PLACEHOLDER_FILE_NAME = ".keep"
+const BRANCH_REF = config.get("github.branchRef")
+
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
@@ -172,7 +174,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return { sha: result.value.newSha }
     }
     return await super.create(sessionData, {
@@ -385,7 +387,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return { newSha: result.value }
     }
 
@@ -430,7 +432,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return
     }
 
@@ -497,7 +499,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return
     }
 
@@ -535,7 +537,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return { newSha: result.value }
     }
 
@@ -626,7 +628,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      this.gitFileSystemService.push(sessionData.siteName)
+      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return { newSha: result.value }
     }
 
@@ -737,8 +739,35 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  async updateRepoState(sessionData: any, { commitSha }: any): Promise<any> {
-    return await super.updateRepoState(sessionData, { commitSha })
+  async updateRepoState(
+    sessionData: UserWithSiteSessionData,
+    {
+      commitSha,
+      branchName = BRANCH_REF,
+    }: { commitSha: string; branchName?: string }
+  ): Promise<void> {
+    const { siteName } = sessionData
+    if (
+      this.isRepoWhitelisted(
+        siteName,
+        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      )
+    ) {
+      logger.info(
+        `Updating repo state for site ${siteName} to ${commitSha} on local Git file system`
+      )
+      const result = await this.gitFileSystemService.updateRepoState(
+        siteName,
+        branchName,
+        commitSha
+      )
+      if (result.isErr()) {
+        throw result.error
+      }
+      return
+    }
+
+    return await super.updateRepoState(sessionData, { commitSha, branchName })
   }
 
   async checkHasAccess(sessionData: any): Promise<any> {

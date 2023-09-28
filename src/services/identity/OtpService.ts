@@ -1,6 +1,6 @@
 import crypto from "crypto"
 
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 
 const SALT_TIMES = 10
 const TOTP_LENGTH = 6

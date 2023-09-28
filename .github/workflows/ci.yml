@@ -10,7 +10,7 @@ env:
   STAGING_BRANCH: refs/heads/staging
   EB_APP: isomer-cms
   EB_ENV_PRODUCTION: cms-backend-prod-node16
-  EB_ENV_STAGING: cms-backend-staging-node16
+  EB_ENV_STAGING: cms-backend-staging-node18
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
 jobs:

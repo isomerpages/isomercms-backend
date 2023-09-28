@@ -28,6 +28,7 @@ export const E2E_EMAIL_TEST_SITE = {
   name: "e2e email test site",
   repo: "e2e-email-test-repo",
 }
+export const E2E_NOTGGS_TEST_REPO = "e2e-notggs-test-repo"
 const E2E_TEST_SECRET = config.get("cypress.e2eTestSecret")
 
 export const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
@@ -190,7 +191,8 @@ export default class AuthenticationMiddlewareService {
       (userType === E2E_USERS.Email.Admin ||
         userType === E2E_USERS.Email.Collaborator)
     const isGithubE2eAccess =
-      repo === E2E_TEST_REPO && userType === "Github user"
+      (repo === E2E_TEST_REPO || repo === E2E_NOTGGS_TEST_REPO) &&
+      userType === "Github user"
 
     if (!isGithubE2eAccess && !isEmailE2eAccess)
       throw new AuthError(

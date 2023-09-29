@@ -38,6 +38,10 @@ export class FileStorageRouter {
     const stagingUrl = await getStagingUrlFromId(repoName)
     console.log(stagingUrl)
     console.log(req.headers["x-forwarded-host"])
+    console.log(req.headers["x-forwarded-for"])
+    const x = req.headers["x-forwarded-host"]
+
+    //! todo check if forwarded-host iss of type string or array. if array, get the last value (last hop)
     if (req.headers["x-forwarded-host"] !== stagingUrl) {
       res.status(403).send("Unauthorized")
       return
@@ -71,6 +75,7 @@ export class FileStorageRouter {
     console.log(req.headers["x-forwarded-host"])
     const repoName = await getRepoNameFromId(req.params.id)
     const stagingUrl = await getStagingUrlFromId(repoName)
+    console.log(typeof req.headers["x-forwarded-host"])
     if (req.headers["x-forwarded-host"] !== stagingUrl) {
       res.status(403).send("Unauthorized")
       return

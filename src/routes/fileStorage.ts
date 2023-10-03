@@ -15,7 +15,9 @@ function getRepoNameFromId(id: string) {
 function getStagingUrlFromId(repoName: string) {
   return new Promise<string>((resolve) => {
     setTimeout(() => {
-      resolve("staging-lite.d29mduhmdpzk5f.amplifyapp.com")
+      resolve(
+        "gitless-and-assetless-staging-lite.d29mduhmdpzk5f.amplifyapp.com"
+      )
     }, 1000)
   })
 }

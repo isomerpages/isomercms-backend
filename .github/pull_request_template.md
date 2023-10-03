@@ -50,6 +50,7 @@ Closes [insert issue #]
 **New environment variables**:
 
 - `env var` : env var details
+    - [ ] added env var to 1PW + SSM script (`fetch_ssm_parameters.sh`)
 
 **New scripts**:
 

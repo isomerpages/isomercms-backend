@@ -46,7 +46,7 @@ class RepoManagementService {
 
         return new GitHubApiError(`Failed to reset repo to commit ${commitSha}`)
       }
-    ).map(() => undefined)
+    )
   }
 }
 

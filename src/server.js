@@ -76,6 +76,7 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
+import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
 import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
@@ -165,6 +166,9 @@ const gitHubService = new RepoService(
   isomerRepoAxiosInstance,
   gitFileSystemService
 )
+const repoManagementService = new RepoManagementService({
+  repoService: gitHubService,
+})
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
@@ -338,6 +342,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   notificationOnEditHandler,
   sitesService,
   deploymentsService,
+  repoManagementService,
 })
 const sgidAuthRouter = new SgidAuthRouter({
   usersService,

@@ -12,7 +12,11 @@ const NODE_ENV = config.get("env")
 const MUTEX_TABLE_NAME = config.get("mutexTableName")
 
 const IS_DEV = NODE_ENV === "dev" || NODE_ENV === "test" || NODE_ENV === "vapt"
-const E2E_TEST_REPOS = ["e2e-email-test-repo", "e2e-test-repo"]
+const E2E_TEST_REPOS = [
+  "e2e-email-test-repo",
+  "e2e-test-repo",
+  "e2e-notggs-test-repo",
+]
 const mockMutexObj = {}
 
 // Dynamodb constants

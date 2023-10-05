@@ -120,14 +120,18 @@ export class DeployService {
         console.error(":cry")
         return
       }
+      console.log("resp from docker", { res })
 
-      execSync(
+      const s3Resp = execSync(
         `aws s3 cp ${join(
-          EFS_VOL_PATH,
+          `/efs`,
+          `build-times-mvp`,
           repoName,
           "_site"
         )} s3://test-build-deploys/ --recursive`
       )
+
+      console.log("Uploaded to S3", { s3Resp })
 
       // // refresh CloudFront distribution
       const cloudFrontClient = new CloudFront({

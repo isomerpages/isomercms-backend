@@ -239,12 +239,6 @@ export class FormsgRouter {
     const router = express.Router({ mergeParams: true })
 
     router.post(
-      "/clone-site",
-      attachFormSGHandler(SITE_CLONE_FORM_KEY),
-      this.cloneSiteToEfs
-    )
-
-    router.post(
       "/create-site",
       attachFormSGHandler(SITE_CREATE_FORM_KEY),
       this.formsgCreateSite

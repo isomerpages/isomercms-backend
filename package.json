@@ -27,6 +27,7 @@
     "@aws-sdk/client-amplify": "^3.370.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.370.0",
     "@aws-sdk/client-dynamodb": "^3.370.0",
+    "@aws-sdk/client-s3": "^3.423.0",
     "@aws-sdk/client-secrets-manager": "^3.370.0",
     "@aws-sdk/lib-dynamodb": "^3.370.0",
     "@growthbook/growthbook": "^0.27.0",

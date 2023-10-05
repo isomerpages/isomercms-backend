@@ -41,14 +41,19 @@ import type {
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
+import { DeployService } from "../deployServices/DeployService"
+
 const EFS_VOL_PATH = config.get("aws.efs.volPath")
 const BRANCH_REF = config.get("github.branchRef")
 
 export default class GitFileSystemService {
   private readonly git: SimpleGit
 
+  private readonly deployService: DeployService
+
   constructor(git: SimpleGit) {
     this.git = git
+    this.deployService = new DeployService()
   }
 
   hasGitFileLock(repoName: string): ResultAsync<boolean, GitFileSystemError> {
@@ -634,6 +639,10 @@ export default class GitFileSystemService {
 
         return errAsync(error)
       })
+      .andThen((result) => {
+        this.deployService.deployApp(repoName)
+        return okAsync(result)
+      })
   }
 
   // Read the contents of a file
@@ -801,6 +810,8 @@ export default class GitFileSystemService {
     oldSha: string,
     userId: SessionDataProps["isomerUserId"]
   ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
+    console.log("in update")
+    console.log({ repoName, filePath, fileContent, oldSha, userId })
     let oldStateSha = ""
 
     return this.getLatestCommitOfBranch(repoName, BRANCH_REF)
@@ -871,6 +882,12 @@ export default class GitFileSystemService {
         }
 
         return errAsync(error)
+      })
+      .andThen((commit) => {
+        // maybe do async first? todo: think about sync stuff later kek
+        this.deployService.deployApp(repoName)
+        console.log("deployed")
+        return okAsync(commit)
       })
   }
 
@@ -969,6 +986,11 @@ export default class GitFileSystemService {
         }
 
         return errAsync(error)
+      })
+      .andThen((commit) => {
+        // maybe do async first? todo: think about sync stuff later kek
+        this.deployService.deployApp(repoName)
+        return okAsync(commit)
       })
   }
 

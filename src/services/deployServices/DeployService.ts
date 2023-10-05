@@ -14,6 +14,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3"
 import CloudFront from "aws-sdk/clients/cloudfront"
+// import fetch from "node-fetch"
 
 import { config } from "@config/config"
 
@@ -107,25 +108,31 @@ export class DeployService {
       //   })
       // }
       // fileUploader(sitePath)
-      const res = await fetch("http://localhost:3000/build", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          dir: `/efs/build-times-mvp/${repoName}`,
-        }),
-      })
-      if (res.status !== 200) {
-        console.error(":cry")
-        return
-      }
-      console.log("resp from docker", { res })
+
+      const responseFromDocker = execSync(
+        `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }'`
+      )
+      console.log({ responseFromDocker })
+
+      // const res = await fetch("http://localhost:3000/build", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     dir: `/efs/repos/${repoName}`,
+      //   }),
+      // })
+      // if (res.status !== 200) {
+      //   console.error(":cry")
+      //   return
+      // }
+      // console.log("resp from docker", { res })
 
       const s3Resp = execSync(
         `aws s3 cp ${join(
           `/efs`,
-          `build-times-mvp`,
+          `repos`,
           repoName,
           "_site"
         )} s3://test-build-deploys/ --recursive`

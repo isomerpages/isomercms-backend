@@ -14,7 +14,6 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3"
 import CloudFront from "aws-sdk/clients/cloudfront"
-import { child } from "winston"
 
 import { config } from "@config/config"
 
@@ -127,7 +126,7 @@ export class DeployService {
           EFS_VOL_PATH,
           repoName,
           "_site"
-        )} s3://test-build-deploys/kishore-test-dev-emil/ --recursive`
+        )} s3://test-build-deploys/ --recursive`
       )
 
       // // refresh CloudFront distribution

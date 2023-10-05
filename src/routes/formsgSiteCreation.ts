@@ -11,10 +11,12 @@ import { BadRequestError } from "@errors/BadRequestError"
 import { getField } from "@utils/formsg-utils"
 
 import { attachFormSGHandler } from "@root/middleware"
+import GitFileSystemService from "@services/db/GitFileSystemService"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 import { mailer } from "@services/utilServices/MailClient"
 
+const SITE_CLONE_FORM_KEY = config.get("formSg.siteCloneFormKey")
 const SITE_CREATE_FORM_KEY = config.get("formSg.siteCreateFormKey")
 const REQUESTER_EMAIL_FIELD = "Government E-mail"
 const SITE_NAME_FIELD = "Site Name"
@@ -25,6 +27,7 @@ const LOGIN_TYPE_FIELD = "Login Type"
 export interface FormsgRouterProps {
   usersService: UsersService
   infraService: InfraService
+  gitFileSystemService: GitFileSystemService
 }
 
 export class FormsgRouter {
@@ -32,9 +35,16 @@ export class FormsgRouter {
 
   private readonly infraService: FormsgRouterProps["infraService"]
 
-  constructor({ usersService, infraService }: FormsgRouterProps) {
+  private readonly gitFileSystemService: FormsgRouterProps["gitFileSystemService"]
+
+  constructor({
+    usersService,
+    infraService,
+    gitFileSystemService,
+  }: FormsgRouterProps) {
     this.usersService = usersService
     this.infraService = infraService
+    this.gitFileSystemService = gitFileSystemService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -155,6 +165,74 @@ export class FormsgRouter {
 <p>You may now view this repository on GitHub. <a href="${stagingUrl}">Staging</a> and <a href="${productionUrl}">production</a> deployments should be accessible within a few minutes.</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
     await mailer.sendMail(email, subject, html)
+  }
+
+  cloneSiteToEfs: RequestHandler<
+    never,
+    Record<string, never>,
+    { data: { submissionId: string } },
+    never,
+    { submission: DecryptedContent }
+  > = async (req, res) => {
+    // 1. Extract arguments
+    const { submissionId } = req.body.data
+    const { responses } = res.locals.submission
+    // NOTE: This is validated by formsg to be of domain `@open.gov.sg`;
+    // hence, not revalidating here
+    const requesterEmail = getField(responses, "Email") as string
+    // NOTE: The field is required by our form so this cannot be empty or undefined
+    const githubRepoName = getField(responses, "Github Repo Name") as string
+
+    logger.info(
+      `${requesterEmail} requested for ${githubRepoName} to be cloned onto EFS`
+    )
+
+    this.gitFileSystemService
+      .clone(githubRepoName)
+      .map((path) => {
+        logger.info(`Cloned ${githubRepoName} to ${path}`)
+        this.sendCloneSuccess(
+          requesterEmail,
+          githubRepoName,
+          submissionId,
+          path
+        )
+      })
+      .mapErr((err) => {
+        logger.error(
+          `Cloning repo: ${githubRepoName} to EFS failed with error: ${JSON.stringify(
+            err
+          )}`
+        )
+        this.sendCloneError(
+          requesterEmail,
+          githubRepoName,
+          submissionId,
+          err.message
+        )
+      })
+  }
+
+  sendCloneSuccess = async (
+    requesterEmail: string,
+    githubRepoName: string,
+    submissionId: string,
+    path: string
+  ) => {
+    const subject = `[Isomer] Clone site ${githubRepoName} SUCCESS`
+    const html = `<p>Isomer site ${githubRepoName} was cloned successfully to EFS path: ${path}. (Form submission id [${submissionId}])</p>`
+    await mailer.sendMail(requesterEmail, subject, html)
+  }
+
+  async sendCloneError(
+    requesterEmail: string,
+    githubRepoName: string,
+    submissionId: string,
+    message: string
+  ) {
+    const subject = `[Isomer] Clone site ${githubRepoName} FAILURE`
+    const html = `<p>Isomer site ${githubRepoName} was <b>not</b> cloned successfully. Cloning failed with error: ${message} (Form submission id [${submissionId}])</p>`
+    await mailer.sendMail(requesterEmail, subject, html)
   }
 
   getRouter() {

@@ -897,6 +897,20 @@ describe("Github Service", () => {
         authHeader
       )
     })
+
+    it("should update a repo state for a non-standard branch correctly", async () => {
+      const branchName = "test-branch"
+      const branchRefEndpoint = `${siteName}/git/refs/heads/${branchName}`
+      await service.updateRepoState(sessionData, {
+        commitSha: sha,
+        branchName,
+      })
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        branchRefEndpoint,
+        { sha, force: true },
+        authHeader
+      )
+    })
   })
 
   describe("checkHasAccess", () => {

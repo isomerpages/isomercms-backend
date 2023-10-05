@@ -14,7 +14,7 @@ Closes [insert issue #]
 
 - [ ] Yes - this PR contains breaking changes
   - Details ...
-- [ ] No - this PR is backwards compatible
+- [ ] No - this PR is backwards compatible with ALL of the following feature flags in this [doc](https://www.notion.so/opengov/Existing-feature-flags-518ad2cdc325420893a105e88c432be5)
 
 **Features**:
 
@@ -50,6 +50,7 @@ Closes [insert issue #]
 **New environment variables**:
 
 - `env var` : env var details
+    - [ ] added env var to 1PW + SSM script (`fetch_ssm_parameters.sh`)
 
 **New scripts**:
 

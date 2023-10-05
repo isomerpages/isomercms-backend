@@ -76,6 +76,7 @@ import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
+import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
 import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
@@ -147,6 +148,7 @@ const FRONTEND_URL = config.get("app.frontendUrl")
 // Import routes
 const { errorHandler } = require("@middleware/errorHandler")
 
+const { FormsgSiteCloneRouter } = require("@routes/formsgSiteClone")
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
 const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
@@ -165,6 +167,9 @@ const gitHubService = new RepoService(
   isomerRepoAxiosInstance,
   gitFileSystemService
 )
+const repoManagementService = new RepoManagementService({
+  repoService: gitHubService,
+})
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
@@ -338,6 +343,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   notificationOnEditHandler,
   sitesService,
   deploymentsService,
+  repoManagementService,
 })
 const sgidAuthRouter = new SgidAuthRouter({
   usersService,
@@ -351,10 +357,17 @@ const authV2Router = new AuthRouter({
   statsMiddleware,
   sgidAuthRouter,
 })
-const formsgRouter = new FormsgRouter({ usersService, infraService })
+const formsgRouter = new FormsgRouter({
+  usersService,
+  infraService,
+  gitFileSystemService,
+})
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
   infraService,
+})
+const formsgSiteCloneRouter = new FormsgSiteCloneRouter({
+  gitFileSystemService,
 })
 
 const app = express()
@@ -403,6 +416,7 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 // FormSG Backend handler routes
 app.use("/formsg", formsgRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
+app.use("/formsg", formsgSiteCloneRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

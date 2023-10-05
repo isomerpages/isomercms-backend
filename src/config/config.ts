@@ -283,6 +283,13 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    siteCloneFormKey: {
+      doc: "FormSG API key for site clone form",
+      env: "SITE_CLONE_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {

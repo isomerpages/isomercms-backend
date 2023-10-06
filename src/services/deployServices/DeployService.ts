@@ -3,6 +3,7 @@
 // create a deploy service class with no dependencies
 
 import { readFileSync, readdirSync, statSync } from "fs"
+import * as fs from "fs"
 import { join } from "node:path"
 import { relative } from "path"
 
@@ -110,6 +111,11 @@ export class DeployService {
     //   })
     // }
     // fileUploader(sitePath)
+
+    // create a file called isBuilding
+    const filePath = `/efs/repos/${repoName}/isBuilding.txt`
+    fs.writeFileSync(filePath, "")
+
     try {
       const responseFromDocker = await exec(
         `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }' --max-time 600`
@@ -126,57 +132,63 @@ export class DeployService {
       })
     }
 
-    // const res = await fetch("http://localhost:3000/build", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     dir: `/efs/repos/${repoName}`,
-    //   }),
-    // })
-    // if (res.status !== 200) {
-    //   console.error(":cry")
-    //   return
-    // }
-    // console.log("resp from docker", { res })
+    setInterval(async () => {
+      // Delete the file if it exists
+      if (!fs.existsSync(filePath)) {
+        console.log("file does not exist")
+        // const res = await fetch("http://localhost:3000/build", {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     dir: `/efs/repos/${repoName}`,
+        //   }),
+        // })
+        // if (res.status !== 200) {
+        //   console.error(":cry")
+        //   return
+        // }
+        // console.log("resp from docker", { res })
 
-    const s3Resp = await exec(
-      `aws s3 cp ${join(
-        `/efs`,
-        `repos`,
-        repoName,
-        "_site"
-      )} s3://test-build-deploys/ --recursive`
-    )
+        const s3Resp = await exec(
+          `aws s3 cp ${join(
+            `/efs`,
+            `repos`,
+            repoName,
+            "_site"
+          )} s3://test-build-deploys/ --recursive`
+        )
 
-    console.log("Uploaded to S3", { s3Resp })
+        console.log("Uploaded to S3", { s3Resp })
 
-    // // refresh CloudFront distribution
-    const cloudFrontClient = new CloudFront({
-      region: "us-east-1",
-      credentials: {
-        accessKeyId: config.get("aws.amplify.accessKeyId"),
-        secretAccessKey: config.get("aws.amplify.secretAccessKey"),
-      },
-    })
+        // // refresh CloudFront distribution
+        const cloudFrontClient = new CloudFront({
+          region: "us-east-1",
+          credentials: {
+            accessKeyId: config.get("aws.amplify.accessKeyId"),
+            secretAccessKey: config.get("aws.amplify.secretAccessKey"),
+          },
+        })
 
-    const invalidationParams = {
-      DistributionId: CLOUDFRONT_DISTRIBUTION_ID,
-      InvalidationBatch: {
-        CallerReference: `${Date.now()}`,
-        Paths: {
-          Quantity: 1,
-          Items: ["/*"],
-        },
-      },
-    }
+        const invalidationParams = {
+          DistributionId: CLOUDFRONT_DISTRIBUTION_ID,
+          InvalidationBatch: {
+            CallerReference: `${Date.now()}`,
+            Paths: {
+              Quantity: 1,
+              Items: ["/*"],
+            },
+          },
+        }
 
-    cloudFrontClient.createInvalidation(invalidationParams, (err, data) => {
-      console.log({ err, data })
-    })
-    console.log(
-      `Invalidated CloudFront distribution ${CLOUDFRONT_DISTRIBUTION_ID}`
-    )
+        cloudFrontClient.createInvalidation(invalidationParams, (err, data) => {
+          console.log({ err, data })
+        })
+        console.log(
+          `Invalidated CloudFront distribution ${CLOUDFRONT_DISTRIBUTION_ID}`
+        )
+      }
+    }, 1000)
   }
 }

@@ -125,10 +125,10 @@ export class DeployService {
     }
 
     const poller = setInterval(async () => {
-      console.log("polling")
+      console.log(`polling for ${filePath}`)
       // Delete the file if it exists
       if (!fs.existsSync(filePath)) {
-        console.log("file does not exist, clearing poller")
+        console.log(`file does not exist for ${filePath}`)
 
         // const res = await fetch("http://localhost:3000/build", {
         //   method: "POST",

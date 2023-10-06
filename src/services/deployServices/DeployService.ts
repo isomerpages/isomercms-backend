@@ -124,10 +124,11 @@ export class DeployService {
       console.error({ error })
     }
 
-    setInterval(async () => {
+    const poller = setInterval(async () => {
       // Delete the file if it exists
       if (!fs.existsSync(filePath)) {
-        console.log("file does not exist")
+        console.log("file does not exist, clearing poller")
+
         // const res = await fetch("http://localhost:3000/build", {
         //   method: "POST",
         //   headers: {
@@ -180,6 +181,8 @@ export class DeployService {
         console.log(
           `Invalidated CloudFront distribution ${CLOUDFRONT_DISTRIBUTION_ID}`
         )
+        console.log("clearing poller")
+        clearInterval(poller)
       }
     }, 1000)
   }

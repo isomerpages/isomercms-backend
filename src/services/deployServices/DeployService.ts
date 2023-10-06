@@ -110,11 +110,21 @@ export class DeployService {
     //   })
     // }
     // fileUploader(sitePath)
-
-    const responseFromDocker = await exec(
-      `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }' --max-time 300`
-    )
-    console.log({ responseFromDocker })
+    try {
+      const responseFromDocker = await exec(
+        `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }' --max-time 600`
+      )
+      console.log({ responseFromDocker })
+    } catch (error) {
+      console.error({ error })
+      // delay for 1 minute
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          console.log("artificial delay done")
+          resolve()
+        }, 60000)
+      })
+    }
 
     // const res = await fetch("http://localhost:3000/build", {
     //   method: "POST",

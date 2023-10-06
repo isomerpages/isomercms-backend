@@ -112,7 +112,7 @@ export class DeployService {
     // fileUploader(sitePath)
 
     const responseFromDocker = await exec(
-      `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }'`
+      `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }' --max-time 300`
     )
     console.log({ responseFromDocker })
 

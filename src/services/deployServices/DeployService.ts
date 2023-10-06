@@ -115,7 +115,6 @@ export class DeployService {
     // create a file called isBuilding
     const filePath = `/efs/repos/${repoName}/isBuilding.txt`
     fs.writeFileSync(filePath, "")
-
     try {
       const responseFromDocker = await exec(
         `curl --location 'http://localhost:3000/build' --header 'Content-Type: application/json' --data '{ "dir": "/efs/repos/${repoName}" }' --max-time 600`
@@ -123,13 +122,6 @@ export class DeployService {
       console.log({ responseFromDocker })
     } catch (error) {
       console.error({ error })
-      // delay for 1 minute
-      await new Promise<void>((resolve) => {
-        setTimeout(() => {
-          console.log("artificial delay done")
-          resolve()
-        }, 60000)
-      })
     }
 
     setInterval(async () => {

@@ -125,6 +125,7 @@ export class DeployService {
     }
 
     const poller = setInterval(async () => {
+      console.log("polling")
       // Delete the file if it exists
       if (!fs.existsSync(filePath)) {
         console.log("file does not exist, clearing poller")

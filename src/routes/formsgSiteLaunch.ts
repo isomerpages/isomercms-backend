@@ -1,8 +1,11 @@
 import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
+import axios from "axios"
 import express, { RequestHandler } from "express"
 import { err, ok } from "neverthrow"
 import dig from "node-dig-dns"
+
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
@@ -239,6 +242,69 @@ export class FormsgSiteLaunchRouter {
         return null
       })
 
+  private async createMonitor(baseDomain: string) {
+    try {
+      const getResp = await axios.post<{ monitors: { id: string }[] }>(
+        "https://api.uptimerobot.com/v2/getMonitors?format=json",
+        {
+          api_key: config.get("uptimeRobot.apiKey"),
+          search: baseDomain,
+        }
+      )
+      const affectedMonitorIds = getResp.data.monitors.map(
+        (monitor) => monitor.id
+      )
+      const getAlertContactsResp = await axios.post<{
+        alert_contacts: { id: string }[]
+      }>("https://api.uptimerobot.com/v2/getAlertContacts?format=json", {
+        api_key: config.get("uptimeRobot.apiKey"),
+      })
+      const alertContacts = getAlertContactsResp.data.alert_contacts
+        .map(
+          (contact) => `${contact.id}_0_0` // numbers at the end represent threshold + recurrence, always 0 for free plan
+        )
+        .join("-")
+      if (affectedMonitorIds.length === 0) {
+        // Create new monitor
+        await axios.post<{ monitors: { id: string }[] }>(
+          "https://api.uptimerobot.com/v2/newMonitor?format=json",
+          {
+            api_key: config.get("uptimeRobot.apiKey"),
+            friendly_name: baseDomain,
+            url: `https://${baseDomain}`,
+            type: 1, // HTTP(S)
+            interval: 30,
+            timeout: 30,
+            alert_contacts: alertContacts,
+            http_method: 1, // GET
+          }
+        )
+      } else {
+        // Edit existing monitor
+        // We only edit the first matching monitor, in the case where multiple monitors exist
+        await axios.post<{ monitors: { id: string }[] }>(
+          "https://api.uptimerobot.com/v2/editMonitor?format=json",
+          {
+            api_key: config.get("uptimeRobot.apiKey"),
+            id: affectedMonitorIds[0],
+            friendly_name: baseDomain,
+            url: `https://${baseDomain}`,
+            type: 1, // HTTP(S)
+            interval: 30,
+            timeout: 30,
+            alert_contacts: alertContacts,
+            http_method: 1, // GET
+          }
+        )
+      }
+    } catch (uptimerobotErr) {
+      // Non-blocking error, since site launch is still successful
+      logger.info(
+        `Unable to create better uptime monitor for ${baseDomain}. Error: ${uptimerobotErr}`
+      )
+    }
+  }
+
   private async handleSiteLaunchResults(
     formResponses: FormResponsesProps[],
     submissionId: string
@@ -269,6 +335,8 @@ export class FormsgSiteLaunchRouter {
               `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for AAAA records`
             )
           }
+          // Create better uptime monitor
+          await this.createMonitor(launchResult.value.primaryDomainSource)
           successResults.push(successResult)
         }
       }

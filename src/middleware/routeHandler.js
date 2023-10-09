@@ -25,14 +25,13 @@ const gitFileSystemService = new GitFileSystemService(
   new SimpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
 )
 
-const isRepoWhitelisted = (siteName, ggsWhitelistedRepos) => {
+const isRepoWhitelisted = (siteName, growthbook) => {
   // TODO: adding log to simplify debugging, to be removed after stabilising
-  logger.info(
-    `Checking if ${siteName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
-      siteName
-    )}`
-  )
-  ggsWhitelistedRepos.includes(siteName)
+  logger.info(`Evaluating if ${siteName} is GGS whitelisted.`)
+  // NOTE: Growthbook has to be optional
+  // as we cannot guarantee its presence on `sessionData`.
+  // It is present iff there is a `siteHandler` attached.
+  return !!growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_WHITELISTED, false)
 }
 
 const handleGitFileLock = async (repoName, next) => {
@@ -74,23 +73,15 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   const { siteName } = req.params
   const { growthbook } = req
 
-  let ggsWhitelistedRepos = { repos: [] }
-  if (growthbook) {
-    ggsWhitelistedRepos = growthbook.getFeatureValue(
-      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
-      {
-        repos: [],
-      }
-    )
-  }
-
   let isGitAvailable = true
+
   // only check git file lock if the repo is whitelisted
-  if (isRepoWhitelisted(siteName, ggsWhitelistedRepos.repos)) {
+  if (isRepoWhitelisted(siteName, growthbook)) {
     isGitAvailable = await handleGitFileLock(siteName, next)
   }
 
   if (!isGitAvailable) return
+
   try {
     await lock(siteName)
   } catch (err) {
@@ -102,6 +93,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
     await unlock(siteName)
     next(err)
   })
+
   try {
     await unlock(siteName)
   } catch (err) {
@@ -120,20 +112,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { accessToken } = userSessionData
   const { growthbook } = req
 
-  let ggsWhitelistedRepos = { repos: [] }
-  if (growthbook) {
-    ggsWhitelistedRepos = growthbook.getFeatureValue(
-      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
-      {
-        repos: [],
-      }
-    )
-  }
-
-  const shouldUseGitFileSystem = isRepoWhitelisted(
-    siteName,
-    ggsWhitelistedRepos.repos
-  )
+  const shouldUseGitFileSystem = isRepoWhitelisted(siteName, growthbook)
 
   const isGitAvailable = await handleGitFileLock(siteName, next)
   if (!isGitAvailable) return

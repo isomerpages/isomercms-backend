@@ -88,6 +88,9 @@ describe("RepoService", () => {
           repos: ["fake-repo", mockSiteName],
         },
       },
+      is_ggs_whitelisted: {
+        defaultValue: true,
+      },
     })
   })
 
@@ -110,13 +113,18 @@ describe("RepoService", () => {
       expect(actual2).toBe(true)
     })
 
-    it("should indicate non-whitelisted repos as non-whitelisted correctly", () => {
+    it("should indicate blacklisted repos as not being allowed", () => {
+      // NOTE: Mock a blacklisted repo
+      const gbSpy = jest.spyOn(mockGrowthBook, "getFeatureValue")
+      gbSpy.mockReturnValueOnce(false)
+
       const actual = RepoService.isRepoGgsWhitelisted(
         "not-whitelisted",
         RepoService.getGgsWhitelistedRepos(
           mockUserWithSiteSessionDataAndGrowthBook.growthbook
         )
       )
+
       expect(actual).toBe(false)
     })
   })

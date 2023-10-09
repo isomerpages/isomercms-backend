@@ -101,13 +101,14 @@ export default class RepoService extends GitHubService {
     ggsWhitelistedRepos: string[]
   ): boolean {
     // TODO: Adding for initial debugging if required. Remove once stabilised
-    logger.info(
-      `Evaluating if ${repoName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
-        repoName
-      )}`
+    logger.info(`Evaluating if ${repoName} is GGS whitelisted.`)
+    // NOTE: Growthbook has to be optional
+    // as we cannot guarantee its presence on `sessionData`.
+    // It is present iff there is a `siteHandler` attached.
+    return !!growthbook?.getFeatureValue(
+      FEATURE_FLAGS.IS_GGS_WHITELISTED,
+      false
     )
-
-    return ggsWhitelistedRepos.includes(repoName)
   }
 
   getCommitDiff(siteName: string, base?: string, head?: string) {

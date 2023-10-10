@@ -12,7 +12,7 @@ const {
 const { NotFoundError } = require("@errors/NotFoundError")
 const { UnprocessableError } = require("@errors/UnprocessableError")
 
-const logger = require("@root/logger/logger")
+const logger = require("@root/logger/logger").default
 
 const ReviewApi = require("./review")
 

@@ -31,17 +31,21 @@ const getPaginatedDirectoryContents = (
   directoryContents: GitDirectoryItem[],
   page: number,
   limit = 15
-): { directories: GitDirectoryItem[]; files: GitDirectoryItem[] } => {
+): {
+  directories: GitDirectoryItem[]
+  files: GitDirectoryItem[]
+  total: number
+} => {
   const subdirectories = directoryContents.filter((item) => item.type === "dir")
-  const files = directoryContents
-    .filter(
-      (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
-    )
+  const directoryFiles = directoryContents.filter(
+    (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
+  )
+  const files = directoryFiles
     .toSorted((a, b) => a.name.localeCompare(b.name))
     // NOTE: Take only first n
     .slice(page * limit, (page + 1) * limit)
 
-  return { directories: subdirectories, files }
+  return { directories: subdirectories, files, total: directoryFiles.length }
 }
 
 // TODO: update the typings here to remove `any`.
@@ -325,11 +329,14 @@ export default class RepoService extends GitHubService {
     // and then we return the first n.
     page = 0,
     limit = 15
-  ): Promise<(MediaDirOutput | MediaFileOutput)[]> {
+  ): Promise<{
+    directories: MediaDirOutput[]
+    files: MediaFileOutput[]
+    total: number
+  }> {
     const { siteName } = sessionData
     logger.debug(`Reading media directory: ${directoryName}`)
-
-    let filteredResult: GitDirectoryItem[] = []
+    let dirContent: GitDirectoryItem[] = []
 
     if (
       this.isRepoWhitelisted(
@@ -346,39 +353,34 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      const { directories, files } = getPaginatedDirectoryContents(
-        result.value,
-        page,
-        limit
-      )
-      filteredResult = [...directories, ...files]
+      dirContent = result.value
     } else {
-      const directoryContents = (await super.readDirectory(sessionData, {
+      dirContent = (await super.readDirectory(sessionData, {
         directoryName,
       })) as GitDirectoryItem[]
-      const { directories, files } = getPaginatedDirectoryContents(
-        directoryContents,
-        page,
-        limit
-      )
-      filteredResult = [...directories, ...files]
     }
 
-    return Promise.all(
-      filteredResult.map((curr) => {
-        if (curr.type === "dir") {
-          return {
-            name: curr.name,
-            type: curr.type,
-          }
-        }
-
-        return this.readMediaFile(sessionData, {
-          fileName: curr.name,
-          directoryName,
-        })
-      })
+    const { directories, files, total } = getPaginatedDirectoryContents(
+      dirContent,
+      page,
+      limit
     )
+
+    return {
+      directories: directories.map(({ name, type }) => ({
+        name,
+        type,
+      })),
+      files: await Promise.all(
+        files.map((file) =>
+          this.readMediaFile(sessionData, {
+            fileName: file.name,
+            directoryName,
+          })
+        )
+      ),
+      total,
+    }
   }
 
   async update(

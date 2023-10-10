@@ -276,7 +276,7 @@ export class FormsgSiteLaunchRouter {
             interval: 30,
             timeout: 30,
             alert_contacts: alertContacts,
-            http_method: 1, // GET
+            http_method: 2, // GET
           }
         )
       } else {
@@ -293,7 +293,7 @@ export class FormsgSiteLaunchRouter {
             interval: 30,
             timeout: 30,
             alert_contacts: alertContacts,
-            http_method: 1, // GET
+            http_method: 2, // GET
           }
         )
       }

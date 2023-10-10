@@ -224,6 +224,13 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(requesterEmail, subject, html)
   }
 
+  sendMonitorCreationFailure = async (repoName: string): Promise<void> => {
+    const email = ISOMER_SUPPORT_EMAIL
+    const subject = `[Isomer] Monitor creation FAILURE`
+    const html = `The Uptime Robot monitor for the following site was not created successfully: ${repoName}`
+    await mailer.sendMail(email, subject, html)
+  }
+
   private digDomainForQuadARecords = async (
     domain: string,
     digType: DigType
@@ -299,9 +306,15 @@ export class FormsgSiteLaunchRouter {
       }
     } catch (uptimerobotErr) {
       // Non-blocking error, since site launch is still successful
-      logger.info(
-        `Unable to create better uptime monitor for ${baseDomain}. Error: ${uptimerobotErr}`
-      )
+      const errMessage = `Unable to create better uptime monitor for ${baseDomain}. Error: ${uptimerobotErr}`
+      logger.error(errMessage)
+      try {
+        await this.sendMonitorCreationFailure(baseDomain)
+      } catch (monitorFailureEmailErr) {
+        logger.error(
+          `Failed to send error email for ${baseDomain}: ${monitorFailureEmailErr}`
+        )
+      }
     }
   }
 

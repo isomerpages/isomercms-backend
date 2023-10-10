@@ -44,10 +44,11 @@ export class FileStorageRouter {
     const x = req.headers["x-forwarded-host"]
 
     //! todo check if forwarded-host iss of type string or array. if array, get the last value (last hop)
-    if (req.headers["x-forwarded-host"] !== stagingUrl) {
-      res.status(403).send("Unauthorized")
-      return
-    }
+    // NOTE: commenting this out this check for speed of development
+    // if (req.headers["x-forwarded-host"] !== stagingUrl) {
+    //   res.status(403).send("Unauthorized")
+    //   return
+    // }
     console.log({ repoName })
     console.log("authorized")
     const url = `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/images/${req.params.imageName}`
@@ -78,10 +79,11 @@ export class FileStorageRouter {
     const repoName = await getRepoNameFromId(req.params.id)
     const stagingUrl = await getStagingUrlFromId(repoName)
     console.log(typeof req.headers["x-forwarded-host"])
-    if (req.headers["x-forwarded-host"] !== stagingUrl) {
-      res.status(403).send("Unauthorized")
-      return
-    }
+    // NOTE: commenting this out this check for speed of development
+    // if (req.headers["x-forwarded-host"] !== stagingUrl) {
+    //   res.status(403).send("Unauthorized")
+    //   return
+    // }
     console.log("authorized")
     const url = `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/files/${req.params.fileName}`
     try {

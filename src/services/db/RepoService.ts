@@ -29,8 +29,8 @@ const BRANCH_REF = config.get("github.branchRef")
 
 const getPaginatedDirectoryContents = (
   directoryContents: GitDirectoryItem[],
-  lastSeen: number,
-  limit: number
+  page: number,
+  limit = 15
 ): { directories: GitDirectoryItem[]; files: GitDirectoryItem[] } => {
   const subdirectories = directoryContents.filter((item) => item.type === "dir")
   const files = directoryContents
@@ -39,7 +39,7 @@ const getPaginatedDirectoryContents = (
     )
     .toSorted((a, b) => a.name.localeCompare(b.name))
     // NOTE: Take only first n
-    .slice(lastSeen, lastSeen + limit)
+    .slice(page * limit, (page + 1) * limit)
 
   return { directories: subdirectories, files }
 }
@@ -323,7 +323,7 @@ export default class RepoService extends GitHubService {
     // NOTE: The last seen index denotes the previous seen images.
     // We will tiebreak in alphabetical order - we sort
     // and then we return the first n.
-    lastSeen = 0,
+    page = 0,
     limit = 15
   ): Promise<(MediaDirOutput | MediaFileOutput)[]> {
     const { siteName } = sessionData
@@ -348,7 +348,7 @@ export default class RepoService extends GitHubService {
 
       const { directories, files } = getPaginatedDirectoryContents(
         result.value,
-        lastSeen,
+        page,
         limit
       )
       filteredResult = [...directories, ...files]
@@ -358,7 +358,7 @@ export default class RepoService extends GitHubService {
       })) as GitDirectoryItem[]
       const { directories, files } = getPaginatedDirectoryContents(
         directoryContents,
-        lastSeen,
+        page,
         limit
       )
       filteredResult = [...directories, ...files]

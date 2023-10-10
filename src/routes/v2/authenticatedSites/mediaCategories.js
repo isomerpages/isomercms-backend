@@ -27,10 +27,12 @@ class MediaCategoriesRouter {
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params
+    const { page } = req.query
     const listResp = await this.mediaDirectoryService.listFiles(
       userWithSiteSessionData,
       {
         directoryName,
+        page,
       }
     )
     return res.status(200).json(listResp)

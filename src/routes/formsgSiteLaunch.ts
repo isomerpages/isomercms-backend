@@ -1,8 +1,11 @@
 import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
+import axios from "axios"
 import express, { RequestHandler } from "express"
 import { err, ok } from "neverthrow"
 import dig from "node-dig-dns"
+
+import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
@@ -221,6 +224,13 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(requesterEmail, subject, html)
   }
 
+  sendMonitorCreationFailure = async (baseDomain: string): Promise<void> => {
+    const email = ISOMER_SUPPORT_EMAIL
+    const subject = `[Isomer] Monitor creation FAILURE`
+    const html = `The Uptime Robot monitor for the following site was not created successfully: ${baseDomain}`
+    await mailer.sendMail(email, subject, html)
+  }
+
   private digDomainForQuadARecords = async (
     domain: string,
     digType: DigType
@@ -238,6 +248,77 @@ export class FormsgSiteLaunchRouter {
         )
         return null
       })
+
+  private async createMonitor(baseDomain: string) {
+    const uptimeRobotBaseUrl = "https://api.uptimerobot.com/v2"
+    try {
+      const UPTIME_ROBOT_API_KEY = config.get("uptimeRobot.apiKey")
+      const getResp = await axios.post<{ monitors: { id: string }[] }>(
+        `${uptimeRobotBaseUrl}/getMonitors?format=json`,
+        {
+          api_key: UPTIME_ROBOT_API_KEY,
+          search: baseDomain,
+        }
+      )
+      const affectedMonitorIds = getResp.data.monitors.map(
+        (monitor) => monitor.id
+      )
+      const getAlertContactsResp = await axios.post<{
+        alert_contacts: { id: string }[]
+      }>(`${uptimeRobotBaseUrl}/getAlertContacts?format=json`, {
+        api_key: UPTIME_ROBOT_API_KEY,
+      })
+      const alertContacts = getAlertContactsResp.data.alert_contacts
+        .map(
+          (contact) => `${contact.id}_0_0` // numbers at the end represent threshold + recurrence, always 0 for free plan
+        )
+        .join("-")
+      if (affectedMonitorIds.length === 0) {
+        // Create new monitor
+        await axios.post<{ monitors: { id: string }[] }>(
+          `${uptimeRobotBaseUrl}/newMonitor?format=json`,
+          {
+            api_key: UPTIME_ROBOT_API_KEY,
+            friendly_name: baseDomain,
+            url: `https://${baseDomain}`,
+            type: 1, // HTTP(S)
+            interval: 30,
+            timeout: 30,
+            alert_contacts: alertContacts,
+            http_method: 2, // GET
+          }
+        )
+      } else {
+        // Edit existing monitor
+        // We only edit the first matching monitor, in the case where multiple monitors exist
+        await axios.post<{ monitors: { id: string }[] }>(
+          `${uptimeRobotBaseUrl}/editMonitor?format=json`,
+          {
+            api_key: UPTIME_ROBOT_API_KEY,
+            id: affectedMonitorIds[0],
+            friendly_name: baseDomain,
+            url: `https://${baseDomain}`,
+            type: 1, // HTTP(S)
+            interval: 30,
+            timeout: 30,
+            alert_contacts: alertContacts,
+            http_method: 2, // GET
+          }
+        )
+      }
+    } catch (uptimerobotErr) {
+      // Non-blocking error, since site launch is still successful
+      const errMessage = `Unable to create better uptime monitor for ${baseDomain}. Error: ${uptimerobotErr}`
+      logger.error(errMessage)
+      try {
+        await this.sendMonitorCreationFailure(baseDomain)
+      } catch (monitorFailureEmailErr) {
+        logger.error(
+          `Failed to send error email for ${baseDomain}: ${monitorFailureEmailErr}`
+        )
+      }
+    }
+  }
 
   private async handleSiteLaunchResults(
     formResponses: FormResponsesProps[],
@@ -269,6 +350,8 @@ export class FormsgSiteLaunchRouter {
               `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for AAAA records`
             )
           }
+          // Create better uptime monitor
+          await this.createMonitor(launchResult.value.primaryDomainSource)
           successResults.push(successResult)
         }
       }

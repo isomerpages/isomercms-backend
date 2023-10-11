@@ -81,6 +81,7 @@ ENV_VARS=(
     "SSM_PREFIX"
     "STEP_FUNCTIONS_ARN"
     "SYSTEM_GITHUB_TOKEN"
+    "UPTIME_ROBOT_API_KEY"
 )
 
 echo "Set AWS region"

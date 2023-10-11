@@ -35,7 +35,8 @@ class MediaDirectoryService {
     return this.gitHubService.readMediaDirectory(
       sessionData,
       directoryName,
-      page
+      // NOTE: Done here as frontend starts indexing from 1
+      page - 1
     )
   }
 

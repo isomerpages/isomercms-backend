@@ -22,20 +22,60 @@ class MediaCategoriesRouter {
     autoBind(this)
   }
 
-  // List files in a resource category
+  // List content in a resource category.
+  // This includes both files and subdirectories within the resource category.
+  async listMediaDirectoryContent(req, res) {
+    const { userWithSiteSessionData } = res.locals
+
+    const { directoryName } = req.params
+    const { page, limit } = req.query
+    const listResp = await this.mediaDirectoryService.listMediaDirectoryContent(
+      userWithSiteSessionData,
+      {
+        directoryName,
+        page,
+        limit,
+      }
+    )
+    return res.status(200).json(listResp)
+  }
+
+  // List files within a resource category.
   async listMediaDirectoryFiles(req, res) {
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params
     const { page } = req.query
-    const listResp = await this.mediaDirectoryService.listFiles(
+
+    const {
+      files,
+      total,
+    } = await this.mediaDirectoryService.listMediaDirectoryContent(
       userWithSiteSessionData,
       {
         directoryName,
         page,
       }
     )
-    return res.status(200).json(listResp)
+    return res.status(200).json({ files, total })
+  }
+
+  async listMediaDirectorySubdirectories(req, res) {
+    const { userWithSiteSessionData } = res.locals
+
+    const { directoryName } = req.params
+    const { page } = req.query
+
+    const {
+      directories,
+    } = await this.mediaDirectoryService.listMediaDirectoryContent(
+      userWithSiteSessionData,
+      {
+        directoryName,
+        page,
+      }
+    )
+    return res.status(200).json({ directories })
   }
 
   // Create new media directory
@@ -124,7 +164,15 @@ class MediaCategoriesRouter {
 
     router.get(
       "/:directoryName",
+      attachReadRouteHandlerWrapper(this.listMediaDirectoryContent)
+    )
+    router.get(
+      "/:directoryName/files",
       attachReadRouteHandlerWrapper(this.listMediaDirectoryFiles)
+    )
+    router.get(
+      "/:directoryName/subdirectories",
+      attachReadRouteHandlerWrapper(this.listMediaDirectorySubdirectories)
     )
     router.post(
       "/",

@@ -28,7 +28,7 @@ class MediaDirectoryService {
     return files
   }
 
-  async listFiles(sessionData, { directoryName, page }) {
+  async listMediaDirectoryContent(sessionData, { directoryName, page, limit }) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
 
@@ -36,7 +36,8 @@ class MediaDirectoryService {
       sessionData,
       directoryName,
       // NOTE: Done here as frontend starts indexing from 1
-      page - 1
+      page - 1,
+      limit
     )
   }
 

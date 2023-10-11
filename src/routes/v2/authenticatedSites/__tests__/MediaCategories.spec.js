@@ -29,7 +29,7 @@ describe("Media Categories Router", () => {
   // We can use read route handler here because we don't need to lock the repo
   subrouter.get(
     "/:siteName/media/:directoryName",
-    attachReadRouteHandlerWrapper(router.listMediaDirectoryFiles)
+    attachReadRouteHandlerWrapper(router.listMediaDirectoryContent)
   )
   subrouter.post(
     "/:siteName/media",

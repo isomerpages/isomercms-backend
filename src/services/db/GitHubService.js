@@ -13,9 +13,6 @@ import logger from "@root/logger/logger"
 
 import ReviewApi from "./review"
 
-export const STAGING_BRANCH = "staging"
-export const STAGING_LITE_BRANCH = "staging-lite"
-
 export default class GitHubService {
   constructor({ axiosInstance }) {
     this.axiosInstance = axiosInstance

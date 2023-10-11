@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios"
+import axios from "axios"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { Base64 } from "js-base64"
 import { okAsync, errAsync } from "neverthrow"

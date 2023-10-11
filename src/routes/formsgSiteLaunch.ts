@@ -224,10 +224,10 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(requesterEmail, subject, html)
   }
 
-  sendMonitorCreationFailure = async (repoName: string): Promise<void> => {
+  sendMonitorCreationFailure = async (baseDomain: string): Promise<void> => {
     const email = ISOMER_SUPPORT_EMAIL
     const subject = `[Isomer] Monitor creation FAILURE`
-    const html = `The Uptime Robot monitor for the following site was not created successfully: ${repoName}`
+    const html = `The Uptime Robot monitor for the following site was not created successfully: ${baseDomain}`
     await mailer.sendMail(email, subject, html)
   }
 

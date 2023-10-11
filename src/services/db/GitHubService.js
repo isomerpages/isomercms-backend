@@ -1,22 +1,21 @@
-const { validateStatus } = require("@utils/axios-utils")
+import { Base64 } from "js-base64"
+import { okAsync, errAsync } from "neverthrow"
 
-const { Base64 } = require("js-base64")
-const { okAsync, errAsync } = require("neverthrow")
+import config from "@config/config"
 
-const BRANCH_REF = "staging"
+import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
+import { NotFoundError } from "@errors/NotFoundError"
+import { UnprocessableError } from "@errors/UnprocessableError"
 
-const {
-  ConflictError,
-  inputNameConflictErrorMsg,
-} = require("@errors/ConflictError")
-const { NotFoundError } = require("@errors/NotFoundError")
-const { UnprocessableError } = require("@errors/UnprocessableError")
+import { validateStatus } from "@utils/axios-utils"
 
-const logger = require("@root/logger/logger")
+import logger from "@root/logger/logger"
 
-const ReviewApi = require("./review")
+import ReviewApi from "./review"
 
-class GitHubService {
+const BRANCH_REF = config.get("github.branchRef")
+
+export default class GitHubService {
   constructor({ axiosInstance }) {
     this.axiosInstance = axiosInstance
   }
@@ -520,5 +519,3 @@ class GitHubService {
     }
   }
 }
-
-module.exports = { GitHubService }

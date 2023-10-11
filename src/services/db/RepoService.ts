@@ -21,7 +21,7 @@ import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileSystemService from "./GitFileSystemService"
-import { GitHubService } from "./GitHubService"
+import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
 const PLACEHOLDER_FILE_NAME = ".keep"

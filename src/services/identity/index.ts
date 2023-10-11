@@ -12,7 +12,7 @@ import {
   SiteMember,
   Otp,
 } from "@database/models"
-import { GitHubService } from "@services/db/GitHubService"
+import GitHubService from "@services/db/GitHubService"
 import SmsClient from "@services/identity/SmsClient"
 import { mailer } from "@services/utilServices/MailClient"
 

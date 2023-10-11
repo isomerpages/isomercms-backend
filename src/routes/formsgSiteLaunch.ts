@@ -250,11 +250,13 @@ export class FormsgSiteLaunchRouter {
       })
 
   private async createMonitor(baseDomain: string) {
+    const uptimeRobotBaseUrl = "https://api.uptimerobot.com/v2"
     try {
+      const UPTIME_ROBOT_API_KEY = config.get("uptimeRobot.apiKey")
       const getResp = await axios.post<{ monitors: { id: string }[] }>(
-        "https://api.uptimerobot.com/v2/getMonitors?format=json",
+        `${uptimeRobotBaseUrl}/getMonitors?format=json`,
         {
-          api_key: config.get("uptimeRobot.apiKey"),
+          api_key: UPTIME_ROBOT_API_KEY,
           search: baseDomain,
         }
       )
@@ -263,8 +265,8 @@ export class FormsgSiteLaunchRouter {
       )
       const getAlertContactsResp = await axios.post<{
         alert_contacts: { id: string }[]
-      }>("https://api.uptimerobot.com/v2/getAlertContacts?format=json", {
-        api_key: config.get("uptimeRobot.apiKey"),
+      }>(`${uptimeRobotBaseUrl}/getAlertContacts?format=json`, {
+        api_key: UPTIME_ROBOT_API_KEY,
       })
       const alertContacts = getAlertContactsResp.data.alert_contacts
         .map(
@@ -274,9 +276,9 @@ export class FormsgSiteLaunchRouter {
       if (affectedMonitorIds.length === 0) {
         // Create new monitor
         await axios.post<{ monitors: { id: string }[] }>(
-          "https://api.uptimerobot.com/v2/newMonitor?format=json",
+          `${uptimeRobotBaseUrl}/newMonitor?format=json`,
           {
-            api_key: config.get("uptimeRobot.apiKey"),
+            api_key: UPTIME_ROBOT_API_KEY,
             friendly_name: baseDomain,
             url: `https://${baseDomain}`,
             type: 1, // HTTP(S)
@@ -290,9 +292,9 @@ export class FormsgSiteLaunchRouter {
         // Edit existing monitor
         // We only edit the first matching monitor, in the case where multiple monitors exist
         await axios.post<{ monitors: { id: string }[] }>(
-          "https://api.uptimerobot.com/v2/editMonitor?format=json",
+          `${uptimeRobotBaseUrl}/editMonitor?format=json`,
           {
-            api_key: config.get("uptimeRobot.apiKey"),
+            api_key: UPTIME_ROBOT_API_KEY,
             id: affectedMonitorIds[0],
             friendly_name: baseDomain,
             url: `https://${baseDomain}`,

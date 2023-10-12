@@ -1,5 +1,6 @@
 import { GrowthBook } from "@growthbook/growthbook"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
+import _ from "lodash"
 
 import config from "@config/config"
 
@@ -40,8 +41,7 @@ const getPaginatedDirectoryContents = (
   const files = directoryContents.filter(
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
-  const paginatedFiles = files
-    .toSorted((a, b) => a.name.localeCompare(b.name))
+  const paginatedFiles = _.sortBy(files, (file) => file.name)
     // NOTE: Take only first n
     .slice(page * limit, (page + 1) * limit)
 

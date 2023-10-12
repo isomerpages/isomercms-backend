@@ -21,7 +21,7 @@ import * as mediaUtils from "@root/utils/media-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
 
-import { GitHubService } from "../GitHubService"
+import GitHubService from "../GitHubService"
 
 const BRANCH_REF = config.get("github.branchRef")
 

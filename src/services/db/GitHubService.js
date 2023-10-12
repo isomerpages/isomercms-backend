@@ -13,7 +13,8 @@ import logger from "@root/logger/logger"
 
 import ReviewApi from "./review"
 
-const BRANCH_REF = config.get("github.branchRef")
+export const STAGING_BRANCH = "staging"
+export const STAGING_LITE_BRANCH = "staging-lite"
 
 export default class GitHubService {
   constructor({ axiosInstance }) {
@@ -91,7 +92,13 @@ export default class GitHubService {
 
   async create(
     sessionData,
-    { content, fileName, directoryName, isMedia = false }
+    {
+      content,
+      fileName,
+      directoryName,
+      isMedia = false,
+      branchName = STAGING_BRANCH,
+    }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
@@ -137,7 +144,7 @@ export default class GitHubService {
       const params = {
         message,
         content: encodedContent,
-        branch: BRANCH_REF,
+        branch: branchName,
       }
 
       const resp = await this.axiosInstance.put(endpoint, params, {
@@ -156,13 +163,16 @@ export default class GitHubService {
     }
   }
 
-  async read(sessionData, { fileName, directoryName }) {
+  async read(
+    sessionData,
+    { fileName, directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -180,7 +190,7 @@ export default class GitHubService {
     return { content, sha }
   }
 
-  async readMedia(sessionData, { fileSha }) {
+  async readMedia(sessionData, { fileSha, branchName = STAGING_BRANCH }) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
      * via Github Blob API. The content can only be retrieved through
@@ -189,7 +199,7 @@ export default class GitHubService {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const blobEndpoint = this.getBlobPath({ siteName, fileSha })
@@ -210,13 +220,16 @@ export default class GitHubService {
     return { content, sha }
   }
 
-  async readDirectory(sessionData, { directoryName }) {
+  async readDirectory(
+    sessionData,
+    { directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -231,7 +244,10 @@ export default class GitHubService {
     return resp.data
   }
 
-  async update(sessionData, { fileContent, sha, fileName, directoryName }) {
+  async update(
+    sessionData,
+    { fileContent, sha, fileName, directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
@@ -257,7 +273,7 @@ export default class GitHubService {
       const params = {
         message,
         content: encodedNewContent,
-        branch: BRANCH_REF,
+        branch: branchName,
         sha: fileSha,
       }
 
@@ -280,7 +296,10 @@ export default class GitHubService {
     }
   }
 
-  async delete(sessionData, { sha, fileName, directoryName }) {
+  async delete(
+    sessionData,
+    { sha, fileName, directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
@@ -302,7 +321,7 @@ export default class GitHubService {
       })
       const params = {
         message,
-        branch: BRANCH_REF,
+        branch: branchName,
         sha: fileSha,
       }
 
@@ -331,7 +350,7 @@ export default class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      ref: BRANCH_REF,
+      ref: STAGING_BRANCH,
     }
     // Get the commits of the repo
     const { data } = await this.axiosInstance.get(endpoint, {
@@ -350,7 +369,7 @@ export default class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      sha: BRANCH_REF,
+      sha: STAGING_BRANCH,
     }
     // Get the commits of the repo
     const { data: commits } = await this.axiosInstance.get(endpoint, {
@@ -396,7 +415,7 @@ export default class GitHubService {
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
-      ref: BRANCH_REF,
+      ref: STAGING_BRANCH,
     }
 
     if (isRecursive) params.recursive = true
@@ -454,7 +473,10 @@ export default class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState(sessionData, { commitSha, branchName = BRANCH_REF }) {
+  async updateRepoState(
+    sessionData,
+    { commitSha, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const refEndpoint = `${siteName}/git/refs/heads/${branchName}`

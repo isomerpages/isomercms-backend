@@ -187,11 +187,19 @@ const config = convict({
       },
     },
     efs: {
-      volPath: {
-        doc: "Path to the EFS volume for storing the Git repositories",
-        env: "EFS_VOL_PATH",
+      volPathStaging: {
+        doc:
+          "Path to the EFS volume for storing the Git repositories that contain entire git histories",
+        env: "EFS_VOL_PATH_STAGING",
         format: "required-string",
         default: "/efs/repos",
+      },
+      volPathStagingLite: {
+        doc:
+          "Path to the EFS volume for storing staging-lite branches with optimised git histories",
+        env: "EFS_VOL_PATH_STAGING_LITE",
+        format: "required-string",
+        default: "/efs/repos-lite",
       },
     },
     stepFunctions: {

@@ -548,7 +548,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.rollback(
         "fake-repo",
-        "fake-commit-sha"
+        "fake-commit-sha",
+        "staging"
       )
 
       expect(result.isOk()).toBeTrue()
@@ -563,7 +564,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.rollback(
         "fake-repo",
-        "fake-commit-sha"
+        "fake-commit-sha",
+        "staging"
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)

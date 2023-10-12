@@ -45,6 +45,9 @@ import type {
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
+const EFS_VOL_PATH_STAGING = config.get("aws.efs.volPathStaging")
+const EFS_VOL_PATH_STAGING_LITE = config.get("aws.efs.volPathStagingLite")
+
 const STAGING_BRANCH = "staging"
 const STAGING_LITE_BRANCH = "staging-lite"
 export default class GitFileSystemService {

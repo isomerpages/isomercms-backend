@@ -31,6 +31,8 @@ const SITE_CREATION_BASE_REPO_URL =
 const ISOMER_GITHUB_ORGANIZATION_NAME = "isomerpages"
 const ISOMER_GITHUB_EMAIL = "isomeradmin@users.noreply.github.com"
 
+const EFS_VOL_PATH = config.get("aws.efs.volPathStaging")
+
 interface ReposServiceProps {
   repository: ModelStatic<Repo>
   simpleGit: SimpleGit

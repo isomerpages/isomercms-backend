@@ -24,7 +24,7 @@ import { getMediaFileInfo } from "@root/utils/media-utils"
 import CommitServiceGitFile from "./CommitServiceGitFile"
 import CommitServiceGitHub from "./CommitServiceGithub"
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubService from "./GitHubService"
+import GitHubService, { STAGING_BRANCH } from "./GitHubService"
 import * as ReviewApi from "./review"
 
 const PLACEHOLDER_FILE_NAME = ".keep"

@@ -1397,7 +1397,7 @@ export class ReviewsRouter {
     )
     router.get(
       "/:requestId/comments",
-      attachWriteRouteHandlerWrapper(this.getComments)
+      attachReadRouteHandlerWrapper(this.getComments)
     )
     router.post(
       "/:requestId/comments",

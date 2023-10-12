@@ -19,22 +19,20 @@ const UpdateContactUsSchema = Joi.object({
       permalink: Joi.string().required(),
       feedback: Joi.string().allow(""),
       agency_name: Joi.string().required(),
-      locations: Joi.array()
-        .items(
-          Joi.object({
-            address: Joi.array().items(Joi.string().allow("")),
-            operating_hours: Joi.array().items(
-              Joi.object({
-                days: Joi.string().allow(""),
-                time: Joi.string().allow(""),
-                description: Joi.string().allow(""),
-              })
-            ),
-            maps_link: Joi.string().allow(""),
-            title: Joi.string().allow(""),
-          })
-        )
-        .required(),
+      locations: Joi.array().items(
+        Joi.object({
+          address: Joi.array().items(Joi.string().allow("")),
+          operating_hours: Joi.array().items(
+            Joi.object({
+              days: Joi.string().allow(""),
+              time: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+            })
+          ),
+          maps_link: Joi.string().allow(""),
+          title: Joi.string().allow(""),
+        })
+      ),
       contacts: Joi.array()
         .items(
           Joi.object({

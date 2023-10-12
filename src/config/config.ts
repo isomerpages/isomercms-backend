@@ -428,6 +428,14 @@ const config = convict({
       default: "",
     },
   },
+  uptimeRobot: {
+    apiKey: {
+      doc: "Uptime Robot API key",
+      env: "UPTIME_ROBOT_API_KEY",
+      format: String,
+      default: "",
+    },
+  },
 })
 
 // Perform validation

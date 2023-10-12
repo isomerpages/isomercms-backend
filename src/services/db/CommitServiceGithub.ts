@@ -53,7 +53,7 @@ export default class CommitServiceGitHub extends GitHubService {
       }),
     ]
     const shouldStagingLiteUpdate =
-      isFileAsset(directoryName) &&
+      !isFileAsset(directoryName) &&
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
 
     // todo check if directory name is works here

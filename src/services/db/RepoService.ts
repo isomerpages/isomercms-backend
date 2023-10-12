@@ -41,9 +41,11 @@ const getPaginatedDirectoryContents = (
   const files = directoryContents.filter(
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
-  const paginatedFiles = _.sortBy(files, (file) => file.name)
-    // NOTE: Take only first n
-    .slice(page * limit, (page + 1) * limit)
+  const paginatedFiles = _(files)
+    .sortBy((file) => file.name)
+    .drop(page * limit)
+    .take(limit)
+    .value()
 
   return {
     directories: subdirectories,

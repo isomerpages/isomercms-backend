@@ -24,7 +24,7 @@ import { getMediaFileInfo } from "@root/utils/media-utils"
 import CommitServiceGitFile from "./CommitServiceGitFile"
 import CommitServiceGitHub from "./CommitServiceGithub"
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubService from "./GitHubService"
+import GitHubService, { STAGING_BRANCH } from "./GitHubService"
 import * as ReviewApi from "./review"
 
 const PLACEHOLDER_FILE_NAME = ".keep"
@@ -59,7 +59,7 @@ const getPaginatedDirectoryContents = (
 // TODO: update the typings here to remove `any`.
 // We can type as `unknown` if required.
 interface RepoServiceParams {
-  axiosInstance: AxiosCacheInstance
+  isomerRepoAxiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
   commitServiceGitFile: CommitServiceGitFile
   commitServiceGitHub: CommitServiceGitHub
@@ -73,13 +73,13 @@ export default class RepoService extends GitHubService {
   private readonly commitServiceGitHub: CommitServiceGitHub
 
   constructor({
-    axiosInstance,
+    isomerRepoAxiosInstance,
     gitFileSystemService,
     commitServiceGitFile,
     commitServiceGitHub,
   }: RepoServiceParams) {
-    console.log({ axiosInstance })
-    super({ axiosInstance })
+    console.log({ isomerRepoAxiosInstance })
+    super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
     this.commitServiceGitFile = commitServiceGitFile
     this.commitServiceGitHub = commitServiceGitHub
@@ -311,6 +311,7 @@ export default class RepoService extends GitHubService {
     sessionData: UserWithSiteSessionData,
     { directoryName }: { directoryName: string }
   ): Promise<GitDirectoryItem[]> {
+    const defaultBranch = STAGING_BRANCH
     if (
       this.isRepoWhitelistedGgs(
         sessionData.siteName,
@@ -320,7 +321,8 @@ export default class RepoService extends GitHubService {
       logger.info("Reading directory from local Git file system")
       const result = await this.gitFileSystemService.listDirectoryContents(
         sessionData.siteName,
-        directoryName
+        directoryName,
+        defaultBranch
       )
 
       if (result.isErr()) {
@@ -349,6 +351,7 @@ export default class RepoService extends GitHubService {
     total: number
   }> {
     const { siteName } = sessionData
+    const defaultBranch = STAGING_BRANCH
     logger.debug(`Reading media directory: ${directoryName}`)
     let dirContent: GitDirectoryItem[] = []
 
@@ -360,7 +363,8 @@ export default class RepoService extends GitHubService {
     ) {
       const result = await this.gitFileSystemService.listDirectoryContents(
         siteName,
-        directoryName
+        directoryName,
+        defaultBranch
       )
 
       if (result.isErr()) {
@@ -417,7 +421,9 @@ export default class RepoService extends GitHubService {
         filePath,
         fileContent,
         sha,
-        sessionData.isomerUserId
+        sessionData.isomerUserId,
+        //! TODO: this needs to be replaced with a call to commitService instead
+        STAGING_BRANCH
       )
 
       if (result.isErr()) {
@@ -462,7 +468,9 @@ export default class RepoService extends GitHubService {
         directoryName,
         "",
         sessionData.isomerUserId,
-        true
+        true,
+        //! TODO: this needs to be replaced with a call to commitService instead
+        STAGING_BRANCH
       )
 
       if (result.isErr()) {
@@ -529,7 +537,9 @@ export default class RepoService extends GitHubService {
         filePath,
         sha,
         sessionData.isomerUserId,
-        false
+        false,
+        //! TODO: this needs to be replaced with a call to commitService instead
+        STAGING_BRANCH
       )
 
       if (result.isErr()) {
@@ -567,6 +577,8 @@ export default class RepoService extends GitHubService {
         oldPath,
         newPath,
         sessionData.isomerUserId,
+        //! TODO: this needs to be replaced with a call to commitService instead
+        STAGING_BRANCH,
         message
       )
 
@@ -658,6 +670,8 @@ export default class RepoService extends GitHubService {
         newPath,
         sessionData.isomerUserId,
         targetFiles,
+        //! TODO: this needs to be replaced with a call to commitService instead
+        STAGING_BRANCH,
         message
       )
 

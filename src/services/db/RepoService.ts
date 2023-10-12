@@ -37,15 +37,19 @@ const getPaginatedDirectoryContents = (
   total: number
 } => {
   const subdirectories = directoryContents.filter((item) => item.type === "dir")
-  const directoryFiles = directoryContents.filter(
+  const files = directoryContents.filter(
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
-  const files = directoryFiles
+  const paginatedFiles = files
     .toSorted((a, b) => a.name.localeCompare(b.name))
     // NOTE: Take only first n
     .slice(page * limit, (page + 1) * limit)
 
-  return { directories: subdirectories, files, total: directoryFiles.length }
+  return {
+    directories: subdirectories,
+    files: paginatedFiles,
+    total: files.length,
+  }
 }
 
 // TODO: update the typings here to remove `any`.

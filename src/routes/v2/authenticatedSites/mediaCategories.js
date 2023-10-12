@@ -29,7 +29,10 @@ class MediaCategoriesRouter {
 
     const { directoryName } = req.params
     const { page, limit } = req.query
-    const listResp = await this.mediaDirectoryService.listMediaDirectoryContent(
+    const {
+      directories,
+      files,
+    } = await this.mediaDirectoryService.listMediaDirectoryContent(
       userWithSiteSessionData,
       {
         directoryName,
@@ -37,7 +40,7 @@ class MediaCategoriesRouter {
         limit,
       }
     )
-    return res.status(200).json(listResp)
+    return res.status(200).json([...directories, ...files])
   }
 
   // List files within a resource category.

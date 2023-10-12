@@ -215,7 +215,7 @@ export default class RepoService extends GitHubService {
   async read(
     sessionData: UserWithSiteSessionData,
     { fileName, directoryName }: { fileName: string; directoryName?: string }
-  ): Promise<Pick<GitFile, "sha" | "content"> | GitFile> {
+  ): Promise<GitFile> {
     if (
       this.isRepoWhitelisted(
         sessionData.siteName,

@@ -24,7 +24,7 @@ class MediaCategoriesRouter {
 
   // List content in a resource category.
   // This includes both files and subdirectories within the resource category.
-  async listMediaDirectoryContent(req, res) {
+  async listMediaDirectoryContents(req, res) {
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params
@@ -164,7 +164,7 @@ class MediaCategoriesRouter {
 
     router.get(
       "/:directoryName",
-      attachReadRouteHandlerWrapper(this.listMediaDirectoryContent)
+      attachReadRouteHandlerWrapper(this.listMediaDirectoryContents)
     )
     router.get(
       "/:directoryName/files",

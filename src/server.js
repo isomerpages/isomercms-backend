@@ -77,6 +77,8 @@ import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
 import RepoManagementService from "./services/admin/RepoManagementService"
+import CommitServiceGitFile from "./services/db/CommitServiceGitFile"
+import CommitServiceGitHub from "./services/db/CommitServiceGithub"
 import GitFileSystemService from "./services/db/GitFileSystemService"
 import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
@@ -162,11 +164,21 @@ const authService = new AuthService({ usersService })
 const simpleGitInstance = new simpleGit({
   maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES,
 })
+
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
-const gitHubService = new RepoService(
-  isomerRepoAxiosInstance,
-  gitFileSystemService
+const commitServiceGitHub = new CommitServiceGitHub(
+  simpleGitInstance,
+  isomerRepoAxiosInstance
 )
+const commitServiceGitFile = new CommitServiceGitFile(gitFileSystemService)
+
+const gitHubService = new RepoService({
+  isomerRepoAxiosInstance,
+  gitFileSystemService,
+  commitServiceGitFile,
+  commitServiceGitHub,
+})
+
 const repoManagementService = new RepoManagementService({
   repoService: gitHubService,
 })

@@ -58,8 +58,9 @@ const getPaginatedDirectoryContents = (
 
 // TODO: update the typings here to remove `any`.
 // We can type as `unknown` if required.
+
 interface RepoServiceParams {
-  isomerRepoAxiosInstance: AxiosCacheInstance
+  axiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
   commitServiceGitFile: CommitServiceGitFile
   commitServiceGitHub: CommitServiceGitHub
@@ -73,12 +74,13 @@ export default class RepoService extends GitHubService {
   private readonly commitServiceGitHub: CommitServiceGitHub
 
   constructor({
-    isomerRepoAxiosInstance,
+    axiosInstance,
     gitFileSystemService,
     commitServiceGitFile,
     commitServiceGitHub,
   }: RepoServiceParams) {
-    super({ axiosInstance: isomerRepoAxiosInstance })
+    console.log({ axiosInstance })
+    super({ axiosInstance })
     this.gitFileSystemService = gitFileSystemService
     this.commitServiceGitFile = commitServiceGitFile
     this.commitServiceGitHub = commitServiceGitHub

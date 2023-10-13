@@ -42,7 +42,7 @@ const getPaginatedDirectoryContents = (
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
   const paginatedFiles = _(files)
-    .sortBy((file) => file.name)
+    .sortBy(["name"])
     .drop(page * limit)
     .take(limit)
     .value()

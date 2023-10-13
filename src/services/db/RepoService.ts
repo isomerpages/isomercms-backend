@@ -213,7 +213,7 @@ export default class RepoService extends GitHubService {
         `Writing file to local Git file system - Site name: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
       )
 
-      this.commitServiceGitFile.create(sessionData, {
+      return this.commitServiceGitFile.create(sessionData, {
         content,
         fileName,
         directoryName,
@@ -830,8 +830,6 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     shouldMakePrivate: any
   ): Promise<any> {
-    return super.changeRepoPrivacy(sessionData, {
-      shouldMakePrivate,
-    })
+    return await super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

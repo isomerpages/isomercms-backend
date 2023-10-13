@@ -1,4 +1,4 @@
-import { AxiosError } from "axios"
+import axios, { AxiosError } from "axios"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { Base64 } from "js-base64"
 import { okAsync, errAsync } from "neverthrow"
@@ -197,7 +197,7 @@ export default class GitHubService {
       return { sha: resp.data.content.sha }
     } catch (err: unknown) {
       if (err instanceof NotFoundError) throw err
-      if (err instanceof AxiosError && err.response) {
+      if (axios.isAxiosError(err) && err.response) {
         const { status } = err.response
         if (status === 422 || status === 409)
           throw new ConflictError(inputNameConflictErrorMsg(fileName))
@@ -230,6 +230,7 @@ export default class GitHubService {
         Authorization: `token ${accessToken}`,
       },
     })
+
     if (resp.status === 404) throw new NotFoundError("File does not exist")
 
     const { content: encodedContent, sha } = resp.data
@@ -356,7 +357,7 @@ export default class GitHubService {
       return { newSha: resp.data.content.sha }
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (err instanceof AxiosError) {
+      if (axios.isAxiosError(err)) {
         const { response } = err
         if (response && response.status === 404) {
           throw new NotFoundError("File does not exist")
@@ -419,7 +420,7 @@ export default class GitHubService {
       })
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (err instanceof AxiosError && err.response) {
+      if (axios.isAxiosError(err) && err.response) {
         const { status } = err.response
         if (status === 404) throw new NotFoundError("File does not exist")
         if (status === 409)
@@ -494,7 +495,7 @@ export default class GitHubService {
       return latestCommitMeta
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (err instanceof AxiosError && err.response) {
+      if (axios.isAxiosError(err) && err.response) {
         const { status } = err.response
         if (status === 422)
           throw new UnprocessableError(`Branch ${branch} does not exist`)
@@ -612,7 +613,7 @@ export default class GitHubService {
       await this.axiosInstance.get(endpoint, { headers })
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (err instanceof AxiosError && err.response) {
+      if (axios.isAxiosError(err) && err.response) {
         const { status } = err.response
         // If user is unauthorized or site does not exist, show the same NotFoundError
         if (status === 404 || status === 403)
@@ -624,7 +625,7 @@ export default class GitHubService {
 
   async changeRepoPrivacy(
     sessionData: { siteName: any; isomerUserId: any },
-    shouldMakePrivate: { shouldMakePrivate: any }
+    shouldMakePrivate: boolean
   ) {
     const { siteName, isomerUserId } = sessionData
     const endpoint = `${siteName}`

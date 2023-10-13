@@ -332,7 +332,7 @@ export default class RepoService extends GitHubService {
     limit = 15
   ): Promise<{
     directories: MediaDirOutput[]
-    files: MediaFileOutput[]
+    files: Pick<MediaFileOutput, "name">[]
     total: number
   }> {
     const { siteName } = sessionData
@@ -372,14 +372,7 @@ export default class RepoService extends GitHubService {
         name,
         type,
       })),
-      files: await Promise.all(
-        files.map((file) =>
-          this.readMediaFile(sessionData, {
-            fileName: file.name,
-            directoryName,
-          })
-        )
-      ),
+      files,
       total,
     }
   }

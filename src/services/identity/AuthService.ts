@@ -1,6 +1,6 @@
 import { NotFoundError } from "@errors/NotFoundError"
 
-import UserSessionData from "@root/classes/UserSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import GitHubService from "@services/db/GitHubService"
 
 interface AuthServiceProps {
@@ -15,7 +15,9 @@ class AuthService {
     this.gitHubService = gitHubService
   }
 
-  async hasAccessToSite(sessionData: UserSessionData): Promise<boolean> {
+  async hasAccessToSite(
+    sessionData: UserWithSiteSessionData
+  ): Promise<boolean> {
     try {
       await this.gitHubService.checkHasAccess(sessionData)
       return true

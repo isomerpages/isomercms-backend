@@ -1,11 +1,10 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import isFileAsset from "@root/utils/commit-utils"
+import { STAGING_LITE_BRANCH } from "@root/constants"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
-import GitHubService, { STAGING_LITE_BRANCH } from "@services/db/GitHubService"
-
-import GitFileSystemService from "./GitFileSystemService"
+import isFileAsset from "@services/db/CommitServiceGitFile"
+import GitHubService from "@services/db/GitHubService"
 
 /**
  * Responsibilities of this class
@@ -13,18 +12,8 @@ import GitFileSystemService from "./GitFileSystemService"
  * 2. Creates non-asset related commits to staging-lite
  */
 export default class CommitServiceGitHub extends GitHubService {
-  private readonly STAGING_BRANCH = "staging"
-
-  private readonly STAGING_LITE_BRANCH = "staging-lite"
-
-  private readonly gitFileSystemService: GitFileSystemService
-
-  constructor(
-    gitFileSystemService: GitFileSystemService,
-    axiosInstance: AxiosCacheInstance
-  ) {
+  constructor(axiosInstance: AxiosCacheInstance) {
     super({ axiosInstance })
-    this.gitFileSystemService = gitFileSystemService
   }
 
   async create(

@@ -3,7 +3,7 @@ import isFileAsset from "@root/utils/commit-utils"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 
 import GitFileSystemService from "./GitFileSystemService"
-import { STAGING_BRANCH } from "./GitHubService"
+import STAGING_BRANCH from "./GitHubService"
 
 /**
  * Responsibilities of this class

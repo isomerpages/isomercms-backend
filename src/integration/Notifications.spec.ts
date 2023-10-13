@@ -32,6 +32,8 @@ import {
 } from "@root/fixtures/sessionData"
 import { getAuthorizationMiddleware } from "@root/middleware"
 import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
+import CommitServiceGitFile from "@root/services/db/CommitServiceGitFile"
+import CommitServiceGitHub from "@root/services/db/CommitServiceGithub"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -66,10 +68,14 @@ const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const gitHubService = new RepoService(
+const commitServiceGitFile = new CommitServiceGitFile(gitFileSystemService)
+const commitServiceGitHub = new CommitServiceGitHub(isomerRepoAxiosInstance)
+const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
-  gitFileSystemService
-)
+  gitFileSystemService,
+  commitServiceGitFile,
+  commitServiceGitHub,
+})
 const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })

@@ -294,11 +294,6 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  // TODO: This is no longer used, remove it
-  async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
-    return super.readMedia(sessionData, { fileSha })
-  }
-
   async readDirectory(
     sessionData: UserWithSiteSessionData,
     { directoryName }: { directoryName: string }

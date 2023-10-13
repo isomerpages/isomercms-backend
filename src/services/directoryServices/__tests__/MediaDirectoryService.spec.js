@@ -37,7 +37,6 @@ describe("Media Directory Service", () => {
 
   const mockGitHubService = {
     create: jest.fn(),
-    readMedia: jest.fn(),
     getRepoInfo: jest.fn(),
     readMediaDirectory: jest.fn(),
   }

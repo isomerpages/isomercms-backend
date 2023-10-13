@@ -394,7 +394,7 @@ export default class GitFileSystemService {
             if (!isOriginRemoteCorrect) {
               return errAsync(
                 new GitFileSystemError(
-                  `An existing folder "${repoName}" exists in staging lite but is not the correct Git repo`
+                  `An existing folder "${repoName}" exists in staging but is not the correct Git repo`
                 )
               )
             }
@@ -405,7 +405,6 @@ export default class GitFileSystemService {
 
   cloneStagingLite(repoName: string): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-
     return this.getFilePathStats(repoName, "", false)
       .andThen((stats) => ok(stats.isDirectory()))
       .orElse((error) => {
@@ -441,7 +440,6 @@ export default class GitFileSystemService {
             }
           ).map(() => `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`)
         }
-
         return this.isGitInitialized(repoName)
           .andThen((isGitInitialized) => {
             if (!isGitInitialized) {

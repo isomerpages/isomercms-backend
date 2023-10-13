@@ -1,12 +1,8 @@
-import { GrowthBook } from "@growthbook/growthbook"
-
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { FEATURE_FLAGS } from "@root/constants"
-import { FeatureFlags } from "@root/types/featureFlags"
+import { STAGING_BRANCH } from "@root/constants"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubService, { STAGING_BRANCH } from "./GitHubService"
 
 export function isFileAsset(path: string) {
   return path.includes("images/") || path.includes("files/")

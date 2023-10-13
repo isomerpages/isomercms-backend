@@ -1,3 +1,5 @@
+import { AxiosCacheInstance } from "axios-cache-interceptor"
+
 import { ConflictError } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
 import { UnprocessableError } from "@errors/UnprocessableError"
@@ -14,10 +16,9 @@ import {
   mockGithubSessionData,
   mockIsomerUserId,
 } from "@fixtures/sessionData"
-import { ForbiddenError } from "@root/errors/ForbiddenError"
 import { indexHtmlContent } from "@root/fixtures/markdown-fixtures"
 import { collectionYmlContent } from "@root/fixtures/yaml-fixtures"
-import { GitHubService } from "@services/db/GitHubService"
+import GitHubService from "@services/db/GitHubService"
 
 // using es6 gives some error
 const { Base64 } = require("js-base64")
@@ -57,9 +58,13 @@ describe("Github Service", () => {
     post: jest.fn(),
     patch: jest.fn(),
   }
-
   const service = new GitHubService({
-    axiosInstance: mockAxiosInstance,
+    /**
+     * type casting here as it we only really need to mock the
+     * functions that we use + do not need to maintain a full
+     * list of axios functions
+     */
+    axiosInstance: (mockAxiosInstance as Partial<AxiosCacheInstance>) as AxiosCacheInstance,
   })
 
   beforeEach(() => {
@@ -167,6 +172,8 @@ describe("Github Service", () => {
           content,
           fileName,
           directoryName,
+          isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -192,6 +199,7 @@ describe("Github Service", () => {
           content: collectionYmlContent,
           fileName: topLevelDirectoryFileName,
           directoryName,
+          isMedia: false,
         })
       ).resolves.toMatchObject({
         sha,
@@ -218,6 +226,7 @@ describe("Github Service", () => {
           content: indexHtmlContent,
           fileName: resourceCategoryFileName,
           directoryName,
+          isMedia: false,
         })
       ).resolves.toMatchObject({
         sha,
@@ -267,6 +276,7 @@ describe("Github Service", () => {
           response: {
             status: 422,
           },
+          isAxiosError: true,
         }
         throw error
       })
@@ -275,6 +285,7 @@ describe("Github Service", () => {
           content,
           fileName,
           directoryName,
+          isMedia: false,
         })
       ).rejects.toThrowError(ConflictError)
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
@@ -293,6 +304,7 @@ describe("Github Service", () => {
           content,
           fileName,
           directoryName,
+          isMedia: false,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
@@ -314,6 +326,7 @@ describe("Github Service", () => {
           content,
           fileName: subDirectoryFileName,
           directoryName: subDirectoryName,
+          isMedia: false,
         })
       ).rejects.toThrowError()
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(fileParentEndpoint, {
@@ -334,6 +347,7 @@ describe("Github Service", () => {
           content,
           fileName,
           directoryName: `${resourceCategoryName}/_posts`,
+          isMedia: false,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(resourceRoomEndpoint, {
@@ -380,12 +394,61 @@ describe("Github Service", () => {
     it("should throw the correct error if file cannot be found", async () => {
       const resp = {
         status: 404,
+        isAxiosError: true,
       }
       mockAxiosInstance.get.mockResolvedValueOnce(resp)
       await expect(
         service.read(sessionData, {
           fileName,
           directoryName,
+        })
+      ).rejects.toThrowError(NotFoundError)
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        validateStatus,
+        params,
+        headers: authHeader.headers,
+      })
+    })
+  })
+
+  describe("ReadMedia", () => {
+    const endpoint = `${siteName}/git/blobs/${sha}`
+    const params = {
+      ref: BRANCH_REF,
+    }
+
+    it("should read a media file works correctly", async () => {
+      const resp = {
+        data: {
+          content,
+          sha,
+        },
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      await expect(
+        service.readMedia(sessionData, {
+          fileSha: sha,
+        })
+      ).resolves.toMatchObject({
+        content,
+        sha,
+      })
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
+        validateStatus,
+        params,
+        headers: authHeader.headers,
+      })
+    })
+
+    it("should throw the correct error if file cannot be found", async () => {
+      const resp = {
+        status: 404,
+        isAxiosError: true,
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      await expect(
+        service.readMedia(sessionData, {
+          fileSha: sha,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
@@ -487,6 +550,7 @@ describe("Github Service", () => {
           response: {
             status: 404,
           },
+          isAxiosError: true,
         }
         throw err
       })
@@ -530,7 +594,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           fileContent: content,
-          sha: undefined,
+          sha: "",
         })
       ).resolves.toMatchObject({
         newSha: sha,
@@ -561,7 +625,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           fileContent: content,
-          sha: undefined,
+          sha: "",
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
@@ -603,6 +667,7 @@ describe("Github Service", () => {
           response: {
             status: 404,
           },
+          isAxiosError: true,
         }
         throw err
       })
@@ -708,6 +773,7 @@ describe("Github Service", () => {
           response: {
             status: 422,
           },
+          isAxiosError: true,
         }
         throw err
       })
@@ -738,6 +804,7 @@ describe("Github Service", () => {
 
     const params = {
       ref: BRANCH_REF,
+      recursive: false,
     }
 
     const headers = {

@@ -28,13 +28,15 @@ class MediaDirectoryService {
     return files
   }
 
-  async listFiles(sessionData, { directoryName }) {
+  async listMediaDirectoryContent(sessionData, { directoryName, page, limit }) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
 
-    return await this.gitHubService.readMediaDirectory(
+    return this.gitHubService.readMediaDirectory(
       sessionData,
-      directoryName
+      directoryName,
+      page,
+      limit
     )
   }
 

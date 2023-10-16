@@ -1,5 +1,6 @@
 import { GrowthBook } from "@growthbook/growthbook"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
+import _ from "lodash"
 
 import config from "@config/config"
 
@@ -27,6 +28,34 @@ import * as ReviewApi from "./review"
 const PLACEHOLDER_FILE_NAME = ".keep"
 const BRANCH_REF = config.get("github.branchRef")
 
+const getPaginatedDirectoryContents = (
+  directoryContents: GitDirectoryItem[],
+  page: number,
+  limit = 15
+): {
+  directories: GitDirectoryItem[]
+  files: GitDirectoryItem[]
+  total: number
+} => {
+  const subdirectories = directoryContents.filter((item) => item.type === "dir")
+  const files = directoryContents.filter(
+    (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
+  )
+  const paginatedFiles = _(files)
+    .sortBy(["name"])
+    .drop(page * limit)
+    .take(limit)
+    .value()
+
+  return {
+    directories: subdirectories,
+    files: paginatedFiles,
+    total: files.length,
+  }
+}
+
+// TODO: update the typings here to remove `any`.
+// We can type as `unknown` if required.
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
@@ -177,7 +206,7 @@ export default class RepoService extends GitHubService {
       this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return { sha: result.value.newSha }
     }
-    return await super.create(sessionData, {
+    return super.create(sessionData, {
       content,
       fileName,
       directoryName,
@@ -209,7 +238,7 @@ export default class RepoService extends GitHubService {
       return result.value
     }
 
-    return await super.read(sessionData, {
+    return super.read(sessionData, {
       fileName,
       directoryName,
     })
@@ -256,18 +285,13 @@ export default class RepoService extends GitHubService {
     )
     const { private: isPrivate } = await super.getRepoInfo(sessionData)
 
-    return await getMediaFileInfo({
+    return getMediaFileInfo({
       file: targetFile,
       siteName,
       directoryName,
       mediaType,
       isPrivate,
     })
-  }
-
-  // TODO: This is no longer used, remove it
-  async readMedia(sessionData: any, { fileSha }: any): Promise<any> {
-    return await super.readMedia(sessionData, { fileSha })
   }
 
   async readDirectory(
@@ -293,23 +317,27 @@ export default class RepoService extends GitHubService {
       return result.value
     }
 
-    return await super.readDirectory(sessionData, {
+    return super.readDirectory(sessionData, {
       directoryName,
     })
   }
 
   async readMediaDirectory(
     sessionData: UserWithSiteSessionData,
-    directoryName: string
-  ): Promise<(MediaDirOutput | MediaFileOutput)[]> {
+    directoryName: string,
+    // NOTE: The last seen index denotes the previous seen images.
+    // We will tiebreak in alphabetical order - we sort
+    // and then we return the first n.
+    page = 0,
+    limit = 15
+  ): Promise<{
+    directories: MediaDirOutput[]
+    files: Pick<MediaFileOutput, "name">[]
+    total: number
+  }> {
     const { siteName } = sessionData
     logger.debug(`Reading media directory: ${directoryName}`)
-
-    let filteredResult: GitDirectoryItem[] = []
-    let isPrivate = false
-    const filterLogic = (file: any) =>
-      (file.type === "file" || file.type === "dir") &&
-      file.name !== PLACEHOLDER_FILE_NAME
+    let dirContent: GitDirectoryItem[] = []
 
     if (
       this.isRepoWhitelisted(
@@ -326,31 +354,27 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      filteredResult = result.value.filter(filterLogic)
+      dirContent = result.value
     } else {
-      const repoInfo = await super.getRepoInfo(sessionData)
-      isPrivate = repoInfo.private
-      const files = await super.readDirectory(sessionData, {
+      dirContent = (await super.readDirectory(sessionData, {
         directoryName,
-      })
-      filteredResult = files.filter(filterLogic)
+      })) as GitDirectoryItem[]
     }
 
-    return await Promise.all(
-      filteredResult.map((curr) => {
-        if (curr.type === "dir") {
-          return {
-            name: curr.name,
-            type: curr.type,
-          }
-        }
-
-        return this.readMediaFile(sessionData, {
-          fileName: curr.name,
-          directoryName,
-        })
-      })
+    const { directories, files, total } = getPaginatedDirectoryContents(
+      dirContent,
+      page,
+      limit
     )
+
+    return {
+      directories: directories.map(({ name, type }) => ({
+        name,
+        type,
+      })),
+      files,
+      total,
+    }
   }
 
   async update(
@@ -391,7 +415,7 @@ export default class RepoService extends GitHubService {
       return { newSha: result.value }
     }
 
-    return await super.update(sessionData, {
+    return super.update(sessionData, {
       fileContent,
       sha,
       fileName,
@@ -457,7 +481,7 @@ export default class RepoService extends GitHubService {
       message,
     })
 
-    return await this.updateRepoState(sessionData, {
+    await this.updateRepoState(sessionData, {
       commitSha: newCommitSha,
     })
   }
@@ -504,7 +528,7 @@ export default class RepoService extends GitHubService {
     }
 
     // GitHub flow
-    return await super.delete(sessionData, {
+    await super.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -685,11 +709,11 @@ export default class RepoService extends GitHubService {
   }
 
   async getRepoInfo(sessionData: any): Promise<any> {
-    return await super.getRepoInfo(sessionData)
+    return super.getRepoInfo(sessionData)
   }
 
   async getRepoState(sessionData: any): Promise<any> {
-    return await super.getRepoState(sessionData)
+    return super.getRepoState(sessionData)
   }
 
   async getLatestCommitOfBranch(
@@ -715,7 +739,7 @@ export default class RepoService extends GitHubService {
       }
       return result.value
     }
-    return await super.getLatestCommitOfBranch(sessionData, branchName)
+    return super.getLatestCommitOfBranch(sessionData, branchName)
   }
 
   async getTree(
@@ -723,7 +747,7 @@ export default class RepoService extends GitHubService {
     githubSessionData: any,
     { isRecursive }: any
   ): Promise<RawGitTreeEntry[]> {
-    return await super.getTree(sessionData, githubSessionData, {
+    return super.getTree(sessionData, githubSessionData, {
       isRecursive,
     })
   }
@@ -733,7 +757,7 @@ export default class RepoService extends GitHubService {
     githubSessionData: any,
     { gitTree, message }: any
   ): Promise<any> {
-    return await super.updateTree(sessionData, githubSessionData, {
+    return super.updateTree(sessionData, githubSessionData, {
       gitTree,
       message,
     })
@@ -767,18 +791,18 @@ export default class RepoService extends GitHubService {
       return
     }
 
-    return await super.updateRepoState(sessionData, { commitSha, branchName })
+    await super.updateRepoState(sessionData, { commitSha, branchName })
   }
 
   async checkHasAccess(sessionData: any): Promise<any> {
-    return await super.checkHasAccess(sessionData)
+    return super.checkHasAccess(sessionData)
   }
 
   async changeRepoPrivacy(
     sessionData: any,
     shouldMakePrivate: any
   ): Promise<any> {
-    return await super.changeRepoPrivacy(sessionData, {
+    return super.changeRepoPrivacy(sessionData, {
       shouldMakePrivate,
     })
   }

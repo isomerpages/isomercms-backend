@@ -396,53 +396,6 @@ describe("Github Service", () => {
     })
   })
 
-  describe("ReadMedia", () => {
-    const endpoint = `${siteName}/git/blobs/${sha}`
-    const params = {
-      ref: BRANCH_REF,
-    }
-
-    it("should read a media file works correctly", async () => {
-      const resp = {
-        data: {
-          content,
-          sha,
-        },
-      }
-      mockAxiosInstance.get.mockResolvedValueOnce(resp)
-      await expect(
-        service.readMedia(sessionData, {
-          fileSha: sha,
-        })
-      ).resolves.toMatchObject({
-        content,
-        sha,
-      })
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
-        validateStatus,
-        params,
-        headers: authHeader.headers,
-      })
-    })
-
-    it("should throw the correct error if file cannot be found", async () => {
-      const resp = {
-        status: 404,
-      }
-      mockAxiosInstance.get.mockResolvedValueOnce(resp)
-      await expect(
-        service.readMedia(sessionData, {
-          fileSha: sha,
-        })
-      ).rejects.toThrowError(NotFoundError)
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
-        validateStatus,
-        params,
-        headers: authHeader.headers,
-      })
-    })
-  })
-
   describe("ReadDirectory", () => {
     const endpoint = `${siteName}/contents/${directoryName}`
     const params = {

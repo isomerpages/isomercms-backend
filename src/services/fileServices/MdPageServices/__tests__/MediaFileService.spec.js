@@ -25,7 +25,6 @@ describe("Media File Service", () => {
     update: jest.fn(),
     delete: jest.fn(),
     getRepoInfo: jest.fn(),
-    readMedia: jest.fn(),
     readMediaFile: jest.fn(),
     readDirectory: jest.fn(),
     renameSinglePath: jest.fn(),

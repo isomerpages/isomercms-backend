@@ -12,7 +12,7 @@ const {
 const { NotFoundError } = require("@errors/NotFoundError")
 const { UnprocessableError } = require("@errors/UnprocessableError")
 
-const logger = require("@root/logger/logger")
+const logger = require("@root/logger/logger").default
 
 const ReviewApi = require("./review")
 
@@ -177,36 +177,6 @@ class GitHubService {
 
     const { content: encodedContent, sha } = resp.data
     const content = Base64.decode(encodedContent)
-
-    return { content, sha }
-  }
-
-  async readMedia(sessionData, { fileSha }) {
-    /**
-     * Files that are bigger than 1 MB needs to be retrieved
-     * via Github Blob API. The content can only be retrieved through
-     * the `sha` of the file.
-     */
-    const { accessToken } = sessionData
-    const { siteName } = sessionData
-    const params = {
-      ref: BRANCH_REF,
-    }
-
-    const blobEndpoint = this.getBlobPath({ siteName, fileSha })
-
-    const resp = await this.axiosInstance.get(blobEndpoint, {
-      validateStatus,
-      params,
-      headers: {
-        Authorization: `token ${accessToken}`,
-      },
-    })
-
-    if (resp.status === 404)
-      throw new NotFoundError("Media file does not exist")
-
-    const { content, sha } = resp.data
 
     return { content, sha }
   }

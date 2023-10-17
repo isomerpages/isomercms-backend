@@ -1,9 +1,6 @@
-import { GrowthBook } from "@growthbook/growthbook"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { FEATURE_FLAGS } from "@root/constants"
-import { FeatureFlags } from "@root/types/featureFlags"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 
 import { isFileAsset } from "./CommitServiceGitFile"
@@ -44,7 +41,7 @@ export default class CommitServiceGitHub extends GitHubService {
       isMedia?: boolean
     }
   ): Promise<{
-    sha: any
+    sha: string
   }> {
     const createPromises = [
       super.create(sessionData, {

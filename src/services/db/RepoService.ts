@@ -78,7 +78,6 @@ export default class RepoService extends GitHubService {
     commitServiceGitFile,
     commitServiceGitHub,
   }: RepoServiceParams) {
-    console.log({ isomerRepoAxiosInstance })
     super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
     this.commitServiceGitFile = commitServiceGitFile

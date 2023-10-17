@@ -41,13 +41,13 @@ export default class CommitServiceGitHub extends GitHubService {
         fileName,
         directoryName,
         isMedia,
+        branchName: STAGING_BRANCH,
       }),
     ]
     const shouldStagingLiteUpdate =
       !isFileAsset(directoryName) &&
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
 
-    // todo check if directory name is works here
     if (shouldStagingLiteUpdate) {
       createPromises.push(
         super.create(sessionData, {
@@ -62,6 +62,7 @@ export default class CommitServiceGitHub extends GitHubService {
 
     // We still await and throw error if the commit to staging-lite fails,
     // but the caller only gets the `resultToStaging` commit returned
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [resultToStaging, _] = await Promise.all(createPromises)
 
     return resultToStaging

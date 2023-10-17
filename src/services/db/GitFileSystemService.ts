@@ -27,7 +27,11 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
-import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
+import {
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+  ISOMER_GITHUB_ORG_NAME,
+} from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
@@ -40,9 +44,6 @@ import type {
 } from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
-
-const EFS_VOL_PATH_STAGING = config.get("aws.efs.volPathStaging")
-const EFS_VOL_PATH_STAGING_LITE = config.get("aws.efs.volPathStagingLite")
 
 const STAGING_BRANCH = "staging"
 const STAGING_LITE_BRANCH = "staging-lite"

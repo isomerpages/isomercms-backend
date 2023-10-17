@@ -28,6 +28,8 @@ import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackE
 import { NotFoundError } from "@errors/NotFoundError"
 
 import {
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
   ISOMER_GITHUB_ORG_NAME,
   STAGING_BRANCH,
   STAGING_LITE_BRANCH,
@@ -44,9 +46,6 @@ import type {
 } from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
-
-const EFS_VOL_PATH_STAGING = config.get("aws.efs.volPathStaging")
-const EFS_VOL_PATH_STAGING_LITE = config.get("aws.efs.volPathStagingLite")
 
 export default class GitFileSystemService {
   private readonly git: SimpleGit

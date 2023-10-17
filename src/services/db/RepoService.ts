@@ -413,24 +413,12 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info("Updating file in local Git file system")
-      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-      const result = await this.gitFileSystemService.update(
-        sessionData.siteName,
-        filePath,
+      return this.commitServiceGitFile.update(sessionData, {
         fileContent,
         sha,
-        sessionData.isomerUserId,
-        //! TODO: this needs to be replaced with a call to commitService instead
-        STAGING_BRANCH
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { newSha: result.value }
+        fileName,
+        directoryName,
+      })
     }
 
     return this.commitServiceGitHub.update(sessionData, {
@@ -459,24 +447,9 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info(
-        `Deleting directory in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}`
-      )
-      const result = await this.gitFileSystemService.delete(
-        sessionData.siteName,
+      await this.commitServiceGitFile.deleteDirectory(sessionData, {
         directoryName,
-        "",
-        sessionData.isomerUserId,
-        true,
-        //! TODO: this needs to be replaced with a call to commitService instead
-        STAGING_BRANCH
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
+      })
       return
     }
 
@@ -506,27 +479,11 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info(
-        `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
-      )
-
-      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-
-      const result = await this.gitFileSystemService.delete(
-        sessionData.siteName,
-        filePath,
+      await this.commitServiceGitFile.delete(sessionData, {
         sha,
-        sessionData.isomerUserId,
-        false,
-        //! TODO: this needs to be replaced with a call to commitService instead
-        STAGING_BRANCH
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
+        fileName,
+        directoryName,
+      })
       return
     }
 
@@ -551,23 +508,13 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info("Renaming file/directory in local Git file system")
-      const result = await this.gitFileSystemService.renameSinglePath(
-        sessionData.siteName,
+      return this.commitServiceGitFile.renameSinglePath(
+        sessionData,
+        githubSessionData,
         oldPath,
         newPath,
-        sessionData.isomerUserId,
-        //! TODO: this needs to be replaced with a call to commitService instead
-        STAGING_BRANCH,
         message
       )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { newSha: result.value }
     }
     return this.commitServiceGitHub.renameSinglePath(
       sessionData,
@@ -592,24 +539,14 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info("Moving files in local Git file system")
-      const result = await this.gitFileSystemService.moveFiles(
-        sessionData.siteName,
+      return this.commitServiceGitFile.moveFiles(
+        sessionData,
+        githubSessionData,
         oldPath,
         newPath,
-        sessionData.isomerUserId,
         targetFiles,
-        //! TODO: this needs to be replaced with a call to commitService instead
-        STAGING_BRANCH,
         message
       )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { newSha: result.value }
     }
 
     return this.commitServiceGitHub.moveFiles(

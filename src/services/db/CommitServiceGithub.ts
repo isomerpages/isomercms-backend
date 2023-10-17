@@ -1,11 +1,11 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import isFileAsset from "@root/utils/commit-utils"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
+import GitHubService, { STAGING_LITE_BRANCH } from "@services/db/GitHubService"
 
-import { isFileAsset } from "./CommitServiceGitFile"
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubService, { STAGING_LITE_BRANCH } from "./GitHubService"
 
 /**
  * Responsibilities of this class

@@ -9,7 +9,6 @@ import logger from "@logger/logger"
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
-import { ConflictError } from "@root/errors/ConflictError"
 import { GitHubCommitData } from "@root/types/commitData"
 import { FeatureFlags } from "@root/types/featureFlags"
 import type {
@@ -435,13 +434,11 @@ export default class RepoService extends GitHubService {
       return { newSha: result.value }
     }
 
-    return super.update(sessionData, {
+    return this.commitServiceGitHub.update(sessionData, {
       fileContent,
       sha,
       fileName,
       directoryName,
-      //! TODO: this needs to be replaced with a call to commitService instead
-      branchName: STAGING_BRANCH,
     })
   }
 
@@ -484,35 +481,10 @@ export default class RepoService extends GitHubService {
       return
     }
 
-    // GitHub flow
-    const gitTree = await this.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-
-    // Retrieve removed items and set their sha to null
-    const newGitTree = gitTree
-      .filter(
-        (item) =>
-          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
-      )
-      .map((item) => ({
-        ...item,
-        sha: null,
-      }))
-
-    const newCommitSha = await this.updateTree(
-      sessionData,
+    await this.commitServiceGitHub.deleteDirectory(sessionData, {
+      directoryName,
+      message,
       githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      },
-      //! TODO: call github commit service directly instead
-      true
-    )
-
-    await this.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
     })
   }
 
@@ -560,7 +532,7 @@ export default class RepoService extends GitHubService {
     }
 
     // GitHub flow
-    await super.delete(sessionData, {
+    await this.commitServiceGitHub.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -598,66 +570,13 @@ export default class RepoService extends GitHubService {
       this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
       return { newSha: result.value }
     }
-
-    const gitTree = await super.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-    const newGitTree: any[] = []
-    const isMovingDirectory =
-      gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||
-      false
-
-    gitTree.forEach((item: any) => {
-      if (isMovingDirectory) {
-        if (item.path === newPath && item.type === "tree") {
-          throw new ConflictError("Target directory already exists")
-        } else if (item.path === oldPath && item.type === "tree") {
-          // Rename old subdirectory to new name
-          newGitTree.push({
-            ...item,
-            path: newPath,
-          })
-        } else if (
-          item.path.startsWith(`${oldPath}/`) &&
-          item.type !== "tree"
-        ) {
-          // Delete old files
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-        }
-      } else if (item.path === newPath && item.type !== "tree") {
-        throw new ConflictError("Target file already exists")
-      } else if (item.path === oldPath && item.type !== "tree") {
-        // Add file to new directory
-        newGitTree.push({
-          ...item,
-          path: newPath,
-        })
-        // Delete old file
-        newGitTree.push({
-          ...item,
-          sha: null,
-        })
-      }
-    })
-
-    const newCommitSha = await super.updateTree(
+    return this.commitServiceGitHub.renameSinglePath(
       sessionData,
       githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      },
-      //! TODO: call github commit service directly instead
-      true
+      oldPath,
+      newPath,
+      message
     )
-    await super.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
-
-    return { newSha: newCommitSha }
   }
 
   async moveFiles(
@@ -694,57 +613,14 @@ export default class RepoService extends GitHubService {
       return { newSha: result.value }
     }
 
-    const gitTree = await super.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-    const newGitTree: any[] = []
-
-    gitTree.forEach((item: any) => {
-      if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
-        const fileName = item.path
-          .split(`${newPath}/`)
-          .slice(1)
-          .join(`${newPath}/`)
-        if (targetFiles.includes(fileName)) {
-          // Conflicting file
-          throw new ConflictError("File already exists in target directory")
-        }
-      }
-      if (item.path.startsWith(`${oldPath}/`) && item.type !== "tree") {
-        const fileName = item.path
-          .split(`${oldPath}/`)
-          .slice(1)
-          .join(`${oldPath}/`)
-        if (targetFiles.includes(fileName)) {
-          // Add file to target directory
-          newGitTree.push({
-            ...item,
-            path: `${newPath}/${fileName}`,
-          })
-          // Delete old file
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-        }
-      }
-    })
-
-    const newCommitSha = await super.updateTree(
+    return this.commitServiceGitHub.moveFiles(
       sessionData,
       githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      },
-      true
+      oldPath,
+      newPath,
+      targetFiles,
+      message
     )
-
-    await super.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
-
-    return { newSha: newCommitSha }
   }
 
   async getRepoInfo(sessionData: any): Promise<any> {

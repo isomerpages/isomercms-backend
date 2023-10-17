@@ -74,13 +74,11 @@ export default class CommitServiceGitHub extends GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName = STAGING_BRANCH,
     }: {
       fileContent: string
       sha: string
       fileName: string
       directoryName: string | undefined
-      branchName?: string
     }
   ): Promise<GitCommitResult> {
     const updatePromises = [
@@ -89,7 +87,7 @@ export default class CommitServiceGitHub extends GitHubService {
         sha,
         fileName,
         directoryName,
-        branchName,
+        branchName: STAGING_BRANCH,
       }),
     ]
     const shouldStagingLiteUpdate =
@@ -180,6 +178,7 @@ export default class CommitServiceGitHub extends GitHubService {
         })
       )
     }
+    await Promise.all(deletePromises)
   }
 
   async delete(
@@ -304,6 +303,88 @@ export default class CommitServiceGitHub extends GitHubService {
       )
     }
 
+    return { newSha: newCommitSha }
+  }
+
+  async moveFiles(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    oldPath: string,
+    newPath: string,
+    targetFiles: string[],
+    message?: string,
+    isStaging?: boolean
+  ): Promise<GitCommitResult> {
+    const gitTree = await super.getTree(
+      sessionData,
+      githubSessionData,
+      {
+        isRecursive: true,
+      },
+      isStaging
+    )
+    const newGitTree: any[] = []
+
+    gitTree.forEach((item: any) => {
+      if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
+        const fileName = item.path
+          .split(`${newPath}/`)
+          .slice(1)
+          .join(`${newPath}/`)
+        if (targetFiles.includes(fileName)) {
+          // Conflicting file
+          throw new ConflictError("File already exists in target directory")
+        }
+      }
+      if (item.path.startsWith(`${oldPath}/`) && item.type !== "tree") {
+        const fileName = item.path
+          .split(`${oldPath}/`)
+          .slice(1)
+          .join(`${oldPath}/`)
+        if (targetFiles.includes(fileName)) {
+          // Add file to target directory
+          newGitTree.push({
+            ...item,
+            path: `${newPath}/${fileName}`,
+          })
+          // Delete old file
+          newGitTree.push({
+            ...item,
+            sha: null,
+          })
+        }
+      }
+    })
+
+    const newCommitSha = await super.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree: newGitTree,
+        message,
+      },
+      !!isStaging
+    )
+
+    await super.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
+
+    const shouldUpdateStagingLite =
+      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+      !isFileAsset(oldPath)
+    if (shouldUpdateStagingLite) {
+      // We don't have to return the sha, just update this should be ok
+      await this.moveFiles(
+        sessionData,
+        githubSessionData,
+        oldPath,
+        newPath,
+        targetFiles,
+        message,
+        false
+      )
+    }
     return { newSha: newCommitSha }
   }
 }

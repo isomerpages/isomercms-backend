@@ -440,6 +440,8 @@ export default class RepoService extends GitHubService {
       sha,
       fileName,
       directoryName,
+      //! TODO: this needs to be replaced with a call to commitService instead
+      branchName: STAGING_BRANCH,
     })
   }
 
@@ -498,10 +500,16 @@ export default class RepoService extends GitHubService {
         sha: null,
       }))
 
-    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
-      gitTree: newGitTree,
-      message,
-    })
+    const newCommitSha = await this.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree: newGitTree,
+        message,
+      },
+      //! TODO: call github commit service directly instead
+      true
+    )
 
     await this.updateRepoState(sessionData, {
       commitSha: newCommitSha,
@@ -641,7 +649,9 @@ export default class RepoService extends GitHubService {
       {
         gitTree: newGitTree,
         message,
-      }
+      },
+      //! TODO: call github commit service directly instead
+      true
     )
     await super.updateRepoState(sessionData, {
       commitSha: newCommitSha,
@@ -726,7 +736,8 @@ export default class RepoService extends GitHubService {
       {
         gitTree: newGitTree,
         message,
-      }
+      },
+      true
     )
 
     await super.updateRepoState(sessionData, {
@@ -783,12 +794,18 @@ export default class RepoService extends GitHubService {
   async updateTree(
     sessionData: any,
     githubSessionData: any,
-    { gitTree, message }: any
+    { gitTree, message }: any,
+    isStaging: boolean
   ): Promise<any> {
-    return super.updateTree(sessionData, githubSessionData, {
-      gitTree,
-      message,
-    })
+    return await super.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree,
+        message,
+      },
+      isStaging
+    )
   }
 
   async updateRepoState(

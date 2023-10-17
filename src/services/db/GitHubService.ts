@@ -11,9 +11,10 @@ import { validateStatus } from "@utils/axios-utils"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { STAGING_BRANCH } from "@root/constants"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
+import { RawGitTreeEntry } from "@root/types/github"
 
 import * as ReviewApi from "./review"
 
@@ -315,7 +316,7 @@ export default class GitHubService {
       sha: string
       fileName: string
       directoryName: string | undefined
-      branchName?: string
+      branchName: string
     }
   ): Promise<GitCommitResult> {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -507,15 +508,16 @@ export default class GitHubService {
   async getTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { isRecursive }: { isRecursive: any }
-  ) {
+    { isRecursive }: any,
+    isStaging = true
+  ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const { treeSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
-      ref: STAGING_BRANCH,
+      ref: isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH,
       recursive: false,
     }
 
@@ -534,7 +536,8 @@ export default class GitHubService {
   async updateTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { gitTree, message }: { gitTree: any; message: any }
+    { gitTree, message }: { gitTree: any; message: any },
+    isStaging: boolean
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()

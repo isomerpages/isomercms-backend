@@ -43,7 +43,9 @@ export default class CommitServiceGitHub extends GitHubService {
       directoryName: string
       isMedia?: boolean
     }
-  ) {
+  ): Promise<{
+    sha: any
+  }> {
     const createPromises = [
       super.create(sessionData, {
         content,

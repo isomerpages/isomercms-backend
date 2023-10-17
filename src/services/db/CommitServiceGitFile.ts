@@ -39,7 +39,7 @@ export default class CommitServiceGitFile {
       directoryName: string
       isMedia?: boolean
     }
-  ) {
+  ): Promise<{ sha: string }> {
     const createPromises = [
       this.gitFileSystemService.create(
         sessionData.siteName,
@@ -51,12 +51,12 @@ export default class CommitServiceGitFile {
         STAGING_BRANCH
       ),
     ]
-    const shouldStagingLiteUpdate =
+    const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset(directoryName)
 
     // todo check if directory name is works here
-    if (shouldStagingLiteUpdate) {
+    if (shouldUpdateStagingLite) {
       createPromises.push(
         this.gitFileSystemService.create(
           sessionData.siteName,
@@ -69,23 +69,23 @@ export default class CommitServiceGitFile {
         )
       )
     }
-    const [resultToStaging, resultToStagingLite] = await Promise.all(
+    const [stagingCreateResult, stagingLiteCreateResult] = await Promise.all(
       createPromises
     )
 
-    if (resultToStaging.isErr()) {
-      throw resultToStaging.error
-    } else if (shouldStagingLiteUpdate && resultToStagingLite.isErr()) {
-      throw resultToStagingLite.error
+    if (stagingCreateResult.isErr()) {
+      throw stagingCreateResult.error
+    } else if (shouldUpdateStagingLite && stagingLiteCreateResult.isErr()) {
+      throw stagingLiteCreateResult.error
     }
 
     this.gitFileSystemService.push(sessionData.siteName, STAGING_BRANCH)
-    if (shouldStagingLiteUpdate) {
+    if (shouldUpdateStagingLite) {
       this.gitFileSystemService.push(
         sessionData.siteName,
         this.STAGING_LITE_BRANCH
       )
     }
-    return { sha: resultToStaging.value.newSha }
+    return { sha: stagingCreateResult.value.newSha }
   }
 }

@@ -310,7 +310,7 @@ export default class GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName = STAGING_BRANCH,
+      branchName,
     }: {
       fileContent: string
       sha: string

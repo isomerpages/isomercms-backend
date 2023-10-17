@@ -12,7 +12,11 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
-import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
+import {
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+  ISOMER_GITHUB_ORG_NAME,
+} from "@constants/constants"
 
 import {
   MOCK_GITHUB_FILENAME_ALPHA_ONE,
@@ -51,8 +55,8 @@ const dirTree = {
 describe("GitFileSystemService", () => {
   beforeEach(() => {
     mockFs({
-      [config.get("aws.efs.volPathStaging")]: dirTree,
-      [config.get("aws.efs.volPathStagingLite")]: dirTree,
+      [`${EFS_VOL_PATH_STAGING}`]: dirTree,
+      [`${EFS_VOL_PATH_STAGING_LITE}`]: dirTree,
     })
   })
 

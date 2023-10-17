@@ -16,7 +16,6 @@ import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 import { mailer } from "@services/utilServices/MailClient"
 
-const SITE_CLONE_FORM_KEY = config.get("formSg.siteCloneFormKey")
 const SITE_CREATE_FORM_KEY = config.get("formSg.siteCreateFormKey")
 const REQUESTER_EMAIL_FIELD = "Government E-mail"
 const SITE_NAME_FIELD = "Site Name"
@@ -82,12 +81,12 @@ export class FormsgRouter {
       if (!siteName) {
         const err = `A site name is required`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
-        return res.sendStatus(200)
+        return cloneRes.sendStatus(200)
       }
       if (!repoName) {
         const err = `A repository name is required`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
-        return res.sendStatus(200)
+        return cloneRes.sendStatus(200)
       }
       const foundIsomerRequester = await this.usersService.findByEmail(
         requesterEmail
@@ -95,7 +94,7 @@ export class FormsgRouter {
       if (!foundIsomerRequester) {
         const err = `Form submitter ${requesterEmail} is not an Isomer user. Register an account for this user and try again.`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
-        return res.sendStatus(200)
+        return cloneRes.sendStatus(200)
       }
       let foundOwner
       if (isEmailLogin) {
@@ -107,10 +106,11 @@ export class FormsgRouter {
             submissionId,
             err
           )
-          return res.sendStatus(200)
+          return cloneRes.sendStatus(200)
         }
         foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
       }
+
       // 3. Use service to create site
       const { deployment } = await this.infraService.createSite({
         creator: foundIsomerRequester,
@@ -119,6 +119,12 @@ export class FormsgRouter {
         repoName,
         isEmailLogin,
       })
+
+      // NOTE: Clone site to EFS
+      const cloneRes = await this.gitFileSystemService.clone(repoName)
+
+      if (cloneRes.isErr()) throw cloneRes.error
+
       await this.sendCreateSuccess(
         requesterEmail,
         repoName,
@@ -165,74 +171,6 @@ export class FormsgRouter {
 <p>You may now view this repository on GitHub. <a href="${stagingUrl}">Staging</a> and <a href="${productionUrl}">production</a> deployments should be accessible within a few minutes.</p>
 <p>This email was sent from the Isomer CMS backend.</p>`
     await mailer.sendMail(email, subject, html)
-  }
-
-  cloneSiteToEfs: RequestHandler<
-    never,
-    Record<string, never>,
-    { data: { submissionId: string } },
-    never,
-    { submission: DecryptedContent }
-  > = async (req, res) => {
-    // 1. Extract arguments
-    const { submissionId } = req.body.data
-    const { responses } = res.locals.submission
-    // NOTE: This is validated by formsg to be of domain `@open.gov.sg`;
-    // hence, not revalidating here
-    const requesterEmail = getField(responses, "Email") as string
-    // NOTE: The field is required by our form so this cannot be empty or undefined
-    const githubRepoName = getField(responses, "Github Repo Name") as string
-
-    logger.info(
-      `${requesterEmail} requested for ${githubRepoName} to be cloned onto EFS`
-    )
-
-    this.gitFileSystemService
-      .clone(githubRepoName)
-      .map((path) => {
-        logger.info(`Cloned ${githubRepoName} to ${path}`)
-        this.sendCloneSuccess(
-          requesterEmail,
-          githubRepoName,
-          submissionId,
-          path
-        )
-      })
-      .mapErr((err) => {
-        logger.error(
-          `Cloning repo: ${githubRepoName} to EFS failed with error: ${JSON.stringify(
-            err
-          )}`
-        )
-        this.sendCloneError(
-          requesterEmail,
-          githubRepoName,
-          submissionId,
-          err.message
-        )
-      })
-  }
-
-  sendCloneSuccess = async (
-    requesterEmail: string,
-    githubRepoName: string,
-    submissionId: string,
-    path: string
-  ) => {
-    const subject = `[Isomer] Clone site ${githubRepoName} SUCCESS`
-    const html = `<p>Isomer site ${githubRepoName} was cloned successfully to EFS path: ${path}. (Form submission id [${submissionId}])</p>`
-    await mailer.sendMail(requesterEmail, subject, html)
-  }
-
-  async sendCloneError(
-    requesterEmail: string,
-    githubRepoName: string,
-    submissionId: string,
-    message: string
-  ) {
-    const subject = `[Isomer] Clone site ${githubRepoName} FAILURE`
-    const html = `<p>Isomer site ${githubRepoName} was <b>not</b> cloned successfully. Cloning failed with error: ${message} (Form submission id [${submissionId}])</p>`
-    await mailer.sendMail(requesterEmail, subject, html)
   }
 
   getRouter() {

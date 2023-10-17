@@ -133,13 +133,13 @@ export default class GitHubService {
       fileName,
       directoryName,
       isMedia = false,
-      branchName = STAGING_BRANCH,
+      branchName,
     }: {
       content: string
       fileName: string
       directoryName: string
       isMedia: boolean
-      branchName?: string
+      branchName: string
     }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData

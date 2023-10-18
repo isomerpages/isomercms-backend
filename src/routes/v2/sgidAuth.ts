@@ -183,19 +183,13 @@ export class SgidAuthRouter {
           typeof verifiedToken === "object" &&
           "userData" in verifiedToken
         ) {
-          return ok(verifiedToken.userData)
+          const { userData } = verifiedToken
+          if (
+            Array.isArray(userData) &&
+            userData.every((item) => isPublicOfficerData(item))
+          )
+            return ok(userData as PublicOfficerData[])
         }
-        logger.error(
-          `Error - token does not match expected format for sgid multiuser login ${email}`
-        )
-        return err(new SgidVerifyUserError())
-      })
-      .andThen((userData) => {
-        if (
-          Array.isArray(userData) &&
-          userData.every((item) => isPublicOfficerData(item))
-        )
-          return ok(userData as PublicOfficerData[])
         logger.error(
           `Error - token does not match expected format for sgid multiuser login ${email}`
         )
@@ -212,7 +206,7 @@ export class SgidAuthRouter {
           )
           return err(new SgidVerifyUserError())
         }
-        return ok("")
+        return ok(userData)
       })
       .asyncAndThen(() =>
         ResultAsync.fromPromise(
@@ -252,7 +246,7 @@ export class SgidAuthRouter {
       attachReadRouteHandlerWrapper(this.handleSgidLogin)
     )
     router.post(
-      "/verify-multiuser-login",
+      "/verify/multi/login",
       attachReadRouteHandlerWrapper(this.handleSgidMultiuserLogin)
     )
 

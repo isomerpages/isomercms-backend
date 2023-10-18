@@ -81,12 +81,12 @@ export class FormsgRouter {
       if (!siteName) {
         const err = `A site name is required`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
-        return cloneRes.sendStatus(200)
+        return res.sendStatus(200)
       }
       if (!repoName) {
         const err = `A repository name is required`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
-        return cloneRes.sendStatus(200)
+        return res.sendStatus(200)
       }
       const foundIsomerRequester = await this.usersService.findByEmail(
         requesterEmail
@@ -94,7 +94,7 @@ export class FormsgRouter {
       if (!foundIsomerRequester) {
         const err = `Form submitter ${requesterEmail} is not an Isomer user. Register an account for this user and try again.`
         await this.sendCreateError(requesterEmail, repoName, submissionId, err)
-        return cloneRes.sendStatus(200)
+        return res.sendStatus(200)
       }
       let foundOwner
       if (isEmailLogin) {
@@ -106,7 +106,7 @@ export class FormsgRouter {
             submissionId,
             err
           )
-          return cloneRes.sendStatus(200)
+          return res.sendStatus(200)
         }
         foundOwner = await this.usersService.findOrCreateByEmail(ownerEmail)
       }

@@ -167,6 +167,7 @@ export class SgidAuthRouter {
   > = async (req, res) => {
     const { email } = req.body
     const token = req.cookies[SGID_MULTIUSER_COOKIE_NAME]
+    res.clearCookie(SGID_MULTIUSER_COOKIE_NAME, { path: "/" })
 
     const safeVerify = Result.fromThrowable(jwtUtils.verifyToken, (error) => {
       logger.error(

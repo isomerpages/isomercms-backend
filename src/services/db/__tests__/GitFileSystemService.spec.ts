@@ -55,8 +55,8 @@ const dirTree = {
 describe("GitFileSystemService", () => {
   beforeEach(() => {
     mockFs({
-      [`${EFS_VOL_PATH_STAGING}`]: dirTree,
-      [`${EFS_VOL_PATH_STAGING_LITE}`]: dirTree,
+      [EFS_VOL_PATH_STAGING]: dirTree,
+      [EFS_VOL_PATH_STAGING_LITE]: dirTree,
     })
   })
 

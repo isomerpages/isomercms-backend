@@ -90,7 +90,8 @@ export class SgidAuthRouter {
 
     const { nonce, codeVerifier } = cookieData
 
-    // Exchange the authorization code and code verifier for the access token, then use the access token to retrieve user's data
+    // Exchange the authorization code and code verifier for the access token,
+    // then use the access token to retrieve user's data
     const userDataRes = await this.sgidAuthService
       .retrieveSgidAccessToken({ authCode, nonce, codeVerifier })
       .andThen(({ accessToken, sub }) =>

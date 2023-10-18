@@ -17,6 +17,12 @@ import { RawGitTreeEntry } from "@root/types/github"
 
 import * as ReviewApi from "./review"
 
+const CACHE_KEYS = {
+  read: {
+    directory: "read-directory",
+  },
+}
+
 export default class GitHubService {
   private readonly axiosInstance: AxiosCacheInstance
 
@@ -192,6 +198,13 @@ export default class GitHubService {
         headers: {
           Authorization: `token ${accessToken}`,
         },
+        cache: {
+          update: {
+            // NOTE: Invalidate entries for reading of directory
+            // and let the next request through to server on resource creation.
+            [CACHE_KEYS.read.directory]: "delete",
+          },
+        },
       })
 
       return { sha: resp.data.content.sha }
@@ -296,6 +309,7 @@ export default class GitHubService {
       headers: {
         Authorization: `token ${accessToken}`,
       },
+      id: CACHE_KEYS.read.directory,
     })
     if (resp.status === 404) throw new NotFoundError("Directory does not exist")
 
@@ -351,6 +365,13 @@ export default class GitHubService {
       const resp = await this.axiosInstance.put(endpoint, params, {
         headers: {
           Authorization: `token ${accessToken}`,
+        },
+        cache: {
+          update: {
+            // NOTE: Invalidate entries for reading of directory
+            // and let the next request through to server on resource update.
+            [CACHE_KEYS.read.directory]: "delete",
+          },
         },
       })
 
@@ -416,6 +437,13 @@ export default class GitHubService {
         params,
         headers: {
           Authorization: `token ${accessToken}`,
+        },
+        cache: {
+          update: {
+            // NOTE: Invalidate entries for reading of directory
+            // and let the next request through to server on resource deletion.
+            [CACHE_KEYS.read.directory]: "delete",
+          },
         },
       })
     } catch (err) {

@@ -3,7 +3,7 @@
 // Note: key should mirror GrowthBook exactly as it is
 export interface FeatureFlags {
   ggs_whitelisted_repos: { repos: string[] }
-  reduce_build_times_whitelisted_repos: boolean
+  isQuickieWhitelisted: boolean
 }
 
 // List of attributes we set in GrowthBook Instance in auth middleware

@@ -77,9 +77,9 @@ import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
 import RepoManagementService from "./services/admin/RepoManagementService"
-import CommitServiceGitFile from "./services/db/CommitServiceGitFile"
-import CommitServiceGitHub from "./services/db/CommitServiceGithub"
+import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
+import GitHubCommitService from "./services/db/GithubCommitService"
 import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
@@ -166,8 +166,8 @@ const simpleGitInstance = new simpleGit({
 })
 
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
-const commitServiceGitHub = new CommitServiceGitHub(isomerRepoAxiosInstance)
-const commitServiceGitFile = new CommitServiceGitFile(gitFileSystemService)
+const commitServiceGitHub = new GitHubCommitService(isomerRepoAxiosInstance)
+const commitServiceGitFile = new GitFileCommitService(gitFileSystemService)
 
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,

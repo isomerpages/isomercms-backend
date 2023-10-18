@@ -20,9 +20,9 @@ import { RawGitTreeEntry } from "@root/types/github"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
 
-import CommitServiceGitFile from "./CommitServiceGitFile"
-import CommitServiceGitHub from "./CommitServiceGithub"
+import GitFileCommitService from "./GitFileCommitService"
 import GitFileSystemService from "./GitFileSystemService"
+import GitHubCommitService from "./GithubCommitService"
 import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
@@ -61,16 +61,16 @@ const getPaginatedDirectoryContents = (
 interface RepoServiceParams {
   isomerRepoAxiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
-  commitServiceGitFile: CommitServiceGitFile
-  commitServiceGitHub: CommitServiceGitHub
+  commitServiceGitFile: GitFileCommitService
+  commitServiceGitHub: GitHubCommitService
 }
 
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
-  private readonly commitServiceGitFile: CommitServiceGitFile
+  private readonly commitServiceGitFile: GitFileCommitService
 
-  private readonly commitServiceGitHub: CommitServiceGitHub
+  private readonly commitServiceGitHub: GitHubCommitService
 
   constructor({
     isomerRepoAxiosInstance,

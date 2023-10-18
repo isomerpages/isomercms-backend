@@ -5,8 +5,8 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitCommitResult } from "@root/types/gitfilesystem"
+import isFileAsset from "@root/utils/commit-utils"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
-import isFileAsset from "@services/db/CommitServiceGitFile"
 import GitHubService from "@services/db/GitHubService"
 
 /**
@@ -14,7 +14,7 @@ import GitHubService from "@services/db/GitHubService"
  * 1. Creates all commits to staging
  * 2. Creates non-asset related commits to staging-lite
  */
-export default class CommitServiceGitHub extends GitHubService {
+export default class GitHubCommitService extends GitHubService {
   constructor(axiosInstance: AxiosCacheInstance) {
     super({ axiosInstance })
   }

@@ -44,8 +44,8 @@ import {
 import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { SettingsRouter as _SettingsRouter } from "@root/routes/v2/authenticatedSites/settings"
 import { SettingsService } from "@root/services/configServices/SettingsService"
-import CommitServiceGitFile from "@root/services/db/CommitServiceGitFile"
-import CommitServiceGitHub from "@root/services/db/CommitServiceGithub"
+import GitFileCommitService from "@root/services/db/GitFileCommitService"
+import GitHubCommitService from "@root/services/db/GithubCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -99,8 +99,8 @@ jest.mock("../services/identity/DeploymentClient", () =>
   }))
 )
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const commitServiceGitFile = new CommitServiceGitFile(gitFileSystemService)
-const commitServiceGitHub = new CommitServiceGitHub(isomerRepoAxiosInstance)
+const commitServiceGitFile = new GitFileCommitService(gitFileSystemService)
+const commitServiceGitHub = new GitHubCommitService(isomerRepoAxiosInstance)
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,

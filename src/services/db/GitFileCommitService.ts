@@ -13,7 +13,7 @@ import GitFileSystemService from "./GitFileSystemService"
  * 1. Creates all commits to staging
  * 2. Creates non-asset related commits to staging-lite
  */
-export default class CommitServiceGitFile {
+export default class GitFileCommitService {
   private readonly STAGING_LITE_BRANCH = "staging-lite"
 
   private readonly gitFileSystemService: GitFileSystemService

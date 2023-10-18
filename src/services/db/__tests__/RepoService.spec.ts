@@ -23,8 +23,8 @@ import * as mediaUtils from "@root/utils/media-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
 
-import CommitServiceGitFile from "../CommitServiceGitFile"
-import CommitServiceGitHub from "../CommitServiceGithub"
+import GitFileCommitService from "../GitFileCommitService"
+import GitHubCommitService from "../GithubCommitService"
 import GitHubService from "../GitHubService"
 
 const MockAxiosInstance = {
@@ -70,8 +70,8 @@ const MockCommitServiceGitHub = {
 const RepoService = new _RepoService({
   isomerRepoAxiosInstance: (MockAxiosInstance as unknown) as AxiosCacheInstance,
   gitFileSystemService: (MockGitFileSystemService as unknown) as GitFileSystemService,
-  commitServiceGitFile: (MockCommitServiceGitFile as unknown) as CommitServiceGitFile,
-  commitServiceGitHub: (MockCommitServiceGitHub as unknown) as CommitServiceGitHub,
+  commitServiceGitFile: (MockCommitServiceGitFile as unknown) as GitFileCommitService,
+  commitServiceGitHub: (MockCommitServiceGitHub as unknown) as GitHubCommitService,
 })
 
 describe("RepoService", () => {

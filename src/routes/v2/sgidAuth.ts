@@ -1,12 +1,12 @@
 import autoBind from "auto-bind"
 import express from "express"
-import { errAsync, okAsync, ResultAsync } from "neverthrow"
-
-import { config } from "@config/config"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 
 import logger from "@logger/logger"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
+
+import jwtUtils from "@utils/jwt-utils"
 
 import { AuthError } from "@root/errors/AuthError"
 import DatabaseError from "@root/errors/DatabaseError"
@@ -14,14 +14,18 @@ import {
   SgidCreateRedirectUrlError,
   SgidFetchAccessTokenError,
   SgidFetchUserInfoError,
+  SgidVerifyUserError,
 } from "@root/errors/SgidErrors"
 import { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
+import { isPublicOfficerData, PublicOfficerData } from "@root/types/sgid"
 import { isSecure } from "@root/utils/auth-utils"
 import UsersService from "@services/identity/UsersService"
 import SgidAuthService from "@services/utilServices/SgidAuthService"
 
 const SGID_COOKIE_NAME = "isomer-sgid"
+const SGID_MULTIUSER_COOKIE_NAME = "isomer-multiuser-sgid"
+const CSRF_TOKEN_EXPIRY_MS = 600000
 
 interface SgidAuthRouterProps {
   usersService: UsersService
@@ -69,7 +73,7 @@ export class SgidAuthRouter {
 
   handleSgidLogin: RequestHandler<
     never,
-    void | ResponseErrorBody,
+    { userData: PublicOfficerData[] } | ResponseErrorBody,
     never,
     { code: string; state: string },
     never
@@ -86,25 +90,130 @@ export class SgidAuthRouter {
 
     const { nonce, codeVerifier } = cookieData
 
-    // Exchange the authorization code and code verifier for the access token, then use the access token to retrieve user's email
-    await this.sgidAuthService
+    // Exchange the authorization code and code verifier for the access token, then use the access token to retrieve user's data
+    const userDataRes = await this.sgidAuthService
       .retrieveSgidAccessToken({ authCode, nonce, codeVerifier })
       .andThen(({ accessToken, sub }) =>
         // We can immediately process the access token - we only need to retrieve the email from sgid
-        this.sgidAuthService.retrieveSgidUserEmail(accessToken, sub)
+        this.sgidAuthService.retrieveSgidUserEmails(accessToken, sub)
       )
-      .andThen((email) => {
-        if (!email || !email.endsWith("@open.gov.sg")) {
+      .andThen((officerDetails) => {
+        if (!officerDetails || officerDetails.length === 0) {
           return errAsync(
             new AuthError(
               "Your email has not been whitelisted to use sgID login. Please use another method of login."
             )
           )
         }
-        return okAsync(email)
+        return okAsync(officerDetails)
       })
-      .andThen((email) =>
-        // Login with email
+    if (userDataRes.isErr()) {
+      const { error } = userDataRes
+      if (
+        error instanceof SgidFetchAccessTokenError ||
+        error instanceof SgidFetchUserInfoError
+      ) {
+        return res.status(500).send()
+      }
+      if (error instanceof AuthError) {
+        return res.status(401).send()
+      }
+      return res.status(500).send()
+    }
+
+    const userData = userDataRes.value
+    if (userData.length === 1) {
+      // If user only has a single email, login directly
+      await ResultAsync.fromPromise(
+        this.usersService.loginWithEmail(userData[0].email),
+        (error) => {
+          logger.error(
+            `Error while retrieving user info from database: ${error}`
+          )
+          return new DatabaseError()
+        }
+      )
+        .map((user) => {
+          const userInfo = {
+            isomerUserId: user.id,
+            email: user.email,
+          }
+          Object.assign(req.session, { userInfo })
+          return res.status(200).send({ userData })
+        })
+        .mapErr((error) => res.status(500).send())
+    } else {
+      // User has multiple emails, defer to user to select email
+      const csrfTokenExpiry = new Date()
+      // getTime allows this to work across timezones
+      csrfTokenExpiry.setTime(csrfTokenExpiry.getTime() + CSRF_TOKEN_EXPIRY_MS)
+      const cookieSettings = {
+        expires: csrfTokenExpiry,
+        httpOnly: true,
+        secure: isSecure,
+      }
+      const token = jwtUtils.signToken({ userData })
+      res.cookie(SGID_MULTIUSER_COOKIE_NAME, token, cookieSettings)
+      return res.status(200).send({ userData })
+    }
+  }
+
+  handleSgidMultiuserLogin: RequestHandler<
+    never,
+    void | ResponseErrorBody,
+    { email: string },
+    unknown,
+    never
+  > = async (req, res) => {
+    const { email } = req.body
+    const token = req.cookies[SGID_MULTIUSER_COOKIE_NAME]
+
+    const safeVerify = Result.fromThrowable(jwtUtils.verifyToken, (error) => {
+      logger.error(
+        `Error - invalid token for sgid multiuser login ${email}: ${error}`
+      )
+      return new SgidVerifyUserError()
+    })
+
+    await safeVerify(token)
+      .andThen((verifiedToken) => {
+        if (
+          verifiedToken &&
+          typeof verifiedToken === "object" &&
+          "userData" in verifiedToken
+        ) {
+          return ok(verifiedToken.userData)
+        }
+        logger.error(
+          `Error - token does not match expected format for sgid multiuser login ${email}`
+        )
+        return err(new SgidVerifyUserError())
+      })
+      .andThen((userData) => {
+        if (
+          Array.isArray(userData) &&
+          userData.every((item) => isPublicOfficerData(item))
+        )
+          return ok(userData as PublicOfficerData[])
+        logger.error(
+          `Error - token does not match expected format for sgid multiuser login ${email}`
+        )
+        return err(new SgidVerifyUserError())
+      })
+      .andThen((userData) => {
+        const isValidUser =
+          userData.filter((data) => data.email === email).length > 0
+        if (!isValidUser) {
+          logger.error(
+            `Error - user with emails ${userData
+              .map((data) => data.email)
+              .join(", ")} attempting to login with unverified email ${email}`
+          )
+          return err(new SgidVerifyUserError())
+        }
+        return ok("")
+      })
+      .asyncAndThen(() =>
         ResultAsync.fromPromise(
           this.usersService.loginWithEmail(email),
           (error) => {
@@ -123,17 +232,9 @@ export class SgidAuthRouter {
         Object.assign(req.session, { userInfo })
         return res.status(200).send()
       })
-      .mapErr((err) => {
-        if (
-          err instanceof SgidFetchAccessTokenError ||
-          err instanceof SgidFetchUserInfoError ||
-          err instanceof DatabaseError
-        ) {
-          return res.status(500).send()
-        }
-        if (err instanceof AuthError) {
-          return res.status(401).send()
-        }
+      .mapErr((error) => {
+        if (error instanceof DatabaseError) return res.status(500).send()
+        if (error instanceof SgidVerifyUserError) return res.status(401).send()
         return res.status(500).send()
       })
   }
@@ -148,6 +249,10 @@ export class SgidAuthRouter {
     router.get(
       "/verify-login",
       attachReadRouteHandlerWrapper(this.handleSgidLogin)
+    )
+    router.post(
+      "/verify-multiuser-login",
+      attachReadRouteHandlerWrapper(this.handleSgidMultiuserLogin)
     )
 
     return router

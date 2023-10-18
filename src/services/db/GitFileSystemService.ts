@@ -339,17 +339,25 @@ export default class GitFileSystemService {
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
     return combine([
-      this.cloneStaging(repoName),
-      this.cloneStagingLite(repoName),
+      this.cloneBranch(repoName, true),
+      this.cloneBranch(repoName, false),
     ]).andThen(([stagingPath, _]) =>
       // staging lite path not needed, promises are resolved in order
       okAsync(stagingPath)
     )
   }
 
-  cloneStaging(repoName: string): ResultAsync<string, GitFileSystemError> {
+  cloneBranch(
+    repoName: string,
+    isStaging: boolean
+  ): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-    return this.getFilePathStats(repoName, "", true)
+    const efsVolPath = isStaging
+      ? EFS_VOL_PATH_STAGING
+      : EFS_VOL_PATH_STAGING_LITE
+    const branch = isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH
+
+    return this.getFilePathStats(repoName, "", isStaging)
       .andThen((stats) => ok(stats.isDirectory()))
       .orElse((error) => {
         if (error instanceof NotFoundError) {
@@ -357,24 +365,34 @@ export default class GitFileSystemService {
         }
         return err(error)
       })
-
       .andThen((isDirectory) => {
         if (!isDirectory) {
-          return ResultAsync.fromPromise(
-            this.git
-              .clone(originUrl, `${EFS_VOL_PATH_STAGING}/${repoName}`)
-              .cwd(`${EFS_VOL_PATH_STAGING}/${repoName}`)
-              .checkout(STAGING_BRANCH),
-            (error) => {
-              logger.error(`Error when cloning ${repoName}: ${error}`)
+          const clonePromise = isStaging
+            ? this.git
+                .clone(originUrl, `${efsVolPath}/${repoName}`)
+                .cwd(`${efsVolPath}/${repoName}`)
+                .checkout(branch)
+            : this.git
+                .clone(originUrl, `${efsVolPath}/${repoName}`, [
+                  "--branch",
+                  branch,
+                  "--single-branch",
+                ])
+                .cwd(`${efsVolPath}/${repoName}`)
 
-              if (error instanceof GitError) {
-                return new GitFileSystemError("Unable to clone whole repo")
-              }
+          return ResultAsync.fromPromise(clonePromise, (error) => {
+            logger.error(`Error when cloning ${repoName}: ${error}`)
 
-              return new GitFileSystemError("An unknown error occurred")
+            if (error instanceof GitError) {
+              return new GitFileSystemError(
+                isStaging
+                  ? "Unable to clone whole repo"
+                  : "Unable to clone staging lite branch"
+              )
             }
-          ).map(() => `${EFS_VOL_PATH_STAGING}/${repoName}`)
+
+            return new GitFileSystemError("An unknown error occurred")
+          }).map(() => `${efsVolPath}/${repoName}`)
         }
 
         return this.isGitInitialized(repoName)
@@ -382,7 +400,9 @@ export default class GitFileSystemService {
             if (!isGitInitialized) {
               return errAsync(
                 new GitFileSystemError(
-                  `An existing folder "${repoName}" exists in staging but is not a Git repo`
+                  `An existing folder "${repoName}" exists ${
+                    isStaging ? "in staging" : "in staging lite"
+                  } but is not a Git repo`
                 )
               )
             }
@@ -393,75 +413,13 @@ export default class GitFileSystemService {
             if (!isOriginRemoteCorrect) {
               return errAsync(
                 new GitFileSystemError(
-                  `An existing folder "${repoName}" exists in staging lite but is not the correct Git repo`
+                  `An existing folder "${repoName}" exists ${
+                    isStaging ? "in staging" : "in staging lite"
+                  } but is not the correct Git repo`
                 )
               )
             }
-            return okAsync(`${EFS_VOL_PATH_STAGING}/${repoName}`)
-          })
-      })
-  }
-
-  cloneStagingLite(repoName: string): ResultAsync<string, GitFileSystemError> {
-    const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-
-    return this.getFilePathStats(repoName, "", false)
-      .andThen((stats) => ok(stats.isDirectory()))
-      .orElse((error) => {
-        if (error instanceof NotFoundError) {
-          return ok(false)
-        }
-        return err(error)
-      })
-
-      .andThen((isDirectory) => {
-        if (!isDirectory) {
-          return ResultAsync.fromPromise(
-            this.git
-              .clone(originUrl, `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`, [
-                "--branch",
-                "staging-lite",
-                "--single-branch",
-              ])
-              .cwd(`${EFS_VOL_PATH_STAGING_LITE}/${repoName}`),
-
-            (error) => {
-              logger.error(
-                `Error when cloning staging lite branch${repoName}: ${error}`
-              )
-
-              if (error instanceof GitError) {
-                return new GitFileSystemError(
-                  "Unable to clone staging lite branch"
-                )
-              }
-
-              return new GitFileSystemError("An unknown error occurred")
-            }
-          ).map(() => `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`)
-        }
-
-        return this.isGitInitialized(repoName)
-          .andThen((isGitInitialized) => {
-            if (!isGitInitialized) {
-              return errAsync(
-                new GitFileSystemError(
-                  `An existing folder "${repoName}" exists but is not a Git repo`
-                )
-              )
-            }
-            return okAsync(true)
-          })
-          .andThen(() => this.isOriginRemoteCorrect(repoName))
-          .andThen((isOriginRemoteCorrect) => {
-            if (!isOriginRemoteCorrect) {
-              return errAsync(
-                new GitFileSystemError(
-                  `An existing folder "${repoName}" exists but is not the correct Git repo`
-                )
-              )
-            }
-            return okAsync(`${EFS_VOL_PATH_STAGING_LITE}/${repoName}`)
+            return okAsync(`${efsVolPath}/${repoName}`)
           })
       })
   }

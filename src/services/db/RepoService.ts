@@ -545,6 +545,8 @@ export default class RepoService extends GitHubService {
         oldPath,
         newPath,
         targetFiles,
+        //! TODO: this needs to be replaced with a call to commitService instead
+        STAGING_BRANCH,
         message
       )
     }

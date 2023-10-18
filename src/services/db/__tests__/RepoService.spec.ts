@@ -200,17 +200,17 @@ describe("RepoService", () => {
       MockCommitServiceGitHub.create.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.create(sessionData, {
-        content: "content",
-        fileName: "test.md",
-        directoryName: "",
+        content: mockDirectoryName,
+        fileName: mockFileName,
+        directoryName: mockDirectoryName,
         isMedia,
       })
 
       expect(actual).toEqual(expected)
       expect(MockCommitServiceGitHub.create).toHaveBeenCalledWith(sessionData, {
-        content: "content",
-        fileName: "test.md",
-        directoryName: "",
+        content: mockContent,
+        fileName: mockFileName,
+        directoryName: mockDirectoryName,
         isMedia,
       })
     })

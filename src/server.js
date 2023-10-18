@@ -166,14 +166,14 @@ const simpleGitInstance = new simpleGit({
 })
 
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
-const commitServiceGitHub = new GitHubCommitService(isomerRepoAxiosInstance)
+const githubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
 const commitServiceGitFile = new GitFileCommitService(gitFileSystemService)
 
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
-  commitServiceGitFile,
-  commitServiceGitHub,
+  gitFileCommitService: commitServiceGitFile,
+  gitFileCommitService: githubCommitService,
 })
 
 const repoManagementService = new RepoManagementService({

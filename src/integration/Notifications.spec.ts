@@ -68,13 +68,13 @@ const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const commitServiceGitFile = new GitFileCommitService(gitFileSystemService)
-const commitServiceGitHub = new GitHubCommitService(isomerRepoAxiosInstance)
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+const githubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
-  commitServiceGitFile,
-  commitServiceGitHub,
+  gitFileCommitService,
+  gitFileCommitService: githubCommitService,
 })
 const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)

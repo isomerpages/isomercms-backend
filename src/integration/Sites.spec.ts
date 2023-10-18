@@ -67,13 +67,13 @@ const mockPermissions = { push: true }
 const mockPrivate = true
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const commitServiceGitHub = new GitHubCommitService(isomerRepoAxiosInstance)
-const commitServiceGitFile = new GitFileCommitService(gitFileSystemService)
+const gitHubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
-  commitServiceGitHub,
-  commitServiceGitFile,
+  gitFileCommitService,
+  gitHubCommitService,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)

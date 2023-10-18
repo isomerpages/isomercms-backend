@@ -99,13 +99,13 @@ jest.mock("../services/identity/DeploymentClient", () =>
   }))
 )
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const commitServiceGitFile = new GitFileCommitService(gitFileSystemService)
-const commitServiceGitHub = new GitHubCommitService(isomerRepoAxiosInstance)
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+const gitHubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
-  commitServiceGitFile,
-  commitServiceGitHub,
+  gitFileCommitService,
+  gitHubCommitService,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)

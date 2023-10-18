@@ -61,8 +61,8 @@ const getPaginatedDirectoryContents = (
 interface RepoServiceParams {
   isomerRepoAxiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
-  commitServiceGitFile: GitFileCommitService
-  commitServiceGitHub: GitHubCommitService
+  gitFileCommitService: GitFileCommitService
+  gitHubCommitService: GitHubCommitService
 }
 
 export default class RepoService extends GitHubService {
@@ -70,18 +70,18 @@ export default class RepoService extends GitHubService {
 
   private readonly commitServiceGitFile: GitFileCommitService
 
-  private readonly commitServiceGitHub: GitHubCommitService
+  private readonly githubCommitService: GitHubCommitService
 
   constructor({
     isomerRepoAxiosInstance,
     gitFileSystemService,
-    commitServiceGitFile,
-    commitServiceGitHub,
+    gitFileCommitService,
+    gitHubCommitService,
   }: RepoServiceParams) {
     super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
-    this.commitServiceGitFile = commitServiceGitFile
-    this.commitServiceGitHub = commitServiceGitHub
+    this.commitServiceGitFile = gitFileCommitService
+    this.githubCommitService = gitHubCommitService
   }
 
   getGgsWhitelistedRepos(
@@ -218,7 +218,7 @@ export default class RepoService extends GitHubService {
         isMedia,
       })
     }
-    return this.commitServiceGitHub.create(sessionData, {
+    return this.githubCommitService.create(sessionData, {
       content,
       fileName,
       directoryName,
@@ -421,7 +421,7 @@ export default class RepoService extends GitHubService {
       })
     }
 
-    return this.commitServiceGitHub.update(sessionData, {
+    return this.githubCommitService.update(sessionData, {
       fileContent,
       sha,
       fileName,
@@ -453,7 +453,7 @@ export default class RepoService extends GitHubService {
       return
     }
 
-    await this.commitServiceGitHub.deleteDirectory(sessionData, {
+    await this.githubCommitService.deleteDirectory(sessionData, {
       directoryName,
       message,
       githubSessionData,
@@ -488,7 +488,7 @@ export default class RepoService extends GitHubService {
     }
 
     // GitHub flow
-    await this.commitServiceGitHub.delete(sessionData, {
+    await this.githubCommitService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -516,7 +516,7 @@ export default class RepoService extends GitHubService {
         message
       )
     }
-    return this.commitServiceGitHub.renameSinglePath(
+    return this.githubCommitService.renameSinglePath(
       sessionData,
       githubSessionData,
       oldPath,
@@ -549,7 +549,7 @@ export default class RepoService extends GitHubService {
       )
     }
 
-    return this.commitServiceGitHub.moveFiles(
+    return this.githubCommitService.moveFiles(
       sessionData,
       githubSessionData,
       oldPath,

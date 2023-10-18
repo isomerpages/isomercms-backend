@@ -132,7 +132,7 @@ export default class GitHubService {
       fileName,
       directoryName,
       isMedia = false,
-      branchName,
+      branchName = STAGING_BRANCH,
     }: {
       content: string
       fileName: string

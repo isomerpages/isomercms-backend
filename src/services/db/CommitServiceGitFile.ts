@@ -1,6 +1,6 @@
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { STAGING_BRANCH } from "@root/constants"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
 import isFileAsset from "@root/utils/commit-utils"
@@ -14,8 +14,6 @@ import GitFileSystemService from "./GitFileSystemService"
  * 2. Creates non-asset related commits to staging-lite
  */
 export default class CommitServiceGitFile {
-  private readonly STAGING_LITE_BRANCH = "staging-lite"
-
   private readonly gitFileSystemService: GitFileSystemService
 
   constructor(gitFileSystemService: GitFileSystemService) {
@@ -60,7 +58,7 @@ export default class CommitServiceGitFile {
           directoryName,
           fileName,
           isMedia ? "base64" : "utf-8",
-          this.STAGING_LITE_BRANCH
+          STAGING_LITE_BRANCH
         )
       )
     }
@@ -76,10 +74,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, STAGING_BRANCH)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
     return { sha: stagingCreateResult.value.newSha }
   }
@@ -125,7 +120,7 @@ export default class CommitServiceGitFile {
           fileContent,
           sha,
           sessionData.isomerUserId,
-          this.STAGING_LITE_BRANCH
+          STAGING_LITE_BRANCH
         )
       )
     }
@@ -141,10 +136,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
     return { newSha: stagingUpdateResult.value }
   }
@@ -184,7 +176,7 @@ export default class CommitServiceGitFile {
           "",
           sessionData.isomerUserId,
           true,
-          this.STAGING_LITE_BRANCH
+          STAGING_LITE_BRANCH
         )
       )
     }
@@ -200,10 +192,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
   }
 
@@ -249,7 +238,7 @@ export default class CommitServiceGitFile {
           sha,
           sessionData.isomerUserId,
           false,
-          this.STAGING_LITE_BRANCH
+          STAGING_LITE_BRANCH
         )
       )
     }
@@ -266,10 +255,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
   }
 
@@ -305,7 +291,7 @@ export default class CommitServiceGitFile {
           oldPath,
           newPath,
           sessionData.isomerUserId,
-          this.STAGING_LITE_BRANCH,
+          STAGING_LITE_BRANCH,
           message
         )
       )
@@ -322,10 +308,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
     return { newSha: stagingRenameResult.value }
   }
@@ -363,7 +346,7 @@ export default class CommitServiceGitFile {
           newPath,
           sessionData.isomerUserId,
           targetFiles,
-          this.STAGING_LITE_BRANCH,
+          STAGING_LITE_BRANCH,
           message
         )
       )
@@ -380,10 +363,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
     return { newSha: stagingMvFilesResult.value }
   }

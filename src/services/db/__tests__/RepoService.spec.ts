@@ -210,7 +210,7 @@ describe("RepoService", () => {
       MockCommitServiceGitHub.create.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.create(sessionData, {
-        content: mockDirectoryName,
+        content: mockContent,
         fileName: mockFileName,
         directoryName: mockDirectoryName,
         isMedia,

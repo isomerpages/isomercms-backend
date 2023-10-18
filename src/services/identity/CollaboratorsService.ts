@@ -157,15 +157,8 @@ class CollaboratorsService {
       return new NotFoundError(`Site does not exist`)
     }
 
-    // 3. Check if valid user exists
-    const user = await this.usersService.findByEmail(email)
-    if (!user) {
-      // Error - user with a valid gov email does not exist
-      logger.error(`create collaborators error: user ${email} is not valid`)
-      return new NotFoundError(
-        `This user does not have an Isomer account. Ask them to log in to Isomer and try adding them again.`
-      )
-    }
+    // 3. Retrieve or create user if user doesn't already exist
+    const user = await this.usersService.findOrCreateByEmail(email)
 
     // 4. Check if user is already a site member
     const existingSiteMember = await this.siteMemberRepository.findOne({

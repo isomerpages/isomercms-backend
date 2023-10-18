@@ -7,7 +7,7 @@ import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
-import { validateStatus } from "@utils/axios-utils"
+import { isAxiosError, validateStatus } from "@utils/axios-utils"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
@@ -240,7 +240,7 @@ export default class GitHubService {
   }
 
   async readMedia(
-    sessionData: { accessToken?: any; siteName?: any },
+    sessionData: UserWithSiteSessionData,
     {
       fileSha,
       branchName = STAGING_BRANCH,
@@ -451,7 +451,7 @@ export default class GitHubService {
     return data
   }
 
-  async getRepoState(sessionData: { accessToken?: any; siteName?: any }) {
+  async getRepoState(sessionData: UserWithSiteSessionData) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = `${siteName}/commits`
@@ -495,7 +495,7 @@ export default class GitHubService {
       return latestCommitMeta
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (axios.isAxiosError(err) && err.response) {
+      if (isAxiosError(err) && err.response) {
         const { status } = err.response
         if (status === 422)
           throw new UnprocessableError(`Branch ${branch} does not exist`)
@@ -643,7 +643,7 @@ export default class GitHubService {
       )
       return okAsync(null)
     } catch (error) {
-      if (error instanceof AxiosError && error.response) {
+      if (isAxiosError(error) && error.response) {
         const { status } = error.response
         // If user is unauthorized or site does not exist, show the same NotFoundError
         if (status === 404 || status === 403) {

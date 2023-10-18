@@ -1,4 +1,3 @@
-import axios, { AxiosError } from "axios"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { Base64 } from "js-base64"
 import { okAsync, errAsync } from "neverthrow"
@@ -11,9 +10,10 @@ import { isAxiosError, validateStatus } from "@utils/axios-utils"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { STAGING_BRANCH } from "@root/constants"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
+import { RawGitTreeEntry } from "@root/types/github"
 
 import * as ReviewApi from "./review"
 
@@ -138,7 +138,7 @@ export default class GitHubService {
       fileName: string
       directoryName: string
       isMedia: boolean
-      branchName?: string
+      branchName: string
     }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -197,7 +197,7 @@ export default class GitHubService {
       return { sha: resp.data.content.sha }
     } catch (err: unknown) {
       if (err instanceof NotFoundError) throw err
-      if (axios.isAxiosError(err) && err.response) {
+      if (isAxiosError(err) && err.response) {
         const { status } = err.response
         if (status === 422 || status === 409)
           throw new ConflictError(inputNameConflictErrorMsg(fileName))
@@ -309,13 +309,13 @@ export default class GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName = STAGING_BRANCH,
+      branchName,
     }: {
       fileContent: string
       sha: string
       fileName: string
       directoryName: string | undefined
-      branchName?: string
+      branchName: string
     }
   ): Promise<GitCommitResult> {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -357,7 +357,7 @@ export default class GitHubService {
       return { newSha: resp.data.content.sha }
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         const { response } = err
         if (response && response.status === 404) {
           throw new NotFoundError("File does not exist")
@@ -420,7 +420,7 @@ export default class GitHubService {
       })
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (axios.isAxiosError(err) && err.response) {
+      if (isAxiosError(err) && err.response) {
         const { status } = err.response
         if (status === 404) throw new NotFoundError("File does not exist")
         if (status === 409)
@@ -507,15 +507,16 @@ export default class GitHubService {
   async getTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { isRecursive }: { isRecursive: any }
-  ) {
+    { isRecursive }: any,
+    isStaging = true
+  ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const { treeSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
-      ref: STAGING_BRANCH,
+      ref: isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH,
       recursive: false,
     }
 
@@ -534,7 +535,8 @@ export default class GitHubService {
   async updateTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { gitTree, message }: { gitTree: any; message: any }
+    { gitTree, message }: { gitTree: any; message: any },
+    isStaging: boolean
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
@@ -613,7 +615,7 @@ export default class GitHubService {
       await this.axiosInstance.get(endpoint, { headers })
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      if (axios.isAxiosError(err) && err.response) {
+      if (isAxiosError(err) && err.response) {
         const { status } = err.response
         // If user is unauthorized or site does not exist, show the same NotFoundError
         if (status === 404 || status === 403)

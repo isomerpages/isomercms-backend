@@ -1,5 +1,5 @@
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { STAGING_BRANCH } from "@root/constants"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import isFileAsset from "@root/utils/commit-utils"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 
@@ -11,8 +11,6 @@ import GitFileSystemService from "./GitFileSystemService"
  * 2. Creates non-asset related commits to staging-lite
  */
 export default class CommitServiceGitFile {
-  private readonly STAGING_LITE_BRANCH = "staging-lite"
-
   private readonly gitFileSystemService: GitFileSystemService
 
   constructor(gitFileSystemService: GitFileSystemService) {
@@ -58,7 +56,7 @@ export default class CommitServiceGitFile {
           directoryName,
           fileName,
           isMedia ? "base64" : "utf-8",
-          this.STAGING_LITE_BRANCH
+          STAGING_LITE_BRANCH
         )
       )
     }
@@ -74,10 +72,7 @@ export default class CommitServiceGitFile {
 
     this.gitFileSystemService.push(sessionData.siteName, STAGING_BRANCH)
     if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH)
     }
     return { sha: stagingCreateResult.value.newSha }
   }

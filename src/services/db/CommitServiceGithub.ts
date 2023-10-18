@@ -4,8 +4,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_LITE_BRANCH } from "@root/constants"
 import isFileAsset from "@root/utils/commit-utils"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
-
-import GitHubService from "./GitHubService"
+import GitHubService from "@services/db/GitHubService"
 
 /**
  * Responsibilities of this class

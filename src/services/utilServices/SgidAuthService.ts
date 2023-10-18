@@ -5,7 +5,7 @@ import {
   SgidCreateRedirectUrlError,
   SgidFetchAccessTokenError,
   SgidFetchUserInfoError,
-} from "@root/errors/SgidErrors"
+} from "@root/errors/SgidError"
 import logger from "@root/logger/logger"
 import { PublicOfficerData } from "@root/types/sgid"
 
@@ -81,7 +81,7 @@ export default class SgidAuthService {
     )
   }
 
-  retrieveSgidUserEmails(
+  retrieveSgidUserData(
     accessToken: string,
     sub: string
   ): ResultAsync<PublicOfficerData[] | undefined, SgidFetchUserInfoError> {

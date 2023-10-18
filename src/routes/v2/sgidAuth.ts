@@ -15,7 +15,7 @@ import {
   SgidFetchAccessTokenError,
   SgidFetchUserInfoError,
   SgidVerifyUserError,
-} from "@root/errors/SgidErrors"
+} from "@root/errors/SgidError"
 import { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { isPublicOfficerData, PublicOfficerData } from "@root/types/sgid"
@@ -95,7 +95,7 @@ export class SgidAuthRouter {
       .retrieveSgidAccessToken({ authCode, nonce, codeVerifier })
       .andThen(({ accessToken, sub }) =>
         // We can immediately process the access token - we only need to retrieve the email from sgid
-        this.sgidAuthService.retrieveSgidUserEmails(accessToken, sub)
+        this.sgidAuthService.retrieveSgidUserData(accessToken, sub)
       )
       .andThen((officerDetails) => {
         if (!officerDetails || officerDetails.length === 0) {

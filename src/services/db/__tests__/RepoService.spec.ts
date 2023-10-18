@@ -21,7 +21,9 @@ import * as mediaUtils from "@root/utils/media-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
 
-import { GitHubService } from "../GitHubService"
+import CommitServiceGitFile from "../CommitServiceGitFile"
+import CommitServiceGitHub from "../CommitServiceGithub"
+import GitHubService from "../GitHubService"
 
 const BRANCH_REF = config.get("github.branchRef")
 
@@ -47,10 +49,20 @@ const MockGitFileSystemService = {
   updateRepoState: jest.fn(),
 }
 
-const RepoService = new _RepoService(
-  (MockAxiosInstance as unknown) as AxiosCacheInstance,
-  (MockGitFileSystemService as unknown) as GitFileSystemService
-)
+const MockCommitServiceGitFile = {
+  create: jest.fn(),
+}
+
+const MockCommitServiceGitHub = {
+  create: jest.fn(),
+}
+
+const RepoService = new _RepoService({
+  isomerRepoAxiosInstance: (MockAxiosInstance as unknown) as AxiosCacheInstance,
+  gitFileSystemService: (MockGitFileSystemService as unknown) as GitFileSystemService,
+  commitServiceGitFile: (MockCommitServiceGitFile as unknown) as CommitServiceGitFile,
+  commitServiceGitHub: (MockCommitServiceGitHub as unknown) as CommitServiceGitHub,
+})
 
 describe("RepoService", () => {
   // Prevent inter-test pollution of mocks
@@ -106,33 +118,32 @@ describe("RepoService", () => {
       const mockFileName = "test.md"
       const mockDirectoryName = ""
       const createOutput = {
-        newSha: returnedSha,
+        sha: returnedSha,
       }
       const expected = {
         sha: returnedSha,
       }
-      MockGitFileSystemService.create.mockResolvedValueOnce(
-        okAsync(createOutput)
-      )
-
+      MockCommitServiceGitFile.create.mockResolvedValueOnce(createOutput)
+      const isMedia = false
       const actual = await RepoService.create(
         mockUserWithSiteSessionDataAndGrowthBook,
         {
           content: mockContent,
           fileName: mockFileName,
           directoryName: mockDirectoryName,
-          isMedia: false,
+          isMedia,
         }
       )
 
       expect(actual).toEqual(expected)
-      expect(MockGitFileSystemService.create).toHaveBeenCalledWith(
-        mockUserWithSiteSessionDataAndGrowthBook.siteName,
-        mockUserWithSiteSessionDataAndGrowthBook.isomerUserId,
-        mockContent,
-        mockDirectoryName,
-        mockFileName,
-        "utf-8"
+      expect(MockCommitServiceGitFile.create).toHaveBeenCalledWith(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          content: mockContent,
+          fileName: mockFileName,
+          directoryName: mockDirectoryName,
+          isMedia,
+        }
       )
     })
 
@@ -142,14 +153,12 @@ describe("RepoService", () => {
       const mockFileName = "test.md"
       const mockDirectoryName = ""
       const createOutput = {
-        newSha: returnedSha,
+        sha: returnedSha,
       }
       const expected = {
         sha: returnedSha,
       }
-      MockGitFileSystemService.create.mockResolvedValueOnce(
-        okAsync(createOutput)
-      )
+      MockCommitServiceGitFile.create.mockResolvedValueOnce(createOutput)
 
       const actual = await RepoService.create(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -162,13 +171,14 @@ describe("RepoService", () => {
       )
 
       expect(actual).toEqual(expected)
-      expect(MockGitFileSystemService.create).toHaveBeenCalledWith(
-        mockUserWithSiteSessionDataAndGrowthBook.siteName,
-        mockUserWithSiteSessionDataAndGrowthBook.isomerUserId,
-        mockContent,
-        mockDirectoryName,
-        mockFileName,
-        "base64"
+      expect(MockCommitServiceGitFile.create).toHaveBeenCalledWith(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        {
+          content: mockContent,
+          fileName: mockFileName,
+          directoryName: mockDirectoryName,
+          isMedia: true,
+        }
       )
     })
 
@@ -187,18 +197,17 @@ describe("RepoService", () => {
       const expected = {
         sha: "test-sha",
       }
-      const gitHubServiceCreate = jest.spyOn(GitHubService.prototype, "create")
-      gitHubServiceCreate.mockResolvedValueOnce(expected)
+      MockCommitServiceGitHub.create.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.create(sessionData, {
-        content: "content",
-        fileName: "test.md",
-        directoryName: "",
+        content: mockDirectoryName,
+        fileName: mockFileName,
+        directoryName: mockDirectoryName,
         isMedia,
       })
 
       expect(actual).toEqual(expected)
-      expect(gitHubServiceCreate).toHaveBeenCalledWith(sessionData, {
+      expect(MockCommitServiceGitHub.create).toHaveBeenCalledWith(sessionData, {
         content: mockContent,
         fileName: mockFileName,
         directoryName: mockDirectoryName,
@@ -580,7 +589,8 @@ describe("RepoService", () => {
         "pages/test.md",
         "fake-original-sha",
         mockUserWithSiteSessionDataAndGrowthBook.isomerUserId,
-        false
+        false,
+        "staging"
       )
       expect(MockGitFileSystemService.push).toBeCalledTimes(1)
       expect(MockGitFileSystemService.push).toBeCalledWith(

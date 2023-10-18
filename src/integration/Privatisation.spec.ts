@@ -44,6 +44,8 @@ import {
 import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { SettingsRouter as _SettingsRouter } from "@root/routes/v2/authenticatedSites/settings"
 import { SettingsService } from "@root/services/configServices/SettingsService"
+import CommitServiceGitFile from "@root/services/db/CommitServiceGitFile"
+import CommitServiceGitHub from "@root/services/db/CommitServiceGithub"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -97,10 +99,14 @@ jest.mock("../services/identity/DeploymentClient", () =>
   }))
 )
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const gitHubService = new RepoService(
+const commitServiceGitFile = new CommitServiceGitFile(gitFileSystemService)
+const commitServiceGitHub = new CommitServiceGitHub(isomerRepoAxiosInstance)
+const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
-  gitFileSystemService
-)
+  gitFileSystemService,
+  commitServiceGitFile,
+  commitServiceGitHub,
+})
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })

@@ -8,7 +8,7 @@ import logger from "@logger/logger"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { FEATURE_FLAGS } from "@root/constants"
+import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitHubCommitData } from "@root/types/commitData"
 import { FeatureFlags } from "@root/types/featureFlags"
@@ -24,7 +24,7 @@ import { getMediaFileInfo } from "@root/utils/media-utils"
 import CommitServiceGitFile from "./CommitServiceGitFile"
 import CommitServiceGitHub from "./CommitServiceGithub"
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubService, { STAGING_BRANCH } from "./GitHubService"
+import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
 const PLACEHOLDER_FILE_NAME = ".keep"
@@ -58,6 +58,7 @@ const getPaginatedDirectoryContents = (
 
 // TODO: update the typings here to remove `any`.
 // We can type as `unknown` if required.
+
 interface RepoServiceParams {
   isomerRepoAxiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
@@ -78,6 +79,7 @@ export default class RepoService extends GitHubService {
     commitServiceGitFile,
     commitServiceGitHub,
   }: RepoServiceParams) {
+    console.log({ isomerRepoAxiosInstance })
     super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
     this.commitServiceGitFile = commitServiceGitFile
@@ -211,7 +213,7 @@ export default class RepoService extends GitHubService {
         `Writing file to local Git file system - Site name: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
       )
 
-      this.commitServiceGitFile.create(sessionData, {
+      return this.commitServiceGitFile.create(sessionData, {
         content,
         fileName,
         directoryName,
@@ -828,8 +830,6 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     shouldMakePrivate: any
   ): Promise<any> {
-    return super.changeRepoPrivacy(sessionData, {
-      shouldMakePrivate,
-    })
+    return await super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

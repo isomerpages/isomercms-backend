@@ -2,7 +2,7 @@ import { BadRequestError } from "@errors/BadRequestError"
 import { NotFoundError } from "@errors/NotFoundError"
 
 import { mockUserWithSiteSessionData } from "@fixtures/sessionData"
-import { GitHubService } from "@services/db/GitHubService"
+import GitHubService from "@services/db/GitHubService"
 
 import _AuthService from "../AuthService"
 

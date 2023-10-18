@@ -31,6 +31,8 @@ import {
   EFS_VOL_PATH_STAGING,
   EFS_VOL_PATH_STAGING_LITE,
   ISOMER_GITHUB_ORG_NAME,
+  STAGING_BRANCH,
+  STAGING_LITE_BRANCH,
 } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
@@ -45,8 +47,6 @@ import type {
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
-const STAGING_BRANCH = "staging"
-const STAGING_LITE_BRANCH = "staging-lite"
 export default class GitFileSystemService {
   private readonly git: SimpleGit
 

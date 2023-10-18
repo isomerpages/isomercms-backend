@@ -80,3 +80,5 @@ export const EFS_VOL_PATH_STAGING_LITE = path.join(
   config.get("aws.efs.volPath"),
   "repos-lite"
 )
+export const STAGING_BRANCH = "staging"
+export const STAGING_LITE_BRANCH = "staging-lite"

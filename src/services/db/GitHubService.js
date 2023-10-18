@@ -1,22 +1,22 @@
-const { validateStatus } = require("@utils/axios-utils")
+import { Base64 } from "js-base64"
+import { okAsync, errAsync } from "neverthrow"
 
-const { Base64 } = require("js-base64")
-const { okAsync, errAsync } = require("neverthrow")
+import config from "@config/config"
 
-const BRANCH_REF = "staging"
+import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
+import { NotFoundError } from "@errors/NotFoundError"
+import { UnprocessableError } from "@errors/UnprocessableError"
 
-const {
-  ConflictError,
-  inputNameConflictErrorMsg,
-} = require("@errors/ConflictError")
-const { NotFoundError } = require("@errors/NotFoundError")
-const { UnprocessableError } = require("@errors/UnprocessableError")
+import { validateStatus } from "@utils/axios-utils"
 
-const logger = require("@root/logger/logger").default
+import logger from "@root/logger/logger"
 
-const ReviewApi = require("./review")
+import ReviewApi from "./review"
 
-class GitHubService {
+export const STAGING_BRANCH = "staging"
+export const STAGING_LITE_BRANCH = "staging-lite"
+
+export default class GitHubService {
   constructor({ axiosInstance }) {
     this.axiosInstance = axiosInstance
   }
@@ -92,7 +92,13 @@ class GitHubService {
 
   async create(
     sessionData,
-    { content, fileName, directoryName, isMedia = false }
+    {
+      content,
+      fileName,
+      directoryName,
+      isMedia = false,
+      branchName = STAGING_BRANCH,
+    }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
@@ -138,7 +144,7 @@ class GitHubService {
       const params = {
         message,
         content: encodedContent,
-        branch: BRANCH_REF,
+        branch: branchName,
       }
 
       const resp = await this.axiosInstance.put(endpoint, params, {
@@ -157,13 +163,16 @@ class GitHubService {
     }
   }
 
-  async read(sessionData, { fileName, directoryName }) {
+  async read(
+    sessionData,
+    { fileName, directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -181,13 +190,46 @@ class GitHubService {
     return { content, sha }
   }
 
-  async readDirectory(sessionData, { directoryName }) {
+  async readMedia(sessionData, { fileSha, branchName = STAGING_BRANCH }) {
+    /**
+     * Files that are bigger than 1 MB needs to be retrieved
+     * via Github Blob API. The content can only be retrieved through
+     * the `sha` of the file.
+     */
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
+    const params = {
+      ref: branchName,
+    }
+
+    const blobEndpoint = this.getBlobPath({ siteName, fileSha })
+
+    const resp = await this.axiosInstance.get(blobEndpoint, {
+      validateStatus,
+      params,
+      headers: {
+        Authorization: `token ${accessToken}`,
+      },
+    })
+
+    if (resp.status === 404)
+      throw new NotFoundError("Media file does not exist")
+
+    const { content, sha } = resp.data
+
+    return { content, sha }
+  }
+
+  async readDirectory(
+    sessionData,
+    { directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -202,7 +244,10 @@ class GitHubService {
     return resp.data
   }
 
-  async update(sessionData, { fileContent, sha, fileName, directoryName }) {
+  async update(
+    sessionData,
+    { fileContent, sha, fileName, directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
@@ -228,7 +273,7 @@ class GitHubService {
       const params = {
         message,
         content: encodedNewContent,
-        branch: BRANCH_REF,
+        branch: branchName,
         sha: fileSha,
       }
 
@@ -251,7 +296,10 @@ class GitHubService {
     }
   }
 
-  async delete(sessionData, { sha, fileName, directoryName }) {
+  async delete(
+    sessionData,
+    { sha, fileName, directoryName, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
@@ -273,7 +321,7 @@ class GitHubService {
       })
       const params = {
         message,
-        branch: BRANCH_REF,
+        branch: branchName,
         sha: fileSha,
       }
 
@@ -302,7 +350,7 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      ref: BRANCH_REF,
+      ref: STAGING_BRANCH,
     }
     // Get the commits of the repo
     const { data } = await this.axiosInstance.get(endpoint, {
@@ -321,7 +369,7 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      sha: BRANCH_REF,
+      sha: STAGING_BRANCH,
     }
     // Get the commits of the repo
     const { data: commits } = await this.axiosInstance.get(endpoint, {
@@ -367,7 +415,7 @@ class GitHubService {
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
-      ref: BRANCH_REF,
+      ref: STAGING_BRANCH,
     }
 
     if (isRecursive) params.recursive = true
@@ -425,7 +473,10 @@ class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState(sessionData, { commitSha, branchName = BRANCH_REF }) {
+  async updateRepoState(
+    sessionData,
+    { commitSha, branchName = STAGING_BRANCH }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const refEndpoint = `${siteName}/git/refs/heads/${branchName}`
@@ -490,5 +541,3 @@ class GitHubService {
     }
   }
 }
-
-module.exports = { GitHubService }

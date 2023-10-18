@@ -1,7 +1,7 @@
 import { NotFoundError } from "@errors/NotFoundError"
 
 import UserSessionData from "@root/classes/UserSessionData"
-import { GitHubService } from "@services/db/GitHubService"
+import GitHubService from "@services/db/GitHubService"
 
 interface AuthServiceProps {
   gitHubService: GitHubService

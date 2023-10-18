@@ -71,7 +71,7 @@ describe("RepoService", () => {
 
   describe("isRepoWhitelisted", () => {
     it("should indicate whitelisted repos as whitelisted correctly", () => {
-      const actual1 = RepoService.isRepoWhitelisted(
+      const actual1 = RepoService.isRepoGgsWhitelisted(
         "fake-repo",
         RepoService.getGgsWhitelistedRepos(
           mockUserWithSiteSessionDataAndGrowthBook.growthbook
@@ -79,7 +79,7 @@ describe("RepoService", () => {
       )
       expect(actual1).toBe(true)
 
-      const actual2 = RepoService.isRepoWhitelisted(
+      const actual2 = RepoService.isRepoGgsWhitelisted(
         mockSiteName,
         RepoService.getGgsWhitelistedRepos(
           mockUserWithSiteSessionDataAndGrowthBook.growthbook
@@ -89,7 +89,7 @@ describe("RepoService", () => {
     })
 
     it("should indicate non-whitelisted repos as non-whitelisted correctly", () => {
-      const actual = RepoService.isRepoWhitelisted(
+      const actual = RepoService.isRepoGgsWhitelisted(
         "not-whitelisted",
         RepoService.getGgsWhitelistedRepos(
           mockUserWithSiteSessionDataAndGrowthBook.growthbook

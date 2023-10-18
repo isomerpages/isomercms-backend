@@ -13,7 +13,7 @@ import { config } from "@config/config"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
 import { Repo, Site } from "@database/models"
-import { DNS_INDIRECTION_REPO } from "@root/constants"
+import { DNS_INDIRECTION_REPO, EFS_VOL_PATH_STAGING } from "@root/constants"
 import GitHubApiError from "@root/errors/GitHubApiError"
 import logger from "@root/logger/logger"
 
@@ -30,8 +30,6 @@ const SITE_CREATION_BASE_REPO_URL =
   "https://github.com/isomerpages/site-creation-base"
 const ISOMER_GITHUB_ORGANIZATION_NAME = "isomerpages"
 const ISOMER_GITHUB_EMAIL = "isomeradmin@users.noreply.github.com"
-
-const EFS_VOL_PATH = config.get("aws.efs.volPath")
 
 interface ReposServiceProps {
   repository: ModelStatic<Repo>
@@ -65,7 +63,7 @@ export default class ReposService {
     this.simpleGit = simpleGit
   }
 
-  getLocalRepoPath = (repoName: string) => `${EFS_VOL_PATH}/${repoName}`
+  getLocalRepoPath = (repoName: string) => `${EFS_VOL_PATH_STAGING}/${repoName}`
 
   create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)

@@ -1,3 +1,5 @@
+import path from "path"
+
 import { config } from "@config/config"
 
 export enum JobStatus {
@@ -69,3 +71,12 @@ export const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"
 export const ISOMER_SUPPORT_EMAIL = "support@isomer.gov.sg"
 
 export const MAX_CONCURRENT_GIT_PROCESSES = 150
+
+export const EFS_VOL_PATH_STAGING = path.join(
+  config.get("aws.efs.volPath"),
+  "repos"
+)
+export const EFS_VOL_PATH_STAGING_LITE = path.join(
+  config.get("aws.efs.volPath"),
+  "repos-lite"
+)

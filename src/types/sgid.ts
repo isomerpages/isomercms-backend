@@ -8,6 +8,7 @@ export interface PublicOfficerData {
 export const isPublicOfficerData = (
   item: unknown
 ): item is PublicOfficerData => {
+  if (!item) return false
   const officerData = item as PublicOfficerData
 
   return (

@@ -28,7 +28,7 @@ export const isReduceBuildTimesWhitelistedRepo = (
   if (!growthbook) return false
 
   const isWhitelistedRedBuildTimesRepo = growthbook.getFeatureValue(
-    FEATURE_FLAGS.REDUCE_BUILD_TIMES_WHITELISTED_REPOS,
+    FEATURE_FLAGS.IS_QUICKIE_WHITELISTED,
     false
   )
 

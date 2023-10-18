@@ -392,7 +392,7 @@ export default class GitHubService {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
       let fileSha = sha
-      if (!sha) {
+      if (!sha || branchName === STAGING_LITE_BRANCH) {
         const { sha: retrievedSha } = await this.read(sessionData, {
           fileName,
           directoryName,

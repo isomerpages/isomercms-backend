@@ -54,6 +54,16 @@ export default class GitFileSystemService {
     this.git = git
   }
 
+  private getEfsVolPathFromBranch(branchName: string) {
+    return branchName === STAGING_LITE_BRANCH
+      ? EFS_VOL_PATH_STAGING_LITE
+      : EFS_VOL_PATH_STAGING
+  }
+
+  private getEfsVolPath(isStaging: boolean) {
+    return isStaging ? EFS_VOL_PATH_STAGING : EFS_VOL_PATH_STAGING_LITE
+  }
+
   /**
    * NOTE: We can do concurrent writes to the staging branch and the staging lite branch
    * since they exist in different folders.
@@ -191,7 +201,7 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<true, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
         .cwd(`${efsVolPath}/${repoName}`)
@@ -290,7 +300,7 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git.cwd(`${efsVolPath}/${repoName}`).log([branchName]),
       (error) => {
@@ -318,7 +328,7 @@ export default class GitFileSystemService {
     logger.warn(
       `Rolling repo ${repoName} back to ${commitSha} for ${branchName}`
     )
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
         .cwd(`${efsVolPath}/${repoName}`)
@@ -352,9 +362,7 @@ export default class GitFileSystemService {
     isStaging: boolean
   ): ResultAsync<string, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-    const efsVolPath = isStaging
-      ? EFS_VOL_PATH_STAGING
-      : EFS_VOL_PATH_STAGING_LITE
+    const efsVolPath = this.getEfsVolPath(isStaging)
     const branch = isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH
 
     return this.getFilePathStats(repoName, "", isStaging)
@@ -430,7 +438,7 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<string, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -493,7 +501,7 @@ export default class GitFileSystemService {
     branchName: string,
     isForce = false
   ): ResultAsync<string, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -545,12 +553,6 @@ export default class GitFileSystemService {
     })
   }
 
-  private getEfsVolPath(branchName: string) {
-    return branchName === STAGING_LITE_BRANCH
-      ? EFS_VOL_PATH_STAGING_LITE
-      : EFS_VOL_PATH_STAGING
-  }
-
   // Commit changes to the local Git repository
   commit(
     repoName: string,
@@ -560,7 +562,7 @@ export default class GitFileSystemService {
     branchName: string,
     skipGitAdd?: boolean
   ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedsRollbackError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
@@ -651,7 +653,7 @@ export default class GitFileSystemService {
     GitCommitResult,
     ConflictError | GitFileSystemError | NotFoundError
   > {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
     const pathToEfsDir = `${efsVolPath}/${repoName}/${directoryName}/`
     const pathToEfsFile = `${efsVolPath}/${repoName}/${filePath}`
@@ -848,7 +850,7 @@ export default class GitFileSystemService {
     directoryPath: string,
     branchName: string
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.getFilePathStats(
       repoName,
       directoryPath,
@@ -931,7 +933,7 @@ export default class GitFileSystemService {
     branchName: string
   ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
     let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.getLatestCommitOfBranch(repoName, branchName)
       .andThen((latestCommit) => {
         // It is guaranteed that the latest commit contains the SHA hash
@@ -1020,7 +1022,7 @@ export default class GitFileSystemService {
     branchName: string
   ): ResultAsync<string, GitFileSystemError | NotFoundError> {
     let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.getLatestCommitOfBranch(repoName, branchName)
       .andThen((latestCommit) => {
         if (!latestCommit.sha) {
@@ -1126,7 +1128,7 @@ export default class GitFileSystemService {
     message?: string
   ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
     let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.getLatestCommitOfBranch(repoName, branchName)
       .andThen((latestCommit) => {
         // It is guaranteed that the latest commit contains the SHA hash
@@ -1208,7 +1210,7 @@ export default class GitFileSystemService {
     branchName: string,
     message?: string
   ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     let oldStateSha = ""
 
     return this.getLatestCommitOfBranch(repoName, branchName)
@@ -1353,7 +1355,7 @@ export default class GitFileSystemService {
     branchName: string,
     sha: string
   ): ResultAsync<void, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPath(branchName)
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(

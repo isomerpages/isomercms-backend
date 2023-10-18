@@ -20,9 +20,9 @@ import { RawGitTreeEntry } from "@root/types/github"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
 
-import CommitServiceGitFile from "./CommitServiceGitFile"
-import CommitServiceGitHub from "./CommitServiceGithub"
+import GitFileCommitService from "./GitFileCommitService"
 import GitFileSystemService from "./GitFileSystemService"
+import GitHubCommitService from "./GithubCommitService"
 import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
@@ -61,27 +61,27 @@ const getPaginatedDirectoryContents = (
 interface RepoServiceParams {
   isomerRepoAxiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
-  commitServiceGitFile: CommitServiceGitFile
-  commitServiceGitHub: CommitServiceGitHub
+  gitFileCommitService: GitFileCommitService
+  gitHubCommitService: GitHubCommitService
 }
 
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
-  private readonly commitServiceGitFile: CommitServiceGitFile
+  private readonly gitFileCommitService: GitFileCommitService
 
-  private readonly commitServiceGitHub: CommitServiceGitHub
+  private readonly githubCommitService: GitHubCommitService
 
   constructor({
     isomerRepoAxiosInstance,
     gitFileSystemService,
-    commitServiceGitFile,
-    commitServiceGitHub,
+    gitFileCommitService,
+    gitHubCommitService,
   }: RepoServiceParams) {
     super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
-    this.commitServiceGitFile = commitServiceGitFile
-    this.commitServiceGitHub = commitServiceGitHub
+    this.gitFileCommitService = gitFileCommitService
+    this.githubCommitService = gitHubCommitService
   }
 
   getGgsWhitelistedRepos(
@@ -211,14 +211,14 @@ export default class RepoService extends GitHubService {
         `Writing file to local Git file system - Site name: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
       )
 
-      return this.commitServiceGitFile.create(sessionData, {
+      return this.gitFileCommitService.create(sessionData, {
         content,
         fileName,
         directoryName,
         isMedia,
       })
     }
-    return this.commitServiceGitHub.create(sessionData, {
+    return this.githubCommitService.create(sessionData, {
       content,
       fileName,
       directoryName,
@@ -413,7 +413,7 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      return this.commitServiceGitFile.update(sessionData, {
+      return this.gitFileCommitService.update(sessionData, {
         fileContent,
         sha,
         fileName,
@@ -421,7 +421,7 @@ export default class RepoService extends GitHubService {
       })
     }
 
-    return this.commitServiceGitHub.update(sessionData, {
+    return this.githubCommitService.update(sessionData, {
       fileContent,
       sha,
       fileName,
@@ -447,13 +447,13 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      await this.commitServiceGitFile.deleteDirectory(sessionData, {
+      await this.gitFileCommitService.deleteDirectory(sessionData, {
         directoryName,
       })
       return
     }
 
-    await this.commitServiceGitHub.deleteDirectory(sessionData, {
+    await this.githubCommitService.deleteDirectory(sessionData, {
       directoryName,
       message,
       githubSessionData,
@@ -479,7 +479,7 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      await this.commitServiceGitFile.delete(sessionData, {
+      await this.gitFileCommitService.delete(sessionData, {
         sha,
         fileName,
         directoryName,
@@ -488,7 +488,7 @@ export default class RepoService extends GitHubService {
     }
 
     // GitHub flow
-    await this.commitServiceGitHub.delete(sessionData, {
+    await this.githubCommitService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -508,7 +508,7 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      return this.commitServiceGitFile.renameSinglePath(
+      return this.gitFileCommitService.renameSinglePath(
         sessionData,
         githubSessionData,
         oldPath,
@@ -516,7 +516,7 @@ export default class RepoService extends GitHubService {
         message
       )
     }
-    return this.commitServiceGitHub.renameSinglePath(
+    return this.githubCommitService.renameSinglePath(
       sessionData,
       githubSessionData,
       oldPath,
@@ -539,7 +539,7 @@ export default class RepoService extends GitHubService {
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      return this.commitServiceGitFile.moveFiles(
+      return this.gitFileCommitService.moveFiles(
         sessionData,
         githubSessionData,
         oldPath,
@@ -549,7 +549,7 @@ export default class RepoService extends GitHubService {
       )
     }
 
-    return this.commitServiceGitHub.moveFiles(
+    return this.githubCommitService.moveFiles(
       sessionData,
       githubSessionData,
       oldPath,

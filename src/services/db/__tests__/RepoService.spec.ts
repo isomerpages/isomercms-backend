@@ -23,8 +23,8 @@ import * as mediaUtils from "@root/utils/media-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
 
-import CommitServiceGitFile from "../CommitServiceGitFile"
-import CommitServiceGitHub from "../CommitServiceGithub"
+import GitFileCommitService from "../GitFileCommitService"
+import GitHubCommitService from "../GithubCommitService"
 import GitHubService from "../GitHubService"
 
 const MockAxiosInstance = {
@@ -49,7 +49,7 @@ const MockGitFileSystemService = {
   updateRepoState: jest.fn(),
 }
 
-const MockCommitServiceGitFile = {
+const MockGitFileCommitService = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -58,7 +58,7 @@ const MockCommitServiceGitFile = {
   moveFiles: jest.fn(),
 }
 
-const MockCommitServiceGitHub = {
+const MockGitHubCommitService = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -70,8 +70,8 @@ const MockCommitServiceGitHub = {
 const RepoService = new _RepoService({
   isomerRepoAxiosInstance: (MockAxiosInstance as unknown) as AxiosCacheInstance,
   gitFileSystemService: (MockGitFileSystemService as unknown) as GitFileSystemService,
-  commitServiceGitFile: (MockCommitServiceGitFile as unknown) as CommitServiceGitFile,
-  commitServiceGitHub: (MockCommitServiceGitHub as unknown) as CommitServiceGitHub,
+  gitFileCommitService: (MockGitFileCommitService as unknown) as GitFileCommitService,
+  gitHubCommitService: (MockGitHubCommitService as unknown) as GitHubCommitService,
 })
 
 describe("RepoService", () => {
@@ -133,7 +133,7 @@ describe("RepoService", () => {
       const expected = {
         sha: returnedSha,
       }
-      MockCommitServiceGitFile.create.mockResolvedValueOnce(createOutput)
+      MockGitFileCommitService.create.mockResolvedValueOnce(createOutput)
       const isMedia = false
       const actual = await RepoService.create(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -146,7 +146,7 @@ describe("RepoService", () => {
       )
 
       expect(actual).toEqual(expected)
-      expect(MockCommitServiceGitFile.create).toHaveBeenCalledWith(
+      expect(MockGitFileCommitService.create).toHaveBeenCalledWith(
         mockUserWithSiteSessionDataAndGrowthBook,
         {
           content: mockContent,
@@ -168,7 +168,7 @@ describe("RepoService", () => {
       const expected = {
         sha: returnedSha,
       }
-      MockCommitServiceGitFile.create.mockResolvedValueOnce(createOutput)
+      MockGitFileCommitService.create.mockResolvedValueOnce(createOutput)
 
       const actual = await RepoService.create(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -181,7 +181,7 @@ describe("RepoService", () => {
       )
 
       expect(actual).toEqual(expected)
-      expect(MockCommitServiceGitFile.create).toHaveBeenCalledWith(
+      expect(MockGitFileCommitService.create).toHaveBeenCalledWith(
         mockUserWithSiteSessionDataAndGrowthBook,
         {
           content: mockContent,
@@ -207,7 +207,7 @@ describe("RepoService", () => {
       const expected = {
         sha: "test-sha",
       }
-      MockCommitServiceGitHub.create.mockResolvedValueOnce(expected)
+      MockGitHubCommitService.create.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.create(sessionData, {
         content: mockContent,
@@ -217,7 +217,7 @@ describe("RepoService", () => {
       })
 
       expect(actual).toEqual(expected)
-      expect(MockCommitServiceGitHub.create).toHaveBeenCalledWith(sessionData, {
+      expect(MockGitHubCommitService.create).toHaveBeenCalledWith(sessionData, {
         content: mockContent,
         fileName: mockFileName,
         directoryName: mockDirectoryName,
@@ -549,7 +549,7 @@ describe("RepoService", () => {
   describe("update", () => {
     it("should update the local Git file system if the repo is whitelisted", async () => {
       const expected: GitCommitResult = { newSha: "fake-commit-sha" }
-      MockCommitServiceGitFile.update.mockResolvedValueOnce(expected)
+      MockGitFileCommitService.update.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.update(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -573,7 +573,7 @@ describe("RepoService", () => {
         email: mockEmail,
         siteName: "not-whitelisted",
       })
-      MockCommitServiceGitHub.update.mockResolvedValueOnce({
+      MockGitHubCommitService.update.mockResolvedValueOnce({
         newSha: expectedSha,
       })
 
@@ -590,7 +590,7 @@ describe("RepoService", () => {
 
   describe("delete", () => {
     it("should delete a file from Git file system when repo is whitelisted", async () => {
-      MockCommitServiceGitFile.delete.mockResolvedValueOnce(
+      MockGitFileCommitService.delete.mockResolvedValueOnce(
         okAsync("some-fake-sha")
       )
 
@@ -600,8 +600,8 @@ describe("RepoService", () => {
         directoryName: "pages",
       })
 
-      expect(MockCommitServiceGitFile.delete).toBeCalledTimes(1)
-      expect(MockCommitServiceGitFile.delete).toBeCalledWith(
+      expect(MockGitFileCommitService.delete).toBeCalledTimes(1)
+      expect(MockGitFileCommitService.delete).toBeCalledWith(
         mockUserWithSiteSessionDataAndGrowthBook,
         {
           sha: "fake-original-sha",
@@ -626,8 +626,8 @@ describe("RepoService", () => {
         directoryName: "pages",
       })
 
-      expect(MockCommitServiceGitHub.delete).toBeCalledTimes(1)
-      expect(MockCommitServiceGitHub.delete).toBeCalledWith(sessionData, {
+      expect(MockGitHubCommitService.delete).toBeCalledTimes(1)
+      expect(MockGitHubCommitService.delete).toBeCalledWith(sessionData, {
         sha: "fake-original-sha",
         fileName: "test.md",
         directoryName: "pages",
@@ -638,7 +638,7 @@ describe("RepoService", () => {
   describe("renameSinglePath", () => {
     it("should rename using the local Git file system if the repo is whitelisted", async () => {
       const expected: GitCommitResult = { newSha: "fake-commit-sha" }
-      MockCommitServiceGitFile.renameSinglePath.mockResolvedValueOnce(expected)
+      MockGitFileCommitService.renameSinglePath.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.renameSinglePath(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -662,7 +662,7 @@ describe("RepoService", () => {
         siteName: "not-whitelisted",
       })
 
-      MockCommitServiceGitHub.renameSinglePath.mockResolvedValueOnce({
+      MockGitHubCommitService.renameSinglePath.mockResolvedValueOnce({
         newSha: expectedSha,
       })
 
@@ -681,7 +681,7 @@ describe("RepoService", () => {
   describe("moveFiles", () => {
     it("should move files using the Git local file system if the repo is whitelisted", async () => {
       const expected = { newSha: "fake-commit-sha" }
-      MockCommitServiceGitFile.moveFiles.mockResolvedValueOnce(expected)
+      MockGitFileCommitService.moveFiles.mockResolvedValueOnce(expected)
       // MockCommitServiceGitFile.push.mockReturnValueOnce(undefined)
 
       const actual = await RepoService.moveFiles(
@@ -707,7 +707,7 @@ describe("RepoService", () => {
         siteName: "not-whitelisted",
       })
 
-      MockCommitServiceGitHub.moveFiles.mockResolvedValueOnce(expected)
+      MockGitHubCommitService.moveFiles.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.moveFiles(
         sessionData,

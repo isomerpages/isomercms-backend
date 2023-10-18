@@ -74,8 +74,8 @@ import {
   MOCK_USER_ID_TWO,
 } from "@fixtures/users"
 import { ReviewRequestStatus } from "@root/constants"
-import CommitServiceGitFile from "@root/services/db/CommitServiceGitFile"
-import CommitServiceGitHub from "@root/services/db/CommitServiceGithub"
+import GitFileCommitService from "@root/services/db/GitFileCommitService"
+import GitHubCommitService from "@root/services/db/GithubCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -103,13 +103,13 @@ import ReviewRequestService from "@services/review/ReviewRequestService"
 import { sequelize } from "@tests/database"
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const commitServiceGitFile = new CommitServiceGitFile(gitFileSystemService)
-const commitServiceGitHub = new CommitServiceGitHub(isomerRepoAxiosInstance)
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+const gitHubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
-  commitServiceGitFile,
-  commitServiceGitHub,
+  gitFileCommitService,
+  gitHubCommitService,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)

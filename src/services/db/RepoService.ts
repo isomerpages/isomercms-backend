@@ -96,7 +96,7 @@ export default class RepoService extends GitHubService {
     return whitelistedGgsRepos.repos
   }
 
-  isRepoWhitelistedGgs(
+  isRepoGgsWhitelisted(
     repoName: string,
     ggsWhitelistedRepos: string[]
   ): boolean {
@@ -202,7 +202,7 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<{ sha: string }> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -231,7 +231,7 @@ export default class RepoService extends GitHubService {
     { fileName, directoryName }: { fileName: string; directoryName?: string }
   ): Promise<GitFile> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -266,7 +266,7 @@ export default class RepoService extends GitHubService {
 
     // fetch from local disk
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -312,7 +312,7 @@ export default class RepoService extends GitHubService {
   ): Promise<GitDirectoryItem[]> {
     const defaultBranch = STAGING_BRANCH
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -355,7 +355,7 @@ export default class RepoService extends GitHubService {
     let dirContent: GitDirectoryItem[] = []
 
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -408,7 +408,7 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -454,7 +454,7 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -520,7 +520,7 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -565,7 +565,7 @@ export default class RepoService extends GitHubService {
     message?: string
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -657,7 +657,7 @@ export default class RepoService extends GitHubService {
     message?: string
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -748,7 +748,7 @@ export default class RepoService extends GitHubService {
   ): Promise<GitHubCommitData> {
     const { siteName } = sessionData
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -798,7 +798,7 @@ export default class RepoService extends GitHubService {
   ): Promise<void> {
     const { siteName } = sessionData
     if (
-      this.isRepoWhitelistedGgs(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )

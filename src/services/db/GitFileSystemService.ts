@@ -365,7 +365,6 @@ export default class GitFileSystemService {
         }
         return err(error)
       })
-
       .andThen((isDirectory) => {
         if (!isDirectory) {
           const clonePromise = isStaging

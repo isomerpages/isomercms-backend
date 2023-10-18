@@ -200,6 +200,7 @@ describe("Github Service", () => {
           fileName: topLevelDirectoryFileName,
           directoryName,
           isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -227,6 +228,7 @@ describe("Github Service", () => {
           fileName: resourceCategoryFileName,
           directoryName,
           isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -255,6 +257,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: true,
+          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -286,6 +289,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(ConflictError)
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
@@ -305,6 +309,7 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
@@ -327,6 +332,7 @@ describe("Github Service", () => {
           fileName: subDirectoryFileName,
           directoryName: subDirectoryName,
           isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError()
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(fileParentEndpoint, {
@@ -348,6 +354,7 @@ describe("Github Service", () => {
           fileName,
           directoryName: `${resourceCategoryName}/_posts`,
           isMedia: false,
+          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(resourceRoomEndpoint, {
@@ -532,6 +539,7 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha,
+          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         newSha: sha,
@@ -560,6 +568,7 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha,
+          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
@@ -595,6 +604,7 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha: "",
+          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         newSha: sha,
@@ -626,6 +636,7 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha: "",
+          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
@@ -881,10 +892,15 @@ describe("Github Service", () => {
         .mockResolvedValueOnce(firstResp)
         .mockResolvedValueOnce(secondResp)
       await expect(
-        service.updateTree(sessionData, mockGithubSessionData, {
-          gitTree,
-          message,
-        })
+        service.updateTree(
+          sessionData,
+          mockGithubSessionData,
+          {
+            gitTree,
+            message,
+          },
+          true
+        )
       ).resolves.toEqual(secondSha)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         url,

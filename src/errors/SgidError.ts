@@ -29,3 +29,13 @@ export class SgidFetchUserInfoError extends BaseIsomerError {
     })
   }
 }
+
+export class SgidVerifyUserError extends BaseIsomerError {
+  constructor(message = "Error while verifying user info") {
+    super({
+      status: 401,
+      code: "SgidVerifyUserInfoError",
+      message,
+    })
+  }
+}

@@ -8,8 +8,7 @@ import logger from "@logger/logger"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { FEATURE_FLAGS } from "@root/constants"
-import { ConflictError } from "@root/errors/ConflictError"
+import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
 import { GitHubCommitData } from "@root/types/commitData"
 import { FeatureFlags } from "@root/types/featureFlags"
 import type {
@@ -21,8 +20,10 @@ import { RawGitTreeEntry } from "@root/types/github"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getMediaFileInfo } from "@root/utils/media-utils"
 
+import GitFileCommitService from "./GitFileCommitService"
 import GitFileSystemService from "./GitFileSystemService"
-import { GitHubService } from "./GitHubService"
+import GitHubCommitService from "./GithubCommitService"
+import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
 const PLACEHOLDER_FILE_NAME = ".keep"
@@ -56,15 +57,31 @@ const getPaginatedDirectoryContents = (
 
 // TODO: update the typings here to remove `any`.
 // We can type as `unknown` if required.
+
+interface RepoServiceParams {
+  isomerRepoAxiosInstance: AxiosCacheInstance
+  gitFileSystemService: GitFileSystemService
+  gitFileCommitService: GitFileCommitService
+  gitHubCommitService: GitHubCommitService
+}
+
 export default class RepoService extends GitHubService {
   private readonly gitFileSystemService: GitFileSystemService
 
-  constructor(
-    axiosInstance: AxiosCacheInstance,
-    gitFileSystemService: GitFileSystemService
-  ) {
-    super({ axiosInstance })
+  private readonly gitFileCommitService: GitFileCommitService
+
+  private readonly githubCommitService: GitHubCommitService
+
+  constructor({
+    isomerRepoAxiosInstance,
+    gitFileSystemService,
+    gitFileCommitService,
+    gitHubCommitService,
+  }: RepoServiceParams) {
+    super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
+    this.gitFileCommitService = gitFileCommitService
+    this.githubCommitService = gitHubCommitService
   }
 
   getGgsWhitelistedRepos(
@@ -72,14 +89,17 @@ export default class RepoService extends GitHubService {
   ): string[] {
     if (!growthbook) return []
 
-    const whitelistedRepos = growthbook.getFeatureValue(
+    const whitelistedGgsRepos = growthbook.getFeatureValue(
       FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
       { repos: [] }
     )
-    return whitelistedRepos.repos
+    return whitelistedGgsRepos.repos
   }
 
-  isRepoWhitelisted(repoName: string, ggsWhitelistedRepos: string[]): boolean {
+  isRepoGgsWhitelisted(
+    repoName: string,
+    ggsWhitelistedRepos: string[]
+  ): boolean {
     // TODO: Adding for initial debugging if required. Remove once stabilised
     logger.info(
       `Evaluating if ${repoName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
@@ -182,7 +202,7 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<{ sha: string }> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -190,23 +210,15 @@ export default class RepoService extends GitHubService {
       logger.info(
         `Writing file to local Git file system - Site name: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
       )
-      const result = await this.gitFileSystemService.create(
-        sessionData.siteName,
-        sessionData.isomerUserId,
+
+      return this.gitFileCommitService.create(sessionData, {
         content,
-        directoryName,
         fileName,
-        isMedia ? "base64" : "utf-8"
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { sha: result.value.newSha }
+        directoryName,
+        isMedia,
+      })
     }
-    return super.create(sessionData, {
+    return this.githubCommitService.create(sessionData, {
       content,
       fileName,
       directoryName,
@@ -219,7 +231,7 @@ export default class RepoService extends GitHubService {
     { fileName, directoryName }: { fileName: string; directoryName?: string }
   ): Promise<GitFile> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -254,7 +266,7 @@ export default class RepoService extends GitHubService {
 
     // fetch from local disk
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -298,8 +310,9 @@ export default class RepoService extends GitHubService {
     sessionData: UserWithSiteSessionData,
     { directoryName }: { directoryName: string }
   ): Promise<GitDirectoryItem[]> {
+    const defaultBranch = STAGING_BRANCH
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -307,7 +320,8 @@ export default class RepoService extends GitHubService {
       logger.info("Reading directory from local Git file system")
       const result = await this.gitFileSystemService.listDirectoryContents(
         sessionData.siteName,
-        directoryName
+        directoryName,
+        defaultBranch
       )
 
       if (result.isErr()) {
@@ -336,18 +350,20 @@ export default class RepoService extends GitHubService {
     total: number
   }> {
     const { siteName } = sessionData
+    const defaultBranch = STAGING_BRANCH
     logger.debug(`Reading media directory: ${directoryName}`)
     let dirContent: GitDirectoryItem[] = []
 
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
       const result = await this.gitFileSystemService.listDirectoryContents(
         siteName,
-        directoryName
+        directoryName,
+        defaultBranch
       )
 
       if (result.isErr()) {
@@ -392,30 +408,20 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info("Updating file in local Git file system")
-      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-      const result = await this.gitFileSystemService.update(
-        sessionData.siteName,
-        filePath,
+      return this.gitFileCommitService.update(sessionData, {
         fileContent,
         sha,
-        sessionData.isomerUserId
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { newSha: result.value }
+        fileName,
+        directoryName,
+      })
     }
 
-    return super.update(sessionData, {
+    return this.githubCommitService.update(sessionData, {
       fileContent,
       sha,
       fileName,
@@ -436,53 +442,21 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info(
-        `Deleting directory in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}`
-      )
-      const result = await this.gitFileSystemService.delete(
-        sessionData.siteName,
+      await this.gitFileCommitService.deleteDirectory(sessionData, {
         directoryName,
-        "",
-        sessionData.isomerUserId,
-        true
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
+      })
       return
     }
 
-    // GitHub flow
-    const gitTree = await this.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-
-    // Retrieve removed items and set their sha to null
-    const newGitTree = gitTree
-      .filter(
-        (item) =>
-          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
-      )
-      .map((item) => ({
-        ...item,
-        sha: null,
-      }))
-
-    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
-      gitTree: newGitTree,
+    await this.githubCommitService.deleteDirectory(sessionData, {
+      directoryName,
       message,
-    })
-
-    await this.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
+      githubSessionData,
     })
   }
 
@@ -500,35 +474,21 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info(
-        `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
-      )
-
-      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-
-      const result = await this.gitFileSystemService.delete(
-        sessionData.siteName,
-        filePath,
+      await this.gitFileCommitService.delete(sessionData, {
         sha,
-        sessionData.isomerUserId,
-        false
-      )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
+        fileName,
+        directoryName,
+      })
       return
     }
 
     // GitHub flow
-    await super.delete(sessionData, {
+    await this.githubCommitService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -543,85 +503,26 @@ export default class RepoService extends GitHubService {
     message?: string
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info("Renaming file/directory in local Git file system")
-      const result = await this.gitFileSystemService.renameSinglePath(
-        sessionData.siteName,
+      return this.gitFileCommitService.renameSinglePath(
+        sessionData,
+        githubSessionData,
         oldPath,
         newPath,
-        sessionData.isomerUserId,
         message
       )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { newSha: result.value }
     }
-
-    const gitTree = await super.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-    const newGitTree: any[] = []
-    const isMovingDirectory =
-      gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||
-      false
-
-    gitTree.forEach((item: any) => {
-      if (isMovingDirectory) {
-        if (item.path === newPath && item.type === "tree") {
-          throw new ConflictError("Target directory already exists")
-        } else if (item.path === oldPath && item.type === "tree") {
-          // Rename old subdirectory to new name
-          newGitTree.push({
-            ...item,
-            path: newPath,
-          })
-        } else if (
-          item.path.startsWith(`${oldPath}/`) &&
-          item.type !== "tree"
-        ) {
-          // Delete old files
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-        }
-      } else if (item.path === newPath && item.type !== "tree") {
-        throw new ConflictError("Target file already exists")
-      } else if (item.path === oldPath && item.type !== "tree") {
-        // Add file to new directory
-        newGitTree.push({
-          ...item,
-          path: newPath,
-        })
-        // Delete old file
-        newGitTree.push({
-          ...item,
-          sha: null,
-        })
-      }
-    })
-
-    const newCommitSha = await super.updateTree(
+    return this.githubCommitService.renameSinglePath(
       sessionData,
       githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      }
+      oldPath,
+      newPath,
+      message
     )
-    await super.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
-
-    return { newSha: newCommitSha }
   }
 
   async moveFiles(
@@ -633,79 +534,29 @@ export default class RepoService extends GitHubService {
     message?: string
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         sessionData.siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
     ) {
-      logger.info("Moving files in local Git file system")
-      const result = await this.gitFileSystemService.moveFiles(
-        sessionData.siteName,
+      return this.gitFileCommitService.moveFiles(
+        sessionData,
+        githubSessionData,
         oldPath,
         newPath,
-        sessionData.isomerUserId,
         targetFiles,
         message
       )
-
-      if (result.isErr()) {
-        throw result.error
-      }
-
-      this.gitFileSystemService.push(sessionData.siteName, BRANCH_REF)
-      return { newSha: result.value }
     }
 
-    const gitTree = await super.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-    const newGitTree: any[] = []
-
-    gitTree.forEach((item: any) => {
-      if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
-        const fileName = item.path
-          .split(`${newPath}/`)
-          .slice(1)
-          .join(`${newPath}/`)
-        if (targetFiles.includes(fileName)) {
-          // Conflicting file
-          throw new ConflictError("File already exists in target directory")
-        }
-      }
-      if (item.path.startsWith(`${oldPath}/`) && item.type !== "tree") {
-        const fileName = item.path
-          .split(`${oldPath}/`)
-          .slice(1)
-          .join(`${oldPath}/`)
-        if (targetFiles.includes(fileName)) {
-          // Add file to target directory
-          newGitTree.push({
-            ...item,
-            path: `${newPath}/${fileName}`,
-          })
-          // Delete old file
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-        }
-      }
-    })
-
-    const newCommitSha = await super.updateTree(
+    return this.githubCommitService.moveFiles(
       sessionData,
       githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      }
+      oldPath,
+      newPath,
+      targetFiles,
+      message
     )
-
-    await super.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
-
-    return { newSha: newCommitSha }
   }
 
   async getRepoInfo(sessionData: any): Promise<any> {
@@ -722,7 +573,7 @@ export default class RepoService extends GitHubService {
   ): Promise<GitHubCommitData> {
     const { siteName } = sessionData
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -755,12 +606,18 @@ export default class RepoService extends GitHubService {
   async updateTree(
     sessionData: any,
     githubSessionData: any,
-    { gitTree, message }: any
+    { gitTree, message }: any,
+    isStaging: boolean
   ): Promise<any> {
-    return super.updateTree(sessionData, githubSessionData, {
-      gitTree,
-      message,
-    })
+    return await super.updateTree(
+      sessionData,
+      githubSessionData,
+      {
+        gitTree,
+        message,
+      },
+      isStaging
+    )
   }
 
   async updateRepoState(
@@ -772,7 +629,7 @@ export default class RepoService extends GitHubService {
   ): Promise<void> {
     const { siteName } = sessionData
     if (
-      this.isRepoWhitelisted(
+      this.isRepoGgsWhitelisted(
         siteName,
         this.getGgsWhitelistedRepos(sessionData.growthbook)
       )
@@ -802,8 +659,6 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     shouldMakePrivate: any
   ): Promise<any> {
-    return super.changeRepoPrivacy(sessionData, {
-      shouldMakePrivate,
-    })
+    return await super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

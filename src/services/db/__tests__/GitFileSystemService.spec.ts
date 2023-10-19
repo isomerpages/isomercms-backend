@@ -12,7 +12,11 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
-import { ISOMER_GITHUB_ORG_NAME } from "@constants/constants"
+import {
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+  ISOMER_GITHUB_ORG_NAME,
+} from "@constants/constants"
 
 import {
   MOCK_GITHUB_FILENAME_ALPHA_ONE,
@@ -33,22 +37,26 @@ const GitFileSystemService = new _GitFileSystemService(
 )
 
 const BRANCH_REF = config.get("github.branchRef")
+const DEFAULT_BRANCH = "staging"
+
+const dirTree = {
+  "fake-repo": {
+    "fake-dir": {
+      "fake-file": "fake content",
+    },
+    "another-fake-dir": {
+      "fake-file": "duplicate fake file",
+    },
+    "fake-empty-dir": {},
+    "another-fake-file": "Another fake content",
+  },
+}
 
 describe("GitFileSystemService", () => {
   beforeEach(() => {
     mockFs({
-      [config.get("aws.efs.volPath")]: {
-        "fake-repo": {
-          "fake-dir": {
-            "fake-file": "fake content",
-          },
-          "another-fake-dir": {
-            "fake-file": "duplicate fake file",
-          },
-          "fake-empty-dir": {},
-          "another-fake-file": "Another fake content",
-        },
-      },
+      [EFS_VOL_PATH_STAGING]: dirTree,
+      [EFS_VOL_PATH_STAGING_LITE]: dirTree,
     })
   })
 
@@ -104,7 +112,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
-        ""
+        "",
+        DEFAULT_BRANCH
       )
       const actual = result
         ._unsafeUnwrap()
@@ -149,7 +158,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
-        ""
+        "",
+        DEFAULT_BRANCH
       )
 
       const actual = result
@@ -175,7 +185,8 @@ describe("GitFileSystemService", () => {
 
       const actual = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
-        ""
+        "",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toHaveLength(0)
@@ -184,7 +195,8 @@ describe("GitFileSystemService", () => {
     it("should return an empty result if the directory is empty", async () => {
       const actual = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
-        "fake-empty-dir"
+        "fake-empty-dir",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toHaveLength(0)
@@ -193,7 +205,8 @@ describe("GitFileSystemService", () => {
     it("should return a GitFileSystemError if the path is not a directory", async () => {
       const result = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
-        "fake-dir/fake-file"
+        "fake-dir/fake-file",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -202,7 +215,8 @@ describe("GitFileSystemService", () => {
     it("should return a NotFoundError if the path does not exist", async () => {
       const result = await GitFileSystemService.listDirectoryContents(
         "fake-repo",
-        "non-existent-dir"
+        "non-existent-dir",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
@@ -235,7 +249,10 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const result = await GitFileSystemService.isValidGitRepo("fake-repo")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
@@ -300,7 +317,10 @@ describe("GitFileSystemService", () => {
           ),
       })
 
-      const result = await GitFileSystemService.isValidGitRepo("fake-repo")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrap()).toBeTrue()
     })
@@ -313,7 +333,10 @@ describe("GitFileSystemService", () => {
         remote: jest.fn().mockResolvedValueOnce(null),
       })
 
-      const result = await GitFileSystemService.isValidGitRepo("fake-repo")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrap()).toBeFalse()
     })
@@ -330,7 +353,10 @@ describe("GitFileSystemService", () => {
           ),
       })
 
-      const result = await GitFileSystemService.isValidGitRepo("fake-repo")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrap()).toBeFalse()
     })
@@ -340,13 +366,19 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockResolvedValueOnce(false),
       })
 
-      const result = await GitFileSystemService.isValidGitRepo("fake-repo")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrap()).toBeFalse()
     })
 
     it("should mark a non-existent folder as invalid", async () => {
-      const result = await GitFileSystemService.isValidGitRepo("non-existent")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "non-existent",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrap()).toBeFalse()
     })
@@ -356,7 +388,10 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const result = await GitFileSystemService.isValidGitRepo("fake-repo")
+      const result = await GitFileSystemService.isValidGitRepo(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
@@ -485,7 +520,8 @@ describe("GitFileSystemService", () => {
     it("should return the filesystem stats for a valid file", async () => {
       const result = await GitFileSystemService.getFilePathStats(
         "fake-repo",
-        "fake-dir/fake-file"
+        "fake-dir/fake-file",
+        DEFAULT_BRANCH === "staging"
       )
 
       expect(result._unsafeUnwrap().isFile()).toBeTrue()
@@ -494,7 +530,8 @@ describe("GitFileSystemService", () => {
     it("should return the filesystem stats for a valid directory", async () => {
       const result = await GitFileSystemService.getFilePathStats(
         "fake-repo",
-        "fake-empty-dir"
+        "fake-empty-dir",
+        DEFAULT_BRANCH === "staging"
       )
 
       expect(result._unsafeUnwrap().isDirectory()).toBeTrue()
@@ -503,7 +540,8 @@ describe("GitFileSystemService", () => {
     it("should return a NotFoundError for a non-existent path", async () => {
       const result = await GitFileSystemService.getFilePathStats(
         "fake-repo",
-        "non-existent"
+        "non-existent",
+        DEFAULT_BRANCH === "staging"
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
@@ -548,7 +586,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.rollback(
         "fake-repo",
-        "fake-commit-sha"
+        "fake-commit-sha",
+        "staging"
       )
 
       expect(result.isOk()).toBeTrue()
@@ -563,7 +602,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.rollback(
         "fake-repo",
-        "fake-commit-sha"
+        "fake-commit-sha",
+        "staging"
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -577,15 +617,26 @@ describe("GitFileSystemService", () => {
           checkout: jest.fn().mockResolvedValueOnce(undefined),
         }),
       })
-
+      MockSimpleGit.clone.mockReturnValueOnce({
+        cwd: jest.fn().mockResolvedValueOnce({}),
+      })
       const result = await GitFileSystemService.clone("new-fake-repo")
-
       expect(result.isOk()).toBeTrue()
     })
 
     it("should do nothing if a valid Git repo already exists", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
         remote: jest
@@ -605,6 +656,16 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/another-fake-repo.git`
+          ),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
         remote: jest
           .fn()
           .mockResolvedValueOnce(
@@ -621,6 +682,9 @@ describe("GitFileSystemService", () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         checkIsRepo: jest.fn().mockResolvedValueOnce(false),
       })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(false),
+      })
 
       const result = await GitFileSystemService.clone("fake-repo")
 
@@ -632,6 +696,9 @@ describe("GitFileSystemService", () => {
         cwd: jest.fn().mockReturnValueOnce({
           checkout: jest.fn().mockRejectedValueOnce(new GitError()),
         }),
+      })
+      MockSimpleGit.clone.mockReturnValueOnce({
+        cwd: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
       const result = await GitFileSystemService.clone("anothers-fake-repo")
@@ -659,7 +726,10 @@ describe("GitFileSystemService", () => {
         pull: jest.fn().mockResolvedValueOnce(undefined),
       })
 
-      const result = await GitFileSystemService.pull("fake-repo")
+      const result = await GitFileSystemService.pull(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result.isOk()).toBeTrue()
     })
@@ -682,7 +752,10 @@ describe("GitFileSystemService", () => {
         pull: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const result = await GitFileSystemService.pull("fake-repo")
+      const result = await GitFileSystemService.pull(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
@@ -692,7 +765,10 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockResolvedValueOnce(false),
       })
 
-      const result = await GitFileSystemService.pull("fake-repo")
+      const result = await GitFileSystemService.pull(
+        "fake-repo",
+        DEFAULT_BRANCH
+      )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
@@ -849,7 +925,8 @@ describe("GitFileSystemService", () => {
         "fake-repo",
         [fakePath],
         MOCK_USER_ID_ONE.toString(),
-        MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE
+        MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrap()).toBe(mockCommitSha)
@@ -890,6 +967,7 @@ describe("GitFileSystemService", () => {
         [fakePath],
         MOCK_USER_ID_ONE.toString(),
         MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
+        DEFAULT_BRANCH,
         true
       )
 
@@ -923,7 +1001,8 @@ describe("GitFileSystemService", () => {
         "fake-repo",
         ["fake-dir/fake-file"],
         "fake-hash",
-        "fake message"
+        "fake message",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(
@@ -953,7 +1032,8 @@ describe("GitFileSystemService", () => {
         "fake-repo",
         ["fake-dir/fake-file"],
         "fake-hash",
-        "fake message"
+        "fake message",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(
@@ -977,7 +1057,8 @@ describe("GitFileSystemService", () => {
         "fake-repo",
         [],
         "fake-hash",
-        "fake message"
+        "fake message",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -999,7 +1080,8 @@ describe("GitFileSystemService", () => {
         "fake-repo",
         ["one", "two", "fake-dir/three"],
         "fake-hash",
-        "fake message"
+        "fake message",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -1014,7 +1096,8 @@ describe("GitFileSystemService", () => {
         "fake-repo",
         ["one", "two", "fake-dir/three"],
         "fake-hash",
-        "fake message"
+        "fake message",
+        DEFAULT_BRANCH
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -1068,7 +1151,8 @@ describe("GitFileSystemService", () => {
         "fake content",
         "fake-dir",
         "create-file",
-        "utf-8"
+        "utf-8",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
@@ -1120,7 +1204,8 @@ describe("GitFileSystemService", () => {
         "fake content",
         "fake-dir",
         "create-media-file",
-        "base64"
+        "base64",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
@@ -1171,7 +1256,8 @@ describe("GitFileSystemService", () => {
         "fake content",
         "fake-create-dir",
         "create-file",
-        "utf-8"
+        "utf-8",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
@@ -1195,7 +1281,8 @@ describe("GitFileSystemService", () => {
         "fake content",
         "fake-dir",
         "fake-file",
-        "utf-8"
+        "utf-8",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
@@ -1248,11 +1335,16 @@ describe("GitFileSystemService", () => {
         "fake content",
         "fake-dir",
         "create-file-rollback",
-        "utf-8"
+        "utf-8",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")
+      expect(spyRollback).toHaveBeenCalledWith(
+        "fake-repo",
+        "test-commit-sha",
+        "staging"
+      )
     })
   })
 
@@ -1342,7 +1434,8 @@ describe("GitFileSystemService", () => {
         "fake-dir/fake-file",
         "fake new content",
         "fake-old-hash",
-        "fake-user-id"
+        "fake-user-id",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
@@ -1394,11 +1487,16 @@ describe("GitFileSystemService", () => {
         "fake-dir/fake-file",
         "fake new content",
         "fake-old-hash",
-        "fake-user-id"
+        "fake-user-id",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")
+      expect(spyRollback).toHaveBeenCalledWith(
+        "fake-repo",
+        "test-commit-sha",
+        "staging"
+      )
     })
 
     it("should return ConflictError if the old SHA provided does not match the current SHA", async () => {
@@ -1422,7 +1520,8 @@ describe("GitFileSystemService", () => {
         "fake-dir/fake-file",
         "fake new content",
         "fake-some-other-hash",
-        "fake-user-id"
+        "fake-user-id",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
@@ -1446,7 +1545,8 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake new content",
         "fake-old-hash",
-        "fake-user-id"
+        "fake-user-id",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -1470,7 +1570,8 @@ describe("GitFileSystemService", () => {
         "fake-dir/non-existent-file",
         "fake new content",
         "fake-old-hash",
-        "fake-user-id"
+        "fake-user-id",
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
@@ -1517,6 +1618,7 @@ describe("GitFileSystemService", () => {
         "fake-dir/fake-file",
         "fake-dir/fake-file-renamed",
         "fake-user-id",
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1566,6 +1668,7 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-dir-renamed",
         "fake-user-id",
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1617,11 +1720,16 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-dir-renamed",
         "fake-user-id",
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "fake-hash")
+      expect(spyRollback).toHaveBeenCalledWith(
+        "fake-repo",
+        "fake-hash",
+        "staging"
+      )
     })
 
     it("should rollback changes if an error occurred when moving the file", async () => {
@@ -1652,11 +1760,16 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-dir-renamed",
         "fake-user-id",
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "fake-hash")
+      expect(spyRollback).toHaveBeenCalledWith(
+        "fake-repo",
+        "fake-hash",
+        "staging"
+      )
     })
 
     it("should return ConflictError if newPath is already an existing file/directory", async () => {
@@ -1677,6 +1790,7 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-empty-dir",
         "fake-user-id",
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1701,6 +1815,7 @@ describe("GitFileSystemService", () => {
         "fake-nonexistent-dir",
         "fake-new-dir",
         "fake-user-id",
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1747,6 +1862,7 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-user-id",
         ["another-fake-file"],
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1791,6 +1907,7 @@ describe("GitFileSystemService", () => {
         "fake-new-dir",
         "fake-user-id",
         ["another-fake-file"],
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1841,11 +1958,16 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-user-id",
         ["another-fake-file"],
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "fake-hash")
+      expect(spyRollback).toHaveBeenCalledWith(
+        "fake-repo",
+        "fake-hash",
+        "staging"
+      )
     })
 
     it("should return ConflictError if newPath is already an existing file/directory", async () => {
@@ -1867,6 +1989,7 @@ describe("GitFileSystemService", () => {
         "another-fake-dir",
         "fake-user-id",
         ["fake-file"],
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1892,6 +2015,7 @@ describe("GitFileSystemService", () => {
         "another-fake-dir",
         "fake-user-id",
         ["fake-file"],
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -1917,6 +2041,7 @@ describe("GitFileSystemService", () => {
         "fake-new-dir",
         "fake-user-id",
         ["fake-file"],
+        DEFAULT_BRANCH,
         "fake-message"
       )
 
@@ -2039,7 +2164,8 @@ describe("GitFileSystemService", () => {
         "fake-dir/fake-file",
         "fake-old-hash",
         "fake-user-id",
-        false
+        false,
+        DEFAULT_BRANCH
       )
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
@@ -2099,7 +2225,8 @@ describe("GitFileSystemService", () => {
         "fake-dir/fake-file",
         "fake-old-hash",
         "fake-user-id",
-        false
+        false,
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
@@ -2134,7 +2261,8 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-old-hash",
         "fake-user-id",
-        false
+        false,
+        DEFAULT_BRANCH
       )
       expect(spyGetFilePathStats).toBeCalledTimes(1)
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -2174,7 +2302,8 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake-old-hash",
         "fake-user-id",
-        false
+        false,
+        DEFAULT_BRANCH
       )
       expect(spyGetGitBlobHash).toBeCalledTimes(1)
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(ConflictError)
@@ -2229,7 +2358,8 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "",
         "fake-user-id",
-        true
+        true,
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrap()).toEqual("fake-new-hash")
@@ -2264,7 +2394,8 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "",
         "fake-user-id",
-        true
+        true,
+        DEFAULT_BRANCH
       )
       expect(spyGetFilePathStats).toBeCalledTimes(1)
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -2326,11 +2457,16 @@ describe("GitFileSystemService", () => {
         "fake-dir",
         "fake new content",
         "fake-user-id",
-        true
+        true,
+        DEFAULT_BRANCH
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-      expect(spyRollback).toHaveBeenCalledWith("fake-repo", "test-commit-sha")
+      expect(spyRollback).toHaveBeenCalledWith(
+        "fake-repo",
+        "test-commit-sha",
+        "staging"
+      )
     })
   })
 

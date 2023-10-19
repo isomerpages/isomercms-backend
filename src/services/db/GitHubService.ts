@@ -1,43 +1,59 @@
-const { validateStatus } = require("@utils/axios-utils")
+import { AxiosCacheInstance } from "axios-cache-interceptor"
+import { Base64 } from "js-base64"
+import { okAsync, errAsync } from "neverthrow"
 
-const { Base64 } = require("js-base64")
-const { okAsync, errAsync } = require("neverthrow")
+import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
+import { NotFoundError } from "@errors/NotFoundError"
+import { UnprocessableError } from "@errors/UnprocessableError"
 
-const BRANCH_REF = "staging"
+import { isAxiosError, validateStatus } from "@utils/axios-utils"
 
-const {
-  ConflictError,
-  inputNameConflictErrorMsg,
-} = require("@errors/ConflictError")
-const { NotFoundError } = require("@errors/NotFoundError")
-const { UnprocessableError } = require("@errors/UnprocessableError")
+import GithubSessionData from "@root/classes/GithubSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
+import logger from "@root/logger/logger"
+import { GitCommitResult } from "@root/types/gitfilesystem"
+import { RawGitTreeEntry } from "@root/types/github"
 
-const logger = require("@root/logger/logger").default
+import * as ReviewApi from "./review"
 
-const ReviewApi = require("./review")
+export default class GitHubService {
+  private readonly axiosInstance: AxiosCacheInstance
 
-class GitHubService {
-  constructor({ axiosInstance }) {
+  constructor({ axiosInstance }: { axiosInstance: AxiosCacheInstance }) {
     this.axiosInstance = axiosInstance
   }
 
-  getCommitDiff(siteName, base, head) {
+  getCommitDiff(
+    siteName: string,
+    base: string | undefined,
+    head: string | undefined
+  ) {
     return ReviewApi.getCommitDiff(siteName, base, head)
   }
 
-  createPullRequest(siteName, title, description) {
+  createPullRequest(
+    siteName: string,
+    title: string,
+    description: string | undefined
+  ) {
     return ReviewApi.createPullRequest(siteName, title, description)
   }
 
-  getPullRequest(siteName, pullRequestNumber) {
+  getPullRequest(siteName: string, pullRequestNumber: number) {
     return ReviewApi.getPullRequest(siteName, pullRequestNumber)
   }
 
-  getBlob(repo, path, ref) {
+  getBlob(repo: string, path: string, ref: string) {
     return ReviewApi.getBlob(repo, path, ref)
   }
 
-  updatePullRequest(siteName, pullRequestNumber, title, description) {
+  updatePullRequest(
+    siteName: string,
+    pullRequestNumber: number,
+    title: string,
+    description: string | undefined
+  ) {
     return ReviewApi.updatePullRequest(
       siteName,
       pullRequestNumber,
@@ -46,53 +62,84 @@ class GitHubService {
     )
   }
 
-  closeReviewRequest(siteName, pullRequestNumber) {
+  closeReviewRequest(siteName: string, pullRequestNumber: number) {
     return ReviewApi.closeReviewRequest(siteName, pullRequestNumber)
   }
 
-  mergePullRequest(siteName, pullRequestNumber) {
+  mergePullRequest(siteName: string, pullRequestNumber: number) {
     return ReviewApi.mergePullRequest(siteName, pullRequestNumber)
   }
 
-  approvePullRequest(siteName, pullRequestNumber) {
+  approvePullRequest(siteName: string, pullRequestNumber: number) {
     return ReviewApi.approvePullRequest(siteName, pullRequestNumber)
   }
 
-  async getComments(siteName, pullRequestNumber) {
+  async getComments(siteName: string, pullRequestNumber: number) {
     return ReviewApi.getComments(siteName, pullRequestNumber)
   }
 
-  async createComment(siteName, pullRequestNumber, user, message) {
+  async createComment(
+    siteName: string,
+    pullRequestNumber: number,
+    user: string,
+    message: string
+  ) {
     return ReviewApi.createComment(siteName, pullRequestNumber, user, message)
   }
 
-  getFilePath({ siteName, fileName, directoryName }) {
+  getFilePath({
+    siteName,
+    fileName,
+    directoryName,
+  }: {
+    siteName: string
+    fileName: string
+    directoryName: string | undefined
+  }) {
     if (!directoryName)
       return `${siteName}/contents/${encodeURIComponent(fileName)}`
     const encodedDirPath = directoryName
       .split("/")
-      .map((folder) => encodeURIComponent(folder))
+      .map((folder: string | number | boolean) => encodeURIComponent(folder))
       .join("/")
     return `${siteName}/contents/${encodedDirPath}/${encodeURIComponent(
       fileName
     )}`
   }
 
-  getBlobPath({ siteName, fileSha }) {
+  getBlobPath({ siteName, fileSha }: { siteName: string; fileSha: string }) {
     return `${siteName}/git/blobs/${fileSha}`
   }
 
-  getFolderPath({ siteName, directoryName }) {
+  getFolderPath({
+    siteName,
+    directoryName,
+  }: {
+    siteName: string
+    directoryName: string
+  }) {
     const encodedDirPath = directoryName
       .split("/")
-      .map((folder) => encodeURIComponent(folder))
+      .map((folder: string | number | boolean) => encodeURIComponent(folder))
       .join("/")
     return `${siteName}/contents/${encodedDirPath}`
   }
 
   async create(
-    sessionData,
-    { content, fileName, directoryName, isMedia = false }
+    sessionData: UserWithSiteSessionData,
+    {
+      content,
+      fileName,
+      directoryName,
+      isMedia = false,
+      branchName = STAGING_BRANCH,
+    }: {
+      content: string
+      fileName: string
+      directoryName: string
+      isMedia: boolean
+      branchName: string
+    }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
@@ -138,7 +185,7 @@ class GitHubService {
       const params = {
         message,
         content: encodedContent,
-        branch: BRANCH_REF,
+        branch: branchName,
       }
 
       const resp = await this.axiosInstance.put(endpoint, params, {
@@ -148,22 +195,32 @@ class GitHubService {
       })
 
       return { sha: resp.data.content.sha }
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof NotFoundError) throw err
-      const { status } = err.response
-      if (status === 422 || status === 409)
-        throw new ConflictError(inputNameConflictErrorMsg(fileName))
-      throw err.response
+      if (isAxiosError(err) && err.response) {
+        const { status } = err.response
+        if (status === 422 || status === 409)
+          throw new ConflictError(inputNameConflictErrorMsg(fileName))
+        throw err.response
+      }
+      throw err
     }
   }
 
-  async read(sessionData, { fileName, directoryName }) {
+  async read(
+    sessionData: UserWithSiteSessionData,
+    {
+      fileName,
+      directoryName,
+      branchName = STAGING_BRANCH,
+    }: { fileName: any; directoryName: any; branchName?: string }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -173,6 +230,7 @@ class GitHubService {
         Authorization: `token ${accessToken}`,
       },
     })
+
     if (resp.status === 404) throw new NotFoundError("File does not exist")
 
     const { content: encodedContent, sha } = resp.data
@@ -181,13 +239,55 @@ class GitHubService {
     return { content, sha }
   }
 
-  async readDirectory(sessionData, { directoryName }) {
+  async readMedia(
+    sessionData: UserWithSiteSessionData,
+    {
+      fileSha,
+      branchName = STAGING_BRANCH,
+    }: { fileSha: any; branchName?: string }
+  ) {
+    /**
+     * Files that are bigger than 1 MB needs to be retrieved
+     * via Github Blob API. The content can only be retrieved through
+     * the `sha` of the file.
+     */
+    const { accessToken } = sessionData
+    const { siteName } = sessionData
+    const params = {
+      ref: branchName,
+    }
+
+    const blobEndpoint = this.getBlobPath({ siteName, fileSha })
+
+    const resp = await this.axiosInstance.get(blobEndpoint, {
+      validateStatus,
+      params,
+      headers: {
+        Authorization: `token ${accessToken}`,
+      },
+    })
+
+    if (resp.status === 404)
+      throw new NotFoundError("Media file does not exist")
+
+    const { content, sha } = resp.data
+
+    return { content, sha }
+  }
+
+  async readDirectory(
+    sessionData: UserWithSiteSessionData,
+    {
+      directoryName,
+      branchName = STAGING_BRANCH,
+    }: { directoryName: any; branchName?: string }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
-      ref: BRANCH_REF,
+      ref: branchName,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -202,13 +302,29 @@ class GitHubService {
     return resp.data
   }
 
-  async update(sessionData, { fileContent, sha, fileName, directoryName }) {
+  async update(
+    sessionData: UserWithSiteSessionData,
+    {
+      fileContent,
+      sha,
+      fileName,
+      directoryName,
+      branchName,
+    }: {
+      fileContent: string
+      sha: string
+      fileName: string
+      directoryName: string | undefined
+      branchName: string
+    }
+  ): Promise<GitCommitResult> {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       // this is to check if the file path still exists, else this will throw a 404. Only needed for paths outside of root
-      if (directoryName)
+      if (directoryName) {
         await this.readDirectory(sessionData, { directoryName })
+      }
       const encodedNewContent = Base64.encode(fileContent)
 
       let fileSha = sha
@@ -228,7 +344,7 @@ class GitHubService {
       const params = {
         message,
         content: encodedNewContent,
-        branch: BRANCH_REF,
+        branch: branchName,
         sha: fileSha,
       }
 
@@ -241,27 +357,46 @@ class GitHubService {
       return { newSha: resp.data.content.sha }
     } catch (err) {
       if (err instanceof NotFoundError) throw err
-      const { status } = err.response
-      if (status === 404) throw new NotFoundError("File does not exist")
-      if (status === 409)
-        throw new ConflictError(
-          "File has been changed recently, please try again"
-        )
-      throw err
+      if (isAxiosError(err)) {
+        const { response } = err
+        if (response && response.status === 404) {
+          throw new NotFoundError("File does not exist")
+        }
+        if (response && response.status === 409) {
+          throw new ConflictError(
+            "File has been changed recently, please try again"
+          )
+        }
+        throw err
+      }
+      throw new UnprocessableError("Unable to update file")
     }
   }
 
-  async delete(sessionData, { sha, fileName, directoryName }) {
+  async delete(
+    sessionData: UserWithSiteSessionData,
+    {
+      sha,
+      fileName,
+      directoryName,
+      branchName = STAGING_BRANCH,
+    }: {
+      sha: string
+      fileName: string
+      directoryName: string
+      branchName?: string
+    }
+  ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     try {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
       let fileSha = sha
-      if (!sha) {
-        const { sha: retrievedSha } = await this.read({
-          accessToken,
+      if (!sha || branchName === STAGING_LITE_BRANCH) {
+        const { sha: retrievedSha } = await this.read(sessionData, {
           fileName,
           directoryName,
+          branchName,
         })
         fileSha = retrievedSha
       }
@@ -273,7 +408,7 @@ class GitHubService {
       })
       const params = {
         message,
-        branch: BRANCH_REF,
+        branch: branchName,
         sha: fileSha,
       }
 
@@ -284,17 +419,20 @@ class GitHubService {
         },
       })
     } catch (err) {
-      const { status } = err.response
-      if (status === 404) throw new NotFoundError("File does not exist")
-      if (status === 409)
-        throw new ConflictError(
-          "File has been changed recently, please try again"
-        )
+      if (err instanceof NotFoundError) throw err
+      if (isAxiosError(err) && err.response) {
+        const { status } = err.response
+        if (status === 404) throw new NotFoundError("File does not exist")
+        if (status === 409)
+          throw new ConflictError(
+            "File has been changed recently, please try again"
+          )
+      }
       throw err
     }
   }
 
-  async getRepoInfo(sessionData) {
+  async getRepoInfo(sessionData: UserWithSiteSessionData) {
     const { siteName } = sessionData
     const { accessToken } = sessionData
     const endpoint = `${siteName}`
@@ -302,7 +440,7 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      ref: BRANCH_REF,
+      ref: STAGING_BRANCH,
     }
     // Get the commits of the repo
     const { data } = await this.axiosInstance.get(endpoint, {
@@ -313,7 +451,7 @@ class GitHubService {
     return data
   }
 
-  async getRepoState(sessionData) {
+  async getRepoState(sessionData: UserWithSiteSessionData) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = `${siteName}/commits`
@@ -321,7 +459,7 @@ class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      sha: BRANCH_REF,
+      sha: STAGING_BRANCH,
     }
     // Get the commits of the repo
     const { data: commits } = await this.axiosInstance.get(endpoint, {
@@ -339,7 +477,10 @@ class GitHubService {
     return { treeSha, currentCommitSha }
   }
 
-  async getLatestCommitOfBranch(sessionData, branch) {
+  async getLatestCommitOfBranch(
+    sessionData: UserWithSiteSessionData,
+    branch: string
+  ) {
     const { accessToken, siteName } = sessionData
     const endpoint = `${siteName}/commits/${branch}`
     const headers = {
@@ -353,21 +494,30 @@ class GitHubService {
       const { commit: latestCommitMeta } = latestCommit
       return latestCommitMeta
     } catch (err) {
-      const { status } = err.response
-      if (status === 422)
-        throw new UnprocessableError(`Branch ${branch} does not exist`)
+      if (err instanceof NotFoundError) throw err
+      if (isAxiosError(err) && err.response) {
+        const { status } = err.response
+        if (status === 422)
+          throw new UnprocessableError(`Branch ${branch} does not exist`)
+      }
       throw err
     }
   }
 
-  async getTree(sessionData, githubSessionData, { isRecursive }) {
+  async getTree(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { isRecursive }: any,
+    isStaging = true
+  ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const { treeSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
-      ref: BRANCH_REF,
+      ref: isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH,
+      recursive: false,
     }
 
     if (isRecursive) params.recursive = true
@@ -382,7 +532,12 @@ class GitHubService {
     return gitTree
   }
 
-  async updateTree(sessionData, githubSessionData, { gitTree, message }) {
+  async updateTree(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { gitTree, message }: { gitTree: any; message: any },
+    isStaging: boolean
+  ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
     const url = `${siteName}/git/trees`
@@ -425,7 +580,13 @@ class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState(sessionData, { commitSha, branchName = BRANCH_REF }) {
+  async updateRepoState(
+    sessionData: UserWithSiteSessionData,
+    {
+      commitSha,
+      branchName = STAGING_BRANCH,
+    }: { commitSha: any; branchName?: string }
+  ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const refEndpoint = `${siteName}/git/refs/heads/${branchName}`
@@ -440,7 +601,7 @@ class GitHubService {
     )
   }
 
-  async checkHasAccess(sessionData) {
+  async checkHasAccess(sessionData: UserWithSiteSessionData) {
     const { accessToken } = sessionData
     const userId = sessionData.githubId
     const { siteName } = sessionData
@@ -453,15 +614,21 @@ class GitHubService {
     try {
       await this.axiosInstance.get(endpoint, { headers })
     } catch (err) {
-      const { status } = err.response
-      // If user is unauthorized or site does not exist, show the same NotFoundError
-      if (status === 404 || status === 403)
-        throw new NotFoundError("Site does not exist")
+      if (err instanceof NotFoundError) throw err
+      if (isAxiosError(err) && err.response) {
+        const { status } = err.response
+        // If user is unauthorized or site does not exist, show the same NotFoundError
+        if (status === 404 || status === 403)
+          throw new NotFoundError("Site does not exist")
+      }
       throw err
     }
   }
 
-  async changeRepoPrivacy(sessionData, shouldMakePrivate) {
+  async changeRepoPrivacy(
+    sessionData: { siteName: any; isomerUserId: any },
+    shouldMakePrivate: boolean
+  ) {
     const { siteName, isomerUserId } = sessionData
     const endpoint = `${siteName}`
 
@@ -476,19 +643,19 @@ class GitHubService {
         { private: shouldMakePrivate },
         { headers }
       )
-      return okAsync()
+      return okAsync(null)
     } catch (error) {
-      const { status } = error.response
-      // If user is unauthorized or site does not exist, show the same NotFoundError
-      if (status === 404 || status === 403) {
-        logger.error(
-          `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
-        )
-        return errAsync(new NotFoundError("Site does not exist"))
+      if (isAxiosError(error) && error.response) {
+        const { status } = error.response
+        // If user is unauthorized or site does not exist, show the same NotFoundError
+        if (status === 404 || status === 403) {
+          logger.error(
+            `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
+          )
+          return errAsync(new NotFoundError("Site does not exist"))
+        }
       }
       return errAsync(error)
     }
   }
 }
-
-module.exports = { GitHubService }

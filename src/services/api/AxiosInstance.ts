@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
-import { setupCache } from "axios-cache-interceptor"
 import _ from "lodash"
 
 import { config } from "@config/config"
@@ -8,7 +7,6 @@ import logger from "@logger/logger"
 
 import tracer from "@utils/tracer"
 
-import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 import { tokenServiceInstance } from "@services/db/TokenService"
 
 import { statsService } from "../infra/StatsService"
@@ -112,16 +110,9 @@ const githubApiInterceptor = (resp: AxiosResponse) => {
   return resp
 }
 
-const isomerRepoAxiosInstance = setupCache(
-  axios.create({
-    baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
-  }),
-  {
-    interpretHeader: true,
-    etag: true,
-    headerInterpreter: customHeaderInterpreter,
-  }
-)
+const isomerRepoAxiosInstance = axios.create({
+  baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
+})
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 isomerRepoAxiosInstance.interceptors.response.use(githubApiInterceptor)

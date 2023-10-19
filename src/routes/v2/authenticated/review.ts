@@ -114,12 +114,12 @@ export class ReviewsRouter {
     }
 
     // Check if they have access to site
-    const possibleSiteMember = await this.identityUsersService.getSiteMember(
-      userWithSiteSessionData.isomerUserId,
-      siteName
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
     )
 
-    if (!possibleSiteMember) {
+    if (!role) {
       return res.status(404).json({ message: "No site members found" })
     }
 

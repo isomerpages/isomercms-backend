@@ -1,7 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import autoBind from "auto-bind"
 import express from "express"
-import { fromPromise } from "neverthrow"
 
 import type { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"

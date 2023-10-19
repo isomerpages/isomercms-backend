@@ -17,7 +17,7 @@ import { RawGitTreeEntry } from "@root/types/github"
 
 import * as ReviewApi from "./review"
 
-const CACHE_KEYS = {
+export const CACHE_KEYS = {
   read: {
     directory: "read-directory",
   },

@@ -18,7 +18,7 @@ import {
 } from "@fixtures/sessionData"
 import { indexHtmlContent } from "@root/fixtures/markdown-fixtures"
 import { collectionYmlContent } from "@root/fixtures/yaml-fixtures"
-import GitHubService from "@services/db/GitHubService"
+import GitHubService, { CACHE_KEYS } from "@services/db/GitHubService"
 
 // using es6 gives some error
 const { Base64 } = require("js-base64")
@@ -48,6 +48,16 @@ describe("Github Service", () => {
   const authHeader = {
     headers: {
       Authorization: `token ${accessToken}`,
+    },
+  }
+
+  const cacheHeader = {
+    cache: {
+      update: {
+        // NOTE: Invalidate entries for reading of directory
+        // and let the next request through to server on resource creation.
+        [CACHE_KEYS.read.directory]: "delete",
+      },
     },
   }
 
@@ -120,6 +130,10 @@ describe("Github Service", () => {
     const folderEndpoint = `${folderParentEndpoint}/${fileName}`
     const resourceRoomEndpoint = `${siteName}/contents/${resourceCategoryName}`
     const encodedContent = Base64.encode(content)
+    const headers = {
+      ...authHeader,
+      ...cacheHeader,
+    }
 
     const message = JSON.stringify({
       message: `Create file: ${fileName}`,
@@ -181,7 +195,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         folderEndpoint,
         params,
-        authHeader
+        headers
       )
     })
 
@@ -209,7 +223,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         topLevelFolderEndpoint,
         resourceRoomParams,
-        authHeader
+        headers
       )
     })
 
@@ -237,7 +251,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         resourceRoomFolderEndpoint,
         resourceCategoryParams,
-        authHeader
+        headers
       )
     })
 
@@ -268,7 +282,7 @@ describe("Github Service", () => {
           ...params,
           content,
         },
-        authHeader
+        headers
       )
     })
 
@@ -295,7 +309,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         folderEndpoint,
         params,
-        authHeader
+        headers
       )
     })
 
@@ -318,6 +332,7 @@ describe("Github Service", () => {
         params: {
           ref: BRANCH_REF,
         },
+        id: CACHE_KEYS.read.directory,
       })
     })
 
@@ -341,6 +356,7 @@ describe("Github Service", () => {
         params: {
           ref: BRANCH_REF,
         },
+        id: CACHE_KEYS.read.directory,
       })
     })
 
@@ -363,6 +379,7 @@ describe("Github Service", () => {
         params: {
           ref: BRANCH_REF,
         },
+        id: CACHE_KEYS.read.directory,
       })
     })
   })
@@ -487,6 +504,7 @@ describe("Github Service", () => {
         validateStatus,
         params,
         headers: authHeader.headers,
+        id: CACHE_KEYS.read.directory,
       })
     })
 
@@ -504,6 +522,7 @@ describe("Github Service", () => {
         validateStatus,
         params,
         headers: authHeader.headers,
+        id: CACHE_KEYS.read.directory,
       })
     })
   })
@@ -521,6 +540,10 @@ describe("Github Service", () => {
       content: encodedContent,
       branch: BRANCH_REF,
       sha,
+    }
+    const headers = {
+      ...authHeader,
+      ...cacheHeader,
     }
 
     it("should update a file correctly", async () => {
@@ -547,7 +570,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         endpoint,
         params,
-        authHeader
+        headers
       )
     })
 
@@ -574,7 +597,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         endpoint,
         params,
-        authHeader
+        headers
       )
     })
 
@@ -617,7 +640,7 @@ describe("Github Service", () => {
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
         endpoint,
         params,
-        authHeader
+        headers
       )
     })
 
@@ -668,7 +691,8 @@ describe("Github Service", () => {
       })
       expect(mockAxiosInstance.delete).toHaveBeenCalledWith(endpoint, {
         params,
-        headers: authHeader.headers,
+        ...authHeader,
+        ...cacheHeader,
       })
     })
 
@@ -691,7 +715,8 @@ describe("Github Service", () => {
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.delete).toHaveBeenCalledWith(endpoint, {
         params,
-        headers: authHeader.headers,
+        ...authHeader,
+        ...cacheHeader,
       })
     })
   })

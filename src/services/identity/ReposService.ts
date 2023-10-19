@@ -1,4 +1,6 @@
+import { exec } from "child_process"
 import fs from "fs"
+import path from "path"
 
 import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
@@ -13,7 +15,11 @@ import { config } from "@config/config"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
 import { Repo, Site } from "@database/models"
-import { DNS_INDIRECTION_REPO, EFS_VOL_PATH_STAGING } from "@root/constants"
+import {
+  DNS_INDIRECTION_REPO,
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+} from "@root/constants"
 import GitHubApiError from "@root/errors/GitHubApiError"
 import logger from "@root/logger/logger"
 
@@ -63,7 +69,11 @@ export default class ReposService {
     this.simpleGit = simpleGit
   }
 
-  getLocalRepoPath = (repoName: string) => `${EFS_VOL_PATH_STAGING}/${repoName}`
+  getLocalStagingRepoPath = (repoName: string) =>
+    path.join(EFS_VOL_PATH_STAGING, repoName)
+
+  getLocalStagingLiteRepoPath = (repoName: string) =>
+    path.join(EFS_VOL_PATH_STAGING_LITE, repoName)
 
   create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)
@@ -107,7 +117,7 @@ export default class ReposService {
     productionUrl: string,
     stagingUrl: string
   ) => {
-    const dir = this.getLocalRepoPath(repoName)
+    const dir = this.getLocalStagingRepoPath(repoName)
 
     // 1. Set URLs in local _config.yml
     this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
@@ -206,45 +216,60 @@ export default class ReposService {
     repoName: string,
     repoUrl: string
   ): Promise<void> => {
-    const dir = this.getLocalRepoPath(repoName)
+    const stgDir = this.getLocalStagingRepoPath(repoName)
+    const stgLiteDir = this.getLocalStagingLiteRepoPath(repoName)
 
     // Make sure the local path is empty, just in case dir was used on a previous attempt.
-    fs.rmSync(`${dir}`, { recursive: true, force: true })
+    fs.rmSync(`${stgDir}`, { recursive: true, force: true })
 
     // Clone base repo locally
-    fs.mkdirSync(dir)
+    fs.mkdirSync(stgDir)
     await this.simpleGit
-      .cwd(dir)
-      .clone(SITE_CREATION_BASE_REPO_URL, dir, ["-b", "staging"])
+      .cwd(stgDir)
+      .clone(SITE_CREATION_BASE_REPO_URL, stgDir, ["-b", "staging"])
 
     // Clear git
-    fs.rmSync(`${dir}/.git`, { recursive: true, force: true })
+    fs.rmSync(`${stgDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
     await this.simpleGit
-      .cwd(dir)
+      .cwd(stgDir)
       .init(["--initial-branch=staging"])
       .checkoutLocalBranch("staging")
 
     // Add all the changes
-    await this.simpleGit.cwd(dir).add(".")
+    await this.simpleGit.cwd(stgDir).add(".")
 
     // Commit
     await this.simpleGit
-      .cwd(dir)
+      .cwd(stgDir)
       .addConfig("user.name", "isomeradmin")
       .addConfig("user.email", ISOMER_GITHUB_EMAIL)
       .commit("Initial commit")
 
     // Push to origin
     await this.simpleGit
-      .cwd(dir)
+      .cwd(stgDir)
       .addRemote("origin", repoUrl)
       .checkout("staging")
       .push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub
       .checkoutLocalBranch("master")
       .push(["-u", "origin", "master"])
       .checkout("staging") // reset local branch back to staging
+
+    // Create staging lite branch in other repo path
+    await this.simpleGit
+      .cwd(stgLiteDir)
+      .clone(repoUrl, stgLiteDir)
+      .checkout("staging")
+      .rm(["-r", "images"])
+      .rm(["-r", "files"])
+
+    // DO NOT use execSync -> it tends to be blocking and causes BE to hang.
+    // From here, all the resulting commands are appended to avoid this ^
+    exec(
+      `cd ${stgLiteDir} && rm -rf .git && cd ${stgLiteDir} init && git add . && git commit -m "initial commit for staging lite" && git remote add origin ${repoUrl} && git push origin staging-lite:staging-lite -f`
+    )
   }
 
   createDnsIndirectionFile = (

@@ -16,7 +16,6 @@ import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 import { mailer } from "@services/utilServices/MailClient"
 
-const SITE_CLONE_FORM_KEY = config.get("formSg.siteCloneFormKey")
 const SITE_CREATE_FORM_KEY = config.get("formSg.siteCreateFormKey")
 const REQUESTER_EMAIL_FIELD = "Government E-mail"
 const SITE_NAME_FIELD = "Site Name"

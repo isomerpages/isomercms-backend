@@ -15,6 +15,11 @@ class IsomerAdminsService {
     this.repository = repository
   }
 
+  async isUserIsomerAdmin(userId: string): Promise<boolean> {
+    const isomerAdmin = await this.getByUserId(userId)
+    return !!isomerAdmin
+  }
+
   async getByUserId(userId: string): Promise<IsomerAdmin | null> {
     const site = await this.repository.findOne({
       where: { userId },

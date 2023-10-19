@@ -16,12 +16,14 @@ import { BadRequestError } from "@root/errors/BadRequestError"
 import { ConflictError } from "@root/errors/ConflictError"
 import logger from "@root/logger/logger"
 
+import IsomerAdminsService from "./IsomerAdminsService"
 import SitesService from "./SitesService"
 import UsersService from "./UsersService"
 
 interface CollaboratorsServiceProps {
   siteRepository: ModelStatic<Site>
   siteMemberRepository: ModelStatic<SiteMember>
+  isomerAdminsService: IsomerAdminsService
   sitesService: SitesService
   usersService: UsersService
   whitelist: ModelStatic<Whitelist>
@@ -34,6 +36,8 @@ class CollaboratorsService {
 
   private readonly siteMemberRepository: CollaboratorsServiceProps["siteMemberRepository"]
 
+  private readonly isomerAdminsService: CollaboratorsServiceProps["isomerAdminsService"]
+
   private readonly sitesService: CollaboratorsServiceProps["sitesService"]
 
   private readonly usersService: CollaboratorsServiceProps["usersService"]
@@ -43,12 +47,14 @@ class CollaboratorsService {
   constructor({
     siteRepository,
     siteMemberRepository,
+    isomerAdminsService,
     sitesService,
     usersService,
     whitelist,
   }: CollaboratorsServiceProps) {
     this.siteRepository = siteRepository
     this.siteMemberRepository = siteMemberRepository
+    this.isomerAdminsService = isomerAdminsService
     this.sitesService = sitesService
     this.usersService = usersService
     this.whitelist = whitelist
@@ -245,7 +251,12 @@ class CollaboratorsService {
       ],
     })
 
-    return site?.site_members?.[0]?.SiteMember?.role ?? null
+    const isIsomerAdmin = await this.isomerAdminsService.isUserIsomerAdmin(
+      userId
+    )
+    const isomerAdminRole = isIsomerAdmin ? CollaboratorRoles.IsomerAdmin : null
+
+    return site?.site_members?.[0]?.SiteMember?.role ?? isomerAdminRole
   }
 
   getStatistics = async (siteName: string) => {

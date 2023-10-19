@@ -286,7 +286,10 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<Exclude<
+        CollaboratorRoles,
+        CollaboratorRoles.IsomerAdmin
+      > | null>
       mockSitesService.getBySiteName.mockReturnValue(
         okAsync({ id: mockSiteId })
       )
@@ -319,7 +322,10 @@ describe("CollaboratorsService", () => {
       const MALFORMED_EMAIL = "test"
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<Exclude<
+        CollaboratorRoles,
+        CollaboratorRoles.IsomerAdmin
+      > | null>
       mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
       mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
@@ -347,7 +353,10 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => null
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<Exclude<
+        CollaboratorRoles,
+        CollaboratorRoles.IsomerAdmin
+      > | null>
       mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
       mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
@@ -375,7 +384,10 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<Exclude<
+        CollaboratorRoles,
+        CollaboratorRoles.IsomerAdmin
+      > | null>
       mockSitesService.getBySiteName.mockResolvedValue(errAsync(null))
       mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
@@ -403,7 +415,10 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<Exclude<
+        CollaboratorRoles,
+        CollaboratorRoles.IsomerAdmin
+      > | null>
       mockSitesService.getBySiteName.mockResolvedValue(
         okAsync({ id: mockSiteId })
       )
@@ -435,7 +450,10 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Contributor
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<Exclude<
+        CollaboratorRoles,
+        CollaboratorRoles.IsomerAdmin
+      > | null>
       mockSitesService.getBySiteName.mockResolvedValue(
         okAsync({ id: mockSiteId })
       )

@@ -38,7 +38,7 @@ export class SiteMember extends Model {
     allowNull: false,
     type: DataType.ENUM("ADMIN", "CONTRIBUTOR"),
   })
-  role!: CollaboratorRoles
+  role!: Exclude<CollaboratorRoles, CollaboratorRoles.IsomerAdmin>
 
   @CreatedAt
   createdAt!: Date

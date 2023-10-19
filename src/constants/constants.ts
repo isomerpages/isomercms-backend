@@ -22,6 +22,7 @@ export enum RedirectionTypes {
 export enum CollaboratorRoles {
   Admin = "ADMIN",
   Contributor = "CONTRIBUTOR",
+  IsomerAdmin = "ISOMERADMIN",
 }
 
 export enum ReviewRequestStatus {

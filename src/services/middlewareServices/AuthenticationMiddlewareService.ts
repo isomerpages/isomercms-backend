@@ -86,7 +86,7 @@ const getUserType = (userType: string): TestUserTypes => {
 }
 
 const generateE2eEmailUser = async (
-  role: CollaboratorRoles,
+  role: Exclude<CollaboratorRoles, CollaboratorRoles.IsomerAdmin>,
   site?: string,
   email?: string
 ): Promise<SessionDataProps> => {

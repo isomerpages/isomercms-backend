@@ -57,7 +57,8 @@ class DeploymentsService {
       throw amplifyStagingLiteResult.error
     }
 
-    const amplifyInfo = amplifyStagingLiteResult.value
+    const amplifyInfoStaging = amplifyStagingResult.value
+    const amplifyInfoStagingLite = amplifyStagingLiteResult.value
 
     return this.create({
       stagingUrl: Brand.fromString(
@@ -68,7 +69,8 @@ class DeploymentsService {
       ),
       site,
       siteId: site.id,
-      hostingId: amplifyInfo.id,
+      hostingId: amplifyInfoStaging.id,
+      stagingLiteHostingId: amplifyInfoStagingLite.id,
     })
   }
 

@@ -268,7 +268,7 @@ export default class ReposService {
     // DO NOT use execSync -> it tends to be blocking and causes BE to hang.
     // From here, all the resulting commands are appended to avoid this ^
     exec(
-      `cd ${stgLiteDir} && rm -rf .git && cd ${stgLiteDir} init && git add . && git commit -m "initial commit for staging lite" && git remote add origin ${repoUrl} && git push origin staging-lite:staging-lite -f`
+      `cd ${stgLiteDir} && rm -rf .git && git init && git checkout -b staging-lite && git add . && git commit -m "initial commit for staging lite" && git remote add origin ${repoUrl} && git push origin staging-lite:staging-lite -f`
     )
   }
 

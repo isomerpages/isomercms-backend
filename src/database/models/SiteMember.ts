@@ -10,7 +10,10 @@ import {
   UpdatedAt,
 } from "sequelize-typescript"
 
-import { CollaboratorRoles } from "@constants/index"
+import {
+  CollaboratorRoles,
+  CollaboratorRolesWithoutIsomerAdmin,
+} from "@constants/index"
 
 import { Notification } from "@database/models/Notification"
 import { Site } from "@database/models/Site"
@@ -38,7 +41,7 @@ export class SiteMember extends Model {
     allowNull: false,
     type: DataType.ENUM("ADMIN", "CONTRIBUTOR"),
   })
-  role!: Exclude<CollaboratorRoles, CollaboratorRoles.IsomerAdmin>
+  role!: CollaboratorRolesWithoutIsomerAdmin
 
   @CreatedAt
   createdAt!: Date

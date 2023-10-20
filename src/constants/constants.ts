@@ -25,6 +25,11 @@ export enum CollaboratorRoles {
   IsomerAdmin = "ISOMERADMIN",
 }
 
+export type CollaboratorRolesWithoutIsomerAdmin = Exclude<
+  CollaboratorRoles,
+  CollaboratorRoles.IsomerAdmin
+>
+
 export enum ReviewRequestStatus {
   Approved = "APPROVED",
   Open = "OPEN",

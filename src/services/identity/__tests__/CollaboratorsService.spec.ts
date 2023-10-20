@@ -15,6 +15,7 @@ import {
 } from "@fixtures/identity"
 import {
   CollaboratorRoles,
+  CollaboratorRolesWithoutIsomerAdmin,
   INACTIVE_USER_THRESHOLD_DAYS,
 } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
@@ -315,10 +316,7 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<Exclude<
-        CollaboratorRoles,
-        CollaboratorRoles.IsomerAdmin
-      > | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockReturnValue(
         okAsync({ id: mockSiteId })
       )
@@ -351,10 +349,7 @@ describe("CollaboratorsService", () => {
       const MALFORMED_EMAIL = "test"
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<Exclude<
-        CollaboratorRoles,
-        CollaboratorRoles.IsomerAdmin
-      > | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
       mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
@@ -382,10 +377,7 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => null
-      ) as unknown) as () => Promise<Exclude<
-        CollaboratorRoles,
-        CollaboratorRoles.IsomerAdmin
-      > | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
       mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
@@ -413,10 +405,7 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<Exclude<
-        CollaboratorRoles,
-        CollaboratorRoles.IsomerAdmin
-      > | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue(errAsync(null))
       mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
@@ -444,10 +433,7 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<Exclude<
-        CollaboratorRoles,
-        CollaboratorRoles.IsomerAdmin
-      > | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue(
         okAsync({ id: mockSiteId })
       )
@@ -479,10 +465,7 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Contributor
-      ) as unknown) as () => Promise<Exclude<
-        CollaboratorRoles,
-        CollaboratorRoles.IsomerAdmin
-      > | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue(
         okAsync({ id: mockSiteId })
       )

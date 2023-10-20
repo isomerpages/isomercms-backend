@@ -25,15 +25,6 @@ const gitFileSystemService = new GitFileSystemService(
   new SimpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
 )
 
-const isRepoWhitelisted = (siteName, growthbook) => {
-  // TODO: adding log to simplify debugging, to be removed after stabilising
-  logger.info(`Evaluating if ${siteName} is GGS whitelisted.`)
-  // NOTE: Growthbook has to be optional
-  // as we cannot guarantee its presence on `sessionData`.
-  // It is present iff there is a `siteHandler` attached.
-  return !!growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_WHITELISTED, false)
-}
-
 const handleGitFileLock = async (repoName, next) => {
   const result = await gitFileSystemService.hasGitFileLock(repoName)
   if (result.isErr()) {
@@ -75,8 +66,8 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
 
   let isGitAvailable = true
 
-  // only check git file lock if the repo is whitelisted
-  if (isRepoWhitelisted(siteName, growthbook)) {
+  // only check git file lock if the repo is ggs enabled
+  if (growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_ENABLED, false)) {
     isGitAvailable = await handleGitFileLock(siteName, next)
   }
 
@@ -112,7 +103,10 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { accessToken } = userSessionData
   const { growthbook } = req
 
-  const shouldUseGitFileSystem = isRepoWhitelisted(siteName, growthbook)
+  const shouldUseGitFileSystem = !!growthbook?.getFeatureValue(
+    FEATURE_FLAGS.IS_GGS_WHITELISTED,
+    false
+  )
 
   const isGitAvailable = await handleGitFileLock(siteName, next)
   if (!isGitAvailable) return

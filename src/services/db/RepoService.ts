@@ -84,33 +84,6 @@ export default class RepoService extends GitHubService {
     this.githubCommitService = gitHubCommitService
   }
 
-  getGgsWhitelistedRepos(
-    growthbook: GrowthBook<FeatureFlags> | undefined
-  ): string[] {
-    if (!growthbook) return []
-
-    const whitelistedGgsRepos = growthbook.getFeatureValue(
-      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
-      { repos: [] }
-    )
-    return whitelistedGgsRepos.repos
-  }
-
-  isRepoGgsWhitelisted(
-    repoName: string,
-    ggsWhitelistedRepos: string[]
-  ): boolean {
-    // TODO: Adding for initial debugging if required. Remove once stabilised
-    logger.info(`Evaluating if ${repoName} is GGS whitelisted.`)
-    // NOTE: Growthbook has to be optional
-    // as we cannot guarantee its presence on `sessionData`.
-    // It is present iff there is a `siteHandler` attached.
-    return !!growthbook?.getFeatureValue(
-      FEATURE_FLAGS.IS_GGS_WHITELISTED,
-      false
-    )
-  }
-
   getCommitDiff(siteName: string, base?: string, head?: string) {
     return ReviewApi.getCommitDiff(siteName, base, head)
   }
@@ -203,9 +176,9 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<{ sha: string }> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       logger.info(
@@ -232,9 +205,9 @@ export default class RepoService extends GitHubService {
     { fileName, directoryName }: { fileName: string; directoryName?: string }
   ): Promise<GitFile> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       logger.info("Reading file from local Git file system")
@@ -267,9 +240,9 @@ export default class RepoService extends GitHubService {
 
     // fetch from local disk
     if (
-      this.isRepoGgsWhitelisted(
-        siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       logger.info(
@@ -313,9 +286,9 @@ export default class RepoService extends GitHubService {
   ): Promise<GitDirectoryItem[]> {
     const defaultBranch = STAGING_BRANCH
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       logger.info("Reading directory from local Git file system")
@@ -356,9 +329,9 @@ export default class RepoService extends GitHubService {
     let dirContent: GitDirectoryItem[] = []
 
     if (
-      this.isRepoGgsWhitelisted(
-        siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       const result = await this.gitFileSystemService.listDirectoryContents(
@@ -409,9 +382,9 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       return this.gitFileCommitService.update(sessionData, {
@@ -443,9 +416,9 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       await this.gitFileCommitService.deleteDirectory(sessionData, {
@@ -475,9 +448,9 @@ export default class RepoService extends GitHubService {
     }
   ): Promise<void> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       await this.gitFileCommitService.delete(sessionData, {
@@ -504,9 +477,9 @@ export default class RepoService extends GitHubService {
     message?: string
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       return this.gitFileCommitService.renameSinglePath(
@@ -535,9 +508,9 @@ export default class RepoService extends GitHubService {
     message?: string
   ): Promise<GitCommitResult> {
     if (
-      this.isRepoGgsWhitelisted(
-        sessionData.siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       return this.gitFileCommitService.moveFiles(
@@ -574,9 +547,9 @@ export default class RepoService extends GitHubService {
   ): Promise<GitHubCommitData> {
     const { siteName } = sessionData
     if (
-      this.isRepoGgsWhitelisted(
-        siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       logger.info(
@@ -630,9 +603,9 @@ export default class RepoService extends GitHubService {
   ): Promise<void> {
     const { siteName } = sessionData
     if (
-      this.isRepoGgsWhitelisted(
-        siteName,
-        this.getGgsWhitelistedRepos(sessionData.growthbook)
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
       )
     ) {
       logger.info(

@@ -4,7 +4,7 @@
 export interface FeatureFlags {
   ggs_whitelisted_repos: { repos: string[] }
   is_build_times_reduction_enabled: boolean
-  is_ggs_whitelisted: boolean
+  is_ggs_enabled: boolean
 }
 
 // List of attributes we set in GrowthBook Instance in auth middleware

@@ -7,16 +7,12 @@ export default function isFileAsset({
   directoryName?: string | undefined
   fileName?: string | undefined
 }) {
-  if (!fileName && !directoryName) return false
+  const filePath = path.join(directoryName ?? "", fileName ?? "")
 
-  let filePath = ""
-  if (directoryName && fileName) {
-    filePath = path.join(directoryName, fileName)
-  } else if (fileName) {
-    filePath = fileName
-  } else if (directoryName) {
-    filePath = directoryName
-  }
-
-  return filePath.includes("images") || filePath.includes("files")
+  return (
+    filePath === "images" ||
+    filePath?.startsWith("images/") ||
+    filePath === "files" ||
+    filePath?.startsWith("files/")
+  )
 }

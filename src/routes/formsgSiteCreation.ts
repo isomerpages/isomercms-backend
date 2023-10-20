@@ -120,10 +120,11 @@ export class FormsgRouter {
         isEmailLogin,
       })
 
-      // NOTE: Clone site to EFS
-      const cloneRes = await this.gitFileSystemService.clone(repoName)
-
-      if (cloneRes.isErr()) throw cloneRes.error
+      if (isEmailLogin) {
+        // NOTE: Clone site to EFS
+        const cloneRes = await this.gitFileSystemService.clone(repoName)
+        if (cloneRes.isErr()) throw cloneRes.error
+      }
 
       await this.sendCreateSuccess(
         requesterEmail,

@@ -49,7 +49,7 @@ export default class GitFileCommitService {
     ]
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(directoryName)
+      !isFileAsset({ directoryName, fileName })
 
     if (shouldUpdateStagingLite) {
       createPromises.push(
@@ -113,9 +113,9 @@ export default class GitFileCommitService {
     ]
 
     const shouldUpdateStagingLite =
-      directoryName &&
+      filePath &&
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(directoryName)
+      !isFileAsset({ fileName, directoryName })
 
     if (shouldUpdateStagingLite) {
       updatePromises.push(
@@ -174,7 +174,7 @@ export default class GitFileCommitService {
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(directoryName)
+      !isFileAsset({ directoryName })
 
     if (shouldUpdateStagingLite) {
       deletePromises.push(
@@ -239,7 +239,7 @@ export default class GitFileCommitService {
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(directoryName)
+      !isFileAsset({ directoryName })
 
     if (shouldUpdateStagingLite) {
       deletePromises.push(
@@ -296,7 +296,7 @@ export default class GitFileCommitService {
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(oldPath)
+      !isFileAsset({ directoryName: oldPath })
 
     if (shouldUpdateStagingLite) {
       renamePromises.push(
@@ -353,7 +353,7 @@ export default class GitFileCommitService {
     ]
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(oldPath)
+      !isFileAsset({ directoryName: oldPath })
 
     if (shouldUpdateStagingLite) {
       mvFilesResults.push(

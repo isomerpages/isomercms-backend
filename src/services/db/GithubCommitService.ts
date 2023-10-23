@@ -45,7 +45,7 @@ export default class GitHubCommitService extends GitHubService {
       }),
     ]
     const shouldStagingLiteUpdate =
-      !isFileAsset(directoryName) &&
+      !isFileAsset({ directoryName, fileName }) &&
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
 
     if (shouldStagingLiteUpdate) {
@@ -92,8 +92,7 @@ export default class GitHubCommitService extends GitHubService {
       }),
     ]
     const shouldStagingLiteUpdate =
-      directoryName &&
-      !isFileAsset(directoryName) &&
+      !isFileAsset({ directoryName, fileName }) &&
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
 
     if (shouldStagingLiteUpdate) {
@@ -168,7 +167,7 @@ export default class GitHubCommitService extends GitHubService {
 
     if (
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(directoryName)
+      !isFileAsset({ directoryName })
     ) {
       deletePromises.push(
         this.deleteDirectory(sessionData, {
@@ -202,7 +201,7 @@ export default class GitHubCommitService extends GitHubService {
       }),
     ]
     const shouldStagingLiteUpdate =
-      !isFileAsset(directoryName) &&
+      !isFileAsset({ directoryName, fileName }) &&
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
     if (shouldStagingLiteUpdate) {
       deletePromises.push(
@@ -290,7 +289,7 @@ export default class GitHubCommitService extends GitHubService {
 
     const shouldStagingLiteUpdate =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(oldPath)
+      !isFileAsset({ directoryName: oldPath })
 
     if (shouldStagingLiteUpdate) {
       // we await this call, but we do not need to return this result
@@ -373,7 +372,7 @@ export default class GitHubCommitService extends GitHubService {
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset(oldPath)
+      !isFileAsset({ directoryName: oldPath })
     if (shouldUpdateStagingLite) {
       // We don't have to return the sha, just update this should be ok
       await this.moveFiles(

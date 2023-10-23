@@ -45,7 +45,6 @@ describe("Review Requests Router", () => {
 
   const mockIdentityUsersService = {
     findByEmail: jest.fn(),
-    getSiteMember: jest.fn(),
   }
 
   const mockSitesService = {
@@ -147,7 +146,9 @@ describe("Review Requests Router", () => {
     it("should return 200 with the list of changed files", async () => {
       // Arrange
       const mockFilesChanged = ["file1", "file2"]
-      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce("user")
+      mockCollaboratorsService.getRole.mockResolvedValueOnce(
+        CollaboratorRoles.Admin
+      )
       mockReviewRequestService.compareDiff.mockReturnValueOnce(
         okAsync(mockFilesChanged)
       )
@@ -161,13 +162,13 @@ describe("Review Requests Router", () => {
       // Assert
       expect(response.status).toEqual(200)
       expect(response.body).toEqual({ items: mockFilesChanged })
-      expect(mockIdentityUsersService.getSiteMember).toHaveBeenCalledTimes(1)
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.compareDiff).toHaveBeenCalledTimes(1)
     })
 
     it("should return 404 if user is not a site member", async () => {
       // Arrange
-      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce(null)
+      mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
       mockSitesService.getBySiteName.mockResolvedValueOnce(ok(true))
 
       // Act
@@ -175,7 +176,7 @@ describe("Review Requests Router", () => {
 
       // Assert
       expect(response.status).toEqual(404)
-      expect(mockIdentityUsersService.getSiteMember).toHaveBeenCalledTimes(1)
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.compareDiff).not.toHaveBeenCalled()
     })
   })
@@ -358,7 +359,6 @@ describe("Review Requests Router", () => {
     it("should return 404 if the site does not exist", async () => {
       // Arrange
       mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
-      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce({})
       mockSitesService.getBySiteName.mockReturnValueOnce(
         err(new MissingSiteError("site"))
       )

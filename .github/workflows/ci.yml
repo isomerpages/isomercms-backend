@@ -9,21 +9,19 @@ env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
   EB_APP: isomer-cms
-  EB_ENV_PRODUCTION: cms-backend-prod-node16
+  EB_ENV_PRODUCTION: cms-backend-prod-node18
   EB_ENV_STAGING: cms-backend-staging-node18
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
 jobs:
   install:
-    # NOTE: Netlify uses ubuntu 16.08 but Github Actions does not offer it by default.
-    # Hence, we default to the latest version.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Cache Node.js modules
         uses: actions/cache@v2
         with:
@@ -43,7 +41,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Load Node.js modules
         uses: actions/cache@v2
         with:
@@ -62,7 +60,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Load Node.js modules
         uses: actions/cache@v2
         with:
@@ -80,7 +78,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Load Node.js modules
         uses: actions/cache@v2
         with:
@@ -121,7 +119,7 @@ jobs:
         - name: Use Node.js
           uses: actions/setup-node@v3
           with:
-            node-version: '16.x'
+            node-version: '18.x'
         - name: Cache Node.js modules
           uses: actions/cache@v2
           with:

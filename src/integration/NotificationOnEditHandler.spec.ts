@@ -140,6 +140,7 @@ const sitesService = new SitesService({
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,
+  isomerAdminsService: (jest.fn() as unknown) as IsomerAdminsService,
   sitesService,
   usersService,
   whitelist: Whitelist,

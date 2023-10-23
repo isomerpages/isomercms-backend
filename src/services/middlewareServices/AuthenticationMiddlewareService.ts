@@ -16,6 +16,7 @@ import {
   E2E_TEST_EMAIL,
   E2E_ISOMER_ID,
   CollaboratorRoles,
+  CollaboratorRolesWithoutIsomerAdmin,
 } from "@root/constants"
 import { Site, SiteMember, User } from "@root/database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
@@ -86,7 +87,7 @@ const getUserType = (userType: string): TestUserTypes => {
 }
 
 const generateE2eEmailUser = async (
-  role: CollaboratorRoles,
+  role: CollaboratorRolesWithoutIsomerAdmin,
   site?: string,
   email?: string
 ): Promise<SessionDataProps> => {

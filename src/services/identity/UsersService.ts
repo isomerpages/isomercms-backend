@@ -79,50 +79,6 @@ class UsersService {
     return this.repository.findOne({ where: { githubId } })
   }
 
-  async getSiteMember(userId: string, siteName: string): Promise<User | null> {
-    return this.repository.findOne({
-      where: { id: userId },
-      include: [
-        {
-          model: Site,
-          as: "site_members",
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
-    })
-  }
-
-  async getSiteAdmin(userId: string, siteName: string) {
-    return this.repository.findOne({
-      where: { id: userId, role: "ADMIN" },
-      include: [
-        {
-          model: SiteMember,
-          as: "site_members",
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
-    })
-  }
-
   async findSitesByUserId(
     isomerId: string
   ): Promise<

@@ -114,12 +114,12 @@ export class ReviewsRouter {
     }
 
     // Check if they have access to site
-    const possibleSiteMember = await this.identityUsersService.getSiteMember(
-      userWithSiteSessionData.isomerUserId,
-      siteName
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
     )
 
-    if (!possibleSiteMember) {
+    if (!role) {
       return res.status(404).json({ message: "No site members found" })
     }
 
@@ -311,6 +311,15 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
+    // Reject if the user is on GitHub login and the site is already migrated
+    const isGitHubUser = !userWithSiteSessionData.isEmailUser()
+
+    if (isGitHubUser) {
+      return res.status(404).send({
+        message: "GitHub users should not be editing a migrated site!",
+      })
+    }
+
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,

@@ -104,7 +104,7 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { growthbook } = req
 
   const shouldUseGitFileSystem = !!growthbook?.getFeatureValue(
-    FEATURE_FLAGS.IS_GGS_WHITELISTED,
+    FEATURE_FLAGS.IS_GGS_ENABLED,
     false
   )
 

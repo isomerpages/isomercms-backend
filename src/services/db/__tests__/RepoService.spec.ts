@@ -75,22 +75,24 @@ const RepoService = new _RepoService({
 })
 
 describe("RepoService", () => {
+  const gbSpy = jest.spyOn(mockGrowthBook, "getFeatureValue")
+
   // Prevent inter-test pollution of mocks
   afterEach(() => {
     jest.clearAllMocks()
   })
 
-  // load whitelisted sites into growthbook
+  // load ggs enabled sites into growthbook
   beforeAll(() => {
     mockGrowthBook.setFeatures({
-      is_ggs_whitelisted: {
+      is_ggs_enabled: {
         defaultValue: true,
       },
     })
   })
 
   describe("create", () => {
-    it("should create using the local Git file system using utf-8 for non-media files if the repo is whitelisted", async () => {
+    it("should create using the local Git file system using utf-8 for non-media files if the repo is ggs enabled", async () => {
       const returnedSha = "test-sha"
       const mockContent = "content"
       const mockFileName = "test.md"
@@ -101,6 +103,7 @@ describe("RepoService", () => {
       const expected = {
         sha: returnedSha,
       }
+      gbSpy.mockReturnValueOnce(true)
       MockGitFileCommitService.create.mockResolvedValueOnce(createOutput)
       const isMedia = false
       const actual = await RepoService.create(
@@ -125,7 +128,7 @@ describe("RepoService", () => {
       )
     })
 
-    it("should create using the local Git file system using base64 for media files if the repo is whitelisted", async () => {
+    it("should create using the local Git file system using base64 for media files if the repo is ggs enabled", async () => {
       const returnedSha = "test-sha"
       const mockContent = "content"
       const mockFileName = "test.md"
@@ -136,6 +139,7 @@ describe("RepoService", () => {
       const expected = {
         sha: returnedSha,
       }
+      gbSpy.mockReturnValueOnce(true)
       MockGitFileCommitService.create.mockResolvedValueOnce(createOutput)
 
       const actual = await RepoService.create(
@@ -160,7 +164,7 @@ describe("RepoService", () => {
       )
     })
 
-    it("should create files on GitHub directly if the repo is not whitelisted", async () => {
+    it("should create files on GitHub directly if the repo is not ggs enabled", async () => {
       const mockContent = "content"
       const mockFileName = "test.md"
       const mockDirectoryName = ""
@@ -195,11 +199,12 @@ describe("RepoService", () => {
   })
 
   describe("read", () => {
-    it("should read from the local Git file system if the repo is whitelisted", async () => {
+    it("should read from the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitFile = {
         content: "test content",
         sha: "test-sha",
       }
+      gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.read.mockResolvedValueOnce(okAsync(expected))
 
       const actual = await RepoService.read(
@@ -213,7 +218,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should read from GitHub directly if the repo is not whitelisted", async () => {
+    it("should read from GitHub directly if the repo is ggs enabled", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -225,6 +230,7 @@ describe("RepoService", () => {
         content: "test content",
         sha: "test-sha",
       }
+      gbSpy.mockReturnValueOnce(true)
       const gitHubServiceRead = jest.spyOn(GitHubService.prototype, "read")
       gitHubServiceRead.mockResolvedValueOnce(expected)
 
@@ -238,7 +244,7 @@ describe("RepoService", () => {
   })
 
   describe("readMediaFile", () => {
-    it("should read image from the local Git file system for whitelisted repos", async () => {
+    it("should read image from the local Git file system for ggs enabled repos", async () => {
       const expected: MediaFileOutput = {
         name: "test content",
         sha: "test-sha",
@@ -246,6 +252,7 @@ describe("RepoService", () => {
         mediaPath: "images/test-img.jpeg",
         type: "image" as ItemType,
       }
+      gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
         okAsync(expected)
       )
@@ -261,7 +268,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should read image from GitHub for whitelisted repos", async () => {
+    it("should read image from GitHub for ggs enabled repos", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -313,7 +320,7 @@ describe("RepoService", () => {
   })
 
   describe("readDirectory", () => {
-    it("should read from the local Git file system if the repo is whitelisted", async () => {
+    it("should read from the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitDirectoryItem[] = [
         {
           name: "fake-file.md",
@@ -337,6 +344,7 @@ describe("RepoService", () => {
           size: 0,
         },
       ]
+      gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
         okAsync(expected)
       )
@@ -351,7 +359,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should read from GitHub directly if the repo is not whitelisted", async () => {
+    it("should read from GitHub directly if the repo is not ggs enabled", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -398,7 +406,7 @@ describe("RepoService", () => {
 
   //! TODO: fix this test, commented out for now as code changes did not change this method
   // describe("readMediaDirectory", () => {
-  //   it("should return an array of files and directories from disk if repo is whitelisted", async () => {
+  //   it("should return an array of files and directories from disk if repo is ggs enabled", async () => {
   //     const image: MediaFileOutput = {
   //       name: "image-name",
   //       sha: "test-sha",
@@ -442,7 +450,7 @@ describe("RepoService", () => {
   //     expect(actual).toEqual(expected)
   //   })
 
-  //   it("should return an array of files and directories from GitHub if repo is not whitelisted", async () => {
+  //   it("should return an array of files and directories from GitHub if repo is not ggs enabled", async () => {
   //     const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
   //       githubId: mockGithubId,
   //       accessToken: mockAccessToken,
@@ -515,7 +523,7 @@ describe("RepoService", () => {
   // })
 
   describe("update", () => {
-    it("should update the local Git file system if the repo is whitelisted", async () => {
+    it("should update the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitCommitResult = { newSha: "fake-commit-sha" }
       MockGitFileCommitService.update.mockResolvedValueOnce(expected)
 
@@ -532,7 +540,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should update GitHub directly if the repo is not whitelisted", async () => {
+    it("should update GitHub directly if the repo is not ggs enabled", async () => {
       const expectedSha = "fake-commit-sha"
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
@@ -557,10 +565,11 @@ describe("RepoService", () => {
   })
 
   describe("delete", () => {
-    it("should delete a file from Git file system when repo is whitelisted", async () => {
+    it("should delete a file from Git file system when repo is ggs enabled", async () => {
       MockGitFileCommitService.delete.mockResolvedValueOnce(
         okAsync("some-fake-sha")
       )
+      gbSpy.mockReturnValueOnce(true)
 
       await RepoService.delete(mockUserWithSiteSessionDataAndGrowthBook, {
         sha: "fake-original-sha",
@@ -579,7 +588,7 @@ describe("RepoService", () => {
       )
     })
 
-    it("should delete a file from GitHub when repo is not whitelisted", async () => {
+    it("should delete a file from GitHub when repo is not ggs enabled", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -604,9 +613,10 @@ describe("RepoService", () => {
   })
 
   describe("renameSinglePath", () => {
-    it("should rename using the local Git file system if the repo is whitelisted", async () => {
+    it("should rename using the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitCommitResult = { newSha: "fake-commit-sha" }
       MockGitFileCommitService.renameSinglePath.mockResolvedValueOnce(expected)
+      gbSpy.mockReturnValueOnce(true)
 
       const actual = await RepoService.renameSinglePath(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -619,7 +629,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should rename file using GitHub directly if the repo is not whitelisted", async () => {
+    it("should rename file using GitHub directly if the repo is not ggs enabled", async () => {
       const expectedSha = "fake-commit-sha"
       const fakeCommitMessage = "fake-commit-message"
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
@@ -647,9 +657,10 @@ describe("RepoService", () => {
   })
 
   describe("moveFiles", () => {
-    it("should move files using the Git local file system if the repo is whitelisted", async () => {
+    it("should move files using the Git local file system if the repo is ggs enabled", async () => {
       const expected = { newSha: "fake-commit-sha" }
       MockGitFileCommitService.moveFiles.mockResolvedValueOnce(expected)
+      gbSpy.mockReturnValueOnce(true)
       // MockCommitServiceGitFile.push.mockReturnValueOnce(undefined)
 
       const actual = await RepoService.moveFiles(
@@ -664,7 +675,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should move files using GitHub directly if the repo is not whitelisted", async () => {
+    it("should move files using GitHub directly if the repo is not ggs enabled", async () => {
       const expected = { newSha: "fake-commit-sha" }
       const fakeCommitMessage = "fake-commit-message"
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
@@ -691,7 +702,7 @@ describe("RepoService", () => {
   })
 
   describe("getLatestCommitOfBranch", () => {
-    it("should read the latest commit data from the local Git file system if the repo is whitelisted", async () => {
+    it("should read the latest commit data from the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitHubCommitData = {
         author: {
           name: "test author",
@@ -701,6 +712,7 @@ describe("RepoService", () => {
         sha: "test-sha",
         message: "test message",
       }
+      gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.getLatestCommitOfBranch.mockResolvedValueOnce(
         okAsync(expected)
       )
@@ -712,7 +724,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should read latest commit data from GitHub if the repo is not whitelisted", async () => {
+    it("should read latest commit data from GitHub if the repo is not ggs enabled", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -742,10 +754,11 @@ describe("RepoService", () => {
   })
 
   describe("updateRepoState", () => {
-    it("should update the repo state on the local Git file system if the repo is whitelisted", async () => {
+    it("should update the repo state on the local Git file system if the repo is ggs enabled", async () => {
       MockGitFileSystemService.updateRepoState.mockResolvedValueOnce(
         okAsync(undefined)
       )
+      gbSpy.mockReturnValueOnce(true)
 
       await RepoService.updateRepoState(
         mockUserWithSiteSessionDataAndGrowthBook,
@@ -758,7 +771,7 @@ describe("RepoService", () => {
       expect(MockGitFileSystemService.updateRepoState).toBeCalledTimes(1)
     })
 
-    it("should update the repo state on GitHub if the repo is not whitelisted", async () => {
+    it("should update the repo state on GitHub if the repo is not ggs enabled", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,

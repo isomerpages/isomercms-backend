@@ -257,6 +257,11 @@ export default class ReposService {
       .push(["-u", "origin", "master"])
       .checkout("staging") // reset local branch back to staging
 
+    // Make sure the local path is empty, just in case dir was used on a previous attempt.
+    fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
+    // create a empty folder stgLiteDir
+    fs.mkdirSync(stgLiteDir)
+
     // Create staging lite branch in other repo path
     await this.simpleGit
       .cwd(stgLiteDir)
@@ -265,11 +270,19 @@ export default class ReposService {
       .rm(["-r", "images"])
       .rm(["-r", "files"])
 
-    // DO NOT use execSync -> it tends to be blocking and causes BE to hang.
-    // From here, all the resulting commands are appended to avoid this ^
-    exec(
-      `cd ${stgLiteDir} && rm -rf .git && git init && git checkout -b staging-lite && git add . && git commit -m "initial commit for staging lite" && git remote add origin ${repoUrl} && git push origin staging-lite:staging-lite -f`
-    )
+    // Clear git
+    fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
+
+    // Prepare git repo
+
+    await this.simpleGit
+      .cwd(stgLiteDir)
+      .init()
+      .checkoutLocalBranch("staging-lite")
+      .add(".")
+      .commit("Initial commit")
+      .addRemote("origin", repoUrl)
+      .push(["origin", "staging-lite", "-f"])
   }
 
   createDnsIndirectionFile = (

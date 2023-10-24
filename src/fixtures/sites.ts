@@ -85,6 +85,7 @@ export const MOCK_DEPLOYMENT_DBENTRY_ONE = {
   hostingId: "1",
   encryptionIv: null,
   encryptedPassword: null,
+  stagingLiteHostingId: "2",
 }
 
 export const MOCK_DEPLOYMENT_DBENTRY_TWO: Attributes<Deployment> = {
@@ -98,6 +99,7 @@ export const MOCK_DEPLOYMENT_DBENTRY_TWO: Attributes<Deployment> = {
   encryptionIv: "12345678901234561234567890123456",
   encryptedPassword:
     "1234567890123456789012345678901234567890123456789012345678901234",
+  stagingLiteHostingId: "2",
 }
 
 export const MOCK_SITEMEMBER_DBENTRY_ONE: Attributes<SiteMember> = {

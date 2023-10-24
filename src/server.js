@@ -150,7 +150,6 @@ const FRONTEND_URL = config.get("app.frontendUrl")
 // Import routes
 const { errorHandler } = require("@middleware/errorHandler")
 
-const { FormsgSiteCloneRouter } = require("@routes/formsgSiteClone")
 const { FormsgRouter } = require("@routes/formsgSiteCreation")
 const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
@@ -376,9 +375,6 @@ const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
   infraService,
 })
-const formsgSiteCloneRouter = new FormsgSiteCloneRouter({
-  gitFileSystemService,
-})
 
 const app = express()
 
@@ -426,7 +422,6 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 // FormSG Backend handler routes
 app.use("/formsg", formsgRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
-app.use("/formsg", formsgSiteCloneRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

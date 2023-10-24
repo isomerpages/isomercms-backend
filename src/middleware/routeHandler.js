@@ -25,16 +25,6 @@ const gitFileSystemService = new GitFileSystemService(
   new SimpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
 )
 
-const isRepoWhitelisted = (siteName, ggsWhitelistedRepos) => {
-  // TODO: adding log to simplify debugging, to be removed after stabilising
-  logger.info(
-    `Checking if ${siteName} is GGS whitelisted: ${ggsWhitelistedRepos.includes(
-      siteName
-    )}`
-  )
-  ggsWhitelistedRepos.includes(siteName)
-}
-
 const handleGitFileLock = async (repoName, next) => {
   const result = await gitFileSystemService.hasGitFileLock(repoName)
   if (result.isErr()) {
@@ -74,23 +64,15 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   const { siteName } = req.params
   const { growthbook } = req
 
-  let ggsWhitelistedRepos = { repos: [] }
-  if (growthbook) {
-    ggsWhitelistedRepos = growthbook.getFeatureValue(
-      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
-      {
-        repos: [],
-      }
-    )
-  }
-
   let isGitAvailable = true
-  // only check git file lock if the repo is whitelisted
-  if (isRepoWhitelisted(siteName, ggsWhitelistedRepos.repos)) {
+
+  // only check git file lock if the repo is ggs enabled
+  if (growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_ENABLED, false)) {
     isGitAvailable = await handleGitFileLock(siteName, next)
   }
 
   if (!isGitAvailable) return
+
   try {
     await lock(siteName)
   } catch (err) {
@@ -102,6 +84,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
     await unlock(siteName)
     next(err)
   })
+
   try {
     await unlock(siteName)
   } catch (err) {
@@ -120,19 +103,9 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   const { accessToken } = userSessionData
   const { growthbook } = req
 
-  let ggsWhitelistedRepos = { repos: [] }
-  if (growthbook) {
-    ggsWhitelistedRepos = growthbook.getFeatureValue(
-      FEATURE_FLAGS.GGS_WHITELISTED_REPOS,
-      {
-        repos: [],
-      }
-    )
-  }
-
-  const shouldUseGitFileSystem = isRepoWhitelisted(
-    siteName,
-    ggsWhitelistedRepos.repos
+  const shouldUseGitFileSystem = !!growthbook?.getFeatureValue(
+    FEATURE_FLAGS.IS_GGS_ENABLED,
+    false
   )
 
   const isGitAvailable = await handleGitFileLock(siteName, next)

@@ -50,7 +50,7 @@
     "cookie-parser": "~1.4.5",
     "cors": "^2.8.5",
     "cross-fetch": "^4.0.0",
-    "crypto-js": "^4.1.1",
+    "crypto-js": "^4.2.0",
     "dd-trace": "^4.7.0",
     "debug": "~2.6.9",
     "dotenv": "^16.3.1",

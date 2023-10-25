@@ -48,12 +48,16 @@ class DeploymentsService {
       amplifyStagingLiteResult,
     ] = await this.createAmplifyAppsOnAws(repoName)
     if (amplifyStagingResult.isErr()) {
-      logger.error(`Amplify set up error: ${amplifyStagingResult.error}`)
+      logger.error(
+        `Amplify set up error for main app: ${amplifyStagingResult.error}`
+      )
       throw amplifyStagingResult.error
     }
 
     if (amplifyStagingLiteResult.isErr()) {
-      logger.error(`Amplify set up error: ${amplifyStagingLiteResult.error}`)
+      logger.error(
+        `Amplify set up error for staging-lite app: ${amplifyStagingLiteResult.error}`
+      )
       throw amplifyStagingLiteResult.error
     }
 

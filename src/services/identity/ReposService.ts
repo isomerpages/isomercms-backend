@@ -274,7 +274,6 @@ export default class ReposService {
     fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
-
     await this.simpleGit
       .cwd(stgLiteDir)
       .init()

@@ -1,7 +1,10 @@
 /* eslint-disable import/prefer-default-export */ // todo remove this line post dev
 import path from "path"
 
-import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
+import {
+  DecryptedContentAndAttachments,
+  DecryptedFile,
+} from "@opengovsg/formsg-sdk/dist/types"
 import express, { RequestHandler } from "express"
 import {
   ResultAsync,
@@ -22,7 +25,7 @@ import { attachFormSGHandler } from "@root/middleware"
 import GitFileSystemService from "@root/services/db/GitFileSystemService"
 import ReposService from "@root/services/identity/ReposService"
 import { mailer } from "@root/services/utilServices/MailClient"
-import { getField, getFieldsFromTable } from "@root/utils/formsg-utils"
+import { getField, getFieldsFromTable, getId } from "@root/utils/formsg-utils"
 
 const GGS_REPAIR_FORM_KEY = config.get("formSg.ggsRepairFormKey")
 
@@ -61,19 +64,38 @@ export class FormsgGGsRepairRouter {
     Record<string, never>,
     { data: { submissionId: string } },
     never,
-    { submission: DecryptedContent }
+    { submission: DecryptedContentAndAttachments }
   > = async (req, res) => {
     console.log(res)
     console.log(res.locals)
     console.log(res.locals.submission)
 
-    const { responses } = res.locals.submission
+    const { responses } = res.locals.submission.content
+
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const optionToSubmitCsv = getField(responses, OPTION_TO_SUBMIT_CSV)
     const repoNames: string[] = []
     if (optionToSubmitCsv === "Yes") {
-      // TODO: figure out how to get the attachments working
-      const attachment = getField(responses, ATTACHMENT)
+      const attachmentId = getId(responses, ATTACHMENT)
+      if (!attachmentId) {
+        throw new Error("No attachment id")
+      }
+      const decryptedFile: DecryptedFile =
+        res.locals.submission.attachments?.[attachmentId]
+      const reposCsv = Buffer.from(decryptedFile.content).toString()
+      if (!reposCsv.startsWith("repo_name")) {
+        logger.error("Invalid csv format")
+        return
+      }
+      const repos = reposCsv.split("\n").slice(1)
+      console.log(repos)
+      repos.forEach((repo) => {
+        repoNames.push(repo)
+      })
+      if (repoNames.length === 0) {
+        logger.error("No repo name provided")
+        return
+      }
     } else {
       const repoNamesFromTable = getFieldsFromTable(responses, REPO_NAME_FIELD)
 

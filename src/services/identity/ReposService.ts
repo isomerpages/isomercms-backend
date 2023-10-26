@@ -376,7 +376,8 @@ export const createRecords = (zoneId: string): Record[] => {
 
     // Create staging lite branch in other repo path
     await this.simpleGit.cwd(stgLiteDir).clone(repoUrl, stgLiteDir)
-
+    // note: for some reason, combining the above and below commands led to race conditions
+    // so we have to do it separately
     await this.simpleGit
       .cwd(stgLiteDir)
       .checkout("staging")

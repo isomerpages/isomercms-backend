@@ -30,7 +30,7 @@ const mockFormsg = {
     authenticate: jest.fn(),
   },
   crypto: {
-    decrypt: jest.fn(),
+    decryptWithAttachments: jest.fn(),
   },
 }
 const MOCK_POST_URI = `https://${mockReq.get("host")}${mockReq.baseUrl}${
@@ -109,17 +109,17 @@ describe("FormSG Processing Service", () => {
     })
     it("should call decrypt successfully, store submission data and call next() when the call to decrypt is successful", async () => {
       // Arrange
-      mockFormsg.crypto.decrypt.mockReturnValue(MOCK_SUBMISSION)
+      mockFormsg.crypto.decryptWithAttachments.mockReturnValue(MOCK_SUBMISSION)
       const decryptMiddleware = FormsProcessingService.decrypt({
         formKey: MOCK_FORM_KEY,
       })
 
       // Act
-      decryptMiddleware(mockReq, mockRes, mockNext)
+      await decryptMiddleware(mockReq, mockRes, mockNext)
 
       // Assert
       expect(mockNext).toHaveBeenCalled()
-      expect(mockFormsg.crypto.decrypt).toHaveBeenCalledWith(
+      expect(mockFormsg.crypto.decryptWithAttachments).toHaveBeenCalledWith(
         MOCK_FORM_KEY,
         MOCK_DATA
       )
@@ -128,7 +128,7 @@ describe("FormSG Processing Service", () => {
 
     it("should not call next handler if decrypt fails", async () => {
       // Arrange
-      mockFormsg.crypto.decrypt.mockReturnValue(null)
+      mockFormsg.crypto.decryptWithAttachments.mockReturnValue(null)
       const decryptMiddleware = FormsProcessingService.decrypt({
         formKey: MOCK_FORM_KEY,
       })
@@ -137,8 +137,8 @@ describe("FormSG Processing Service", () => {
       const result = () => decryptMiddleware(mockReq, mockRes, mockNext)
 
       // Assert
-      expect(result).toThrow(UnprocessableError)
-      expect(mockFormsg.crypto.decrypt).toHaveBeenCalledWith(
+      await expect(result).rejects.toThrow(UnprocessableError)
+      expect(mockFormsg.crypto.decryptWithAttachments).toHaveBeenCalledWith(
         MOCK_FORM_KEY,
         MOCK_DATA
       )

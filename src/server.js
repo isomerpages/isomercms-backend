@@ -150,10 +150,15 @@ const FRONTEND_URL = config.get("app.frontendUrl")
 // Import routes
 const { errorHandler } = require("@middleware/errorHandler")
 
-const { FormsgRouter } = require("@routes/formsgSiteCreation")
-const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
+const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
+const {
+  FormsgSiteCreateRouter,
+} = require("@root/routes/formsg/formsgSiteCreation")
+const {
+  FormsgSiteLaunchRouter,
+} = require("@root/routes/formsg/formsgSiteLaunch")
 const { AuthService } = require("@services/utilServices/AuthService")
 
 // growthbook polyfills
@@ -366,7 +371,7 @@ const authV2Router = new AuthRouter({
   statsMiddleware,
   sgidAuthRouter,
 })
-const formsgRouter = new FormsgRouter({
+const formsgSiteCreateRouter = new FormsgSiteCreateRouter({
   usersService,
   infraService,
   gitFileSystemService,
@@ -374,6 +379,11 @@ const formsgRouter = new FormsgRouter({
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
   infraService,
+})
+
+const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
+  gitFileSystemService,
+  reposService,
 })
 
 const app = express()
@@ -420,8 +430,9 @@ app.use("/v2", authenticatedSubrouterV2)
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 
 // FormSG Backend handler routes
-app.use("/formsg", formsgRouter.getRouter())
+app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
+app.use("/formsg", formsgGGsRepairRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

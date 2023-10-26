@@ -26,12 +26,12 @@ import { DigResponse, DigType } from "@root/types/dig"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 
-const { SITE_LAUNCH_FORM_KEY } = process.env
+const SITE_LAUNCH_FORM_KEY = config.get("formSg.siteLaunchFormKey")
 const REQUESTER_EMAIL_FIELD = "Government Email"
 const SITE_LAUNCH_LIST =
   "Site Launch Details (Root Domain (eg. blah.moe.edu.sg), Redirection domain, Repo name (eg. moe-standrewsjc), Agency Email)"
 
-export interface FormsgRouterProps {
+export interface FormsgSiteLaunchRouterProps {
   usersService: UsersService
   infraService: InfraService
 }
@@ -138,11 +138,11 @@ export class FormsgSiteLaunchRouter {
     return ok({ ...launchSiteResult.value, repoName, requesterEmail })
   }
 
-  private readonly usersService: FormsgRouterProps["usersService"]
+  private readonly usersService: FormsgSiteLaunchRouterProps["usersService"]
 
-  private readonly infraService: FormsgRouterProps["infraService"]
+  private readonly infraService: FormsgSiteLaunchRouterProps["infraService"]
 
-  constructor({ usersService, infraService }: FormsgRouterProps) {
+  constructor({ usersService, infraService }: FormsgSiteLaunchRouterProps) {
     this.usersService = usersService
     this.infraService = infraService
     // We need to bind all methods because we don't invoke them from the class directly

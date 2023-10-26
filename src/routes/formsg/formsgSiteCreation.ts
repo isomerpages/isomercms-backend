@@ -29,7 +29,7 @@ export interface FormsgRouterProps {
   gitFileSystemService: GitFileSystemService
 }
 
-export class FormsgRouter {
+export class FormsgSiteCreateRouter {
   private readonly usersService: FormsgRouterProps["usersService"]
 
   private readonly infraService: FormsgRouterProps["infraService"]

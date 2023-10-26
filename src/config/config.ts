@@ -283,6 +283,20 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    siteLaunchFormKey: {
+      doc: "FormSG API key for site launch form",
+      env: "SITE_LAUNCH_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    ggsRepairFormKey: {
+      doc: "FormSG API key for GGs repair form",
+      env: "GGS_REPAIR_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {

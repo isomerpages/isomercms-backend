@@ -1,4 +1,4 @@
-import { errAsync, okAsync } from "neverthrow"
+import { Result, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -43,32 +43,59 @@ class DeploymentsService {
     repoName: string
     site: Site
   }): Promise<Deployment> => {
-    const amplifyResult = await this.createAmplifyAppOnAws(repoName)
-    if (amplifyResult.isErr()) {
-      logger.error(`Amplify set up error: ${amplifyResult.error}`)
-      throw amplifyResult.error
+    const [
+      amplifyStagingResult,
+      amplifyStagingLiteResult,
+    ] = await this.createAmplifyAppsOnAws(repoName)
+    if (amplifyStagingResult.isErr()) {
+      logger.error(
+        `Amplify set up error for main app: ${amplifyStagingResult.error}`
+      )
+      throw amplifyStagingResult.error
     }
-    const amplifyInfo = amplifyResult.value
+
+    if (amplifyStagingLiteResult.isErr()) {
+      logger.error(
+        `Amplify set up error for staging-lite app: ${amplifyStagingLiteResult.error}`
+      )
+      throw amplifyStagingLiteResult.error
+    }
+
+    const amplifyInfoStaging = amplifyStagingResult.value
+    const amplifyInfoStagingLite = amplifyStagingLiteResult.value
 
     return this.create({
       stagingUrl: Brand.fromString(
-        `https://staging.${amplifyInfo.defaultDomain}`
+        `https://staging.${amplifyStagingLiteResult.value.defaultDomain}`
       ),
       productionUrl: Brand.fromString(
-        `https://master.${amplifyInfo.defaultDomain}`
+        `https://master.${amplifyStagingResult.value.defaultDomain}`
       ),
       site,
       siteId: site.id,
-      hostingId: amplifyInfo.id,
+      hostingId: amplifyInfoStaging.id,
+      stagingLiteHostingId: amplifyInfoStagingLite.id,
     })
   }
 
-  createAmplifyAppOnAws = async (repoName: string) => {
+  createAmplifyAppsOnAws = async (repoName: string) => {
+    const stagingApp = await this.createAmplifyAppOnAws(repoName, repoName)
+    const stagingLiteApp = await this.createAmplifyAppOnAws(
+      repoName,
+      `${repoName}-staging-lite`
+    )
+    return [stagingApp, stagingLiteApp]
+  }
+
+  createAmplifyAppOnAws = async (
+    repoName: string,
+    appName: string
+  ): Promise<Result<AmplifyInfo, AmplifyError>> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
     logger.info(`PublishToAmplify ${repoUrl}`)
 
     const createAppOptions = this.deploymentClient.generateCreateAppInput(
-      repoName,
+      appName,
       repoUrl
     )
     // 1. Create Amplify app

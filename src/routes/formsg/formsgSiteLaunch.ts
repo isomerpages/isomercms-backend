@@ -1,4 +1,4 @@
-import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
+import { DecryptedContentAndAttachments } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
 import axios from "axios"
 import express, { RequestHandler } from "express"
@@ -157,11 +157,11 @@ export class FormsgSiteLaunchRouter {
     string,
     { data: { submissionId: string } },
     never,
-    { submission: DecryptedContent }
+    { submission: DecryptedContentAndAttachments }
   > = async (req, res) => {
     // 1. Extract arguments
     const { submissionId } = req.body.data
-    const { responses } = res.locals.submission
+    const { responses } = res.locals.submission.content
     const siteLaunchList = getFieldsFromTable(responses, SITE_LAUNCH_LIST)
     const formResponses: FormResponsesProps[] =
       siteLaunchList?.map((element) =>

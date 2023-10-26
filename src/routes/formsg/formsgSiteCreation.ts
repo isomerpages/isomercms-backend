@@ -1,4 +1,4 @@
-import { DecryptedContent } from "@opengovsg/formsg-sdk/dist/types"
+import { DecryptedContentAndAttachments } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
 import express, { RequestHandler } from "express"
 
@@ -53,11 +53,11 @@ export class FormsgSiteCreateRouter {
     Record<string, never>,
     { data: { submissionId: string } },
     never,
-    { submission: DecryptedContent }
+    { submission: DecryptedContentAndAttachments }
   > = async (req, res) => {
     // 1. Extract arguments
     const { submissionId } = req.body.data
-    const { responses } = res.locals.submission
+    const { responses } = res.locals.submission.content
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const siteName = getField(responses, SITE_NAME_FIELD)
     const repoName = getField(responses, REPO_NAME_FIELD)

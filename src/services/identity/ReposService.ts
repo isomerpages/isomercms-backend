@@ -258,30 +258,7 @@ export default class ReposService {
       .checkout("staging") // reset local branch back to staging
 
     // Make sure the local path is empty, just in case dir was used on a previous attempt.
-    fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
-    // create a empty folder stgLiteDir
-    fs.mkdirSync(stgLiteDir)
-
-    // Create staging lite branch in other repo path
-    await this.simpleGit
-      .cwd(stgLiteDir)
-      .clone(repoUrl, stgLiteDir)
-      .checkout("staging")
-      .rm(["-r", "images"])
-      .rm(["-r", "files"])
-
-    // Clear git
-    fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
-
-    // Prepare git repo
-    await this.simpleGit
-      .cwd(stgLiteDir)
-      .init()
-      .checkoutLocalBranch("staging-lite")
-      .add(".")
-      .commit("Initial commit")
-      .addRemote("origin", repoUrl)
-      .push(["origin", "staging-lite", "-f"])
+    await this.setUpStagingLite(stgLiteDir, repoUrl)
   }
 
   createDnsIndirectionFile = (
@@ -389,5 +366,36 @@ export const createRecords = (zoneId: string): Record[] => {
         )
       })
       .map(() => undefined)
+  }
+
+  async setUpStagingLite(stgLiteDir: string, repoUrl: string) {
+    fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
+    // create a empty folder stgLiteDir
+    fs.mkdirSync(stgLiteDir)
+
+    // note: for some reason, combining below commands led to race conditions
+    // so we have to do it separately
+    // Create staging lite branch in other repo path
+    await this.simpleGit.cwd(stgLiteDir).clone(repoUrl, stgLiteDir)
+    await this.simpleGit.cwd(stgLiteDir).pull() // some repos are large, clone takes time
+    await this.simpleGit
+      .cwd(stgLiteDir)
+      .checkout("staging")
+      .rm(["-r", "images"])
+      .rm(["-r", "files"])
+
+    // Clear git
+    fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
+
+    // Prepare git repo
+    await this.simpleGit
+      .cwd(stgLiteDir)
+      .init()
+      .checkoutLocalBranch("staging-lite")
+      .add(".")
+      .commit("Initial commit")
+      .addRemote("origin", repoUrl)
+      .push(["origin", "staging-lite", "-f"])
+    return stgLiteDir
   }
 }

@@ -394,8 +394,8 @@ export default class GitFileSystemService {
             if (error instanceof GitError) {
               return new GitFileSystemError(
                 isStaging
-                  ? "Unable to clone whole repo"
-                  : "Unable to clone staging lite branch"
+                  ? `Unable to clone whole repo for ${repoName}`
+                  : `Unable to clone staging lite branch for ${repoName}`
               )
             }
 

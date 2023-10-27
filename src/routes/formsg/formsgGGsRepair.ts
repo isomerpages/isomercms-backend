@@ -84,7 +84,6 @@ export class FormsgGGsRepairRouter {
         return
       }
       const repos = reposCsv.split("\n").slice(1)
-      console.log(repos)
       repos.forEach((repo) => {
         repoNames.push(repo)
       })
@@ -110,7 +109,6 @@ export class FormsgGGsRepairRouter {
       })
     }
 
-    //! TODO: Kishore: remember to reenable verification of the formsg submission post-dev
     if (!requesterEmail?.endsWith("@open.gov.sg")) {
       logger.error("Requester email is not from @open.gov.sg")
       return
@@ -118,10 +116,6 @@ export class FormsgGGsRepairRouter {
     this.handleGGsFormSubmission(repoNames, requesterEmail)
   }
 
-  // 3 test cases
-  // 1 -> repos that dont exist in efs
-  // 2 -> repos that exist in efs but need a re-sync
-  // 3 -> 1 + 2 combined
   handleGGsFormSubmission = (repoNames: string[], requesterEmail: string) => {
     const repairs: ResultAsync<string, GitFileSystemError>[] = []
 
@@ -152,18 +146,12 @@ export class FormsgGGsRepairRouter {
             }
             return errAsync<boolean, GitFileSystemError>(error)
           })
-          .andThen(() => {
-            console.log("pulling", repoName)
-
+          .andThen(() =>
             // repo exists in efs, but we need to pull for staging and reset staging lite
-            return this.gitFileSystemService
+            this.gitFileSystemService
               .pull(repoName, "staging")
-              .andThen(() => {
-                console.log("resetting staging lite", repoName)
-                const setUpStgLiteRes: ResultAsync<
-                  string,
-                  GitFileSystemError
-                > = fromPromise(
+              .andThen(() =>
+                fromPromise(
                   this.reposService.setUpStagingLite(
                     path.join(EFS_VOL_PATH_STAGING_LITE, repoName),
                     repoUrl
@@ -173,15 +161,13 @@ export class FormsgGGsRepairRouter {
                       `Error setting up staging lite for repo ${repoName}: ${error}`
                     )
                 )
-                return setUpStgLiteRes
-              })
+              )
               .andThen((result) => {
-                console.log("syncing", repoName)
                 // take note of repos that synced successfully
                 syncedStagingAndStagingLiteRepos.push(repoName)
                 return okAsync(result)
               })
-          })
+          )
       )
     })
 
@@ -192,13 +178,8 @@ export class FormsgGGsRepairRouter {
         // send one final email about success and failures
         return okAsync([])
       })
-      .andThen(() => {
-        console.log(
-          "syncedStagingAndStagingLiteRepos",
-          syncedStagingAndStagingLiteRepos
-        )
-        console.log("clonedStagingRepos", clonedStagingRepos)
-        return fromPromise(
+      .andThen(() =>
+        fromPromise(
           this.sendEmail({
             requesterEmail,
             clonedRepos: clonedStagingRepos,
@@ -215,7 +196,7 @@ export class FormsgGGsRepairRouter {
             )
           }
         )
-      })
+      )
   }
 
   async sendEmail({

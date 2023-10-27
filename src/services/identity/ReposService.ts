@@ -369,7 +369,6 @@ export const createRecords = (zoneId: string): Record[] => {
   }
 
   async setUpStagingLite(stgLiteDir: string, repoUrl: string) {
-    console.log("setting up staging lite", stgLiteDir, repoUrl)
     fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
     // create a empty folder stgLiteDir
     fs.mkdirSync(stgLiteDir)
@@ -397,7 +396,6 @@ export const createRecords = (zoneId: string): Record[] => {
       .commit("Initial commit")
       .addRemote("origin", repoUrl)
       .push(["origin", "staging-lite", "-f"])
-    console.log("finished setting up staging lite", stgLiteDir, repoUrl)
     return stgLiteDir
   }
 }

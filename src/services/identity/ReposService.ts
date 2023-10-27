@@ -374,10 +374,11 @@ export const createRecords = (zoneId: string): Record[] => {
     // create a empty folder stgLiteDir
     fs.mkdirSync(stgLiteDir)
 
+    // note: for some reason, combining below commands led to race conditions
+    // so we have to do it separately
     // Create staging lite branch in other repo path
     await this.simpleGit.cwd(stgLiteDir).clone(repoUrl, stgLiteDir)
-    // note: for some reason, combining the above and below commands led to race conditions
-    // so we have to do it separately
+    await this.simpleGit.cwd(stgLiteDir).pull() // some repos are large, clone takes time
     await this.simpleGit
       .cwd(stgLiteDir)
       .checkout("staging")

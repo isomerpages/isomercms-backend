@@ -1,4 +1,4 @@
-/* eslint-disable import/prefer-default-export */ // todo remove this line post dev
+/* eslint-disable import/prefer-default-export */
 import path from "path"
 
 import {

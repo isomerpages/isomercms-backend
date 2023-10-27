@@ -504,6 +504,30 @@ export default class GitHubService {
     }
   }
 
+  async getLatestCommitOfPath(
+    sessionData: UserWithSiteSessionData,
+    path: string
+  ) {
+    const { accessToken, siteName } = sessionData
+    const endpoint = `${siteName}/commits`
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+
+    const { data: latestCommit } = await this.axiosInstance.get(endpoint, {
+      headers,
+      params: {
+        path,
+      },
+    })
+
+    if (latestCommit.length === 0)
+      throw new NotFoundError(`Path ${path} does not exist`)
+
+    const { commit: latestCommitMeta } = latestCommit[0]
+    return latestCommitMeta
+  }
+
   async getTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,

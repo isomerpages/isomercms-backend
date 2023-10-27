@@ -13,6 +13,7 @@ export interface MediaFileInput {
   siteName: string
   directoryName: string
   mediaType: MediaType
+  addedTime: number
   isPrivate?: boolean
 }
 
@@ -22,6 +23,7 @@ export interface MediaFileOutput {
   mediaUrl: string
   mediaPath: string
   type: ItemType
+  addedTime: number
 }
 
 export interface MediaDirOutput {

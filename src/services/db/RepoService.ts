@@ -261,9 +261,13 @@ export default class RepoService extends GitHubService {
     }
 
     // fetch from Github
+    const filePath = `${directoryName}/${fileName}`
     const directoryData = await super.readDirectory(sessionData, {
       directoryName,
     })
+    const {
+      author: { date: addedTime },
+    } = await super.getLatestCommitOfPath(sessionData, filePath)
 
     const mediaType = directoryName.split("/")[0] as MediaType
     const targetFile = directoryData.find(
@@ -276,6 +280,7 @@ export default class RepoService extends GitHubService {
       siteName,
       directoryName,
       mediaType,
+      addedTime,
       isPrivate,
     })
   }

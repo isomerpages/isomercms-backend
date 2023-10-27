@@ -34,6 +34,7 @@ export const SVG_FILE = {
 const BASE_INPUT = {
   siteName: MEDIA_SITE_NAME,
   directoryName: MEDIA_DIRECTORY_NAME,
+  addedTime: 0,
 }
 
 export const DIR_INPUT = {

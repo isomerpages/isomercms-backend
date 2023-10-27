@@ -6,13 +6,7 @@ import {
   DecryptedFile,
 } from "@opengovsg/formsg-sdk/dist/types"
 import express, { RequestHandler } from "express"
-import {
-  ResultAsync,
-  combineWithAllErrors,
-  errAsync,
-  fromPromise,
-  okAsync,
-} from "neverthrow"
+import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
@@ -172,7 +166,7 @@ export class FormsgGGsRepairRouter {
     })
 
     let errors: GitFileSystemError[] = []
-    combineWithAllErrors(repairs)
+    ResultAsync.combineWithAllErrors(repairs)
       .orElse((error) => {
         errors = error
         // send one final email about success and failures

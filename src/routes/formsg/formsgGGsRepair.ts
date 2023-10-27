@@ -66,10 +66,6 @@ export class FormsgGGsRepairRouter {
     never,
     { submission: DecryptedContentAndAttachments }
   > = async (req, res) => {
-    console.log(res)
-    console.log(res.locals)
-    console.log(res.locals.submission)
-
     const { responses } = res.locals.submission.content
 
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
@@ -132,7 +128,7 @@ export class FormsgGGsRepairRouter {
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
     repoNames.forEach((repoName) => {
-      const repoUrl = `https://github.com/isomerpages/${repoName}`
+      const repoUrl = `git@github.com:isomerpages/${repoName}`
 
       repairs.push(
         this.doesRepoNeedClone(repoName)

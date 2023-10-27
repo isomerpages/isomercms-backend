@@ -1,14 +1,6 @@
 import fs from "fs"
 
-import {
-  combine,
-  err,
-  errAsync,
-  ok,
-  okAsync,
-  Result,
-  ResultAsync,
-} from "neverthrow"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
   GitError,
@@ -348,7 +340,7 @@ export default class GitFileSystemService {
 
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
-    return combine([
+    return ResultAsync.combine([
       this.cloneBranch(repoName, true),
       this.cloneBranch(repoName, false),
     ]).andThen(([stagingPath, _]) =>
@@ -759,7 +751,7 @@ export default class GitFileSystemService {
     encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     const defaultEfsVolPath = EFS_VOL_PATH_STAGING
-    return combine([
+    return ResultAsync.combine([
       ResultAsync.fromPromise(
         fs.promises.readFile(
           `${defaultEfsVolPath}/${repoName}/${filePath}`,
@@ -883,7 +875,7 @@ export default class GitFileSystemService {
         )
       )
       .andThen((directoryContents) => {
-        const resultAsyncs = directoryContents.map((directoryItem: any) => {
+        const resultAsyncs = directoryContents.map((directoryItem) => {
           const isDirectory = directoryItem.isDirectory()
           const { name } = directoryItem
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
@@ -892,7 +884,7 @@ export default class GitFileSystemService {
           return this.getGitBlobHash(repoName, path)
             .orElse(() => okAsync(""))
             .andThen((sha) =>
-              combine([
+              ResultAsync.combine([
                 okAsync(sha),
                 this.getFilePathStats(
                   repoName,
@@ -902,7 +894,7 @@ export default class GitFileSystemService {
               ])
             )
             .andThen((shaAndStats) => {
-              const [sha, stats] = shaAndStats as [string, fs.Stats]
+              const [sha, stats] = shaAndStats
               const result: GitDirectoryItem = {
                 name,
                 type,
@@ -915,7 +907,7 @@ export default class GitFileSystemService {
             })
         })
 
-        return combine(resultAsyncs)
+        return ResultAsync.combine(resultAsyncs)
       })
       .andThen((directoryItems) =>
         // Note: The sha is empty if the file is not tracked by Git
@@ -1258,7 +1250,7 @@ export default class GitFileSystemService {
         )
       )
       .andThen(() =>
-        combine(
+        ResultAsync.combine(
           targetFiles.map((targetFile) =>
             // We expect to see an error here, since the new path should not exist
             this.getFilePathStats(

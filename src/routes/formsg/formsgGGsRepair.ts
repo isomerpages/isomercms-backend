@@ -144,7 +144,7 @@ export class FormsgGGsRepairRouter {
               // Repo exists in EFS, no need to clone, but continue with syncing
               return okAsync(false)
             }
-            return errAsync<boolean, GitFileSystemError>(error)
+            return errAsync(error)
           })
           .andThen(() =>
             // repo exists in efs, but we need to pull for staging and reset staging lite

@@ -31,6 +31,8 @@ import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
+import DeploymentsService from "./DeploymentsService"
+
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
   gitHubService: RepoService
@@ -40,6 +42,7 @@ interface SitesServiceProps {
   reviewRequestService: ReviewRequestService
   sitesCacheService: SitesCacheService
   previewService: PreviewService
+  deploymentsService: DeploymentsService
 }
 
 class SitesService {
@@ -61,6 +64,8 @@ class SitesService {
 
   private readonly previewService: SitesServiceProps["previewService"]
 
+  private readonly deploymentsService: SitesServiceProps["deploymentsService"]
+
   constructor({
     siteRepository,
     gitHubService,
@@ -70,6 +75,7 @@ class SitesService {
     reviewRequestService,
     sitesCacheService,
     previewService,
+    deploymentsService,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
@@ -79,6 +85,7 @@ class SitesService {
     this.reviewRequestService = reviewRequestService
     this.sitesCacheService = sitesCacheService
     this.previewService = previewService
+    this.deploymentsService = deploymentsService
   }
 
   isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
@@ -260,20 +267,8 @@ class SitesService {
       .orElse(() => okAsync(this.extractAuthorEmail(commit)))
   }
 
-  updateDbWithStagingUrl(site: Site, stagingUrl: StagingPermalink) {
-    // Non-blocking control flow
-    this.siteRepository.update(
-      {
-        deployment: {
-          stagingUrl,
-        },
-      },
-      {
-        where: {
-          id: site.id,
-        },
-      }
-    )
+  async updateDbWithStagingUrl(site: Site, stagingUrl: StagingPermalink) {
+    this.deploymentsService.updateStagingUrl(site.id, stagingUrl)
   }
 
   // Tries to get the site urls in the following order:

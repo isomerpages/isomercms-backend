@@ -233,6 +233,9 @@ const reviewRequestService = new ReviewRequestService(
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
 const previewService = new PreviewService()
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -242,14 +245,13 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService,
   previewService,
+  deploymentsService,
 })
 const reposService = new ReposService({
   repository: Repo,
   simpleGit: simpleGitInstance,
 })
-const deploymentsService = new DeploymentsService({
-  deploymentsRepository: Deployment,
-})
+
 const launchClient = new LaunchClient()
 const launchesService = new LaunchesService({
   launchesRepository: Launch,

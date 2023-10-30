@@ -10,6 +10,15 @@ export function getField(
   return response?.answer?.trim()
 }
 
+export function getId(
+  responses: FormField[],
+  name: string
+): string | undefined {
+  const response = responses.find(({ question }) => question === name)
+
+  return response?._id
+}
+
 function trimAllStrings(
   responseArray: string[] | string[][]
 ): string[] | string[][] {

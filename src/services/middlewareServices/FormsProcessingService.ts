@@ -1,7 +1,5 @@
-import {
-  DecryptParams,
-  DecryptedContent,
-} from "@opengovsg/formsg-sdk/dist/types"
+import Crypto from "@opengovsg/formsg-sdk/dist/crypto"
+import Webhooks from "@opengovsg/formsg-sdk/dist/webhooks"
 import { Request, Response, NextFunction } from "express"
 
 import logger from "@logger/logger"
@@ -10,15 +8,8 @@ import { AuthError } from "@errors/AuthError"
 import { UnprocessableError } from "@errors/UnprocessableError"
 
 export interface FormsSdk {
-  webhooks: {
-    authenticate: (header: string, uri: string) => void
-  }
-  crypto: {
-    decrypt: (
-      formCreateKey: string,
-      decryptParams: DecryptParams
-    ) => DecryptedContent | null
-  }
+  webhooks: Webhooks
+  crypto: Crypto
 }
 export default class FormsProcessingService {
   formsg: FormsSdk
@@ -47,12 +38,12 @@ export default class FormsProcessingService {
     }
   }
 
-  decrypt = ({ formKey }: { formKey: string }) => (
+  decrypt = ({ formKey }: { formKey: string }) => async (
     req: Request,
     res: Response,
     next: NextFunction
-  ): void => {
-    const submission = this.formsg.crypto.decrypt(
+  ): Promise<void> => {
+    const submission = await this.formsg.crypto.decryptWithAttachments(
       formKey,
       // If `verifiedContent` is provided in `req.body.data`, the return object
       // will include a verified key.

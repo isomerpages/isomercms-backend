@@ -536,6 +536,20 @@ class SitesService {
       })
     )
   }
+
+  getUserStagingSiteBuildStatus(
+    lastCommitTime: number,
+    userSessionData: UserWithSiteSessionData
+  ) {
+    const { siteName, growthbook } = userSessionData
+    return this.getBySiteName(siteName).andThen((site) =>
+      this.deploymentsService.getStagingSiteBuildStatus(
+        site.id.toString(),
+        lastCommitTime,
+        isReduceBuildTimesWhitelistedRepo(growthbook)
+      )
+    )
+  }
 }
 
 export default SitesService

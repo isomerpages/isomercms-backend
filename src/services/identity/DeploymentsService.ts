@@ -1,4 +1,5 @@
-import { Result, errAsync, okAsync } from "neverthrow"
+import { JobStatus } from "@aws-sdk/client-amplify"
+import { Result, ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -6,8 +7,14 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import { Deployment, Repo, Site } from "@database/models"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
+import {
+  StagingBuildStatus,
+  BuildStatus,
+  statusStates,
+} from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
 import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
@@ -259,6 +266,78 @@ class DeploymentsService {
     )
     return okAsync(deploymentInfo)
   }
+
+  getStagingSiteBuildStatus = (
+    siteId: string,
+    lastCommitTime: number,
+    isRepoWhiteListedForBuildRed: boolean
+  ): ResultAsync<BuildStatus, NotFoundError | AmplifyError> =>
+    fromPromise(
+      this.deploymentsRepository.findOne({
+        where: {
+          siteId,
+        },
+      }),
+      () => new NotFoundError("Site has not been deployed!")
+    )
+      .andThen((deploymentInfo) => {
+        if (!deploymentInfo) {
+          return errAsync(new NotFoundError("Site has not been deployed!"))
+        }
+        return okAsync(deploymentInfo)
+      })
+      .andThen((deploymentInfo) => {
+        let userStagingApp: string
+        const { hostingId, stagingLiteHostingId } = deploymentInfo
+        if (isRepoWhiteListedForBuildRed) {
+          userStagingApp = hostingId
+        } else {
+          userStagingApp = stagingLiteHostingId
+        }
+
+        if (!userStagingApp) {
+          return errAsync(
+            new NotFoundError("Staging site has not been deployed!")
+          )
+        }
+        return okAsync(userStagingApp)
+      })
+      .andThen((userStagingApp) => {
+        const branchName = isRepoWhiteListedForBuildRed
+          ? STAGING_LITE_BRANCH
+          : STAGING_BRANCH
+        return this.deploymentClient.getJobSummaries(userStagingApp, branchName)
+      })
+      .andThen((jobSummaries) => {
+        if (jobSummaries.length === 0) {
+          return okAsync(statusStates.pending)
+        }
+        for (let i = 0; i < jobSummaries.length; i += 1) {
+          const jobSummary = jobSummaries[i]
+          if (jobSummary.commitTime) {
+            const jobSummaryTime = jobSummary.commitTime.getTime()
+            if (
+              jobSummaryTime >= lastCommitTime &&
+              jobSummary.status === JobStatus.SUCCEED
+            ) {
+              return okAsync(
+                // a commit further ahead is already ready
+                statusStates.ready
+              )
+            }
+            if (jobSummaryTime < lastCommitTime) {
+              // since job summaries are sorted, this is the last build to check and this will
+              // be the sot for the site build's status
+              return okAsync(
+                jobSummary.status === JobStatus.FAILED
+                  ? statusStates.error
+                  : statusStates.pending
+              )
+            }
+          }
+        }
+        return okAsync(statusStates.error)
+      })
 }
 
 export default DeploymentsService

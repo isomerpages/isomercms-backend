@@ -30,6 +30,7 @@ export const getMediaFileInfo = async ({
   siteName,
   directoryName,
   mediaType,
+  addedTime,
   isPrivate,
 }: MediaFileInput): Promise<MediaFileOutput> => {
   const baseFileData = {
@@ -37,6 +38,7 @@ export const getMediaFileInfo = async ({
     sha: file.sha,
     mediaPath: `${directoryName}/${file.name}`,
     type: file.type,
+    addedTime,
   }
   if (mediaType === "images" && isPrivate) {
     try {

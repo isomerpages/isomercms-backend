@@ -1,14 +1,6 @@
 import fs from "fs"
 
-import {
-  combine,
-  err,
-  errAsync,
-  ok,
-  okAsync,
-  Result,
-  ResultAsync,
-} from "neverthrow"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
   GitError,
@@ -348,7 +340,7 @@ export default class GitFileSystemService {
 
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
-    return combine([
+    return ResultAsync.combine([
       this.cloneBranch(repoName, true),
       this.cloneBranch(repoName, false),
     ]).andThen(([stagingPath, _]) =>
@@ -759,7 +751,7 @@ export default class GitFileSystemService {
     encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     const defaultEfsVolPath = EFS_VOL_PATH_STAGING
-    return combine([
+    return ResultAsync.combine([
       ResultAsync.fromPromise(
         fs.promises.readFile(
           `${defaultEfsVolPath}/${repoName}/${filePath}`,
@@ -800,7 +792,7 @@ export default class GitFileSystemService {
 
   getMimeType(fileExtension: string): Result<string, MediaTypeError> {
     if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
-      err(new MediaTypeError("Unsupported file extension found"))
+      return err(new MediaTypeError("Unsupported file extension found"))
     }
     switch (fileExtension) {
       case "svg":
@@ -820,28 +812,33 @@ export default class GitFileSystemService {
     siteName: string,
     directoryName: string,
     fileName: string
-  ): ResultAsync<MediaFileOutput, GitFileSystemError | MediaTypeError> {
-    return this.read(
-      siteName,
-      `${directoryName}/${fileName}`,
-      "base64"
-    ).andThen((file: GitFile) => {
-      const fileType = "file" as const
-      const fileExtResult = this.getFileExtension(fileName)
-      if (fileExtResult.isErr()) return errAsync(fileExtResult.error)
+  ): ResultAsync<
+    MediaFileOutput,
+    GitFileSystemError | MediaTypeError | NotFoundError
+  > {
+    return this.getFileExtension(fileName)
+      .andThen((fileExt) => this.getMimeType(fileExt))
+      .asyncAndThen((mimeType) =>
+        ResultAsync.combine([
+          okAsync(mimeType),
+          this.getFilePathStats(siteName, `${directoryName}/${fileName}`, true),
+          this.read(siteName, `${directoryName}/${fileName}`, "base64"),
+        ])
+      )
+      .andThen((combineResult) => {
+        const [mimeType, stats, file] = combineResult
+        const fileType = "file" as const
+        const dataUrlPrefix = `data:${mimeType};base64`
 
-      const mimeTypeResult = this.getMimeType(fileExtResult.value)
-      if (mimeTypeResult.isErr()) return errAsync(mimeTypeResult.error)
-
-      const dataUrlPrefix = `data:${mimeTypeResult.value};base64`
-      return okAsync({
-        name: fileName,
-        sha: file.sha,
-        mediaUrl: `${dataUrlPrefix},${file.content}`,
-        mediaPath: `${directoryName}/${fileName}`,
-        type: fileType,
+        return okAsync({
+          name: fileName,
+          sha: "",
+          mediaUrl: `${dataUrlPrefix},${file.content}`,
+          mediaPath: `${directoryName}/${fileName}`,
+          type: fileType,
+          addedTime: stats.birthtimeMs,
+        })
       })
-    })
   }
 
   // Read the contents of a directory
@@ -883,7 +880,7 @@ export default class GitFileSystemService {
         )
       )
       .andThen((directoryContents) => {
-        const resultAsyncs = directoryContents.map((directoryItem: any) => {
+        const resultAsyncs = directoryContents.map((directoryItem) => {
           const isDirectory = directoryItem.isDirectory()
           const { name } = directoryItem
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
@@ -892,7 +889,7 @@ export default class GitFileSystemService {
           return this.getGitBlobHash(repoName, path)
             .orElse(() => okAsync(""))
             .andThen((sha) =>
-              combine([
+              ResultAsync.combine([
                 okAsync(sha),
                 this.getFilePathStats(
                   repoName,
@@ -902,7 +899,7 @@ export default class GitFileSystemService {
               ])
             )
             .andThen((shaAndStats) => {
-              const [sha, stats] = shaAndStats as [string, fs.Stats]
+              const [sha, stats] = shaAndStats
               const result: GitDirectoryItem = {
                 name,
                 type,
@@ -915,7 +912,7 @@ export default class GitFileSystemService {
             })
         })
 
-        return combine(resultAsyncs)
+        return ResultAsync.combine(resultAsyncs)
       })
       .andThen((directoryItems) =>
         // Note: The sha is empty if the file is not tracked by Git
@@ -1258,7 +1255,7 @@ export default class GitFileSystemService {
         )
       )
       .andThen(() =>
-        combine(
+        ResultAsync.combine(
           targetFiles.map((targetFile) =>
             // We expect to see an error here, since the new path should not exist
             this.getFilePathStats(

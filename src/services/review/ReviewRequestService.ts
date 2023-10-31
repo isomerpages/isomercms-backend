@@ -1,14 +1,6 @@
 import { AxiosResponse } from "axios"
 import _ from "lodash"
-import {
-  err,
-  errAsync,
-  ok,
-  okAsync,
-  Result,
-  ResultAsync,
-  combine,
-} from "neverthrow"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 
@@ -147,7 +139,7 @@ export default class ReviewRequestService {
         ).map((mappings) => ({ mappings, files }))
       )
       .andThen(({ mappings, files }) =>
-        combine(
+        ResultAsync.combine(
           this.compareDiffWithMappings(
             userWithSiteSessionData,
             stagingLink,
@@ -235,7 +227,7 @@ export default class ReviewRequestService {
     return this.pageService
       .parsePageName(pathInfo, sessionData)
       .andThen((pageName) =>
-        combine([
+        ResultAsync.combine([
           this.pageService.retrieveCmsPermalink(pageName, siteName),
           this.pageService.retrieveStagingPermalink(
             sessionData,

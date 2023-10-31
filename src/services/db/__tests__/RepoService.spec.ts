@@ -251,6 +251,7 @@ describe("RepoService", () => {
         mediaUrl: "sampleBase64Img",
         mediaPath: "images/test-img.jpeg",
         type: "image" as ItemType,
+        addedTime: 0,
       }
       gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
@@ -268,7 +269,7 @@ describe("RepoService", () => {
       expect(actual).toEqual(expected)
     })
 
-    it("should read image from GitHub for ggs enabled repos", async () => {
+    it("should read image from GitHub for non-ggs enabled repos", async () => {
       const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
         githubId: mockGithubId,
         accessToken: mockAccessToken,
@@ -283,11 +284,16 @@ describe("RepoService", () => {
         mediaUrl: "http://some-cdn.com/image",
         mediaPath: "images/test-img.jpeg",
         type: "image" as ItemType,
+        addedTime: 0,
       }
 
       const gitHubServiceReadDirectory = jest.spyOn(
         GitHubService.prototype,
         "readDirectory"
+      )
+      const gitHubServiceGetLatestCommitOfPath = jest.spyOn(
+        GitHubService.prototype,
+        "getLatestCommitOfPath"
       )
       const gitHubServiceGetRepoInfo = jest.spyOn(
         GitHubService.prototype,
@@ -304,6 +310,11 @@ describe("RepoService", () => {
           name: "fake-dir",
         },
       ])
+      gitHubServiceGetLatestCommitOfPath.mockResolvedValueOnce({
+        author: {
+          date: 0,
+        },
+      })
       gitHubServiceGetRepoInfo.mockResolvedValueOnce({ private: false })
       const getMediaFileInfo = jest
         .spyOn(mediaUtils, "getMediaFileInfo")

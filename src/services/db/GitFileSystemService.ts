@@ -103,7 +103,7 @@ export default class GitFileSystemService {
       ? `${EFS_VOL_PATH_STAGING}/${repoName}`
       : `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`
     return ResultAsync.fromPromise(
-      this.git.cwd(`${repoPath}`).checkIsRepo(),
+      this.git.cwd({ path: `${repoPath}`, root: false }).checkIsRepo(),
       (error) => {
         logger.error(
           `Error when checking if ${repoName} is a Git repo: ${error}`
@@ -129,7 +129,9 @@ export default class GitFileSystemService {
       ? `${EFS_VOL_PATH_STAGING}/${repoName}`
       : `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`
     return ResultAsync.fromPromise(
-      this.git.cwd(repoPath).remote(["get-url", "origin"]),
+      this.git
+        .cwd({ path: repoPath, root: false })
+        .remote(["get-url", "origin"]),
       (error) => {
         logger.error(`Error when checking origin remote URL: ${error}`)
 
@@ -196,7 +198,7 @@ export default class GitFileSystemService {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
-        .cwd(`${efsVolPath}/${repoName}`)
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
         .revparse(["--abbrev-ref", "HEAD"]),
       (error) => {
         logger.error(`Error when getting current branch: ${error}`)
@@ -210,7 +212,9 @@ export default class GitFileSystemService {
     ).andThen((currentBranch) => {
       if (currentBranch !== branchName) {
         return ResultAsync.fromPromise(
-          this.git.cwd(`${efsVolPath}/${repoName}`).checkout(branchName),
+          this.git
+            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+            .checkout(branchName),
           (error) => {
             logger.error(`Error when checking out ${branchName}: ${error}`)
 
@@ -237,7 +241,9 @@ export default class GitFileSystemService {
       ? EFS_VOL_PATH_STAGING
       : EFS_VOL_PATH_STAGING_LITE
     return ResultAsync.fromPromise(
-      this.git.cwd(`${efsVolPath}/${repoName}`).revparse([`HEAD:${filePath}`]),
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .revparse([`HEAD:${filePath}`]),
       (error) => {
         logger.error(
           `Error when getting Git blob hash: ${error} when trying to access ${efsVolPath}/${repoName}`
@@ -294,7 +300,9 @@ export default class GitFileSystemService {
   ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
-      this.git.cwd(`${efsVolPath}/${repoName}`).log([branchName]),
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .log([branchName]),
       (error) => {
         logger.error(
           `Error when getting latest commit of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
@@ -323,7 +331,7 @@ export default class GitFileSystemService {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
-        .cwd(`${efsVolPath}/${repoName}`)
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
         .reset(["--hard", commitSha])
         .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE),
       (error) => {
@@ -370,7 +378,7 @@ export default class GitFileSystemService {
           const clonePromise = isStaging
             ? this.git
                 .clone(originUrl, `${efsVolPath}/${repoName}`)
-                .cwd(`${efsVolPath}/${repoName}`)
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                 .checkout(branch)
             : this.git
                 .clone(originUrl, `${efsVolPath}/${repoName}`, [
@@ -378,7 +386,7 @@ export default class GitFileSystemService {
                   branch,
                   "--single-branch",
                 ])
-                .cwd(`${efsVolPath}/${repoName}`)
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
 
           return ResultAsync.fromPromise(clonePromise, (error) => {
             logger.error(`Error when cloning ${repoName}: ${error}`)
@@ -440,7 +448,9 @@ export default class GitFileSystemService {
 
       return this.ensureCorrectBranch(repoName, branchName).andThen(() =>
         ResultAsync.fromPromise(
-          this.git.cwd(`${efsVolPath}/${repoName}`).pull(),
+          this.git
+            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+            .pull(),
           (error) => {
             // Full error message 1: Your configuration specifies to merge
             // with the ref 'refs/heads/staging' from the remote, but no
@@ -506,9 +516,11 @@ export default class GitFileSystemService {
           ResultAsync.fromPromise(
             isForce
               ? this.git
-                  .cwd(`${efsVolPath}/${repoName}`)
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push([...gitOptions, "--force"])
-              : this.git.cwd(`${efsVolPath}/${repoName}`).push(gitOptions),
+              : this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(gitOptions),
             (error) => {
               logger.error(`Error when pushing ${repoName}: ${error}`)
 
@@ -526,8 +538,12 @@ export default class GitFileSystemService {
           // Retry push once
           ResultAsync.fromPromise(
             isForce
-              ? this.git.cwd(`${efsVolPath}/${repoName}`).push(["--force"])
-              : this.git.cwd(`${efsVolPath}/${repoName}`).push(),
+              ? this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(["--force"])
+              : this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(),
             (error) => {
               logger.error(`Error when pushing ${repoName}: ${error}`)
 
@@ -592,7 +608,9 @@ export default class GitFileSystemService {
           }
 
           return ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).add(pathSpec),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .add(pathSpec),
             (error) => {
               logger.error(
                 `Error when Git adding files to ${repoName}: ${error}`
@@ -612,7 +630,9 @@ export default class GitFileSystemService {
         })
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).commit(commitMessage),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .commit(commitMessage),
             (error) => {
               logger.error(`Error when committing ${repoName}: ${error}`)
 
@@ -1160,7 +1180,9 @@ export default class GitFileSystemService {
       )
       .andThen(() =>
         ResultAsync.fromPromise(
-          this.git.cwd(`${efsVolPath}/${repoName}`).mv(oldPath, newPath),
+          this.git
+            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+            .mv(oldPath, newPath),
           (error) => {
             logger.error(`Error when moving ${oldPath} to ${newPath}: ${error}`)
 
@@ -1363,7 +1385,9 @@ export default class GitFileSystemService {
       return this.ensureCorrectBranch(repoName, branchName)
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).catFile(["-t", sha]),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .catFile(["-t", sha]),
             (error) => {
               // An error is thrown if the SHA does not exist in the branch
               if (error instanceof GitError) {
@@ -1376,7 +1400,9 @@ export default class GitFileSystemService {
         )
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).reset(["--hard", sha]),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .reset(["--hard", sha]),
             (error) => {
               logger.error(`Error when updating repo state: ${error}`)
 

@@ -11,6 +11,7 @@ export const MEDIA_DIR: MediaFile = {
   type: "dir",
   sha: MEDIA_FILE_SHA,
   path: `${MEDIA_DIRECTORY_NAME}/directory`,
+  size: 0,
 }
 
 const BASE_MEDIA_FILE: MediaFile = {
@@ -18,6 +19,7 @@ const BASE_MEDIA_FILE: MediaFile = {
   type: "file",
   sha: MEDIA_FILE_SHA,
   path: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
+  size: 1234,
 }
 
 export const NESTED_MEDIA_FILE: MediaFile = {

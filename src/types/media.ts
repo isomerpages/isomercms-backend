@@ -6,6 +6,7 @@ export interface MediaFile {
   type: ItemType
   sha: string
   path: string
+  size: number
 }
 
 export interface MediaFileInput {
@@ -24,6 +25,7 @@ export interface MediaFileOutput {
   mediaPath: string
   type: ItemType
   addedTime: number
+  size: number
 }
 
 export interface MediaDirOutput {

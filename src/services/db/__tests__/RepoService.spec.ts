@@ -252,6 +252,7 @@ describe("RepoService", () => {
         mediaPath: "images/test-img.jpeg",
         type: "image" as ItemType,
         addedTime: 0,
+        size: 0,
       }
       gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
@@ -285,6 +286,7 @@ describe("RepoService", () => {
         mediaPath: "images/test-img.jpeg",
         type: "image" as ItemType,
         addedTime: 0,
+        size: 0,
       }
 
       const gitHubServiceReadDirectory = jest.spyOn(

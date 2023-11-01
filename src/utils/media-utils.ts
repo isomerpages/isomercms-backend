@@ -39,6 +39,7 @@ export const getMediaFileInfo = async ({
     mediaPath: `${directoryName}/${file.name}`,
     type: file.type,
     addedTime,
+    size: file.size,
   }
   if (mediaType === "images" && isPrivate) {
     try {

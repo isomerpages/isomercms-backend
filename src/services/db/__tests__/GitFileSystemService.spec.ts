@@ -1407,13 +1407,14 @@ describe("GitFileSystemService", () => {
 
       const expected: MediaFileOutput = {
         name: "fake-media-file.png",
-        sha: "",
+        sha: "fake-hash",
         mediaUrl: `data:image/png;base64,${Buffer.from(
           "fake media content"
         ).toString("base64")}`,
         mediaPath: "fake-dir/fake-media-file.png",
         type: "file",
         addedTime: fileStats.birthtimeMs,
+        size: fileStats.size,
       }
 
       const actual = await GitFileSystemService.readMediaFile(

@@ -852,11 +852,12 @@ export default class GitFileSystemService {
 
         return okAsync({
           name: fileName,
-          sha: "",
+          sha: file.sha,
           mediaUrl: `${dataUrlPrefix},${file.content}`,
           mediaPath: `${directoryName}/${fileName}`,
           type: fileType,
           addedTime: stats.birthtimeMs,
+          size: stats.size,
         })
       })
   }

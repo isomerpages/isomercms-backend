@@ -195,6 +195,10 @@ const CreateMediaFileRequestSchema = Joi.object().keys({
   newFileName: Joi.string().required(),
 })
 
+const CreateMediaFilesRequestSchema = Joi.object().keys({
+  files: Joi.array().items(CreateMediaFileRequestSchema),
+})
+
 const UpdateMediaFileRequestSchema = Joi.object().keys({
   content: Joi.string(),
   sha: Joi.string().required(),
@@ -306,4 +310,5 @@ module.exports = {
   UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
   UpdateRepoPasswordRequestSchema,
+  CreateMediaFilesRequestSchema,
 }

@@ -13,6 +13,7 @@ const {
   CreateMediaFileRequestSchema,
   UpdateMediaFileRequestSchema,
   DeleteMediaFileRequestSchema,
+  CreateMediaFilesRequestSchema,
 } = require("@validators/RequestSchema")
 
 class MediaFilesRouter {
@@ -40,6 +41,35 @@ class MediaFilesRouter {
     )
 
     res.status(200).json(createResp)
+    return next()
+  }
+
+  async createMediaFiles(req, res, next) {
+    const { userWithSiteSessionData } = res.locals
+
+    const { directoryName } = req.params
+    const { error } = CreateMediaFilesRequestSchema.validate(req.body)
+    if (error) throw new BadRequestError(error.message)
+
+    const { files } = req.body
+    const resolvedFiles = await Promise.allSettled(
+      files.map(({ content, newFileName }) =>
+        this.mediaFileService.create(userWithSiteSessionData, {
+          fileName: newFileName,
+          directoryName,
+          content,
+        })
+      )
+    )
+
+    const createdFiles = resolvedFiles.filter(
+      (resolvedFile) => resolvedFile.status === "fulfilled"
+    )
+    const failedFiles = resolvedFiles.filter(
+      (resolvedFile) => resolvedFile.status === "rejected"
+    )
+
+    res.status(200).json({ created: createdFiles, failed: failedFiles })
     return next()
   }
 
@@ -111,6 +141,10 @@ class MediaFilesRouter {
     const router = express.Router({ mergeParams: true })
 
     router.post("/", attachRollbackRouteHandlerWrapper(this.createMediaFile))
+    router.post(
+      "/files",
+      attachRollbackRouteHandlerWrapper(this.createMediaFiles)
+    )
     router.get("/:fileName", attachReadRouteHandlerWrapper(this.readMediaFile))
     router.post(
       "/:fileName",

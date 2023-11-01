@@ -245,7 +245,7 @@ export default class ReposService {
       .checkoutLocalBranch("staging")
 
     // Add all the changes
-    await this.simpleGit.cwd(stgDir).add(".")
+    await this.simpleGit.cwd({ path: stgDir, root: false }).add(".")
 
     // Commit
     await this.simpleGit

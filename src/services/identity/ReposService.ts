@@ -1,4 +1,3 @@
-import { exec } from "child_process"
 import fs from "fs"
 import path from "path"
 
@@ -123,19 +122,20 @@ export default class ReposService {
     this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
 
     // 2. Commit changes in local repo
+    await this.simpleGit.cwd(dir).checkout("staging") // ensure on staging branch
+    await this.simpleGit.cwd(dir).add(".")
     await this.simpleGit
       .cwd(dir)
-      .checkout("staging") // ensure on staging branch
-      .add(".")
       .addConfig("user.name", ISOMER_GITHUB_ORGANIZATION_NAME)
-      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
-      .commit("Set URLs")
+    await this.simpleGit.cwd(dir).addConfig("user.email", ISOMER_GITHUB_EMAIL)
+    await this.simpleGit.cwd(dir).commit("Set URLs")
 
     // 3. Push changes to staging branch
     await this.simpleGit.cwd(dir).push("origin", "staging")
 
     // 4. Merge these changes into master branch
-    await this.simpleGit.cwd(dir).checkout("master").merge(["staging"])
+    await this.simpleGit.cwd(dir).checkout("master")
+    await this.simpleGit.cwd(dir).merge(["staging"])
 
     // 5. Push changes to master branch
     await this.simpleGit.cwd(dir).push("origin", "master")
@@ -232,30 +232,26 @@ export default class ReposService {
     fs.rmSync(`${stgDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
-    await this.simpleGit
-      .cwd(stgDir)
-      .init(["--initial-branch=staging"])
-      .checkoutLocalBranch("staging")
+    await this.simpleGit.cwd(stgDir).init(["--initial-branch=staging"])
+    await this.simpleGit.cwd(stgDir).checkoutLocalBranch("staging")
 
     // Add all the changes
     await this.simpleGit.cwd(stgDir).add(".")
 
     // Commit
+    await this.simpleGit.cwd(stgDir).addConfig("user.name", "isomeradmin")
     await this.simpleGit
       .cwd(stgDir)
-      .addConfig("user.name", "isomeradmin")
       .addConfig("user.email", ISOMER_GITHUB_EMAIL)
-      .commit("Initial commit")
+    await this.simpleGit.cwd(stgDir).commit("Initial commit")
 
     // Push to origin
-    await this.simpleGit
-      .cwd(stgDir)
-      .addRemote("origin", repoUrl)
-      .checkout("staging")
-      .push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub
-      .checkoutLocalBranch("master")
-      .push(["-u", "origin", "master"])
-      .checkout("staging") // reset local branch back to staging
+    await this.simpleGit.cwd(stgDir).addRemote("origin", repoUrl)
+    await this.simpleGit.cwd(stgDir).checkout("staging")
+    await this.simpleGit.cwd(stgDir).push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub
+    await this.simpleGit.cwd(stgDir).checkoutLocalBranch("master")
+    await this.simpleGit.cwd(stgDir).push(["-u", "origin", "master"])
+    await this.simpleGit.cwd(stgDir).checkout("staging") // reset local branch back to staging
 
     // Make sure the local path is empty, just in case dir was used on a previous attempt.
     await this.setUpStagingLite(stgLiteDir, repoUrl)
@@ -378,24 +374,20 @@ export const createRecords = (zoneId: string): Record[] => {
     // Create staging lite branch in other repo path
     await this.simpleGit.cwd(stgLiteDir).clone(repoUrl, stgLiteDir)
     await this.simpleGit.cwd(stgLiteDir).pull() // some repos are large, clone takes time
-    await this.simpleGit
-      .cwd(stgLiteDir)
-      .checkout("staging")
-      .rm(["-r", "images"])
-      .rm(["-r", "files"])
+    await this.simpleGit.cwd(stgLiteDir).checkout("staging")
+    await this.simpleGit.cwd(stgLiteDir).rm(["-r", "images"])
+    await this.simpleGit.cwd(stgLiteDir).rm(["-r", "files"])
 
     // Clear git
     fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
-    await this.simpleGit
-      .cwd(stgLiteDir)
-      .init()
-      .checkoutLocalBranch("staging-lite")
-      .add(".")
-      .commit("Initial commit")
-      .addRemote("origin", repoUrl)
-      .push(["origin", "staging-lite", "-f"])
+    await this.simpleGit.cwd(stgLiteDir).init()
+    await this.simpleGit.cwd(stgLiteDir).checkoutLocalBranch("staging-lite")
+    await this.simpleGit.cwd(stgLiteDir).add(".")
+    await this.simpleGit.cwd(stgLiteDir).commit("Initial commit")
+    await this.simpleGit.cwd(stgLiteDir).addRemote("origin", repoUrl)
+    await this.simpleGit.cwd(stgLiteDir).push(["origin", "staging-lite", "-f"])
     return stgLiteDir
   }
 }

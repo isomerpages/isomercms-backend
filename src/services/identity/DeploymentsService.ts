@@ -250,6 +250,7 @@ class DeploymentsService {
     })
     if (!deploymentInfo)
       return errAsync(new NotFoundError("Site has not been deployed!"))
+    logger.info(`Updating staging url for ${siteId} to ${stagingUrl}`)
     await this.deploymentsRepository.update(
       {
         stagingUrl,

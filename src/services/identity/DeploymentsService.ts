@@ -10,11 +10,7 @@ import { Deployment, Repo, Site } from "@database/models"
 import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
-import {
-  StagingBuildStatus,
-  BuildStatus,
-  statusStates,
-} from "@root/types/stagingBuildStatus"
+import { BuildStatus, statusStates } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
 import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
@@ -269,7 +265,6 @@ class DeploymentsService {
 
   getStagingSiteBuildStatus = (
     siteId: string,
-    lastCommitTime: number,
     isRepoWhiteListedForBuildRed: boolean
   ): ResultAsync<BuildStatus, NotFoundError | AmplifyError> =>
     fromPromise(
@@ -290,9 +285,9 @@ class DeploymentsService {
         let userStagingApp: string
         const { hostingId, stagingLiteHostingId } = deploymentInfo
         if (isRepoWhiteListedForBuildRed) {
-          userStagingApp = hostingId
-        } else {
           userStagingApp = stagingLiteHostingId
+        } else {
+          userStagingApp = hostingId
         }
 
         if (!userStagingApp) {
@@ -312,31 +307,17 @@ class DeploymentsService {
         if (jobSummaries.length === 0) {
           return okAsync(statusStates.pending)
         }
-        for (let i = 0; i < jobSummaries.length; i += 1) {
-          const jobSummary = jobSummaries[i]
-          if (jobSummary.commitTime) {
-            const jobSummaryTime = jobSummary.commitTime.getTime()
-            if (
-              jobSummaryTime >= lastCommitTime &&
-              jobSummary.status === JobStatus.SUCCEED
-            ) {
-              return okAsync(
-                // a commit further ahead is already ready
-                statusStates.ready
-              )
-            }
-            if (jobSummaryTime < lastCommitTime) {
-              // since job summaries are sorted, this is the last build to check and this will
-              // be the sot for the site build's status
-              return okAsync(
-                jobSummary.status === JobStatus.FAILED
-                  ? statusStates.error
-                  : statusStates.pending
-              )
-            }
-          }
+
+        const jobSummary = jobSummaries[0]
+
+        switch (jobSummary.status) {
+          case JobStatus.SUCCEED:
+            return okAsync(statusStates.ready)
+          case JobStatus.FAILED:
+            return okAsync(statusStates.error)
+          default:
+            return okAsync(statusStates.pending)
         }
-        return okAsync(statusStates.error)
       })
 }
 

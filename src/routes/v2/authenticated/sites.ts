@@ -17,7 +17,7 @@ import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import { RepositoryData } from "@root/types/repoInfo"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
-import { BuildStatus } from "@root/types/stagingBuildStatus"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
@@ -172,20 +172,19 @@ export class SitesRouter {
 
   getUserStagingSiteBuildStatus: RequestHandler<
     { siteName: string },
-    BuildStatus | ResponseErrorBody,
-    { lastCommitTime: number },
+    StagingBuildStatus | ResponseErrorBody,
+    never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
     const result = await this.sitesService.getUserStagingSiteBuildStatus(
-      req.body.lastCommitTime,
       userWithSiteSessionData
     )
     if (result.isOk()) {
       return res.status(200).json(result.value)
     }
-    return res.status(404).json({ message: result.error.message })
+    return res.status(404).json({ message: "Unable to get staging status" })
   }
 
   getRouter() {

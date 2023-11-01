@@ -7,5 +7,4 @@ export type BuildStatus = typeof statusStates[keyof typeof statusStates]
 
 export interface StagingBuildStatus {
   status: BuildStatus
-  timeLastSaved: number
 }

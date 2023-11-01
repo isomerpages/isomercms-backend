@@ -16,12 +16,14 @@ import {
   getAllRepoData,
   SitesCacheService,
 } from "@root/services/identity/SitesCacheService"
+import { AmplifyError } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 import { safeJsonParse } from "@root/utils/json"
@@ -538,17 +540,20 @@ class SitesService {
   }
 
   getUserStagingSiteBuildStatus(
-    lastCommitTime: number,
     userSessionData: UserWithSiteSessionData
-  ) {
+  ): ResultAsync<
+    StagingBuildStatus,
+    NotFoundError | MissingSiteError | AmplifyError
+  > {
     const { siteName, growthbook } = userSessionData
-    return this.getBySiteName(siteName).andThen((site) =>
-      this.deploymentsService.getStagingSiteBuildStatus(
-        site.id.toString(),
-        lastCommitTime,
-        isReduceBuildTimesWhitelistedRepo(growthbook)
+    return this.getBySiteName(siteName)
+      .andThen((site) =>
+        this.deploymentsService.getStagingSiteBuildStatus(
+          site.id.toString(),
+          isReduceBuildTimesWhitelistedRepo(growthbook)
+        )
       )
-    )
+      .andThen((status) => okAsync({ status }))
   }
 }
 

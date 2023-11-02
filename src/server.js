@@ -3,6 +3,7 @@ import "./utils/tracer"
 import "module-alias/register"
 
 import { SgidClient } from "@opengovsg/sgid-client"
+import algoliasearch from "algoliasearch"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
 import nocache from "nocache"
@@ -79,6 +80,7 @@ import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
 import RepoService from "./services/db/RepoService"
+import SearchService from "./services/egazette/SearchService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
@@ -150,6 +152,7 @@ const { errorHandler } = require("@middleware/errorHandler")
 
 const { AuthRouter } = require("@routes/v2/auth")
 
+const { FormsgEGazetteRouter } = require("@root/routes/formsg/formsgEGazette")
 const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
 const {
   FormsgSiteCreateRouter,
@@ -169,6 +172,13 @@ const simpleGitInstance = new simpleGit({
 
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+
+// Setup Algolia search client
+const searchClient = algoliasearch(
+  config.get("algolia.appId"),
+  config.get("algolia.apiKey")
+)
+const searchService = new SearchService(searchClient)
 
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
@@ -373,6 +383,7 @@ const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
   gitFileSystemService,
   reposService,
 })
+const formsgEGazetteRouter = new FormsgEGazetteRouter(searchService)
 
 const app = express()
 
@@ -414,6 +425,7 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 app.use("/formsg", formsgGGsRepairRouter.getRouter())
+app.use("/formsg", formsgEGazetteRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

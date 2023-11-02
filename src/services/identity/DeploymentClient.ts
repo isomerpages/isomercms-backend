@@ -10,8 +10,11 @@ import {
   UpdateBranchCommand,
   UpdateBranchCommandOutput,
   UpdateBranchCommandInput,
+  ListJobsCommand,
+  ListJobsCommandOutput,
+  JobSummary,
 } from "@aws-sdk/client-amplify"
-import { ResultAsync } from "neverthrow"
+import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
@@ -69,6 +72,11 @@ class DeploymentClient {
       this.amplifyClient.send(new UpdateBranchCommand(options))
     ) as ResultAsync<UpdateBranchCommandOutput, AmplifyError>
 
+  sendListJobsApp = (appId: string, branchName: string) =>
+    wrap(
+      this.amplifyClient.send(new ListJobsCommand({ appId, branchName }))
+    ) as ResultAsync<ListJobsCommandOutput, AmplifyError>
+
   generateCreateAppInput = (
     repoName: string,
     repoUrl: string
@@ -113,6 +121,23 @@ class DeploymentClient {
     enableBasicAuth: true,
     basicAuthCredentials: Buffer.from(`user:${password}`).toString("base64"),
   })
+
+  getJobSummaries = (
+    appId: string,
+    branchName: string
+  ): ResultAsync<JobSummary[], AmplifyError> =>
+    fromPromise(
+      this.sendListJobsApp(appId, branchName),
+      (err) => new AmplifyError(`${err}`)
+    ).andThen((resp) => {
+      if (resp.isErr()) {
+        return errAsync(resp.error)
+      }
+      if (!resp.value.jobSummaries) {
+        return errAsync(new AmplifyError("No job summaries"))
+      }
+      return okAsync(resp.value.jobSummaries)
+    })
 }
 
 export default DeploymentClient

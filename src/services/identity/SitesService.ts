@@ -16,14 +16,19 @@ import {
   getAllRepoData,
   SitesCacheService,
 } from "@root/services/identity/SitesCacheService"
+import { AmplifyError } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
-import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
+import {
+  isReduceBuildTimesWhitelistedRepo,
+  isShowStagingBuildStatusWhitelistedRepo,
+} from "@root/utils/growthbook-utils"
 import { safeJsonParse } from "@root/utils/json"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -535,6 +540,26 @@ class SitesService {
         }
       })
     )
+  }
+
+  getUserStagingSiteBuildStatus(
+    userSessionData: UserWithSiteSessionData
+  ): ResultAsync<
+    StagingBuildStatus,
+    NotFoundError | MissingSiteError | AmplifyError
+  > {
+    const { siteName, growthbook } = userSessionData
+    if (!isShowStagingBuildStatusWhitelistedRepo(growthbook)) {
+      return errAsync(new NotFoundError())
+    }
+    return this.getBySiteName(siteName)
+      .andThen((site) =>
+        this.deploymentsService.getStagingSiteBuildStatus(
+          site.id.toString(),
+          isReduceBuildTimesWhitelistedRepo(growthbook)
+        )
+      )
+      .map((status) => ({ status }))
   }
 }
 

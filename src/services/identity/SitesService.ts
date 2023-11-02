@@ -16,20 +16,27 @@ import {
   getAllRepoData,
   SitesCacheService,
 } from "@root/services/identity/SitesCacheService"
+import { AmplifyError } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
-import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
+import {
+  isReduceBuildTimesWhitelistedRepo,
+  isShowStagingBuildStatusWhitelistedRepo,
+} from "@root/utils/growthbook-utils"
 import { safeJsonParse } from "@root/utils/json"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
+
+import DeploymentsService from "./DeploymentsService"
 
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
@@ -40,6 +47,7 @@ interface SitesServiceProps {
   reviewRequestService: ReviewRequestService
   sitesCacheService: SitesCacheService
   previewService: PreviewService
+  deploymentsService: DeploymentsService
 }
 
 class SitesService {
@@ -61,6 +69,8 @@ class SitesService {
 
   private readonly previewService: SitesServiceProps["previewService"]
 
+  private readonly deploymentsService: SitesServiceProps["deploymentsService"]
+
   constructor({
     siteRepository,
     gitHubService,
@@ -70,6 +80,7 @@ class SitesService {
     reviewRequestService,
     sitesCacheService,
     previewService,
+    deploymentsService,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
@@ -79,6 +90,7 @@ class SitesService {
     this.reviewRequestService = reviewRequestService
     this.sitesCacheService = sitesCacheService
     this.previewService = previewService
+    this.deploymentsService = deploymentsService
   }
 
   isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
@@ -260,20 +272,8 @@ class SitesService {
       .orElse(() => okAsync(this.extractAuthorEmail(commit)))
   }
 
-  updateDbWithStagingUrl(site: Site, stagingUrl: StagingPermalink) {
-    // Non-blocking control flow
-    this.siteRepository.update(
-      {
-        deployment: {
-          stagingUrl,
-        },
-      },
-      {
-        where: {
-          id: site.id,
-        },
-      }
-    )
+  async updateDbWithStagingUrl(site: Site, stagingUrl: StagingPermalink) {
+    this.deploymentsService.updateStagingUrl(site.id, stagingUrl)
   }
 
   // Tries to get the site urls in the following order:
@@ -540,6 +540,26 @@ class SitesService {
         }
       })
     )
+  }
+
+  getUserStagingSiteBuildStatus(
+    userSessionData: UserWithSiteSessionData
+  ): ResultAsync<
+    StagingBuildStatus,
+    NotFoundError | MissingSiteError | AmplifyError
+  > {
+    const { siteName, growthbook } = userSessionData
+    if (!isShowStagingBuildStatusWhitelistedRepo(growthbook)) {
+      return errAsync(new NotFoundError())
+    }
+    return this.getBySiteName(siteName)
+      .andThen((site) =>
+        this.deploymentsService.getStagingSiteBuildStatus(
+          site.id.toString(),
+          isReduceBuildTimesWhitelistedRepo(growthbook)
+        )
+      )
+      .map((status) => ({ status }))
   }
 }
 

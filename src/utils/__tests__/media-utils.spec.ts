@@ -43,6 +43,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(IMAGE_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
@@ -58,6 +60,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_SUBDIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(
       await getMediaFileInfo(NESTED_IMAGE_FILE_PUBLIC_INPUT)
@@ -73,6 +77,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(SVG_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
@@ -88,6 +94,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(PDF_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
@@ -100,6 +108,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     const resp = await getMediaFileInfo(IMAGE_FILE_PRIVATE_INPUT)
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
@@ -120,6 +130,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     const resp = await getMediaFileInfo(SVG_FILE_PRIVATE_INPUT)
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
@@ -143,6 +155,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(PDF_FILE_PRIVATE_INPUT)).toStrictEqual(
       expectedResp

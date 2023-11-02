@@ -125,6 +125,10 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -141,6 +145,7 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
@@ -161,9 +166,6 @@ const authorizationMiddleware = getAuthorizationMiddleware({
 const reposService = new ReposService({
   repository: Repo,
   simpleGit: simpleGit(),
-})
-const deploymentsService = new DeploymentsService({
-  deploymentsRepository: Deployment,
 })
 const launchClient = new LaunchClient()
 const launchesService = new LaunchesService({

@@ -1,4 +1,4 @@
-import { Stats } from "fs"
+import fs, { Stats } from "fs"
 
 import mockFs from "mock-fs"
 import { okAsync } from "neverthrow"
@@ -23,6 +23,8 @@ import {
   MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
 } from "@fixtures/github"
 import { MOCK_USER_ID_ONE } from "@fixtures/users"
+import { MediaTypeError } from "@root/errors/MediaTypeError"
+import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import _GitFileSystemService from "@services/db/GitFileSystemService"
@@ -43,6 +45,7 @@ const dirTree = {
   "fake-repo": {
     "fake-dir": {
       "fake-file": "fake content",
+      "fake-media-file.png": "fake media content",
     },
     "another-fake-dir": {
       "fake-file": "duplicate fake file",
@@ -1391,6 +1394,85 @@ describe("GitFileSystemService", () => {
 
       expect(result.isErr()).toBeTrue()
     })
+  })
+
+  describe("readMediaFile", () => {
+    it("should read the contents of a media file successfully", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-hash"),
+      })
+      const fileStats = fs.statSync(
+        `${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir/fake-media-file.png`
+      )
+
+      const expected: MediaFileOutput = {
+        name: "fake-media-file.png",
+        sha: "fake-hash",
+        mediaUrl: `data:image/png;base64,${Buffer.from(
+          "fake media content"
+        ).toString("base64")}`,
+        mediaPath: "fake-dir/fake-media-file.png",
+        type: "file",
+        addedTime: fileStats.birthtimeMs,
+        size: fileStats.size,
+      }
+
+      const actual = await GitFileSystemService.readMediaFile(
+        "fake-repo",
+        "fake-dir",
+        "fake-media-file.png"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual(expected)
+    })
+
+    it("should return a NotFoundError if the file does not exist", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockRejectedValueOnce("fake-hash"),
+      })
+
+      const result = await GitFileSystemService.readMediaFile(
+        "fake-repo",
+        "fake-dir",
+        "non-existent-file.png"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+
+    it("should return a GitFileSystemError if an error occurred when getting the Git blob hash", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.readMediaFile(
+        "fake-repo",
+        "fake-dir",
+        "fake-media-file.png"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  it("should return a MediaTypeError if the file has an invalid file extension", async () => {
+    const result = await GitFileSystemService.readMediaFile(
+      "fake-repo",
+      "fake-dir",
+      "fake-media-file.invalid"
+    )
+
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(MediaTypeError)
+  })
+
+  it("should return a MediaTypeError if the file has no file extension", async () => {
+    const result = await GitFileSystemService.readMediaFile(
+      "fake-repo",
+      "fake-dir",
+      "fake-file"
+    )
+
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(MediaTypeError)
   })
 
   describe("update", () => {

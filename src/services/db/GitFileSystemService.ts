@@ -1,14 +1,6 @@
 import fs from "fs"
 
-import {
-  combine,
-  err,
-  errAsync,
-  ok,
-  okAsync,
-  Result,
-  ResultAsync,
-} from "neverthrow"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
   GitError,
@@ -111,7 +103,7 @@ export default class GitFileSystemService {
       ? `${EFS_VOL_PATH_STAGING}/${repoName}`
       : `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`
     return ResultAsync.fromPromise(
-      this.git.cwd(`${repoPath}`).checkIsRepo(),
+      this.git.cwd({ path: `${repoPath}`, root: false }).checkIsRepo(),
       (error) => {
         logger.error(
           `Error when checking if ${repoName} is a Git repo: ${error}`
@@ -137,7 +129,9 @@ export default class GitFileSystemService {
       ? `${EFS_VOL_PATH_STAGING}/${repoName}`
       : `${EFS_VOL_PATH_STAGING_LITE}/${repoName}`
     return ResultAsync.fromPromise(
-      this.git.cwd(repoPath).remote(["get-url", "origin"]),
+      this.git
+        .cwd({ path: repoPath, root: false })
+        .remote(["get-url", "origin"]),
       (error) => {
         logger.error(`Error when checking origin remote URL: ${error}`)
 
@@ -204,7 +198,7 @@ export default class GitFileSystemService {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
-        .cwd(`${efsVolPath}/${repoName}`)
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
         .revparse(["--abbrev-ref", "HEAD"]),
       (error) => {
         logger.error(`Error when getting current branch: ${error}`)
@@ -218,7 +212,9 @@ export default class GitFileSystemService {
     ).andThen((currentBranch) => {
       if (currentBranch !== branchName) {
         return ResultAsync.fromPromise(
-          this.git.cwd(`${efsVolPath}/${repoName}`).checkout(branchName),
+          this.git
+            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+            .checkout(branchName),
           (error) => {
             logger.error(`Error when checking out ${branchName}: ${error}`)
 
@@ -245,7 +241,9 @@ export default class GitFileSystemService {
       ? EFS_VOL_PATH_STAGING
       : EFS_VOL_PATH_STAGING_LITE
     return ResultAsync.fromPromise(
-      this.git.cwd(`${efsVolPath}/${repoName}`).revparse([`HEAD:${filePath}`]),
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .revparse([`HEAD:${filePath}`]),
       (error) => {
         logger.error(
           `Error when getting Git blob hash: ${error} when trying to access ${efsVolPath}/${repoName}`
@@ -302,7 +300,9 @@ export default class GitFileSystemService {
   ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
-      this.git.cwd(`${efsVolPath}/${repoName}`).log([branchName]),
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .log([branchName]),
       (error) => {
         logger.error(
           `Error when getting latest commit of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
@@ -331,7 +331,7 @@ export default class GitFileSystemService {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
-        .cwd(`${efsVolPath}/${repoName}`)
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
         .reset(["--hard", commitSha])
         .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE),
       (error) => {
@@ -348,7 +348,7 @@ export default class GitFileSystemService {
 
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
-    return combine([
+    return ResultAsync.combine([
       this.cloneBranch(repoName, true),
       this.cloneBranch(repoName, false),
     ]).andThen(([stagingPath, _]) =>
@@ -378,7 +378,7 @@ export default class GitFileSystemService {
           const clonePromise = isStaging
             ? this.git
                 .clone(originUrl, `${efsVolPath}/${repoName}`)
-                .cwd(`${efsVolPath}/${repoName}`)
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                 .checkout(branch)
             : this.git
                 .clone(originUrl, `${efsVolPath}/${repoName}`, [
@@ -386,7 +386,7 @@ export default class GitFileSystemService {
                   branch,
                   "--single-branch",
                 ])
-                .cwd(`${efsVolPath}/${repoName}`)
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
 
           return ResultAsync.fromPromise(clonePromise, (error) => {
             logger.error(`Error when cloning ${repoName}: ${error}`)
@@ -448,7 +448,9 @@ export default class GitFileSystemService {
 
       return this.ensureCorrectBranch(repoName, branchName).andThen(() =>
         ResultAsync.fromPromise(
-          this.git.cwd(`${efsVolPath}/${repoName}`).pull(),
+          this.git
+            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+            .pull(),
           (error) => {
             // Full error message 1: Your configuration specifies to merge
             // with the ref 'refs/heads/staging' from the remote, but no
@@ -514,9 +516,11 @@ export default class GitFileSystemService {
           ResultAsync.fromPromise(
             isForce
               ? this.git
-                  .cwd(`${efsVolPath}/${repoName}`)
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push([...gitOptions, "--force"])
-              : this.git.cwd(`${efsVolPath}/${repoName}`).push(gitOptions),
+              : this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(gitOptions),
             (error) => {
               logger.error(`Error when pushing ${repoName}: ${error}`)
 
@@ -534,8 +538,12 @@ export default class GitFileSystemService {
           // Retry push once
           ResultAsync.fromPromise(
             isForce
-              ? this.git.cwd(`${efsVolPath}/${repoName}`).push(["--force"])
-              : this.git.cwd(`${efsVolPath}/${repoName}`).push(),
+              ? this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(["--force"])
+              : this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(),
             (error) => {
               logger.error(`Error when pushing ${repoName}: ${error}`)
 
@@ -600,7 +608,9 @@ export default class GitFileSystemService {
           }
 
           return ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).add(pathSpec),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .add(pathSpec),
             (error) => {
               logger.error(
                 `Error when Git adding files to ${repoName}: ${error}`
@@ -620,7 +630,9 @@ export default class GitFileSystemService {
         })
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).commit(commitMessage),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .commit(commitMessage),
             (error) => {
               logger.error(`Error when committing ${repoName}: ${error}`)
 
@@ -759,7 +771,7 @@ export default class GitFileSystemService {
     encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     const defaultEfsVolPath = EFS_VOL_PATH_STAGING
-    return combine([
+    return ResultAsync.combine([
       ResultAsync.fromPromise(
         fs.promises.readFile(
           `${defaultEfsVolPath}/${repoName}/${filePath}`,
@@ -800,7 +812,7 @@ export default class GitFileSystemService {
 
   getMimeType(fileExtension: string): Result<string, MediaTypeError> {
     if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
-      err(new MediaTypeError("Unsupported file extension found"))
+      return err(new MediaTypeError("Unsupported file extension found"))
     }
     switch (fileExtension) {
       case "svg":
@@ -820,28 +832,34 @@ export default class GitFileSystemService {
     siteName: string,
     directoryName: string,
     fileName: string
-  ): ResultAsync<MediaFileOutput, GitFileSystemError | MediaTypeError> {
-    return this.read(
-      siteName,
-      `${directoryName}/${fileName}`,
-      "base64"
-    ).andThen((file: GitFile) => {
-      const fileType = "file" as const
-      const fileExtResult = this.getFileExtension(fileName)
-      if (fileExtResult.isErr()) return errAsync(fileExtResult.error)
+  ): ResultAsync<
+    MediaFileOutput,
+    GitFileSystemError | MediaTypeError | NotFoundError
+  > {
+    return this.getFileExtension(fileName)
+      .andThen((fileExt) => this.getMimeType(fileExt))
+      .asyncAndThen((mimeType) =>
+        ResultAsync.combine([
+          okAsync(mimeType),
+          this.getFilePathStats(siteName, `${directoryName}/${fileName}`, true),
+          this.read(siteName, `${directoryName}/${fileName}`, "base64"),
+        ])
+      )
+      .andThen((combineResult) => {
+        const [mimeType, stats, file] = combineResult
+        const fileType = "file" as const
+        const dataUrlPrefix = `data:${mimeType};base64`
 
-      const mimeTypeResult = this.getMimeType(fileExtResult.value)
-      if (mimeTypeResult.isErr()) return errAsync(mimeTypeResult.error)
-
-      const dataUrlPrefix = `data:${mimeTypeResult.value};base64`
-      return okAsync({
-        name: fileName,
-        sha: file.sha,
-        mediaUrl: `${dataUrlPrefix},${file.content}`,
-        mediaPath: `${directoryName}/${fileName}`,
-        type: fileType,
+        return okAsync({
+          name: fileName,
+          sha: file.sha,
+          mediaUrl: `${dataUrlPrefix},${file.content}`,
+          mediaPath: `${directoryName}/${fileName}`,
+          type: fileType,
+          addedTime: stats.birthtimeMs,
+          size: stats.size,
+        })
       })
-    })
   }
 
   // Read the contents of a directory
@@ -883,7 +901,7 @@ export default class GitFileSystemService {
         )
       )
       .andThen((directoryContents) => {
-        const resultAsyncs = directoryContents.map((directoryItem: any) => {
+        const resultAsyncs = directoryContents.map((directoryItem) => {
           const isDirectory = directoryItem.isDirectory()
           const { name } = directoryItem
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
@@ -892,7 +910,7 @@ export default class GitFileSystemService {
           return this.getGitBlobHash(repoName, path)
             .orElse(() => okAsync(""))
             .andThen((sha) =>
-              combine([
+              ResultAsync.combine([
                 okAsync(sha),
                 this.getFilePathStats(
                   repoName,
@@ -902,7 +920,7 @@ export default class GitFileSystemService {
               ])
             )
             .andThen((shaAndStats) => {
-              const [sha, stats] = shaAndStats as [string, fs.Stats]
+              const [sha, stats] = shaAndStats
               const result: GitDirectoryItem = {
                 name,
                 type,
@@ -915,7 +933,7 @@ export default class GitFileSystemService {
             })
         })
 
-        return combine(resultAsyncs)
+        return ResultAsync.combine(resultAsyncs)
       })
       .andThen((directoryItems) =>
         // Note: The sha is empty if the file is not tracked by Git
@@ -1163,7 +1181,9 @@ export default class GitFileSystemService {
       )
       .andThen(() =>
         ResultAsync.fromPromise(
-          this.git.cwd(`${efsVolPath}/${repoName}`).mv(oldPath, newPath),
+          this.git
+            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+            .mv(oldPath, newPath),
           (error) => {
             logger.error(`Error when moving ${oldPath} to ${newPath}: ${error}`)
 
@@ -1258,7 +1278,7 @@ export default class GitFileSystemService {
         )
       )
       .andThen(() =>
-        combine(
+        ResultAsync.combine(
           targetFiles.map((targetFile) =>
             // We expect to see an error here, since the new path should not exist
             this.getFilePathStats(
@@ -1366,7 +1386,9 @@ export default class GitFileSystemService {
       return this.ensureCorrectBranch(repoName, branchName)
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).catFile(["-t", sha]),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .catFile(["-t", sha]),
             (error) => {
               // An error is thrown if the SHA does not exist in the branch
               if (error instanceof GitError) {
@@ -1379,7 +1401,9 @@ export default class GitFileSystemService {
         )
         .andThen(() =>
           ResultAsync.fromPromise(
-            this.git.cwd(`${efsVolPath}/${repoName}`).reset(["--hard", sha]),
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .reset(["--hard", sha]),
             (error) => {
               logger.error(`Error when updating repo state: ${error}`)
 

@@ -1,4 +1,5 @@
-import { Result, errAsync, okAsync } from "neverthrow"
+import { JobStatus } from "@aws-sdk/client-amplify"
+import { Result, ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -6,8 +7,10 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import { Deployment, Repo, Site } from "@database/models"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
+import { BuildStatus, StatusStates } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
 import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
@@ -241,6 +244,81 @@ class DeploymentsService {
 
     return updateResp
   }
+
+  updateStagingUrl = async (siteId: number, stagingUrl: string) => {
+    const deploymentInfo = await this.deploymentsRepository.findOne({
+      where: {
+        siteId,
+      },
+    })
+    if (!deploymentInfo)
+      return errAsync(new NotFoundError("Site has not been deployed!"))
+    logger.info(`Updating staging url for ${siteId} to ${stagingUrl}`)
+    await this.deploymentsRepository.update(
+      {
+        stagingUrl,
+      },
+      { where: { siteId } }
+    )
+    return okAsync(deploymentInfo)
+  }
+
+  getStagingSiteBuildStatus = (
+    siteId: string,
+    isRepoWhiteListedForBuildRed: boolean
+  ): ResultAsync<BuildStatus, NotFoundError | AmplifyError> =>
+    fromPromise(
+      this.deploymentsRepository.findOne({
+        where: {
+          siteId,
+        },
+      }),
+      () => new NotFoundError("Site has not been deployed!")
+    )
+      .andThen((deploymentInfo) => {
+        if (!deploymentInfo) {
+          return errAsync(new NotFoundError("Site has not been deployed!"))
+        }
+        return okAsync(deploymentInfo)
+      })
+      .andThen((deploymentInfo) => {
+        let userStagingApp: string
+        const { hostingId, stagingLiteHostingId } = deploymentInfo
+        if (isRepoWhiteListedForBuildRed) {
+          userStagingApp = stagingLiteHostingId
+        } else {
+          userStagingApp = hostingId
+        }
+
+        if (!userStagingApp) {
+          return errAsync(
+            new NotFoundError("Staging site has not been deployed!")
+          )
+        }
+        return okAsync(userStagingApp)
+      })
+      .andThen((userStagingApp) => {
+        const branchName = isRepoWhiteListedForBuildRed
+          ? STAGING_LITE_BRANCH
+          : STAGING_BRANCH
+        return this.deploymentClient.getJobSummaries(userStagingApp, branchName)
+      })
+      .andThen((jobSummaries) => {
+        if (jobSummaries.length === 0) {
+          return okAsync(StatusStates.pending)
+        }
+
+        const jobSummary = jobSummaries[0]
+
+        switch (jobSummary.status) {
+          case JobStatus.SUCCEED:
+            return okAsync(StatusStates.ready)
+          case JobStatus.FAILED:
+            return okAsync(StatusStates.error)
+          default:
+            return okAsync(StatusStates.pending)
+        }
+      })
 }
 
 export default DeploymentsService

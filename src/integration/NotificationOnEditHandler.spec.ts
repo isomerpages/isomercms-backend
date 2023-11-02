@@ -6,6 +6,7 @@ import { NotificationOnEditHandler } from "@middleware/notificationOnEditHandler
 import UserSessionData from "@classes/UserSessionData"
 
 import {
+  Deployment,
   Notification,
   Repo,
   Reviewer,
@@ -41,6 +42,7 @@ import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import RepoService from "@services/db/RepoService"
@@ -121,6 +123,9 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -136,6 +141,7 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

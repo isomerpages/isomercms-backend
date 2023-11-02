@@ -28,6 +28,7 @@ import {
   MOCK_STAGING_URL_DB,
   MOCK_STAGING_URL_GITHUB,
   MOCK_PRODUCTION_URL_GITHUB,
+  MOCK_STAGING_LITE_URL_DB,
 } from "@fixtures/repoInfo"
 import {
   mockUserWithSiteSessionData,
@@ -47,12 +48,15 @@ import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
+import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import { SitesCacheService } from "@services/identity/SitesCacheService"
 import _SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
+
+import DeploymentsService from "../DeploymentsService"
 
 const MockRepository = {
   findOne: jest.fn(),
@@ -85,6 +89,10 @@ const MockSitesCacheService = {
   getLastUpdated: jest.fn(),
 }
 
+const MockDeploymentsService = {
+  updateStagingUrl: jest.fn(),
+}
+
 const MockPreviewService = {}
 const SitesService = new _SitesService({
   siteRepository: (MockRepository as unknown) as ModelStatic<Site>,
@@ -95,6 +103,7 @@ const SitesService = new _SitesService({
   reviewRequestService: (MockReviewRequestService as unknown) as ReviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService: (MockDeploymentsService as unknown) as DeploymentsService,
 })
 
 const SpySitesService = {
@@ -106,6 +115,18 @@ const mockSite = ({
   name: "i m a site",
   users: [],
 } as unknown) as Site
+
+const mockDeploymentWithStagingUrl = {
+  stagingUrl: "https://123.staging.amplifyapp.com",
+  hostingId: "123",
+  stagingLiteHostingId: "321",
+}
+
+const mockDeploymentWithStagingLiteUrl = {
+  stagingUrl: "https://321.staging-lite.amplifyapp.com",
+  hostingId: "123",
+  stagingListHostingId: "321",
+}
 
 describe("SitesService", () => {
   // Prevent inter-test pollution of mocks

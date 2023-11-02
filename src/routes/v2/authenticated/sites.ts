@@ -17,6 +17,7 @@ import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import { RepositoryData } from "@root/types/repoInfo"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
@@ -169,6 +170,23 @@ export class SitesRouter {
       .getSitesPreview(req.body.sites, res.locals.userSessionData)
       .then((previews) => res.status(200).json(previews))
 
+  getUserStagingSiteBuildStatus: RequestHandler<
+    { siteName: string },
+    StagingBuildStatus | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const result = await this.sitesService.getUserStagingSiteBuildStatus(
+      userWithSiteSessionData
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(404).json({ message: "Unable to get staging status" })
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
@@ -209,6 +227,12 @@ export class SitesRouter {
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteAdmin,
       attachReadRouteHandlerWrapper(this.launchSite)
+    )
+    router.get(
+      "/:siteName/getStagingBuildStatus",
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.getUserStagingSiteBuildStatus)
     )
 
     // The /sites/preview is a POST endpoint as the frontend sends

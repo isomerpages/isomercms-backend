@@ -120,7 +120,7 @@ export default class GitHubCommitService extends GitHubService {
       directoryName,
       message,
       githubSessionData,
-      isStaging,
+      isStaging = true,
     }: {
       directoryName: string
       message: string
@@ -223,7 +223,7 @@ export default class GitHubCommitService extends GitHubService {
     oldPath: string,
     newPath: string,
     message?: string,
-    isStaging?: boolean
+    isStaging = true
   ): Promise<GitCommitResult> {
     const gitTree = await super.getTree(
       sessionData,
@@ -313,7 +313,7 @@ export default class GitHubCommitService extends GitHubService {
     newPath: string,
     targetFiles: string[],
     message?: string,
-    isStaging?: boolean
+    isStaging = true
   ): Promise<GitCommitResult> {
     const gitTree = await super.getTree(
       sessionData,

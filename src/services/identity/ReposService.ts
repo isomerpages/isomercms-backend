@@ -124,7 +124,7 @@ export default class ReposService {
 
     // 2. Commit changes in local repo
     await this.simpleGit
-      .cwd(dir)
+      .cwd({ path: dir, root: false })
       .checkout("staging") // ensure on staging branch
       .add(".")
       .addConfig("user.name", ISOMER_GITHUB_ORGANIZATION_NAME)
@@ -132,16 +132,23 @@ export default class ReposService {
       .commit("Set URLs")
 
     // 3. Push changes to staging branch
-    await this.simpleGit.cwd(dir).push("origin", "staging")
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .push("origin", "staging")
 
     // 4. Merge these changes into master branch
-    await this.simpleGit.cwd(dir).checkout("master").merge(["staging"])
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .checkout("master")
+      .merge(["staging"])
 
     // 5. Push changes to master branch
-    await this.simpleGit.cwd(dir).push("origin", "master")
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .push("origin", "master")
 
     // 6. Checkout back to staging branch
-    await this.simpleGit.cwd(dir).checkout("staging")
+    await this.simpleGit.cwd({ path: dir, root: false }).checkout("staging")
   }
 
   private setUrlsInLocalConfig(
@@ -225,7 +232,7 @@ export default class ReposService {
     // Clone base repo locally
     fs.mkdirSync(stgDir)
     await this.simpleGit
-      .cwd(stgDir)
+      .cwd({ path: stgDir, root: false })
       .clone(SITE_CREATION_BASE_REPO_URL, stgDir, ["-b", "staging"])
 
     // Clear git
@@ -233,23 +240,23 @@ export default class ReposService {
 
     // Prepare git repo
     await this.simpleGit
-      .cwd(stgDir)
+      .cwd({ path: stgDir, root: false })
       .init(["--initial-branch=staging"])
       .checkoutLocalBranch("staging")
 
     // Add all the changes
-    await this.simpleGit.cwd(stgDir).add(".")
+    await this.simpleGit.cwd({ path: stgDir, root: false }).add(".")
 
     // Commit
     await this.simpleGit
-      .cwd(stgDir)
+      .cwd({ path: stgDir, root: false })
       .addConfig("user.name", "isomeradmin")
       .addConfig("user.email", ISOMER_GITHUB_EMAIL)
       .commit("Initial commit")
 
     // Push to origin
     await this.simpleGit
-      .cwd(stgDir)
+      .cwd({ path: stgDir, root: false })
       .addRemote("origin", repoUrl)
       .checkout("staging")
       .push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub
@@ -376,20 +383,33 @@ export const createRecords = (zoneId: string): Record[] => {
     // note: for some reason, combining below commands led to race conditions
     // so we have to do it separately
     // Create staging lite branch in other repo path
-    await this.simpleGit.cwd(stgLiteDir).clone(repoUrl, stgLiteDir)
-    await this.simpleGit.cwd(stgLiteDir).pull() // some repos are large, clone takes time
+
     await this.simpleGit
-      .cwd(stgLiteDir)
+      .cwd({ path: stgLiteDir, root: false })
+      .clone(repoUrl, stgLiteDir)
+    await this.simpleGit.cwd({ path: stgLiteDir, root: false }).pull() // some repos are large, clone takes time
+    await this.simpleGit
+      .cwd({ path: stgLiteDir, root: false })
       .checkout("staging")
-      .rm(["-r", "images"])
-      .rm(["-r", "files"])
+
+    if (fs.existsSync(path.join(`${stgLiteDir}`, `images`))) {
+      await this.simpleGit
+        .cwd({ path: stgLiteDir, root: false })
+        .rm(["-r", "images"])
+    }
+
+    if (fs.existsSync(path.join(`${stgLiteDir}`, `files`))) {
+      await this.simpleGit
+        .cwd({ path: stgLiteDir, root: false })
+        .rm(["-r", "files"])
+    }
 
     // Clear git
     fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
     await this.simpleGit
-      .cwd(stgLiteDir)
+      .cwd({ path: stgLiteDir, root: false })
       .init()
       .checkoutLocalBranch("staging-lite")
       .add(".")

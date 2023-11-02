@@ -157,6 +157,10 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -172,15 +176,13 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const navYmlService = new NavYmlService({
   gitHubService,
 })
 const homepagePageService = new HomepagePageService({
   gitHubService,
-})
-const deploymentsService = new DeploymentsService({
-  deploymentsRepository: Deployment,
 })
 
 const identityAuthService = getIdentityAuthService(gitHubService)

@@ -559,7 +559,7 @@ class SitesService {
           isReduceBuildTimesWhitelistedRepo(growthbook)
         )
       )
-      .andThen((status) => okAsync({ status }))
+      .map((status) => ({ status }))
   }
 }
 

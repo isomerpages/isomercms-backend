@@ -10,7 +10,7 @@ import { Deployment, Repo, Site } from "@database/models"
 import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
-import { BuildStatus, statusStates } from "@root/types/stagingBuildStatus"
+import { BuildStatus, StatusStates } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
 import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
@@ -305,18 +305,18 @@ class DeploymentsService {
       })
       .andThen((jobSummaries) => {
         if (jobSummaries.length === 0) {
-          return okAsync(statusStates.pending)
+          return okAsync(StatusStates.pending)
         }
 
         const jobSummary = jobSummaries[0]
 
         switch (jobSummary.status) {
           case JobStatus.SUCCEED:
-            return okAsync(statusStates.ready)
+            return okAsync(StatusStates.ready)
           case JobStatus.FAILED:
-            return okAsync(statusStates.error)
+            return okAsync(StatusStates.error)
           default:
-            return okAsync(statusStates.pending)
+            return okAsync(StatusStates.pending)
         }
       })
 }

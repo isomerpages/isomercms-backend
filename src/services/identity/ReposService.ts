@@ -383,6 +383,7 @@ export const createRecords = (zoneId: string): Record[] => {
     // note: for some reason, combining below commands led to race conditions
     // so we have to do it separately
     // Create staging lite branch in other repo path
+
     await this.simpleGit
       .cwd({ path: stgLiteDir, root: false })
       .clone(repoUrl, stgLiteDir)
@@ -390,8 +391,18 @@ export const createRecords = (zoneId: string): Record[] => {
     await this.simpleGit
       .cwd({ path: stgLiteDir, root: false })
       .checkout("staging")
-      .rm(["-r", "images"])
-      .rm(["-r", "files"])
+
+    if (fs.existsSync(path.join(`${stgLiteDir}`, `images`))) {
+      await this.simpleGit
+        .cwd({ path: stgLiteDir, root: false })
+        .rm(["-r", "images"])
+    }
+
+    if (fs.existsSync(path.join(`${stgLiteDir}`, `files`))) {
+      await this.simpleGit
+        .cwd({ path: stgLiteDir, root: false })
+        .rm(["-r", "files"])
+    }
 
     // Clear git
     fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })

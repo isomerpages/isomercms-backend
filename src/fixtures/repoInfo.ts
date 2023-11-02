@@ -11,6 +11,9 @@ export const MOCK_STAGING_URL_CONFIGYML: NonNullable<
 export const MOCK_STAGING_URL_DB: NonNullable<
   ConfigYmlData["staging"]
 > = Brand.fromString("https://repo-staging-db.netlify.app")
+export const MOCK_STAGING_LITE_URL_DB: NonNullable<
+  ConfigYmlData["staging"]
+> = Brand.fromString("https://repo-staging-lite-db.netlify.app")
 
 export const MOCK_PRODUCTION_URL_GITHUB: NonNullable<
   ConfigYmlData["prod"]

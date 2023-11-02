@@ -3,6 +3,7 @@ import simpleGit from "simple-git"
 import request from "supertest"
 
 import {
+  Deployment,
   Notification,
   Repo,
   Reviewer,
@@ -48,6 +49,7 @@ import { ConfigService } from "@root/services/fileServices/YmlFileServices/Confi
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
@@ -126,6 +128,10 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -141,6 +147,7 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,

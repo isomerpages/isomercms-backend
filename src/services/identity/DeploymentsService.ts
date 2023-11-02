@@ -241,6 +241,24 @@ class DeploymentsService {
 
     return updateResp
   }
+
+  updateStagingUrl = async (siteId: number, stagingUrl: string) => {
+    const deploymentInfo = await this.deploymentsRepository.findOne({
+      where: {
+        siteId,
+      },
+    })
+    if (!deploymentInfo)
+      return errAsync(new NotFoundError("Site has not been deployed!"))
+    logger.info(`Updating staging url for ${siteId} to ${stagingUrl}`)
+    await this.deploymentsRepository.update(
+      {
+        stagingUrl,
+      },
+      { where: { siteId } }
+    )
+    return okAsync(deploymentInfo)
+  }
 }
 
 export default DeploymentsService

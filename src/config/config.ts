@@ -297,6 +297,29 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    eGazetteFormKey: {
+      doc: "FormSG API key for eGazette form submissions",
+      env: "EGAZETTE_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "XYZ",
+    },
+  },
+  algolia: {
+    appId: {
+      doc: "Algolia app id",
+      env: "ALGOLIA_APP_ID",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    apiKey: {
+      doc: "Algolia api key",
+      env: "ALGOLIA_API_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {

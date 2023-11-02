@@ -25,7 +25,10 @@ import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
 import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
-import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
+import {
+  isReduceBuildTimesWhitelistedRepo,
+  isShowStagingBuildStatusWhitelistedRepo,
+} from "@root/utils/growthbook-utils"
 import { safeJsonParse } from "@root/utils/json"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -546,6 +549,9 @@ class SitesService {
     NotFoundError | MissingSiteError | AmplifyError
   > {
     const { siteName, growthbook } = userSessionData
+    if (!isShowStagingBuildStatusWhitelistedRepo(growthbook)) {
+      return errAsync(new NotFoundError())
+    }
     return this.getBySiteName(siteName)
       .andThen((site) =>
         this.deploymentsService.getStagingSiteBuildStatus(

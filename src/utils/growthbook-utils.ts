@@ -34,3 +34,14 @@ export const isReduceBuildTimesWhitelistedRepo = (
 
   return isWhitelistedRedBuildTimesRepo
 }
+
+export const isShowStagingBuildStatusWhitelistedRepo = (
+  growthbook: GrowthBook<FeatureFlags> | undefined
+): boolean => {
+  if (!growthbook) return false
+
+  return growthbook.getFeatureValue(
+    FEATURE_FLAGS.IS_SHOW_STAGING_BUILD_STATUS_ENABLED,
+    false
+  )
+}

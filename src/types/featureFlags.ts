@@ -4,6 +4,7 @@
 export interface FeatureFlags {
   is_build_times_reduction_enabled: boolean
   is_ggs_enabled: boolean
+  is_show_staging_build_status_enabled: boolean
 }
 
 // List of attributes we set in GrowthBook Instance in auth middleware

@@ -82,17 +82,23 @@ class DeploymentsService {
   }
 
   createAmplifyAppsOnAws = async (repoName: string) => {
-    const stagingApp = await this.createAmplifyAppOnAws(repoName, repoName)
+    const stagingApp = await this.createAmplifyAppOnAws(
+      repoName,
+      repoName,
+      false
+    )
     const stagingLiteApp = await this.createAmplifyAppOnAws(
       repoName,
-      `${repoName}-staging-lite`
+      `${repoName}-staging-lite`,
+      true
     )
     return [stagingApp, stagingLiteApp]
   }
 
   createAmplifyAppOnAws = async (
     repoName: string,
-    appName: string
+    appName: string,
+    createStagingLite: boolean
   ): Promise<Result<AmplifyInfo, AmplifyError>> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
     logger.info(`PublishToAmplify ${repoUrl}`)
@@ -129,24 +135,36 @@ class DeploymentsService {
           repository: repoUrl,
         }
 
-        // 2. Create Master branch
+        // 2. Create branch command inputs
         const createMasterBranchInput = this.deploymentClient.generateCreateBranchInput(
           amplifyInfo.id,
           "master"
         )
-        return this.deploymentClient
-          .sendCreateBranch(createMasterBranchInput)
-          .map(() => amplifyInfo)
-      })
-      .andThen((amplifyInfo) => {
-        // 3. Create Staging branch
+
         const createStagingBranchInput = this.deploymentClient.generateCreateBranchInput(
           amplifyInfo.id,
           "staging"
         )
+
+        const createStagingLiteBranchInput = this.deploymentClient.generateCreateBranchInput(
+          amplifyInfo.id,
+          "staging-lite"
+        )
+
+        // 3. Create branches
+        if (createStagingLite) {
+          return this.deploymentClient
+            .sendCreateBranch(createStagingLiteBranchInput)
+            .map(() => amplifyInfo)
+        }
         return this.deploymentClient
-          .sendCreateBranch(createStagingBranchInput)
+          .sendCreateBranch(createMasterBranchInput)
           .map(() => amplifyInfo)
+          .andThen(() =>
+            this.deploymentClient
+              .sendCreateBranch(createStagingBranchInput)
+              .map(() => amplifyInfo)
+          )
       })
   }
 

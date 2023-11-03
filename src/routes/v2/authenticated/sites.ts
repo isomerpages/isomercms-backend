@@ -8,6 +8,7 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import type UserSessionData from "@root/classes/UserSessionData"
+import logger from "@root/logger/logger"
 import { attachSiteHandler } from "@root/middleware"
 import { StatsMiddleware } from "@root/middleware/stats"
 import InfraService from "@root/services/infra/InfraService"
@@ -172,7 +173,7 @@ export class SitesRouter {
 
   getUserStagingSiteBuildStatus: RequestHandler<
     { siteName: string },
-    StagingBuildStatus | ResponseErrorBody,
+    StagingBuildStatus | ResponseErrorBody | undefined,
     never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
@@ -184,7 +185,8 @@ export class SitesRouter {
     if (result.isOk()) {
       return res.status(200).json(result.value)
     }
-    return res.status(404).json(result.error)
+    logger.error({ message: result.error.message })
+    return res.status(200).json(undefined)
   }
 
   getRouter() {

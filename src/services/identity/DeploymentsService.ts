@@ -291,8 +291,11 @@ class DeploymentsService {
         }
 
         if (!userStagingApp) {
+          logger.error(
+            `Staging site for site id ${siteId} has not been deployed!`
+          )
           return errAsync(
-            new NotFoundError("Staging site has not been deployed!")
+            new NotFoundError(`Staging site has not been deployed!`)
           )
         }
         return okAsync(userStagingApp)
@@ -318,6 +321,10 @@ class DeploymentsService {
           default:
             return okAsync(StatusStates.pending)
         }
+      })
+      .mapErr((err) => {
+        logger.error(`Error getting build status: ${err}`)
+        return new AmplifyError("Error getting build status")
       })
 }
 

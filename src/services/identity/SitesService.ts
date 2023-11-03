@@ -11,6 +11,7 @@ import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import MissingUserError from "@root/errors/MissingUserError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
+import logger from "@root/logger/logger"
 import PreviewService from "@root/services/identity/PreviewService"
 import {
   getAllRepoData,
@@ -550,7 +551,11 @@ class SitesService {
   > {
     const { siteName, growthbook } = userSessionData
     if (!isShowStagingBuildStatusWhitelistedRepo(growthbook)) {
-      return errAsync(new NotFoundError())
+      return errAsync(
+        new NotFoundError(
+          "Site is not whitelisted for showing staging build status"
+        )
+      )
     }
     return this.getBySiteName(siteName)
       .andThen((site) =>

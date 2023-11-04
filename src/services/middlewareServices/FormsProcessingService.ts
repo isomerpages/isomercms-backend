@@ -50,13 +50,17 @@ export default class FormsProcessingService {
       req.body.data
     )
 
+    // add created timestamp
+    const decryptedPayload = { ...submission, createdAt: req.body.data.created }
+
     // If the decryption failed, submission will be `null`.
     if (submission === null) {
       const postUri = `https://${req.get("host")}${req.baseUrl}${req.path}`
       throw new UnprocessableError(`Bad formsg submission at ${postUri}`)
     }
+
     // Continue processing the submission
-    res.locals.submission = submission
+    res.locals.submission = decryptedPayload
     next()
   }
 }

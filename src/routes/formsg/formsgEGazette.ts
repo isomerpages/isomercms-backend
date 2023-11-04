@@ -16,9 +16,6 @@ import { getField } from "@root/utils/formsg-utils"
 const EGAZETTE_FORM_KEY = config.get("formSg.eGazetteFormKey")
 const EGAZETTE_S3_BUCKET = config.get("egazette.s3Bucket")
 
-const S3_URL = `https://[bucket-name].s3.[region].amazonaws.com/[object-key]
-`
-
 const formStructure = {
   publisherEmail: "Email",
   gazetteDetails: {
@@ -204,19 +201,45 @@ export class FormsgEGazetteRouter {
 
     // Add to search index
     // NOTE: Using `!` here to force unwrap as validation has been done above
+    await this.addToSearchIndex(
+      gazetteCategory!,
+      gazetteSubCategory!,
+      gazetteNotificationNum!,
+      gazetteTitle!,
+      publishTime,
+      objectKey
+    )
+
+    return res.sendStatus(200)
+  }
+
+  async addToSearchIndex(
+    gazetteCategory: string,
+    gazetteSubCategory: string,
+    gazetteNotificationNum: string,
+    gazetteTitle: string,
+    publishTime: string,
+    objectKey: string
+  ) {
     const newSearchRecord = {
       category: gazetteCategory!,
       subCategory: gazetteSubCategory || "",
       notificationNum: gazetteNotificationNum!,
       title: gazetteTitle!,
       publishDate: publishTime!,
-      publishTimestamp: toTimestamp(publishTime), // Dates must be Unix timestamps for searchability
+      publishTimestamp: toTimestamp(publishTime),
       fileUrl: getS3ObjectUrl(
         EGAZETTE_S3_BUCKET,
         config.get("aws.region"),
         objectKey
       ),
-      objectID: gazetteNotificationNum!,
+      objectID: "",
+    }
+
+    if (gazetteSubCategory) {
+      newSearchRecord.objectID = `${gazetteCategory}-${gazetteSubCategory}-${gazetteNotificationNum}`
+    } else {
+      newSearchRecord.objectID = `${gazetteCategory}-${gazetteNotificationNum}`
     }
 
     console.log(`Adding record to search index`, newSearchRecord)
@@ -225,10 +248,11 @@ export class FormsgEGazetteRouter {
     try {
       await this.searchService.addToIndex(newSearchRecord)
     } catch (e) {
-      console.log(e)
+      logger.error(
+        `Adding to search index failed with error: ${JSON.stringify(e)}`
+      )
+      console.log("Add to search index err", e)
     }
-
-    return res.sendStatus(200)
   }
 
   getRouter() {

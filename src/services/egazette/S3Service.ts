@@ -14,6 +14,8 @@ export default class S3Service {
         Bucket: bucketName,
         Key: key,
         Body: blob,
+        ContentType: "application/pdf",
+        ContentDisposition: 'inline; filename="example.pdf"', // allows browsers to open inline instead of downloading
       }
 
       // Upload the file to the bucket

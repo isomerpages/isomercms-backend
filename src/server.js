@@ -2,6 +2,7 @@
 import "./utils/tracer"
 import "module-alias/register"
 
+import { S3Client } from "@aws-sdk/client-s3"
 import { SgidClient } from "@opengovsg/sgid-client"
 import algoliasearch from "algoliasearch"
 import SequelizeStoreFactory from "connect-session-sequelize"
@@ -82,6 +83,7 @@ import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
 import GitHubCommitService from "./services/db/GithubCommitService"
 import RepoService from "./services/db/RepoService"
+import S3Service from "./services/egazette/S3Service"
 import SearchService from "./services/egazette/SearchService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
@@ -182,6 +184,15 @@ const searchClient = algoliasearch(
   config.get("algolia.apiKey")
 )
 const searchService = new SearchService(searchClient)
+
+const s3Client = new S3Client({
+  region: config.get("aws.region"),
+  credentials: {
+    accessKeyId: config.get("aws.accessKeyId"),
+    secretAccessKey: config.get("aws.secretAccessKey"),
+  },
+})
+const s3Service = new S3Service(s3Client)
 
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
@@ -397,7 +408,10 @@ const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
   gitFileSystemService,
   reposService,
 })
-const formsgEGazetteRouter = new FormsgEGazetteRouter(searchService)
+const formsgEGazetteRouter = new FormsgEGazetteRouter({
+  searchService,
+  s3Service,
+})
 
 const app = express()
 

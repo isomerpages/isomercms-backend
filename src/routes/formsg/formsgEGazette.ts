@@ -47,8 +47,8 @@ export type SearchRecord = {
 }
 
 function toTimestamp(strDate: string) {
-  const datum = Date.parse(strDate)
-  return datum / 1000
+  const datum = new Date(strDate)
+  return datum.getTime()
 }
 
 function getS3ObjectUrl(

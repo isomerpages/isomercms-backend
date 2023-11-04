@@ -143,28 +143,28 @@ const config = convict({
       format: "required-string",
       default: "ap-southeast-1",
     },
+    accountNumber: {
+      doc: "AWS account number (egazette)",
+      env: "AWS_ACCOUNT_NUMBER",
+      sensitive: true,
+      format: String,
+      default: "",
+    },
+    accessKeyId: {
+      doc: "AWS access key ID (egazette)",
+      env: "AWS_ACCESS_KEY_ID",
+      sensitive: true,
+      format: String,
+      default: "",
+    },
+    secretAccessKey: {
+      doc: "AWS secret access key (egazette)",
+      env: "AWS_SECRET_ACCESS_KEY",
+      sensitive: true,
+      format: String,
+      default: "",
+    },
     amplify: {
-      accountNumber: {
-        doc: "AWS account number (microservices)",
-        env: "AWS_ACCOUNT_NUMBER",
-        sensitive: true,
-        format: String,
-        default: "",
-      },
-      accessKeyId: {
-        doc: "AWS access key ID (microservices)",
-        env: "AWS_ACCESS_KEY_ID",
-        sensitive: true,
-        format: String,
-        default: "",
-      },
-      secretAccessKey: {
-        doc: "AWS secret access key (microservices)",
-        env: "AWS_SECRET_ACCESS_KEY",
-        sensitive: true,
-        format: String,
-        default: "",
-      },
       mockAmplifyDomainAssociationCalls: {
         doc: "Mock domain association calls to Amplify",
         env: "MOCK_AMPLIFY_DOMAIN_ASSOCIATION_CALLS",
@@ -303,6 +303,15 @@ const config = convict({
       sensitive: true,
       format: "required-string",
       default: "XYZ",
+    },
+  },
+  egazette: {
+    s3Bucket: {
+      doc: "S3 Bucket used to upload new gazettes",
+      env: "EGAZETTE_S3_BUCKET",
+      sensitive: true,
+      format: "required-string",
+      default: "",
     },
   },
   algolia: {

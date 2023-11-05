@@ -1,0 +1,253 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: "GIG DNS Management API"
+  description: "An API to manage DNS records for GovTech Domains"
+
+paths:
+  /dns-records:
+    post:
+      summary: Add a list of DNS records
+      description: Add multiple DNS records of various types to the DNS management system along with a contact email.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: header
+          name: X-API-KEY
+          required: true
+          schema:
+            type: string
+          description: API key required to authorize requests.
+          example: "1234567890abcdef"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - records
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The contact email address for this set of DNS records.
+                records:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/DNSRecord"
+              example:
+                email: "admin@example.com"
+                records:
+                  - type: "A"
+                    name: "example.com"
+                    content: "192.168.1.1"
+                  - type: "AAAA"
+                    name: "example.com"
+                    content: "::1"
+                  - type: "CNAME"
+                    name: "blog.example.com"
+                    content: "example.com"
+                  - type: "MX"
+                    name: "example.com"
+                    content: "mail.example.com"
+                    priority: 10
+                  - type: "TXT"
+                    name: "example.com"
+                    content: "v=spf1 include:_spf.example.com ~all"
+                  - type: "SRV"
+                    name: "_sip._tcp.example.com"
+                    content: "10 60 5060 sipserver.example.com."
+                  - type: "NS"
+                    name: "example.com"
+                    content: "ns1.example.com."
+                  - type: "SPF"
+                    name: "example.com"
+                    content: "v=spf1 include:_spf.example.com ~all"
+                  - type: "LOC"
+                    name: "example.com"
+                    content: "37 46 30 N 122 23 30 W 0.00m"
+                  - type: "CAA"
+                    name: "example.com"
+                    content: '0 issue "letsencrypt.org"'
+                  - type: "DNSKEY"
+                    name: "example.com"
+                    content: "[DNSKEY data]"
+                  - type: "DS"
+                    name: "example.com"
+                    content: "[DS data]"
+      responses:
+        "201":
+          description: DNS records successfully added.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "DNS records added successfully."
+        "400":
+          description: Invalid request data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid data provided."
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Internal server error."
+    get:
+      summary: Retrieve DNS records
+      description: Get a list of DNS records for a specified name.
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+          description: The name of the DNS record to retrieve.
+      responses:
+        "200":
+          description: A list of DNS records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DNSRecord"
+        "404":
+          description: No records found for the specified name.
+    delete:
+      summary: Delete a DNS record by name and type
+      description: Delete a specific DNS record identified by its name and type.
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+          description: The name of the DNS record to be deleted.
+        - in: query
+          name: type
+          required: true
+          schema:
+            type: string
+            enum:
+              [
+                "A",
+                "AAAA",
+                "CNAME",
+                "TXT",
+                "SRV",
+                "LOC",
+                "MX",
+                "NS",
+                "SPF",
+                "CAA",
+                "DNSKEY",
+                "DS",
+              ]
+          description: The type of the DNS record to be deleted.
+      responses:
+        "200":
+          description: DNS record successfully deleted.
+        "404":
+          description: DNS record not found.
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: API key required to authorize requests.
+  schemas:
+    DNSRecord:
+      type: object
+      required:
+        - type
+        - name
+        - content
+      properties:
+        type:
+          type: string
+          description: The type of the DNS record.
+          enum:
+            [
+              "A",
+              "AAAA",
+              "CNAME",
+              "TXT",
+              "SRV",
+              "LOC",
+              "MX",
+              "NS",
+              "SPF",
+              "CAA",
+              "DNSKEY",
+              "DS",
+            ]
+        name:
+          type: string
+          description: The name of the DNS record.
+        content:
+          oneOf:
+            - type: string
+            - $ref: "#/components/schemas/DNSKEYData"
+            - $ref: "#/components/schemas/DSData"
+          description: The content of the DNS record. Varies depending on the record type.
+        priority:
+          type: integer
+          optional: true
+          description: Priority of the record (used for MX and SRV records).
+    DNSKEYData:
+      type: object
+      required:
+        - flags
+        - protocol
+        - algorithm
+        - publicKey
+      properties:
+        flags:
+          type: integer
+          description: An unsigned 16-bit integer representing DNSKEY flags.
+        protocol:
+          type: integer
+          description: The protocol field. Should always be 3.
+        algorithm:
+          type: integer
+          description: An 8-bit integer identifying the DNSKEY's cryptographic algorithm.
+        publicKey:
+          type: string
+          description: The public key material, encoded in Base64.
+    DSData:
+      type: object
+      required:
+        - keyTag
+        - algorithm
+        - digestType
+        - digest
+      properties:
+        keyTag:
+          type: integer
+          description: An unsigned 16-bit integer representing the key tag.
+        algorithm:
+          type: integer
+          description: An 8-bit integer identifying the DS record's cryptographic algorithm.
+        digestType:
+          type: integer
+          description: An 8-bit integer representing the type of the digest.
+        digest:
+          type: string
+          description: The digest value, encoded in Base64.

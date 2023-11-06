@@ -24,6 +24,7 @@ class SearchService {
           "category",
           "subCategory",
           "publishDate,notificationNum",
+          "fileUrl",
         ],
       })
     } catch (e) {

@@ -40,7 +40,9 @@ export type SearchRecord = {
   category: string
   subCategory: string
   notificationNum: string
+  publishDate: string
   publishTimestamp: number
+  fileUrl: string
 }
 
 function toTimestamp(strDate: string) {

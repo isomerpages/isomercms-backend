@@ -927,6 +927,7 @@ export default class GitFileSystemService {
                 sha,
                 path,
                 size: type === "dir" ? 0 : stats.size,
+                addedTime: stats.birthtimeMs,
               }
 
               return okAsync(result)

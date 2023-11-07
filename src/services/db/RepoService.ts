@@ -1,4 +1,3 @@
-import { GrowthBook } from "@growthbook/growthbook"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import _ from "lodash"
 
@@ -10,7 +9,6 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
 import { GitHubCommitData } from "@root/types/commitData"
-import { FeatureFlags } from "@root/types/featureFlags"
 import type {
   GitCommitResult,
   GitDirectoryItem,
@@ -43,7 +41,12 @@ const getPaginatedDirectoryContents = (
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
   const paginatedFiles = _(files)
-    .sortBy(["name"])
+    // Note: We are sorting by name here to maintain compatibility for
+    // GitHub-login users, since it is very expensive to get the addedTime for
+    // each file from the GitHub API. The files will be sorted by addedTime in
+    // milliseconds for GGS users, so they will never see the alphabetical
+    // sorting.
+    .orderBy(["addedTime", "name"], ["desc", "asc"])
     .drop(page * limit)
     .take(limit)
     .value()
@@ -588,7 +591,7 @@ export default class RepoService extends GitHubService {
     { gitTree, message }: any,
     isStaging: boolean
   ): Promise<any> {
-    return await super.updateTree(
+    return super.updateTree(
       sessionData,
       githubSessionData,
       {
@@ -638,6 +641,6 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     shouldMakePrivate: any
   ): Promise<any> {
-    return await super.changeRepoPrivacy(sessionData, shouldMakePrivate)
+    return super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

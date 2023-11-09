@@ -185,13 +185,22 @@ const searchClient = algoliasearch(
 )
 const searchService = new SearchService(searchClient)
 
-const s3Client = new S3Client({
+const s3ClientConfig = {
   region: config.get("aws.region"),
-  credentials: {
-    accessKeyId: config.get("aws.accessKeyId"),
-    secretAccessKey: config.get("aws.secretAccessKey"),
-  },
-})
+}
+// For local dev
+const AWS_ACCESS_KEY_ID = config.get("aws.accessKeyId")
+const AWS_SECRET_ACCESS_KEY = config.get("aws.secretAccessKey")
+if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY) {
+  s3ClientConfig.credentials = {
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  }
+  console.log(" found", s3ClientConfig)
+} else {
+  console.log("not found", s3ClientConfig)
+}
+const s3Client = new S3Client(s3ClientConfig)
 const s3Service = new S3Service(s3Client)
 
 const gitHubService = new RepoService({

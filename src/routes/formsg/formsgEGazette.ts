@@ -188,18 +188,19 @@ export class FormsgEGazetteRouter {
             objectKey,
             value.content
           )
-          console.log(`Received upload response from S3Service`, uploadResponse)
+          logger.info("Successfully uploaded gazette to S3 bucket")
         } catch (err) {
           logger.error(
             `Uploading gazette to S3 Bucket failed with error: ${JSON.stringify(
               err
             )}`
           )
-          console.log(`S3 err`, err)
+          // TODO: possibly alert admin/publisher that this failed
+          // Stop execution if S3 upload is not successful
+          return
         }
       }
     }
-    console.log(`raw data`, attachments)
 
     // Add to search index
     // NOTE: Using `!` here to force unwrap as validation has been done above
@@ -244,7 +245,9 @@ export class FormsgEGazetteRouter {
       newSearchRecord.objectID = `${gazetteCategory}-${gazetteNotificationNum}`
     }
 
-    console.log(`Adding record to search index`, newSearchRecord)
+    logger.info(
+      `Adding record to search index ${JSON.stringify(newSearchRecord)}`
+    )
 
     // publish to index
     try {
@@ -252,8 +255,9 @@ export class FormsgEGazetteRouter {
     } catch (e) {
       logger.error(
         `Adding to search index failed with error: ${JSON.stringify(e)}`
+
+        // TODO: possibly alert admin/publisher that this failed
       )
-      console.log("Add to search index err", e)
     }
   }
 

@@ -127,7 +127,7 @@ export default class GitHubCommitService extends GitHubService {
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName })
     ) {
-      await this.deleteDirectory(sessionData, {
+      await super.deleteDirectory(sessionData, {
         directoryName,
         message,
         githubSessionData,

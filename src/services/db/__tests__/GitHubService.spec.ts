@@ -892,15 +892,10 @@ describe("Github Service", () => {
         .mockResolvedValueOnce(firstResp)
         .mockResolvedValueOnce(secondResp)
       await expect(
-        service.updateTree(
-          sessionData,
-          mockGithubSessionData,
-          {
-            gitTree,
-            message,
-          },
-          true
-        )
+        service.updateTree(sessionData, mockGithubSessionData, {
+          gitTree,
+          message,
+        })
       ).resolves.toEqual(secondSha)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         url,

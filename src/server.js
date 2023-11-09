@@ -193,9 +193,8 @@ if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY) {
     accessKeyId: AWS_ACCESS_KEY_ID,
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   }
-  console.log(" found", s3ClientConfig)
 } else {
-  console.log("not found", s3ClientConfig)
+  logger.error("s3 creds not found when initialising s3 client")
 }
 const s3Client = new S3Client(s3ClientConfig)
 const s3Service = new S3Service(s3Client)

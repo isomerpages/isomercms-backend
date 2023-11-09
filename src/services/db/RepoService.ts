@@ -604,18 +604,12 @@ export default class RepoService extends GitHubService {
   async updateTree(
     sessionData: any,
     githubSessionData: any,
-    { gitTree, message }: any,
-    isStaging: boolean
+    { gitTree, message }: any
   ): Promise<any> {
-    return super.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree,
-        message,
-      },
-      isStaging
-    )
+    return super.updateTree(sessionData, githubSessionData, {
+      gitTree,
+      message,
+    })
   }
 
   async updateRepoState(

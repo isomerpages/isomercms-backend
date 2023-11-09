@@ -926,7 +926,10 @@ describe("Github Service", () => {
     const refEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
 
     it("should update a repo state correctly", async () => {
-      await service.updateRepoState(sessionData, { commitSha: sha })
+      await service.updateRepoState(sessionData, {
+        commitSha: sha,
+        branchName: BRANCH_REF,
+      })
       expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
         refEndpoint,
         { sha, force: true },

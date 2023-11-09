@@ -50,6 +50,18 @@ function toTimestamp(strDate: string) {
   return datum.getTime()
 }
 
+function formatObjectId(objectId: string) {
+  // Remove apostrophes and whitespaces
+  let formattedId = objectId.replace(/['\s]/g, "")
+
+  // If the first character is a dash, remove it
+  if (formattedId.startsWith("-")) {
+    formattedId = formattedId.substring(1)
+  }
+
+  return formattedId
+}
+
 function getS3ObjectUrl(
   bucketName: string,
   region: string,
@@ -240,9 +252,13 @@ export class FormsgEGazetteRouter {
     }
 
     if (gazetteSubCategory) {
-      newSearchRecord.objectID = `${gazetteCategory}-${gazetteSubCategory}-${gazetteNotificationNum}`
+      newSearchRecord.objectID = formatObjectId(
+        `${gazetteCategory}-${gazetteSubCategory}-${gazetteNotificationNum}-${gazetteTitle}`
+      )
     } else {
-      newSearchRecord.objectID = `${gazetteCategory}-${gazetteNotificationNum}`
+      newSearchRecord.objectID = formatObjectId(
+        `${gazetteCategory}-${gazetteNotificationNum}-${gazetteTitle}`
+      )
     }
 
     logger.info(

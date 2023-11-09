@@ -225,67 +225,14 @@ export default class GitHubCommitService extends GitHubService {
     message?: string,
     isStaging = true
   ): Promise<GitCommitResult> {
-    const gitTree = await super.getTree(
+    const stagingRenameSinglePathResult = await super.renameSinglePath(
       sessionData,
       githubSessionData,
-      {
-        isRecursive: true,
-      },
-      !!isStaging
+      oldPath,
+      newPath,
+      message,
+      isStaging
     )
-    const newGitTree: any[] = []
-    const isMovingDirectory =
-      gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||
-      false
-
-    gitTree.forEach((item: any) => {
-      if (isMovingDirectory) {
-        if (item.path === newPath && item.type === "tree") {
-          throw new ConflictError("Target directory already exists")
-        } else if (item.path === oldPath && item.type === "tree") {
-          // Rename old subdirectory to new name
-          newGitTree.push({
-            ...item,
-            path: newPath,
-          })
-        } else if (
-          item.path.startsWith(`${oldPath}/`) &&
-          item.type !== "tree"
-        ) {
-          // Delete old files
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-        }
-      } else if (item.path === newPath && item.type !== "tree") {
-        throw new ConflictError("Target file already exists")
-      } else if (item.path === oldPath && item.type !== "tree") {
-        // Add file to new directory
-        newGitTree.push({
-          ...item,
-          path: newPath,
-        })
-        // Delete old file
-        newGitTree.push({
-          ...item,
-          sha: null,
-        })
-      }
-    })
-
-    const newCommitSha = await super.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      },
-      !!isStaging
-    )
-    await super.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
 
     const shouldStagingLiteUpdate =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
@@ -293,7 +240,7 @@ export default class GitHubCommitService extends GitHubService {
 
     if (shouldStagingLiteUpdate) {
       // we await this call, but we do not need to return this result
-      await this.renameSinglePath(
+      await super.renameSinglePath(
         sessionData,
         githubSessionData,
         oldPath,
@@ -303,7 +250,7 @@ export default class GitHubCommitService extends GitHubService {
       )
     }
 
-    return { newSha: newCommitSha }
+    return stagingRenameSinglePathResult
   }
 
   async moveFiles(
@@ -315,67 +262,22 @@ export default class GitHubCommitService extends GitHubService {
     message?: string,
     isStaging = true
   ): Promise<GitCommitResult> {
-    const gitTree = await super.getTree(
+    const stagingMoveFilesResult = await super.moveFiles(
       sessionData,
       githubSessionData,
-      {
-        isRecursive: true,
-      },
+      oldPath,
+      newPath,
+      targetFiles,
+      message,
       isStaging
     )
-    const newGitTree: any[] = []
-
-    gitTree.forEach((item: any) => {
-      if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
-        const fileName = item.path
-          .split(`${newPath}/`)
-          .slice(1)
-          .join(`${newPath}/`)
-        if (targetFiles.includes(fileName)) {
-          // Conflicting file
-          throw new ConflictError("File already exists in target directory")
-        }
-      }
-      if (item.path.startsWith(`${oldPath}/`) && item.type !== "tree") {
-        const fileName = item.path
-          .split(`${oldPath}/`)
-          .slice(1)
-          .join(`${oldPath}/`)
-        if (targetFiles.includes(fileName)) {
-          // Add file to target directory
-          newGitTree.push({
-            ...item,
-            path: `${newPath}/${fileName}`,
-          })
-          // Delete old file
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-        }
-      }
-    })
-
-    const newCommitSha = await super.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      },
-      !!isStaging
-    )
-
-    await super.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName: oldPath })
     if (shouldUpdateStagingLite) {
       // We don't have to return the sha, just update this should be ok
-      await this.moveFiles(
+      await super.moveFiles(
         sessionData,
         githubSessionData,
         oldPath,
@@ -385,6 +287,7 @@ export default class GitHubCommitService extends GitHubService {
         false
       )
     }
-    return { newSha: newCommitSha }
+
+    return stagingMoveFilesResult
   }
 }

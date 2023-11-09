@@ -32,11 +32,12 @@ class MediaFileService {
     const fileBuffer = Buffer.from(fileContent, "base64")
 
     // Scan file for virus - cloudmersive API
-    const virusScanRes = await scanFileForVirus(fileBuffer)
-    logger.info(`File scan result: ${virusScanRes.CleanResult}`)
-    if (!virusScanRes || !virusScanRes.CleanResult) {
-      throw new BadRequestError("File did not pass virus scan")
-    }
+    // TODO: Evaluate if we still
+    // const virusScanRes = await scanFileForVirus(fileBuffer)
+    // logger.info(`File scan result: ${virusScanRes.CleanResult}`)
+    // if (!virusScanRes || !virusScanRes.CleanResult) {
+    //   throw new BadRequestError("File did not pass virus scan")
+    // }
 
     // Sanitize and validate file
     const sanitizedContent = await validateAndSanitizeFileUpload(content)

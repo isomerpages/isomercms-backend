@@ -811,8 +811,10 @@ export default class GitFileSystemService {
   }
 
   getMimeType(fileExtension: string): Result<string, MediaTypeError> {
-    if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
-      return err(new MediaTypeError("Unsupported file extension found"))
+    if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension.toLowerCase())) {
+      return err(
+        new MediaTypeError(`Unsupported file extension: ${fileExtension} found`)
+      )
     }
     switch (fileExtension) {
       case "svg":

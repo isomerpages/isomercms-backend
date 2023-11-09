@@ -252,7 +252,7 @@ export default class ReviewRequestService {
     path,
   }: PathInfo): Result<EditedMediaDto, PageParseError> => {
     const fileExt = getFileExt(name)
-    if (ALLOWED_FILE_EXTENSIONS.includes(fileExt)) {
+    if (ALLOWED_FILE_EXTENSIONS.includes(fileExt.toLowerCase())) {
       return ok({
         name,
         path: path.unwrapOr([""]),

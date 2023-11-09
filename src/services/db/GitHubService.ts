@@ -125,6 +125,10 @@ export default class GitHubService {
     return `${siteName}/contents/${encodedDirPath}`
   }
 
+  getBranch(isStaging: boolean) {
+    return isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH
+  }
+
   async create(
     sessionData: UserWithSiteSessionData,
     {
@@ -605,11 +609,8 @@ export default class GitHubService {
 
   async updateRepoState(
     sessionData: UserWithSiteSessionData,
-    {
-      commitSha,
-      branchName = STAGING_BRANCH,
-    }: { commitSha: any; branchName?: string }
-  ) {
+    { commitSha, branchName }: { commitSha: any; branchName: string }
+  ): Promise<void> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const refEndpoint = `${siteName}/git/refs/heads/${branchName}`
@@ -693,7 +694,7 @@ export default class GitHubService {
       directoryName: string
       message: string
       githubSessionData: GithubSessionData
-      isStaging?: boolean
+      isStaging: boolean
     }
   ) {
     // GitHub flow
@@ -724,6 +725,7 @@ export default class GitHubService {
 
     await this.updateRepoState(sessionData, {
       commitSha: newCommitSha,
+      branchName: this.getBranch(isStaging),
     })
   }
 
@@ -790,6 +792,7 @@ export default class GitHubService {
     })
     await this.updateRepoState(sessionData, {
       commitSha: newCommitSha,
+      branchName: this.getBranch(isStaging),
     })
     return { newSha: newCommitSha }
   }
@@ -851,6 +854,7 @@ export default class GitHubService {
 
     await this.updateRepoState(sessionData, {
       commitSha: newCommitSha,
+      branchName: this.getBranch(isStaging),
     })
     return { newSha: newCommitSha }
   }

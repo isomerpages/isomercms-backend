@@ -27,7 +27,7 @@ const defaultCloudmersiveClient = CloudmersiveVirusApiClient.ApiClient.instance
 // Configure API key authorization: Apikey
 const apikey = defaultCloudmersiveClient.authentications.Apikey
 apikey.apiKey = CLOUDMERSIVE_API_KEY
-defaultCloudmersiveClient.timeout = 1000 * 60 * 5 // 5 minutes
+defaultCloudmersiveClient.timeout = 1000 * 60 * 2 // 2 minutes
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
 const scanFileForVirus = (fileBuffer) =>

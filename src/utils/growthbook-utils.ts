@@ -45,3 +45,12 @@ export const isShowStagingBuildStatusWhitelistedRepo = (
     false
   )
 }
+
+export const isCloudmersiveEnabled = (
+  growthbook: GrowthBook<FeatureFlags> | undefined
+): boolean => {
+  // If growthbook is not defined, return true to enable Cloudmersive as default shd be true
+  if (!growthbook) return true
+
+  return growthbook.getFeatureValue(FEATURE_FLAGS.IS_CLOUDMERSIVE_ENABLED, true)
+}

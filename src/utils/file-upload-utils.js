@@ -1,12 +1,12 @@
-const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
-const FileType = require("file-type")
-const isSvg = require("is-svg")
+import CloudmersiveVirusApiClient from "cloudmersive-virus-api-client"
+import FileType from "file-type"
+import isSvg from "is-svg"
 
-const { config } = require("@config/config")
+import { config } from "@config/config"
+
+import { sanitizer } from "@services/utilServices/Sanitizer"
 
 const logger = require("@logger/logger").default
-
-const { sanitizer } = require("@services/utilServices/Sanitizer")
 
 const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
@@ -27,7 +27,7 @@ const defaultCloudmersiveClient = CloudmersiveVirusApiClient.ApiClient.instance
 // Configure API key authorization: Apikey
 const apikey = defaultCloudmersiveClient.authentications.Apikey
 apikey.apiKey = CLOUDMERSIVE_API_KEY
-
+defaultCloudmersiveClient.timeout = 1000 * 60 * 5 // 5 minutes
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
 const scanFileForVirus = (fileBuffer) =>

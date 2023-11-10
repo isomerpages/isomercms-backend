@@ -30,7 +30,8 @@ const BRANCH_REF = config.get("github.branchRef")
 const getPaginatedDirectoryContents = (
   directoryContents: GitDirectoryItem[],
   page: number,
-  limit = 15
+  limit = 15,
+  search = ""
 ): {
   directories: GitDirectoryItem[]
   files: GitDirectoryItem[]
@@ -40,13 +41,25 @@ const getPaginatedDirectoryContents = (
   const files = directoryContents.filter(
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
-  const paginatedFiles = _(files)
+
+  let sortedFiles = _(files)
     // Note: We are sorting by name here to maintain compatibility for
     // GitHub-login users, since it is very expensive to get the addedTime for
     // each file from the GitHub API. The files will be sorted by addedTime in
     // milliseconds for GGS users, so they will never see the alphabetical
     // sorting.
-    .orderBy(["addedTime", "name"], ["desc", "asc"])
+    .orderBy(
+      [(file) => file.addedTime, (file) => file.name.toLowerCase()],
+      ["desc", "asc"]
+    )
+
+  if (search) {
+    sortedFiles = sortedFiles.filter((file) =>
+      file.name.toLowerCase().includes(search.toLowerCase())
+    )
+  }
+
+  const paginatedFiles = sortedFiles
     .drop(page * limit)
     .take(limit)
     .value()
@@ -325,7 +338,8 @@ export default class RepoService extends GitHubService {
     // We will tiebreak in alphabetical order - we sort
     // and then we return the first n.
     page = 0,
-    limit = 15
+    limit = 15,
+    search = ""
   ): Promise<{
     directories: MediaDirOutput[]
     files: Pick<MediaFileOutput, "name">[]
@@ -362,7 +376,8 @@ export default class RepoService extends GitHubService {
     const { directories, files, total } = getPaginatedDirectoryContents(
       dirContent,
       page,
-      limit
+      limit,
+      search
     )
 
     return {

@@ -2,7 +2,7 @@ import { GrowthBook, setPolyfills } from "@growthbook/growthbook"
 
 import config from "@root/config/config"
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
-import { FeatureFlags } from "@root/types/featureFlags"
+import { FeatureFlags, cmConfigType } from "@root/types/featureFlags"
 
 const GROWTHBOOK_API_HOST = "https://cdn.growthbook.io"
 
@@ -48,9 +48,16 @@ export const isShowStagingBuildStatusWhitelistedRepo = (
 
 export const isCloudmersiveEnabled = (
   growthbook: GrowthBook<FeatureFlags> | undefined
-): boolean => {
+): cmConfigType => {
   // If growthbook is not defined, return true to enable Cloudmersive as default shd be true
-  if (!growthbook) return true
+  const defaultConfig = {
+    is_enabled: true,
+    timeout: 60000,
+  }
+  if (!growthbook) return defaultConfig
 
-  return growthbook.getFeatureValue(FEATURE_FLAGS.IS_CLOUDMERSIVE_ENABLED, true)
+  return growthbook.getFeatureValue(
+    FEATURE_FLAGS.IS_CLOUDMERSIVE_ENABLED,
+    defaultConfig
+  )
 }

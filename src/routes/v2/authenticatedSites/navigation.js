@@ -6,7 +6,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
 const { UpdateNavigationRequestSchema } = require("@validators/RequestSchema")
@@ -52,7 +52,7 @@ class NavigationRouter {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.readNavigation))
-    router.post("/", attachWriteRouteHandlerWrapper(this.updateNavigation))
+    router.post("/", attachRollbackRouteHandlerWrapper(this.updateNavigation))
 
     return router
   }

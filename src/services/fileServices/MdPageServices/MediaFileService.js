@@ -12,6 +12,7 @@ const {
 const { isMediaPathValid } = require("@validators/validators")
 
 const { getFileExt } = require("@root/utils/files")
+const { isCloudmersiveEnabled } = require("@root/utils/growthbook-utils")
 
 class MediaFileService {
   constructor({ repoService }) {
@@ -32,13 +33,14 @@ class MediaFileService {
     const fileBuffer = Buffer.from(fileContent, "base64")
 
     // Scan file for virus - cloudmersive API
-    // TODO: Evaluate if we still
-    // const virusScanRes = await scanFileForVirus(fileBuffer)
-    // logger.info(`File scan result: ${virusScanRes.CleanResult}`)
-    // if (!virusScanRes || !virusScanRes.CleanResult) {
-    //   throw new BadRequestError("File did not pass virus scan")
-    // }
-
+    const cmConfig = isCloudmersiveEnabled(sessionData.growthbook)
+    if (cmConfig.is_enabled) {
+      const virusScanRes = await scanFileForVirus(fileBuffer, cmConfig.timeout)
+      logger.info(`File scan result: ${virusScanRes.CleanResult}`)
+      if (!virusScanRes || !virusScanRes.CleanResult) {
+        throw new BadRequestError("File did not pass virus scan")
+      }
+    }
     // Sanitize and validate file
     const sanitizedContent = await validateAndSanitizeFileUpload(content)
     if (!sanitizedContent) {

@@ -28,7 +28,10 @@ class MediaDirectoryService {
     return files
   }
 
-  async listMediaDirectoryContent(sessionData, { directoryName, page, limit }) {
+  async listMediaDirectoryContent(
+    sessionData,
+    { directoryName, page, limit, search }
+  ) {
     if (!isMediaPathValid({ path: directoryName }))
       throw new BadRequestError("Invalid media folder name")
 
@@ -36,7 +39,8 @@ class MediaDirectoryService {
       sessionData,
       directoryName,
       page,
-      limit
+      limit,
+      search
     )
   }
 

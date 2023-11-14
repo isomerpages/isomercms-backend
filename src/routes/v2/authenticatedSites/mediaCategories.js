@@ -48,7 +48,7 @@ class MediaCategoriesRouter {
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params
-    const { page, limit } = req.query
+    const { page, limit, search } = req.query
 
     const {
       files,
@@ -59,6 +59,7 @@ class MediaCategoriesRouter {
         directoryName,
         page,
         limit,
+        search,
       }
     )
     return res.status(200).json({ files, total })

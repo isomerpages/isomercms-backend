@@ -91,7 +91,7 @@ describe("GitFileSystemService", () => {
         path: "fake-dir",
         size: 0,
         addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
-          .birthtimeMs,
+          .ctimeMs,
       }
       const expectedAnotherFakeDir: GitDirectoryItem = {
         name: "another-fake-dir",
@@ -101,7 +101,7 @@ describe("GitFileSystemService", () => {
         size: 0,
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-dir`
-        ).birthtimeMs,
+        ).ctimeMs,
       }
       const expectedFakeEmptyDir: GitDirectoryItem = {
         name: "fake-empty-dir",
@@ -111,7 +111,7 @@ describe("GitFileSystemService", () => {
         size: 0,
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/fake-empty-dir`
-        ).birthtimeMs,
+        ).ctimeMs,
       }
       const expectedAnotherFakeFile: GitDirectoryItem = {
         name: "another-fake-file",
@@ -121,7 +121,7 @@ describe("GitFileSystemService", () => {
         size: "Another fake content".length,
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-file`
-        ).birthtimeMs,
+        ).ctimeMs,
       }
 
       const result = await GitFileSystemService.listDirectoryContents(
@@ -162,7 +162,7 @@ describe("GitFileSystemService", () => {
         path: "fake-dir",
         size: 0,
         addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
-          .birthtimeMs,
+          .ctimeMs,
       }
       const expectedAnotherFakeFile: GitDirectoryItem = {
         name: "another-fake-file",
@@ -172,7 +172,7 @@ describe("GitFileSystemService", () => {
         size: "Another fake content".length,
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-file`
-        ).birthtimeMs,
+        ).ctimeMs,
       }
 
       const result = await GitFileSystemService.listDirectoryContents(
@@ -1429,7 +1429,7 @@ describe("GitFileSystemService", () => {
         ).toString("base64")}`,
         mediaPath: "fake-dir/fake-media-file.png",
         type: "file",
-        addedTime: fileStats.birthtimeMs,
+        addedTime: fileStats.ctimeMs,
         size: fileStats.size,
       }
 

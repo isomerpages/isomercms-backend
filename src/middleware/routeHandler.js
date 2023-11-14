@@ -10,7 +10,11 @@ const { default: GithubSessionData } = require("@classes/GithubSessionData")
 const { lock, unlock } = require("@utils/mutex-utils")
 const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
 
-const { MAX_CONCURRENT_GIT_PROCESSES } = require("@constants/constants")
+const {
+  MAX_CONCURRENT_GIT_PROCESSES,
+  STAGING_BRANCH,
+  STAGING_LITE_BRANCH,
+} = require("@constants/constants")
 
 const { FEATURE_FLAGS } = require("@root/constants/featureFlags")
 const GitFileSystemError = require("@root/errors/GitFileSystemError").default
@@ -117,21 +121,29 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     return
   }
 
-  let originalCommitSha
+  let originalStagingCommitSha
+  let originalStagingLiteCommitSha
+
   if (shouldUseGitFileSystem) {
-    const result = await gitFileSystemService.getLatestCommitOfBranch(
-      siteName,
-      BRANCH_REF
-    )
-    if (result.isErr()) {
+    const results = await Promise.all([
+      gitFileSystemService.getLatestCommitOfBranch(siteName, STAGING_BRANCH),
+      gitFileSystemService.getLatestCommitOfBranch(
+        siteName,
+        STAGING_LITE_BRANCH
+      ),
+    ])
+    const [stgResult, stgLiteResult] = results
+
+    if (stgResult.isErr() || stgLiteResult.isErr()) {
       await unlock(siteName)
-      next(result.err)
+      next(stgResult.err)
       return
     }
-    originalCommitSha = result.value.sha
-    if (!originalCommitSha) {
+    originalStagingCommitSha = stgResult.value.sha
+    originalStagingLiteCommitSha = stgLiteResult.value.sha
+    if (!originalStagingCommitSha || !originalStagingLiteCommitSha) {
       await unlock(siteName)
-      next(result.err)
+      next(stgResult.err)
       return
     }
     // Unused for git file system, but to maintain existing structure
@@ -141,18 +153,23 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     })
   } else {
     try {
-      const { currentCommitSha, treeSha } = await getCommitAndTreeSha(
-        siteName,
-        accessToken
-      )
+      const {
+        currentCommitSha: currentStgCommitSha,
+        treeSha: stgTreeSha,
+      } = await getCommitAndTreeSha(siteName, accessToken)
+
+      const {
+        currentCommitSha: currentStgLiteCommitSha,
+      } = await getCommitAndTreeSha(siteName, accessToken)
 
       const githubSessionData = new GithubSessionData({
-        currentCommitSha,
-        treeSha,
+        currentCommitSha: currentStgCommitSha,
+        treeSha: stgTreeSha,
       })
       res.locals.githubSessionData = githubSessionData
 
-      originalCommitSha = currentCommitSha
+      originalStagingCommitSha = currentStgCommitSha
+      originalStagingLiteCommitSha = currentStgLiteCommitSha
     } catch (err) {
       await unlock(siteName)
       next(err)
@@ -164,19 +181,42 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       if (shouldUseGitFileSystem) {
         await backOff(() => {
           const rollbackRes = gitFileSystemService
-            .rollback(siteName, originalCommitSha)
+            .rollback(siteName, originalStagingCommitSha, STAGING_BRANCH)
+            .rollback(
+              siteName,
+              originalStagingLiteCommitSha,
+              STAGING_LITE_BRANCH
+            )
             .unwrapOr(false)
           if (!rollbackRes) throw new GitFileSystemError("Rollback failure")
         })
         await backOff(() => {
-          const pushRes = gitFileSystemService
-            .push(siteName, true)
-            .unwrapOr(false)
+          let pushRes = gitFileSystemService.push(
+            siteName,
+            STAGING_BRANCH,
+            true
+          )
+          if (originalStagingLiteCommitSha) {
+            pushRes = pushRes.push(siteName, STAGING_LITE_BRANCH, true)
+          }
+
+          pushRes = pushRes.unwrapOr(false)
           if (!pushRes) throw new GitFileSystemError("Push failure")
         })
       } else {
         await backOff(() => {
-          revertCommit(originalCommitSha, siteName, accessToken)
+          revertCommit(
+            originalStagingCommitSha,
+            siteName,
+            accessToken,
+            STAGING_BRANCH
+          )
+          revertCommit(
+            originalStagingLiteCommitSha,
+            siteName,
+            accessToken,
+            STAGING_LITE_BRANCH
+          )
         })
       }
     } catch (retryErr) {

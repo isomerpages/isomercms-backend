@@ -506,7 +506,6 @@ export default class GitFileSystemService {
     branchName: string,
     isForce = false
   ): ResultAsync<string, GitFileSystemError> {
-    console.log("about to push")
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {

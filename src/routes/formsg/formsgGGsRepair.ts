@@ -10,7 +10,7 @@ import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
-import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
+import { EFS_VOL_PATH_STAGING_LITE, STAGING_BRANCH } from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
 import { consoleLogger } from "@root/logger/console.logger"
@@ -143,7 +143,7 @@ export class FormsgGGsRepairRouter {
           .andThen(() =>
             // repo exists in efs, but we need to pull for staging and reset staging lite
             this.gitFileSystemService
-              .pull(repoName, "staging")
+              .pull(repoName, STAGING_BRANCH)
               .andThen(() =>
                 fromPromise(
                   this.reposService.setUpStagingLite(

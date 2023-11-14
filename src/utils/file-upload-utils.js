@@ -1,16 +1,16 @@
-import CloudmersiveVirusApiClient from "cloudmersive-virus-api-client"
-import FileType from "file-type"
-import isSvg from "is-svg"
+const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
+const FileType = require("file-type")
+const isSvg = require("is-svg")
 
-import { config } from "@config/config"
-
-import { sanitizer } from "@services/utilServices/Sanitizer"
+const { config } = require("@config/config")
 
 const logger = require("@logger/logger").default
 
+const { sanitizer } = require("@services/utilServices/Sanitizer")
+
 const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
-export const ALLOWED_FILE_EXTENSIONS = [
+const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
   "png",
   "jpg",
@@ -30,7 +30,7 @@ apikey.apiKey = CLOUDMERSIVE_API_KEY
 
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
-export const scanFileForVirus = (fileBuffer, timeout) => {
+const scanFileForVirus = (fileBuffer, timeout) => {
   if (timeout) {
     defaultCloudmersiveClient.timeout = timeout
   }
@@ -49,7 +49,7 @@ export const scanFileForVirus = (fileBuffer, timeout) => {
   })
 }
 
-export const validateAndSanitizeFileUpload = async (data) => {
+const validateAndSanitizeFileUpload = async (data) => {
   const [, content] = data.split(",")
   const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
@@ -66,4 +66,10 @@ export const validateAndSanitizeFileUpload = async (data) => {
   }
 
   return undefined
+}
+
+module.exports = {
+  validateAndSanitizeFileUpload,
+  ALLOWED_FILE_EXTENSIONS,
+  scanFileForVirus,
 }

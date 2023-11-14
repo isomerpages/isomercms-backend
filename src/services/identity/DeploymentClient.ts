@@ -93,7 +93,7 @@ class DeploymentClient {
 
   generateCreateBranchInput = (
     appId: string,
-    branchName: "master" | "staging"
+    branchName: "master" | "staging" | "staging-lite"
   ): CreateBranchCommandInput => ({
     appId,
     framework: "Jekyll",

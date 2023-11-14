@@ -90,6 +90,8 @@ describe("GitFileSystemService", () => {
         sha: "fake-dir-hash",
         path: "fake-dir",
         size: 0,
+        addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
+          .ctimeMs,
       }
       const expectedAnotherFakeDir: GitDirectoryItem = {
         name: "another-fake-dir",
@@ -97,6 +99,9 @@ describe("GitFileSystemService", () => {
         sha: "another-fake-dir-hash",
         path: "another-fake-dir",
         size: 0,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-dir`
+        ).ctimeMs,
       }
       const expectedFakeEmptyDir: GitDirectoryItem = {
         name: "fake-empty-dir",
@@ -104,6 +109,9 @@ describe("GitFileSystemService", () => {
         sha: "fake-empty-dir-hash",
         path: "fake-empty-dir",
         size: 0,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/fake-empty-dir`
+        ).ctimeMs,
       }
       const expectedAnotherFakeFile: GitDirectoryItem = {
         name: "another-fake-file",
@@ -111,6 +119,9 @@ describe("GitFileSystemService", () => {
         sha: "another-fake-file-hash",
         path: "another-fake-file",
         size: "Another fake content".length,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-file`
+        ).ctimeMs,
       }
 
       const result = await GitFileSystemService.listDirectoryContents(
@@ -150,6 +161,8 @@ describe("GitFileSystemService", () => {
         sha: "fake-dir-hash",
         path: "fake-dir",
         size: 0,
+        addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
+          .ctimeMs,
       }
       const expectedAnotherFakeFile: GitDirectoryItem = {
         name: "another-fake-file",
@@ -157,6 +170,9 @@ describe("GitFileSystemService", () => {
         sha: "another-fake-file-hash",
         path: "another-fake-file",
         size: "Another fake content".length,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-file`
+        ).ctimeMs,
       }
 
       const result = await GitFileSystemService.listDirectoryContents(
@@ -1413,7 +1429,7 @@ describe("GitFileSystemService", () => {
         ).toString("base64")}`,
         mediaPath: "fake-dir/fake-media-file.png",
         type: "file",
-        addedTime: fileStats.birthtimeMs,
+        addedTime: fileStats.ctimeMs,
         size: fileStats.size,
       }
 

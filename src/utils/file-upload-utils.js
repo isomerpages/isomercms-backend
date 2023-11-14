@@ -30,8 +30,11 @@ apikey.apiKey = CLOUDMERSIVE_API_KEY
 
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
-const scanFileForVirus = (fileBuffer) =>
-  new Promise((success, failure) => {
+const scanFileForVirus = (fileBuffer, timeout) => {
+  if (timeout) {
+    defaultCloudmersiveClient.timeout = timeout
+  }
+  return new Promise((success, failure) => {
     apiInstance.scanFile(fileBuffer, (error, data) => {
       if (error) {
         logger.error(
@@ -44,6 +47,7 @@ const scanFileForVirus = (fileBuffer) =>
       }
     })
   })
+}
 
 const validateAndSanitizeFileUpload = async (data) => {
   const [, content] = data.split(",")
@@ -66,6 +70,6 @@ const validateAndSanitizeFileUpload = async (data) => {
 
 module.exports = {
   validateAndSanitizeFileUpload,
-  scanFileForVirus,
   ALLOWED_FILE_EXTENSIONS,
+  scanFileForVirus,
 }

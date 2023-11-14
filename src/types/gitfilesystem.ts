@@ -13,4 +13,5 @@ export type GitDirectoryItem = {
   sha: string
   path: string
   size: number
+  addedTime: number
 }

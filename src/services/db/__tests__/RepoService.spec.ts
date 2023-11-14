@@ -341,6 +341,7 @@ describe("RepoService", () => {
           sha: "test-sha1",
           path: "test/fake-file.md",
           size: 100,
+          addedTime: 3,
         },
         {
           name: "another-fake-file.md",
@@ -348,6 +349,7 @@ describe("RepoService", () => {
           sha: "test-sha2",
           path: "another-fake-file.md",
           size: 100,
+          addedTime: 2,
         },
         {
           name: "fake-dir",
@@ -355,6 +357,7 @@ describe("RepoService", () => {
           sha: "test-sha3",
           path: "fake-dir",
           size: 0,
+          addedTime: 1,
         },
       ]
       gbSpy.mockReturnValueOnce(true)
@@ -387,6 +390,7 @@ describe("RepoService", () => {
           sha: "test-sha1",
           path: "test/fake-file.md",
           size: 100,
+          addedTime: 3,
         },
         {
           name: "another-fake-file.md",
@@ -394,6 +398,7 @@ describe("RepoService", () => {
           sha: "test-sha2",
           path: "another-fake-file.md",
           size: 100,
+          addedTime: 2,
         },
         {
           name: "fake-dir",
@@ -401,6 +406,7 @@ describe("RepoService", () => {
           sha: "test-sha3",
           path: "fake-dir",
           size: 0,
+          addedTime: 1,
         },
       ]
       const gitHubServiceReadDirectory = jest.spyOn(

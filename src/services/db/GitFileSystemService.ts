@@ -858,7 +858,7 @@ export default class GitFileSystemService {
           mediaUrl: `${dataUrlPrefix},${file.content}`,
           mediaPath: `${directoryName}/${fileName}`,
           type: fileType,
-          addedTime: stats.birthtimeMs,
+          addedTime: stats.ctimeMs,
           size: stats.size,
         })
       })
@@ -929,6 +929,7 @@ export default class GitFileSystemService {
                 sha,
                 path,
                 size: type === "dir" ? 0 : stats.size,
+                addedTime: stats.ctimeMs,
               }
 
               return okAsync(result)

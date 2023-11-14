@@ -1,4 +1,3 @@
-import { GrowthBook } from "@growthbook/growthbook"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import _ from "lodash"
 
@@ -10,7 +9,6 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
 import { GitHubCommitData } from "@root/types/commitData"
-import { FeatureFlags } from "@root/types/featureFlags"
 import type {
   GitCommitResult,
   GitDirectoryItem,
@@ -32,7 +30,8 @@ const BRANCH_REF = config.get("github.branchRef")
 const getPaginatedDirectoryContents = (
   directoryContents: GitDirectoryItem[],
   page: number,
-  limit = 15
+  limit = 15,
+  search = ""
 ): {
   directories: GitDirectoryItem[]
   files: GitDirectoryItem[]
@@ -42,8 +41,26 @@ const getPaginatedDirectoryContents = (
   const files = directoryContents.filter(
     (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
   )
-  const paginatedFiles = _(files)
-    .sortBy(["name"])
+
+  let sortedFiles = _(files)
+    // Note: We are sorting by name here to maintain compatibility for
+    // GitHub-login users, since it is very expensive to get the addedTime for
+    // each file from the GitHub API. The files will be sorted by addedTime in
+    // milliseconds for GGS users, so they will never see the alphabetical
+    // sorting.
+    .orderBy(
+      [(file) => file.addedTime, (file) => file.name.toLowerCase()],
+      ["desc", "asc"]
+    )
+
+  if (search) {
+    sortedFiles = sortedFiles.filter((file) =>
+      file.name.toLowerCase().includes(search.toLowerCase())
+    )
+  }
+  const totalLength = sortedFiles.value().length
+
+  const paginatedFiles = sortedFiles
     .drop(page * limit)
     .take(limit)
     .value()
@@ -51,7 +68,7 @@ const getPaginatedDirectoryContents = (
   return {
     directories: subdirectories,
     files: paginatedFiles,
-    total: files.length,
+    total: totalLength,
   }
 }
 
@@ -322,7 +339,8 @@ export default class RepoService extends GitHubService {
     // We will tiebreak in alphabetical order - we sort
     // and then we return the first n.
     page = 0,
-    limit = 15
+    limit = 15,
+    search = ""
   ): Promise<{
     directories: MediaDirOutput[]
     files: Pick<MediaFileOutput, "name">[]
@@ -359,7 +377,8 @@ export default class RepoService extends GitHubService {
     const { directories, files, total } = getPaginatedDirectoryContents(
       dirContent,
       page,
-      limit
+      limit,
+      search
     )
 
     return {
@@ -588,7 +607,7 @@ export default class RepoService extends GitHubService {
     { gitTree, message }: any,
     isStaging: boolean
   ): Promise<any> {
-    return await super.updateTree(
+    return super.updateTree(
       sessionData,
       githubSessionData,
       {
@@ -638,6 +657,6 @@ export default class RepoService extends GitHubService {
     sessionData: any,
     shouldMakePrivate: any
   ): Promise<any> {
-    return await super.changeRepoPrivacy(sessionData, shouldMakePrivate)
+    return super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

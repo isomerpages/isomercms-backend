@@ -58,6 +58,7 @@ const getPaginatedDirectoryContents = (
       file.name.toLowerCase().includes(search.toLowerCase())
     )
   }
+  const totalLength = sortedFiles.value().length
 
   const paginatedFiles = sortedFiles
     .drop(page * limit)
@@ -67,7 +68,7 @@ const getPaginatedDirectoryContents = (
   return {
     directories: subdirectories,
     files: paginatedFiles,
-    total: files.length,
+    total: totalLength,
   }
 }
 

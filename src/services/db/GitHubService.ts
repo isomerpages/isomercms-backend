@@ -136,7 +136,7 @@ export default class GitHubService {
       fileName,
       directoryName,
       isMedia = false,
-      branchName = STAGING_BRANCH,
+      branchName,
     }: {
       content: string
       fileName: string
@@ -216,7 +216,7 @@ export default class GitHubService {
     {
       fileName,
       directoryName,
-      branchName = STAGING_BRANCH,
+      branchName,
     }: { fileName: any; directoryName: any; branchName?: string }
   ) {
     const { accessToken } = sessionData
@@ -245,10 +245,7 @@ export default class GitHubService {
 
   async readMedia(
     sessionData: UserWithSiteSessionData,
-    {
-      fileSha,
-      branchName = STAGING_BRANCH,
-    }: { fileSha: any; branchName?: string }
+    { fileSha, branchName }: { fileSha: any; branchName?: string }
   ) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
@@ -281,10 +278,7 @@ export default class GitHubService {
 
   async readDirectory(
     sessionData: UserWithSiteSessionData,
-    {
-      directoryName,
-      branchName = STAGING_BRANCH,
-    }: { directoryName: any; branchName?: string }
+    { directoryName, branchName }: { directoryName: any; branchName?: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -383,12 +377,12 @@ export default class GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName = STAGING_BRANCH,
+      branchName,
     }: {
       sha: string
       fileName: string
       directoryName: string
-      branchName?: string
+      branchName: string
     }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -455,7 +449,7 @@ export default class GitHubService {
     return data
   }
 
-  async getRepoState(sessionData: UserWithSiteSessionData) {
+  async getRepoState(sessionData: UserWithSiteSessionData, isStaging: boolean) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = `${siteName}/commits`
@@ -463,7 +457,7 @@ export default class GitHubService {
       Authorization: `token ${accessToken}`,
     }
     const params = {
-      sha: STAGING_BRANCH,
+      sha: isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH,
     }
     // Get the commits of the repo
     const { data: commits } = await this.axiosInstance.get(endpoint, {
@@ -536,7 +530,7 @@ export default class GitHubService {
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
     { isRecursive }: any,
-    isStaging = true
+    isStaging: boolean
   ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -689,7 +683,7 @@ export default class GitHubService {
       directoryName,
       message,
       githubSessionData,
-      isStaging = true,
+      isStaging,
     }: {
       directoryName: string
       message: string
@@ -731,11 +725,19 @@ export default class GitHubService {
 
   async renameSinglePath(
     sessionData: UserWithSiteSessionData,
-    githubSessionData: GithubSessionData,
-    oldPath: string,
-    newPath: string,
-    message?: string,
-    isStaging = true
+    {
+      githubSessionData,
+      oldPath,
+      newPath,
+      isStaging,
+      message,
+    }: {
+      githubSessionData: GithubSessionData
+      oldPath: string
+      newPath: string
+      isStaging: boolean
+      message?: string
+    }
   ): Promise<GitCommitResult> {
     const gitTree = await this.getTree(
       sessionData,
@@ -799,12 +801,21 @@ export default class GitHubService {
 
   async moveFiles(
     sessionData: UserWithSiteSessionData,
-    githubSessionData: GithubSessionData,
-    oldPath: string,
-    newPath: string,
-    targetFiles: string[],
-    message?: string,
-    isStaging = true
+    {
+      githubSessionData,
+      oldPath,
+      newPath,
+      targetFiles,
+      message,
+      isStaging,
+    }: {
+      githubSessionData: GithubSessionData
+      oldPath: string
+      newPath: string
+      targetFiles: string[]
+      isStaging: boolean
+      message?: string
+    }
   ) {
     const gitTree = await this.getTree(
       sessionData,

@@ -495,10 +495,17 @@ export default class RepoService extends GitHubService {
 
   async renameSinglePath(
     sessionData: UserWithSiteSessionData,
-    githubSessionData: GithubSessionData,
-    oldPath: string,
-    newPath: string,
-    message?: string
+    {
+      githubSessionData,
+      oldPath,
+      newPath,
+      message,
+    }: {
+      githubSessionData: GithubSessionData
+      oldPath: string
+      newPath: string
+      message?: string
+    }
   ): Promise<GitCommitResult> {
     if (
       sessionData.growthbook?.getFeatureValue(
@@ -514,22 +521,29 @@ export default class RepoService extends GitHubService {
         message
       )
     }
-    return this.githubCommitService.renameSinglePath(
-      sessionData,
+    return this.githubCommitService.renameSinglePath(sessionData, {
       githubSessionData,
       oldPath,
       newPath,
-      message
-    )
+      message,
+    })
   }
 
   async moveFiles(
     sessionData: UserWithSiteSessionData,
-    githubSessionData: GithubSessionData,
-    oldPath: string,
-    newPath: string,
-    targetFiles: string[],
-    message?: string
+    {
+      githubSessionData,
+      oldPath,
+      newPath,
+      targetFiles,
+      message,
+    }: {
+      githubSessionData: GithubSessionData
+      oldPath: string
+      newPath: string
+      targetFiles: string[]
+      message?: string
+    }
   ): Promise<GitCommitResult> {
     if (
       sessionData.growthbook?.getFeatureValue(
@@ -547,14 +561,13 @@ export default class RepoService extends GitHubService {
       )
     }
 
-    return this.githubCommitService.moveFiles(
-      sessionData,
+    return this.githubCommitService.moveFiles(sessionData, {
       githubSessionData,
       oldPath,
       newPath,
       targetFiles,
-      message
-    )
+      message,
+    })
   }
 
   async getRepoInfo(sessionData: any): Promise<any> {
@@ -562,7 +575,8 @@ export default class RepoService extends GitHubService {
   }
 
   async getRepoState(sessionData: any): Promise<any> {
-    return super.getRepoState(sessionData)
+    const isStaging = true
+    return super.getRepoState(sessionData, isStaging)
   }
 
   async getLatestCommitOfBranch(
@@ -596,9 +610,15 @@ export default class RepoService extends GitHubService {
     githubSessionData: any,
     { isRecursive }: any
   ): Promise<RawGitTreeEntry[]> {
-    return super.getTree(sessionData, githubSessionData, {
-      isRecursive,
-    })
+    const isStaging = true
+    return super.getTree(
+      sessionData,
+      githubSessionData,
+      {
+        isRecursive,
+      },
+      isStaging
+    )
   }
 
   async updateTree(

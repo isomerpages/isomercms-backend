@@ -108,19 +108,17 @@ export default class GitHubCommitService extends GitHubService {
       directoryName,
       message,
       githubSessionData,
-      isStaging = true,
     }: {
       directoryName: string
       message: string
       githubSessionData: GithubSessionData
-      isStaging?: boolean
     }
   ): Promise<void> {
     await super.deleteDirectory(sessionData, {
       directoryName,
       message,
       githubSessionData,
-      isStaging,
+      isStaging: true,
     })
 
     if (
@@ -152,6 +150,7 @@ export default class GitHubCommitService extends GitHubService {
       sha,
       fileName,
       directoryName,
+      branchName: STAGING_BRANCH,
     })
 
     const shouldStagingLiteUpdate =
@@ -169,19 +168,28 @@ export default class GitHubCommitService extends GitHubService {
 
   async renameSinglePath(
     sessionData: UserWithSiteSessionData,
-    githubSessionData: GithubSessionData,
-    oldPath: string,
-    newPath: string,
-    message?: string,
-    isStaging = true
-  ): Promise<GitCommitResult> {
-    const stagingRenameSinglePathResult = await super.renameSinglePath(
-      sessionData,
+    {
       githubSessionData,
       oldPath,
       newPath,
+
       message,
-      isStaging
+    }: {
+      githubSessionData: GithubSessionData
+      oldPath: string
+      newPath: string
+      message?: string
+    }
+  ): Promise<GitCommitResult> {
+    const stagingRenameSinglePathResult = await super.renameSinglePath(
+      sessionData,
+      {
+        githubSessionData,
+        oldPath,
+        newPath,
+        message,
+        isStaging: true,
+      }
     )
 
     const shouldStagingLiteUpdate =
@@ -190,14 +198,13 @@ export default class GitHubCommitService extends GitHubService {
 
     if (shouldStagingLiteUpdate) {
       // we await this call, but we do not need to return this result
-      await super.renameSinglePath(
-        sessionData,
+      await super.renameSinglePath(sessionData, {
         githubSessionData,
         oldPath,
         newPath,
         message,
-        false
-      )
+        isStaging: false,
+      })
     }
 
     return stagingRenameSinglePathResult
@@ -205,37 +212,44 @@ export default class GitHubCommitService extends GitHubService {
 
   async moveFiles(
     sessionData: UserWithSiteSessionData,
-    githubSessionData: GithubSessionData,
-    oldPath: string,
-    newPath: string,
-    targetFiles: string[],
-    message?: string,
-    isStaging = true
+    {
+      githubSessionData,
+      oldPath,
+      newPath,
+      targetFiles,
+
+      message,
+    }: {
+      githubSessionData: GithubSessionData
+      oldPath: string
+      newPath: string
+      targetFiles: string[]
+
+      message?: string
+    }
   ): Promise<GitCommitResult> {
-    const stagingMoveFilesResult = await super.moveFiles(
-      sessionData,
+    const stagingMoveFilesResult = await super.moveFiles(sessionData, {
       githubSessionData,
       oldPath,
       newPath,
       targetFiles,
       message,
-      isStaging
-    )
+      isStaging: true,
+    })
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName: oldPath })
     if (shouldUpdateStagingLite) {
       // We don't have to return the sha, just update this should be ok
-      await super.moveFiles(
-        sessionData,
+      await super.moveFiles(sessionData, {
         githubSessionData,
         oldPath,
         newPath,
         targetFiles,
         message,
-        false
-      )
+        isStaging: false,
+      })
     }
 
     return stagingMoveFilesResult

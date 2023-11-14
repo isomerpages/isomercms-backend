@@ -229,8 +229,9 @@ ${syncedRepos.map((repo) => `<li>${repo}</li>`)}
   }
 
   doesRepoNeedClone(repoName: string): ResultAsync<true, false> {
+    const isStaging = true
     return this.gitFileSystemService
-      .isGitInitialized(repoName)
+      .isGitInitialized(repoName, isStaging)
       .andThen((isRepoInEfs) => {
         if (isRepoInEfs) {
           return errAsync<true, false>(false)

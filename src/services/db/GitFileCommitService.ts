@@ -164,7 +164,7 @@ export default class GitFileCommitService {
       "",
       sessionData.isomerUserId,
       true,
-      STAGING_BRANCH
+      defaultBranch
     )
 
     const shouldUpdateStagingLite =

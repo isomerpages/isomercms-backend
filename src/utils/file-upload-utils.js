@@ -10,7 +10,7 @@ const logger = require("@logger/logger").default
 
 const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
-const ALLOWED_FILE_EXTENSIONS = [
+export const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
   "png",
   "jpg",
@@ -30,7 +30,7 @@ apikey.apiKey = CLOUDMERSIVE_API_KEY
 
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
-const scanFileForVirus = (fileBuffer, timeout) => {
+export const scanFileForVirus = (fileBuffer, timeout) => {
   if (timeout) {
     defaultCloudmersiveClient.timeout = timeout
   }
@@ -49,7 +49,7 @@ const scanFileForVirus = (fileBuffer, timeout) => {
   })
 }
 
-const validateAndSanitizeFileUpload = async (data) => {
+export const validateAndSanitizeFileUpload = async (data) => {
   const [, content] = data.split(",")
   const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
@@ -66,10 +66,4 @@ const validateAndSanitizeFileUpload = async (data) => {
   }
 
   return undefined
-}
-
-module.exports = {
-  validateAndSanitizeFileUpload,
-  scanFileForVirus,
-  ALLOWED_FILE_EXTENSIONS,
 }

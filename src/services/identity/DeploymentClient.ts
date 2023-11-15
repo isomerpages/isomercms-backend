@@ -79,17 +79,40 @@ class DeploymentClient {
 
   generateCreateAppInput = (
     repoName: string,
-    repoUrl: string
-  ): CreateAppCommandInput => ({
-    name: repoName,
-    accessToken: SYSTEM_GITHUB_TOKEN,
-    repository: repoUrl,
-    buildSpec: AMPLIFY_BUILD_SPEC,
-    environmentVariables: {
-      JEKYLL_ENV: "development",
-    },
-    customRules: [{ source: "/<*>", target: "/404.html", status: "404" }],
-  })
+    repoUrl: string,
+    isStagingLite: boolean
+  ): CreateAppCommandInput => {
+    const stgLiteRedirectRules = [
+      {
+        source: "/files/<*>",
+        target: `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/files/<*>`,
+        status: "200",
+      },
+      {
+        source: "/images/<*>",
+        target: `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/images/<*>`,
+        status: "200",
+      },
+    ]
+    const defaultRedirectRules = [
+      { source: "/<*>", target: "/404.html", status: "404" },
+    ]
+
+    const redirectRules = isStagingLite
+      ? [...stgLiteRedirectRules, ...defaultRedirectRules]
+      : defaultRedirectRules
+
+    return {
+      name: repoName,
+      accessToken: SYSTEM_GITHUB_TOKEN,
+      repository: repoUrl,
+      buildSpec: AMPLIFY_BUILD_SPEC,
+      environmentVariables: {
+        JEKYLL_ENV: "development",
+      },
+      customRules: redirectRules,
+    }
+  }
 
   generateCreateBranchInput = (
     appId: string,

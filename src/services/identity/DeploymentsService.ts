@@ -69,7 +69,7 @@ class DeploymentsService {
 
     return this.create({
       stagingUrl: Brand.fromString(
-        `https://staging.${amplifyStagingLiteResult.value.defaultDomain}`
+        `https://staging-lite.${amplifyStagingLiteResult.value.defaultDomain}`
       ),
       productionUrl: Brand.fromString(
         `https://master.${amplifyStagingResult.value.defaultDomain}`
@@ -105,7 +105,8 @@ class DeploymentsService {
 
     const createAppOptions = this.deploymentClient.generateCreateAppInput(
       appName,
-      repoUrl
+      repoUrl,
+      createStagingLite
     )
     // 1. Create Amplify app
     return this.deploymentClient

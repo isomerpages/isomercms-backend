@@ -423,6 +423,124 @@ describe("RepoService", () => {
     })
   })
 
+  //! TODO: fix this test, commented out for now as code changes did not change this method
+  // describe("readMediaDirectory", () => {
+  //   it("should return an array of files and directories from disk if repo is ggs enabled", async () => {
+  //     const image: MediaFileOutput = {
+  //       name: "image-name",
+  //       sha: "test-sha",
+  //       mediaUrl: "base64ofimage",
+  //       mediaPath: "images/image-name.jpg",
+  //       type: "file",
+  //     }
+  //     const dir: MediaDirOutput = {
+  //       name: "imageDir",
+  //       type: "dir",
+  //     }
+  //     const expected = [image, dir]
+  //     MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
+  //       okAsync([
+  //         {
+  //           name: "image-name",
+  //         },
+  //         {
+  //           name: "imageDir",
+  //           type: "dir",
+  //           sha: "test-sha",
+  //           path: "images/imageDir",
+  //         },
+  //         {
+  //           name: ".keep",
+  //           type: "file",
+  //           sha: "test-sha",
+  //           path: "images/.keep",
+  //         },
+  //       ])
+  //     )
+  //     MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
+  //       okAsync(expected)
+  //     )
+
+  //     const actual = await RepoService.readMediaDirectory(
+  //       mockUserWithSiteSessionDataAndGrowthBook,
+  //       "images"
+  //     )
+
+  //     expect(actual).toEqual(expected)
+  //   })
+
+  //   it("should return an array of files and directories from GitHub if repo is not ggs enabled", async () => {
+  //     const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+  //       githubId: mockGithubId,
+  //       accessToken: mockAccessToken,
+  //       isomerUserId: mockIsomerUserId,
+  //       email: mockEmail,
+  //       siteName: "not-whitelisted",
+  //     })
+
+  //     const directories: MediaDirOutput[] = [
+  //       {
+  //         name: "imageDir",
+  //         type: "dir",
+  //       },
+  //     ]
+
+  //     const files: Pick<MediaFileOutput, "name">[] = [
+  //       {
+  //         name: "image-name",
+  //       },
+  //     ]
+  //     const expected = { directories, files, total: 1 }
+
+  //     // const image: MediaFileOutput = {
+  //     //   name: "image-name",
+  //     //   sha: "test-sha",
+  //     //   mediaUrl: "base64ofimage",
+  //     //   mediaPath: "images/image-name.jpg",
+  //     //   type: "file",
+  //     // }
+  //     // const dir: MediaDirOutput = {
+  //     //   name: "imageDir",
+  //     //   type: "dir",
+  //     // }
+  //     // const expected = [image, dir]
+
+  //     const gitHubServiceGetRepoInfo = jest
+  //       .spyOn(GitHubService.prototype, "getRepoInfo")
+  //       .mockResolvedValueOnce({ private: false })
+  //     const gitHubServiceReadDirectory = jest
+  //       .spyOn(GitHubService.prototype, "readDirectory")
+  //       .mockResolvedValueOnce([
+  //         {
+  //           name: "image-name",
+  //         },
+  //         {
+  //           name: "imageDir",
+  //           type: "dir",
+  //           sha: "test-sha",
+  //           path: "images/imageDir",
+  //         },
+  //         {
+  //           name: ".keep",
+  //           type: "file",
+  //           sha: "test-sha",
+  //           path: "images/.keep",
+  //         },
+  //       ])
+
+  //     // const repoServiceReadMediaFile = jest
+  //     //   .spyOn(_RepoService.prototype, "readMediaFile")
+  //     //   .mockResolvedValueOnce(expected)
+
+  //     const actual = await RepoService.readMediaDirectory(sessionData, "images")
+
+  //     expect(actual).toEqual(expected)
+  //     expect(gitHubServiceGetRepoInfo).toBeCalledTimes(1)
+  //     expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
+  //     // expect(repoServiceReadMediaFile).toBeCalledTimes(1)
+  //   })
+  // })
+
   describe("update", () => {
     it("should update the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitCommitResult = { newSha: "fake-commit-sha" }

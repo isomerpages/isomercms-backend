@@ -7,8 +7,8 @@ info:
 paths:
   /dns-records:
     post:
-      summary: Add a list of DNS records
-      description: Add multiple DNS records of various types to the DNS management system along with a contact email.
+      summary: Add a DNS record
+      description: Add a DNS record of various types to the DNS management system along with a contact email.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -27,59 +27,23 @@ paths:
               type: object
               required:
                 - email
-                - records
+                - record
               properties:
                 email:
                   type: string
                   format: email
-                  description: The contact email address for this set of DNS records.
-                records:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/DNSRecord"
+                  description: The contact email address for this DNS record.
+                record:
+                  $ref: "#/components/schemas/DNSRecord"
               example:
                 email: "admin@example.com"
-                records:
-                  - type: "A"
-                    name: "example.com"
-                    content: "192.168.1.1"
-                  - type: "AAAA"
-                    name: "example.com"
-                    content: "::1"
-                  - type: "CNAME"
-                    name: "blog.example.com"
-                    content: "example.com"
-                  - type: "MX"
-                    name: "example.com"
-                    content: "mail.example.com"
-                    priority: 10
-                  - type: "TXT"
-                    name: "example.com"
-                    content: "v=spf1 include:_spf.example.com ~all"
-                  - type: "SRV"
-                    name: "_sip._tcp.example.com"
-                    content: "10 60 5060 sipserver.example.com."
-                  - type: "NS"
-                    name: "example.com"
-                    content: "ns1.example.com."
-                  - type: "SPF"
-                    name: "example.com"
-                    content: "v=spf1 include:_spf.example.com ~all"
-                  - type: "LOC"
-                    name: "example.com"
-                    content: "37 46 30 N 122 23 30 W 0.00m"
-                  - type: "CAA"
-                    name: "example.com"
-                    content: '0 issue "letsencrypt.org"'
-                  - type: "DNSKEY"
-                    name: "example.com"
-                    content: "[DNSKEY data]"
-                  - type: "DS"
-                    name: "example.com"
-                    content: "[DS data]"
+                record:
+                  type: "A"
+                  name: "example.com"
+                  content: "192.168.1.1"
       responses:
         "201":
-          description: DNS records successfully added.
+          description: DNS record successfully added.
           content:
             application/json:
               schema:
@@ -87,7 +51,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "DNS records added successfully."
+                    example: "DNS record added successfully."
         "400":
           description: Invalid request data.
           content:
@@ -209,7 +173,6 @@ components:
           description: The content of the DNS record. Varies depending on the record type.
         priority:
           type: integer
-          optional: true
           description: Priority of the record (used for MX and SRV records).
     DNSKEYData:
       type: object

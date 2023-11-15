@@ -26,6 +26,7 @@ class SearchService {
           "publishDate,notificationNum",
           "fileUrl",
         ],
+        customRanking: ["desc(publishTimestamp)"],
       })
     } catch (e) {
       logger.error(

@@ -87,10 +87,12 @@ describe("Base Directory Service", () => {
 
       expect(mockRepoService.renameSinglePath).toHaveBeenCalledWith(
         sessionData,
-        mockGithubSessionData,
-        directoryName,
-        renamedDir,
-        message
+        {
+          githubSessionData: mockGithubSessionData,
+          oldPath: directoryName,
+          newPath: renamedDir,
+          message,
+        }
       )
     })
 
@@ -109,10 +111,12 @@ describe("Base Directory Service", () => {
 
       expect(mockRepoService.renameSinglePath).toHaveBeenCalledWith(
         sessionData,
-        mockGithubSessionData,
-        directoryName,
-        renamedDir,
-        message
+        {
+          githubSessionData: mockGithubSessionData,
+          oldPath: directoryName,
+          newPath: renamedDir,
+          message,
+        }
       )
     })
   })
@@ -154,14 +158,13 @@ describe("Base Directory Service", () => {
         })
       ).rejects.toThrowError(ConflictError)
 
-      expect(mockRepoService.moveFiles).toHaveBeenCalledWith(
-        sessionData,
-        mockGithubSessionData,
-        `${directoryName}/${subcollectionName}`,
-        targetDir,
-        ["file.md", "file2.md"],
-        message
-      )
+      expect(mockRepoService.moveFiles).toHaveBeenCalledWith(sessionData, {
+        githubSessionData: mockGithubSessionData,
+        oldPath: `${directoryName}/${subcollectionName}`,
+        newPath: targetDir,
+        targetFiles: ["file.md", "file2.md"],
+        message,
+      })
     })
 
     it("Moving files in directories works correctly", async () => {
@@ -178,14 +181,13 @@ describe("Base Directory Service", () => {
         })
       ).resolves.not.toThrow()
 
-      expect(mockRepoService.moveFiles).toHaveBeenCalledWith(
-        sessionData,
-        mockGithubSessionData,
-        `${directoryName}/${subcollectionName}`,
-        targetDir,
-        ["file.md", "file2.md"],
-        message
-      )
+      expect(mockRepoService.moveFiles).toHaveBeenCalledWith(sessionData, {
+        githubSessionData: mockGithubSessionData,
+        oldPath: `${directoryName}/${subcollectionName}`,
+        newPath: targetDir,
+        targetFiles: ["file.md", "file2.md"],
+        message,
+      })
     })
   })
 })

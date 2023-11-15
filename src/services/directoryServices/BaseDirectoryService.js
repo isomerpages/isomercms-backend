@@ -38,13 +38,12 @@ class BaseDirectoryService {
     githubSessionData,
     { oldDirectoryName, newDirectoryName, message }
   ) {
-    await this.repoService.renameSinglePath(
-      sessionData,
+    await this.repoService.renameSinglePath(sessionData, {
       githubSessionData,
-      oldDirectoryName,
-      newDirectoryName,
-      message
-    )
+      oldPath: oldDirectoryName,
+      newPath: newDirectoryName,
+      message,
+    })
   }
 
   // Move files which do not require modification of content
@@ -53,14 +52,13 @@ class BaseDirectoryService {
     githubSessionData,
     { oldDirectoryName, newDirectoryName, targetFiles, message }
   ) {
-    await this.repoService.moveFiles(
-      sessionData,
+    await this.repoService.moveFiles(sessionData, {
       githubSessionData,
-      oldDirectoryName,
-      newDirectoryName,
+      oldPath: oldDirectoryName,
+      newPath: newDirectoryName,
       targetFiles,
-      message
-    )
+      message,
+    })
   }
 }
 

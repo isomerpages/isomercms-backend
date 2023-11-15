@@ -229,10 +229,12 @@ describe("Media File Service", () => {
 
       expect(mockRepoService.renameSinglePath).toHaveBeenCalledWith(
         sessionData,
-        mockGithubSessionData,
-        `${directoryName}/${oldFileName}`,
-        `${directoryName}/${fileName}`,
-        `Renamed ${oldFileName} to ${fileName}`
+        {
+          githubSessionData: mockGithubSessionData,
+          oldPath: `${directoryName}/${oldFileName}`,
+          newPath: `${directoryName}/${fileName}`,
+          message: `Renamed ${oldFileName} to ${fileName}`,
+        }
       )
     })
   })

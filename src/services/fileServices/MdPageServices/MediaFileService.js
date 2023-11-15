@@ -119,10 +119,12 @@ class MediaFileService {
 
     const { newSha: newCommitSha } = await this.repoService.renameSinglePath(
       sessionData,
-      githubSessionData,
-      `${directoryName}/${oldFileName}`,
-      `${directoryName}/${newFileName}`,
-      `Renamed ${oldFileName} to ${newFileName}`
+      {
+        githubSessionData,
+        oldPath: `${directoryName}/${oldFileName}`,
+        newPath: `${directoryName}/${newFileName}`,
+        message: `Renamed ${oldFileName} to ${newFileName}`,
+      }
     )
 
     return {

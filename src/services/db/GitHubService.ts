@@ -175,7 +175,10 @@ export default class GitHubService {
           pathToCheck = directoryName.split("/").slice(0, -1).join("/")
         }
         // this is to check if the file path still exists, else this will throw a 404
-        await this.readDirectory(sessionData, { directoryName: pathToCheck })
+        await this.readDirectory(sessionData, {
+          directoryName: pathToCheck,
+          branchName,
+        })
       }
 
       // Validation and sanitisation of media already done
@@ -191,7 +194,7 @@ export default class GitHubService {
         content: encodedContent,
         branch: branchName,
       }
-
+      console.log("params", params)
       const resp = await this.axiosInstance.put(endpoint, params, {
         headers: {
           Authorization: `token ${accessToken}`,
@@ -217,7 +220,7 @@ export default class GitHubService {
       fileName,
       directoryName,
       branchName,
-    }: { fileName: any; directoryName: any; branchName?: string }
+    }: { fileName: any; directoryName: any; branchName: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -245,7 +248,7 @@ export default class GitHubService {
 
   async readMedia(
     sessionData: UserWithSiteSessionData,
-    { fileSha, branchName }: { fileSha: any; branchName?: string }
+    { fileSha, branchName }: { fileSha: any; branchName: string }
   ) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
@@ -278,7 +281,7 @@ export default class GitHubService {
 
   async readDirectory(
     sessionData: UserWithSiteSessionData,
-    { directoryName, branchName }: { directoryName: any; branchName?: string }
+    { directoryName, branchName }: { directoryName: any; branchName: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -321,7 +324,7 @@ export default class GitHubService {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
       // this is to check if the file path still exists, else this will throw a 404. Only needed for paths outside of root
       if (directoryName) {
-        await this.readDirectory(sessionData, { directoryName })
+        await this.readDirectory(sessionData, { directoryName, branchName })
       }
       const encodedNewContent = Base64.encode(fileContent)
 
@@ -330,6 +333,7 @@ export default class GitHubService {
         const { sha: retrievedSha } = await this.read(sessionData, {
           fileName,
           directoryName,
+          branchName,
         })
         fileSha = retrievedSha
       }
@@ -773,6 +777,8 @@ export default class GitHubService {
           })
         }
       } else if (item.path === newPath && item.type !== "tree") {
+        console.log("item.path", item.path)
+        console.log("newPath", newPath)
         throw new ConflictError("Target file already exists")
       } else if (item.path === oldPath && item.type !== "tree") {
         // Add file to new directory

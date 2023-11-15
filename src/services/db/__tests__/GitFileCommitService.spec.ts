@@ -63,7 +63,12 @@ describe("GitFileCommitService", () => {
       // Arrange
       const pushSpy = jest
         .spyOn(gitFileSystemService, "push")
-        .mockResolvedValue(okAsync("push ok"))
+        .mockImplementation((siteName, branchName) =>
+          ResultAsync.fromPromise(
+            Promise.resolve("push ok"),
+            () => new GitFileSystemError("push failed")
+          )
+        )
 
       // Act
       await gitFileCommitService.pushToGithub(sessionData, true)

@@ -12,7 +12,7 @@ import {
   mockUserWithSiteSessionDataAndGrowthBook,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { ItemType, MediaFileOutput } from "@root/types"
+import { ItemType, MediaDirOutput, MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import {
   GitCommitResult,
@@ -423,124 +423,6 @@ describe("RepoService", () => {
     })
   })
 
-  //! TODO: fix this test, commented out for now as code changes did not change this method
-  // describe("readMediaDirectory", () => {
-  //   it("should return an array of files and directories from disk if repo is ggs enabled", async () => {
-  //     const image: MediaFileOutput = {
-  //       name: "image-name",
-  //       sha: "test-sha",
-  //       mediaUrl: "base64ofimage",
-  //       mediaPath: "images/image-name.jpg",
-  //       type: "file",
-  //     }
-  //     const dir: MediaDirOutput = {
-  //       name: "imageDir",
-  //       type: "dir",
-  //     }
-  //     const expected = [image, dir]
-  //     MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
-  //       okAsync([
-  //         {
-  //           name: "image-name",
-  //         },
-  //         {
-  //           name: "imageDir",
-  //           type: "dir",
-  //           sha: "test-sha",
-  //           path: "images/imageDir",
-  //         },
-  //         {
-  //           name: ".keep",
-  //           type: "file",
-  //           sha: "test-sha",
-  //           path: "images/.keep",
-  //         },
-  //       ])
-  //     )
-  //     MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
-  //       okAsync(expected)
-  //     )
-
-  //     const actual = await RepoService.readMediaDirectory(
-  //       mockUserWithSiteSessionDataAndGrowthBook,
-  //       "images"
-  //     )
-
-  //     expect(actual).toEqual(expected)
-  //   })
-
-  //   it("should return an array of files and directories from GitHub if repo is not ggs enabled", async () => {
-  //     const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-  //       githubId: mockGithubId,
-  //       accessToken: mockAccessToken,
-  //       isomerUserId: mockIsomerUserId,
-  //       email: mockEmail,
-  //       siteName: "not-whitelisted",
-  //     })
-
-  //     const directories: MediaDirOutput[] = [
-  //       {
-  //         name: "imageDir",
-  //         type: "dir",
-  //       },
-  //     ]
-
-  //     const files: Pick<MediaFileOutput, "name">[] = [
-  //       {
-  //         name: "image-name",
-  //       },
-  //     ]
-  //     const expected = { directories, files, total: 1 }
-
-  //     // const image: MediaFileOutput = {
-  //     //   name: "image-name",
-  //     //   sha: "test-sha",
-  //     //   mediaUrl: "base64ofimage",
-  //     //   mediaPath: "images/image-name.jpg",
-  //     //   type: "file",
-  //     // }
-  //     // const dir: MediaDirOutput = {
-  //     //   name: "imageDir",
-  //     //   type: "dir",
-  //     // }
-  //     // const expected = [image, dir]
-
-  //     const gitHubServiceGetRepoInfo = jest
-  //       .spyOn(GitHubService.prototype, "getRepoInfo")
-  //       .mockResolvedValueOnce({ private: false })
-  //     const gitHubServiceReadDirectory = jest
-  //       .spyOn(GitHubService.prototype, "readDirectory")
-  //       .mockResolvedValueOnce([
-  //         {
-  //           name: "image-name",
-  //         },
-  //         {
-  //           name: "imageDir",
-  //           type: "dir",
-  //           sha: "test-sha",
-  //           path: "images/imageDir",
-  //         },
-  //         {
-  //           name: ".keep",
-  //           type: "file",
-  //           sha: "test-sha",
-  //           path: "images/.keep",
-  //         },
-  //       ])
-
-  //     // const repoServiceReadMediaFile = jest
-  //     //   .spyOn(_RepoService.prototype, "readMediaFile")
-  //     //   .mockResolvedValueOnce(expected)
-
-  //     const actual = await RepoService.readMediaDirectory(sessionData, "images")
-
-  //     expect(actual).toEqual(expected)
-  //     expect(gitHubServiceGetRepoInfo).toBeCalledTimes(1)
-  //     expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
-  //     // expect(repoServiceReadMediaFile).toBeCalledTimes(1)
-  //   })
-  // })
-
   describe("update", () => {
     it("should update the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitCommitResult = { newSha: "fake-commit-sha" }
@@ -639,10 +521,12 @@ describe("RepoService", () => {
 
       const actual = await RepoService.renameSinglePath(
         mockUserWithSiteSessionDataAndGrowthBook,
-        mockGithubSessionData,
-        "fake-old-path",
-        "fake-new-path",
-        "fake-commit-message"
+        {
+          githubSessionData: mockGithubSessionData,
+          oldPath: "fake-old-path",
+          newPath: "fake-new-path",
+          message: "fake-commit-message",
+        }
       )
 
       expect(actual).toEqual(expected)
@@ -663,13 +547,12 @@ describe("RepoService", () => {
         newSha: expectedSha,
       })
 
-      const actual = await RepoService.renameSinglePath(
-        sessionData,
-        mockGithubSessionData,
-        "fake-path/old-fake-file.md",
-        "fake-path/new-fake-file.md",
-        fakeCommitMessage
-      )
+      const actual = await RepoService.renameSinglePath(sessionData, {
+        githubSessionData: mockGithubSessionData,
+        oldPath: "fake-path/old-fake-file.md",
+        newPath: "fake-path/new-fake-file.md",
+        message: fakeCommitMessage,
+      })
 
       expect(actual).toEqual({ newSha: expectedSha })
     })
@@ -684,11 +567,13 @@ describe("RepoService", () => {
 
       const actual = await RepoService.moveFiles(
         mockUserWithSiteSessionDataAndGrowthBook,
-        mockGithubSessionData,
-        "fake-old-path",
-        "fake-new-path",
-        ["fake-file1", "fake-file2"],
-        "fake-commit-message"
+        {
+          githubSessionData: mockGithubSessionData,
+          oldPath: "fake-old-path",
+          newPath: "fake-new-path",
+          targetFiles: ["fake-file1", "fake-file2"],
+          message: "fake-commit-message",
+        }
       )
 
       expect(actual).toEqual(expected)
@@ -707,14 +592,13 @@ describe("RepoService", () => {
 
       MockGitHubCommitService.moveFiles.mockResolvedValueOnce(expected)
 
-      const actual = await RepoService.moveFiles(
-        sessionData,
-        mockGithubSessionData,
-        "fake-path",
-        "fake-new-path",
-        ["old-fake-file.md", "old-fake-file-two.md"],
-        fakeCommitMessage
-      )
+      const actual = await RepoService.moveFiles(sessionData, {
+        githubSessionData: mockGithubSessionData,
+        oldPath: "fake-path",
+        newPath: "fake-new-path",
+        targetFiles: ["old-fake-file.md", "old-fake-file-two.md"],
+        message: fakeCommitMessage,
+      })
 
       expect(actual).toEqual(expected)
     })

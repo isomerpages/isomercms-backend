@@ -248,7 +248,10 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockResolvedValueOnce(true),
       })
 
-      const result = await GitFileSystemService.isGitInitialized("fake-repo")
+      const result = await GitFileSystemService.isGitInitialized(
+        "fake-repo",
+        true
+      )
 
       expect(result._unsafeUnwrap()).toBeTrue()
     })
@@ -258,7 +261,10 @@ describe("GitFileSystemService", () => {
         checkIsRepo: jest.fn().mockResolvedValueOnce(false),
       })
 
-      const result = await GitFileSystemService.isGitInitialized("fake-repo")
+      const result = await GitFileSystemService.isGitInitialized(
+        "fake-repo",
+        true
+      )
 
       expect(result._unsafeUnwrap()).toBeFalse()
     })
@@ -288,7 +294,8 @@ describe("GitFileSystemService", () => {
       })
 
       const result = await GitFileSystemService.isOriginRemoteCorrect(
-        "fake-repo"
+        "fake-repo",
+        true
       )
 
       expect(result._unsafeUnwrap()).toBeTrue()
@@ -304,7 +311,8 @@ describe("GitFileSystemService", () => {
       })
 
       const result = await GitFileSystemService.isOriginRemoteCorrect(
-        "fake-repo"
+        "fake-repo",
+        true
       )
 
       expect(result._unsafeUnwrap()).toBeFalse()
@@ -316,7 +324,8 @@ describe("GitFileSystemService", () => {
       })
 
       const result = await GitFileSystemService.isOriginRemoteCorrect(
-        "fake-repo"
+        "fake-repo",
+        true
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
@@ -515,7 +524,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.getGitBlobHash(
         "fake-repo",
-        "fake-dir/fake-file"
+        "fake-dir/fake-file",
+        true
       )
 
       expect(result._unsafeUnwrap()).toBe("fake-hash")
@@ -528,7 +538,8 @@ describe("GitFileSystemService", () => {
 
       const result = await GitFileSystemService.getGitBlobHash(
         "fake-repo",
-        "fake-dir/fake-file"
+        "fake-dir/fake-file",
+        true
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)

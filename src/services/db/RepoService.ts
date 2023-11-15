@@ -244,6 +244,7 @@ export default class RepoService extends GitHubService {
     return super.read(sessionData, {
       fileName,
       directoryName,
+      branchName: STAGING_BRANCH,
     })
   }
 
@@ -281,6 +282,7 @@ export default class RepoService extends GitHubService {
     const filePath = `${directoryName}/${fileName}`
     const directoryData = await super.readDirectory(sessionData, {
       directoryName,
+      branchName: STAGING_BRANCH,
     })
     const {
       author: { date: addedTime },
@@ -329,6 +331,7 @@ export default class RepoService extends GitHubService {
 
     return super.readDirectory(sessionData, {
       directoryName,
+      branchName: defaultBranch,
     })
   }
 
@@ -371,6 +374,7 @@ export default class RepoService extends GitHubService {
     } else {
       dirContent = (await super.readDirectory(sessionData, {
         directoryName,
+        branchName: defaultBranch,
       })) as GitDirectoryItem[]
     }
 

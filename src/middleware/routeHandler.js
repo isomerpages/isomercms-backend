@@ -156,11 +156,11 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       const {
         currentCommitSha: currentStgCommitSha,
         treeSha: stgTreeSha,
-      } = await getCommitAndTreeSha(siteName, accessToken)
+      } = await getCommitAndTreeSha(siteName, accessToken, STAGING_BRANCH)
 
       const {
         currentCommitSha: currentStgLiteCommitSha,
-      } = await getCommitAndTreeSha(siteName, accessToken)
+      } = await getCommitAndTreeSha(siteName, accessToken, STAGING_LITE_BRANCH)
 
       const githubSessionData = new GithubSessionData({
         currentCommitSha: currentStgCommitSha,
@@ -179,13 +179,15 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
   await routeHandler(req, res, next).catch(async (err) => {
     try {
       if (shouldUseGitFileSystem) {
-        await backOff(() => {
-          const rollbackRes = gitFileSystemService
+        await backOff(async () => {
+          const rollbackRes = await gitFileSystemService
             .rollback(siteName, originalStagingCommitSha, STAGING_BRANCH)
-            .rollback(
-              siteName,
-              originalStagingLiteCommitSha,
-              STAGING_LITE_BRANCH
+            .andThen(() =>
+              gitFileSystemService.rollback(
+                siteName,
+                originalStagingLiteCommitSha,
+                STAGING_LITE_BRANCH
+              )
             )
             .unwrapOr(false)
           if (!rollbackRes) throw new GitFileSystemError("Rollback failure")
@@ -204,14 +206,14 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
           if (!pushRes) throw new GitFileSystemError("Push failure")
         })
       } else {
-        await backOff(() => {
-          revertCommit(
+        await backOff(async () => {
+          await revertCommit(
             originalStagingCommitSha,
             siteName,
             accessToken,
             STAGING_BRANCH
           )
-          revertCommit(
+          await revertCommit(
             originalStagingLiteCommitSha,
             siteName,
             accessToken,

@@ -15,9 +15,12 @@ import {
   mockCurrentCommitSha,
   mockGithubSessionData,
   mockIsomerUserId,
+  gitTree,
 } from "@fixtures/sessionData"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { indexHtmlContent } from "@root/fixtures/markdown-fixtures"
 import { collectionYmlContent } from "@root/fixtures/yaml-fixtures"
+import { RawGitTreeEntry } from "@root/types/github"
 import GitHubService from "@services/db/GitHubService"
 
 // using es6 gives some error
@@ -871,7 +874,7 @@ describe("Github Service", () => {
     it("should update a repo tree correctly", async () => {
       const firstSha = "first-sha"
       const secondSha = "second-sha"
-      const gitTree = "git-tree"
+
       const message = "message"
       const finalExpectedMessage = JSON.stringify({
         message,
@@ -994,6 +997,227 @@ describe("Github Service", () => {
         }
       )
       expect(resp.isOk()).toEqual(true)
+    })
+  })
+
+  describe("deleteDirectory", () => {
+    const message = JSON.stringify({
+      message: `Delete directory: ${directoryName}`,
+      directoryName,
+      userId,
+    })
+    const params = {
+      message,
+      branch: BRANCH_REF,
+      sha: treeSha,
+      force: true,
+    }
+
+    const endpoint = `${siteName}/git/refs/heads/${STAGING_BRANCH}`
+    const stagingLiteEndpoint = `${siteName}/git/refs/heads/${STAGING_LITE_BRANCH}`
+
+    it("should delete a directory correctly", async () => {
+      // Arrange
+      const getTreeSpy = jest.spyOn(service, "getTree")
+      getTreeSpy.mockResolvedValueOnce(gitTree)
+      mockAxiosInstance.get.mockImplementation(() =>
+        Promise.resolve({ data: gitTree })
+      )
+      const updateTreeSpy = jest.spyOn(service, "updateTree")
+      updateTreeSpy.mockResolvedValueOnce(treeSha)
+      // Act
+      await service.deleteDirectory(sessionData, {
+        directoryName,
+        message,
+        githubSessionData: mockGithubSessionData,
+        isStaging: true,
+      })
+
+      // Assert
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        endpoint,
+        {
+          force: true,
+          sha: treeSha,
+        },
+        {
+          headers: { Authorization: `token ${accessToken}` },
+        }
+      )
+    })
+
+    it("should delete a directory correctly in staging lite branch", async () => {
+      // Arrange
+      const getTreeSpy = jest.spyOn(service, "getTree")
+      getTreeSpy.mockResolvedValueOnce(gitTree)
+      mockAxiosInstance.get.mockImplementation(() =>
+        Promise.resolve({ data: gitTree })
+      )
+      const updateTreeSpy = jest.spyOn(service, "updateTree")
+      updateTreeSpy.mockResolvedValueOnce(treeSha)
+      // Act
+      await service.deleteDirectory(sessionData, {
+        directoryName,
+        message,
+        githubSessionData: mockGithubSessionData,
+        isStaging: false,
+      })
+
+      // Assert
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        stagingLiteEndpoint,
+        {
+          force: true,
+          sha: treeSha,
+        },
+        {
+          headers: { Authorization: `token ${accessToken}` },
+        }
+      )
+    })
+
+    // it("should throw the correct error if directory cannot be found", async () => {
+    //   // Arrange
+    //   const getTreeSpy = jest.spyOn(service, "getTree")
+    //   getTreeSpy.mockResolvedValueOnce(gitTree)
+    //   const updateTreeSpy = jest.spyOn(service, "updateTree")
+    //   updateTreeSpy.mockResolvedValueOnce(treeSha)
+    //   mockAxiosInstance.patch.mockImplementation(() => {
+    //     const err = {
+    //       response: {
+    //         status: 404,
+    //       },
+    //       isAxiosError: true,
+    //     }
+    //     throw err
+    //   })
+
+    //   // Act
+    //   await expect(
+    //     service.deleteDirectory(sessionData, {
+    //       directoryName,
+    //       message,
+    //       githubSessionData: mockGithubSessionData,
+    //       isStaging: true,
+    //     })
+    //   ).rejects.toThrow()
+
+    //   // Assert
+    //   expect(mockAxiosInstance.patch).toHaveBeenCalledWith(endpoint, {
+    //     params,
+    //     headers: authHeader.headers,
+    //   })
+    // })
+
+    // it("should throw the correct error if directory cannot be found in staging lite", async () => {
+    //   // Arrange
+
+    //   const getTreeSpy = jest.spyOn(service, "getTree")
+    //   getTreeSpy.mockResolvedValueOnce(gitTree)
+    //   const updateTreeSpy = jest.spyOn(service, "updateTree")
+    //   updateTreeSpy.mockResolvedValueOnce(treeSha)
+    //   mockAxiosInstance.patch.mockImplementation(() => {
+    //     const err = {
+    //       response: {
+    //         status: 404,
+    //       },
+    //       isAxiosError: true,
+    //     }
+    //     throw err
+    //   })
+
+    //   // Act
+    //   await expect(
+    //     service.deleteDirectory(sessionData, {
+    //       directoryName,
+    //       message,
+    //       githubSessionData: mockGithubSessionData,
+    //       isStaging: true,
+    //     })
+    //   ).rejects.toThrow()
+
+    //   // Assert
+    //   expect(mockAxiosInstance.patch).toHaveBeenCalledWith(endpoint, {
+    //     params,
+    //     headers: authHeader.headers,
+    //   })
+    // })
+  })
+
+  describe("renameSinglePath", () => {
+    it("should rename a file correctly", async () => {
+      // Arrange
+
+      const oldPath = "old/path.txt"
+      const newPath = "new/path.txt"
+      const message = "Renaming file"
+      const isStaging = true
+
+      const newGitTree: RawGitTreeEntry[] = [
+        {
+          path: newPath,
+          type: "file",
+          sha: "new-sha1",
+          mode: "100644",
+          url: "",
+        },
+        {
+          path: oldPath,
+          type: "file",
+          sha: "new-sha2",
+          mode: "100644",
+          url: "",
+        },
+      ]
+
+      const resolvedTree = [
+        {
+          path: newPath,
+          type: "file",
+          sha: "new-sha1",
+          mode: "100644",
+          url: "",
+        },
+        {
+          path: oldPath,
+          type: "file",
+          sha: null,
+          mode: "100644",
+          url: "",
+        },
+      ]
+      const newCommitSha = "new-commit-sha"
+      jest.spyOn(service, "getTree").mockResolvedValueOnce(newGitTree)
+      jest.spyOn(service, "updateTree").mockResolvedValueOnce(newCommitSha)
+      jest.spyOn(service, "updateRepoState").mockResolvedValueOnce()
+
+      // Act
+      const result = await service.renameSinglePath(
+        sessionData,
+        mockGithubSessionData,
+        oldPath,
+        newPath,
+        message,
+        isStaging
+      )
+
+      // Assert
+      expect(service.getTree).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        { isRecursive: true },
+        isStaging
+      )
+      expect(service.updateTree).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        { gitTree: resolvedTree, message }
+      )
+      expect(service.updateRepoState).toHaveBeenCalledWith(sessionData, {
+        commitSha: newCommitSha,
+        branchName: service.getBranch(isStaging),
+      })
+      expect(result).toEqual({ newSha: newCommitSha })
     })
   })
 })

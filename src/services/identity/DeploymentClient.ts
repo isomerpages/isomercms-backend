@@ -13,6 +13,9 @@ import {
   ListJobsCommand,
   ListJobsCommandOutput,
   JobSummary,
+  StartJobCommand,
+  StartJobCommandOutput,
+  StartJobCommandInput,
 } from "@aws-sdk/client-amplify"
 import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
@@ -77,11 +80,23 @@ class DeploymentClient {
       this.amplifyClient.send(new ListJobsCommand({ appId, branchName }))
     ) as ResultAsync<ListJobsCommandOutput, AmplifyError>
 
-  generateCreateAppInput = (
-    repoName: string,
-    repoUrl: string,
+  sendStartJobCommand = (options: StartJobCommandInput) =>
+    wrap(this.amplifyClient.send(new StartJobCommand(options))) as ResultAsync<
+      StartJobCommandOutput,
+      AmplifyError
+    >
+
+  generateCreateAppInput = ({
+    appName,
+    repoName,
+    repoUrl,
+    isStagingLite,
+  }: {
+    appName: string
+    repoUrl: string
+    repoName: string
     isStagingLite: boolean
-  ): CreateAppCommandInput => {
+  }): CreateAppCommandInput => {
     const stgLiteRedirectRules = [
       {
         source: "/files/<*>",
@@ -103,7 +118,7 @@ class DeploymentClient {
       : defaultRedirectRules
 
     return {
-      name: repoName,
+      name: appName,
       accessToken: SYSTEM_GITHUB_TOKEN,
       repository: repoUrl,
       buildSpec: AMPLIFY_BUILD_SPEC,

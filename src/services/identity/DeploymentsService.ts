@@ -98,16 +98,17 @@ class DeploymentsService {
   createAmplifyAppOnAws = async (
     repoName: string,
     appName: string,
-    createStagingLite: boolean
+    isStagingLite: boolean
   ): Promise<Result<AmplifyInfo, AmplifyError>> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
     logger.info(`PublishToAmplify ${repoUrl}`)
 
-    const createAppOptions = this.deploymentClient.generateCreateAppInput(
+    const createAppOptions = this.deploymentClient.generateCreateAppInput({
       appName,
       repoUrl,
-      createStagingLite
-    )
+      repoName,
+      isStagingLite,
+    })
     // 1. Create Amplify app
     return this.deploymentClient
       .sendCreateApp(createAppOptions)
@@ -153,17 +154,38 @@ class DeploymentsService {
         )
 
         // 3. Create branches
-        if (createStagingLite) {
+        if (isStagingLite) {
           return this.deploymentClient
             .sendCreateBranch(createStagingLiteBranchInput)
+            .andThen(() =>
+              this.deploymentClient.sendStartJobCommand({
+                appId: amplifyInfo.id,
+                branchName: "staging-lite",
+                jobType: "RELEASE",
+              })
+            )
             .map(() => amplifyInfo)
         }
         return this.deploymentClient
           .sendCreateBranch(createMasterBranchInput)
+          .andThen(() =>
+            this.deploymentClient.sendStartJobCommand({
+              appId: amplifyInfo.id,
+              branchName: "master",
+              jobType: "RELEASE",
+            })
+          )
           .map(() => amplifyInfo)
           .andThen(() =>
             this.deploymentClient
               .sendCreateBranch(createStagingBranchInput)
+              .andThen(() =>
+                this.deploymentClient.sendStartJobCommand({
+                  appId: amplifyInfo.id,
+                  branchName: "staging",
+                  jobType: "RELEASE",
+                })
+              )
               .map(() => amplifyInfo)
           )
       })

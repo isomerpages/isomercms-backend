@@ -360,19 +360,6 @@ export default class GitFileSystemService {
     )
   }
 
-  hi(siteName: string, originalStagingCommitSha: string) {
-    const rollbackRes = this.rollback(
-      siteName,
-      originalStagingCommitSha,
-      STAGING_BRANCH
-    )
-      .andThen(() =>
-        this.rollback(siteName, originalStagingCommitSha, STAGING_LITE_BRANCH)
-      )
-      .unwrapOr(false)
-    if (!rollbackRes) throw new GitFileSystemError("Rollback failure")
-  }
-
   cloneBranch(
     repoName: string,
     isStaging: boolean

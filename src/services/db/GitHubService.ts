@@ -194,7 +194,6 @@ export default class GitHubService {
         content: encodedContent,
         branch: branchName,
       }
-      console.log("params", params)
       const resp = await this.axiosInstance.put(endpoint, params, {
         headers: {
           Authorization: `token ${accessToken}`,
@@ -777,8 +776,6 @@ export default class GitHubService {
           })
         }
       } else if (item.path === newPath && item.type !== "tree") {
-        console.log("item.path", item.path)
-        console.log("newPath", newPath)
         throw new ConflictError("Target file already exists")
       } else if (item.path === oldPath && item.type !== "tree") {
         // Add file to new directory

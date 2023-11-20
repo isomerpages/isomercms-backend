@@ -1,38 +1,38 @@
-const { backOff } = require("exponential-backoff")
-const SimpleGit = require("simple-git")
+import { backOff } from "exponential-backoff"
+import simpleGit from "simple-git"
 
-const { config } = require("@config/config")
+import { config } from "@config/config"
 
-const logger = require("@logger/logger").default
+import GithubSessionData from "@classes/GithubSessionData"
 
-const { default: GithubSessionData } = require("@classes/GithubSessionData")
+import { lock, unlock } from "@utils/mutex-utils"
+import { getCommitAndTreeSha, revertCommit } from "@utils/utils.js"
 
-const { lock, unlock } = require("@utils/mutex-utils")
-const { getCommitAndTreeSha, revertCommit } = require("@utils/utils.js")
-
-const {
+import {
   MAX_CONCURRENT_GIT_PROCESSES,
   STAGING_BRANCH,
   STAGING_LITE_BRANCH,
-} = require("@constants/constants")
+} from "@constants/constants"
 
-const { FEATURE_FLAGS } = require("@root/constants/featureFlags")
-const GitFileSystemError = require("@root/errors/GitFileSystemError").default
-const LockedError = require("@root/errors/LockedError").default
-const {
-  default: GitFileSystemService,
-} = require("@services/db/GitFileSystemService")
+import { FEATURE_FLAGS } from "@root/constants/featureFlags"
+import LockedError from "@root/errors/LockedError"
+import logger from "@root/logger/logger"
+import convertNeverThrowToPromise from "@root/utils/neverthrow"
+import GitFileSystemService from "@services/db/GitFileSystemService"
 
 const BRANCH_REF = config.get("github.branchRef")
+const simpleGitInstance = simpleGit({
+  maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES,
+})
+const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
 
-const gitFileSystemService = new GitFileSystemService(
-  new SimpleGit({ maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES })
-)
-
-const handleGitFileLock = async (repoName, next) => {
-  const result = await gitFileSystemService.hasGitFileLock(repoName)
+const handleGitFileLock = async (
+  repoName: string,
+  next: (arg0: any) => void
+) => {
+  const result = await gitFileSystemService.hasGitFileLock(repoName, true)
   if (result.isErr()) {
-    next(result.err)
+    next(result.error)
     return false
   }
   const isGitLocked = result.value
@@ -49,21 +49,21 @@ const handleGitFileLock = async (repoName, next) => {
 }
 
 // Used when there are no write API calls to the repo on GitHub
-const attachReadRouteHandlerWrapper = (routeHandler) => async (
-  req,
-  res,
-  next
-) => {
-  routeHandler(req, res).catch((err) => {
+const attachReadRouteHandlerWrapper = (
+  routeHandler: (arg0: any, arg1: any) => Promise<any>
+) => async (req: any, res: any, next: (arg0: any) => void) => {
+  routeHandler(req, res).catch((err: any) => {
     next(err)
   })
 }
 
 // Used when there are write API calls to the repo on GitHub
-const attachWriteRouteHandlerWrapper = (routeHandler) => async (
-  req,
-  res,
-  next
+const attachWriteRouteHandlerWrapper = (
+  routeHandler: (arg0: any, arg1: any, arg2: any) => Promise<any>
+) => async (
+  req: { params?: any; growthbook?: any },
+  res: any,
+  next: (arg0: unknown) => void
 ) => {
   const { siteName } = req.params
   const { growthbook } = req
@@ -84,7 +84,7 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
     return
   }
 
-  await routeHandler(req, res, next).catch(async (err) => {
+  await routeHandler(req, res, next).catch(async (err: any) => {
     await unlock(siteName)
     next(err)
   })
@@ -96,10 +96,12 @@ const attachWriteRouteHandlerWrapper = (routeHandler) => async (
   }
 }
 
-const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
-  req,
-  res,
-  next
+const attachRollbackRouteHandlerWrapper = (
+  routeHandler: (arg0: any, arg1: any, arg2: any) => Promise<any>
+) => async (
+  req: { params?: any; growthbook?: any },
+  res: { locals: { githubSessionData?: any; userSessionData?: any } },
+  next: (arg0: unknown) => void
 ) => {
   const { userSessionData } = res.locals
   const { siteName } = req.params
@@ -121,8 +123,8 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
     return
   }
 
-  let originalStagingCommitSha
-  let originalStagingLiteCommitSha
+  let originalStagingCommitSha: any
+  let originalStagingLiteCommitSha: any
 
   if (shouldUseGitFileSystem) {
     const results = await Promise.all([
@@ -132,18 +134,19 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
         STAGING_LITE_BRANCH
       ),
     ])
-    const [stgResult, stgLiteResult] = results
+    const [stagingResult, stagingLiteResult] = results
 
-    if (stgResult.isErr() || stgLiteResult.isErr()) {
+    if (stagingResult.isErr() || stagingLiteResult.isErr()) {
       await unlock(siteName)
-      next(stgResult.err)
+      if (stagingResult.isErr()) next(stagingResult.error)
+      if (stagingLiteResult.isErr()) next(stagingLiteResult.error)
       return
     }
-    originalStagingCommitSha = stgResult.value.sha
-    originalStagingLiteCommitSha = stgLiteResult.value.sha
+    originalStagingCommitSha = stagingResult.value.sha
+    originalStagingLiteCommitSha = stagingLiteResult.value.sha
     if (!originalStagingCommitSha || !originalStagingLiteCommitSha) {
       await unlock(siteName)
-      next(stgResult.err)
+      if (stagingResult.isErr()) next(stagingResult.error)
       return
     }
     // Unused for git file system, but to maintain existing structure
@@ -176,22 +179,30 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
       return
     }
   }
-  await routeHandler(req, res, next).catch(async (err) => {
+
+  await routeHandler(req, res, next).catch(async (err: any) => {
     try {
       if (shouldUseGitFileSystem) {
-        await backOff(async () => {
-          const rollbackRes = await gitFileSystemService
-            .rollback(siteName, originalStagingCommitSha, STAGING_BRANCH)
-            .andThen(() =>
-              gitFileSystemService.rollback(
-                siteName,
-                originalStagingLiteCommitSha,
-                STAGING_LITE_BRANCH
-              )
+        await backOff(() =>
+          convertNeverThrowToPromise(
+            gitFileSystemService.rollback(
+              siteName,
+              originalStagingCommitSha,
+              STAGING_BRANCH
             )
-            .unwrapOr(false)
-          if (!rollbackRes) throw new GitFileSystemError("Rollback failure")
-        })
+          )
+        )
+
+        await backOff(() =>
+          convertNeverThrowToPromise(
+            gitFileSystemService.rollback(
+              siteName,
+              originalStagingLiteCommitSha,
+              STAGING_LITE_BRANCH
+            )
+          )
+        )
+
         await backOff(() => {
           let pushRes = gitFileSystemService.push(
             siteName,
@@ -199,27 +210,30 @@ const attachRollbackRouteHandlerWrapper = (routeHandler) => async (
             true
           )
           if (originalStagingLiteCommitSha) {
-            pushRes = pushRes.push(siteName, STAGING_LITE_BRANCH, true)
+            pushRes = pushRes.andThen(() =>
+              gitFileSystemService.push(siteName, STAGING_LITE_BRANCH, true)
+            )
           }
 
-          pushRes = pushRes.unwrapOr(false)
-          if (!pushRes) throw new GitFileSystemError("Push failure")
+          return convertNeverThrowToPromise(pushRes)
         })
       } else {
-        await backOff(async () => {
-          await revertCommit(
+        await backOff(() =>
+          revertCommit(
             originalStagingCommitSha,
             siteName,
             accessToken,
             STAGING_BRANCH
           )
-          await revertCommit(
+        )
+        await backOff(() =>
+          revertCommit(
             originalStagingLiteCommitSha,
             siteName,
             accessToken,
             STAGING_LITE_BRANCH
           )
-        })
+        )
       }
     } catch (retryErr) {
       await unlock(siteName)

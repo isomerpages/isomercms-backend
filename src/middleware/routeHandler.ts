@@ -49,21 +49,21 @@ const handleGitFileLock = async (
 }
 
 // Used when there are no write API calls to the repo on GitHub
-const attachReadRouteHandlerWrapper = (
-  routeHandler: (arg0: any, arg1: any) => Promise<any>
-) => async (req: any, res: any, next: (arg0: any) => void) => {
+export const attachReadRouteHandlerWrapper = (routeHandler: any) => async (
+  req: any,
+  res: any,
+  next: any
+) => {
   routeHandler(req, res).catch((err: any) => {
     next(err)
   })
 }
 
 // Used when there are write API calls to the repo on GitHub
-const attachWriteRouteHandlerWrapper = (
-  routeHandler: (arg0: any, arg1: any, arg2: any) => Promise<any>
-) => async (
-  req: { params?: any; growthbook?: any },
+export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
+  req: any,
   res: any,
-  next: (arg0: unknown) => void
+  next: any
 ) => {
   const { siteName } = req.params
   const { growthbook } = req
@@ -96,12 +96,10 @@ const attachWriteRouteHandlerWrapper = (
   }
 }
 
-const attachRollbackRouteHandlerWrapper = (
-  routeHandler: (arg0: any, arg1: any, arg2: any) => Promise<any>
-) => async (
-  req: { params?: any; growthbook?: any },
-  res: { locals: { githubSessionData?: any; userSessionData?: any } },
-  next: (arg0: unknown) => void
+export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
+  req: any,
+  res: any,
+  next: any
 ) => {
   const { userSessionData } = res.locals
   const { siteName } = req.params
@@ -249,10 +247,4 @@ const attachRollbackRouteHandlerWrapper = (
   } catch (err) {
     next(err)
   }
-}
-
-module.exports = {
-  attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
-  attachRollbackRouteHandlerWrapper,
 }

@@ -3,12 +3,12 @@ import express from "express"
 import _ from "lodash"
 
 import { AuthorizationMiddleware } from "@middleware/authorization"
-import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { attachSiteHandler } from "@root/middleware"
+import { attachReadRouteHandlerWrapper } from "@root/middleware/routeHandler"
 import { RequestHandler } from "@root/types"
 import { UserDto } from "@root/types/dto/review"
 import CollaboratorsService from "@services/identity/CollaboratorsService"

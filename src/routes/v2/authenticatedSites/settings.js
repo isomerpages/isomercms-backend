@@ -135,7 +135,7 @@ class SettingsRouter {
     router.post(
       "/repo-password",
       this.authorizationMiddleware.verifyIsEmailUser,
-      attachRollbackRouteHandlerWrapper(this.updateRepoPassword)
+      attachReadRouteHandlerWrapper(this.updateRepoPassword)
     )
 
     return router

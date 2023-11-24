@@ -52,6 +52,8 @@ paths:
                   message:
                     type: string
                     example: "DNS record added successfully."
+        "401":
+          description: Unauthorized.
         "400":
           description: Invalid request data.
           content:
@@ -91,6 +93,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DNSRecord"
+        "401":
+          description: Unauthorized.
         "404":
           description: No records found for the specified name.
     delete:
@@ -127,6 +131,16 @@ paths:
       responses:
         "200":
           description: DNS record successfully deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "DNS record successfully deleted"
+        "401":
+          description: Unauthorized.
         "404":
           description: DNS record not found.
 components:

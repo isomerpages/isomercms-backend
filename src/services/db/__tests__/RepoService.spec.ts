@@ -161,7 +161,7 @@ describe("RepoService", () => {
       )
     })
 
-    it("should create files on GitHub directly if the repo is not ggs enabled", async () => {
+    it("should create files on GitHub directly if the repo is not whitelisted", async () => {
       const mockContent = "content"
       const mockFileName = "test.md"
       const mockDirectoryName = ""
@@ -176,16 +176,18 @@ describe("RepoService", () => {
       const expected = {
         sha: "test-sha",
       }
+      const gitHubServiceCreate = jest.spyOn(GitHubService.prototype, "create")
+      gitHubServiceCreate.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.create(sessionData, {
-        content: mockContent,
-        fileName: mockFileName,
-        directoryName: mockDirectoryName,
+        content: "content",
+        fileName: "test.md",
+        directoryName: "",
         isMedia,
       })
 
       expect(actual).toEqual(expected)
-      expect(MockGitHubService.create).toHaveBeenCalledWith(sessionData, {
+      expect(gitHubServiceCreate).toHaveBeenCalledWith(sessionData, {
         content: mockContent,
         fileName: mockFileName,
         directoryName: mockDirectoryName,
@@ -564,6 +566,8 @@ describe("RepoService", () => {
         email: mockEmail,
         siteName: "not-whitelisted",
       })
+      const gitHubServiceUpdate = jest.spyOn(GitHubService.prototype, "update")
+      gitHubServiceUpdate.mockResolvedValueOnce({ newSha: expectedSha })
 
       const actual = await RepoService.update(sessionData, {
         fileContent: "test content",
@@ -658,7 +662,11 @@ describe("RepoService", () => {
           }
         )
 
-        MockGitHubService.renameSinglePath.mockResolvedValueOnce({
+        const gitHubServiceRenameSinglePath = jest.spyOn(
+          GitHubService.prototype,
+          "renameSinglePath"
+        )
+        gitHubServiceRenameSinglePath.mockResolvedValueOnce({
           newSha: expectedSha,
         })
 
@@ -706,7 +714,11 @@ describe("RepoService", () => {
           }
         )
 
-        MockGitHubService.moveFiles.mockResolvedValueOnce(expected)
+        const gitHubServiceMoveFiles = jest.spyOn(
+          GitHubService.prototype,
+          "moveFiles"
+        )
+        gitHubServiceMoveFiles.mockResolvedValueOnce(expected)
 
         const actual = await RepoService.moveFiles(
           sessionData,

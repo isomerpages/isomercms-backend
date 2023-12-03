@@ -755,11 +755,13 @@ export default class GitHubService {
 
   async updateRepoState(
     sessionData: UserWithSiteSessionData,
-    { commitSha }: { commitSha: string }
+    { commitSha, branchName }: { commitSha: any; branchName?: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const refEndpoint = `${siteName}/git/refs/heads/${STAGING_BRANCH}`
+    const refEndpoint = `${siteName}/git/refs/heads/${
+      branchName || STAGING_BRANCH
+    }`
     const headers = {
       Authorization: `token ${accessToken}`,
     }

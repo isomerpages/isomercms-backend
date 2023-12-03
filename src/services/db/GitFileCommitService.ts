@@ -1,5 +1,3 @@
-import { okAsync } from "neverthrow"
-
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"

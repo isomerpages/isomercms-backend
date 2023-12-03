@@ -208,7 +208,6 @@ export default class RepoService extends GitHubService {
       fileName,
       directoryName,
       isMedia,
-      branchName: STAGING_BRANCH,
     })
   }
 

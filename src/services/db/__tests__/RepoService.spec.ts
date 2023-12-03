@@ -8,7 +8,6 @@ import {
   mockGithubSessionData,
   mockGrowthBook,
   mockIsomerUserId,
-  mockSiteName,
   mockUserWithSiteSessionDataAndGrowthBook,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
@@ -24,7 +23,6 @@ import GitFileSystemService from "@services/db/GitFileSystemService"
 import _RepoService from "@services/db/RepoService"
 
 import GitFileCommitService from "../GitFileCommitService"
-import GitHubCommitService from "../GithubCommitService"
 import GitHubService from "../GitHubService"
 
 const MockAxiosInstance = {
@@ -58,7 +56,7 @@ const MockGitFileCommitService = {
   moveFiles: jest.fn(),
 }
 
-const MockGitHubCommitService = {
+const MockGitHubService = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -71,7 +69,6 @@ const RepoService = new _RepoService({
   isomerRepoAxiosInstance: (MockAxiosInstance as unknown) as AxiosCacheInstance,
   gitFileSystemService: (MockGitFileSystemService as unknown) as GitFileSystemService,
   gitFileCommitService: (MockGitFileCommitService as unknown) as GitFileCommitService,
-  gitHubCommitService: (MockGitHubCommitService as unknown) as GitHubCommitService,
 })
 
 describe("RepoService", () => {
@@ -179,7 +176,6 @@ describe("RepoService", () => {
       const expected = {
         sha: "test-sha",
       }
-      MockGitHubCommitService.create.mockResolvedValueOnce(expected)
 
       const actual = await RepoService.create(sessionData, {
         content: mockContent,
@@ -189,7 +185,7 @@ describe("RepoService", () => {
       })
 
       expect(actual).toEqual(expected)
-      expect(MockGitHubCommitService.create).toHaveBeenCalledWith(sessionData, {
+      expect(MockGitHubService.create).toHaveBeenCalledWith(sessionData, {
         content: mockContent,
         fileName: mockFileName,
         directoryName: mockDirectoryName,
@@ -568,9 +564,6 @@ describe("RepoService", () => {
         email: mockEmail,
         siteName: "not-whitelisted",
       })
-      MockGitHubCommitService.update.mockResolvedValueOnce({
-        newSha: expectedSha,
-      })
 
       const actual = await RepoService.update(sessionData, {
         fileContent: "test content",
@@ -616,200 +609,213 @@ describe("RepoService", () => {
         siteName: "not-whitelisted",
       })
 
+      const mockedGitHubService = jest
+        .spyOn(GitHubService.prototype, "delete")
+        .mockResolvedValueOnce(undefined)
+
       await RepoService.delete(sessionData, {
         sha: "fake-original-sha",
         fileName: "test.md",
         directoryName: "pages",
       })
 
-      expect(MockGitHubCommitService.delete).toBeCalledTimes(1)
-      expect(MockGitHubCommitService.delete).toBeCalledWith(sessionData, {
+      expect(mockedGitHubService).toBeCalledWith(sessionData, {
         sha: "fake-original-sha",
         fileName: "test.md",
         directoryName: "pages",
       })
     })
-  })
 
-  describe("renameSinglePath", () => {
-    it("should rename using the local Git file system if the repo is ggs enabled", async () => {
-      const expected: GitCommitResult = { newSha: "fake-commit-sha" }
-      MockGitFileCommitService.renameSinglePath.mockResolvedValueOnce(expected)
-      gbSpy.mockReturnValueOnce(true)
+    describe("renameSinglePath", () => {
+      it("should rename using the local Git file system if the repo is ggs enabled", async () => {
+        const expected: GitCommitResult = { newSha: "fake-commit-sha" }
+        MockGitFileCommitService.renameSinglePath.mockResolvedValueOnce(
+          expected
+        )
+        gbSpy.mockReturnValueOnce(true)
 
-      const actual = await RepoService.renameSinglePath(
-        mockUserWithSiteSessionDataAndGrowthBook,
-        mockGithubSessionData,
-        "fake-old-path",
-        "fake-new-path",
-        "fake-commit-message"
-      )
+        const actual = await RepoService.renameSinglePath(
+          mockUserWithSiteSessionDataAndGrowthBook,
+          mockGithubSessionData,
+          "fake-old-path",
+          "fake-new-path",
+          "fake-commit-message"
+        )
 
-      expect(actual).toEqual(expected)
-    })
-
-    it("should rename file using GitHub directly if the repo is not ggs enabled", async () => {
-      const expectedSha = "fake-commit-sha"
-      const fakeCommitMessage = "fake-commit-message"
-      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-        githubId: mockGithubId,
-        accessToken: mockAccessToken,
-        isomerUserId: mockIsomerUserId,
-        email: mockEmail,
-        siteName: "not-whitelisted",
+        expect(actual).toEqual(expected)
       })
 
-      MockGitHubCommitService.renameSinglePath.mockResolvedValueOnce({
-        newSha: expectedSha,
+      it("should rename file using GitHub directly if the repo is not ggs enabled", async () => {
+        const expectedSha = "fake-commit-sha"
+        const fakeCommitMessage = "fake-commit-message"
+        const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData(
+          {
+            githubId: mockGithubId,
+            accessToken: mockAccessToken,
+            isomerUserId: mockIsomerUserId,
+            email: mockEmail,
+            siteName: "not-whitelisted",
+          }
+        )
+
+        MockGitHubService.renameSinglePath.mockResolvedValueOnce({
+          newSha: expectedSha,
+        })
+
+        const actual = await RepoService.renameSinglePath(
+          sessionData,
+          mockGithubSessionData,
+          "fake-path/old-fake-file.md",
+          "fake-path/new-fake-file.md",
+          fakeCommitMessage
+        )
+
+        expect(actual).toEqual({ newSha: expectedSha })
+      })
+    })
+
+    describe("moveFiles", () => {
+      it("should move files using the Git local file system if the repo is ggs enabled", async () => {
+        const expected = { newSha: "fake-commit-sha" }
+        MockGitFileCommitService.moveFiles.mockResolvedValueOnce(expected)
+        gbSpy.mockReturnValueOnce(true)
+        // MockCommitServiceGitFile.push.mockReturnValueOnce(undefined)
+
+        const actual = await RepoService.moveFiles(
+          mockUserWithSiteSessionDataAndGrowthBook,
+          mockGithubSessionData,
+          "fake-old-path",
+          "fake-new-path",
+          ["fake-file1", "fake-file2"],
+          "fake-commit-message"
+        )
+
+        expect(actual).toEqual(expected)
       })
 
-      const actual = await RepoService.renameSinglePath(
-        sessionData,
-        mockGithubSessionData,
-        "fake-path/old-fake-file.md",
-        "fake-path/new-fake-file.md",
-        fakeCommitMessage
-      )
+      it("should move files using GitHub directly if the repo is not ggs enabled", async () => {
+        const expected = { newSha: "fake-commit-sha" }
+        const fakeCommitMessage = "fake-commit-message"
+        const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData(
+          {
+            githubId: mockGithubId,
+            accessToken: mockAccessToken,
+            isomerUserId: mockIsomerUserId,
+            email: mockEmail,
+            siteName: "not-whitelisted",
+          }
+        )
 
-      expect(actual).toEqual({ newSha: expectedSha })
-    })
-  })
+        MockGitHubService.moveFiles.mockResolvedValueOnce(expected)
 
-  describe("moveFiles", () => {
-    it("should move files using the Git local file system if the repo is ggs enabled", async () => {
-      const expected = { newSha: "fake-commit-sha" }
-      MockGitFileCommitService.moveFiles.mockResolvedValueOnce(expected)
-      gbSpy.mockReturnValueOnce(true)
-      // MockCommitServiceGitFile.push.mockReturnValueOnce(undefined)
+        const actual = await RepoService.moveFiles(
+          sessionData,
+          mockGithubSessionData,
+          "fake-path",
+          "fake-new-path",
+          ["old-fake-file.md", "old-fake-file-two.md"],
+          fakeCommitMessage
+        )
 
-      const actual = await RepoService.moveFiles(
-        mockUserWithSiteSessionDataAndGrowthBook,
-        mockGithubSessionData,
-        "fake-old-path",
-        "fake-new-path",
-        ["fake-file1", "fake-file2"],
-        "fake-commit-message"
-      )
-
-      expect(actual).toEqual(expected)
+        expect(actual).toEqual(expected)
+      })
     })
 
-    it("should move files using GitHub directly if the repo is not ggs enabled", async () => {
-      const expected = { newSha: "fake-commit-sha" }
-      const fakeCommitMessage = "fake-commit-message"
-      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-        githubId: mockGithubId,
-        accessToken: mockAccessToken,
-        isomerUserId: mockIsomerUserId,
-        email: mockEmail,
-        siteName: "not-whitelisted",
+    describe("getLatestCommitOfBranch", () => {
+      it("should read the latest commit data from the local Git file system if the repo is ggs enabled", async () => {
+        const expected: GitHubCommitData = {
+          author: {
+            name: "test author",
+            email: "test@email.com",
+            date: "2023-07-20T11:25:05+08:00",
+          },
+          sha: "test-sha",
+          message: "test message",
+        }
+        gbSpy.mockReturnValueOnce(true)
+        MockGitFileSystemService.getLatestCommitOfBranch.mockResolvedValueOnce(
+          okAsync(expected)
+        )
+
+        const actual = await RepoService.getLatestCommitOfBranch(
+          mockUserWithSiteSessionDataAndGrowthBook,
+          "master"
+        )
+        expect(actual).toEqual(expected)
       })
 
-      MockGitHubCommitService.moveFiles.mockResolvedValueOnce(expected)
-
-      const actual = await RepoService.moveFiles(
-        sessionData,
-        mockGithubSessionData,
-        "fake-path",
-        "fake-new-path",
-        ["old-fake-file.md", "old-fake-file-two.md"],
-        fakeCommitMessage
-      )
-
-      expect(actual).toEqual(expected)
-    })
-  })
-
-  describe("getLatestCommitOfBranch", () => {
-    it("should read the latest commit data from the local Git file system if the repo is ggs enabled", async () => {
-      const expected: GitHubCommitData = {
-        author: {
-          name: "test author",
-          email: "test@email.com",
-          date: "2023-07-20T11:25:05+08:00",
-        },
-        sha: "test-sha",
-        message: "test message",
-      }
-      gbSpy.mockReturnValueOnce(true)
-      MockGitFileSystemService.getLatestCommitOfBranch.mockResolvedValueOnce(
-        okAsync(expected)
-      )
-
-      const actual = await RepoService.getLatestCommitOfBranch(
-        mockUserWithSiteSessionDataAndGrowthBook,
-        "master"
-      )
-      expect(actual).toEqual(expected)
-    })
-
-    it("should read latest commit data from GitHub if the repo is not ggs enabled", async () => {
-      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-        githubId: mockGithubId,
-        accessToken: mockAccessToken,
-        isomerUserId: mockIsomerUserId,
-        email: mockEmail,
-        siteName: "not-whitelisted",
+      it("should read latest commit data from GitHub if the repo is not ggs enabled", async () => {
+        const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData(
+          {
+            githubId: mockGithubId,
+            accessToken: mockAccessToken,
+            isomerUserId: mockIsomerUserId,
+            email: mockEmail,
+            siteName: "not-whitelisted",
+          }
+        )
+        const expected: GitHubCommitData = {
+          author: {
+            name: "test author",
+            email: "test@email.com",
+            date: "2023-07-20T11:25:05+08:00",
+          },
+          message: "test message",
+        }
+        const gitHubServiceReadDirectory = jest.spyOn(
+          GitHubService.prototype,
+          "getLatestCommitOfBranch"
+        )
+        gitHubServiceReadDirectory.mockResolvedValueOnce(expected)
+        const actual = await RepoService.getLatestCommitOfBranch(
+          sessionData,
+          "master"
+        )
+        expect(actual).toEqual(expected)
       })
-      const expected: GitHubCommitData = {
-        author: {
-          name: "test author",
-          email: "test@email.com",
-          date: "2023-07-20T11:25:05+08:00",
-        },
-        message: "test message",
-      }
-      const gitHubServiceReadDirectory = jest.spyOn(
-        GitHubService.prototype,
-        "getLatestCommitOfBranch"
-      )
-      gitHubServiceReadDirectory.mockResolvedValueOnce(expected)
-      const actual = await RepoService.getLatestCommitOfBranch(
-        sessionData,
-        "master"
-      )
-      expect(actual).toEqual(expected)
     })
-  })
 
-  describe("updateRepoState", () => {
-    it("should update the repo state on the local Git file system if the repo is ggs enabled", async () => {
-      MockGitFileSystemService.updateRepoState.mockResolvedValueOnce(
-        okAsync(undefined)
-      )
-      gbSpy.mockReturnValueOnce(true)
+    describe("updateRepoState", () => {
+      it("should update the repo state on the local Git file system if the repo is ggs enabled", async () => {
+        MockGitFileSystemService.updateRepoState.mockResolvedValueOnce(
+          okAsync(undefined)
+        )
+        gbSpy.mockReturnValueOnce(true)
 
-      await RepoService.updateRepoState(
-        mockUserWithSiteSessionDataAndGrowthBook,
-        {
+        await RepoService.updateRepoState(
+          mockUserWithSiteSessionDataAndGrowthBook,
+          {
+            commitSha: "fake-sha",
+            branchName: "master",
+          }
+        )
+
+        expect(MockGitFileSystemService.updateRepoState).toBeCalledTimes(1)
+      })
+
+      it("should update the repo state on GitHub if the repo is not ggs enabled", async () => {
+        const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData(
+          {
+            githubId: mockGithubId,
+            accessToken: mockAccessToken,
+            isomerUserId: mockIsomerUserId,
+            email: mockEmail,
+            siteName: "not-whitelisted",
+          }
+        )
+        const gitHubServiceUpdateRepoState = jest.spyOn(
+          GitHubService.prototype,
+          "updateRepoState"
+        )
+        gitHubServiceUpdateRepoState.mockResolvedValueOnce(undefined)
+
+        await RepoService.updateRepoState(sessionData, {
           commitSha: "fake-sha",
           branchName: "master",
-        }
-      )
+        })
 
-      expect(MockGitFileSystemService.updateRepoState).toBeCalledTimes(1)
-    })
-
-    it("should update the repo state on GitHub if the repo is not ggs enabled", async () => {
-      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-        githubId: mockGithubId,
-        accessToken: mockAccessToken,
-        isomerUserId: mockIsomerUserId,
-        email: mockEmail,
-        siteName: "not-whitelisted",
+        expect(gitHubServiceUpdateRepoState).toBeCalledTimes(1)
       })
-      const gitHubServiceUpdateRepoState = jest.spyOn(
-        GitHubService.prototype,
-        "updateRepoState"
-      )
-      gitHubServiceUpdateRepoState.mockResolvedValueOnce(undefined)
-
-      await RepoService.updateRepoState(sessionData, {
-        commitSha: "fake-sha",
-        branchName: "master",
-      })
-
-      expect(gitHubServiceUpdateRepoState).toBeCalledTimes(1)
     })
   })
 })

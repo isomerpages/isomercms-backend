@@ -26,7 +26,6 @@ import { statsMiddleware } from "@root/middleware/stats"
 import { SitesRouter as _SitesRouter } from "@root/routes/v2/authenticated/sites"
 import { isomerRepoAxiosInstance } from "@root/services/api/AxiosInstance"
 import GitFileCommitService from "@root/services/db/GitFileCommitService"
-import GitHubCommitService from "@root/services/db/GithubCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -67,13 +66,12 @@ const mockPermissions = { push: true }
 const mockPrivate = true
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
-const gitHubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
+
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
   gitFileCommitService,
-  gitHubCommitService,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)

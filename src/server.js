@@ -79,7 +79,6 @@ import { SgidAuthRouter } from "./routes/v2/sgidAuth"
 import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
-import GitHubCommitService from "./services/db/GithubCommitService"
 import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
@@ -170,14 +169,12 @@ const simpleGitInstance = new simpleGit({
 })
 
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
-const gitHubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
 
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
   gitFileCommitService,
-  gitHubCommitService,
 })
 
 const repoManagementService = new RepoManagementService({

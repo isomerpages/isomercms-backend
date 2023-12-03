@@ -75,7 +75,6 @@ import {
 } from "@fixtures/users"
 import { ReviewRequestStatus } from "@root/constants"
 import GitFileCommitService from "@root/services/db/GitFileCommitService"
-import GitHubCommitService from "@root/services/db/GithubCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -105,12 +104,11 @@ import { sequelize } from "@tests/database"
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
-const gitHubCommitService = new GitHubCommitService(isomerRepoAxiosInstance)
+
 const gitHubService = new RepoService({
   isomerRepoAxiosInstance,
   gitFileSystemService,
   gitFileCommitService,
-  gitHubCommitService,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)

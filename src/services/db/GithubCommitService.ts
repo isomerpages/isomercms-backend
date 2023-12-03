@@ -149,15 +149,10 @@ export default class GitHubCommitService extends GitHubService {
         sha: null,
       }))
 
-    const newCommitSha = await this.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message,
-      },
-      !!isStaging
-    )
+    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message,
+    })
 
     const deletePromises = [
       this.updateRepoState(sessionData, {
@@ -280,8 +275,7 @@ export default class GitHubCommitService extends GitHubService {
       {
         gitTree: newGitTree,
         message,
-      },
-      !!isStaging
+      }
     )
     await super.updateRepoState(sessionData, {
       commitSha: newCommitSha,
@@ -362,8 +356,7 @@ export default class GitHubCommitService extends GitHubService {
       {
         gitTree: newGitTree,
         message,
-      },
-      !!isStaging
+      }
     )
 
     await super.updateRepoState(sessionData, {

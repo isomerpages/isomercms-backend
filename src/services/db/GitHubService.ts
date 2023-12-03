@@ -559,8 +559,7 @@ export default class GitHubService {
   async updateTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { gitTree, message }: { gitTree: any; message: any },
-    isStaging: boolean
+    { gitTree, message }: { gitTree: any; message: any }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
@@ -604,16 +603,175 @@ export default class GitHubService {
     return newCommitSha
   }
 
-  async updateRepoState(
+  async deleteDirectory(
     sessionData: UserWithSiteSessionData,
     {
-      commitSha,
-      branchName = STAGING_BRANCH,
-    }: { commitSha: any; branchName?: string }
+      directoryName,
+      message,
+      githubSessionData,
+    }: {
+      directoryName: string
+      message: string
+      githubSessionData: GithubSessionData
+    }
+  ): Promise<void> {
+    // GitHub flow
+    const gitTree = await this.getTree(sessionData, githubSessionData, {
+      isRecursive: true,
+    })
+
+    // Retrieve removed items and set their sha to null
+    const newGitTree = gitTree
+      .filter(
+        (item) =>
+          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
+      )
+      .map((item) => ({
+        ...item,
+        sha: null,
+      }))
+
+    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message,
+    })
+
+    await this.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
+  }
+
+  async moveFiles(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    oldPath: string,
+    newPath: string,
+    targetFiles: string[],
+    message?: string
+  ): Promise<GitCommitResult> {
+    const gitTree = await this.getTree(sessionData, githubSessionData, {
+      isRecursive: true,
+    })
+    const newGitTree: any[] = []
+
+    gitTree.forEach((item: any) => {
+      if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
+        const fileName = item.path
+          .split(`${newPath}/`)
+          .slice(1)
+          .join(`${newPath}/`)
+        if (targetFiles.includes(fileName)) {
+          // Conflicting file
+          throw new ConflictError("File already exists in target directory")
+        }
+      }
+      if (item.path.startsWith(`${oldPath}/`) && item.type !== "tree") {
+        const fileName = item.path
+          .split(`${oldPath}/`)
+          .slice(1)
+          .join(`${oldPath}/`)
+        if (targetFiles.includes(fileName)) {
+          // Add file to target directory
+          newGitTree.push({
+            ...item,
+            path: `${newPath}/${fileName}`,
+          })
+          // Delete old file
+          newGitTree.push({
+            ...item,
+            sha: null,
+          })
+        }
+      }
+    })
+
+    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message,
+    })
+
+    await this.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
+
+    return { newSha: newCommitSha }
+  }
+
+  async renameSinglePath(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    oldPath: string,
+    newPath: string,
+    message?: string,
+    isStaging = true
+  ): Promise<GitCommitResult> {
+    const gitTree = await this.getTree(
+      sessionData,
+      githubSessionData,
+      {
+        isRecursive: true,
+      },
+      !!isStaging
+    )
+    const newGitTree: any[] = []
+    const isMovingDirectory =
+      gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||
+      false
+
+    gitTree.forEach((item: any) => {
+      if (isMovingDirectory) {
+        if (item.path === newPath && item.type === "tree") {
+          throw new ConflictError("Target directory already exists")
+        } else if (item.path === oldPath && item.type === "tree") {
+          // Rename old subdirectory to new name
+          newGitTree.push({
+            ...item,
+            path: newPath,
+          })
+        } else if (
+          item.path.startsWith(`${oldPath}/`) &&
+          item.type !== "tree"
+        ) {
+          // Delete old files
+          newGitTree.push({
+            ...item,
+            sha: null,
+          })
+        }
+      } else if (item.path === newPath && item.type !== "tree") {
+        throw new ConflictError("Target file already exists")
+      } else if (item.path === oldPath && item.type !== "tree") {
+        // Add file to new directory
+        newGitTree.push({
+          ...item,
+          path: newPath,
+        })
+        // Delete old file
+        newGitTree.push({
+          ...item,
+          sha: null,
+        })
+      }
+    })
+
+    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message,
+    })
+    await this.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
+
+    return { newSha: newCommitSha }
+  }
+
+  async updateRepoState(
+    sessionData: UserWithSiteSessionData,
+    { commitSha }: { commitSha: any }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const refEndpoint = `${siteName}/git/refs/heads/${branchName}`
+    const refEndpoint = `${siteName}/git/refs/heads/${STAGING_BRANCH}`
     const headers = {
       Authorization: `token ${accessToken}`,
     }

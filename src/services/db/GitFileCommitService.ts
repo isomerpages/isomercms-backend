@@ -1,6 +1,8 @@
+import { okAsync } from "neverthrow"
+
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { STAGING_BRANCH } from "@root/constants"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
 import isFileAsset from "@root/utils/commit-utils"
@@ -14,12 +16,32 @@ import GitFileSystemService from "./GitFileSystemService"
  * 2. Creates non-asset related commits to staging-lite
  */
 export default class GitFileCommitService {
-  private readonly STAGING_LITE_BRANCH = "staging-lite"
-
   private readonly gitFileSystemService: GitFileSystemService
 
   constructor(gitFileSystemService: GitFileSystemService) {
     this.gitFileSystemService = gitFileSystemService
+  }
+
+  async pushToGithub(
+    sessionData: UserWithSiteSessionData,
+    shouldUpdateStagingLite: boolean
+  ) {
+    // We await the push to staging FIRST, and then push to staging-lite
+    // We don't want a case when staging lite updates but staging doesn't
+    const res = this.gitFileSystemService.push(
+      sessionData.siteName,
+      STAGING_BRANCH
+    )
+
+    if (shouldUpdateStagingLite) {
+      res.andThen(() =>
+        this.gitFileSystemService.push(
+          sessionData.siteName,
+          STAGING_LITE_BRANCH
+        )
+      )
+    }
+    await res
   }
 
   async create(
@@ -36,51 +58,43 @@ export default class GitFileCommitService {
       isMedia?: boolean
     }
   ): Promise<{ sha: string }> {
-    const createPromises = [
-      this.gitFileSystemService.create(
+    const stagingCreateResult = await this.gitFileSystemService.create(
+      sessionData.siteName,
+      sessionData.isomerUserId,
+      content,
+      directoryName,
+      fileName,
+      isMedia ? "base64" : "utf-8",
+      STAGING_BRANCH
+    )
+    const shouldUpdateStagingLite =
+      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+      !isFileAsset({ directoryName, fileName })
+
+    let stagingLiteCreateResult
+    if (shouldUpdateStagingLite) {
+      stagingLiteCreateResult = await this.gitFileSystemService.create(
         sessionData.siteName,
         sessionData.isomerUserId,
         content,
         directoryName,
         fileName,
         isMedia ? "base64" : "utf-8",
-        STAGING_BRANCH
-      ),
-    ]
-    const shouldUpdateStagingLite =
-      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset({ directoryName, fileName })
-
-    if (shouldUpdateStagingLite) {
-      createPromises.push(
-        this.gitFileSystemService.create(
-          sessionData.siteName,
-          sessionData.isomerUserId,
-          content,
-          directoryName,
-          fileName,
-          isMedia ? "base64" : "utf-8",
-          this.STAGING_LITE_BRANCH
-        )
+        STAGING_LITE_BRANCH
       )
     }
-    const [stagingCreateResult, stagingLiteCreateResult] = await Promise.all(
-      createPromises
-    )
 
     if (stagingCreateResult.isErr()) {
       throw stagingCreateResult.error
-    } else if (shouldUpdateStagingLite && stagingLiteCreateResult.isErr()) {
+    } else if (
+      shouldUpdateStagingLite &&
+      stagingLiteCreateResult &&
+      stagingLiteCreateResult.isErr()
+    ) {
       throw stagingLiteCreateResult.error
     }
 
-    this.gitFileSystemService.push(sessionData.siteName, STAGING_BRANCH)
-    if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
-    }
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
     return { sha: stagingCreateResult.value.newSha }
   }
 
@@ -101,51 +115,43 @@ export default class GitFileCommitService {
     const defaultBranch = STAGING_BRANCH
     logger.info("Updating file in local Git file system")
     const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-    const updatePromises = [
-      this.gitFileSystemService.update(
+    const stagingUpdateResult = await this.gitFileSystemService.update(
+      sessionData.siteName,
+      filePath,
+      fileContent,
+      sha,
+      sessionData.isomerUserId,
+      defaultBranch
+    )
+
+    const shouldUpdateStagingLite =
+      !!filePath &&
+      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+      !isFileAsset({ fileName, directoryName })
+
+    let stagingLiteUpdateResult
+    if (shouldUpdateStagingLite) {
+      stagingLiteUpdateResult = await this.gitFileSystemService.update(
         sessionData.siteName,
         filePath,
         fileContent,
         sha,
         sessionData.isomerUserId,
-        defaultBranch
-      ),
-    ]
-
-    const shouldUpdateStagingLite =
-      filePath &&
-      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset({ fileName, directoryName })
-
-    if (shouldUpdateStagingLite) {
-      updatePromises.push(
-        this.gitFileSystemService.update(
-          sessionData.siteName,
-          filePath,
-          fileContent,
-          sha,
-          sessionData.isomerUserId,
-          this.STAGING_LITE_BRANCH
-        )
+        STAGING_LITE_BRANCH
       )
     }
-
-    const results = await Promise.all(updatePromises)
-    const [stagingUpdateResult, stagingLiteUpdateResult] = results
 
     if (stagingUpdateResult.isErr()) {
       throw stagingUpdateResult.error
-    } else if (shouldUpdateStagingLite && stagingLiteUpdateResult.isErr()) {
+    } else if (
+      shouldUpdateStagingLite &&
+      stagingLiteUpdateResult &&
+      stagingLiteUpdateResult.isErr()
+    ) {
       throw stagingLiteUpdateResult.error
     }
 
-    this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
-    if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
-    }
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
     return { newSha: stagingUpdateResult.value }
   }
 
@@ -161,50 +167,41 @@ export default class GitFileCommitService {
     logger.info(
       `Deleting directory in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}`
     )
-    const deletePromises = [
-      this.gitFileSystemService.delete(
+    const stagingDeleteResult = await this.gitFileSystemService.delete(
+      sessionData.siteName,
+      directoryName,
+      "",
+      sessionData.isomerUserId,
+      true,
+      defaultBranch
+    )
+
+    const shouldUpdateStagingLite =
+      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+      !isFileAsset({ directoryName })
+    let stagingLiteDeleteResult
+    if (shouldUpdateStagingLite) {
+      stagingLiteDeleteResult = await this.gitFileSystemService.delete(
         sessionData.siteName,
         directoryName,
         "",
         sessionData.isomerUserId,
         true,
-        STAGING_BRANCH
-      ),
-    ]
-
-    const shouldUpdateStagingLite =
-      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-      !isFileAsset({ directoryName })
-
-    if (shouldUpdateStagingLite) {
-      deletePromises.push(
-        this.gitFileSystemService.delete(
-          sessionData.siteName,
-          directoryName,
-          "",
-          sessionData.isomerUserId,
-          true,
-          this.STAGING_LITE_BRANCH
-        )
+        STAGING_LITE_BRANCH
       )
     }
-
-    const results = await Promise.all(deletePromises)
-    const [stagingDeleteResult, stagingLiteDeleteResult] = results
 
     if (stagingDeleteResult.isErr()) {
       throw stagingDeleteResult.error
-    } else if (shouldUpdateStagingLite && stagingLiteDeleteResult.isErr()) {
+    } else if (
+      shouldUpdateStagingLite &&
+      stagingLiteDeleteResult &&
+      stagingLiteDeleteResult.isErr()
+    ) {
       throw stagingLiteDeleteResult.error
     }
 
-    this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
-    if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
-    }
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
   }
 
   async delete(
@@ -222,55 +219,45 @@ export default class GitFileCommitService {
     logger.info(
       `Deleting file in local Git file system for repo: ${sessionData.siteName}, directory name: ${directoryName}, file name: ${fileName}`
     )
-    const defaultBranch = STAGING_BRANCH
 
     const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
 
-    const deletePromises = [
-      this.gitFileSystemService.delete(
-        sessionData.siteName,
-        filePath,
-        sha,
-        sessionData.isomerUserId,
-        false,
-        STAGING_BRANCH
-      ),
-    ]
+    const stagingDeleteResult = await this.gitFileSystemService.delete(
+      sessionData.siteName,
+      filePath,
+      sha,
+      sessionData.isomerUserId,
+      false,
+      STAGING_BRANCH
+    )
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName })
 
+    let stagingLiteDeleteResult
     if (shouldUpdateStagingLite) {
-      deletePromises.push(
-        this.gitFileSystemService.delete(
-          sessionData.siteName,
-          filePath,
-          sha,
-          sessionData.isomerUserId,
-          false,
-          this.STAGING_LITE_BRANCH
-        )
+      stagingLiteDeleteResult = await this.gitFileSystemService.delete(
+        sessionData.siteName,
+        filePath,
+        sha,
+        sessionData.isomerUserId,
+        false,
+        STAGING_LITE_BRANCH
       )
     }
-
-    const [stagingDeleteResult, stagingLiteDeleteResult] = await Promise.all(
-      deletePromises
-    )
 
     if (stagingDeleteResult.isErr()) {
       throw stagingDeleteResult.error
-    } else if (shouldUpdateStagingLite && stagingLiteDeleteResult.isErr()) {
+    } else if (
+      shouldUpdateStagingLite &&
+      stagingLiteDeleteResult &&
+      stagingLiteDeleteResult.isErr()
+    ) {
       throw stagingLiteDeleteResult.error
     }
 
-    this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
-    if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
-        sessionData.siteName,
-        this.STAGING_LITE_BRANCH
-      )
-    }
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
   }
 
   async renameSinglePath(
@@ -283,50 +270,38 @@ export default class GitFileCommitService {
     const defaultBranch = STAGING_BRANCH
     logger.info("Renaming file/directory in local Git file system")
 
-    const renamePromises = [
-      this.gitFileSystemService.renameSinglePath(
-        sessionData.siteName,
-        oldPath,
-        newPath,
-        sessionData.isomerUserId,
-        defaultBranch,
-        message
-      ),
-    ]
+    const stagingRenameResult = await this.gitFileSystemService.renameSinglePath(
+      sessionData.siteName,
+      oldPath,
+      newPath,
+      sessionData.isomerUserId,
+      defaultBranch,
+      message
+    )
+
+    if (stagingRenameResult.isErr()) {
+      throw stagingRenameResult.error
+    }
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName: oldPath })
 
     if (shouldUpdateStagingLite) {
-      renamePromises.push(
-        this.gitFileSystemService.renameSinglePath(
-          sessionData.siteName,
-          oldPath,
-          newPath,
-          sessionData.isomerUserId,
-          this.STAGING_LITE_BRANCH,
-          message
-        )
-      )
-    }
-
-    const results = await Promise.all(renamePromises)
-    const [stagingRenameResult, stagingLiteRenameResult] = results
-
-    if (stagingRenameResult.isErr()) {
-      throw stagingRenameResult.error
-    } else if (shouldUpdateStagingLite && stagingLiteRenameResult.isErr()) {
-      throw stagingLiteRenameResult.error
-    }
-
-    this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
-    if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
+      const stagingLiteRenameResult = await this.gitFileSystemService.renameSinglePath(
         sessionData.siteName,
-        this.STAGING_LITE_BRANCH
+        oldPath,
+        newPath,
+        sessionData.isomerUserId,
+        STAGING_LITE_BRANCH,
+        message
       )
+      if (stagingLiteRenameResult.isErr()) {
+        throw stagingLiteRenameResult.error
+      }
     }
+
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
     return { newSha: stagingRenameResult.value }
   }
 
@@ -340,51 +315,39 @@ export default class GitFileCommitService {
   ): Promise<GitCommitResult> {
     logger.info("Moving files in local Git file system")
     const defaultBranch = STAGING_BRANCH
-    const mvFilesResults = [
-      this.gitFileSystemService.moveFiles(
-        sessionData.siteName,
-        oldPath,
-        newPath,
-        sessionData.isomerUserId,
-        targetFiles,
-        defaultBranch,
-        message
-      ),
-    ]
+    const stagingMvFilesResult = await this.gitFileSystemService.moveFiles(
+      sessionData.siteName,
+      oldPath,
+      newPath,
+      sessionData.isomerUserId,
+      targetFiles,
+      defaultBranch,
+      message
+    )
+    if (stagingMvFilesResult.isErr()) {
+      throw stagingMvFilesResult.error
+    }
+
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName: oldPath })
 
     if (shouldUpdateStagingLite) {
-      mvFilesResults.push(
-        this.gitFileSystemService.moveFiles(
-          sessionData.siteName,
-          oldPath,
-          newPath,
-          sessionData.isomerUserId,
-          targetFiles,
-          this.STAGING_LITE_BRANCH,
-          message
-        )
-      )
-    }
-
-    const results = await Promise.all(mvFilesResults)
-    const [stagingMvFilesResult, stagingLiteMvFilesResult] = results
-
-    if (stagingMvFilesResult.isErr()) {
-      throw stagingMvFilesResult.error
-    } else if (shouldUpdateStagingLite && stagingLiteMvFilesResult.isErr()) {
-      throw stagingLiteMvFilesResult.error
-    }
-
-    this.gitFileSystemService.push(sessionData.siteName, defaultBranch)
-    if (shouldUpdateStagingLite) {
-      this.gitFileSystemService.push(
+      const stagingLiteMvFilesResult = await this.gitFileSystemService.moveFiles(
         sessionData.siteName,
-        this.STAGING_LITE_BRANCH
+        oldPath,
+        newPath,
+        sessionData.isomerUserId,
+        targetFiles,
+        STAGING_LITE_BRANCH,
+        message
       )
+      if (stagingLiteMvFilesResult.isErr()) {
+        throw stagingLiteMvFilesResult.error
+      }
     }
+
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
     return { newSha: stagingMvFilesResult.value }
   }
 }

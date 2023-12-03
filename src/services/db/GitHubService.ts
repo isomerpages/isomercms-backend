@@ -268,17 +268,14 @@ export default class GitHubService {
 
   async readDirectory(
     sessionData: UserWithSiteSessionData,
-    {
-      directoryName,
-      branchName = STAGING_BRANCH,
-    }: { directoryName: any; branchName?: string }
+    { directoryName }: { directoryName: any }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFolderPath({ siteName, directoryName })
 
     const params = {
-      ref: branchName,
+      ref: STAGING_BRANCH,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -300,13 +297,11 @@ export default class GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName,
     }: {
       fileContent: string
       sha: string
       fileName: string
       directoryName: string | undefined
-      branchName: string
     }
   ): Promise<GitCommitResult> {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -335,7 +330,7 @@ export default class GitHubService {
       const params = {
         message,
         content: encodedNewContent,
-        branch: branchName,
+        branch: STAGING_BRANCH,
         sha: fileSha,
       }
 
@@ -690,17 +685,11 @@ export default class GitHubService {
     githubSessionData: GithubSessionData,
     oldPath: string,
     newPath: string,
-    message?: string,
-    isStaging = true
+    message?: string
   ): Promise<GitCommitResult> {
-    const gitTree = await this.getTree(
-      sessionData,
-      githubSessionData,
-      {
-        isRecursive: true,
-      },
-      !!isStaging
-    )
+    const gitTree = await this.getTree(sessionData, githubSessionData, {
+      isRecursive: true,
+    })
     const newGitTree: any[] = []
     const isMovingDirectory =
       gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||

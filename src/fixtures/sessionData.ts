@@ -4,6 +4,7 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FeatureFlags } from "@root/types/featureFlags"
+import { RawGitTreeEntry } from "@root/types/github"
 
 import {
   MOCK_USER_EMAIL_ONE,
@@ -24,6 +25,24 @@ export const mockTreeSha = "mockTreeSha"
 export const mockCurrentCommitSha = "mockCurrentCommitSha"
 export const mockSiteName = "mockSiteName"
 export const mockGrowthBook = new GrowthBook<FeatureFlags>()
+
+export const gitTree: RawGitTreeEntry[] = [
+  {
+    path: "directory/file1.txt",
+    type: "tree",
+    sha: "fake-sha-1",
+    mode: "100644",
+    url: "fake-url-1",
+  },
+  {
+    path: "directory/file2.txt",
+    type: "file",
+    sha: "fake-sha-2",
+    mode: "100644",
+    url: "fake-url-2",
+    size: 100,
+  },
+]
 
 export const mockGithubState = {
   treeSha: mockTreeSha,

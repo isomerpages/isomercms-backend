@@ -418,7 +418,6 @@ export default class RepoService extends GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName: STAGING_BRANCH,
     })
   }
 
@@ -612,7 +611,7 @@ export default class RepoService extends GitHubService {
     {
       commitSha,
       branchName = BRANCH_REF,
-    }: { commitSha: string; branchName?: string }
+    }: { commitSha: string; branchName: string }
   ): Promise<void> {
     const { siteName } = sessionData
     if (

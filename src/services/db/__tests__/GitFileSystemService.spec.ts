@@ -901,6 +901,9 @@ describe("GitFileSystemService", () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         push: jest.fn().mockRejectedValueOnce(new GitError()),
       })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        push: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
 
       const result = await GitFileSystemService.push("fake-repo", BRANCH_REF)
 

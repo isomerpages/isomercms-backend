@@ -542,6 +542,29 @@ export default class GitFileSystemService {
             isForce
               ? this.git
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push([...gitOptions, "--force"])
+              : this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(gitOptions),
+            (error) => {
+              logger.error(`Error when pushing ${repoName}: ${error}`)
+
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to push latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .orElse(() =>
+          // Retry push twice
+          ResultAsync.fromPromise(
+            isForce
+              ? this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(["--force"])
               : this.git
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })

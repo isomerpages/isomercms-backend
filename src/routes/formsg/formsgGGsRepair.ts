@@ -116,7 +116,7 @@ export class FormsgGGsRepairRouter {
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
     repoNames.forEach((repoName) => {
-      const repoUrl = `git@github.com:isomerpages/${repoName}`
+      const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 
       repairs.push(
         this.doesRepoNeedClone(repoName)

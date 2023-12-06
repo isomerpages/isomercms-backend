@@ -46,14 +46,18 @@ export default class GitFileSystemService {
     this.git = git
   }
 
-  private getEfsVolPathFromBranch(branchName: string) {
+  private getEfsVolPathFromBranch(branchName: string): string {
     return branchName === STAGING_LITE_BRANCH
       ? EFS_VOL_PATH_STAGING_LITE
       : EFS_VOL_PATH_STAGING
   }
 
-  private getEfsVolPath(isStaging: boolean) {
+  private getEfsVolPath(isStaging: boolean): string {
     return isStaging ? EFS_VOL_PATH_STAGING : EFS_VOL_PATH_STAGING_LITE
+  }
+
+  private isStagingFromBranchName(branchName: string): boolean {
+    return branchName !== STAGING_LITE_BRANCH
   }
 
   /**
@@ -97,7 +101,7 @@ export default class GitFileSystemService {
 
   isGitInitialized(
     repoName: string,
-    isStaging = true
+    isStaging: boolean
   ): ResultAsync<boolean, GitFileSystemError> {
     const repoPath = isStaging
       ? `${EFS_VOL_PATH_STAGING}/${repoName}`
@@ -122,7 +126,7 @@ export default class GitFileSystemService {
 
   isOriginRemoteCorrect(
     repoName: string,
-    isStaging = true
+    isStaging: boolean
   ): ResultAsync<boolean, GitFileSystemError> {
     const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
     const repoPath = isStaging
@@ -149,11 +153,9 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<boolean, GitFileSystemError> {
-    return this.getFilePathStats(
-      repoName,
-      "",
-      branchName !== STAGING_LITE_BRANCH
-    )
+    const isStaging = this.isStagingFromBranchName(branchName)
+
+    return this.getFilePathStats(repoName, "", isStaging)
       .andThen((stats) => {
         if (!stats.isDirectory()) {
           // Return as an error to prevent further processing
@@ -168,14 +170,14 @@ export default class GitFileSystemService {
         }
         return err(error)
       })
-      .andThen(() => this.isGitInitialized(repoName))
+      .andThen(() => this.isGitInitialized(repoName, isStaging))
       .andThen((isGitInitialized) => {
         if (!isGitInitialized) {
           return err<never, false>(false)
         }
         return ok(true)
       })
-      .andThen(() => this.isOriginRemoteCorrect(repoName))
+      .andThen(() => this.isOriginRemoteCorrect(repoName, isStaging))
       .andThen((isOriginRemoteCorrect) => {
         if (!isOriginRemoteCorrect) {
           return err<never, false>(false)
@@ -235,7 +237,7 @@ export default class GitFileSystemService {
   getGitBlobHash(
     repoName: string,
     filePath: string,
-    isStaging = true
+    isStaging: boolean
   ): ResultAsync<string, GitFileSystemError> {
     const efsVolPath = isStaging
       ? EFS_VOL_PATH_STAGING
@@ -403,7 +405,7 @@ export default class GitFileSystemService {
           }).map(() => `${efsVolPath}/${repoName}`)
         }
 
-        return this.isGitInitialized(repoName)
+        return this.isGitInitialized(repoName, isStaging)
           .andThen((isGitInitialized) => {
             if (!isGitInitialized) {
               return errAsync(
@@ -416,7 +418,7 @@ export default class GitFileSystemService {
             }
             return okAsync(true)
           })
-          .andThen(() => this.isOriginRemoteCorrect(repoName))
+          .andThen(() => this.isOriginRemoteCorrect(repoName, isStaging))
           .andThen((isOriginRemoteCorrect) => {
             if (!isOriginRemoteCorrect) {
               return errAsync(
@@ -540,10 +542,33 @@ export default class GitFileSystemService {
             isForce
               ? this.git
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(["--force"])
+                  .push([...gitOptions, "--force"])
               : this.git
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(),
+                  .push(gitOptions),
+            (error) => {
+              logger.error(`Error when pushing ${repoName}: ${error}`)
+
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to push latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .orElse(() =>
+          // Retry push twice
+          ResultAsync.fromPromise(
+            isForce
+              ? this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push([...gitOptions, "--force"])
+              : this.git
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .push(gitOptions),
             (error) => {
               logger.error(`Error when pushing ${repoName}: ${error}`)
 
@@ -791,7 +816,7 @@ export default class GitFileSystemService {
           return new GitFileSystemError("An unknown error occurred")
         }
       ),
-      this.getGitBlobHash(repoName, filePath),
+      this.getGitBlobHash(repoName, filePath, true),
     ]).map((contentAndHash) => {
       const [content, sha] = contentAndHash
       const result: GitFile = {
@@ -858,7 +883,7 @@ export default class GitFileSystemService {
           mediaUrl: `${dataUrlPrefix},${file.content}`,
           mediaPath: `${directoryName}/${fileName}`,
           type: fileType,
-          addedTime: stats.ctimeMs,
+          addedTime: stats.birthtimeMs,
           size: stats.size,
         })
       })
@@ -871,6 +896,7 @@ export default class GitFileSystemService {
     branchName: string
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    const isStaging = this.isStagingFromBranchName(branchName)
     return this.getFilePathStats(
       repoName,
       directoryPath,
@@ -909,7 +935,7 @@ export default class GitFileSystemService {
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
           const type = isDirectory ? "dir" : "file"
 
-          return this.getGitBlobHash(repoName, path)
+          return this.getGitBlobHash(repoName, path, isStaging)
             .orElse(() => okAsync(""))
             .andThen((sha) =>
               ResultAsync.combine([
@@ -929,7 +955,7 @@ export default class GitFileSystemService {
                 sha,
                 path,
                 size: type === "dir" ? 0 : stats.size,
-                addedTime: stats.ctimeMs,
+                addedTime: stats.birthtimeMs,
               }
 
               return okAsync(result)
@@ -955,6 +981,7 @@ export default class GitFileSystemService {
   ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
     let oldStateSha = ""
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    const isStaging = this.isStagingFromBranchName(branchName)
     return this.getLatestCommitOfBranch(repoName, branchName)
       .andThen((latestCommit) => {
         // It is guaranteed that the latest commit contains the SHA hash
@@ -979,7 +1006,7 @@ export default class GitFileSystemService {
         return okAsync(true)
       })
       .andThen(() =>
-        this.getGitBlobHash(repoName, filePath).andThen((sha) => {
+        this.getGitBlobHash(repoName, filePath, isStaging).andThen((sha) => {
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(
@@ -1044,6 +1071,8 @@ export default class GitFileSystemService {
   ): ResultAsync<string, GitFileSystemError | NotFoundError> {
     let oldStateSha = ""
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    const isStaging = this.isStagingFromBranchName(branchName)
+
     return this.getLatestCommitOfBranch(repoName, branchName)
       .andThen((latestCommit) => {
         if (!latestCommit.sha) {
@@ -1084,7 +1113,7 @@ export default class GitFileSystemService {
         if (isDir) {
           return okAsync(true) // If it's a directory, skip the blob hash verification
         }
-        return this.getGitBlobHash(repoName, path).andThen((sha) => {
+        return this.getGitBlobHash(repoName, path, isStaging).andThen((sha) => {
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(

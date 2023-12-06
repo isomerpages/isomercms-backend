@@ -15,9 +15,12 @@ import {
   mockCurrentCommitSha,
   mockGithubSessionData,
   mockIsomerUserId,
+  gitTree,
 } from "@fixtures/sessionData"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { indexHtmlContent } from "@root/fixtures/markdown-fixtures"
 import { collectionYmlContent } from "@root/fixtures/yaml-fixtures"
+import { RawGitTreeEntry } from "@root/types/github"
 import GitHubService from "@services/db/GitHubService"
 
 // using es6 gives some error
@@ -173,7 +176,6 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -200,7 +202,6 @@ describe("Github Service", () => {
           fileName: topLevelDirectoryFileName,
           directoryName,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -228,7 +229,6 @@ describe("Github Service", () => {
           fileName: resourceCategoryFileName,
           directoryName,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -257,7 +257,6 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: true,
-          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         sha,
@@ -289,7 +288,6 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(ConflictError)
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
@@ -309,7 +307,6 @@ describe("Github Service", () => {
           fileName,
           directoryName,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(folderParentEndpoint, {
@@ -332,7 +329,6 @@ describe("Github Service", () => {
           fileName: subDirectoryFileName,
           directoryName: subDirectoryName,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError()
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(fileParentEndpoint, {
@@ -354,7 +350,6 @@ describe("Github Service", () => {
           fileName,
           directoryName: `${resourceCategoryName}/_posts`,
           isMedia: false,
-          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(resourceRoomEndpoint, {
@@ -539,7 +534,6 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha,
-          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         newSha: sha,
@@ -568,7 +562,6 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha,
-          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.put).toHaveBeenCalledWith(
@@ -604,7 +597,6 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha: "",
-          branchName: BRANCH_REF,
         })
       ).resolves.toMatchObject({
         newSha: sha,
@@ -636,7 +628,6 @@ describe("Github Service", () => {
           directoryName,
           fileContent: content,
           sha: "",
-          branchName: BRANCH_REF,
         })
       ).rejects.toThrowError(NotFoundError)
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(endpoint, {
@@ -892,15 +883,10 @@ describe("Github Service", () => {
         .mockResolvedValueOnce(firstResp)
         .mockResolvedValueOnce(secondResp)
       await expect(
-        service.updateTree(
-          sessionData,
-          mockGithubSessionData,
-          {
-            gitTree,
-            message,
-          },
-          true
-        )
+        service.updateTree(sessionData, mockGithubSessionData, {
+          gitTree,
+          message,
+        })
       ).resolves.toEqual(secondSha)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         url,
@@ -996,6 +982,156 @@ describe("Github Service", () => {
         }
       )
       expect(resp.isOk()).toEqual(true)
+    })
+  })
+
+  describe("deleteDirectory", () => {
+    const message = JSON.stringify({
+      message: `Delete directory: ${directoryName}`,
+      directoryName,
+      userId,
+    })
+    const params = {
+      message,
+      branch: BRANCH_REF,
+      sha: treeSha,
+      force: true,
+    }
+
+    const endpoint = `${siteName}/git/refs/heads/${STAGING_BRANCH}`
+    const stagingLiteEndpoint = `${siteName}/git/refs/heads/${STAGING_LITE_BRANCH}`
+
+    it("should delete a directory correctly", async () => {
+      // Arrange
+      const getTreeSpy = jest.spyOn(service, "getTree")
+      getTreeSpy.mockResolvedValueOnce(gitTree)
+      mockAxiosInstance.get.mockImplementation(() =>
+        Promise.resolve({ data: gitTree })
+      )
+      const updateTreeSpy = jest.spyOn(service, "updateTree")
+      updateTreeSpy.mockResolvedValueOnce(treeSha)
+      // Act
+      await service.deleteDirectory(sessionData, {
+        directoryName,
+        message,
+        githubSessionData: mockGithubSessionData,
+      })
+
+      // Assert
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        endpoint,
+        {
+          force: true,
+          sha: treeSha,
+        },
+        {
+          headers: { Authorization: `token ${accessToken}` },
+        }
+      )
+    })
+
+    it("should throw the correct error if directory cannot be found", async () => {
+      // Arrange
+      const getTreeSpy = jest.spyOn(service, "getTree")
+      getTreeSpy.mockResolvedValueOnce(gitTree)
+      const updateTreeSpy = jest.spyOn(service, "updateTree")
+      updateTreeSpy.mockResolvedValueOnce(treeSha)
+      mockAxiosInstance.patch.mockImplementation(() => {
+        const err = {
+          response: {
+            status: 404,
+          },
+          isAxiosError: true,
+        }
+        throw err
+      })
+
+      // Act
+      await expect(
+        service.deleteDirectory(sessionData, {
+          directoryName,
+          message,
+          githubSessionData: mockGithubSessionData,
+        })
+      ).rejects.toStrictEqual({ isAxiosError: true, response: { status: 404 } })
+
+      // Assert
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        endpoint,
+        {
+          force: true,
+          sha: "mockTreeSha",
+        },
+        {
+          headers: authHeader.headers,
+        }
+      )
+    })
+  })
+
+  describe("renameSinglePath", () => {
+    it("should rename a file correctly", async () => {
+      // Arrange
+
+      const oldPath = "old/path.txt"
+      const newPath = "new/path.txt"
+      const message = "Renaming file"
+
+      const newGitTree: RawGitTreeEntry[] = [
+        {
+          path: oldPath,
+          type: "file",
+          sha: "new-sha2",
+          mode: "100644",
+          url: "",
+        },
+      ]
+
+      const resolvedTree = [
+        {
+          path: newPath,
+          type: "file",
+          sha: "new-sha2",
+          mode: "100644",
+          url: "",
+        },
+        {
+          path: oldPath,
+          type: "file",
+          sha: null,
+          mode: "100644",
+          url: "",
+        },
+      ]
+      const newCommitSha = "new-commit-sha"
+      jest.spyOn(service, "getTree").mockResolvedValueOnce(newGitTree)
+      jest.spyOn(service, "updateTree").mockResolvedValueOnce(newCommitSha)
+      jest.spyOn(service, "updateRepoState").mockResolvedValueOnce()
+
+      // Act
+      const result = await service.renameSinglePath(
+        sessionData,
+        mockGithubSessionData,
+        oldPath,
+        newPath,
+        message
+      )
+
+      // Assert
+      expect(service.getTree).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        { isRecursive: true }
+      )
+      expect(service.updateTree).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        { gitTree: resolvedTree, message }
+      )
+      expect(service.updateRepoState).toHaveBeenCalledWith(sessionData, {
+        commitSha: newCommitSha,
+      })
+      expect(result).toEqual({ newSha: newCommitSha })
     })
   })
 })

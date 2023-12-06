@@ -20,7 +20,6 @@ import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileCommitService from "./GitFileCommitService"
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubCommitService from "./GithubCommitService"
 import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
@@ -79,7 +78,6 @@ interface RepoServiceParams {
   isomerRepoAxiosInstance: AxiosCacheInstance
   gitFileSystemService: GitFileSystemService
   gitFileCommitService: GitFileCommitService
-  gitHubCommitService: GitHubCommitService
 }
 
 export default class RepoService extends GitHubService {
@@ -87,18 +85,14 @@ export default class RepoService extends GitHubService {
 
   private readonly gitFileCommitService: GitFileCommitService
 
-  private readonly githubCommitService: GitHubCommitService
-
   constructor({
     isomerRepoAxiosInstance,
     gitFileSystemService,
     gitFileCommitService,
-    gitHubCommitService,
   }: RepoServiceParams) {
     super({ axiosInstance: isomerRepoAxiosInstance })
     this.gitFileSystemService = gitFileSystemService
     this.gitFileCommitService = gitFileCommitService
-    this.githubCommitService = gitHubCommitService
   }
 
   getCommitDiff(siteName: string, base?: string, head?: string) {
@@ -209,7 +203,7 @@ export default class RepoService extends GitHubService {
         isMedia,
       })
     }
-    return this.githubCommitService.create(sessionData, {
+    return super.create(sessionData, {
       content,
       fileName,
       directoryName,
@@ -369,9 +363,9 @@ export default class RepoService extends GitHubService {
 
       dirContent = result.value
     } else {
-      dirContent = (await super.readDirectory(sessionData, {
+      dirContent = await super.readDirectory(sessionData, {
         directoryName,
-      })) as GitDirectoryItem[]
+      })
     }
 
     const { directories, files, total } = getPaginatedDirectoryContents(
@@ -419,7 +413,7 @@ export default class RepoService extends GitHubService {
       })
     }
 
-    return this.githubCommitService.update(sessionData, {
+    return super.update(sessionData, {
       fileContent,
       sha,
       fileName,
@@ -451,7 +445,7 @@ export default class RepoService extends GitHubService {
       return
     }
 
-    await this.githubCommitService.deleteDirectory(sessionData, {
+    super.deleteDirectory(sessionData, {
       directoryName,
       message,
       githubSessionData,
@@ -486,7 +480,7 @@ export default class RepoService extends GitHubService {
     }
 
     // GitHub flow
-    await this.githubCommitService.delete(sessionData, {
+    await super.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -514,7 +508,7 @@ export default class RepoService extends GitHubService {
         message
       )
     }
-    return this.githubCommitService.renameSinglePath(
+    return super.renameSinglePath(
       sessionData,
       githubSessionData,
       oldPath,
@@ -547,7 +541,7 @@ export default class RepoService extends GitHubService {
       )
     }
 
-    return this.githubCommitService.moveFiles(
+    return super.moveFiles(
       sessionData,
       githubSessionData,
       oldPath,
@@ -604,18 +598,12 @@ export default class RepoService extends GitHubService {
   async updateTree(
     sessionData: any,
     githubSessionData: any,
-    { gitTree, message }: any,
-    isStaging: boolean
+    { gitTree, message }: any
   ): Promise<any> {
-    return super.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree,
-        message,
-      },
-      isStaging
-    )
+    return super.updateTree(sessionData, githubSessionData, {
+      gitTree,
+      message,
+    })
   }
 
   async updateRepoState(
@@ -623,7 +611,7 @@ export default class RepoService extends GitHubService {
     {
       commitSha,
       branchName = BRANCH_REF,
-    }: { commitSha: string; branchName?: string }
+    }: { commitSha: string; branchName: string }
   ): Promise<void> {
     const { siteName } = sessionData
     if (
@@ -646,7 +634,7 @@ export default class RepoService extends GitHubService {
       return
     }
 
-    await super.updateRepoState(sessionData, { commitSha, branchName })
+    await super.updateRepoState(sessionData, { commitSha })
   }
 
   async checkHasAccess(sessionData: any): Promise<any> {

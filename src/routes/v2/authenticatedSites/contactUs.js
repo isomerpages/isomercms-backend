@@ -6,7 +6,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
 const { UpdateContactUsSchema } = require("@validators/RequestSchema")
@@ -53,7 +53,7 @@ class ContactUsRouter {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.readContactUs))
-    router.post("/", attachWriteRouteHandlerWrapper(this.updateContactUs))
+    router.post("/", attachRollbackRouteHandlerWrapper(this.updateContactUs))
 
     return router
   }

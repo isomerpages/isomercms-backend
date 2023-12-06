@@ -132,13 +132,11 @@ export default class GitHubService {
       fileName,
       directoryName,
       isMedia = false,
-      branchName = STAGING_BRANCH,
     }: {
       content: string
       fileName: string
       directoryName: string
       isMedia: boolean
-      branchName: string
     }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -185,7 +183,7 @@ export default class GitHubService {
       const params = {
         message,
         content: encodedContent,
-        branch: branchName,
+        branch: STAGING_BRANCH,
       }
 
       const resp = await this.axiosInstance.put(endpoint, params, {
@@ -209,18 +207,14 @@ export default class GitHubService {
 
   async read(
     sessionData: UserWithSiteSessionData,
-    {
-      fileName,
-      directoryName,
-      branchName = STAGING_BRANCH,
-    }: { fileName: any; directoryName: any; branchName?: string }
+    { fileName, directoryName }: { fileName: any; directoryName: any }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
     const params = {
-      ref: branchName,
+      ref: STAGING_BRANCH,
     }
 
     const resp = await this.axiosInstance.get(endpoint, {
@@ -241,10 +235,7 @@ export default class GitHubService {
 
   async readMedia(
     sessionData: UserWithSiteSessionData,
-    {
-      fileSha,
-      branchName = STAGING_BRANCH,
-    }: { fileSha: any; branchName?: string }
+    { fileSha }: { fileSha: any; branchName?: string }
   ) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
@@ -254,7 +245,7 @@ export default class GitHubService {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const params = {
-      ref: branchName,
+      ref: STAGING_BRANCH,
     }
 
     const blobEndpoint = this.getBlobPath({ siteName, fileSha })
@@ -379,12 +370,10 @@ export default class GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName = STAGING_BRANCH,
     }: {
       sha: string
       fileName: string
       directoryName: string
-      branchName?: string
     }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
@@ -392,11 +381,10 @@ export default class GitHubService {
       const endpoint = this.getFilePath({ siteName, fileName, directoryName })
 
       let fileSha = sha
-      if (!sha || branchName === STAGING_LITE_BRANCH) {
+      if (!sha) {
         const { sha: retrievedSha } = await this.read(sessionData, {
           fileName,
           directoryName,
-          branchName,
         })
         fileSha = retrievedSha
       }
@@ -408,7 +396,7 @@ export default class GitHubService {
       })
       const params = {
         message,
-        branch: branchName,
+        branch: STAGING_BRANCH,
         sha: fileSha,
       }
 
@@ -767,11 +755,13 @@ export default class GitHubService {
 
   async updateRepoState(
     sessionData: UserWithSiteSessionData,
-    { commitSha }: { commitSha: string }
+    { commitSha, branchName }: { commitSha: any; branchName?: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const refEndpoint = `${siteName}/git/refs/heads/${STAGING_BRANCH}`
+    const refEndpoint = `${siteName}/git/refs/heads/${
+      branchName || STAGING_BRANCH
+    }`
     const headers = {
       Authorization: `token ${accessToken}`,
     }

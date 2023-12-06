@@ -110,7 +110,9 @@ describe("GitFileCommitService", () => {
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
           .mockResolvedValue()
-
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
         // Act
         const result = await gitFileCommitService.create(sessionData, {
           content,
@@ -126,8 +128,17 @@ describe("GitFileCommitService", () => {
           content,
           directoryName,
           fileName,
-          isMedia ? "base64" : "utf-8",
+          "utf-8",
           STAGING_BRANCH
+        )
+        expect(createSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          sessionData.isomerUserId,
+          content,
+          directoryName,
+          fileName,
+          "utf-8",
+          STAGING_LITE_BRANCH
         )
         expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))
         expect(result).toEqual({ sha: "new-sha" })
@@ -189,6 +200,10 @@ describe("GitFileCommitService", () => {
           .spyOn(gitFileCommitService, "pushToGithub")
           .mockResolvedValue()
 
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
+
         // Act
         const result = await gitFileCommitService.update(sessionData, {
           fileContent,
@@ -208,6 +223,15 @@ describe("GitFileCommitService", () => {
           sha,
           sessionData.isomerUserId,
           STAGING_BRANCH
+        )
+
+        expect(updateSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          filePath,
+          fileContent,
+          sha,
+          sessionData.isomerUserId,
+          STAGING_LITE_BRANCH
         )
         expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))
         expect(result).toEqual({ newSha: "new-sha" })
@@ -268,6 +292,10 @@ describe("GitFileCommitService", () => {
           .spyOn(gitFileCommitService, "pushToGithub")
           .mockResolvedValue()
 
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
+
         // Act
         await gitFileCommitService.deleteDirectory(sessionData, {
           directoryName,
@@ -281,6 +309,14 @@ describe("GitFileCommitService", () => {
           sessionData.isomerUserId,
           true,
           STAGING_BRANCH
+        )
+        expect(deleteSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          directoryName,
+          "",
+          sessionData.isomerUserId,
+          true,
+          STAGING_LITE_BRANCH
         )
         expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))
       })
@@ -331,6 +367,9 @@ describe("GitFileCommitService", () => {
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
           .mockResolvedValue()
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
 
         // Act
         await gitFileCommitService.delete(sessionData, {
@@ -350,6 +389,14 @@ describe("GitFileCommitService", () => {
           sessionData.isomerUserId,
           false,
           STAGING_BRANCH
+        )
+        expect(deleteSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          filePath,
+          sha,
+          sessionData.isomerUserId,
+          false,
+          STAGING_LITE_BRANCH
         )
         expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))
       })
@@ -407,6 +454,9 @@ describe("GitFileCommitService", () => {
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
           .mockResolvedValue()
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
 
         // Act
         const result = await gitFileCommitService.renameSinglePath(
@@ -424,6 +474,14 @@ describe("GitFileCommitService", () => {
           newPath,
           sessionData.isomerUserId,
           STAGING_BRANCH,
+          message
+        )
+        expect(renameSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          oldPath,
+          newPath,
+          sessionData.isomerUserId,
+          STAGING_LITE_BRANCH,
           message
         )
         expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))
@@ -484,6 +542,9 @@ describe("GitFileCommitService", () => {
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
           .mockResolvedValue()
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
 
         // Act
         const result = await gitFileCommitService.moveFiles(
@@ -503,6 +564,15 @@ describe("GitFileCommitService", () => {
           sessionData.isomerUserId,
           targetFiles,
           STAGING_BRANCH,
+          message
+        )
+        expect(moveFilesSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          oldPath,
+          newPath,
+          sessionData.isomerUserId,
+          targetFiles,
+          STAGING_LITE_BRANCH,
           message
         )
         expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))

@@ -10,7 +10,7 @@ import { isAxiosError, validateStatus } from "@utils/axios-utils"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
+import { STAGING_BRANCH } from "@root/constants"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
 import { RawGitTreeEntry } from "@root/types/github"

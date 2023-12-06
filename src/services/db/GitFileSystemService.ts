@@ -565,10 +565,10 @@ export default class GitFileSystemService {
             isForce
               ? this.git
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(["--force"])
+                  .push([...gitOptions, "--force"])
               : this.git
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(),
+                  .push(gitOptions),
             (error) => {
               logger.error(`Error when pushing ${repoName}: ${error}`)
 

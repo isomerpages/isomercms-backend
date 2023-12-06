@@ -250,7 +250,6 @@ export default class GitFileSystemService {
         logger.error(
           `Error when getting Git blob hash: ${error} when trying to access ${efsVolPath}/${repoName}`
         )
-        console.log(`revparse: HEAD:${filePath} for ${efsVolPath}/${repoName}`)
 
         if (error instanceof GitError) {
           return new GitFileSystemError("Unable to determine Git blob hash")

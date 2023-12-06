@@ -20,7 +20,6 @@ import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileCommitService from "./GitFileCommitService"
 import GitFileSystemService from "./GitFileSystemService"
-import GitHubCommitService from "./GithubCommitService"
 import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
@@ -448,29 +447,10 @@ export default class RepoService extends GitHubService {
       return
     }
 
-    // GitHub flow
-    const gitTree = await this.getTree(sessionData, githubSessionData, {
-      isRecursive: true,
-    })
-
-    // Retrieve removed items and set their sha to null
-    const newGitTree = gitTree
-      .filter(
-        (item) =>
-          item.path.startsWith(`${directoryName}/`) && item.type !== "tree"
-      )
-      .map((item) => ({
-        ...item,
-        sha: null,
-      }))
-
-    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
-      gitTree: newGitTree,
+    super.deleteDirectory(sessionData, {
+      directoryName,
       message,
-    })
-
-    await this.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
+      githubSessionData,
     })
   }
 

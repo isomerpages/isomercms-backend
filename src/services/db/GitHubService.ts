@@ -767,7 +767,7 @@ export default class GitHubService {
 
   async updateRepoState(
     sessionData: UserWithSiteSessionData,
-    { commitSha }: { commitSha: any }
+    { commitSha }: { commitSha: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData

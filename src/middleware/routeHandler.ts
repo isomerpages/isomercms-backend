@@ -1,4 +1,4 @@
-import { backOff } from "exponential-backoff"
+import { BackoffOptions, backOff } from "exponential-backoff"
 import simpleGit from "simple-git"
 
 import { config } from "@config/config"
@@ -21,6 +21,10 @@ import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 
 const BRANCH_REF = config.get("github.branchRef")
+
+const backoffOptions: BackoffOptions = {
+  numOfAttempts: 5,
+}
 const simpleGitInstance = simpleGit({
   maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES,
 })
@@ -181,24 +185,28 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
   await routeHandler(req, res, next).catch(async (err: any) => {
     try {
       if (shouldUseGitFileSystem) {
-        await backOff(() =>
-          convertNeverThrowToPromise(
-            gitFileSystemService.rollback(
-              siteName,
-              originalStagingCommitSha,
-              STAGING_BRANCH
-            )
-          )
+        await backOff(
+          () =>
+            convertNeverThrowToPromise(
+              gitFileSystemService.rollback(
+                siteName,
+                originalStagingCommitSha,
+                STAGING_BRANCH
+              )
+            ),
+          backoffOptions
         )
 
-        await backOff(() =>
-          convertNeverThrowToPromise(
-            gitFileSystemService.rollback(
-              siteName,
-              originalStagingLiteCommitSha,
-              STAGING_LITE_BRANCH
-            )
-          )
+        await backOff(
+          () =>
+            convertNeverThrowToPromise(
+              gitFileSystemService.rollback(
+                siteName,
+                originalStagingLiteCommitSha,
+                STAGING_LITE_BRANCH
+              )
+            ),
+          backoffOptions
         )
 
         await backOff(() => {
@@ -214,23 +222,27 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
           }
 
           return convertNeverThrowToPromise(pushRes)
-        })
+        }, backoffOptions)
       } else {
-        await backOff(() =>
-          revertCommit(
-            originalStagingCommitSha,
-            siteName,
-            accessToken,
-            STAGING_BRANCH
-          )
+        await backOff(
+          () =>
+            revertCommit(
+              originalStagingCommitSha,
+              siteName,
+              accessToken,
+              STAGING_BRANCH
+            ),
+          backoffOptions
         )
-        await backOff(() =>
-          revertCommit(
-            originalStagingLiteCommitSha,
-            siteName,
-            accessToken,
-            STAGING_LITE_BRANCH
-          )
+        await backOff(
+          () =>
+            revertCommit(
+              originalStagingLiteCommitSha,
+              siteName,
+              accessToken,
+              STAGING_LITE_BRANCH
+            ),
+          backoffOptions
         )
       }
     } catch (retryErr) {

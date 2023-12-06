@@ -1,4 +1,6 @@
+import { GrowthBook } from "@growthbook/growthbook"
 import { BackoffOptions, backOff } from "exponential-backoff"
+import { ResultAsync } from "neverthrow"
 import simpleGit from "simple-git"
 
 import { config } from "@config/config"
@@ -17,6 +19,7 @@ import {
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
 import LockedError from "@root/errors/LockedError"
 import logger from "@root/logger/logger"
+import { FeatureFlags } from "@root/types/featureFlags"
 import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 
@@ -50,6 +53,20 @@ const handleGitFileLock = async (
     return false
   }
   return true
+}
+
+const isGitFileAndIsGitAvail = async (
+  growthbook: GrowthBook<FeatureFlags>,
+  siteName: string,
+  next: any
+) => {
+  let isGitAvailable = true
+
+  // only check git file lock if the repo is ggs enabled
+  if (growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_ENABLED, false)) {
+    isGitAvailable = await handleGitFileLock(siteName, next)
+  }
+  return isGitAvailable
 }
 
 // Used when there are no write API calls to the repo on GitHub
@@ -111,12 +128,12 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
   const { accessToken } = userSessionData
   const { growthbook } = req
 
-  const shouldUseGitFileSystem = !!growthbook?.getFeatureValue(
-    FEATURE_FLAGS.IS_GGS_ENABLED,
-    false
+  const isGitAvailable = await isGitFileAndIsGitAvail(
+    growthbook,
+    siteName,
+    next
   )
 
-  const isGitAvailable = await handleGitFileLock(siteName, next)
   if (!isGitAvailable) return
   try {
     await lock(siteName)
@@ -125,32 +142,35 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
     return
   }
 
-  let originalStagingCommitSha: any
-  let originalStagingLiteCommitSha: any
+  let originalStagingCommitSha: string
+  let originalStagingLiteCommitSha: string
 
+  const shouldUseGitFileSystem = growthbook?.getFeatureValue(
+    FEATURE_FLAGS.IS_GGS_ENABLED,
+    false
+  )
   if (shouldUseGitFileSystem) {
-    const results = await Promise.all([
+    const results = await ResultAsync.combine([
       gitFileSystemService.getLatestCommitOfBranch(siteName, STAGING_BRANCH),
       gitFileSystemService.getLatestCommitOfBranch(
         siteName,
         STAGING_LITE_BRANCH
       ),
     ])
-    const [stagingResult, stagingLiteResult] = results
 
-    if (stagingResult.isErr() || stagingLiteResult.isErr()) {
+    if (results.isErr()) {
       await unlock(siteName)
-      if (stagingResult.isErr()) next(stagingResult.error)
-      if (stagingLiteResult.isErr()) next(stagingLiteResult.error)
+      next(results.error)
       return
     }
-    originalStagingCommitSha = stagingResult.value.sha
-    originalStagingLiteCommitSha = stagingLiteResult.value.sha
-    if (!originalStagingCommitSha || !originalStagingLiteCommitSha) {
+    const [stagingResult, stagingLiteResult] = results.value
+    if (!stagingResult.sha || !stagingLiteResult.sha) {
       await unlock(siteName)
-      if (stagingResult.isErr()) next(stagingResult.error)
       return
     }
+
+    originalStagingCommitSha = stagingResult.sha
+    originalStagingLiteCommitSha = stagingLiteResult.sha
     // Unused for git file system, but to maintain existing structure
     res.locals.githubSessionData = new GithubSessionData({
       currentCommitSha: "",

@@ -177,6 +177,7 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
       originalStagingLiteCommitSha = currentStgLiteCommitSha
     } catch (err) {
       await unlock(siteName)
+      logger.error(`Failed to rollback repo ${siteName}: ${err}`)
       next(err)
       return
     }
@@ -247,6 +248,7 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
       }
     } catch (retryErr) {
       await unlock(siteName)
+      logger.error(`Failed to rollback repo ${siteName}: ${retryErr}`)
       next(retryErr)
       return
     }

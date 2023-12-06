@@ -235,7 +235,7 @@ export default class GitHubService {
 
   async readMedia(
     sessionData: UserWithSiteSessionData,
-    { fileSha }: { fileSha: any; branchName?: string }
+    { fileSha }: { fileSha: string }
   ) {
     /**
      * Files that are bigger than 1 MB needs to be retrieved
@@ -268,7 +268,7 @@ export default class GitHubService {
 
   async readDirectory(
     sessionData: UserWithSiteSessionData,
-    { directoryName }: { directoryName: any }
+    { directoryName }: { directoryName: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -514,8 +514,7 @@ export default class GitHubService {
   async getTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { isRecursive }: any,
-    isStaging = true
+    { isRecursive }: any
   ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -523,7 +522,7 @@ export default class GitHubService {
     const url = `${siteName}/git/trees/${treeSha}`
 
     const params = {
-      ref: isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH,
+      ref: STAGING_BRANCH,
       recursive: false,
     }
 

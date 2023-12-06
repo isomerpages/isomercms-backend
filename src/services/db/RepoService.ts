@@ -363,9 +363,9 @@ export default class RepoService extends GitHubService {
 
       dirContent = result.value
     } else {
-      dirContent = (await super.readDirectory(sessionData, {
+      dirContent = await super.readDirectory(sessionData, {
         directoryName,
-      })) as GitDirectoryItem[]
+      })
     }
 
     const { directories, files, total } = getPaginatedDirectoryContents(

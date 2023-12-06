@@ -1,7 +1,7 @@
 import fs, { Stats } from "fs"
 
 import mockFs from "mock-fs"
-import { ResultAsync, okAsync } from "neverthrow"
+import { ResultAsync, ok, okAsync } from "neverthrow"
 import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"
@@ -109,7 +109,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync({ newSha: "new-sha" }))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
           .mockReturnValue(true)
@@ -155,7 +155,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync({ newSha: "new-sha" }))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -198,7 +198,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync("new-sha"))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -248,7 +248,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync("new-sha"))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -290,7 +290,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync(""))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -329,7 +329,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync(""))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -366,7 +366,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync(""))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
           .mockReturnValue(true)
@@ -411,7 +411,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync(""))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -453,7 +453,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync("new-sha"))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
           .mockReturnValue(true)
@@ -498,7 +498,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync("new-sha"))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
@@ -541,7 +541,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync("new-sha"))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
           .mockReturnValue(true)
@@ -590,7 +590,7 @@ describe("GitFileCommitService", () => {
           .mockResolvedValue(okAsync("new-sha"))
         const pushSpy = jest
           .spyOn(gitFileCommitService, "pushToGithub")
-          .mockResolvedValue()
+          .mockResolvedValue(ok(""))
 
         jest
           .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")

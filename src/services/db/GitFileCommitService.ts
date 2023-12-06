@@ -39,7 +39,7 @@ export default class GitFileCommitService {
         )
       )
     }
-    await res
+    return res
   }
 
   async create(

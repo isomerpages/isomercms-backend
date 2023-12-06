@@ -363,9 +363,9 @@ export default class RepoService extends GitHubService {
 
       dirContent = result.value
     } else {
-      dirContent = (await super.readDirectory(sessionData, {
+      dirContent = await super.readDirectory(sessionData, {
         directoryName,
-      })) as GitDirectoryItem[]
+      })
     }
 
     const { directories, files, total } = getPaginatedDirectoryContents(
@@ -418,7 +418,6 @@ export default class RepoService extends GitHubService {
       sha,
       fileName,
       directoryName,
-      branchName: STAGING_BRANCH,
     })
   }
 
@@ -612,7 +611,7 @@ export default class RepoService extends GitHubService {
     {
       commitSha,
       branchName = BRANCH_REF,
-    }: { commitSha: string; branchName?: string }
+    }: { commitSha: string; branchName: string }
   ): Promise<void> {
     const { siteName } = sessionData
     if (

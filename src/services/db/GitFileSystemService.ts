@@ -47,7 +47,8 @@ export default class GitFileSystemService {
   }
 
   private getEfsVolPathFromBranch(branchName: string): string {
-    return branchName === STAGING_LITE_BRANCH
+    // need to use includes as it also checks for "origin/<branch_name>"
+    return branchName.includes(STAGING_LITE_BRANCH)
       ? EFS_VOL_PATH_STAGING_LITE
       : EFS_VOL_PATH_STAGING
   }

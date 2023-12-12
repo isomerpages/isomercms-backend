@@ -153,7 +153,6 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
     FEATURE_FLAGS.IS_BUILD_TIMES_REDUCTION_ENABLED,
     false
   )
-  console.log(growthbook?.getFeatureValues())
 
   if (shouldUseGitFileSystem && shouldCheckStagingLite) {
     // ggs + quickie

@@ -161,12 +161,16 @@ export default class GitFileSystemService {
         if (!stats.isDirectory()) {
           // Return as an error to prevent further processing
           // The function will eventually return false
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} is not a directory`
+          )
           return errAsync(false)
         }
         return okAsync(true)
       })
       .orElse((error) => {
         if (error instanceof NotFoundError) {
+          logger.error(`Repo: ${repoName}, branch: ${branchName} is not found`)
           return err(false)
         }
         return err(error)
@@ -174,6 +178,9 @@ export default class GitFileSystemService {
       .andThen(() => this.isGitInitialized(repoName, isStaging))
       .andThen((isGitInitialized) => {
         if (!isGitInitialized) {
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} does not have git initialised`
+          )
           return err<never, false>(false)
         }
         return ok(true)
@@ -181,6 +188,9 @@ export default class GitFileSystemService {
       .andThen(() => this.isOriginRemoteCorrect(repoName, isStaging))
       .andThen((isOriginRemoteCorrect) => {
         if (!isOriginRemoteCorrect) {
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} does not have correct origin remote`
+          )
           return err<never, false>(false)
         }
         return ok(true)

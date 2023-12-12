@@ -9,7 +9,8 @@ const convertNeverThrowToPromise = async <T, E>(
   x: ResultAsync<T, E>
 ): Promise<T> => {
   const res = await x
-  return res._unsafeUnwrap()
+  if (res.isErr()) return Promise.reject(res.error)
+  return Promise.resolve(res.value)
 }
 
 export default convertNeverThrowToPromise

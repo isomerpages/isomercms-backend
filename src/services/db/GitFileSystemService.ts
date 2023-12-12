@@ -47,7 +47,8 @@ export default class GitFileSystemService {
   }
 
   private getEfsVolPathFromBranch(branchName: string): string {
-    return branchName === STAGING_LITE_BRANCH
+    // need to use includes as it also checks for "origin/<branch_name>"
+    return branchName.includes(STAGING_LITE_BRANCH)
       ? EFS_VOL_PATH_STAGING_LITE
       : EFS_VOL_PATH_STAGING
   }
@@ -160,12 +161,16 @@ export default class GitFileSystemService {
         if (!stats.isDirectory()) {
           // Return as an error to prevent further processing
           // The function will eventually return false
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} is not a directory`
+          )
           return errAsync(false)
         }
         return okAsync(true)
       })
       .orElse((error) => {
         if (error instanceof NotFoundError) {
+          logger.error(`Repo: ${repoName}, branch: ${branchName} is not found`)
           return err(false)
         }
         return err(error)
@@ -173,6 +178,9 @@ export default class GitFileSystemService {
       .andThen(() => this.isGitInitialized(repoName, isStaging))
       .andThen((isGitInitialized) => {
         if (!isGitInitialized) {
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} does not have git initialised`
+          )
           return err<never, false>(false)
         }
         return ok(true)
@@ -180,6 +188,9 @@ export default class GitFileSystemService {
       .andThen(() => this.isOriginRemoteCorrect(repoName, isStaging))
       .andThen((isOriginRemoteCorrect) => {
         if (!isOriginRemoteCorrect) {
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} does not have correct origin remote`
+          )
           return err<never, false>(false)
         }
         return ok(true)
@@ -444,7 +455,9 @@ export default class GitFileSystemService {
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
-          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
         )
       }
 
@@ -509,7 +522,9 @@ export default class GitFileSystemService {
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
-          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
         )
       }
       const gitOptions = `origin ${branchName}`.split(" ")
@@ -599,7 +614,9 @@ export default class GitFileSystemService {
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
-          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
         )
       }
 
@@ -1411,7 +1428,9 @@ export default class GitFileSystemService {
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
         return errAsync(
-          new GitFileSystemError(`Folder "${repoName}" is not a valid Git repo`)
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
         )
       }
 

@@ -70,8 +70,6 @@ import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
-import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
-import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
@@ -320,17 +318,6 @@ const reviewRouter = new ReviewsRouter(
   notificationsService,
   gitHubService
 )
-const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
-  authenticationMiddleware,
-  statsMiddleware,
-  usersService,
-  apiLogger,
-})
-const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
-  authenticationMiddleware,
-  authorizationMiddleware,
-  apiLogger,
-})
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authenticationMiddleware,
@@ -415,13 +402,6 @@ app.use(sessionMiddleware)
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
 // Routes layer setup
-// To avoid refactoring auth router v1 to use dependency injection
-app.use("/v1/auth", authV2Router.getRouter())
-// Endpoints which have siteName, used to inject site access token
-app.use("/v1/sites/:siteName", authenticatedSitesSubrouterV1)
-// Endpoints which require login, but not site access token
-app.use("/v1", authenticatedSubrouterV1)
-
 app.use("/v2/auth", authV2Router.getRouter())
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)

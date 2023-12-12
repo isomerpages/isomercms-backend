@@ -149,7 +149,13 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
     FEATURE_FLAGS.IS_GGS_ENABLED,
     false
   )
-  if (shouldUseGitFileSystem) {
+  const shouldCheckStagingLite = growthbook?.getFeatureValue(
+    FEATURE_FLAGS.IS_BUILD_TIMES_REDUCTION_ENABLED,
+    false
+  )
+
+  if (shouldUseGitFileSystem && shouldCheckStagingLite) {
+    // ggs + quickie
     const results = await ResultAsync.combine([
       gitFileSystemService.getLatestCommitOfBranch(siteName, STAGING_BRANCH),
       gitFileSystemService.getLatestCommitOfBranch(
@@ -176,7 +182,32 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
       currentCommitSha: "",
       treeSha: "",
     })
+  } else if (shouldUseGitFileSystem && !shouldCheckStagingLite) {
+    // ggs alone
+    const result = await gitFileSystemService.getLatestCommitOfBranch(
+      siteName,
+      STAGING_BRANCH
+    )
+
+    if (result.isErr()) {
+      await unlock(siteName)
+      next(result.error)
+      return
+    }
+
+    if (!result.value.sha) {
+      await unlock(siteName)
+      return
+    }
+
+    originalStagingCommitSha = result.value.sha
+    // Unused for git file system, but to maintain existing structure
+    res.locals.githubSessionData = new GithubSessionData({
+      currentCommitSha: "",
+      treeSha: "",
+    })
   } else {
+    // non-GGS flow
     try {
       const {
         currentCommitSha: currentStgCommitSha,
@@ -197,7 +228,9 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
       originalStagingLiteCommitSha = currentStgLiteCommitSha
     } catch (err) {
       await unlock(siteName)
-      logger.error(`Failed to rollback repo ${siteName}: ${err}`)
+      logger.error(
+        `Failed to rollback repo ${siteName}: ${JSON.stringify(err)}`
+      )
       next(err)
       return
     }
@@ -218,17 +251,20 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
           backoffOptions
         )
 
-        await backOff(
-          () =>
-            convertNeverThrowToPromise(
-              gitFileSystemService.rollback(
-                siteName,
-                originalStagingLiteCommitSha,
-                STAGING_LITE_BRANCH
-              )
-            ),
-          backoffOptions
-        )
+        if (shouldCheckStagingLite) {
+          // for quickie sites
+          await backOff(
+            () =>
+              convertNeverThrowToPromise(
+                gitFileSystemService.rollback(
+                  siteName,
+                  originalStagingLiteCommitSha,
+                  STAGING_LITE_BRANCH
+                )
+              ),
+            backoffOptions
+          )
+        }
 
         await backOff(() => {
           let pushRes = gitFileSystemService.push(
@@ -245,6 +281,7 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
           return convertNeverThrowToPromise(pushRes)
         }, backoffOptions)
       } else {
+        // Github flow
         await backOff(
           () =>
             revertCommit(
@@ -255,20 +292,12 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
             ),
           backoffOptions
         )
-        await backOff(
-          () =>
-            revertCommit(
-              originalStagingLiteCommitSha,
-              siteName,
-              accessToken,
-              STAGING_LITE_BRANCH
-            ),
-          backoffOptions
-        )
       }
     } catch (retryErr) {
       await unlock(siteName)
-      logger.error(`Failed to rollback repo ${siteName}: ${retryErr}`)
+      logger.error(
+        `Failed to rollback repo ${siteName}: ${JSON.stringify(retryErr)}`
+      )
       next(retryErr)
       return
     }

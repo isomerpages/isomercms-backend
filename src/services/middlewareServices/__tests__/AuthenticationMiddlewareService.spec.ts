@@ -34,8 +34,8 @@ const extractSpy = jest
 
 const authenticationMiddlewareService = new AuthenticationMiddlewareService()
 
-const E2E_GITHUB_REPO_URL = `/v1/sites/${E2E_TEST_REPO}`
-const E2E_EMAIL_REPO_URL = `/v1/sites/${E2E_EMAIL_TEST_SITE.repo}`
+const E2E_GITHUB_REPO_URL = `/v2/sites/${E2E_TEST_REPO}`
+const E2E_EMAIL_REPO_URL = `/v2/sites/${E2E_EMAIL_TEST_SITE.repo}`
 
 const MOCK_GITHUB_USER_PROPS: VerifyAccessProps = {
   // NOTE: Actual users won't have cookies - instead, they will use our session
@@ -197,7 +197,7 @@ describe("AuthenticationMiddlewareService", () => {
 
     it("should throw an error when github e2e user tries to access a non-e2e repo", () => {
       // Arrange
-      const props = getMockUser("github", `/v1/sites/some-repo`)
+      const props = getMockUser("github", `/v2/sites/some-repo`)
 
       // Act
       // NOTE: Have to do this cos it should throw
@@ -209,7 +209,7 @@ describe("AuthenticationMiddlewareService", () => {
 
     it("should throw an error when email e2e admin tries to access a non-e2e repo", () => {
       // Arrange
-      const props = getMockUser("email admin", `/v1/sites/some-repo`)
+      const props = getMockUser("email admin", `/v2/sites/some-repo`)
 
       // Act
       // NOTE: Have to do this cos it should throw
@@ -221,7 +221,7 @@ describe("AuthenticationMiddlewareService", () => {
 
     it("should throw an error when email e2e collab tries to access a non-e2e repo", () => {
       // Arrange
-      const props = getMockUser("email collab", `/v1/sites/some-repo`)
+      const props = getMockUser("email collab", `/v2/sites/some-repo`)
 
       // Act
       // NOTE: Have to do this cos it should throw

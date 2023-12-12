@@ -34,12 +34,7 @@ const E2E_TEST_SECRET = config.get("cypress.e2eTestSecret")
 
 export const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
 export const E2E_TEST_GITHUB_USER = "e2e-test"
-const GENERAL_ACCESS_PATHS = [
-  "/v1/sites",
-  "/v1/auth/whoami",
-  "/v2/sites",
-  "/v2/auth/whoami",
-]
+const GENERAL_ACCESS_PATHS = ["/v2/sites", "/v2/auth/whoami"]
 
 interface E2eCookie {
   isomercmsE2E: string
@@ -168,7 +163,7 @@ export default class AuthenticationMiddlewareService {
     if (!cookies) return false
 
     const { isomercmsE2E, e2eUserType } = cookies
-    const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
+    const urlTokens = url.split("/") // urls take the form "/v2/sites/<repo>/<path>""
 
     // NOTE: If the cookie is not set, this is an actual user.
     if (!isomercmsE2E || !e2eUserType) return false

@@ -41,10 +41,6 @@ export class StatsMiddleware {
     this.statsService.countMigratedSites()
   )
 
-  trackV1GithubLogins = wrapAsRequestHandler(async () =>
-    this.statsService.trackGithubLogins(Versions.V1)
-  )
-
   trackV2GithubLogins = wrapAsRequestHandler(async () =>
     this.statsService.trackGithubLogins(Versions.V2)
   )

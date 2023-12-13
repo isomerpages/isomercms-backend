@@ -214,10 +214,6 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
         treeSha: stgTreeSha,
       } = await getCommitAndTreeSha(siteName, accessToken, STAGING_BRANCH)
 
-      const {
-        currentCommitSha: currentStgLiteCommitSha,
-      } = await getCommitAndTreeSha(siteName, accessToken, STAGING_LITE_BRANCH)
-
       const githubSessionData = new GithubSessionData({
         currentCommitSha: currentStgCommitSha,
         treeSha: stgTreeSha,
@@ -225,7 +221,6 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
       res.locals.githubSessionData = githubSessionData
 
       originalStagingCommitSha = currentStgCommitSha
-      originalStagingLiteCommitSha = currentStgLiteCommitSha
     } catch (err) {
       await unlock(siteName)
       logger.error(

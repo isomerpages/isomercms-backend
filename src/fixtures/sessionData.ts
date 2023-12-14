@@ -6,6 +6,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FeatureFlags } from "@root/types/featureFlags"
 import { RawGitTreeEntry } from "@root/types/github"
 
+import { MOCK_REPO_NAME_ONE } from "./sites"
 import {
   MOCK_USER_EMAIL_ONE,
   MOCK_USER_EMAIL_TWO,
@@ -105,3 +106,11 @@ export const MOCK_USER_SESSION_DATA_FOUR = new UserSessionData({
   isomerUserId: String(MOCK_USER_ID_FOUR),
   email: MOCK_USER_EMAIL_FOUR,
 })
+
+export const MOCK_USER_WITH_SITE_SESSION_DATA_ONE = new UserWithSiteSessionData(
+  {
+    isomerUserId: String(MOCK_USER_ID_ONE),
+    email: MOCK_USER_EMAIL_ONE,
+    siteName: MOCK_REPO_NAME_ONE,
+  }
+)

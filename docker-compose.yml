@@ -14,6 +14,7 @@ services:
     volumes:
       - ./:/opt/isomercms-backend
       - /opt/isomercms-backend/node_modules
+      - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
 
   postgres:
     image: "postgres:13-alpine"

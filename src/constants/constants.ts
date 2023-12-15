@@ -88,3 +88,5 @@ export const EFS_VOL_PATH_STAGING_LITE = path.join(
 )
 export const STAGING_BRANCH = "staging"
 export const STAGING_LITE_BRANCH = "staging-lite"
+export const PLACEHOLDER_FILE_NAME = ".keep"
+export const GIT_SYSTEM_DIRECTORY = ".git"

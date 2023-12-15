@@ -71,17 +71,103 @@ describe("GitFileSystemService", () => {
 
   describe("listDirectoryContents", () => {
     it("should return the contents of a directory successfully", async () => {
+      const expectedFakeDir: GitDirectoryItem = {
+        name: "fake-dir",
+        type: "dir",
+        path: "fake-dir",
+        size: 0,
+        addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
+          .ctimeMs,
+      }
+      const expectedAnotherFakeDir: GitDirectoryItem = {
+        name: "another-fake-dir",
+        type: "dir",
+        path: "another-fake-dir",
+        size: 0,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-dir`
+        ).ctimeMs,
+      }
+      const expectedFakeEmptyDir: GitDirectoryItem = {
+        name: "fake-empty-dir",
+        type: "dir",
+        path: "fake-empty-dir",
+        size: 0,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/fake-empty-dir`
+        ).ctimeMs,
+      }
+      const expectedAnotherFakeFile: GitDirectoryItem = {
+        name: "another-fake-file",
+        type: "file",
+        path: "another-fake-file",
+        size: "Another fake content".length,
+        addedTime: fs.statSync(
+          `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-file`
+        ).ctimeMs,
+      }
+
+      const result = await GitFileSystemService.listDirectoryContents(
+        "fake-repo",
+        "",
+        DEFAULT_BRANCH
+      )
+      const actual = result
+        ._unsafeUnwrap()
+        .sort((a, b) => a.name.localeCompare(b.name))
+
+      expect(actual).toMatchObject([
+        expectedAnotherFakeDir,
+        expectedAnotherFakeFile,
+        expectedFakeDir,
+        expectedFakeEmptyDir,
+      ])
+    })
+
+    it("should return an empty result if the directory is empty", async () => {
+      const result = await GitFileSystemService.listDirectoryContents(
+        "fake-repo",
+        "fake-empty-dir",
+        DEFAULT_BRANCH
+      )
+
+      expect(result._unsafeUnwrap()).toHaveLength(0)
+    })
+
+    it("should return a GitFileSystemError if the path is not a directory", async () => {
+      const result = await GitFileSystemService.listDirectoryContents(
+        "fake-repo",
+        "fake-dir/fake-file",
+        DEFAULT_BRANCH
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return a NotFoundError if the path does not exist", async () => {
+      const result = await GitFileSystemService.listDirectoryContents(
+        "fake-repo",
+        "non-existent-dir",
+        DEFAULT_BRANCH
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+  })
+
+  describe("listPaginatedDirectoryContents", () => {
+    it("should return the contents of a directory successfully", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("another-fake-dir-hash"),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-dir-hash"),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockResolvedValueOnce("fake-empty-dir-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
 
       const expectedFakeDir: GitDirectoryItem = {
@@ -124,14 +210,15 @@ describe("GitFileSystemService", () => {
         ).ctimeMs,
       }
 
-      const result = await GitFileSystemService.listDirectoryContents(
+      const result = await GitFileSystemService.listPaginatedDirectoryContents(
         "fake-repo",
         "",
         DEFAULT_BRANCH
       )
-      const actual = result
-        ._unsafeUnwrap()
-        .sort((a, b) => a.name.localeCompare(b.name))
+      const actual = [
+        ...result._unsafeUnwrap().directories,
+        ...result._unsafeUnwrap().files,
+      ].sort((a, b) => a.name.localeCompare(b.name))
 
       expect(actual).toMatchObject([
         expectedAnotherFakeDir,
@@ -146,20 +233,20 @@ describe("GitFileSystemService", () => {
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
       })
       MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        revparse: jest.fn().mockResolvedValueOnce("fake-dir-hash"),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-empty-dir-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
       })
 
       const expectedFakeDir: GitDirectoryItem = {
-        name: "fake-dir",
+        name: "fake-empty-dir",
         type: "dir",
-        sha: "fake-dir-hash",
-        path: "fake-dir",
+        sha: "fake-empty-dir-hash",
+        path: "fake-empty-dir",
         size: 0,
         addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
           .ctimeMs,
@@ -175,15 +262,16 @@ describe("GitFileSystemService", () => {
         ).ctimeMs,
       }
 
-      const result = await GitFileSystemService.listDirectoryContents(
+      const result = await GitFileSystemService.listPaginatedDirectoryContents(
         "fake-repo",
         "",
         DEFAULT_BRANCH
       )
 
-      const actual = result
-        ._unsafeUnwrap()
-        .sort((a, b) => a.name.localeCompare(b.name))
+      const actual = [
+        ...result._unsafeUnwrap().directories,
+        ...result._unsafeUnwrap().files,
+      ].sort((a, b) => a.name.localeCompare(b.name))
 
       expect(actual).toMatchObject([expectedAnotherFakeFile, expectedFakeDir])
     })
@@ -202,27 +290,37 @@ describe("GitFileSystemService", () => {
         revparse: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const actual = await GitFileSystemService.listDirectoryContents(
+      const result = await GitFileSystemService.listPaginatedDirectoryContents(
         "fake-repo",
         "",
         DEFAULT_BRANCH
       )
 
-      expect(actual._unsafeUnwrap()).toHaveLength(0)
+      const actual = [
+        ...result._unsafeUnwrap().directories,
+        ...result._unsafeUnwrap().files,
+      ]
+
+      expect(actual).toHaveLength(0)
     })
 
     it("should return an empty result if the directory is empty", async () => {
-      const actual = await GitFileSystemService.listDirectoryContents(
+      const result = await GitFileSystemService.listPaginatedDirectoryContents(
         "fake-repo",
         "fake-empty-dir",
         DEFAULT_BRANCH
       )
 
-      expect(actual._unsafeUnwrap()).toHaveLength(0)
+      const actual = [
+        ...result._unsafeUnwrap().directories,
+        ...result._unsafeUnwrap().files,
+      ]
+
+      expect(actual).toHaveLength(0)
     })
 
     it("should return a GitFileSystemError if the path is not a directory", async () => {
-      const result = await GitFileSystemService.listDirectoryContents(
+      const result = await GitFileSystemService.listPaginatedDirectoryContents(
         "fake-repo",
         "fake-dir/fake-file",
         DEFAULT_BRANCH
@@ -232,7 +330,7 @@ describe("GitFileSystemService", () => {
     })
 
     it("should return a NotFoundError if the path does not exist", async () => {
-      const result = await GitFileSystemService.listDirectoryContents(
+      const result = await GitFileSystemService.listPaginatedDirectoryContents(
         "fake-repo",
         "non-existent-dir",
         DEFAULT_BRANCH

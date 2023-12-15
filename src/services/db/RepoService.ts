@@ -10,12 +10,14 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
+  DirectoryContents,
   GitCommitResult,
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
 import { RawGitTreeEntry } from "@root/types/github"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
+import { getPaginatedDirectoryContents } from "@root/utils/files"
 import { getMediaFileInfo } from "@root/utils/media-utils"
 
 import GitFileCommitService from "./GitFileCommitService"
@@ -23,53 +25,7 @@ import GitFileSystemService from "./GitFileSystemService"
 import GitHubService from "./GitHubService"
 import * as ReviewApi from "./review"
 
-const PLACEHOLDER_FILE_NAME = ".keep"
 const BRANCH_REF = config.get("github.branchRef")
-
-const getPaginatedDirectoryContents = (
-  directoryContents: GitDirectoryItem[],
-  page: number,
-  limit = 15,
-  search = ""
-): {
-  directories: GitDirectoryItem[]
-  files: GitDirectoryItem[]
-  total: number
-} => {
-  const subdirectories = directoryContents.filter((item) => item.type === "dir")
-  const files = directoryContents.filter(
-    (item) => item.type === "file" && item.name !== PLACEHOLDER_FILE_NAME
-  )
-
-  let sortedFiles = _(files)
-    // Note: We are sorting by name here to maintain compatibility for
-    // GitHub-login users, since it is very expensive to get the addedTime for
-    // each file from the GitHub API. The files will be sorted by addedTime in
-    // milliseconds for GGS users, so they will never see the alphabetical
-    // sorting.
-    .orderBy(
-      [(file) => file.addedTime, (file) => file.name.toLowerCase()],
-      ["desc", "asc"]
-    )
-
-  if (search) {
-    sortedFiles = sortedFiles.filter((file) =>
-      file.name.toLowerCase().includes(search.toLowerCase())
-    )
-  }
-  const totalLength = sortedFiles.value().length
-
-  const paginatedFiles = sortedFiles
-    .drop(page * limit)
-    .take(limit)
-    .value()
-
-  return {
-    directories: subdirectories,
-    files: paginatedFiles,
-    total: totalLength,
-  }
-}
 
 // TODO: update the typings here to remove `any`.
 // We can type as `unknown` if required.
@@ -343,7 +299,7 @@ export default class RepoService extends GitHubService {
     const { siteName } = sessionData
     const defaultBranch = STAGING_BRANCH
     logger.debug(`Reading media directory: ${directoryName}`)
-    let dirContent: GitDirectoryItem[] = []
+    let dirContent: DirectoryContents
 
     if (
       sessionData.growthbook?.getFeatureValue(
@@ -351,10 +307,13 @@ export default class RepoService extends GitHubService {
         false
       )
     ) {
-      const result = await this.gitFileSystemService.listDirectoryContents(
+      const result = await this.gitFileSystemService.listPaginatedDirectoryContents(
         siteName,
         directoryName,
-        defaultBranch
+        defaultBranch,
+        page,
+        limit,
+        search
       )
 
       if (result.isErr()) {
@@ -363,17 +322,13 @@ export default class RepoService extends GitHubService {
 
       dirContent = result.value
     } else {
-      dirContent = await super.readDirectory(sessionData, {
+      const contents = await super.readDirectory(sessionData, {
         directoryName,
       })
+      dirContent = getPaginatedDirectoryContents(contents, page, limit, search)
     }
 
-    const { directories, files, total } = getPaginatedDirectoryContents(
-      dirContent,
-      page,
-      limit,
-      search
-    )
+    const { directories, files, total } = dirContent
 
     return {
       directories: directories.map(({ name, type }) => ({

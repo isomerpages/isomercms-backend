@@ -11,7 +11,7 @@ import {
   mockUserWithSiteSessionDataAndGrowthBook,
 } from "@fixtures/sessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import { ItemType, MediaFileOutput } from "@root/types"
+import { ItemType, MediaDirOutput, MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import {
   GitCommitResult,
@@ -38,6 +38,7 @@ const MockGitFileSystemService = {
   readMediaFile: jest.fn(),
   create: jest.fn(),
   listDirectoryContents: jest.fn(),
+  listPaginatedDirectoryContents: jest.fn(),
   push: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -360,11 +361,7 @@ describe("RepoService", () => {
       ]
       gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
-        okAsync({
-          directories: expected.filter((item) => item.type === "dir"),
-          files: expected.filter((item) => item.type === "file"),
-          total: expected.length,
-        })
+        okAsync(expected)
       )
 
       const actual = await RepoService.readDirectory(
@@ -425,123 +422,78 @@ describe("RepoService", () => {
     })
   })
 
-  //! TODO: fix this test, commented out for now as code changes did not change this method
-  // describe("readMediaDirectory", () => {
-  //   it("should return an array of files and directories from disk if repo is ggs enabled", async () => {
-  //     const image: MediaFileOutput = {
-  //       name: "image-name",
-  //       sha: "test-sha",
-  //       mediaUrl: "base64ofimage",
-  //       mediaPath: "images/image-name.jpg",
-  //       type: "file",
-  //     }
-  //     const dir: MediaDirOutput = {
-  //       name: "imageDir",
-  //       type: "dir",
-  //     }
-  //     const expected = [image, dir]
-  //     MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
-  //       okAsync([
-  //         {
-  //           name: "image-name",
-  //         },
-  //         {
-  //           name: "imageDir",
-  //           type: "dir",
-  //           sha: "test-sha",
-  //           path: "images/imageDir",
-  //         },
-  //         {
-  //           name: ".keep",
-  //           type: "file",
-  //           sha: "test-sha",
-  //           path: "images/.keep",
-  //         },
-  //       ])
-  //     )
-  //     MockGitFileSystemService.readMediaFile.mockResolvedValueOnce(
-  //       okAsync(expected)
-  //     )
+  describe("readMediaDirectory", () => {
+    it("should return an array of files and directories from disk if repo is ggs enabled", async () => {
+      const testDir: MediaDirOutput = {
+        name: "imageDir",
+        type: "dir",
+      }
+      const testFile: MediaFileOutput = {
+        name: "image-name",
+        sha: "test-sha",
+        mediaUrl: "base64ofimage",
+        mediaPath: "images/image-name.jpg",
+        type: "file",
+        addedTime: 0,
+        size: 0,
+      }
+      const expected = {
+        directories: [testDir],
+        files: [testFile],
+        total: 1,
+      }
+      MockGitFileSystemService.listPaginatedDirectoryContents.mockResolvedValueOnce(
+        okAsync(expected)
+      )
 
-  //     const actual = await RepoService.readMediaDirectory(
-  //       mockUserWithSiteSessionDataAndGrowthBook,
-  //       "images"
-  //     )
+      const actual = await RepoService.readMediaDirectory(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        "images"
+      )
 
-  //     expect(actual).toEqual(expected)
-  //   })
+      expect(actual).toEqual(expected)
+    })
 
-  //   it("should return an array of files and directories from GitHub if repo is not ggs enabled", async () => {
-  //     const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
-  //       githubId: mockGithubId,
-  //       accessToken: mockAccessToken,
-  //       isomerUserId: mockIsomerUserId,
-  //       email: mockEmail,
-  //       siteName: "not-whitelisted",
-  //     })
+    it("should return an array of files and directories from GitHub if repo is not ggs enabled", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
 
-  //     const directories: MediaDirOutput[] = [
-  //       {
-  //         name: "imageDir",
-  //         type: "dir",
-  //       },
-  //     ]
+      const testDirectory: MediaDirOutput = {
+        name: "imageDir",
+        type: "dir",
+      }
 
-  //     const files: Pick<MediaFileOutput, "name">[] = [
-  //       {
-  //         name: "image-name",
-  //       },
-  //     ]
-  //     const expected = { directories, files, total: 1 }
+      const testFile: MediaFileOutput = {
+        name: "image-name",
+        sha: "test-sha",
+        mediaUrl: "base64ofimage",
+        mediaPath: "images/image-name.jpg",
+        type: "file",
+        addedTime: 0,
+        size: 0,
+      }
 
-  //     // const image: MediaFileOutput = {
-  //     //   name: "image-name",
-  //     //   sha: "test-sha",
-  //     //   mediaUrl: "base64ofimage",
-  //     //   mediaPath: "images/image-name.jpg",
-  //     //   type: "file",
-  //     // }
-  //     // const dir: MediaDirOutput = {
-  //     //   name: "imageDir",
-  //     //   type: "dir",
-  //     // }
-  //     // const expected = [image, dir]
+      const expected = {
+        directories: [testDirectory],
+        files: [testFile],
+        total: 1,
+      }
 
-  //     const gitHubServiceGetRepoInfo = jest
-  //       .spyOn(GitHubService.prototype, "getRepoInfo")
-  //       .mockResolvedValueOnce({ private: false })
-  //     const gitHubServiceReadDirectory = jest
-  //       .spyOn(GitHubService.prototype, "readDirectory")
-  //       .mockResolvedValueOnce([
-  //         {
-  //           name: "image-name",
-  //         },
-  //         {
-  //           name: "imageDir",
-  //           type: "dir",
-  //           sha: "test-sha",
-  //           path: "images/imageDir",
-  //         },
-  //         {
-  //           name: ".keep",
-  //           type: "file",
-  //           sha: "test-sha",
-  //           path: "images/.keep",
-  //         },
-  //       ])
+      const gitHubServiceReadDirectory = jest
+        .spyOn(GitHubService.prototype, "readDirectory")
+        .mockResolvedValueOnce([testDirectory, testFile])
 
-  //     // const repoServiceReadMediaFile = jest
-  //     //   .spyOn(_RepoService.prototype, "readMediaFile")
-  //     //   .mockResolvedValueOnce(expected)
+      const actual = await RepoService.readMediaDirectory(sessionData, "images")
 
-  //     const actual = await RepoService.readMediaDirectory(sessionData, "images")
-
-  //     expect(actual).toEqual(expected)
-  //     expect(gitHubServiceGetRepoInfo).toBeCalledTimes(1)
-  //     expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
-  //     // expect(repoServiceReadMediaFile).toBeCalledTimes(1)
-  //   })
-  // })
+      expect(actual).toEqual(expected)
+      expect(gitHubServiceReadDirectory).toBeCalledTimes(1)
+    })
+  })
 
   describe("update", () => {
     it("should update the local Git file system if the repo is ggs enabled", async () => {

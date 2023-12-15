@@ -912,13 +912,11 @@ export default class GitFileSystemService {
   listDirectoryContents(
     repoName: string,
     directoryPath: string,
-    branchName: string,
-    page = 0,
-    limit = 0,
-    search = ""
-  ): ResultAsync<DirectoryContents, GitFileSystemError | NotFoundError> {
+    branchName: string
+  ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     const isStaging = this.isStagingFromBranchName(branchName)
+
     return this.getFilePathStats(
       repoName,
       directoryPath,
@@ -974,6 +972,19 @@ export default class GitFileSystemService {
 
         return ResultAsync.combine(resultAsyncs)
       })
+  }
+
+  listPaginatedDirectoryContents(
+    repoName: string,
+    directoryPath: string,
+    branchName: string,
+    page = 0,
+    limit = 0,
+    search = ""
+  ): ResultAsync<DirectoryContents, GitFileSystemError | NotFoundError> {
+    const isStaging = this.isStagingFromBranchName(branchName)
+
+    return this.listDirectoryContents(repoName, directoryPath, branchName)
       .andThen((directoryContents) =>
         okAsync(
           getPaginatedDirectoryContents(directoryContents, page, limit, search)

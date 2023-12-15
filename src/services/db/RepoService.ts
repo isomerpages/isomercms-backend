@@ -274,7 +274,7 @@ export default class RepoService extends GitHubService {
         throw result.error
       }
 
-      return [...result.value.directories, ...result.value.files]
+      return result.value
     }
 
     return super.readDirectory(sessionData, {
@@ -307,7 +307,7 @@ export default class RepoService extends GitHubService {
         false
       )
     ) {
-      const result = await this.gitFileSystemService.listDirectoryContents(
+      const result = await this.gitFileSystemService.listPaginatedDirectoryContents(
         siteName,
         directoryName,
         defaultBranch,

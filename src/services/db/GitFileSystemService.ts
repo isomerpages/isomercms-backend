@@ -32,12 +32,14 @@ import { MediaTypeError } from "@root/errors/MediaTypeError"
 import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
+  DirectoryContents,
   GitCommitResult,
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
+import { getPaginatedDirectoryContents } from "@root/utils/files"
 
 export default class GitFileSystemService {
   private readonly git: SimpleGit
@@ -900,7 +902,7 @@ export default class GitFileSystemService {
           mediaUrl: `${dataUrlPrefix},${file.content}`,
           mediaPath: `${directoryName}/${fileName}`,
           type: fileType,
-          addedTime: stats.birthtimeMs,
+          addedTime: stats.ctimeMs,
           size: stats.size,
         })
       })
@@ -910,8 +912,11 @@ export default class GitFileSystemService {
   listDirectoryContents(
     repoName: string,
     directoryPath: string,
-    branchName: string
-  ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
+    branchName: string,
+    page = 0,
+    limit = 0,
+    search = ""
+  ): ResultAsync<DirectoryContents, GitFileSystemError | NotFoundError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     const isStaging = this.isStagingFromBranchName(branchName)
     return this.getFilePathStats(
@@ -952,38 +957,73 @@ export default class GitFileSystemService {
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
           const type = isDirectory ? "dir" : "file"
 
-          return this.getGitBlobHash(repoName, path, isStaging)
-            .orElse(() => okAsync(""))
-            .andThen((sha) =>
-              ResultAsync.combine([
-                okAsync(sha),
-                this.getFilePathStats(
-                  repoName,
-                  path,
-                  branchName !== STAGING_LITE_BRANCH
-                ),
-              ])
-            )
-            .andThen((shaAndStats) => {
-              const [sha, stats] = shaAndStats
+          return this.getFilePathStats(repoName, path, isStaging).andThen(
+            (stats) => {
               const result: GitDirectoryItem = {
                 name,
                 type,
-                sha,
                 path,
                 size: type === "dir" ? 0 : stats.size,
-                addedTime: stats.birthtimeMs,
+                addedTime: stats.ctimeMs,
               }
 
               return okAsync(result)
-            })
+            }
+          )
         })
 
         return ResultAsync.combine(resultAsyncs)
       })
-      .andThen((directoryItems) =>
+      .andThen((directoryContents) =>
+        okAsync(
+          getPaginatedDirectoryContents(directoryContents, page, limit, search)
+        )
+      )
+      .andThen((paginatedDirectoryContents) => {
+        const directories = paginatedDirectoryContents.directories.map(
+          (directory) =>
+            this.getGitBlobHash(repoName, directory.path, isStaging)
+              .orElse(() => okAsync(""))
+              .andThen((sha) => {
+                const result: GitDirectoryItem = {
+                  ...directory,
+                  sha,
+                }
+
+                return okAsync(result)
+              })
+        )
+
+        const files = paginatedDirectoryContents.files.map((file) =>
+          this.getGitBlobHash(repoName, file.path, isStaging)
+            .orElse(() => okAsync(""))
+            .andThen((sha) => {
+              const result: GitDirectoryItem = {
+                ...file,
+                sha,
+              }
+
+              return okAsync(result)
+            })
+        )
+
+        return ResultAsync.combine([
+          ResultAsync.combine(directories),
+          ResultAsync.combine(files),
+          okAsync(paginatedDirectoryContents.total),
+        ])
+      })
+      .andThen(([directories, files, total]) =>
         // Note: The sha is empty if the file is not tracked by Git
-        okAsync(directoryItems.filter((item) => item.sha !== ""))
+        // This may result in the number of files being less than the requested
+        // limit (if limit is greater than 0), but the trade-off is acceptable
+        // here because the user can use pagination to get the next set of files,
+        // which is guaranteed to be a fresh set of files
+        okAsync({
+          directories: directories.filter((directory) => directory.sha !== ""),
+          files: files.filter((file) => file.sha !== ""),
+          total,
+        })
       )
   }
 

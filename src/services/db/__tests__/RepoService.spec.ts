@@ -334,6 +334,14 @@ describe("RepoService", () => {
     it("should read from the local Git file system if the repo is ggs enabled", async () => {
       const expected: GitDirectoryItem[] = [
         {
+          name: "fake-dir",
+          type: "dir",
+          sha: "test-sha3",
+          path: "fake-dir",
+          size: 0,
+          addedTime: 1,
+        },
+        {
           name: "fake-file.md",
           type: "file",
           sha: "test-sha1",
@@ -349,18 +357,14 @@ describe("RepoService", () => {
           size: 100,
           addedTime: 2,
         },
-        {
-          name: "fake-dir",
-          type: "dir",
-          sha: "test-sha3",
-          path: "fake-dir",
-          size: 0,
-          addedTime: 1,
-        },
       ]
       gbSpy.mockReturnValueOnce(true)
       MockGitFileSystemService.listDirectoryContents.mockResolvedValueOnce(
-        okAsync(expected)
+        okAsync({
+          directories: expected.filter((item) => item.type === "dir"),
+          files: expected.filter((item) => item.type === "file"),
+          total: expected.length,
+        })
       )
 
       const actual = await RepoService.readDirectory(

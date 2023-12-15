@@ -10,8 +10,14 @@ export type GitCommitResult = {
 export type GitDirectoryItem = {
   name: string
   type: "file" | "dir"
-  sha: string
+  sha?: string
   path: string
   size: number
   addedTime: number
+}
+
+export type DirectoryContents = {
+  directories: GitDirectoryItem[]
+  files: GitDirectoryItem[]
+  total: number
 }

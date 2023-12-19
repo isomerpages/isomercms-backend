@@ -1,6 +1,6 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { Base64 } from "js-base64"
-import { okAsync, errAsync } from "neverthrow"
+import { okAsync, errAsync, ResultAsync } from "neverthrow"
 
 import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
@@ -11,9 +11,10 @@ import { isAxiosError, validateStatus } from "@utils/axios-utils"
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_BRANCH } from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
-import { RawGitTreeEntry } from "@root/types/github"
+import { GitHubRepoInfo, RawGitTreeEntry, RepoState } from "@root/types/github"
 
 import * as ReviewApi from "./review"
 
@@ -418,7 +419,9 @@ export default class GitHubService {
     }
   }
 
-  async getRepoInfo(sessionData: UserWithSiteSessionData) {
+  async getRepoInfo(
+    sessionData: UserWithSiteSessionData
+  ): Promise<GitHubRepoInfo> {
     const { siteName } = sessionData
     const { accessToken } = sessionData
     const endpoint = `${siteName}`
@@ -437,7 +440,7 @@ export default class GitHubService {
     return data
   }
 
-  async getRepoState(sessionData: UserWithSiteSessionData) {
+  async getRepoState(sessionData: UserWithSiteSessionData): Promise<RepoState> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = `${siteName}/commits`
@@ -791,7 +794,7 @@ export default class GitHubService {
   async changeRepoPrivacy(
     sessionData: { siteName: string; isomerUserId: string },
     shouldMakePrivate: boolean
-  ) {
+  ): Promise<ResultAsync<null, NotFoundError | GitHubApiError>> {
     const { siteName, isomerUserId } = sessionData
     const endpoint = `${siteName}`
 
@@ -818,7 +821,7 @@ export default class GitHubService {
           return errAsync(new NotFoundError("Site does not exist"))
         }
       }
-      return errAsync(error)
+      return errAsync(new GitHubApiError(`${error}`))
     }
   }
 }

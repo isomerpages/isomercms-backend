@@ -1,0 +1,131 @@
+name: AWS Deploy
+
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        description: "AWS region to use"
+        required: true
+        type: string
+      cicd-role:
+        description: "AWS IAM role to assume by GitHub action runner"
+        required: true
+        type: string
+      ecr-repository:
+        description: "ECR repository to push image to"
+        required: true
+        type: string
+      ecs-cluster-name:
+        description: "ECS cluster to deploy to"
+        required: true
+        type: string
+      ecs-web-service-name:
+        description: "ECS service for web"
+        required: true
+        type: string
+      ecs-container-name:
+        description: "Name of container in ECS task definition"
+        required: true
+        type: string
+      environment: 
+        description: "Environment to deploy to"
+        required: true
+        type: string
+      shortEnv: 
+        description: "Shortened version of the environment"
+        required: true
+        type: string
+      task-definition-path: 
+        description: "Path to task definition file"
+        required: true
+        type: string
+    secrets: 
+      AWS_ACCOUNT_ID:
+        description: "AWS account ID to deploy to"
+        required: true
+      EFS_FILE_SYSTEM_ID: 
+        description: "EFS file system ID to mount"
+        required: true
+      DD_API_KEY: 
+        description: "Datadog API key for sending logs"
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    name: Build and push image to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.cicd-role }}
+          role-session-name: github-action-application-deploy
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push image to ECR
+        uses: docker/build-push-action@v4
+        with:
+          provenance: false
+          push: true
+          sbom: false
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.cicd-role }}
+          role-session-name: github-action-application-deploy
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push image to ECR
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
+
+      - name: Replace variables in task definition file
+        run: |
+            sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' ${{ inputs.task-definition-path }}
+            sed -i 's/<EFS_FILE_SYSTEM_ID>/${{ secrets.EFS_FILE_SYSTEM_ID }}/g' ${{ inputs.task-definition-path }}
+            sed -i 's/<DD_API_KEY>/${{ secrets.DD_API_KEY }}/g' ${{ inputs.task-definition-path }}
+      
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ inputs.task-definition-path }}
+          container-name: ${{ inputs.ecs-container-name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          cluster: ${{ inputs.ecs-cluster-name }}
+          service: ${{ inputs.ecs-web-service-name }}
+          wait-for-service-stability: true

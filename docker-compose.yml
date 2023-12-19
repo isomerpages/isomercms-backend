@@ -1,5 +1,21 @@
 version: "3"
 services:
+  web:
+    build: .
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      # postgres://user:pass@hostname:port/database
+      - DB_URI=postgres://isomer:password@postgres:5432/isomercms_dev
+    volumes:
+      - ./:/opt/isomercms-backend
+      - /opt/isomercms-backend/node_modules
+      - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
+
   postgres:
     image: "postgres:13-alpine"
     environment:
@@ -7,7 +23,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: isomercms_dev
     ports:
-      - "15432:5432"
+      - "5432:5432"
     volumes:
       - isomercms_data:/var/lib/postgresql/data
 
@@ -20,6 +36,5 @@ services:
     ports:
       # use a different port to avoid blocking dev environment when running tests
       - "54321:5432"
-
 volumes:
   isomercms_data:

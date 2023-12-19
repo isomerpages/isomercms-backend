@@ -1,7 +1,9 @@
 version: "3"
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.develop
     ports:
       - "8081:8081"
     depends_on:
@@ -15,6 +17,7 @@ services:
       - ./:/opt/isomercms-backend
       - /opt/isomercms-backend/node_modules
       - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
+      - "~/.gitconfig:/etc/gitconfig"
 
   postgres:
     image: "postgres:13-alpine"

@@ -687,6 +687,91 @@ describe("Github Service", () => {
     })
   })
 
+  describe("DeleteMultipleFiles", () => {
+    const getTreeEndpoint = `${siteName}/git/trees/${treeSha}`
+    const updateTreeEndpoint = `${siteName}/git/trees`
+    const commitEndpoint = `${siteName}/git/commits`
+    const updateRepoStateEndpoint = `${siteName}/git/refs/heads/${BRANCH_REF}`
+
+    const mockFiles = gitTree.map((item) => ({
+      filePath: item.path,
+      sha: item.sha,
+    }))
+
+    const params = {
+      recursive: true,
+      ref: BRANCH_REF,
+    }
+    const headers = {
+      Authorization: `token ${accessToken}`,
+    }
+    const firstSha = "first-sha"
+    const secondSha = "second-sha"
+    const firstResp = {
+      data: {
+        sha: firstSha,
+      },
+    }
+    const secondResp = {
+      data: {
+        sha: secondSha,
+      },
+    }
+    const finalExpectedMessage = JSON.stringify({
+      message: `Delete files: ${mockFiles
+        .map((item) => item.filePath)
+        .join(", ")}`,
+      userId,
+    })
+
+    it("should delete multiple files/directories correctly", async () => {
+      const resp = {
+        data: {
+          tree: mockFiles.map((item) => ({
+            path: item.filePath,
+            sha: item.sha,
+          })),
+        },
+      }
+      mockAxiosInstance.get.mockResolvedValueOnce(resp)
+      mockAxiosInstance.post
+        .mockResolvedValueOnce(firstResp)
+        .mockResolvedValueOnce(secondResp)
+      await service.deleteMultipleFiles(sessionData, mockGithubSessionData, {
+        items: mockFiles,
+      })
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(getTreeEndpoint, {
+        params,
+        headers,
+      })
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        updateTreeEndpoint,
+        {
+          tree: mockFiles.map((item) => ({
+            path: item.filePath,
+            sha: null,
+          })),
+          base_tree: treeSha,
+        },
+        authHeader
+      )
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        commitEndpoint,
+        {
+          message: finalExpectedMessage,
+          tree: firstSha,
+          parents: [mockCurrentCommitSha],
+        },
+        authHeader
+      )
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith(
+        updateRepoStateEndpoint,
+        { sha: secondSha, force: true },
+        authHeader
+      )
+    })
+  })
+
   describe("GetRepoInfo", () => {
     const endpoint = `${siteName}`
     const headers = {

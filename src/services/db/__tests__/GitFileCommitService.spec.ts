@@ -1,39 +1,16 @@
-import fs, { Stats } from "fs"
-
-import mockFs from "mock-fs"
 import { ResultAsync, ok, okAsync } from "neverthrow"
-import { GitError, SimpleGit } from "simple-git"
+import { SimpleGit } from "simple-git"
 
 import config from "@config/config"
 
-import { BadRequestError } from "@errors/BadRequestError"
-import { ConflictError } from "@errors/ConflictError"
 import GitFileSystemError from "@errors/GitFileSystemError"
-import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
-import { NotFoundError } from "@errors/NotFoundError"
 
-import {
-  EFS_VOL_PATH_STAGING,
-  EFS_VOL_PATH_STAGING_LITE,
-  ISOMER_GITHUB_ORG_NAME,
-  STAGING_BRANCH,
-  STAGING_LITE_BRANCH,
-} from "@constants/constants"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@constants/constants"
 
-import {
-  MOCK_GITHUB_FILENAME_ALPHA_ONE,
-  MOCK_GITHUB_COMMIT_MESSAGE_ALPHA_ONE,
-} from "@fixtures/github"
-import { MOCK_USER_ID_ONE } from "@fixtures/users"
-import { MediaTypeError } from "@root/errors/MediaTypeError"
 import {
   mockGithubSessionData,
   mockUserWithSiteSessionData,
-  mockUserWithSiteSessionDataAndGrowthBook,
 } from "@root/fixtures/sessionData"
-import { MediaFileOutput } from "@root/types"
-import { GitHubCommitData } from "@root/types/commitData"
-import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
 import _GitFileCommitService from "@services/db/GitFileCommitService"
 import _GitFileSystemService from "@services/db/GitFileSystemService"
 
@@ -437,6 +414,97 @@ describe("GitFileCommitService", () => {
           STAGING_BRANCH
         )
         expect(deleteSpy).toHaveBeenCalledTimes(1) // delete is called only once for the staging branch
+        expect(pushSpy).toHaveBeenCalledWith(sessionData, false) // push is called with shouldUpdateStagingLite as false
+      })
+    })
+
+    describe("deleteMultipleFiles", () => {
+      it("should delete multiple files or directories and push to GitHub", async () => {
+        // Arrange
+        const mockFiles = [
+          {
+            filePath: "test-file-one",
+            sha: "test-sha-one",
+          },
+          {
+            filePath: "test-file-two",
+            sha: "test-sha-two",
+          },
+        ]
+        const deleteMultipleFilesSpy = jest
+          .spyOn(gitFileSystemService, "deleteMultipleFiles")
+          .mockResolvedValue(okAsync(""))
+        const pushSpy = jest
+          .spyOn(gitFileCommitService, "pushToGithub")
+          .mockResolvedValue(ok(""))
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(true)
+
+        // Act
+        await gitFileCommitService.deleteMultipleFiles(
+          sessionData,
+          mockGithubSessionData,
+          {
+            items: mockFiles,
+          }
+        )
+
+        // Assert
+        expect(deleteMultipleFilesSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          mockFiles,
+          sessionData.isomerUserId,
+          STAGING_BRANCH
+        )
+        expect(deleteMultipleFilesSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          mockFiles,
+          sessionData.isomerUserId,
+          STAGING_LITE_BRANCH
+        )
+        expect(pushSpy).toHaveBeenCalledWith(sessionData, expect.any(Boolean))
+      })
+
+      it("should delete multiple files or directories and commit only to staging branch when not whitelisted", async () => {
+        const mockFiles = [
+          {
+            filePath: "test-file-one",
+            sha: "test-sha-one",
+          },
+          {
+            filePath: "test-file-two",
+            sha: "test-sha-two",
+          },
+        ]
+        const deleteMultipleFilesSpy = jest
+          .spyOn(gitFileSystemService, "deleteMultipleFiles")
+          .mockResolvedValue(okAsync(""))
+        const pushSpy = jest
+          .spyOn(gitFileCommitService, "pushToGithub")
+          .mockResolvedValue(ok(""))
+
+        jest
+          .spyOn(gbUtils, "isReduceBuildTimesWhitelistedRepo")
+          .mockReturnValue(false)
+
+        // Act
+        await gitFileCommitService.deleteMultipleFiles(
+          sessionData,
+          mockGithubSessionData,
+          {
+            items: mockFiles,
+          }
+        )
+
+        // Assert
+        expect(deleteMultipleFilesSpy).toHaveBeenCalledWith(
+          sessionData.siteName,
+          mockFiles,
+          sessionData.isomerUserId,
+          STAGING_BRANCH
+        )
+        expect(deleteMultipleFilesSpy).toHaveBeenCalledTimes(1) // delete is called only once for the staging branch
         expect(pushSpy).toHaveBeenCalledWith(sessionData, false) // push is called with shouldUpdateStagingLite as false
       })
     })

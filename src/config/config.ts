@@ -361,9 +361,16 @@ const config = convict({
     },
   },
   database: {
-    dbUri: {
-      doc: "Database URI",
-      env: "DB_URI",
+    dbReadUri: {
+      doc: "Database Reader URI",
+      env: "DB_READ_URI",
+      sensitive: true,
+      format: "required-string",
+      default: "postgres://isomer:password@localhost:54321/isomercms_test",
+    },
+    dbWriteUri: {
+      doc: "Database Writer URI",
+      env: "DB_WRITE_URI",
       sensitive: true,
       format: "required-string",
       default: "postgres://isomer:password@localhost:54321/isomercms_test",

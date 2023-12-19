@@ -207,7 +207,10 @@ export default class GitHubService {
 
   async read(
     sessionData: UserWithSiteSessionData,
-    { fileName, directoryName }: { fileName: any; directoryName: any }
+    {
+      fileName,
+      directoryName,
+    }: { fileName: string; directoryName: string | undefined }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -514,7 +517,7 @@ export default class GitHubService {
   async getTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { isRecursive }: any
+    { isRecursive }: { isRecursive: boolean }
   ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -541,7 +544,7 @@ export default class GitHubService {
   async updateTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { gitTree, message }: { gitTree: any; message: any }
+    { gitTree, message }: { gitTree: RawGitTreeEntry[]; message?: string }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
@@ -634,9 +637,9 @@ export default class GitHubService {
     const gitTree = await this.getTree(sessionData, githubSessionData, {
       isRecursive: true,
     })
-    const newGitTree: any[] = []
+    const newGitTree: RawGitTreeEntry[] = []
 
-    gitTree.forEach((item: any) => {
+    gitTree.forEach((item: RawGitTreeEntry) => {
       if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
         const fileName = item.path
           .split(`${newPath}/`)
@@ -689,12 +692,12 @@ export default class GitHubService {
     const gitTree = await this.getTree(sessionData, githubSessionData, {
       isRecursive: true,
     })
-    const newGitTree: any[] = []
+    const newGitTree: RawGitTreeEntry[] = []
     const isMovingDirectory =
-      gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||
-      false
+      gitTree.find((item: RawGitTreeEntry) => item.path === oldPath)?.type ===
+        "tree" || false
 
-    gitTree.forEach((item: any) => {
+    gitTree.forEach((item: RawGitTreeEntry) => {
       if (isMovingDirectory) {
         if (item.path === newPath && item.type === "tree") {
           throw new ConflictError("Target directory already exists")
@@ -743,7 +746,7 @@ export default class GitHubService {
 
   async updateRepoState(
     sessionData: UserWithSiteSessionData,
-    { commitSha, branchName }: { commitSha: any; branchName?: string }
+    { commitSha, branchName }: { commitSha: string; branchName?: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -786,7 +789,7 @@ export default class GitHubService {
   }
 
   async changeRepoPrivacy(
-    sessionData: { siteName: any; isomerUserId: any },
+    sessionData: { siteName: string; isomerUserId: string },
     shouldMakePrivate: boolean
   ) {
     const { siteName, isomerUserId } = sessionData

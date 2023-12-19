@@ -862,7 +862,6 @@ describe("Github Service", () => {
     it("should update a repo tree correctly", async () => {
       const firstSha = "first-sha"
       const secondSha = "second-sha"
-      const gitTree = "git-tree"
       const message = "message"
       const finalExpectedMessage = JSON.stringify({
         message,

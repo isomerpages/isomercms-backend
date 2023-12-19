@@ -20,6 +20,7 @@ import {
   CreateMediaDirectoryRequestSchema,
   CreateMediaFileRequestSchema,
   DeleteMediaFileRequestSchema,
+  DeleteMultipleMediaFilesRequestSchema,
   MoveMediaDirectoryFilesRequestSchema,
   RenameMediaDirectoryRequestSchema,
   UpdateMediaFileRequestSchema,
@@ -364,6 +365,34 @@ export class MediaRouter {
     return res.status(200).send("OK")
   }
 
+  // Delete multiple media files
+  deleteMultipleMediaFiles: RequestHandler<
+    never,
+    string,
+    { items: Array<{ filePath: string; sha: string }> },
+    never,
+    {
+      userWithSiteSessionData: UserWithSiteSessionData
+      githubSessionData: GithubSessionData
+    }
+  > = async (req, res) => {
+    const { userWithSiteSessionData, githubSessionData } = res.locals
+
+    const { items } = req.body
+    const { error } = DeleteMultipleMediaFilesRequestSchema.validate(req.body)
+    if (error) throw new BadRequestError(error.message)
+
+    await this.mediaFileService.deleteMultipleFiles(
+      userWithSiteSessionData,
+      githubSessionData,
+      {
+        items,
+      }
+    )
+
+    return res.status(200).send("OK")
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
 
@@ -382,6 +411,10 @@ export class MediaRouter {
     router.post(
       "/",
       attachRollbackRouteHandlerWrapper(this.createMediaDirectory)
+    )
+    router.delete(
+      "/",
+      attachRollbackRouteHandlerWrapper(this.deleteMultipleMediaFiles)
     )
     router.post(
       "/:directoryName",

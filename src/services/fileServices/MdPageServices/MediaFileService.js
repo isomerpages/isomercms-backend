@@ -131,6 +131,24 @@ class MediaFileService {
       sha: newCommitSha,
     }
   }
+
+  async deleteMultipleFiles(sessionData, githubSessionData, { items }) {
+    items.forEach((item) => {
+      const directoryName = item.filePath.split("/").slice(0, -1).join("/")
+      const fileName = item.filePath.split("/").pop()
+
+      this.mediaNameChecks({
+        directoryName,
+        fileName,
+      })
+    })
+
+    return this.repoService.deleteMultipleFiles(
+      sessionData,
+      githubSessionData,
+      { items }
+    )
+  }
 }
 
 module.exports = { MediaFileService }

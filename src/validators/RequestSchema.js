@@ -205,6 +205,17 @@ const DeleteMediaFileRequestSchema = Joi.object().keys({
   sha: Joi.string().required(),
 })
 
+const DeleteMultipleMediaFilesRequestSchema = Joi.object().keys({
+  items: Joi.array()
+    .items(
+      Joi.object().keys({
+        filePath: Joi.string().required(),
+        sha: Joi.string().required(),
+      })
+    )
+    .required(),
+})
+
 const UpdateNavigationRequestSchema = Joi.object().keys({
   content: Joi.object()
     .keys({
@@ -303,6 +314,7 @@ module.exports = {
   CreateMediaFileRequestSchema,
   UpdateMediaFileRequestSchema,
   DeleteMediaFileRequestSchema,
+  DeleteMultipleMediaFilesRequestSchema,
   UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
   UpdateRepoPasswordRequestSchema,

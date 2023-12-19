@@ -9,8 +9,6 @@ import {
   LogResult,
 } from "simple-git"
 
-import { config } from "@config/config"
-
 import logger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
@@ -624,10 +622,10 @@ export default class GitFileSystemService {
 
       // Note: We only accept commits that change 1 file at once (pathSpec.length == 1)
       // Or commits that move/rename files (pathSpec.length == 2)
-      if (pathSpec.length < 1 || pathSpec.length > 2) {
+      if (pathSpec.length < 1) {
         return errAsync(
           new GitFileSystemError(
-            `Invalid pathSpec length: ${pathSpec.length}. Expected 1 or 2`
+            `Invalid pathSpec length: ${pathSpec.length}. Expected 1 or more`
           )
         )
       }
@@ -651,25 +649,32 @@ export default class GitFileSystemService {
             return okAsync(true)
           }
 
-          return ResultAsync.fromPromise(
-            this.git
-              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-              .add(pathSpec),
-            (error) => {
-              logger.error(
-                `Error when Git adding files to ${repoName}: ${error}`
-              )
+          // Note: We need to add files sequentially due to the Git lock
+          return pathSpec.reduce(
+            (acc, curr) =>
+              acc.andThen(() =>
+                ResultAsync.fromPromise(
+                  this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .add(curr),
+                  (error) => {
+                    logger.error(
+                      `Error when Git adding files to ${repoName}: ${error}`
+                    )
 
-              if (error instanceof GitError) {
-                return new GitFileSystemNeedsRollbackError(
-                  "Unable to commit changes"
+                    if (error instanceof GitError) {
+                      return new GitFileSystemNeedsRollbackError(
+                        "Unable to commit changes"
+                      )
+                    }
+
+                    return new GitFileSystemNeedsRollbackError(
+                      "An unknown error occurred"
+                    )
+                  }
                 )
-              }
-
-              return new GitFileSystemNeedsRollbackError(
-                "An unknown error occurred"
-              )
-            }
+              ),
+            okAsync<unknown, GitFileSystemNeedsRollbackError>(undefined)
           )
         })
         .andThen(() =>
@@ -1250,6 +1255,131 @@ export default class GitFileSystemService {
           `Delete ${
             isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
           }`,
+          branchName
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitFileSystemNeedsRollbackError) {
+          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
+            errAsync(new GitFileSystemError(error.message))
+          )
+        }
+
+        return errAsync(error)
+      })
+  }
+
+  // Delete multiple files
+  deleteMultipleFiles(
+    repoName: string,
+    items: Array<{ filePath: string; sha: string }>,
+    userId: SessionDataProps["isomerUserId"],
+    branchName: string
+  ): ResultAsync<string, GitFileSystemError | NotFoundError> {
+    let oldStateSha = ""
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    const isStaging = this.isStagingFromBranchName(branchName)
+
+    return this.getLatestCommitOfBranch(repoName, branchName)
+      .andThen((latestCommit) => {
+        if (!latestCommit.sha) {
+          return errAsync(
+            new GitFileSystemError(
+              `Unable to find latest commit of repo: ${repoName} on branch "${branchName}"`
+            )
+          )
+        }
+        oldStateSha = latestCommit.sha as string
+        return okAsync(true)
+      })
+      .andThen(() =>
+        ResultAsync.combine(
+          items.map(({ filePath, sha }) =>
+            this.getFilePathStats(repoName, filePath, isStaging).andThen(
+              (stats) =>
+                okAsync({
+                  filePath,
+                  sha,
+                  stats,
+                })
+            )
+          )
+        )
+      )
+      .andThen((itemsWithStats) => {
+        const isFileConflict = !itemsWithStats.every(async (itemStats) => {
+          if (itemStats.stats.isDirectory()) {
+            // If it's a directory, skip the blob hash verification
+            return true
+          }
+
+          const result = await this.getGitBlobHash(
+            repoName,
+            itemStats.filePath,
+            isStaging
+          ).andThen((sha) => {
+            if (sha !== itemStats.sha) {
+              return okAsync(false)
+            }
+
+            return okAsync(true)
+          })
+
+          return result.isOk() && result.value
+        })
+
+        if (isFileConflict) {
+          return errAsync(
+            new ConflictError(
+              "File has been changed recently, please try again"
+            )
+          )
+        }
+
+        return okAsync(itemsWithStats)
+      })
+      .andThen((itemsWithStats) =>
+        // Note: All deletions must be successful, otherwise we rollback
+        ResultAsync.combine(
+          itemsWithStats.map((itemStats) => {
+            const deletePromise = itemStats.stats.isDirectory()
+              ? fs.promises.rm(
+                  `${efsVolPath}/${repoName}/${itemStats.filePath}`,
+                  {
+                    recursive: true,
+                    force: true,
+                  }
+                )
+              : fs.promises.rm(
+                  `${efsVolPath}/${repoName}/${itemStats.filePath}`
+                )
+
+            return ResultAsync.fromPromise(deletePromise, (error) => {
+              logger.error(
+                `Error when deleting ${itemStats.filePath} from Git file system: ${error}`
+              )
+
+              if (error instanceof Error) {
+                return new GitFileSystemNeedsRollbackError(
+                  `Unable to delete ${
+                    itemStats.stats.isDirectory() ? "directory" : "file"
+                  } on disk`
+                )
+              }
+
+              return new GitFileSystemNeedsRollbackError(
+                "An unknown error occurred"
+              )
+            })
+          })
+        )
+      )
+      .andThen(() =>
+        this.commit(
+          repoName,
+          items.map((item) => item.filePath),
+          userId,
+          `Delete ${items.length} items`,
           branchName
         )
       )

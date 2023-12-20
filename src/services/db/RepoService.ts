@@ -1,4 +1,3 @@
-import { User } from "aws-sdk/clients/budgets"
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import _ from "lodash"
 import { ResultAsync } from "neverthrow"
@@ -124,7 +123,7 @@ export default class RepoService extends GitHubService {
     siteName: string
     fileName: string
     directoryName?: string
-  }): string {
+  }) {
     return super.getFilePath({
       siteName,
       fileName,
@@ -132,13 +131,7 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  getBlobPath({
-    siteName,
-    fileSha,
-  }: {
-    siteName: string
-    fileSha: string
-  }): string {
+  getBlobPath({ siteName, fileSha }: { siteName: string; fileSha: string }) {
     return super.getBlobPath({ siteName, fileSha })
   }
 

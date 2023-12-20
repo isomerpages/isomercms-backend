@@ -17,6 +17,7 @@ import {
   STAGING_LITE_BRANCH,
 } from "@constants/constants"
 
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
 import LockedError from "@root/errors/LockedError"
 import logger from "@root/logger/logger"
@@ -136,15 +137,13 @@ export const attachWriteRouteHandlerWrapper = <
 }
 
 export const attachRollbackRouteHandlerWrapper = <
-  P extends { siteName: string },
+  P extends { siteName: string; directoryName: string; fileName: string },
   ResBody,
   ReqBody,
   ReqQuery,
   Locals extends {
-    userSessionData: {
-      accessToken: string
-    }
-    githubSessionData: object
+    userWithSiteSessionData: UserWithSiteSessionData
+    githubSessionData: GithubSessionData
   }
 >(
   routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
@@ -153,10 +152,10 @@ export const attachRollbackRouteHandlerWrapper = <
   res: Response<ResBody, Locals>,
   next: NextFunction
 ) => {
-  const { userSessionData } = res.locals
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
 
-  const { accessToken } = userSessionData
+  const { accessToken } = userWithSiteSessionData
   const { growthbook } = req
 
   if (!growthbook) {

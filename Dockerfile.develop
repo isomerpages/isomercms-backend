@@ -2,10 +2,8 @@ FROM node:18-alpine AS base
 WORKDIR /opt/isomercms-backend
 RUN mkdir /root/.ssh
 COPY . .
-COPY ./.ssh /root/.ssh
-RUN chmod 600 /root/.ssh/github.pub
-RUN chmod 600 /root/.ssh/github
 RUN apk update
+RUN apk add --no-cache bash
 RUN apk add git
 RUN apk add openssh-client
 RUN npm ci
@@ -19,4 +17,4 @@ RUN chmod +x ./scripts/04_add_github_to_known_hosts.sh
 RUN sh ./scripts/04_add_github_to_known_hosts.sh
 
 EXPOSE "8081"
-CMD ["npm", "run", "dev:server"] 
+CMD ["bash", "-c", "chmod +x ./scripts/02_fetch_ssh_keys.sh && bash ./scripts/02_fetch_ssh_keys.sh & npm run dev:server"] 

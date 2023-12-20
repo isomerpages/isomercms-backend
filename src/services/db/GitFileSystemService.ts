@@ -912,7 +912,8 @@ export default class GitFileSystemService {
   listDirectoryContents(
     repoName: string,
     directoryPath: string,
-    branchName: string
+    branchName: string,
+    includeSha = true
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     const isStaging = this.isStagingFromBranchName(branchName)
@@ -955,6 +956,33 @@ export default class GitFileSystemService {
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
           const type = isDirectory ? "dir" : "file"
 
+          if (includeSha) {
+            return this.getGitBlobHash(repoName, path, isStaging)
+              .orElse(() => okAsync(""))
+              .andThen((sha) =>
+                ResultAsync.combine([
+                  okAsync(sha),
+                  this.getFilePathStats(repoName, path, isStaging),
+                ])
+              )
+              .andThen((shaAndStats) => {
+                const [sha, stats] = shaAndStats
+                return this.getFilePathStats(repoName, path, isStaging).andThen(
+                  (stats) => {
+                    const result: GitDirectoryItem = {
+                      name,
+                      type,
+                      sha,
+                      path,
+                      size: type === "dir" ? 0 : stats.size,
+                      addedTime: stats.ctimeMs,
+                    }
+
+                    return okAsync(result)
+                  }
+                )
+              })
+          }
           return this.getFilePathStats(repoName, path, isStaging).andThen(
             (stats) => {
               const result: GitDirectoryItem = {
@@ -964,7 +992,6 @@ export default class GitFileSystemService {
                 size: type === "dir" ? 0 : stats.size,
                 addedTime: stats.ctimeMs,
               }
-
               return okAsync(result)
             }
           )
@@ -984,12 +1011,18 @@ export default class GitFileSystemService {
   ): ResultAsync<DirectoryContents, GitFileSystemError | NotFoundError> {
     const isStaging = this.isStagingFromBranchName(branchName)
 
-    return this.listDirectoryContents(repoName, directoryPath, branchName)
+    return this.listDirectoryContents(
+      repoName,
+      directoryPath,
+      branchName,
+      false
+    )
       .andThen((directoryContents) =>
         okAsync(
           getPaginatedDirectoryContents(directoryContents, page, limit, search)
         )
       )
+      .andThen((dirContents) => okAsync(dirContents))
       .andThen((paginatedDirectoryContents) => {
         const directories = paginatedDirectoryContents.directories.map(
           (directory) =>
@@ -1076,6 +1109,7 @@ export default class GitFileSystemService {
       .andThen(() =>
         this.getGitBlobHash(repoName, filePath, isStaging).andThen((sha) => {
           if (sha !== oldSha) {
+            logger.debug(`Old sha: ${oldSha}, new: ${sha}`)
             return errAsync(
               new ConflictError(
                 "File has been changed recently, please try again"
@@ -1182,6 +1216,7 @@ export default class GitFileSystemService {
           return okAsync(true) // If it's a directory, skip the blob hash verification
         }
         return this.getGitBlobHash(repoName, path, isStaging).andThen((sha) => {
+          logger.debug(`Delete: Old sha: ${oldSha}, new: ${sha}`)
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(

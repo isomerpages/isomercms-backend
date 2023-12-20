@@ -88,7 +88,6 @@ jobs:
       - run: npm ci
       - run: npm run test:docker
       - run: . .env.test && npx jest --runInBand
-      - run: docker compose down
 
   gatekeep:
     name: Determine if Build & Deploy is needed

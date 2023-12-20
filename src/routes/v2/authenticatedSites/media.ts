@@ -108,13 +108,11 @@ export class MediaRouter {
     { directoryName: string },
     { directories: MediaDirOutput[] },
     never,
-    { page: number },
+    never,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-
     const { directoryName } = req.params
-    const { page } = req.query
 
     const {
       directories,
@@ -122,8 +120,8 @@ export class MediaRouter {
       userWithSiteSessionData,
       {
         directoryName,
-        page,
-        limit: 0,
+        page: 0,
+        limit: 1,
         search: "",
       }
     )

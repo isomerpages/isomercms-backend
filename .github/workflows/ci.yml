@@ -87,7 +87,7 @@ jobs:
           key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
       - run: npm run test:docker
-      - run: npm run test
+      - run: . .env.test && jest --runInBand
       - run: docker compose down
 
   gatekeep:

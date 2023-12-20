@@ -316,7 +316,10 @@ describe("RepoService", () => {
           date: 0,
         },
       })
-      gitHubServiceGetRepoInfo.mockResolvedValueOnce({ private: false })
+      gitHubServiceGetRepoInfo.mockResolvedValueOnce({
+        description: "",
+        private: false,
+      })
       const getMediaFileInfo = jest
         .spyOn(mediaUtils, "getMediaFileInfo")
         .mockResolvedValueOnce(expected)

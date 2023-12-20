@@ -695,7 +695,7 @@ describe("Github Service", () => {
 
     const mockFiles = gitTree.map((item) => ({
       filePath: item.path,
-      sha: item.sha,
+      sha: item.sha || "",
     }))
 
     const params = {

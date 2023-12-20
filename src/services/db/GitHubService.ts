@@ -427,10 +427,10 @@ export default class GitHubService {
     const gitTree = await this.getTree(sessionData, githubSessionData, {
       isRecursive: true,
     })
-    const newGitTree: any[] = []
+    const newGitTree: RawGitTreeEntry[] = []
     const filePaths = items.map((item) => item.filePath)
 
-    gitTree.forEach((item: any) => {
+    gitTree.forEach((item: RawGitTreeEntry) => {
       if (filePaths.includes(item.path)) {
         // Mark the file to be deleted
         newGitTree.push({

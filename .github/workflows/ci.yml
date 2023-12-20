@@ -86,7 +86,7 @@ jobs:
           path: ~/.npm
           key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: npm run test:services
+      - run: npm run test:docker
       - run: npm run test
       - run: docker compose down
 

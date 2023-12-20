@@ -615,10 +615,10 @@ export default class RepoService extends GitHubService {
     return super.checkHasAccess(sessionData)
   }
 
-  async changeRepoPrivacy(
+  changeRepoPrivacy(
     sessionData: UserWithSiteSessionData,
     shouldMakePrivate: boolean
-  ): Promise<ResultAsync<null, NotFoundError | GitHubApiError>> {
+  ): ResultAsync<null, NotFoundError | GitHubApiError> {
     return super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

@@ -791,10 +791,10 @@ export default class GitHubService {
     }
   }
 
-  async changeRepoPrivacy(
+  changeRepoPrivacy(
     sessionData: { siteName: string; isomerUserId: string },
     shouldMakePrivate: boolean
-  ): Promise<ResultAsync<null, NotFoundError | GitHubApiError>> {
+  ): ResultAsync<null, NotFoundError | GitHubApiError> {
     const { siteName, isomerUserId } = sessionData
     const endpoint = `${siteName}`
 
@@ -803,25 +803,26 @@ export default class GitHubService {
       Authorization: "",
       "Content-Type": "application/json",
     }
-    try {
-      await this.axiosInstance.patch(
+
+    return ResultAsync.fromPromise(
+      this.axiosInstance.patch(
         endpoint,
         { private: shouldMakePrivate },
         { headers }
-      )
-      return okAsync(null)
-    } catch (error) {
-      if (isAxiosError(error) && error.response) {
-        const { status } = error.response
-        // If user is unauthorized or site does not exist, show the same NotFoundError
-        if (status === 404 || status === 403) {
-          logger.error(
-            `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
-          )
-          return errAsync(new NotFoundError("Site does not exist"))
+      ),
+      (error) => {
+        if (isAxiosError(error) && error.response) {
+          const { status } = error.response
+          // If user is unauthorized or site does not exist, show the same NotFoundError
+          if (status === 404 || status === 403) {
+            logger.error(
+              `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
+            )
+            return new NotFoundError("Site does not exist")
+          }
         }
+        return new GitHubApiError(`${error}`)
       }
-      return errAsync(new GitHubApiError(`${error}`))
-    }
+    ).map(() => null)
   }
 }

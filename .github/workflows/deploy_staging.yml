@@ -16,9 +16,9 @@ jobs:
     with:
       aws-region: "ap-southeast-1"
       cicd-role: "arn:aws:iam::646878943557:role/redirection-github-oidc-role"
-      ecr-repository: "isomer-infra-ecr"
-      ecs-cluster-name: "redirection"
-      ecs-web-service-name: "redir-web-ecs-service"
+      ecr-repository: "isomer-infra-staging-ecr"
+      ecs-cluster-name: "isomer-infra-staging-ecs"
+      ecs-web-service-name: "isomer-infra-staging-ecs-service"
       ecs-container-name: "app-server"
       environment: "staging"
       shortEnv: "stg"

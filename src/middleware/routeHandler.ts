@@ -1,5 +1,6 @@
 import { GrowthBook } from "@growthbook/growthbook"
 import { BackoffOptions, backOff } from "exponential-backoff"
+import { Request, Response, NextFunction } from "express"
 import { ResultAsync } from "neverthrow"
 import simpleGit from "simple-git"
 
@@ -20,6 +21,7 @@ import { FEATURE_FLAGS } from "@root/constants/featureFlags"
 import LockedError from "@root/errors/LockedError"
 import logger from "@root/logger/logger"
 import { FeatureFlags } from "@root/types/featureFlags"
+import { RequestHandler } from "@root/types/request"
 import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 
@@ -35,7 +37,7 @@ const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
 
 const handleGitFileLock = async (
   repoName: string,
-  next: (arg0: any) => void
+  next: (arg0: Error | null) => void
 ) => {
   const result = await gitFileSystemService.hasGitFileLock(repoName, true)
   if (result.isErr()) {
@@ -58,7 +60,7 @@ const handleGitFileLock = async (
 const isGitFileAndIsGitAvail = async (
   growthbook: GrowthBook<FeatureFlags>,
   siteName: string,
-  next: any
+  next: NextFunction
 ) => {
   let isGitAvailable = true
 
@@ -70,21 +72,37 @@ const isGitFileAndIsGitAvail = async (
 }
 
 // Used when there are no write API calls to the repo on GitHub
-export const attachReadRouteHandlerWrapper = (routeHandler: any) => async (
-  req: any,
-  res: any,
-  next: any
+export const attachReadRouteHandlerWrapper = <
+  P,
+  ResBody,
+  ReqBody,
+  ReqQuery,
+  Locals extends Record<string, unknown>
+>(
+  routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
+) => async (
+  req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
+  res: Response<ResBody, Locals>,
+  next: NextFunction
 ) => {
-  routeHandler(req, res).catch((err: any) => {
+  Promise.resolve(routeHandler(req, res, next)).catch((err: Error) => {
     next(err)
   })
 }
 
 // Used when there are write API calls to the repo on GitHub
-export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
-  req: any,
-  res: any,
-  next: any
+export const attachWriteRouteHandlerWrapper = <
+  P extends { siteName: string },
+  ResBody,
+  ReqBody,
+  ReqQuery,
+  Locals extends Record<string, unknown>
+>(
+  routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
+) => async (
+  req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
+  res: Response<ResBody, Locals>,
+  next: NextFunction
 ) => {
   const { siteName } = req.params
   const { growthbook } = req
@@ -105,7 +123,7 @@ export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
     return
   }
 
-  await routeHandler(req, res, next).catch(async (err: any) => {
+  Promise.resolve(routeHandler(req, res, next)).catch(async (err: Error) => {
     await unlock(siteName)
     next(err)
   })
@@ -117,16 +135,34 @@ export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
   }
 }
 
-export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
-  req: any,
-  res: any,
-  next: any
+export const attachRollbackRouteHandlerWrapper = <
+  P extends { siteName: string },
+  ResBody,
+  ReqBody,
+  ReqQuery,
+  Locals extends {
+    userSessionData: {
+      accessToken: string
+    }
+    githubSessionData: object
+  }
+>(
+  routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
+) => async (
+  req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
+  res: Response<ResBody, Locals>,
+  next: NextFunction
 ) => {
   const { userSessionData } = res.locals
   const { siteName } = req.params
 
   const { accessToken } = userSessionData
   const { growthbook } = req
+
+  if (!growthbook) {
+    next(new Error("GrowthBook instance is undefined."))
+    return
+  }
 
   const isGitAvailable = await isGitFileAndIsGitAvail(
     growthbook,
@@ -231,7 +267,7 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
     }
   }
 
-  await routeHandler(req, res, next).catch(async (err: any) => {
+  Promise.resolve(routeHandler(req, res, next)).catch(async (err: Error) => {
     try {
       if (shouldUseGitFileSystem) {
         await backOff(

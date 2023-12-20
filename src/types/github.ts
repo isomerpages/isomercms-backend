@@ -103,9 +103,9 @@ export type RawGitTreeEntry = {
 }
 
 export type GitHubRepoInfo = {
-  title: string
-  description: string
-  type: string
+  title?: string
+  description?: string
+  type?: string
   private: boolean
 }
 

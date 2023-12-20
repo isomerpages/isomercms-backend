@@ -11,3 +11,4 @@ build/
 .step-functions-local/
 .serverless/
 .cache_ggshield
+.ssh/

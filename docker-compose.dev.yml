@@ -1,20 +1,20 @@
 version: "3"
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.develop
     ports:
       - "8081:8081"
     depends_on:
       - postgres
     env_file:
       - .env
-    environment:
-      # postgres://user:pass@hostname:port/database
-      - DB_URI=postgres://isomer:password@postgres:5432/isomercms_dev
     volumes:
       - ./:/opt/isomercms-backend
       - /opt/isomercms-backend/node_modules
       - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
+      - "~/.gitconfig:/etc/gitconfig"
 
   postgres:
     image: "postgres:13-alpine"
@@ -27,14 +27,5 @@ services:
     volumes:
       - isomercms_data:/var/lib/postgresql/data
 
-  postgres_test:
-    image: "postgres:13-alpine"
-    environment:
-      POSTGRES_USER: isomer
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: isomercms_test
-    ports:
-      # use a different port to avoid blocking dev environment when running tests
-      - "54321:5432"
 volumes:
   isomercms_data:

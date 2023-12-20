@@ -1109,7 +1109,6 @@ export default class GitFileSystemService {
       .andThen(() =>
         this.getGitBlobHash(repoName, filePath, isStaging).andThen((sha) => {
           if (sha !== oldSha) {
-            logger.debug(`Old sha: ${oldSha}, new: ${sha}`)
             return errAsync(
               new ConflictError(
                 "File has been changed recently, please try again"
@@ -1216,7 +1215,6 @@ export default class GitFileSystemService {
           return okAsync(true) // If it's a directory, skip the blob hash verification
         }
         return this.getGitBlobHash(repoName, path, isStaging).andThen((sha) => {
-          logger.debug(`Delete: Old sha: ${oldSha}, new: ${sha}`)
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(

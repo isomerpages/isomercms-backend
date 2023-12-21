@@ -1,0 +1,11 @@
+**/*.pem
+**/.aws
+**/.ssh
+**/.ebextensions
+**/.elasticbeanstalk
+**/node_modules
+**/public/lib
+.eslintrc.json
+.prettierrc.json
+**/docs
+**/.platform

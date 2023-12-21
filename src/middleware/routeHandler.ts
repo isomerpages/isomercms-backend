@@ -4,8 +4,6 @@ import { Request, Response, NextFunction } from "express"
 import { ResultAsync } from "neverthrow"
 import simpleGit from "simple-git"
 
-import { config } from "@config/config"
-
 import GithubSessionData from "@classes/GithubSessionData"
 
 import { lock, unlock } from "@utils/mutex-utils"
@@ -25,8 +23,6 @@ import { FeatureFlags } from "@root/types/featureFlags"
 import { RequestHandler } from "@root/types/request"
 import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import GitFileSystemService from "@services/db/GitFileSystemService"
-
-const BRANCH_REF = config.get("github.branchRef")
 
 const backoffOptions: BackoffOptions = {
   numOfAttempts: 5,
@@ -72,39 +68,30 @@ const isGitFileAndIsGitAvail = async (
   return isGitAvailable
 }
 
-// Used when there are no write API calls to the repo on GitHub
-export const attachReadRouteHandlerWrapper = <
-  P,
-  ResBody,
-  ReqBody,
-  ReqQuery,
-  Locals extends Record<string, unknown>
->(
-  routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
-) => async (
-  req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
+type RouteWrapper<
+  P = Record<string, unknown>,
+  L extends Record<string, unknown> = Record<string, unknown>
+> = <Params extends P, ResBody, ReqBody, ReqQuery, Locals extends L>(
+  handler: RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>
+) => (
+  req: Request<Params, ResBody, ReqBody, ReqQuery, Locals>,
   res: Response<ResBody, Locals>,
   next: NextFunction
-) => {
+) => void
+
+// Used when there are no write API calls to the repo on GitHub
+export const attachReadRouteHandlerWrapper: RouteWrapper = (
+  routeHandler
+) => async (req, res, next) => {
   Promise.resolve(routeHandler(req, res, next)).catch((err: Error) => {
     next(err)
   })
 }
 
 // Used when there are write API calls to the repo on GitHub
-export const attachWriteRouteHandlerWrapper = <
-  P extends { siteName: string },
-  ResBody,
-  ReqBody,
-  ReqQuery,
-  Locals extends Record<string, unknown>
->(
-  routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
-) => async (
-  req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
-  res: Response<ResBody, Locals>,
-  next: NextFunction
-) => {
+export const attachWriteRouteHandlerWrapper: RouteWrapper<{
+  siteName: string
+}> = (routeHandler) => async (req, res, next) => {
   const { siteName } = req.params
   const { growthbook } = req
 
@@ -136,22 +123,17 @@ export const attachWriteRouteHandlerWrapper = <
   }
 }
 
-export const attachRollbackRouteHandlerWrapper = <
-  P extends { siteName: string; directoryName: string; fileName: string },
-  ResBody,
-  ReqBody,
-  ReqQuery,
-  Locals extends {
+export const attachRollbackRouteHandlerWrapper: RouteWrapper<
+  {
+    siteName: string
+    directoryName: string
+    fileName: string
+  },
+  {
     userWithSiteSessionData: UserWithSiteSessionData
     githubSessionData: GithubSessionData
   }
->(
-  routeHandler: RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals>
-) => async (
-  req: Request<P, ResBody, ReqBody, ReqQuery, Locals>,
-  res: Response<ResBody, Locals>,
-  next: NextFunction
-) => {
+> = (routeHandler) => async (req, res, next: NextFunction) => {
   const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
 

@@ -912,7 +912,8 @@ export default class GitFileSystemService {
   listDirectoryContents(
     repoName: string,
     directoryPath: string,
-    branchName: string
+    branchName: string,
+    includeSha = true
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     const isStaging = this.isStagingFromBranchName(branchName)
@@ -955,6 +956,29 @@ export default class GitFileSystemService {
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`
           const type = isDirectory ? "dir" : "file"
 
+          if (includeSha) {
+            return this.getGitBlobHash(repoName, path, isStaging)
+              .orElse(() => okAsync(""))
+              .andThen((sha) =>
+                ResultAsync.combine([
+                  okAsync(sha),
+                  this.getFilePathStats(repoName, path, isStaging),
+                ])
+              )
+              .andThen((shaAndStats) => {
+                const [sha, stats] = shaAndStats
+                const result: GitDirectoryItem = {
+                  name,
+                  type,
+                  sha,
+                  path,
+                  size: type === "dir" ? 0 : stats.size,
+                  addedTime: stats.ctimeMs,
+                }
+
+                return okAsync(result)
+              })
+          }
           return this.getFilePathStats(repoName, path, isStaging).andThen(
             (stats) => {
               const result: GitDirectoryItem = {
@@ -964,7 +988,6 @@ export default class GitFileSystemService {
                 size: type === "dir" ? 0 : stats.size,
                 addedTime: stats.ctimeMs,
               }
-
               return okAsync(result)
             }
           )
@@ -984,7 +1007,12 @@ export default class GitFileSystemService {
   ): ResultAsync<DirectoryContents, GitFileSystemError | NotFoundError> {
     const isStaging = this.isStagingFromBranchName(branchName)
 
-    return this.listDirectoryContents(repoName, directoryPath, branchName)
+    return this.listDirectoryContents(
+      repoName,
+      directoryPath,
+      branchName,
+      false
+    )
       .andThen((directoryContents) =>
         okAsync(
           getPaginatedDirectoryContents(directoryContents, page, limit, search)

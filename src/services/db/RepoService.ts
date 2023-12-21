@@ -1,5 +1,6 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import _ from "lodash"
+import { ResultAsync } from "neverthrow"
 
 import config from "@config/config"
 
@@ -8,6 +9,8 @@ import logger from "@logger/logger"
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS, STAGING_BRANCH } from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import { GitHubCommitData } from "@root/types/commitData"
 import type {
   DirectoryContents,
@@ -15,7 +18,7 @@ import type {
   GitDirectoryItem,
   GitFile,
 } from "@root/types/gitfilesystem"
-import { RawGitTreeEntry } from "@root/types/github"
+import { GitHubRepoInfo, RawGitTreeEntry, RepoState } from "@root/types/github"
 import { MediaDirOutput, MediaFileOutput, MediaType } from "@root/types/media"
 import { getPaginatedDirectoryContents } from "@root/utils/files"
 import { getMediaFileInfo } from "@root/utils/media-utils"
@@ -112,7 +115,15 @@ export default class RepoService extends GitHubService {
     return ReviewApi.createComment(siteName, pullRequestNumber, user, message)
   }
 
-  getFilePath({ siteName, fileName, directoryName }: any): any {
+  getFilePath({
+    siteName,
+    fileName,
+    directoryName,
+  }: {
+    siteName: string
+    fileName: string
+    directoryName?: string
+  }) {
     return super.getFilePath({
       siteName,
       fileName,
@@ -120,11 +131,17 @@ export default class RepoService extends GitHubService {
     })
   }
 
-  getBlobPath({ siteName, fileSha }: any): any {
+  getBlobPath({ siteName, fileSha }: { siteName: string; fileSha: string }) {
     return super.getBlobPath({ siteName, fileSha })
   }
 
-  getFolderPath({ siteName, directoryName }: any) {
+  getFolderPath({
+    siteName,
+    directoryName,
+  }: {
+    siteName: string
+    directoryName: string
+  }) {
     return super.getFolderPath({ siteName, directoryName })
   }
 
@@ -506,11 +523,13 @@ export default class RepoService extends GitHubService {
     )
   }
 
-  async getRepoInfo(sessionData: any): Promise<any> {
+  async getRepoInfo(
+    sessionData: UserWithSiteSessionData
+  ): Promise<GitHubRepoInfo> {
     return super.getRepoInfo(sessionData)
   }
 
-  async getRepoState(sessionData: any): Promise<any> {
+  async getRepoState(sessionData: UserWithSiteSessionData): Promise<RepoState> {
     return super.getRepoState(sessionData)
   }
 
@@ -541,9 +560,9 @@ export default class RepoService extends GitHubService {
   }
 
   async getTree(
-    sessionData: any,
-    githubSessionData: any,
-    { isRecursive }: any
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { isRecursive }: { isRecursive: boolean }
   ): Promise<RawGitTreeEntry[]> {
     return super.getTree(sessionData, githubSessionData, {
       isRecursive,
@@ -551,10 +570,10 @@ export default class RepoService extends GitHubService {
   }
 
   async updateTree(
-    sessionData: any,
-    githubSessionData: any,
-    { gitTree, message }: any
-  ): Promise<any> {
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { gitTree, message }: { gitTree: RawGitTreeEntry[]; message?: string }
+  ): Promise<string> {
     return super.updateTree(sessionData, githubSessionData, {
       gitTree,
       message,
@@ -592,14 +611,14 @@ export default class RepoService extends GitHubService {
     await super.updateRepoState(sessionData, { commitSha })
   }
 
-  async checkHasAccess(sessionData: any): Promise<any> {
+  async checkHasAccess(sessionData: UserWithSiteSessionData): Promise<void> {
     return super.checkHasAccess(sessionData)
   }
 
-  async changeRepoPrivacy(
-    sessionData: any,
-    shouldMakePrivate: any
-  ): Promise<any> {
+  changeRepoPrivacy(
+    sessionData: UserWithSiteSessionData,
+    shouldMakePrivate: boolean
+  ): ResultAsync<null, NotFoundError | GitHubApiError> {
     return super.changeRepoPrivacy(sessionData, shouldMakePrivate)
   }
 }

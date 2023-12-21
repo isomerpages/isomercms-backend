@@ -97,7 +97,19 @@ export type RawGitTreeEntry = {
   path: string
   mode: string
   type: "tree" | "file"
-  sha: string
+  sha: string | null
   url: string
   size?: number // only exists if it is a file
+}
+
+export type GitHubRepoInfo = {
+  title?: string
+  description: string
+  type?: string
+  private: boolean
+}
+
+export type RepoState = {
+  treeSha: string
+  currentCommitSha: string
 }

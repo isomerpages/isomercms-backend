@@ -1,6 +1,6 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { Base64 } from "js-base64"
-import { okAsync, errAsync } from "neverthrow"
+import { okAsync, errAsync, ResultAsync } from "neverthrow"
 
 import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
@@ -11,9 +11,10 @@ import { isAxiosError, validateStatus } from "@utils/axios-utils"
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_BRANCH } from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
 import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
-import { RawGitTreeEntry } from "@root/types/github"
+import { GitHubRepoInfo, RawGitTreeEntry, RepoState } from "@root/types/github"
 
 import * as ReviewApi from "./review"
 
@@ -207,7 +208,10 @@ export default class GitHubService {
 
   async read(
     sessionData: UserWithSiteSessionData,
-    { fileName, directoryName }: { fileName: any; directoryName: any }
+    {
+      fileName,
+      directoryName,
+    }: { fileName: string; directoryName: string | undefined }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -415,7 +419,9 @@ export default class GitHubService {
     }
   }
 
-  async getRepoInfo(sessionData: UserWithSiteSessionData) {
+  async getRepoInfo(
+    sessionData: UserWithSiteSessionData
+  ): Promise<GitHubRepoInfo> {
     const { siteName } = sessionData
     const { accessToken } = sessionData
     const endpoint = `${siteName}`
@@ -434,7 +440,7 @@ export default class GitHubService {
     return data
   }
 
-  async getRepoState(sessionData: UserWithSiteSessionData) {
+  async getRepoState(sessionData: UserWithSiteSessionData): Promise<RepoState> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const endpoint = `${siteName}/commits`
@@ -514,7 +520,7 @@ export default class GitHubService {
   async getTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { isRecursive }: any
+    { isRecursive }: { isRecursive: boolean }
   ): Promise<RawGitTreeEntry[]> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -541,7 +547,7 @@ export default class GitHubService {
   async updateTree(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,
-    { gitTree, message }: { gitTree: any; message: any }
+    { gitTree, message }: { gitTree: RawGitTreeEntry[]; message?: string }
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
@@ -634,9 +640,9 @@ export default class GitHubService {
     const gitTree = await this.getTree(sessionData, githubSessionData, {
       isRecursive: true,
     })
-    const newGitTree: any[] = []
+    const newGitTree: RawGitTreeEntry[] = []
 
-    gitTree.forEach((item: any) => {
+    gitTree.forEach((item: RawGitTreeEntry) => {
       if (item.path.startsWith(`${newPath}/`) && item.type !== "tree") {
         const fileName = item.path
           .split(`${newPath}/`)
@@ -689,12 +695,12 @@ export default class GitHubService {
     const gitTree = await this.getTree(sessionData, githubSessionData, {
       isRecursive: true,
     })
-    const newGitTree: any[] = []
+    const newGitTree: RawGitTreeEntry[] = []
     const isMovingDirectory =
-      gitTree.find((item: any) => item.path === oldPath)?.type === "tree" ||
-      false
+      gitTree.find((item: RawGitTreeEntry) => item.path === oldPath)?.type ===
+        "tree" || false
 
-    gitTree.forEach((item: any) => {
+    gitTree.forEach((item: RawGitTreeEntry) => {
       if (isMovingDirectory) {
         if (item.path === newPath && item.type === "tree") {
           throw new ConflictError("Target directory already exists")
@@ -743,7 +749,7 @@ export default class GitHubService {
 
   async updateRepoState(
     sessionData: UserWithSiteSessionData,
-    { commitSha, branchName }: { commitSha: any; branchName?: string }
+    { commitSha, branchName }: { commitSha: string; branchName?: string }
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
@@ -785,10 +791,10 @@ export default class GitHubService {
     }
   }
 
-  async changeRepoPrivacy(
-    sessionData: { siteName: any; isomerUserId: any },
+  changeRepoPrivacy(
+    sessionData: { siteName: string; isomerUserId: string },
     shouldMakePrivate: boolean
-  ) {
+  ): ResultAsync<null, NotFoundError | GitHubApiError> {
     const { siteName, isomerUserId } = sessionData
     const endpoint = `${siteName}`
 
@@ -797,25 +803,26 @@ export default class GitHubService {
       Authorization: "",
       "Content-Type": "application/json",
     }
-    try {
-      await this.axiosInstance.patch(
+
+    return ResultAsync.fromPromise(
+      this.axiosInstance.patch(
         endpoint,
         { private: shouldMakePrivate },
         { headers }
-      )
-      return okAsync(null)
-    } catch (error) {
-      if (isAxiosError(error) && error.response) {
-        const { status } = error.response
-        // If user is unauthorized or site does not exist, show the same NotFoundError
-        if (status === 404 || status === 403) {
-          logger.error(
-            `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
-          )
-          return errAsync(new NotFoundError("Site does not exist"))
+      ),
+      (error) => {
+        if (isAxiosError(error) && error.response) {
+          const { status } = error.response
+          // If user is unauthorized or site does not exist, show the same NotFoundError
+          if (status === 404 || status === 403) {
+            logger.error(
+              `User with id ${isomerUserId} attempted to change privacy of site ${siteName}`
+            )
+            return new NotFoundError("Site does not exist")
+          }
         }
+        return new GitHubApiError(`${error}`)
       }
-      return errAsync(error)
-    }
+    ).map(() => null)
   }
 }

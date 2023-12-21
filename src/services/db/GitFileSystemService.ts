@@ -967,20 +967,16 @@ export default class GitFileSystemService {
               )
               .andThen((shaAndStats) => {
                 const [sha, stats] = shaAndStats
-                return this.getFilePathStats(repoName, path, isStaging).andThen(
-                  (stats) => {
-                    const result: GitDirectoryItem = {
-                      name,
-                      type,
-                      sha,
-                      path,
-                      size: type === "dir" ? 0 : stats.size,
-                      addedTime: stats.ctimeMs,
-                    }
+                const result: GitDirectoryItem = {
+                  name,
+                  type,
+                  sha,
+                  path,
+                  size: type === "dir" ? 0 : stats.size,
+                  addedTime: stats.ctimeMs,
+                }
 
-                    return okAsync(result)
-                  }
-                )
+                return okAsync(result)
               })
           }
           return this.getFilePathStats(repoName, path, isStaging).andThen(
@@ -1022,7 +1018,6 @@ export default class GitFileSystemService {
           getPaginatedDirectoryContents(directoryContents, page, limit, search)
         )
       )
-      .andThen((dirContents) => okAsync(dirContents))
       .andThen((paginatedDirectoryContents) => {
         const directories = paginatedDirectoryContents.directories.map(
           (directory) =>

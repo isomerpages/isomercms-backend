@@ -71,11 +71,26 @@ describe("GitFileSystemService", () => {
 
   describe("listDirectoryContents", () => {
     it("should return the contents of a directory successfully", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("another-fake-dir-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("another-fake-file-hash"),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-dir-hash"),
+      })
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest.fn().mockResolvedValueOnce("fake-empty-dir-hash"),
+      })
+
       const expectedFakeDir: GitDirectoryItem = {
         name: "fake-dir",
         type: "dir",
         path: "fake-dir",
         size: 0,
+        sha: "fake-dir-hash",
         addedTime: fs.statSync(`${EFS_VOL_PATH_STAGING}/fake-repo/fake-dir`)
           .ctimeMs,
       }
@@ -84,6 +99,7 @@ describe("GitFileSystemService", () => {
         type: "dir",
         path: "another-fake-dir",
         size: 0,
+        sha: "another-fake-dir-hash",
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-dir`
         ).ctimeMs,
@@ -93,6 +109,7 @@ describe("GitFileSystemService", () => {
         type: "dir",
         path: "fake-empty-dir",
         size: 0,
+        sha: "fake-empty-dir-hash",
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/fake-empty-dir`
         ).ctimeMs,
@@ -102,6 +119,7 @@ describe("GitFileSystemService", () => {
         type: "file",
         path: "another-fake-file",
         size: "Another fake content".length,
+        sha: "another-fake-file-hash",
         addedTime: fs.statSync(
           `${EFS_VOL_PATH_STAGING}/fake-repo/another-fake-file`
         ).ctimeMs,
@@ -115,7 +133,7 @@ describe("GitFileSystemService", () => {
       const actual = result
         ._unsafeUnwrap()
         .sort((a, b) => a.name.localeCompare(b.name))
-
+      console.log(actual)
       expect(actual).toMatchObject([
         expectedAnotherFakeDir,
         expectedAnotherFakeFile,

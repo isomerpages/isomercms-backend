@@ -257,11 +257,12 @@ export default class RepoService extends GitHubService {
     const targetFile = directoryData.find(
       (fileOrDir: { name: string }) => fileOrDir.name === fileName
     )
-    const { private: isPrivate } = await super.getRepoInfo(sessionData)
 
     if (targetFile === undefined) {
       throw new NotFoundError(`File ${fileName} not found in ${directoryName}`)
     }
+
+    const { private: isPrivate } = await super.getRepoInfo(sessionData)
 
     return getMediaFileInfo({
       file: targetFile,

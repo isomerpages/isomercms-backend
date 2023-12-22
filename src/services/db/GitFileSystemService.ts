@@ -620,8 +620,6 @@ export default class GitFileSystemService {
         )
       }
 
-      // Note: We only accept commits that change 1 file at once (pathSpec.length == 1)
-      // Or commits that move/rename files (pathSpec.length == 2)
       if (pathSpec.length < 1) {
         return errAsync(
           new GitFileSystemError(
@@ -1289,7 +1287,7 @@ export default class GitFileSystemService {
             )
           )
         }
-        oldStateSha = latestCommit.sha as string
+        oldStateSha = latestCommit.sha
         return okAsync(true)
       })
       .andThen(() =>

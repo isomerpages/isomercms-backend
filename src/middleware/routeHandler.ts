@@ -32,10 +32,7 @@ const simpleGitInstance = simpleGit({
 })
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
 
-const handleGitFileLock = async (
-  repoName: string,
-  next: (arg0: Error | null) => void
-) => {
+const handleGitFileLock = async (repoName: string, next: NextFunction) => {
   const result = await gitFileSystemService.hasGitFileLock(repoName, true)
   if (result.isErr()) {
     next(result.error)

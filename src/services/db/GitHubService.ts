@@ -419,6 +419,37 @@ export default class GitHubService {
     }
   }
 
+  async deleteMultipleFiles(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { items }: { items: Array<{ filePath: string; sha: string }> }
+  ): Promise<void> {
+    const gitTree = await this.getTree(sessionData, githubSessionData, {
+      isRecursive: true,
+    })
+    const newGitTree: RawGitTreeEntry[] = []
+    const filePaths = items.map((item) => item.filePath)
+
+    gitTree.forEach((item: RawGitTreeEntry) => {
+      if (filePaths.includes(item.path)) {
+        // Mark the file to be deleted
+        newGitTree.push({
+          ...item,
+          sha: null,
+        })
+      }
+    })
+
+    const newCommitSha = await this.updateTree(sessionData, githubSessionData, {
+      gitTree: newGitTree,
+      message: `Delete files: ${filePaths.join(", ")}`,
+    })
+
+    await this.updateRepoState(sessionData, {
+      commitSha: newCommitSha,
+    })
+  }
+
   async getRepoInfo(
     sessionData: UserWithSiteSessionData
   ): Promise<GitHubRepoInfo> {

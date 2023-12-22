@@ -24,6 +24,7 @@ describe("Media File Service", () => {
     read: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    deleteMultipleFiles: jest.fn(),
     getRepoInfo: jest.fn(),
     readMediaFile: jest.fn(),
     readDirectory: jest.fn(),
@@ -233,6 +234,42 @@ describe("Media File Service", () => {
         `${directoryName}/${oldFileName}`,
         `${directoryName}/${fileName}`,
         `Renamed ${oldFileName} to ${fileName}`
+      )
+    })
+  })
+
+  describe("DeleteMultipleFiles", () => {
+    it("rejects page names with special characters", async () => {
+      await expect(
+        service.deleteMultipleFiles(sessionData, mockGithubSessionData, {
+          items: [
+            { filePath: "file/file%%%name.pdf", sha },
+            { filePath: "valid.pdf", sha },
+          ],
+        })
+      ).rejects.toThrowError(BadRequestError)
+    })
+
+    it("Deleting multiple pages works correctly", async () => {
+      const mockFiles = [
+        { filePath: "images/valid.jpg", sha },
+        { filePath: "images/another/valid.jpg", sha },
+      ]
+
+      mockRepoService.deleteMultipleFiles.mockResolvedValueOnce(undefined)
+
+      await expect(
+        service.deleteMultipleFiles(sessionData, mockGithubSessionData, {
+          items: mockFiles,
+        })
+      ).resolves.not.toThrow()
+
+      expect(mockRepoService.deleteMultipleFiles).toHaveBeenCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        {
+          items: mockFiles,
+        }
       )
     })
   })

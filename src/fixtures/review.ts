@@ -1,7 +1,12 @@
 import { Attributes } from "sequelize/types"
 
 import { ReviewRequestStatus } from "@root/constants"
-import { ReviewRequest, ReviewRequestView } from "@root/database/models"
+import {
+  ReviewComment,
+  ReviewMeta,
+  ReviewRequest,
+  ReviewRequestView,
+} from "@root/database/models"
 import { Commit, RawPullRequest } from "@root/types/github"
 
 import {
@@ -89,6 +94,21 @@ export const MOCK_REVIEW_REQUEST_ONE: Attributes<ReviewRequest> = {
   },
   reviewStatus: ReviewRequestStatus.Open,
   reviewers: [mockCollaboratorAdmin1, mockCollaboratorAdmin2],
+}
+
+export const MOCK_REVIEW_REQUEST_META: Attributes<ReviewMeta> = {
+  id: 1,
+  reviewerId: mockCollaboratorAdmin1.id,
+  reviewId: 1,
+  pullRequestNumber: 1,
+  reviewLink: "fakeUrl",
+}
+
+export const MOCK_REVIEW_REQUEST_COMMENT: Attributes<ReviewComment> = {
+  id: 1,
+  reviewerId: mockCollaboratorAdmin1.id,
+  reviewId: 1,
+  comment: "fake comment",
 }
 
 export const MOCK_REVIEW_REQUEST_VIEW_ONE: Attributes<ReviewRequestView> = {

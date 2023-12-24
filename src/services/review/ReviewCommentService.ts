@@ -28,7 +28,7 @@ export default class ReviewCommentService {
     this.sequelize = sequelize
   }
 
-  getCommentsOfReviewRequest(reviewId: number) {
+  getCommentsForReviewRequest(reviewId: number) {
     return this.repository.findAll({
       where: { reviewId },
       include: [{ model: User, required: true }],

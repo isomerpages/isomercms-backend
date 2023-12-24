@@ -888,10 +888,6 @@ export default class ReviewRequestService {
       throw new RequestNotFoundError("Review Request not found")
     }
 
-    const allComments = await this.reviewCommentService.getCommentsOfReviewRequest(
-      reviewMeta.reviewId
-    )
-
     const comments = await this.apiService.getComments(
       siteName,
       pullRequestNumber
@@ -920,10 +916,12 @@ export default class ReviewRequestService {
     })
 
     const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
-
+    const allComments = await this.reviewCommentService.getCommentsForReviewRequest(
+      reviewMeta.reviewId
+    )
     // if comments exist in DB return those, else return from GitHub
     let commentsFromDB: CommentItem[] = []
-    if (allComments.length !== 0) {
+    if (allComments && allComments.length !== 0) {
       commentsFromDB = allComments.map((rawComment) => ({
         user: rawComment.user.email || "",
         createdAt: rawComment.createdAt.getTime(),

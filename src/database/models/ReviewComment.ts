@@ -13,7 +13,7 @@ import { User } from "@database/models/User"
 import { ReviewRequest } from "./ReviewRequest"
 
 @Table({ tableName: "review_comments" })
-export class Reviewer extends Model {
+export class ReviewComment extends Model {
   @Column({
     autoIncrement: true,
     primaryKey: true,
@@ -28,7 +28,7 @@ export class Reviewer extends Model {
 
   @ForeignKey(() => ReviewRequest)
   @Column
-  requestId!: string
+  reviewId!: string
 
   @Column
   comment!: string

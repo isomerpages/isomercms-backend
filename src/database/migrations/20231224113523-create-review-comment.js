@@ -8,7 +8,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      request_id: {
+      review_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.BIGINT,

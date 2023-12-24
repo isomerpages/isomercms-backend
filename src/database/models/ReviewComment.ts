@@ -6,6 +6,7 @@ import {
   DataType,
   CreatedAt,
   UpdatedAt,
+  BelongsTo,
 } from "sequelize-typescript"
 
 import { User } from "@database/models/User"
@@ -32,6 +33,12 @@ export class ReviewComment extends Model {
 
   @Column
   comment!: string
+
+  @BelongsTo(() => User, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
+  user!: User
 
   @CreatedAt
   createdAt!: Date

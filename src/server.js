@@ -31,6 +31,7 @@ import {
   Notification,
   ReviewRequest,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequestView,
 } from "@database/models"
@@ -87,6 +88,7 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
+import ReviewCommentService from "./services/review/ReviewCommentService"
 import RepoCheckerService from "./services/review/RepoCheckerService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
@@ -111,6 +113,7 @@ const sequelize = initSequelize([
   IsomerAdmin,
   Notification,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequest,
   ReviewRequestView,
@@ -221,8 +224,15 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const reviewCommentService = new ReviewCommentService(
+  User,
+  ReviewComment,
+  Reviewer,
+  sequelize
+)
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
+  reviewCommentService,
   mailer,
   User,
   ReviewRequest,
@@ -233,6 +243,7 @@ const reviewRequestService = new ReviewRequestService(
   new ConfigService(),
   sequelize
 )
+
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
 const previewService = new PreviewService()

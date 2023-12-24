@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios"
-import _ from "lodash"
+import _, { sortBy, unionBy } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
@@ -12,7 +12,7 @@ import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
 import { ReviewRequestStatus } from "@root/constants"
-import { Repo, ReviewRequestView } from "@root/database/models"
+import { Repo, ReviewComment, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import { BaseIsomerError } from "@root/errors/BaseError"
@@ -55,6 +55,8 @@ import RepoService from "../db/RepoService"
 import { PageService } from "../fileServices/MdPageServices/PageService"
 import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
+
+import ReviewCommentService from "./ReviewCommentService"
 import MailClient from "../utilServices/MailClient"
 
 const injectDefaultEditMeta = ({
@@ -83,6 +85,8 @@ const injectDefaultEditMeta = ({
 export default class ReviewRequestService {
   private readonly apiService: RepoService
 
+  private readonly reviewCommentService: ReviewCommentService
+
   private readonly mailer: MailClient
 
   private readonly repository: ModelStatic<ReviewRequest>
@@ -103,6 +107,7 @@ export default class ReviewRequestService {
 
   constructor(
     apiService: RepoService,
+    reviewCommentService: ReviewCommentService,
     mailer: MailClient,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
@@ -114,6 +119,7 @@ export default class ReviewRequestService {
     sequelize: Sequelize
   ) {
     this.apiService = apiService
+    this.reviewCommentService = reviewCommentService
     this.mailer = mailer
     this.users = users
     this.repository = repository
@@ -849,15 +855,22 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     pullRequestNumber: number,
     message: string
-  ): Promise<AxiosResponse<void>> => {
+  ): Promise<ReviewComment> => {
     const { siteName, isomerUserId } = sessionData
 
-    return this.apiService.createComment(
-      siteName,
-      pullRequestNumber,
-      isomerUserId,
-      message
-    )
+    // get id of review request
+    const reviewMeta = await this.reviewMeta.findOne({
+      where: { pullRequestNumber },
+    })
+
+    if (reviewMeta?.reviewId) {
+      return await this.reviewCommentService.createCommentForReviewRequest(
+        reviewMeta?.reviewId,
+        isomerUserId,
+        message
+      )
+    }
+    throw new RequestNotFoundError("Review Request not found")
   }
 
   getComments = async (
@@ -866,6 +879,18 @@ export default class ReviewRequestService {
     pullRequestNumber: number
   ): Promise<CommentItem[]> => {
     const { siteName, isomerUserId: userId } = sessionData
+
+    // get review request id
+    const reviewMeta = await this.reviewMeta.findOne({
+      where: { pullRequestNumber },
+    })
+    if (!reviewMeta || !reviewMeta.reviewId) {
+      throw new RequestNotFoundError("Review Request not found")
+    }
+
+    const allComments = await this.reviewCommentService.getCommentsOfReviewRequest(
+      reviewMeta.reviewId
+    )
 
     const comments = await this.apiService.getComments(
       siteName,
@@ -896,7 +921,28 @@ export default class ReviewRequestService {
 
     const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
 
-    return this.computeCommentData(comments, viewedTime)
+    // if comments exist in DB return those, else return from GitHub
+    let commentsFromDB: CommentItem[] = []
+    if (allComments.length !== 0) {
+      commentsFromDB = allComments.map((rawComment) => ({
+        user: rawComment.user.email || "",
+        createdAt: rawComment.createdAt.getTime(),
+        message: rawComment.comment,
+        isRead: viewedTime ? rawComment.createdAt < viewedTime : false,
+      }))
+    }
+    // Note: temporarily till all existing RRs depending on GitHub
+    // are merged, we will combine both the DB and GitHub without
+    // duplicates
+    // TODO: Remove after dependency of GitHub is removed
+    const commentsFromGitHub = await this.computeCommentData(
+      comments,
+      viewedTime
+    )
+    return sortBy(
+      unionBy(commentsFromDB, commentsFromGitHub, "message"),
+      "createdAt"
+    )
   }
 
   getBlob = async (repo: string, path: string, ref: string): Promise<string> =>

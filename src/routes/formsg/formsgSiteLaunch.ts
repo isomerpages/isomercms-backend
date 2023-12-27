@@ -375,7 +375,7 @@ export class FormsgSiteLaunchRouter {
               )
               return isAmazonCAA
             })
-            if (caaRecords.length > 1 && !hasAmazonCAAWhitelisted) {
+            if (caaRecords.length > 0 && !hasAmazonCAAWhitelisted) {
               successResult.addCAARecord = true
             } else {
               successResult.addCAARecord = false

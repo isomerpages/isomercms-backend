@@ -8,11 +8,9 @@ RUN apk update && \
   apk add openssh-client
 
 RUN mkdir /root/.ssh
-RUN cat <<EOF >/root/.ssh/config 
-Host github.com
-  IdentityFile /root/.ssh/github
-  User git
-EOF
+
+RUN chmod +x ./scripts/03_add_keys_to_ssh_config.sh
+RUN sh ./scripts/03_add_keys_to_ssh_config.sh
 
 RUN chmod +x ./scripts/04_add_github_to_known_hosts.sh
 RUN sh ./scripts/04_add_github_to_known_hosts.sh

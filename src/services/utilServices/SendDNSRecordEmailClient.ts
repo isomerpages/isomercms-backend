@@ -2,12 +2,13 @@ import { groupBy } from "lodash"
 
 import { DigType } from "@root/types/dig"
 
-export interface QuadARecord {
+export interface DigDNSRecord {
   domain: string
   class: string
   type: DigType
   value: string
 }
+
 export interface DnsRecordsEmailProps {
   requesterEmail: string
   repoName: string
@@ -18,7 +19,8 @@ export interface DnsRecordsEmailProps {
   indirectionDomain: string
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
-  quadARecords?: QuadARecord[]
+  quadARecords?: DigDNSRecord[]
+  addCAARecord?: boolean
 }
 
 export interface LaunchFailureEmailProps {
@@ -109,7 +111,43 @@ export function getDNSRecordsEmailBody(
   </table>`
 
   Object.keys(groupedDnsRecords).forEach((repoName) => {
-    const allQuadARecordsForRepo: QuadARecord[] = []
+    groupedDnsRecords[repoName].forEach((dnsRecord) => {
+      if (dnsRecord.addCAARecord) {
+        html += `<p style="${bodyFooterStyle}">Please add CAA records for the following repo: <b>${repoName}</b>.`
+
+        html += ` <table style="${tableStyle}">
+        <thead>
+          <tr style="${headerRowStyle}">
+            <th style="${thStyle}">Repo Name</th>
+            <th style="${thStyle}">Type</th>
+            <th style="${thStyle}">Flags</th>
+            <th style="${thStyle}">Tag</th>
+            <th style="${thStyle}">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr style="${tdStyle}">
+        <td style="${tdStyle}  background-color: #f2f2f2" rowspan="2" >${repoName}</td>
+        <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+        <td style="${tdStyle}">0</td>
+        <td style="${tdStyle}">issue</td>
+        <td style="${tdStyle}">amazontrust.com</td>
+      </tr>
+      <tr style="${tdStyle}">
+      <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+        <td style="${tdStyle}">0</td>
+        <td style="${tdStyle}">issue</td>
+        <td style="${tdStyle}">amazontrust.com</td>
+      </tr>
+    
+    </tbody>
+  </table>`
+      }
+    })
+  })
+
+  Object.keys(groupedDnsRecords).forEach((repoName) => {
+    const allQuadARecordsForRepo: DigDNSRecord[] = []
     groupedDnsRecords[repoName].forEach((dnsRecord) => {
       if (dnsRecord.quadARecords) {
         allQuadARecordsForRepo.push(...dnsRecord.quadARecords)
@@ -147,7 +185,6 @@ export function getDNSRecordsEmailBody(
   })
 
   html += `<p style="${bodyFooterStyle}">This email was sent from the Isomer CMS backend.</p>`
-
   return html
 }
 

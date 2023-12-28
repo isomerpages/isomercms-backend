@@ -22,6 +22,7 @@ import {
   getDNSRecordsEmailBody,
   getErrorEmailBody,
 } from "@root/services/utilServices/SendDNSRecordEmailClient"
+import TRUSTED_AMPLIFY_CAA_RECORDS from "@root/types/caaAmplify"
 import { DigResponse, DigType } from "@root/types/dig"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
@@ -231,7 +232,7 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(email, subject, html)
   }
 
-  private digDomainForQuadARecords = async (
+  digDomainRecords = async (
     domain: string,
     digType: DigType
   ): Promise<DigResponse | null> =>
@@ -332,13 +333,18 @@ export class FormsgSiteLaunchRouter {
       for (const launchResult of launchResults) {
         if (launchResult.isOk()) {
           // check for AAAA records
-          const digResponse = await this.digDomainForQuadARecords(
+          const quadADigResponse = await this.digDomainRecords(
             launchResult.value.primaryDomainSource,
             "AAAA"
           )
+          const caaDigResponse = await this.digDomainRecords(
+            launchResult.value.primaryDomainSource,
+            "CAA"
+          )
+
           const successResult: DnsRecordsEmailProps = launchResult.value
-          if (digResponse && digResponse.answer) {
-            const quadARecords = digResponse.answer
+          if (quadADigResponse && quadADigResponse.answer) {
+            const quadARecords = quadADigResponse.answer
             successResult.quadARecords = quadARecords.map((record) => ({
               domain: record.domain,
               class: record.class,
@@ -348,6 +354,35 @@ export class FormsgSiteLaunchRouter {
           } else {
             logger.info(
               `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for AAAA records`
+            )
+          }
+
+          if (!caaDigResponse) {
+            logger.info(
+              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for CAA records`
+            )
+          } else if (caaDigResponse.answer) {
+            const caaRecords = caaDigResponse.answer
+
+            /**
+             * NOTE: If there exists more than one CAA Record, we need to
+             * 1. check if they have whitelisted Amazon CAA
+             * 2. if not, send email to inform them to whitelist Amazon CAA
+             */
+            const hasAmazonCAAWhitelisted = caaRecords.some((record) => {
+              const isAmazonCAA = TRUSTED_AMPLIFY_CAA_RECORDS.some(
+                (trustedCAA) => trustedCAA === record.value
+              )
+              return isAmazonCAA
+            })
+            if (caaRecords.length > 0 && !hasAmazonCAAWhitelisted) {
+              successResult.addCAARecord = true
+            } else {
+              successResult.addCAARecord = false
+            }
+          } else {
+            logger.info(
+              `${launchResult.value.primaryDomainSource} Domain does not have any CAA records.`
             )
           }
           // Create better uptime monitor

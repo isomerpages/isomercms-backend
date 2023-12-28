@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - staging
+      - feat/ecs
 
 jobs:
   deploy:
@@ -19,7 +20,7 @@ jobs:
       ecr-repository: "isomer-infra-staging-ecr"
       ecs-cluster-name: "isomer-infra-staging-ecs"
       ecs-web-service-name: "isomer-infra-staging-ecs-service"
-      ecs-container-name: "app-server"
+      ecs-container-name: "backend"
       environment: "staging"
       shortEnv: "stg"
       task-definition-path: ".aws/deploy/backend-task-definition.staging.json"

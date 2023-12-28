@@ -3,7 +3,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.develop
+      dockerfile: Dockerfile
     ports:
       - "8081:8081"
     depends_on:

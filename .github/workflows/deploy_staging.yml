@@ -23,7 +23,10 @@ jobs:
       ecs-container-name: "backend"
       environment: "staging"
       shortEnv: "stg"
-      task-definition-path: ".aws/deploy/backend-task-definition.staging.json"
+      task-definition-path: ".aws/deploy/backend-task-definition.staging.json" 
+      codedeploy-application: "isomer-stg-ecs-app"
+      codedeploy-deployment-group: "isomer-stg-ecs-dg"
+
     secrets: 
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       EFS_FILE_SYSTEM_ID: ${{ secrets.STAGING_EFS_FILE_SYSTEM_ID }}

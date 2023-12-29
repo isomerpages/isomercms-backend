@@ -175,4 +175,4 @@ class MediaDirectoryService {
   }
 }
 
-module.exports = { MediaDirectoryService }
+export default MediaDirectoryService

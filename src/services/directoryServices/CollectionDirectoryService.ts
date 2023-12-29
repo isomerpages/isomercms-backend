@@ -1,10 +1,18 @@
-const { BadRequestError } = require("@errors/BadRequestError")
-const {
+import { BadRequestError } from "@errors/BadRequestError"
+import {
   ConflictError,
   protectedFolderConflictErrorMsg,
-} = require("@errors/ConflictError")
+} from "@errors/ConflictError"
 
-const { slugifyCollectionName } = require("@utils/utils")
+import { slugifyCollectionName } from "@utils/utils"
+
+import GithubSessionData from "@root/classes/GithubSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { NavYmlService } from "@root/services/fileServices/YmlFileServices/NavYmlService"
+import { GitDirectoryItem } from "@root/types/gitfilesystem"
+import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { CollectionYmlService } from "@services/fileServices/YmlFileServices/CollectionYmlService"
+import { MoverService } from "@services/moverServices/MoverService"
 
 const ISOMER_TEMPLATE_DIRS = ["_data", "_includes", "_site", "_layouts"]
 const ISOMER_TEMPLATE_PROTECTED_DIRS = [
@@ -20,11 +28,24 @@ const ISOMER_TEMPLATE_PROTECTED_DIRS = [
 const PLACEHOLDER_FILE_NAME = ".keep"
 
 class CollectionDirectoryService {
+  private baseDirectoryService: BaseDirectoryService
+
+  private navYmlService: NavYmlService
+
+  private collectionYmlService: CollectionYmlService
+
+  private moverService: MoverService
+
   constructor({
     baseDirectoryService,
     navYmlService,
     collectionYmlService,
     moverService,
+  }: {
+    baseDirectoryService: BaseDirectoryService
+    navYmlService: NavYmlService
+    collectionYmlService: CollectionYmlService
+    moverService: MoverService
   }) {
     this.baseDirectoryService = baseDirectoryService
     this.navYmlService = navYmlService
@@ -32,22 +53,25 @@ class CollectionDirectoryService {
     this.moverService = moverService
   }
 
-  convertYmlToObjOrder(fileOrder) {
-    function addSubcollection() {
+  convertYmlToObjOrder(fileOrder: string[]): GitDirectoryItem[] {
+    let currSubcollectionName = ""
+    let currSubcollectionFiles: string[] = []
+    const processedFiles: GitDirectoryItem[] = []
+
+    const addSubcollection = () => {
       if (currSubcollectionName !== "") {
         processedFiles.push({
           name: currSubcollectionName,
           type: "dir",
           children: currSubcollectionFiles,
+          path: "",
+          size: 0,
+          addedTime: 0,
         })
         currSubcollectionName = ""
         currSubcollectionFiles = []
       }
     }
-
-    let currSubcollectionName = ""
-    let currSubcollectionFiles = []
-    const processedFiles = []
 
     fileOrder.forEach((filePath) => {
       if (filePath.includes("/")) {
@@ -56,12 +80,16 @@ class CollectionDirectoryService {
           addSubcollection()
           currSubcollectionName = subcollectionName
         }
-        if (fileName !== ".keep") currSubcollectionFiles.push(fileName)
+        if (fileName !== PLACEHOLDER_FILE_NAME)
+          currSubcollectionFiles.push(fileName)
       } else {
         addSubcollection()
         processedFiles.push({
           name: filePath,
           type: "file",
+          path: "",
+          size: 0,
+          addedTime: 0,
         })
       }
     })
@@ -69,13 +97,13 @@ class CollectionDirectoryService {
     return processedFiles
   }
 
-  convertObjToYmlOrder(objArr) {
-    const fileOrder = []
+  convertObjToYmlOrder(objArr: GitDirectoryItem[]): string[] {
+    const fileOrder: string[] = []
     objArr.forEach((obj) => {
       if (obj.type === "dir") {
         const subcollectionName = obj.name
         fileOrder.push(`${subcollectionName}/${PLACEHOLDER_FILE_NAME}`)
-        obj.children.forEach((fileName) => {
+        obj.children?.forEach((fileName) => {
           fileOrder.push(`${subcollectionName}/${fileName}`)
         })
       } else {
@@ -85,37 +113,53 @@ class CollectionDirectoryService {
     return fileOrder
   }
 
-  async listAllCollections(sessionData) {
+  async listAllCollections(
+    sessionData: UserWithSiteSessionData
+  ): Promise<GitDirectoryItem[]> {
     const filesOrDirs = await this.baseDirectoryService.list(sessionData, {
       directoryName: "",
     })
-    return filesOrDirs.reduce((acc, curr) => {
-      if (
-        curr.type === "dir" &&
-        !ISOMER_TEMPLATE_DIRS.includes(curr.name) &&
-        curr.name.slice(0, 1) === "_"
-      )
-        acc.push({
-          name: curr.path.slice(1),
-          type: "dir",
-        })
-      return acc
-    }, [])
+    return filesOrDirs.reduce(
+      (acc: GitDirectoryItem[], curr: GitDirectoryItem) => {
+        if (
+          curr.type === "dir" &&
+          !ISOMER_TEMPLATE_DIRS.includes(curr.name) &&
+          curr.name.startsWith("_")
+        ) {
+          acc.push({
+            name: curr.name.slice(1),
+            type: "dir",
+            path: "",
+            size: 0,
+            addedTime: 0,
+          })
+        }
+        return acc
+      },
+      []
+    )
   }
 
-  async listFiles(sessionData, { collectionName }) {
+  async listFiles(
+    sessionData: UserWithSiteSessionData,
+    { collectionName }: { collectionName: string }
+  ): Promise<GitDirectoryItem[]> {
     const files = await this.collectionYmlService.listContents(sessionData, {
       collectionName,
     })
-
     return this.convertYmlToObjOrder(files)
   }
 
-  async createDirectory(sessionData, { collectionName, objArray }) {
+  async createDirectory(
+    sessionData: UserWithSiteSessionData,
+    {
+      collectionName,
+      objArray,
+    }: { collectionName: string; objArray: GitDirectoryItem[] }
+  ): Promise<{ newDirectoryName: string; items: GitDirectoryItem[] }> {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
       throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
     if (/[^a-zA-Z0-9- ]/g.test(collectionName)) {
-      // Contains non-allowed characters
       throw new BadRequestError(
         "Special characters not allowed in collection name"
       )
@@ -123,17 +167,20 @@ class CollectionDirectoryService {
     const slugifiedCollectionName = slugifyCollectionName(collectionName)
     await this.collectionYmlService.create(sessionData, {
       collectionName: slugifiedCollectionName,
+      orderArray: undefined,
     })
+
     if (objArray) {
       const orderArray = this.convertObjToYmlOrder(objArray)
-      // We can't perform these operations concurrently because of conflict issues
-      /* eslint-disable no-await-in-loop, no-restricted-syntax */
-      for (const fileName of orderArray) {
+      orderArray.forEach(async (fileName) => {
         await this.moverService.movePage(sessionData, {
           fileName,
+          oldFileCollection: undefined,
+          oldFileSubcollection: undefined,
+          newFileSubcollection: undefined,
           newFileCollection: slugifiedCollectionName,
         })
-      }
+      })
     }
     return {
       newDirectoryName: slugifiedCollectionName,
@@ -142,47 +189,64 @@ class CollectionDirectoryService {
   }
 
   async renameDirectory(
-    sessionData,
-    githubSessionData,
-    { collectionName, newDirectoryName }
-  ) {
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    {
+      collectionName,
+      newDirectoryName,
+    }: { collectionName: string; newDirectoryName: string }
+  ): Promise<void> {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
-      // Contains non-allowed characters
       throw new BadRequestError(
         "Special characters not allowed in collection name"
       )
     }
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(newDirectoryName))
       throw new ConflictError(protectedFolderConflictErrorMsg(newDirectoryName))
+
     const slugifiedNewCollectionName = slugifyCollectionName(newDirectoryName)
     await this.baseDirectoryService.rename(sessionData, githubSessionData, {
       oldDirectoryName: `_${collectionName}`,
       newDirectoryName: `_${slugifiedNewCollectionName}`,
       message: `Renaming collection ${collectionName} to ${slugifiedNewCollectionName}`,
     })
+
     await this.collectionYmlService.renameCollectionInOrder(sessionData, {
       oldCollectionName: collectionName,
       newCollectionName: slugifiedNewCollectionName,
     })
+
     await this.navYmlService.renameCollectionInNav(sessionData, {
       oldCollectionName: collectionName,
       newCollectionName: slugifiedNewCollectionName,
     })
   }
 
-  async deleteDirectory(sessionData, githubSessionData, { collectionName }) {
+  async deleteDirectory(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { collectionName }: { collectionName: string }
+  ): Promise<void> {
     if (ISOMER_TEMPLATE_PROTECTED_DIRS.includes(collectionName))
       throw new ConflictError(protectedFolderConflictErrorMsg(collectionName))
+
     await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: `_${collectionName}`,
       message: `Deleting collection ${collectionName}`,
     })
+
     await this.navYmlService.deleteCollectionInNav(sessionData, {
       collectionName,
     })
   }
 
-  async reorderDirectory(sessionData, { collectionName, objArray }) {
+  async reorderDirectory(
+    sessionData: UserWithSiteSessionData,
+    {
+      collectionName,
+      objArray,
+    }: { collectionName: string; objArray: GitDirectoryItem[] }
+  ): Promise<GitDirectoryItem[]> {
     const fileOrder = this.convertObjToYmlOrder(objArray)
     await this.collectionYmlService.updateOrder(sessionData, {
       collectionName,
@@ -192,20 +256,31 @@ class CollectionDirectoryService {
   }
 
   async movePages(
-    sessionData,
-    { collectionName, targetCollectionName, targetSubcollectionName, objArray }
-  ) {
-    // We can't perform these operations concurrently because of conflict issues
-    /* eslint-disable no-await-in-loop, no-restricted-syntax */
-    for (const file of objArray) {
-      const fileName = file.name
-      await this.moverService.movePage(sessionData, {
-        fileName,
-        oldFileCollection: collectionName,
-        newFileCollection: targetCollectionName,
-        newFileSubcollection: targetSubcollectionName,
-      })
+    sessionData: UserWithSiteSessionData,
+    {
+      collectionName,
+      targetCollectionName,
+      targetSubcollectionName,
+      objArray,
+    }: {
+      collectionName: string
+      targetCollectionName: string
+      targetSubcollectionName: string
+      objArray: GitDirectoryItem[]
     }
+  ): Promise<void> {
+    await Promise.all(
+      objArray.map(async (file) => {
+        const fileName = file.name
+        await this.moverService.movePage(sessionData, {
+          fileName,
+          oldFileCollection: collectionName,
+          oldFileSubcollection: undefined,
+          newFileCollection: targetCollectionName,
+          newFileSubcollection: targetSubcollectionName,
+        })
+      })
+    )
   }
 }
 

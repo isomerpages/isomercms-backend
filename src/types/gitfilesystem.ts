@@ -14,6 +14,15 @@ export type GitDirectoryItem = {
   path: string
   size: number
   addedTime: number
+  children?: string[]
+}
+
+export type GitFileItem = {
+  name: string
+  type: string
+  title: string
+  date: string
+  resourceType?: string
 }
 
 export type DirectoryContents = {

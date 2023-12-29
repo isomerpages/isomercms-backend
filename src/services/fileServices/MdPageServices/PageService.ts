@@ -6,7 +6,7 @@ import { BaseIsomerError } from "@root/errors/BaseError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
-import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import ResourceRoomDirectoryService from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import {
   CollectionPageName,
   ContactUsPageName,
@@ -292,7 +292,7 @@ export class PageService {
       // NOTE: Assumed that errors are of a 4xx nature rather than 5xx
       () => new MissingResourceRoomError()
     ).andThen<ResourceRoomName, MissingResourceRoomError>(
-      ({ resourceRoomName }: { resourceRoomName: string }) =>
+      ({ resourceRoomName }: { resourceRoomName: string | null }) =>
         // NOTE: Underlying service can return this as `null` or as an empty string
         resourceRoomName
           ? ok({

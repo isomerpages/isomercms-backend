@@ -7,6 +7,7 @@ import {
 import { slugifyCollectionName } from "@utils/utils"
 
 import GithubSessionData from "@root/classes/GithubSessionData"
+import UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitDirectoryItem } from "@root/types/gitfilesystem"
@@ -67,7 +68,7 @@ class ResourceRoomDirectoryService {
   }
 
   async getResourceRoomDirectoryName(
-    sessionData: UserWithSiteSessionData
+    sessionData: UserSessionData
   ): Promise<{ resourceRoomName: string | null }> {
     const config: { content: ConfigContent } = await this.configYmlService.read(
       sessionData

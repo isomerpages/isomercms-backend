@@ -33,12 +33,12 @@ module.exports = {
       comment: {
         type: Sequelize.STRING,
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn("NOW"),
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn("NOW"),
@@ -46,6 +46,6 @@ module.exports = {
     })
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("ReviewComments")
+    await queryInterface.dropTable("review_comments")
   },
 }

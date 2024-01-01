@@ -528,6 +528,13 @@ describe("Review Requests Integration Tests", () => {
         pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
         reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
       })
+      await ReviewComment.create({
+        reviewId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+        comment: MOCK_GITHUB_COMMENT_BODY_ONE,
+        createdAt: new Date().getTime(),
+        updatedAt: new Date().getTime(),
+      })
     })
 
     afterAll(async () => {
@@ -538,6 +545,9 @@ describe("Review Requests Integration Tests", () => {
         where: {},
       })
       await ReviewRequest.destroy({
+        where: {},
+      })
+      await ReviewComment.destroy({
         where: {},
       })
     })

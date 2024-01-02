@@ -70,7 +70,7 @@ export class CollaboratorsRouter {
     const { siteName, userId } = req.params
     const { userWithSiteSessionData } = res.locals
     logger.info(
-      `Editing site members table by deleting collaborator ${userId} from site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`
+      `Editing site members table by deleting collaborator ${userId} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`
     )
 
     const resp = await this.collaboratorsService.delete(siteName, userId)

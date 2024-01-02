@@ -110,7 +110,7 @@ class DeploymentClient {
       },
     ]
     const defaultRedirectRules = [
-      { source: "/<*>", target: "/404.html", status: "404" },
+      { source: "/<*>", target: "/404.html", status: "404-200" },
     ]
 
     const redirectRules = isStagingLite

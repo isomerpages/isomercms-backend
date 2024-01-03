@@ -606,6 +606,9 @@ export default class InfraService {
               siteStatus: SiteStatus.Launched,
               jobStatus: JobStatus.Ready,
             }
+
+            // Create better uptime monitor iff site launch is a success
+            await this.createMonitor(message.primaryDomainSource)
           } else {
             updateSiteLaunchParams = {
               id: site.value.id,
@@ -614,10 +617,7 @@ export default class InfraService {
             }
           }
 
-          // Create better uptime monitor
-          await this.createMonitor(message.primaryDomainSource)
           await this.sitesService.update(updateSiteLaunchParams)
-
           await this.sendEmailUpdate(message, isSuccess)
         })
       )

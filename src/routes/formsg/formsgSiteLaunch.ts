@@ -308,7 +308,6 @@ export class FormsgSiteLaunchRouter {
             )
           }
           // Create better uptime monitor
-          await this.createMonitor(launchResult.value.primaryDomainSource)
           successResults.push(successResult)
         }
       }

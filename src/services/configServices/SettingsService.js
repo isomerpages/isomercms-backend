@@ -173,6 +173,14 @@ class SettingsService {
       // only when changing from public to private - not awaited as this is slow and non-blocking
       privatiseNetlifySite(siteName, password)
     }
+    const updatePasswordResp = await this.deploymentsService.updateAmplifyPassword(
+      siteName,
+      password,
+      enablePassword
+    )
+    if (updatePasswordResp.isErr()) {
+      return updatePasswordResp
+    }
     if (isPrivate !== enablePassword) {
       // For public -> private or private -> public, we also need to update the repo privacy on github
       const privatiseRepoRes = await this.gitHubService.changeRepoPrivacy(
@@ -189,11 +197,7 @@ class SettingsService {
         return errAsync(err)
       }
     }
-    return this.deploymentsService.updateAmplifyPassword(
-      siteName,
-      password,
-      enablePassword
-    )
+    return updatePasswordResp
   }
 
   shouldUpdateHomepage(updatedConfigContent, configContent) {

@@ -202,9 +202,14 @@ class DeploymentsService {
     return okAsync(deploymentInfo)
   }
 
-  deletePassword = async (appId: string, deploymentId: number) => {
+  deletePassword = async (
+    appId: string,
+    deploymentId: number,
+    isStagingLite: boolean
+  ) => {
     const updateAppInput = this.deploymentClient.generateDeletePasswordInput(
-      appId
+      appId,
+      isStagingLite ? "staging-lite" : "staging"
     )
     const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
 
@@ -249,9 +254,22 @@ class DeploymentsService {
       return errAsync(
         new NotFoundError(`Deployment for site ${repoName} does not exist`)
       )
-    const { id, hostingId: appId } = deploymentInfo
+    const {
+      id,
+      hostingId: appId,
+      stagingLiteHostingId: stagingLiteId,
+    } = deploymentInfo
 
-    if (!enablePassword) return this.deletePassword(appId, id)
+    if (!enablePassword) {
+      const stagingRes = await this.deletePassword(appId, id, false)
+      if (!stagingLiteId || stagingRes.isErr()) return stagingRes
+      const stagingLiteRes = await this.deletePassword(stagingLiteId, id, true)
+      if (stagingLiteRes.isErr())
+        logger.error(
+          `Privatisation adjustment failed for ${repoName} - requires manual fixing of inconsistent state`
+        )
+      return stagingLiteRes
+    }
 
     const {
       encryptedPassword: oldEncryptedPassword,
@@ -271,6 +289,24 @@ class DeploymentsService {
     const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
     if (updateResp.isErr()) {
       return updateResp
+    }
+
+    if (stagingLiteId) {
+      const updateStagingLiteInput = this.deploymentClient.generateUpdatePasswordInput(
+        stagingLiteId,
+        password,
+        "staging-lite"
+      )
+
+      const updateStagingLiteResp = await this.deploymentClient.sendUpdateApp(
+        updateStagingLiteInput
+      )
+      if (updateStagingLiteResp.isErr()) {
+        logger.error(
+          `Privatisation adjustment failed for ${repoName} - requires manual fixing of inconsistent state`
+        )
+        return updateStagingLiteResp
+      }
     }
 
     const { encryptedPassword, iv } = encryptPassword(password, SECRET_KEY)

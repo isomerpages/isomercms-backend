@@ -102,7 +102,8 @@ jobs:
           import os
           ref = os.environ['GITHUB_REF']
           prod = os.environ['PRODUCTION_BRANCH']
-          if ref == prod:
+          staging = os.environ['STAGING_BRANCH']
+          if ref == prod or ref == staging:
             print('::set-output name=proceed::true')
           else:
             print('::set-output name=proceed::false')

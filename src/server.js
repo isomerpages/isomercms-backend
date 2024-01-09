@@ -224,12 +224,7 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
-const reviewCommentService = new ReviewCommentService(
-  User,
-  ReviewComment,
-  Reviewer,
-  sequelize
-)
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
   reviewCommentService,
@@ -467,6 +462,7 @@ sequelize
   .authenticate()
   .then(() => {
     logger.info("Connection has been established successfully.")
+    ReviewComment.sync()
     bootstrap(app)
   })
   .catch((err) => {

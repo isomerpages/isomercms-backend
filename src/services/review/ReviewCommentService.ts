@@ -10,22 +10,8 @@ import { User } from "@database/models/User"
 export default class ReviewCommentService {
   private readonly repository: ModelStatic<ReviewComment>
 
-  private readonly users: ModelStatic<User>
-
-  private readonly reviewers: ModelStatic<Reviewer>
-
-  private readonly sequelize: Sequelize
-
-  constructor(
-    users: ModelStatic<User>,
-    repository: ModelStatic<ReviewComment>,
-    reviewers: ModelStatic<Reviewer>,
-    sequelize: Sequelize
-  ) {
+  constructor(repository: ModelStatic<ReviewComment>) {
     this.repository = repository
-    this.users = users
-    this.reviewers = reviewers
-    this.sequelize = sequelize
   }
 
   getCommentsForReviewRequest(reviewId: number) {

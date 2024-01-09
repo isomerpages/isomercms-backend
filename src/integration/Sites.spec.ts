@@ -80,12 +80,7 @@ const gitHubService = new RepoService({
   gitFileSystemService,
   gitFileCommitService,
 })
-const reviewCommentService = new ReviewCommentService(
-  User,
-  ReviewComment,
-  Reviewer,
-  sequelize
-)
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })

@@ -81,12 +81,7 @@ const gitHubService = new RepoService({
   gitFileSystemService,
   gitFileCommitService,
 })
-const reviewCommentService = new ReviewCommentService(
-  User,
-  ReviewComment,
-  Reviewer,
-  sequelize
-)
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })

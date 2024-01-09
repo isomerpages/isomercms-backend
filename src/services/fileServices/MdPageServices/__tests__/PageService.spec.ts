@@ -17,7 +17,7 @@ import {
 } from "@root/types/pages"
 import { Brand } from "@root/types/util"
 import { extractPathInfo } from "@root/utils/files"
-import { ResourceRoomDirectoryService } from "@services/directoryServices/ResourceRoomDirectoryService"
+import ResourceRoomDirectoryService from "@services/directoryServices/ResourceRoomDirectoryService"
 
 import { CollectionPageService } from "../CollectionPageService"
 import { ContactUsPageService } from "../ContactUsPageService"

@@ -45,8 +45,8 @@ import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { SettingsRouter as _SettingsRouter } from "@root/routes/v2/authenticatedSites/settings"
 import { SettingsService } from "@root/services/configServices/SettingsService"
 import GitFileCommitService from "@root/services/db/GitFileCommitService"
-import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
-import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import BaseDirectoryService from "@root/services/directoryServices/BaseDirectoryService"
+import ResourceRoomDirectoryService from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
 import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
@@ -110,9 +110,7 @@ const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({
-  repoService: gitHubService,
-})
+const baseDirectoryService = new BaseDirectoryService(gitHubService)
 
 const contactUsService = new ContactUsPageService({
   gitHubService,

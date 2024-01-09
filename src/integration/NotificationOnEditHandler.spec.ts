@@ -30,6 +30,7 @@ import {
   MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
   MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
 } from "@root/fixtures/review"
+import GitHubService from "@root/services/db/GitHubService"
 import BaseDirectoryService from "@root/services/directoryServices/BaseDirectoryService"
 import ResourceRoomDirectoryService from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -69,9 +70,9 @@ const footerYmlService = new FooterYmlService({
 const collectionYmlService = new CollectionYmlService({
   gitHubService: mockGithubService,
 })
-const baseDirectoryService = new BaseDirectoryService({
-  repoService: mockGithubService,
-})
+const baseDirectoryService = new BaseDirectoryService(
+  (mockGithubService as unknown) as RepoService
+)
 
 const contactUsService = new ContactUsPageService({
   gitHubService: mockGithubService,
@@ -100,7 +101,7 @@ const configYmlService = new ConfigYmlService({
 const resourceRoomDirectoryService = new ResourceRoomDirectoryService({
   baseDirectoryService,
   configYmlService,
-  gitHubService: mockGithubService,
+  gitHubService: (mockGithubService as unknown) as GitHubService,
 })
 const pageService = new PageService({
   collectionPageService,

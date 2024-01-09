@@ -8,7 +8,7 @@ import {
 } from "@root/fixtures/sessionData"
 import { MOCK_REPO_NAME_ONE } from "@root/fixtures/sites"
 import { attachReadRouteHandlerWrapper } from "@root/middleware/routeHandler"
-import { MediaDirectoryService } from "@root/services/directoryServices/MediaDirectoryService"
+import MediaDirectoryService from "@root/services/directoryServices/MediaDirectoryService"
 import { MediaFileService } from "@root/services/fileServices/MdPageServices/MediaFileService"
 
 import { MediaRouter } from "../media"

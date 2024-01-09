@@ -34,8 +34,8 @@ import {
 import { getAuthorizationMiddleware } from "@root/middleware"
 import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
 import GitFileCommitService from "@root/services/db/GitFileCommitService"
-import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
-import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import BaseDirectoryService from "@root/services/directoryServices/BaseDirectoryService"
+import ResourceRoomDirectoryService from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
 import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"
@@ -80,9 +80,7 @@ const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({
-  repoService: gitHubService,
-})
+const baseDirectoryService = new BaseDirectoryService(gitHubService)
 
 const contactUsService = new ContactUsPageService({
   gitHubService,

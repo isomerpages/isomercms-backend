@@ -36,7 +36,6 @@ export class ReviewComment extends Model {
 
   @BelongsTo(() => User, {
     onUpdate: "CASCADE",
-    onDelete: "CASCADE",
   })
   user!: User
 

@@ -1,8 +1,8 @@
-import MediaDirectoryService from "@services/directoryServices/MediaDirectoryService"
-
 const { config } = require("@config/config")
 
 const { BadRequestError } = require("@errors/BadRequestError")
+
+const MediaDirectoryService = require("@services/directoryServices/MediaDirectoryService")
 
 const GITHUB_ORG_NAME = config.get("github.orgName")
 

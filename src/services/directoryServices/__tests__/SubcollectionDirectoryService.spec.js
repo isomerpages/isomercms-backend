@@ -1,6 +1,6 @@
-import SubcollectionDirectoryService from "@services/directoryServices/SubcollectionDirectoryService"
-
 const { BadRequestError } = require("@errors/BadRequestError")
+
+const SubcollectionDirectoryService = require("@services/directoryServices/SubcollectionDirectoryService")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 

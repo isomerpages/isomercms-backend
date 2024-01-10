@@ -3,10 +3,10 @@ import {
   retrieveDataFromMarkdown,
 } from "@utils/markdown-utils"
 
-import ResourceDirectoryService from "@services/directoryServices/ResourceDirectoryService"
-
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")
+
+const ResourceDirectoryService = require("@services/directoryServices/ResourceDirectoryService")
 
 const INDEX_FILE_NAME = "index.html"
 

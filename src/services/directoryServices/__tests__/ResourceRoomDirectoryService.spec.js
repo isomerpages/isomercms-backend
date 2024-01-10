@@ -1,7 +1,7 @@
-import ResourceRoomDirectoryService from "@services/directoryServices/ResourceRoomDirectoryService"
-
 const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
+
+const ResourceRoomDirectoryService = require("@services/directoryServices/ResourceRoomDirectoryService")
 
 const INDEX_FILE_NAME = "index.html"
 

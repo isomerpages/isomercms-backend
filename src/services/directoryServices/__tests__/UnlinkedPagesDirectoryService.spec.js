@@ -1,4 +1,4 @@
-import UnlinkedPagesDirectoryService from "@services/directoryServices/UnlinkedPagesDirectoryService"
+const UnlinkedPagesDirectoryService = require("@services/directoryServices/UnlinkedPagesDirectoryService")
 
 const UNLINKED_PAGE_DIRECTORY_NAME = "pages"
 

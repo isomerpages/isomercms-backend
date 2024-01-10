@@ -1,6 +1,6 @@
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
-
 const { ConflictError } = require("@errors/ConflictError")
+
+const BaseDirectoryService = require("@services/directoryServices/BaseDirectoryService")
 
 describe("Base Directory Service", () => {
   const siteName = "test-site"

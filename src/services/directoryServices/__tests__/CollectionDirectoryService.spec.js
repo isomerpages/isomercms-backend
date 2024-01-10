@@ -1,7 +1,7 @@
-import CollectionDirectoryService from "@services/directoryServices/CollectionDirectoryService"
-
 const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
+
+const CollectionDirectoryService = require("@services/directoryServices/CollectionDirectoryService")
 
 describe("Collection Directory Service", () => {
   const siteName = "test-site"

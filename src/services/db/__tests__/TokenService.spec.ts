@@ -1,5 +1,5 @@
 import { expect, jest } from "@jest/globals"
-import { AxiosResponse } from "axios"
+import { AxiosRequestHeaders, AxiosResponse } from "axios"
 import { ok, err } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
@@ -594,9 +594,9 @@ describe("Token Service", () => {
       (resetTime: number) =>
         ({
           config: {
-            headers: {
+            headers: ({
               Authorization: `token ${sampleGithubToken}`,
-            },
+            } as unknown) as AxiosRequestHeaders,
           },
           headers: {
             [GITHUB_TOKEN_REMAINING_HEADER]: "1234",

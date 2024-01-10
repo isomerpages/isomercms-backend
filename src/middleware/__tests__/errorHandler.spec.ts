@@ -1,4 +1,4 @@
-import { AxiosError } from "axios"
+import { AxiosError, AxiosRequestHeaders } from "axios"
 import _ from "lodash"
 import { serializeError } from "serialize-error"
 
@@ -21,7 +21,9 @@ const mockRes = {
 }
 const mockNext = jest.fn()
 const mockAxiosError: AxiosError = {
-  config: {},
+  config: {
+    headers: ({} as unknown) as AxiosRequestHeaders,
+  },
   request: {},
   isAxiosError: true,
   toJSON: jest.fn().mockReturnThis(),

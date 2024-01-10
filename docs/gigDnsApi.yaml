@@ -35,12 +35,18 @@ paths:
                   description: The contact email address for this DNS record.
                 record:
                   $ref: "#/components/schemas/DNSRecord"
+                rootDomain:
+                  type: string
+                  description: The root domain associated with this DNS record.
+                  example: "example.com"
               example:
                 email: "admin@example.com"
                 record:
                   type: "A"
                   name: "example.com"
                   content: "192.168.1.1"
+                rootDomain: "example.com"
+              
       responses:
         "201":
           description: DNS record successfully added.
@@ -64,6 +70,81 @@ paths:
                   message:
                     type: string
                     example: "Invalid data provided."
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Internal server error."
+    put:
+      summary: Update a DNS record
+      description: Update an existing DNS record in the DNS management system.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: header
+          name: X-API-KEY
+          required: true
+          schema:
+            type: string
+          description: API key required to authorize requests.
+          example: "1234567890abcdef"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - record
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The contact email address for this DNS record.
+                record:
+                  $ref: "#/components/schemas/DNSRecord"
+                rootDomain:
+                  type: string
+                  description: The root domain associated with this DNS record.
+                  example: "example.com"
+              example:
+                email: "admin@example.com"
+                record:
+                  type: "A"
+                  name: "example.com"
+                  content: "192.168.1.1"
+                rootDomain: "example.com"
+      responses:
+        "200":
+          description: DNS record successfully updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "DNS record updated successfully."
+        "401":
+          description: Unauthorized.
+        "400":
+          description: Invalid request data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid data provided."
+        "404":
+          description: DNS record not found.
         "500":
           description: Server error.
           content:
@@ -128,6 +209,19 @@ paths:
                 "DS",
               ]
           description: The type of the DNS record to be deleted.
+        - in: query
+          name: rootDomain
+          required: false
+          schema:
+            type: string
+          description: The root domain associated with the DNS record to be deleted.
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+            format: email
+          description: The contact email address associated with the DNS record to be deleted.
       responses:
         "200":
           description: DNS record successfully deleted.

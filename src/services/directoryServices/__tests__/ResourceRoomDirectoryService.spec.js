@@ -1,3 +1,5 @@
+import ResourceRoomDirectoryService from "@services/directoryServices/ResourceRoomDirectoryService"
+
 const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
 
@@ -55,9 +57,7 @@ describe("Resource Room Directory Service", () => {
     }),
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
-  const {
-    ResourceRoomDirectoryService,
-  } = require("@services/directoryServices/ResourceRoomDirectoryService")
+
   const service = new ResourceRoomDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     configYmlService: mockConfigYmlService,

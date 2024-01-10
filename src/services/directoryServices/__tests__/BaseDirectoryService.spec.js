@@ -1,3 +1,5 @@
+import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+
 const { ConflictError } = require("@errors/ConflictError")
 
 describe("Base Directory Service", () => {
@@ -24,9 +26,6 @@ describe("Base Directory Service", () => {
     deleteDirectory: jest.fn(),
   }
 
-  const {
-    BaseDirectoryService,
-  } = require("@services/directoryServices/BaseDirectoryService")
   const service = new BaseDirectoryService({
     repoService: mockRepoService,
   })

@@ -1,3 +1,5 @@
+import CollectionDirectoryService from "@services/directoryServices/CollectionDirectoryService"
+
 const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
 
@@ -42,9 +44,6 @@ describe("Collection Directory Service", () => {
     movePage: jest.fn(),
   }
 
-  const {
-    CollectionDirectoryService,
-  } = require("@services/directoryServices/CollectionDirectoryService")
   const service = new CollectionDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     navYmlService: mockNavYmlService,

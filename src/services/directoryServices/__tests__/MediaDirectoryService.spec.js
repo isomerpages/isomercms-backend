@@ -1,3 +1,5 @@
+import MediaDirectoryService from "@services/directoryServices/MediaDirectoryService"
+
 const { config } = require("@config/config")
 
 const { BadRequestError } = require("@errors/BadRequestError")
@@ -41,9 +43,6 @@ describe("Media Directory Service", () => {
     readMediaDirectory: jest.fn(),
   }
 
-  const {
-    MediaDirectoryService,
-  } = require("@services/directoryServices/MediaDirectoryService")
   const service = new MediaDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     gitHubService: mockGitHubService,

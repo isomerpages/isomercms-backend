@@ -175,4 +175,4 @@ export class MediaDirectoryService {
   }
 }
 
-module.exports = MediaDirectoryService
+module.exports = { MediaDirectoryService }

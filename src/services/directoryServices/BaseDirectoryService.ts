@@ -87,4 +87,4 @@ export class BaseDirectoryService {
   }
 }
 
-module.exports = BaseDirectoryService
+module.exports = { BaseDirectoryService }

@@ -190,4 +190,4 @@ export class ResourceRoomDirectoryService {
   }
 }
 
-module.exports = ResourceRoomDirectoryService
+module.exports = { ResourceRoomDirectoryService }

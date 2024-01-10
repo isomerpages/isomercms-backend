@@ -233,4 +233,4 @@ export class ResourceDirectoryService {
   }
 }
 
-module.exports = ResourceDirectoryService
+module.exports = { ResourceDirectoryService }

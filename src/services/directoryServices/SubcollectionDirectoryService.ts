@@ -249,4 +249,4 @@ export class SubcollectionDirectoryService {
   }
 }
 
-module.exports = SubcollectionDirectoryService
+module.exports = { SubcollectionDirectoryService }

@@ -72,4 +72,4 @@ class UnlinkedPagesDirectoryService {
   }
 }
 
-module.exports = UnlinkedPagesDirectoryService
+module.exports = { UnlinkedPagesDirectoryService }

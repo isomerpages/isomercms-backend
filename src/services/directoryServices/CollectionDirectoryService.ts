@@ -284,4 +284,4 @@ export class CollectionDirectoryService {
   }
 }
 
-module.exports = CollectionDirectoryService
+module.exports = { CollectionDirectoryService }

@@ -25,7 +25,7 @@ import {
   RenameMediaDirectoryRequestSchema,
   UpdateMediaFileRequestSchema,
 } from "@root/validators/RequestSchema"
-import MediaDirectoryService from "@services/directoryServices/MediaDirectoryService"
+import { MediaDirectoryService } from "@services/directoryServices/MediaDirectoryService"
 import { MediaFileService } from "@services/fileServices/MdPageServices/MediaFileService"
 
 interface MediaRouterProps {

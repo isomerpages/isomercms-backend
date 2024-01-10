@@ -1,7 +1,5 @@
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const SubcollectionDirectoryService = require("@services/directoryServices/SubcollectionDirectoryService")
-
 const PLACEHOLDER_FILE_NAME = ".keep"
 
 describe("Subcollection Directory Service", () => {
@@ -50,6 +48,9 @@ describe("Subcollection Directory Service", () => {
     delete: jest.fn(),
   }
 
+  const {
+    SubcollectionDirectoryService,
+  } = require("@services/directoryServices/SubcollectionDirectoryService")
   const service = new SubcollectionDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     collectionYmlService: mockCollectionYmlService,

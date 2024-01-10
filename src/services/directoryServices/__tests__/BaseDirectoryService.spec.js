@@ -1,7 +1,5 @@
 const { ConflictError } = require("@errors/ConflictError")
 
-const BaseDirectoryService = require("@services/directoryServices/BaseDirectoryService")
-
 describe("Base Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
@@ -26,6 +24,9 @@ describe("Base Directory Service", () => {
     deleteDirectory: jest.fn(),
   }
 
+  const {
+    BaseDirectoryService,
+  } = require("@services/directoryServices/BaseDirectoryService")
   const service = new BaseDirectoryService({
     repoService: mockRepoService,
   })

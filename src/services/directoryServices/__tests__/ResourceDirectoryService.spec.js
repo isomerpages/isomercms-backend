@@ -1,12 +1,5 @@
-import {
-  convertDataToMarkdown,
-  retrieveDataFromMarkdown,
-} from "@utils/markdown-utils"
-
 const { BadRequestError } = require("@errors/BadRequestError")
 const { NotFoundError } = require("@errors/NotFoundError")
-
-const ResourceDirectoryService = require("@services/directoryServices/ResourceDirectoryService")
 
 const INDEX_FILE_NAME = "index.html"
 
@@ -58,10 +51,19 @@ describe("Resource Directory Service", () => {
     }),
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
+
+  const {
+    ResourceDirectoryService,
+  } = require("@services/directoryServices/ResourceDirectoryService")
   const service = new ResourceDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     gitHubService: mockGitHubService,
   })
+
+  const {
+    convertDataToMarkdown,
+    retrieveDataFromMarkdown,
+  } = require("@utils/markdown-utils")
   beforeEach(() => {
     jest.clearAllMocks()
   })

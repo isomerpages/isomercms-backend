@@ -1,5 +1,3 @@
-const UnlinkedPagesDirectoryService = require("@services/directoryServices/UnlinkedPagesDirectoryService")
-
 const UNLINKED_PAGE_DIRECTORY_NAME = "pages"
 
 describe("Unlinked Pages Directory Service", () => {
@@ -27,6 +25,9 @@ describe("Unlinked Pages Directory Service", () => {
     movePage: jest.fn(),
   }
 
+  const {
+    UnlinkedPagesDirectoryService,
+  } = require("@services/directoryServices/UnlinkedPagesDirectoryService")
   const service = new UnlinkedPagesDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     moverService: mockMoverService,

@@ -1,8 +1,6 @@
 const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
 
-const CollectionDirectoryService = require("@services/directoryServices/CollectionDirectoryService")
-
 describe("Collection Directory Service", () => {
   const siteName = "test-site"
   const accessToken = "test-token"
@@ -44,6 +42,9 @@ describe("Collection Directory Service", () => {
     movePage: jest.fn(),
   }
 
+  const {
+    CollectionDirectoryService,
+  } = require("@services/directoryServices/CollectionDirectoryService")
   const service = new CollectionDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     navYmlService: mockNavYmlService,

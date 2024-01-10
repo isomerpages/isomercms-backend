@@ -1,8 +1,6 @@
 const { BadRequestError } = require("@errors/BadRequestError")
 const { ConflictError } = require("@errors/ConflictError")
 
-const ResourceRoomDirectoryService = require("@services/directoryServices/ResourceRoomDirectoryService")
-
 const INDEX_FILE_NAME = "index.html"
 
 describe("Resource Room Directory Service", () => {
@@ -58,6 +56,9 @@ describe("Resource Room Directory Service", () => {
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
 
+  const {
+    ResourceRoomDirectoryService,
+  } = require("@services/directoryServices/ResourceRoomDirectoryService")
   const service = new ResourceRoomDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     configYmlService: mockConfigYmlService,

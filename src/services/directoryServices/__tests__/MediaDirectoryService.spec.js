@@ -2,8 +2,6 @@ const { config } = require("@config/config")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const MediaDirectoryService = require("@services/directoryServices/MediaDirectoryService")
-
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
 const PLACEHOLDER_FILE_NAME = ".keep"
@@ -43,6 +41,9 @@ describe("Media Directory Service", () => {
     readMediaDirectory: jest.fn(),
   }
 
+  const {
+    MediaDirectoryService,
+  } = require("@services/directoryServices/MediaDirectoryService")
   const service = new MediaDirectoryService({
     baseDirectoryService: mockBaseDirectoryService,
     gitHubService: mockGitHubService,

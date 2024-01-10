@@ -31,8 +31,8 @@ import {
   MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
 } from "@root/fixtures/review"
 import GitHubService from "@root/services/db/GitHubService"
-import BaseDirectoryService from "@root/services/directoryServices/BaseDirectoryService"
-import ResourceRoomDirectoryService from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
+import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
 import { HomepagePageService } from "@root/services/fileServices/MdPageServices/HomepagePageService"

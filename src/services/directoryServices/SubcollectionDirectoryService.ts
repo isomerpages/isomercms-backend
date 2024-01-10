@@ -8,14 +8,14 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitDirectoryItem } from "@root/types/gitfilesystem"
 import GitHubService from "@services/db/GitHubService"
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 import { SubcollectionPageService } from "@services/fileServices/MdPageServices/SubcollectionPageService"
 import { CollectionYmlService } from "@services/fileServices/YmlFileServices/CollectionYmlService"
 import { MoverService } from "@services/moverServices/MoverService"
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
-class SubcollectionDirectoryService {
+export class SubcollectionDirectoryService {
   private baseDirectoryService: BaseDirectoryService
 
   private collectionYmlService: CollectionYmlService
@@ -249,4 +249,4 @@ class SubcollectionDirectoryService {
   }
 }
 
-export default SubcollectionDirectoryService
+module.exports = SubcollectionDirectoryService

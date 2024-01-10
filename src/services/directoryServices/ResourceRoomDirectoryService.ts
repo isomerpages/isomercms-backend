@@ -12,7 +12,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { ConflictError } from "@root/errors/ConflictError"
 import { GitDirectoryItem } from "@root/types/gitfilesystem"
 import GitHubService from "@services/db/GitHubService"
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 
 const INDEX_FILE_NAME = "index.html"
@@ -22,7 +22,7 @@ interface ConfigContent {
   resources_name?: string
 }
 
-class ResourceRoomDirectoryService {
+export class ResourceRoomDirectoryService {
   private baseDirectoryService: BaseDirectoryService
 
   private configYmlService: ConfigYmlService
@@ -190,4 +190,4 @@ class ResourceRoomDirectoryService {
   }
 }
 
-export default ResourceRoomDirectoryService
+module.exports = ResourceRoomDirectoryService

@@ -11,11 +11,11 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitDirectoryItem, GitFileItem } from "@root/types/gitfilesystem"
 import GitHubService from "@services/db/GitHubService"
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 
 const INDEX_FILE_NAME = "index.html"
 
-class ResourceDirectoryService {
+export class ResourceDirectoryService {
   private baseDirectoryService: BaseDirectoryService
 
   private gitHubService: GitHubService
@@ -233,4 +233,4 @@ class ResourceDirectoryService {
   }
 }
 
-export default ResourceDirectoryService
+module.exports = ResourceDirectoryService

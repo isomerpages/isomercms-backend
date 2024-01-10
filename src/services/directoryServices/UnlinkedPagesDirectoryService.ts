@@ -1,6 +1,6 @@
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitDirectoryItem } from "@root/types/gitfilesystem"
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 import { MoverService } from "@services/moverServices/MoverService"
 
 const UNLINKED_PAGE_DIRECTORY_NAME = "pages"
@@ -72,4 +72,4 @@ class UnlinkedPagesDirectoryService {
   }
 }
 
-export default UnlinkedPagesDirectoryService
+module.exports = UnlinkedPagesDirectoryService

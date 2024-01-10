@@ -13,7 +13,7 @@ interface DirectoryOperationOptions {
   targetFiles?: string[]
 }
 
-class BaseDirectoryService {
+export class BaseDirectoryService {
   private repoService: RepoService
 
   constructor(repoService: RepoService) {
@@ -87,4 +87,4 @@ class BaseDirectoryService {
   }
 }
 
-export default BaseDirectoryService
+module.exports = BaseDirectoryService

@@ -10,7 +10,7 @@ import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { NavYmlService } from "@root/services/fileServices/YmlFileServices/NavYmlService"
 import { GitDirectoryItem } from "@root/types/gitfilesystem"
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 import { CollectionYmlService } from "@services/fileServices/YmlFileServices/CollectionYmlService"
 import { MoverService } from "@services/moverServices/MoverService"
 
@@ -27,7 +27,7 @@ const ISOMER_TEMPLATE_PROTECTED_DIRS = [
 ]
 const PLACEHOLDER_FILE_NAME = ".keep"
 
-class CollectionDirectoryService {
+export class CollectionDirectoryService {
   private baseDirectoryService: BaseDirectoryService
 
   private navYmlService: NavYmlService
@@ -284,4 +284,4 @@ class CollectionDirectoryService {
   }
 }
 
-export default CollectionDirectoryService
+module.exports = CollectionDirectoryService

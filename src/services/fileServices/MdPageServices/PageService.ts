@@ -6,7 +6,7 @@ import { BaseIsomerError } from "@root/errors/BaseError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
-import ResourceRoomDirectoryService from "@root/services/directoryServices/ResourceRoomDirectoryService"
+import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import {
   CollectionPageName,
   ContactUsPageName,

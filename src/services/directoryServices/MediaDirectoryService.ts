@@ -7,11 +7,11 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { GitDirectoryItem } from "@root/types/gitfilesystem"
 import { MediaDirOutput, MediaFileOutput } from "@root/types/media"
 import RepoService from "@services/db/RepoService"
-import BaseDirectoryService from "@services/directoryServices/BaseDirectoryService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 
 const PLACEHOLDER_FILE_NAME = ".keep"
 
-class MediaDirectoryService {
+export class MediaDirectoryService {
   private baseDirectoryService: BaseDirectoryService
 
   private repoService: RepoService
@@ -175,4 +175,4 @@ class MediaDirectoryService {
   }
 }
 
-export default MediaDirectoryService
+module.exports = MediaDirectoryService

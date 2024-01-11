@@ -258,6 +258,49 @@ export default class GitFileCommitService {
     this.pushToGithub(sessionData, shouldUpdateStagingLite)
   }
 
+  async deleteMultipleFiles(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { items }: { items: Array<{ filePath: string; sha: string }> }
+  ): Promise<void> {
+    logger.info(
+      `Deleting multiple files in local Git file system for repo: ${sessionData.siteName}`
+    )
+
+    const stagingDeleteResult = await this.gitFileSystemService.deleteMultipleFiles(
+      sessionData.siteName,
+      items,
+      sessionData.isomerUserId,
+      STAGING_BRANCH
+    )
+
+    const shouldUpdateStagingLite =
+      isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+      !items.some(({ filePath }) => isFileAsset({ directoryName: filePath }))
+
+    let stagingLiteDeleteResult
+    if (shouldUpdateStagingLite) {
+      stagingLiteDeleteResult = await this.gitFileSystemService.deleteMultipleFiles(
+        sessionData.siteName,
+        items,
+        sessionData.isomerUserId,
+        STAGING_LITE_BRANCH
+      )
+    }
+
+    if (stagingDeleteResult.isErr()) {
+      throw stagingDeleteResult.error
+    } else if (
+      shouldUpdateStagingLite &&
+      stagingLiteDeleteResult &&
+      stagingLiteDeleteResult.isErr()
+    ) {
+      throw stagingLiteDeleteResult.error
+    }
+
+    this.pushToGithub(sessionData, shouldUpdateStagingLite)
+  }
+
   async renameSinglePath(
     sessionData: UserWithSiteSessionData,
     githubSessionData: GithubSessionData,

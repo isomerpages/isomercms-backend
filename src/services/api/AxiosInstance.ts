@@ -1,5 +1,5 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
-import { setupCache } from "axios-cache-interceptor"
+import axios, { AxiosRequestConfig } from "axios"
+import { CacheAxiosResponse, setupCache } from "axios-cache-interceptor"
 import _ from "lodash"
 
 import { config } from "@config/config"
@@ -91,13 +91,13 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   }
 }
 
-const respHandler = (response: AxiosResponse) => {
+const respHandler = (response: CacheAxiosResponse) => {
   // Any status code that lie within the range of 2xx will cause this function to trigger
   tokenServiceInstance.onResponse(response)
   return response
 }
 
-const githubApiInterceptor = (resp: AxiosResponse) => {
+const githubApiInterceptor = (resp: CacheAxiosResponse) => {
   const fullUrl = `${resp.config.baseURL || ""}${resp.config.url || ""}`
   if (
     resp.status !== 304 &&
@@ -126,7 +126,11 @@ isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 isomerRepoAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
-const genericGitHubAxiosInstance = axios.create()
+const genericGitHubAxiosInstance = setupCache(axios.create(), {
+  interpretHeader: true,
+  etag: true,
+  headerInterpreter: customHeaderInterpreter,
+})
 genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
 genericGitHubAxiosInstance.interceptors.response.use(respHandler)
 genericGitHubAxiosInstance.interceptors.response.use(githubApiInterceptor)

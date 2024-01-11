@@ -27,6 +27,7 @@ describe("Media Router", () => {
     read: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    deleteMultipleFiles: jest.fn(),
     rename: jest.fn(),
   }
 
@@ -45,6 +46,10 @@ describe("Media Router", () => {
   subrouter.post(
     "/:siteName/media",
     attachReadRouteHandlerWrapper(router.createMediaDirectory)
+  )
+  subrouter.delete(
+    "/:siteName/media",
+    attachReadRouteHandlerWrapper(router.deleteMultipleMediaFiles)
   )
   subrouter.post(
     "/:siteName/media/:directoryName",
@@ -399,6 +404,36 @@ describe("Media Router", () => {
         .expect(200)
       expect(mockMediaFileService.delete).toHaveBeenCalledWith(
         MOCK_USER_WITH_SITE_SESSION_DATA_ONE,
+        expectedServiceInput
+      )
+    })
+  })
+
+  describe("deleteMultipleMediaFiles", () => {
+    it("rejects requests with invalid body", async () => {
+      await request(app).delete(`/${siteName}/media`).send({}).expect(400)
+    })
+
+    it("accepts valid multiple media files delete requests", async () => {
+      const expectedServiceInput = {
+        items: [
+          {
+            filePath: "test-file-one",
+            sha: "test-file-one-sha",
+          },
+          {
+            filePath: "test-file-two",
+            sha: "test-file=two-sha",
+          },
+        ],
+      }
+      await request(app)
+        .delete(`/${siteName}/media`)
+        .send(expectedServiceInput)
+        .expect(200)
+      expect(mockMediaFileService.deleteMultipleFiles).toHaveBeenCalledWith(
+        MOCK_USER_WITH_SITE_SESSION_DATA_ONE,
+        undefined,
         expectedServiceInput
       )
     })

@@ -257,6 +257,11 @@ export default class RepoService extends GitHubService {
     const targetFile = directoryData.find(
       (fileOrDir: { name: string }) => fileOrDir.name === fileName
     )
+
+    if (targetFile === undefined) {
+      throw new NotFoundError(`File ${fileName} not found in ${directoryName}`)
+    }
+
     const { private: isPrivate } = await super.getRepoInfo(sessionData)
 
     return getMediaFileInfo({
@@ -456,6 +461,33 @@ export default class RepoService extends GitHubService {
       sha,
       fileName,
       directoryName,
+    })
+  }
+
+  async deleteMultipleFiles(
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    { items }: { items: Array<{ filePath: string; sha: string }> }
+  ): Promise<void> {
+    if (
+      sessionData.growthbook?.getFeatureValue(
+        FEATURE_FLAGS.IS_GGS_ENABLED,
+        false
+      )
+    ) {
+      await this.gitFileCommitService.deleteMultipleFiles(
+        sessionData,
+        githubSessionData,
+        {
+          items,
+        }
+      )
+      return
+    }
+
+    // GitHub flow
+    await super.deleteMultipleFiles(sessionData, githubSessionData, {
+      items,
     })
   }
 

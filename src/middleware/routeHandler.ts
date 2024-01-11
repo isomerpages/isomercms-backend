@@ -1,9 +1,8 @@
 import { GrowthBook } from "@growthbook/growthbook"
 import { BackoffOptions, backOff } from "exponential-backoff"
+import { Request, Response, NextFunction } from "express"
 import { ResultAsync } from "neverthrow"
 import simpleGit from "simple-git"
-
-import { config } from "@config/config"
 
 import GithubSessionData from "@classes/GithubSessionData"
 
@@ -16,14 +15,14 @@ import {
   STAGING_LITE_BRANCH,
 } from "@constants/constants"
 
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
 import LockedError from "@root/errors/LockedError"
 import logger from "@root/logger/logger"
 import { FeatureFlags } from "@root/types/featureFlags"
+import { RequestHandler } from "@root/types/request"
 import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import GitFileSystemService from "@services/db/GitFileSystemService"
-
-const BRANCH_REF = config.get("github.branchRef")
 
 const backoffOptions: BackoffOptions = {
   numOfAttempts: 5,
@@ -33,10 +32,7 @@ const simpleGitInstance = simpleGit({
 })
 const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
 
-const handleGitFileLock = async (
-  repoName: string,
-  next: (arg0: any) => void
-) => {
+const handleGitFileLock = async (repoName: string, next: NextFunction) => {
   const result = await gitFileSystemService.hasGitFileLock(repoName, true)
   if (result.isErr()) {
     next(result.error)
@@ -58,7 +54,7 @@ const handleGitFileLock = async (
 const isGitFileAndIsGitAvail = async (
   growthbook: GrowthBook<FeatureFlags>,
   siteName: string,
-  next: any
+  next: NextFunction
 ) => {
   let isGitAvailable = true
 
@@ -69,23 +65,30 @@ const isGitFileAndIsGitAvail = async (
   return isGitAvailable
 }
 
+type RouteWrapper<
+  P = Record<string, unknown>,
+  L extends Record<string, unknown> = Record<string, unknown>
+> = <Params extends P, ResBody, ReqBody, ReqQuery, Locals extends L>(
+  handler: RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>
+) => (
+  req: Request<Params, ResBody, ReqBody, ReqQuery, Locals>,
+  res: Response<ResBody, Locals>,
+  next: NextFunction
+) => void
+
 // Used when there are no write API calls to the repo on GitHub
-export const attachReadRouteHandlerWrapper = (routeHandler: any) => async (
-  req: any,
-  res: any,
-  next: any
-) => {
-  routeHandler(req, res).catch((err: any) => {
+export const attachReadRouteHandlerWrapper: RouteWrapper = (
+  routeHandler
+) => async (req, res, next) => {
+  Promise.resolve(routeHandler(req, res, next)).catch((err: Error) => {
     next(err)
   })
 }
 
 // Used when there are write API calls to the repo on GitHub
-export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
-  req: any,
-  res: any,
-  next: any
-) => {
+export const attachWriteRouteHandlerWrapper: RouteWrapper<{
+  siteName: string
+}> = (routeHandler) => async (req, res, next) => {
   const { siteName } = req.params
   const { growthbook } = req
 
@@ -105,7 +108,7 @@ export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
     return
   }
 
-  await routeHandler(req, res, next).catch(async (err: any) => {
+  Promise.resolve(routeHandler(req, res, next)).catch(async (err: Error) => {
     await unlock(siteName)
     next(err)
   })
@@ -117,16 +120,27 @@ export const attachWriteRouteHandlerWrapper = (routeHandler: any) => async (
   }
 }
 
-export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
-  req: any,
-  res: any,
-  next: any
-) => {
-  const { userSessionData } = res.locals
+export const attachRollbackRouteHandlerWrapper: RouteWrapper<
+  {
+    siteName: string
+    directoryName: string
+    fileName: string
+  },
+  {
+    userWithSiteSessionData: UserWithSiteSessionData
+    githubSessionData: GithubSessionData
+  }
+> = (routeHandler) => async (req, res, next: NextFunction) => {
+  const { userWithSiteSessionData } = res.locals
   const { siteName } = req.params
 
-  const { accessToken } = userSessionData
+  const { accessToken } = userWithSiteSessionData
   const { growthbook } = req
+
+  if (!growthbook) {
+    next(new Error("GrowthBook instance is undefined."))
+    return
+  }
 
   const isGitAvailable = await isGitFileAndIsGitAvail(
     growthbook,
@@ -231,7 +245,7 @@ export const attachRollbackRouteHandlerWrapper = (routeHandler: any) => async (
     }
   }
 
-  await routeHandler(req, res, next).catch(async (err: any) => {
+  Promise.resolve(routeHandler(req, res, next)).catch(async (err: Error) => {
     try {
       if (shouldUseGitFileSystem) {
         await backOff(

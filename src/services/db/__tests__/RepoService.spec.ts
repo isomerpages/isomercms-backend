@@ -42,6 +42,7 @@ const MockGitFileSystemService = {
   push: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  deleteMultipleFiles: jest.fn(),
   getLatestCommitOfBranch: jest.fn(),
   renameSinglePath: jest.fn(),
   moveFiles: jest.fn(),
@@ -52,15 +53,7 @@ const MockGitFileCommitService = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
-  deleteDirectory: jest.fn(),
-  renameSinglePath: jest.fn(),
-  moveFiles: jest.fn(),
-}
-
-const MockGitHubService = {
-  create: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
+  deleteMultipleFiles: jest.fn(),
   deleteDirectory: jest.fn(),
   renameSinglePath: jest.fn(),
   moveFiles: jest.fn(),
@@ -587,6 +580,73 @@ describe("RepoService", () => {
         fileName: "test.md",
         directoryName: "pages",
       })
+    })
+  })
+
+  describe("deleteMultipleFiles", () => {
+    const mockFiles = [
+      {
+        filePath: "fake-dir/fake-file-one",
+        sha: "fake-sha-one",
+      },
+      {
+        filePath: "another-fake-dir/fake-file-two",
+        sha: "fake-sha-two",
+      },
+    ]
+
+    it("should delete multiple files from Git file system when repo is ggs enabled", async () => {
+      MockGitFileCommitService.deleteMultipleFiles.mockResolvedValueOnce(
+        okAsync("some-fake-sha")
+      )
+      gbSpy.mockReturnValueOnce(true)
+
+      await RepoService.deleteMultipleFiles(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        mockGithubSessionData,
+        {
+          items: mockFiles,
+        }
+      )
+
+      expect(MockGitFileCommitService.deleteMultipleFiles).toBeCalledTimes(1)
+      expect(MockGitFileCommitService.deleteMultipleFiles).toBeCalledWith(
+        mockUserWithSiteSessionDataAndGrowthBook,
+        mockGithubSessionData,
+        {
+          items: mockFiles,
+        }
+      )
+    })
+
+    it("should delete multiple files from GitHub when repo is not ggs enabled", async () => {
+      const sessionData: UserWithSiteSessionData = new UserWithSiteSessionData({
+        githubId: mockGithubId,
+        accessToken: mockAccessToken,
+        isomerUserId: mockIsomerUserId,
+        email: mockEmail,
+        siteName: "not-whitelisted",
+      })
+
+      const mockedGitHubService = jest
+        .spyOn(GitHubService.prototype, "deleteMultipleFiles")
+        .mockResolvedValueOnce(undefined)
+
+      await RepoService.deleteMultipleFiles(
+        sessionData,
+        mockGithubSessionData,
+        {
+          items: mockFiles,
+        }
+      )
+
+      expect(mockedGitHubService).toBeCalledWith(
+        sessionData,
+        mockGithubSessionData,
+        {
+          items: mockFiles,
+        }
+      )
     })
   })
 

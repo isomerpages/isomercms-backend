@@ -539,6 +539,10 @@ export default class GitFileSystemService {
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(gitOptions),
             (error) => {
+              logger.error(
+                `Error when pushing ${repoName}. Retrying git push operation for the first time...`
+              )
+
               if (error instanceof GitError) {
                 return new GitFileSystemError(
                   "Unable to push latest changes of repo"
@@ -560,6 +564,10 @@ export default class GitFileSystemService {
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(gitOptions),
             (error) => {
+              logger.error(
+                `Error when pushing ${repoName}. Retrying git push operation for the second time...`
+              )
+
               if (error instanceof GitError) {
                 return new GitFileSystemError(
                   "Unable to push latest changes of repo"
@@ -572,6 +580,7 @@ export default class GitFileSystemService {
         )
         .orElse(() =>
           // Retry push twice
+          // TODO: To eliminate duplicate code by using a backoff or retry package
           ResultAsync.fromPromise(
             isForce
               ? this.git
@@ -581,7 +590,9 @@ export default class GitFileSystemService {
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(gitOptions),
             (error) => {
-              logger.error(`Error when pushing ${repoName}: ${error}`)
+              logger.error(
+                `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
+              )
 
               if (error instanceof GitError) {
                 return new GitFileSystemError(

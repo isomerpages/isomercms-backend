@@ -539,8 +539,6 @@ export default class GitFileSystemService {
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(gitOptions),
             (error) => {
-              logger.error(`Error when pushing ${repoName}: ${error}`)
-
               if (error instanceof GitError) {
                 return new GitFileSystemError(
                   "Unable to push latest changes of repo"
@@ -562,8 +560,6 @@ export default class GitFileSystemService {
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(gitOptions),
             (error) => {
-              logger.error(`Error when pushing ${repoName}: ${error}`)
-
               if (error instanceof GitError) {
                 return new GitFileSystemError(
                   "Unable to push latest changes of repo"

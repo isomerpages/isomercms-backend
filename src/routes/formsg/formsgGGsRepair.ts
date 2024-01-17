@@ -10,7 +10,10 @@ import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
-import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
+import {
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+} from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
 import { consoleLogger } from "@root/logger/console.logger"
@@ -147,6 +150,7 @@ export class FormsgGGsRepairRouter {
               .andThen(() =>
                 fromPromise(
                   this.reposService.setUpStagingLite(
+                    path.join(EFS_VOL_PATH_STAGING, repoName),
                     path.join(EFS_VOL_PATH_STAGING_LITE, repoName),
                     repoUrl
                   ),

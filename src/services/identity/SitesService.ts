@@ -327,19 +327,30 @@ class SitesService {
             return okAsync(site.deployment)
           }
 
-          const featureFlagSyncedWithDb =
-            (isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-              site?.deployment?.stagingUrl.includes("staging-lite.")) ||
-            // useful for rollbacks
-            (!isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
-              site?.deployment?.stagingUrl.includes("staging."))
+          // Privatisation has priority over growthbook - if private, automatically use staging
+          const isPrivateSiteSyncedWithDb =
+            site.isPrivate && site?.deployment?.stagingUrl.includes("staging.")
 
-          if (featureFlagSyncedWithDb) {
+          const featureFlagSyncedWithDb =
+            !site.isPrivate &&
+            ((isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+              site?.deployment?.stagingUrl.includes("staging-lite.")) ||
+              // useful for rollbacks
+              (!isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+                site?.deployment?.stagingUrl.includes("staging.")))
+
+          if (isPrivateSiteSyncedWithDb || featureFlagSyncedWithDb) {
             return okAsync(site.deployment)
           }
 
           let stagingUrl: StagingPermalink
-          if (isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)) {
+          if (site.isPrivate) {
+            stagingUrl = Brand.fromString(
+              `https://staging.${site.deployment.hostingId}.amplifyapp.com`
+            )
+          } else if (
+            isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
+          ) {
             stagingUrl = Brand.fromString(
               `https://staging-lite.${site.deployment.stagingLiteHostingId}.amplifyapp.com`
             )

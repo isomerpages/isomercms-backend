@@ -1274,7 +1274,9 @@ export class ReviewsRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
-    const { siteName, requestId } = req.params
+    // NOTE: We don't check for the existence of the review request, as we
+    // assume that we are comparing between the staging and master branch
+    const { siteName } = req.params
     const { path } = req.query
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
@@ -1308,30 +1310,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 2: Retrieve review request
-    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site.value,
-      requestId
-    )
-
-    if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "getBlob",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-          requestId,
-          file: path,
-        },
-      })
-      return res.status(404).send({
-        message: "Please ensure that the site exists!",
-      })
-    }
-
-    // Step 3: Check if the user is a contributor of the site
+    // Step 2: Check if the user is a contributor of the site
     const role = await this.collaboratorsService.getRole(
       siteName,
       userWithSiteSessionData.isomerUserId

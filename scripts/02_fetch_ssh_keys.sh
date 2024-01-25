@@ -12,11 +12,11 @@ SSH_PUBLIC_KEY_VALUE="${!SSH_PUBLIC_KEY_PARAM_NAME}"
 SSH_PRIVATE_KEY_VALUE="${!SSH_PRIVATE_KEY_PARAM_NAME}"
 
 echo "Fetching keys"
-echo $SSH_PUBLIC_KEY_VALUE >/root/.ssh/github.pub || {
+echo "$SSH_PUBLIC_KEY_VALUE" >/root/.ssh/github.pub || {
     echo "Failed to fetch SSH public key"
     exit 1
 }
-echo $SSH_PRIVATE_KEY_VALUE >/root/.ssh/github || {
+echo "$SSH_PRIVATE_KEY_VALUE" >/root/.ssh/github || {
     echo "Failed to fetch SSH private key"
     exit 1
 }

@@ -7,7 +7,8 @@ concurrency:
 on:
   push:
     branches:
-      - staging
+      # TODO: Update this to allow `staging` once ecs deploys work
+      # - staging
       - feat/ecs
 
 jobs:

@@ -79,7 +79,7 @@ export function getDNSRecordsEmailBody(
       // check if dnsRecords.redirectionDomain is undefined
       html += `
         <tr style="${tdStyle}">
-  
+
           <td style="${tdStyle}">${dnsRecords.domainValidationSource}</td>
           <td style="${tdStyle}">${dnsRecords.domainValidationTarget}</td>
           <td style="${tdStyle}">CNAME</td>
@@ -126,21 +126,20 @@ export function getDNSRecordsEmailBody(
           </tr>
         </thead>
         <tbody>
-        <tr style="${tdStyle}">
-        <td style="${tdStyle}  background-color: #f2f2f2" rowspan="2" >${repoName}</td>
-        <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
-        <td style="${tdStyle}">0</td>
-        <td style="${tdStyle}">issue</td>
-        <td style="${tdStyle}">amazontrust.com</td>
-      </tr>
-      <tr style="${tdStyle}">
-      <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
-        <td style="${tdStyle}">0</td>
-        <td style="${tdStyle}">issue</td>
-        <td style="${tdStyle}">amazontrust.com</td>
-      </tr>
-    
-    </tbody>
+          <tr style="${tdStyle}">
+            <td style="${tdStyle}  background-color: #f2f2f2" rowspan="2" >${repoName}</td>
+            <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+            <td style="${tdStyle}">0</td>
+            <td style="${tdStyle}">issue</td>
+            <td style="${tdStyle}">amazontrust.com</td>
+          </tr>
+          <tr style="${tdStyle}">
+            <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+            <td style="${tdStyle}">0</td>
+            <td style="${tdStyle}">issuewild</td>
+            <td style="${tdStyle}">amazontrust.com</td>
+          </tr>
+        </tbody>
   </table>`
       }
     })

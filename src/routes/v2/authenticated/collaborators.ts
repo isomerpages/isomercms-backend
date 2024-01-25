@@ -8,6 +8,7 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { BaseIsomerError } from "@root/errors/BaseError"
+import logger from "@root/logger/logger"
 import { attachSiteHandler } from "@root/middleware"
 import { RequestHandler } from "@root/types"
 import { UserDto } from "@root/types/dto/review"
@@ -42,6 +43,10 @@ export class CollaboratorsRouter {
   > = async (req, res) => {
     const { email, acknowledge = false } = req.body
     const { siteName } = req.params
+    const { userWithSiteSessionData } = res.locals
+    logger.info(
+      `Editing site members table by creating collaborator ${email} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`
+    )
     const resp = await this.collaboratorsService.create(
       siteName,
       email,
@@ -63,6 +68,11 @@ export class CollaboratorsRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { siteName, userId } = req.params
+    const { userWithSiteSessionData } = res.locals
+    logger.info(
+      `Editing site members table by deleting collaborator ${userId} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`
+    )
+
     const resp = await this.collaboratorsService.delete(siteName, userId)
 
     // Check for error and throw

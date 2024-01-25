@@ -11,6 +11,7 @@ const UNLINKED_PAGES_DIRECTORY_NAME = "pages"
 
 class UnlinkedPageService {
   constructor({ gitHubService }) {
+    // NOTE: This is actually `RepoService`
     this.gitHubService = gitHubService
   }
 

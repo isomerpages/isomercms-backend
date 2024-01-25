@@ -20,4 +20,4 @@ RUN npm ci
 RUN rm -rf /var/cache/apk/*
 
 EXPOSE "8081"
-CMD ["bash", "-c", "chmod +x ./scripts/02_fetch_ssh_keys.sh && bash ./scripts/02_fetch_ssh_keys.sh & npm run start:ecs"] 
+CMD ["bash", "-c", "chmod +x ./scripts/02_fetch_ssh_keys.sh && bash ./scripts/02_fetch_ssh_keys.sh && git config --system --add safe.directory '*' & npm run start:ecs"] 

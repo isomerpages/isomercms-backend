@@ -23,3 +23,4 @@ export type DigType =
   | "SOA"
   | "SRV"
   | "TXT"
+  | "CAA"

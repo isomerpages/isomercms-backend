@@ -258,7 +258,7 @@ const config = convict({
   dataDog: {
     env: {
       doc: "The DataDog environment",
-      format: ["development", "local", "staging", "production"],
+      format: ["development", "local", "staging", "vapt", "uat", "production"],
       env: "DD_ENV",
       default: "local",
     },

@@ -29,5 +29,5 @@ jobs:
 
     secrets: 
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      EFS_FILE_SYSTEM_ID: ${{ secrets.STAGING_EFS_FILE_SYSTEM_ID }}
+      EFS_FILE_SYSTEM_ID: ${{ secrets.VAPT_EFS_FILE_SYSTEM_ID }}
       DD_API_KEY: ${{ secrets.DD_API_KEY }}

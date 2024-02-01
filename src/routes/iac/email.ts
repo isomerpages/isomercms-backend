@@ -21,7 +21,7 @@ import { RequestHandler } from "@root/types"
 import { Brand } from "@root/types/util"
 import UsersService from "@services/identity/UsersService"
 
-const PULUMI_HEADER_KEY = "X-Pulumi-Token"
+const PULUMI_HEADER_KEY = "x-pulumi-token"
 
 export class IacEmailCreationRouter {
   private readonly simpleGit: SimpleGit

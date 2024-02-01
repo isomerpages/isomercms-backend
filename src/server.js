@@ -411,6 +411,8 @@ app.use(sessionMiddleware)
 // Health endpoint
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
+app.use("/v2/iac/email", iacEmailCreationRouter.getRouter())
+
 // Routes layer setup
 app.use("/v2/auth", authV2Router.getRouter())
 // Endpoints which have require login, but not site access token
@@ -422,7 +424,6 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 app.use("/formsg", formsgGGsRepairRouter.getRouter())
-app.use("/v2/iac/email/", iacEmailCreationRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

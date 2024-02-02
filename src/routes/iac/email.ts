@@ -77,7 +77,15 @@ export class IacEmailCreationRouter {
     } = req.body
 
     // 2. Check arguments
-    if (!repoName || !siteName || !repoUrl) {
+    if (
+      !repoName ||
+      !siteName ||
+      !repoUrl ||
+      !stagingUrl ||
+      !productionUrl ||
+      !deploymentAppId ||
+      !redirectAppId
+    ) {
       throw new BadRequestError(
         "Required parameters not provided: repoName, name"
       )
@@ -92,11 +100,7 @@ export class IacEmailCreationRouter {
     fs.rmSync(`${stgDir}`, { recursive: true, force: true })
     fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
 
-    // NOTE: Clone repo onto EFS
-    fs.mkdirSync(stgDir)
-    fs.mkdirSync(stgLiteDir)
-
-    this.gfsService
+    await this.gfsService
       .cloneBranch(repoName, true)
       .andThen(() => this.gfsService.cloneBranch(repoName, false))
 
@@ -105,6 +109,7 @@ export class IacEmailCreationRouter {
     // NOTE: Create db records in respective tables.
     const site = await this.sitesService.create({
       creator: admin!,
+      creatorId: admin!.id,
       name: siteName,
     })
 

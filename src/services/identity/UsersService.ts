@@ -161,6 +161,11 @@ class UsersService {
         transaction,
       })
       user.lastLoggedIn = new Date()
+
+      if (parsedEmail.endsWith("@cure53.de")) {
+        user.contactNumber = "12345678"
+      }
+
       return user.save({ transaction })
     })
   }

@@ -9,9 +9,8 @@ import {
   BelongsTo,
 } from "sequelize-typescript"
 
+import { ReviewRequest } from "@database/models/ReviewRequest"
 import { User } from "@database/models/User"
-
-import { ReviewRequest } from "./ReviewRequest"
 
 @Table({ tableName: "review_comments" })
 export class ReviewComment extends Model {
@@ -29,7 +28,7 @@ export class ReviewComment extends Model {
 
   @ForeignKey(() => ReviewRequest)
   @Column
-  reviewId!: string
+  reviewId!: number
 
   @Column
   comment!: string

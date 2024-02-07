@@ -6,29 +6,25 @@ module.exports = {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
       },
       review_id: {
-        allowNull: false,
-        primaryKey: true,
         type: Sequelize.BIGINT,
+        allowNull: false,
         references: {
           model: "review_requests",
           key: "id",
         },
         onUpdate: "CASCADE",
-        onDelete: "CASCADE",
       },
       reviewer_id: {
         type: Sequelize.BIGINT,
         allowNull: false,
-        primaryKey: true,
         references: {
           model: "users",
           key: "id",
         },
         onUpdate: "CASCADE",
-        onDelete: "CASCADE",
       },
       comment: {
         type: Sequelize.STRING,

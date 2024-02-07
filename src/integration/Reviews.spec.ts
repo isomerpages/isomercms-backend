@@ -357,6 +357,9 @@ describe("Review Requests Integration Tests", () => {
       await Reviewer.destroy({
         where: {},
       })
+      await ReviewComment.destroy({
+        where: {},
+      })
       await ReviewRequest.destroy({
         where: {},
       })
@@ -539,10 +542,10 @@ describe("Review Requests Integration Tests", () => {
       await Reviewer.destroy({
         where: {},
       })
-      await ReviewRequest.destroy({
+      await ReviewComment.destroy({
         where: {},
       })
-      await ReviewComment.destroy({
+      await ReviewRequest.destroy({
         where: {},
       })
     })
@@ -666,9 +669,13 @@ describe("Review Requests Integration Tests", () => {
       await ReviewRequestView.destroy({
         where: {},
       })
-      await ReviewRequest.destroy({
-        where: {},
-      })
+      try {
+        await ReviewRequest.destroy({
+          where: {},
+        })
+      } catch (e) {
+        console.log(`Error for review request`, e)
+      }
     })
 
     it("should mark all existing review requests as viewed for the user", async () => {
@@ -1844,6 +1851,9 @@ describe("Review Requests Integration Tests", () => {
 
     afterAll(async () => {
       await ReviewMeta.destroy({
+        where: {},
+      })
+      await ReviewComment.destroy({
         where: {},
       })
       await ReviewRequest.destroy({

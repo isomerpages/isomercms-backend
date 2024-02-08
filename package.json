@@ -1,12 +1,12 @@
 {
   "name": "isomercms",
-  "version": "0.62.0",
+  "version": "0.63.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start": "node --unhandled-rejections=warn -r ts-node/register/transpile-only -r tsconfig-paths/register -r dotenv/config build/server.js dotenv_config_path=/efs/isomer/.isomer.env",
-    "dev:server": "source .env && ts-node-dev --unhandled-rejections=warn --respawn src/server.js",
-    "dev": "docker compose -f docker-compose.dev.yml up",
+    "start:ecs": "ts-node-dev --unhandled-rejections=warn --respawn src/server.js",
+    "dev": "source .env && docker compose -f docker-compose.dev.yml up",
     "test:docker": "docker run -d -p 54321:5432 --name postgres -e POSTGRES_USER=isomer -e POSTGRES_PASSWORD=password -e POSTGRES_DB=isomercms_test postgres:latest",
     "test": "source .env.test && jest --runInBand",
     "release": "npm version $npm_config_isomer_update && git push --tags",

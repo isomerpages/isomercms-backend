@@ -13,6 +13,7 @@ const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 const ALLOWED_FILE_EXTENSIONS = [
   "pdf",
   "png",
+  "apng",
   "jpg",
   "jpeg",
   "gif",

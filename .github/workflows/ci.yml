@@ -102,8 +102,7 @@ jobs:
           import os
           ref = os.environ['GITHUB_REF']
           prod = os.environ['PRODUCTION_BRANCH']
-          staging = os.environ['STAGING_BRANCH']
-          if ref == prod or ref == staging:
+          if ref == prod:
             print('::set-output name=proceed::true')
           else:
             print('::set-output name=proceed::false')
@@ -162,16 +161,11 @@ jobs:
             import os
             branch = os.environ['GITHUB_REF']
             production = os.environ['PRODUCTION_BRANCH']
-            staging = os.environ['STAGING_BRANCH']
             eb_app = os.environ['EB_APP']
             eb_env_production = os.environ['EB_ENV_PRODUCTION']
-            eb_env_staging = os.environ['EB_ENV_STAGING']
             if branch == production:
               print('::set-output name=eb_app::' + eb_app)
               print('::set-output name=eb_env::' + eb_env_production)
-            elif branch == staging:
-              print('::set-output name=eb_app::' + eb_app)
-              print('::set-output name=eb_env::' + eb_env_staging)
           id: select_eb_vars
         - name: Deploy to EB
           uses: opengovsg/beanstalk-deploy@v11

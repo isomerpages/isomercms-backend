@@ -39,6 +39,15 @@ on:
         description: "Path to task definition file"
         required: true
         type: string
+      codedeploy-application:
+        description: 'CodeDeploy application to use'
+        required: true
+        type: string
+      codedeploy-deployment-group:
+        description: 'CodeDeploy deployment group to use'
+        required: true
+        type: string
+
     secrets: 
       AWS_ACCOUNT_ID:
         description: "AWS account ID to deploy to"
@@ -114,6 +123,11 @@ jobs:
             sed -i 's/<EFS_FILE_SYSTEM_ID>/${{ secrets.EFS_FILE_SYSTEM_ID }}/g' ${{ inputs.task-definition-path }}
             sed -i 's/<DD_API_KEY>/${{ secrets.DD_API_KEY }}/g' ${{ inputs.task-definition-path }}
       
+      - name: Replace variables in appspec
+        run: |
+          sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/deploy/appspec.json
+          sed -i 's/<ENVIRONMENT>/${{ inputs.shortEnv }}/g' .aws/deploy/appspec.json
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -129,3 +143,6 @@ jobs:
           cluster: ${{ inputs.ecs-cluster-name }}
           service: ${{ inputs.ecs-web-service-name }}
           wait-for-service-stability: true
+          codedeploy-appspec: .aws/deploy/appspec.json
+          codedeploy-application: ${{ inputs.codedeploy-application }}
+          codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}

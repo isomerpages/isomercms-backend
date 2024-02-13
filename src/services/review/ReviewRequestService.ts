@@ -55,6 +55,7 @@ import RepoService from "../db/RepoService"
 import { PageService } from "../fileServices/MdPageServices/PageService"
 import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
+import MailClient from "../utilServices/MailClient"
 
 const injectDefaultEditMeta = ({
   path,
@@ -82,6 +83,8 @@ const injectDefaultEditMeta = ({
 export default class ReviewRequestService {
   private readonly apiService: RepoService
 
+  private readonly mailer: MailClient
+
   private readonly repository: ModelStatic<ReviewRequest>
 
   private readonly users: ModelStatic<User>
@@ -100,6 +103,7 @@ export default class ReviewRequestService {
 
   constructor(
     apiService: RepoService,
+    mailer: MailClient,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,
@@ -110,6 +114,7 @@ export default class ReviewRequestService {
     sequelize: Sequelize
   ) {
     this.apiService = apiService
+    this.mailer = mailer
     this.users = users
     this.repository = repository
     this.reviewers = reviewers
@@ -349,13 +354,30 @@ export default class ReviewRequestService {
       requestorId: requestor.id,
       siteId: site.id,
     })
+    const subject = `[${siteName}] You've been requested to review some changes`
+    const emailBody = `<p>${requestor.email} has requested you to review and approve changes made on ${siteName}. You can either approve the changes or add comments for your collaborators to see.</p>
+    <p><a href="cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank"> View review request on IsomerCMS </a></p>
+    <p>Is this your first time approving and publishing a review request? Don’t worry, here is an article from the Isomer Guide for you:
+    <ul>
+    <li>
+    <a href=”guide.isomer.gov.sg/publish-changes-and-site-launch/for-email-login-users/approve-and-publish-a-review-request” target="_blank"> How to approve and publish a review request </a> 
+    </li>
+    </ul>
+    </p>
+    <p>Best,\nIsomerCMS Support Team</p>`
     await Promise.all(
-      reviewers.map(({ id }) =>
-        this.reviewers.create({
+      reviewers.map(async ({ id, email: reviewerEmail }) => {
+        await this.reviewers.create({
           requestId: reviewRequest.id,
           reviewerId: id,
         })
-      )
+        if (!reviewerEmail) {
+          // Should not reach here
+          throw new Error(`Reviewer with id ${id} has no email`)
+        }
+        const emailContent = `<p>Hi ${reviewerEmail},</p>${emailBody}`
+        await this.mailer.sendMail(reviewerEmail, subject, emailContent)
+      })
     )
 
     await this.reviewMeta.create({

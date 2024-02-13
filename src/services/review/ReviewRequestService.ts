@@ -356,11 +356,11 @@ export default class ReviewRequestService {
     })
     const subject = `[${siteName}] You've been requested to review some changes`
     const emailBody = `<p>${requestor.email} has requested you to review and approve changes made on ${siteName}. You can either approve the changes or add comments for your collaborators to see.</p>
-    <p><a href="cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank"> View review request on IsomerCMS </a></p>
+    <p><a href="https://cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank">View review request on IsomerCMS</a></p>
     <p>Is this your first time approving and publishing a review request? Don’t worry, here is an article from the Isomer Guide for you:
     <ul>
     <li>
-    <a href=”guide.isomer.gov.sg/publish-changes-and-site-launch/for-email-login-users/approve-and-publish-a-review-request” target="_blank"> How to approve and publish a review request </a> 
+    <a href="https://guide.isomer.gov.sg/publish-changes-and-site-launch/for-email-login-users/approve-and-publish-a-review-request" target="_blank">How to approve and publish a review request</a> 
     </li>
     </ul>
     </p>

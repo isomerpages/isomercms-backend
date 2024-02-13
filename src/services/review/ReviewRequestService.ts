@@ -364,7 +364,8 @@ export default class ReviewRequestService {
     </li>
     </ul>
     </p>
-    <p>Best,\nIsomerCMS Support Team</p>`
+    <p>Best,</p>
+    <p>IsomerCMS Support Team</p>`
     await Promise.all(
       reviewers.map(async ({ id, email: reviewerEmail }) => {
         await this.reviewers.create({

@@ -355,17 +355,15 @@ export default class ReviewRequestService {
       siteId: site.id,
     })
     const subject = `[${siteName}] You've been requested to review some changes`
-    const emailBody = `<p>${requestor.email} has requested you to review and approve changes made on ${siteName}. You can either approve the changes or add comments for your collaborators to see.</p>
-    <p><a href="https://cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank">View review request on IsomerCMS</a></p>
-    <p>Is this your first time approving and publishing a review request? Don’t worry, here is an article from the Isomer Guide for you:
-    <ul>
-    <li>
-    <a href="https://guide.isomer.gov.sg/publish-changes-and-site-launch/for-email-login-users/approve-and-publish-a-review-request" target="_blank">How to approve and publish a review request</a> 
-    </li>
-    </ul>
-    </p>
-    <p>Best,</p>
-    <p>IsomerCMS Support Team</p>`
+    const emailBody = `<p>Hi there,</p>
+    <p>${requestor.email} has requested you to review and approve changes made to site-name. You can see the changes and approve them, or add comments for site collaborators to see.</p>
+    <br />
+    <p><a href="https://cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank">Click to see the review request on IsomerCMS</a></p>
+    <br />
+    <p>If this is your first time approving or publishing a review request, <a href="https://guide.isomer.gov.sg/publish-changes-and-site-launch/for-email-login-users/approve-and-publish-a-review-request" target="_blank">this article from our Isomer Guide</a> might help.</p>
+    <br />
+    <p>Best,<br />
+    The Isomer Team</p>`
     await Promise.all(
       reviewers.map(async ({ id, email: reviewerEmail }) => {
         await this.reviewers.create({
@@ -376,8 +374,7 @@ export default class ReviewRequestService {
           // Should not reach here
           throw new Error(`Reviewer with id ${id} has no email`)
         }
-        const emailContent = `<p>Hi ${reviewerEmail},</p>${emailBody}`
-        await this.mailer.sendMail(reviewerEmail, subject, emailContent)
+        await this.mailer.sendMail(reviewerEmail, subject, emailBody)
       })
     )
 

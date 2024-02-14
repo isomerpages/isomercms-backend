@@ -9,6 +9,7 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import type UserSessionData from "@root/classes/UserSessionData"
 import { attachSiteHandler } from "@root/middleware"
+import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 import { StatsMiddleware } from "@root/middleware/stats"
 import InfraService from "@root/services/infra/InfraService"
 import type { RequestHandler } from "@root/types"
@@ -189,6 +190,7 @@ export class SitesRouter {
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
+    const routeCheckerMiddleware = new RouteCheckerMiddleware()
 
     router.get(
       "/",
@@ -197,39 +199,46 @@ export class SitesRouter {
     )
     router.get(
       "/:siteName/lastUpdated",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getLastUpdated)
     )
     router.get(
       "/:siteName/stagingUrl",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getStagingUrl)
     )
     router.get(
       "/:siteName/siteUrl",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getSiteUrl)
     )
     router.get(
       "/:siteName/info",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getSiteInfo)
     )
     router.get(
       "/:siteName/launchInfo",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getSiteLaunchInfo)
     )
     router.post(
       "/:siteName/launchSite",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteAdmin,
       attachReadRouteHandlerWrapper(this.launchSite)
     )
     router.get(
       "/:siteName/getStagingBuildStatus",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getUserStagingSiteBuildStatus)

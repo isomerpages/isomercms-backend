@@ -1,4 +1,5 @@
 import { attachSiteHandler } from "@root/middleware"
+import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 
 import { MetricsRouter } from "./metrics"
 import { NotificationsRouter } from "./notifications"
@@ -45,6 +46,7 @@ const getAuthenticatedSubrouter = ({
     notificationsService,
   })
   const metricsRouter = new MetricsRouter({ authorizationMiddleware })
+  const routeCheckerMiddleware = new RouteCheckerMiddleware()
 
   const authenticatedSubrouter = express.Router({ mergeParams: true })
 
@@ -55,17 +57,20 @@ const getAuthenticatedSubrouter = ({
   authenticatedSubrouter.use("/metrics", metricsRouter.getRouter())
   authenticatedSubrouter.use(
     "/sites/:siteName/collaborators",
+    routeCheckerMiddleware.verifySiteName,
     collaboratorsRouter.getRouter()
   )
   const baseSitesV2Router = sitesV2Router.getRouter()
   const sitesRouterWithReviewRequest = baseSitesV2Router.use(
     "/:siteName/review",
+    routeCheckerMiddleware.verifySiteName,
     attachSiteHandler,
     reviewRouter.getRouter()
   )
   authenticatedSubrouter.use("/sites", sitesRouterWithReviewRequest)
   authenticatedSubrouter.use(
     "/sites/:siteName/notifications",
+    routeCheckerMiddleware.verifySiteName,
     notificationsRouter.getRouter()
   )
   authenticatedSubrouter.use("/user", usersRouter.getRouter())

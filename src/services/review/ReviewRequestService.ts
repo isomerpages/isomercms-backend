@@ -356,7 +356,7 @@ export default class ReviewRequestService {
     })
     const subject = `[${siteName}] You've been requested to review some changes`
     const emailBody = `<p>Hi there,</p>
-    <p>${requestor.email} has requested you to review and approve changes made to site-name. You can see the changes and approve them, or add comments for site collaborators to see.</p>
+    <p>${requestor.email} has requested you to review and approve changes made to ${siteName}. You can see the changes and approve them, or add comments for site collaborators to see.</p>
     <br />
     <p><a href="https://cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank">Click to see the review request on IsomerCMS</a></p>
     <br />

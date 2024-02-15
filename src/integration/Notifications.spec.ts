@@ -53,6 +53,7 @@ import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import MailClient from "@root/services/utilServices/MailClient"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import RepoService from "@services/db/RepoService"
@@ -68,6 +69,9 @@ const MOCK_SITE = "mockSite"
 const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
 const gitFileSystemService = new GitFileSystemService(simpleGit())
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
 const gitHubService = new RepoService({
@@ -116,6 +120,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as RepoService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,

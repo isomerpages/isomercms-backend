@@ -53,6 +53,7 @@ import {
 import { mockUserWithSiteSessionData } from "@root/fixtures/sessionData"
 import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
+import MailClient from "@root/services/utilServices/MailClient"
 import { GithubCommentData } from "@root/types/dto/review"
 import { Commit } from "@root/types/github"
 import RepoService from "@services/db/RepoService"
@@ -119,8 +120,13 @@ const MockSequelize = {
   transaction: jest.fn((transaction) => transaction()),
 }
 
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
+
 const ReviewRequestService = new _ReviewRequestService(
   (MockReviewApi as unknown) as RepoService,
+  mockMailer,
   (MockUsersRepository as unknown) as ModelStatic<User>,
   (MockReviewRequestRepository as unknown) as ModelStatic<ReviewRequest>,
   (MockReviewersRepository as unknown) as ModelStatic<Reviewer>,

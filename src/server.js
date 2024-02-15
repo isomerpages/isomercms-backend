@@ -67,6 +67,7 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
+import { mailer } from "@services/utilServices/MailClient"
 
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
@@ -216,6 +217,7 @@ const pageService = new PageService({
 })
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
+  mailer,
   User,
   ReviewRequest,
   Reviewer,

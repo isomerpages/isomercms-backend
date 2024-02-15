@@ -45,6 +45,7 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
+import MailClient from "@root/services/utilServices/MailClient"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
@@ -62,6 +63,9 @@ const mockGithubService = {
   getComments: jest.fn(),
   getCommitDiff: jest.fn(),
 }
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
 const usersService = getUsersService(sequelize)
 const footerYmlService = new FooterYmlService({
   gitHubService: mockGithubService,
@@ -114,6 +118,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (mockGithubService as unknown) as RepoService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,

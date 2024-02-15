@@ -52,6 +52,7 @@ import DynamoDBService from "@root/services/infra/DynamoDBService"
 import InfraService from "@root/services/infra/InfraService"
 import StepFunctionsService from "@root/services/infra/StepFunctionsService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
+import MailClient from "@root/services/utilServices/MailClient"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import RepoService from "@services/db/RepoService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
@@ -65,6 +66,9 @@ const mockUpdatedAt = "now"
 const mockPermissions = { push: true }
 const mockPrivate = true
 
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
 const gitFileSystemService = new GitFileSystemService(simpleGit())
 
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
@@ -114,6 +118,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,

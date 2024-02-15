@@ -1,4 +1,5 @@
 import { attachSiteHandler } from "@root/middleware"
+import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 
 const express = require("express")
 
@@ -199,9 +200,11 @@ const getAuthenticatedSitesSubrouter = ({
     repoManagementService,
     authorizationMiddleware,
   })
+  const routeCheckerMiddleware = new RouteCheckerMiddleware()
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
+  authenticatedSitesSubrouter.use(routeCheckerMiddleware.verifySiteName)
   authenticatedSitesSubrouter.use(authenticationMiddleware.verifyAccess)
   authenticatedSitesSubrouter.use(attachSiteHandler)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username

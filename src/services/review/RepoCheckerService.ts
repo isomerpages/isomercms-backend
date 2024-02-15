@@ -16,7 +16,12 @@ import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
 import { Deployment, Repo, Site, SiteMember } from "@root/database/models"
 import SiteCheckerError from "@root/errors/SiteCheckerError"
 import logger from "@root/logger/logger"
-import { RepoErrorTypes, RepoError, isRepoError } from "@root/types/siteChecker"
+import {
+  RepoErrorTypes,
+  RepoError,
+  isRepoError,
+  RepoErrorDto,
+} from "@root/types/siteChecker"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
 import GitFileSystemService from "../db/GitFileSystemService"
@@ -62,6 +67,65 @@ export default class RepoCheckerService {
     this.gitFileSystemService = gitFileSystemService
     this.git = git
     this.repoRepository = repoRepository
+  }
+
+  isCurrentlyLocked(repo: string): ResultAsync<boolean, never> {
+    const logsFilePath = path.join(SITE_CHECKER_REPO_PATH, repo)
+    // create logs folder if it does not exist
+
+    if (!fs.existsSync(logsFilePath)) {
+      fs.mkdirSync(logsFilePath, { recursive: true })
+    }
+
+    // check if checker.lock exists
+    const lockFilePath = path.join(logsFilePath, "checker.lock")
+    return ResultAsync.fromPromise(
+      fs.promises.access(lockFilePath, fs.constants.F_OK),
+      () => okAsync(false)
+    )
+      .map(() => true)
+      .orElse(() => ok(false))
+  }
+
+  createLock(repo: string): ResultAsync<undefined, SiteCheckerError> {
+    // create a checker.lock file
+    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, "checker.lock")
+    return ResultAsync.fromPromise(
+      fs.promises.writeFile(lockFilePath, "locked"),
+      (error) => new SiteCheckerError(`${error}`)
+    )
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.git
+            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+            .add([`${path.join(repo, "checker.lock")}`])
+            .commit(`Create lock for ${repo}`)
+            .push(),
+          (error) => new SiteCheckerError(`${error}`)
+        )
+      )
+      .map(() => undefined)
+  }
+
+  deleteLock(repo: string): ResultAsync<undefined, SiteCheckerError> {
+    // delete the checker.lock file
+    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, "checker.lock")
+    return ResultAsync.fromPromise(
+      fs.promises.unlink(lockFilePath),
+      (error) => new SiteCheckerError(`${error}`)
+    )
+      .map(() => undefined)
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.git
+            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+            .add([`${path.join(repo, "checker.lock")}`])
+            .commit(`Delete lock for ${repo}`)
+            .push(),
+          (error) => new SiteCheckerError(`${error}`)
+        )
+      )
+      .map(() => undefined)
   }
 
   /**
@@ -190,6 +254,11 @@ export default class RepoCheckerService {
   }
 
   remover(repo: string, repoExists: boolean) {
+    const NODE_ENV = config.get("env")
+    if (NODE_ENV === "prod") {
+      // by right this should not happen, but just in case
+      return okAsync(undefined)
+    }
     if (repoExists) {
       return okAsync(undefined)
     }
@@ -324,7 +393,10 @@ export default class RepoCheckerService {
       })
   }
 
-  reporter(repo: string, errors: RepoError[]) {
+  reporter(
+    repo: string,
+    errors: RepoError[]
+  ): ResultAsync<RepoError[], SiteCheckerError> {
     // todo: make sure to set up repo in efs in both staging and production environments
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
 
@@ -346,24 +418,56 @@ export default class RepoCheckerService {
         .commit("site checker logs")
         .push(),
       (error) => new SiteCheckerError(`${error}`)
-    )
+    ).map(() => errors)
   }
 
-  checkRepo(repo: string): ResultAsync<undefined, SiteCheckerError> {
+  checkRepo(repo: string): ResultAsync<RepoErrorDto, never> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
      */
 
     let repoExists = true
+    return this.isCurrentlyLocked(repo)
+      .andThen((isLocked) => {
+        if (isLocked) {
+          return errAsync({
+            status: "loading",
+          })
+        }
+        return this.createLock(repo)
+      })
+      .andThen(() =>
+        this.cloner(repo).andThen((cloned) => {
+          repoExists = cloned
 
-    return this.cloner(repo).andThen((cloned) => {
-      repoExists = cloned
-      return this.checker(repo)
-        .andThen((errors) => this.reporter(repo, errors))
-        .andThen(() => this.remover(repo, repoExists))
-        .andThen(() => okAsync(undefined))
-    })
+          return this.checker(repo)
+            .andThen((errors) => this.reporter(repo, errors))
+            .map<RepoErrorDto>((errors) => ({
+              status: "success",
+              errors,
+            }))
+
+            .andThen((errors) =>
+              this.remover(repo, repoExists).andThen(() => ok(errors))
+            )
+            .andThen((errors) =>
+              this.deleteLock(repo).andThen(() => ok(errors))
+            )
+        })
+      )
+      .orElse((error) => {
+        if (error.status === "loading") {
+          return okAsync<RepoErrorDto>({
+            status: "loading",
+          })
+        }
+        this.deleteLock(repo)
+        logger.error(`Error running site checker for repo ${repo}: ${error}`)
+        return okAsync<RepoErrorDto>({
+          status: "error",
+        })
+      })
   }
 
   getPathInCms = (permalink: string, repoName: string) => {
@@ -493,14 +597,13 @@ export default class RepoCheckerService {
     const filesRootDir = path.join(dirPath, "files")
     const imagesRootDir = path.join(dirPath, "images")
 
-    return ResultAsync.fromPromise(
-      this.traverseDirectory(filesRootDir, dirPath),
-      (e) => new SiteCheckerError(`Failed to traverse directory: ${e}`)
+    return this.traverseDirectory(
+      filesRootDir,
+      dirPath
     ).andThen((assetFilesPath) =>
-      ResultAsync.fromPromise(
-        this.traverseDirectory(imagesRootDir, dirPath),
-        (e) => new SiteCheckerError(`Failed to traverse directory: ${e}`)
-      ).map((imagesPath) => new Set([...assetFilesPath, ...imagesPath]))
+      this.traverseDirectory(imagesRootDir, dirPath).map(
+        (imagesPath) => new Set([...assetFilesPath, ...imagesPath])
+      )
     )
   }
 
@@ -552,22 +655,31 @@ export default class RepoCheckerService {
     )
   }
 
-  // todo: refactor to use neverthrow
-  async traverseDirectory(dir: string, relativePath: string) {
+  traverseDirectory(
+    dir: string,
+    relativePath: string
+  ): ResultAsync<Set<string>, SiteCheckerError> {
     const filePaths = new Set<string>()
-    const files = await fs.promises.readdir(dir, {
-      recursive: true,
-      withFileTypes: true,
-    })
+    return ResultAsync.fromPromise(
+      fs.promises.readdir(dir, {
+        recursive: true,
+        withFileTypes: true,
+      }),
+      (error) => new SiteCheckerError(`${error}`)
+    ).andThen((files) => {
+      files.map((entry) => {
+        const res = path.resolve(
+          relativePath,
+          path.join(entry.path, entry.name)
+        )
+        if (!entry.isDirectory()) {
+          filePaths.add(decodeURIComponent(res.slice(relativePath.length)))
+        }
+        return entry
+      })
 
-    const promises = files.map(async (entry) => {
-      const res = path.resolve(relativePath, path.join(entry.path, entry.name))
-      if (!entry.isDirectory()) {
-        filePaths.add(decodeURIComponent(res.slice(relativePath.length)))
-      }
+      return ok(filePaths)
     })
-    await Promise.all(promises)
-    return filePaths
   }
 
   // todo: refactor to use neverthrow

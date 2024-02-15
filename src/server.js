@@ -349,6 +349,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   reviewRouter,
   notificationsService,
   infraService,
+  repoCheckerService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({

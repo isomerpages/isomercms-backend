@@ -63,6 +63,7 @@ import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
+import MailClient from "@root/services/utilServices/MailClient"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import RepoService from "@services/db/RepoService"
@@ -97,6 +98,9 @@ jest.mock("../services/identity/DeploymentClient", () =>
       .mockImplementation(() => ok(mockDeleteInput)),
   }))
 )
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
 const gitFileSystemService = new GitFileSystemService(simpleGit())
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
 
@@ -146,6 +150,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as RepoService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,

@@ -90,6 +90,7 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
+import MailClient from "@root/services/utilServices/MailClient"
 import { ReviewRequestDto } from "@root/types/dto/review"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import GitFileSystemService from "@services/db/GitFileSystemService"
@@ -101,6 +102,10 @@ import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { sequelize } from "@tests/database"
+
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
 
 const gitFileSystemService = new GitFileSystemService(simpleGit())
 const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
@@ -151,6 +156,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as RepoService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,

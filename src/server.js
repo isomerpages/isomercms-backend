@@ -70,7 +70,6 @@ import ReviewRequestService from "@services/review/ReviewRequestService"
 
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
-import { IacEmailCreationRouter } from "./routes/iac/email"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
@@ -373,15 +372,6 @@ const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
   reposService,
 })
 
-const iacEmailCreationRouter = new IacEmailCreationRouter(
-  simpleGitInstance,
-  gitFileSystemService,
-  sitesService,
-  usersService,
-  reposService,
-  deploymentsService
-)
-
 const app = express()
 
 if (isSecure) {
@@ -410,8 +400,6 @@ app.use(sessionMiddleware)
 
 // Health endpoint
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
-
-app.use("/v2/iac/email", iacEmailCreationRouter.getRouter())
 
 // Routes layer setup
 app.use("/v2/auth", authV2Router.getRouter())

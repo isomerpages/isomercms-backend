@@ -453,14 +453,6 @@ const config = convict({
       default: "",
     },
   },
-  pulumi: {
-    authToken: {
-      doc: "Pulumi auth token used to run post site create actions ",
-      env: "PULUMI_AUTH_TOKEN",
-      format: "required-string",
-      default: "",
-    },
-  },
 })
 
 // Perform validation

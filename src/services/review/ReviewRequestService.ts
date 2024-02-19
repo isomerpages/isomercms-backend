@@ -377,6 +377,7 @@ export default class ReviewRequestService {
         try {
           await this.mailer.sendMail(reviewerEmail, subject, emailBody)
         } catch (mailerErr) {
+          // Non-blocking
           logger.error(
             `Error when sending reviewer mail to ${reviewerEmail}: ${mailerErr}`
           )

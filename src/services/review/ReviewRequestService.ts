@@ -374,7 +374,13 @@ export default class ReviewRequestService {
           // Should not reach here
           throw new Error(`Reviewer with id ${id} has no email`)
         }
-        await this.mailer.sendMail(reviewerEmail, subject, emailBody)
+        try {
+          await this.mailer.sendMail(reviewerEmail, subject, emailBody)
+        } catch (mailerErr) {
+          logger.error(
+            `Error when sending reviewer mail to ${reviewerEmail}: ${mailerErr}`
+          )
+        }
       })
     )
 

@@ -21,9 +21,7 @@
     "jump:staging": "source .ssh/.env.staging && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-staging-bastion.pem",
     "db:migrate:staging": "source .ssh/.env.staging && npx sequelize-cli db:migrate",
     "jump:prod": "source .ssh/.env.prod && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-production-bastion.pem",
-    "db:migrate:prod": "source .ssh/.env.prod && npx sequelize-cli db:migrate",
-    "jump:vapt": "source .ssh/.env.vapt && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-vapt-bastion",
-    "db:migrate:vapt": "source .ssh/.env.vapt && npx sequelize-cli db:migrate"
+    "db:migrate:prod": "source .ssh/.env.prod && npx sequelize-cli db:migrate"
   },
   "dependencies": {
     "@aws-sdk/client-amplify": "^3.370.0",

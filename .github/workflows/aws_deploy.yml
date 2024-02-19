@@ -85,9 +85,7 @@ jobs:
       - name: Build and push image to ECR
         uses: docker/build-push-action@v4
         with:
-          provenance: false
           push: true
-          sbom: false
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
 
   deploy:
@@ -110,12 +108,6 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build and push image to ECR
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
 
       - name: Replace variables in task definition file
         run: |

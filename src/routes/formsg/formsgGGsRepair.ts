@@ -10,12 +10,15 @@ import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
+import { lock, unlock } from "@utils/mutex-utils"
+
 import {
   EFS_VOL_PATH_STAGING,
   EFS_VOL_PATH_STAGING_LITE,
 } from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
+import LockedError from "@root/errors/LockedError"
 import { consoleLogger } from "@root/logger/console.logger"
 import logger from "@root/logger/logger"
 import { attachFormSGHandler } from "@root/middleware"
@@ -114,7 +117,7 @@ export class FormsgGGsRepairRouter {
   }
 
   handleGGsFormSubmission = (repoNames: string[], requesterEmail: string) => {
-    const repairs: ResultAsync<string, GitFileSystemError>[] = []
+    const repairs: ResultAsync<string, GitFileSystemError | LockedError>[] = []
 
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
@@ -122,7 +125,11 @@ export class FormsgGGsRepairRouter {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 
       repairs.push(
-        this.doesRepoNeedClone(repoName)
+        ResultAsync.fromPromise(
+          lock(repoName),
+          (err) => new LockedError(`Unable to lock repo ${repoName}`)
+        )
+          .andThen(() => this.doesRepoNeedClone(repoName))
           .andThen(() => {
             const isStaging = true
             return (
@@ -166,6 +173,15 @@ export class FormsgGGsRepairRouter {
                 return okAsync(result)
               })
           )
+          .andThen((result) => {
+            // Failure to unlock is not blocking
+            ResultAsync.fromPromise(unlock(repoName), () => {
+              logger.error(
+                "Failed to unlock repo - repo will unlock after 1 min"
+              )
+            })
+            return okAsync(result)
+          })
       )
     })
 

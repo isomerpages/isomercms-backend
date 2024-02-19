@@ -161,6 +161,7 @@ class UsersService {
         transaction,
       })
       user.lastLoggedIn = new Date()
+
       return user.save({ transaction })
     })
   }

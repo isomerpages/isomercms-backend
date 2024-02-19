@@ -20,6 +20,10 @@ RUN npm ci
 RUN rm -rf /var/cache/apk/*
 
 RUN git config --system --add safe.directory '*'
+RUN echo "[user]" > /root/.gitconfig 
+RUN echo "  name = Isomer Admin" >> /root/.gitconfig
+RUN echo "  email = admin@isomer.gov.sg" >> /root/.gitconfig
+
 
 EXPOSE "8081"
 CMD ["bash", "-c", "chmod +x ./scripts/02_fetch_ssh_keys.sh && bash ./scripts/02_fetch_ssh_keys.sh & npm run start:ecs"] 

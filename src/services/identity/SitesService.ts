@@ -442,6 +442,7 @@ class SitesService {
     createParams: Partial<Site> & {
       name: Site["name"]
       creator: Site["creator"]
+      creatorId: Site["creatorId"]
     }
   ) {
     return this.siteRepository.create(createParams)

@@ -188,19 +188,23 @@ jobs:
     needs: [gatekeep]
     if: needs.gatekeep.outputs.proceed == 'true'
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
-        with:
-          # npm cache files are stored in `~/.npm` on Linux/macOS
-          path: ~/.npm
-          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-node-
-            ${{ runner.OS }}-
       - name: Deploy to ECS 
-        uses: ./.github/workflows/deploy_prod.yml
+        uses: ./.github/workflows/aws_deploy.yml
+        with:
+          aws-region: "ap-southeast-1"
+          cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-github-oidc-role-16ea937"
+          ecr-repository: "isomer-infra-prod-ecr"
+          ecs-cluster-name: "isomer-prod-ecs"
+          ecs-web-service-name: "isomer-prod-ecs-service"
+          ecs-container-name: "backend"
+          environment: "prod"
+          shortEnv: "prod"
+          task-definition-path: ".aws/deploy/backend-task-definition.prod.json" 
+          codedeploy-application: "isomer-prod-ecs-app"
+          codedeploy-deployment-group: "isomer-prod-ecs-dg"
+          
+          # Secrets
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          EFS_FILE_SYSTEM_ID: ${{ secrets.PROD_EFS_FILE_SYSTEM_ID }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+  

@@ -118,7 +118,7 @@ describe("Homepage Router", () => {
       )
     })
 
-    it("accepts valid homepage update requests with additional unspecified fields and returns the details of the file updated", async () => {
+    it("rejects homepage update requests with additional unspecified fields", async () => {
       const extraUpdateDetails = { ...updatePageDetails }
       // Add extra unspecified field
       extraUpdateDetails.content.frontMatter.extra = ""
@@ -131,7 +131,7 @@ describe("Homepage Router", () => {
       await request(app)
         .post(`/${siteName}/homepage`)
         .send(extraUpdateDetails)
-        .expect(200)
+        .expect(400)
 
       expect(mockHomepagePageService.update).toHaveBeenCalledWith(
         mockUserWithSiteSessionData,

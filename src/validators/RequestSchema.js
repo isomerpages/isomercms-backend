@@ -63,7 +63,143 @@ const UpdateHomepageSchema = Joi.object({
       permalink: Joi.string().required(),
       notification: Joi.string().allow(""),
       image: Joi.string(),
-      sections: Joi.array().required(),
+      sections: Joi.array()
+        .items(
+          // Hero section
+          Joi.object({
+            hero: Joi.object({
+              variant: Joi.string().allow(
+                "side",
+                "image",
+                "floating",
+                "center",
+                ""
+              ),
+              backgroundColor: Joi.string().allow("black", "white", "gray", ""),
+              background: Joi.string().allow(""),
+              size: Joi.string().allow("sm", "md", ""),
+              alignment: Joi.string().allow("left", "right", ""),
+              title: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+              dropdown: Joi.object({
+                title: Joi.string().required(),
+                options: Joi.array().items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    url: Joi.string().required(),
+                  })
+                ),
+              }),
+              key_highlights: Joi.array()
+                .max(4)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    description: Joi.string().allow(""),
+                    url: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          }),
+
+          // Resources section
+          Joi.object({
+            resources: Joi.object({
+              title: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+            }),
+          }),
+
+          // Infobar section
+          Joi.object({
+            infobar: Joi.object({
+              title: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+            }),
+          }),
+
+          // Infopic section
+          Joi.object({
+            infopic: Joi.object({
+              title: Joi.string(),
+              subtitle: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+              image: Joi.string(),
+              alt: Joi.string(),
+            }),
+          }),
+
+          // Announcements section
+          Joi.object({
+            announcements: Joi.object({
+              title: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              announcement_items: Joi.array()
+                .max(5)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    date: Joi.string().required(),
+                    announcement: Joi.string().required(),
+                    link_text: Joi.string().allow(""),
+                    link_url: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          }),
+
+          // Textcard section
+          Joi.object({
+            textcards: Joi.object({
+              title: Joi.string().required(),
+              id: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+              cards: Joi.array()
+                .max(4)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    description: Joi.string().allow(""),
+                    linktext: Joi.string().allow(""),
+                    url: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          }),
+
+          // Infocols section
+          Joi.object({
+            infocols: Joi.object({
+              title: Joi.string().required(),
+              id: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+              linktext: Joi.string().allow(""),
+              infoboxes: Joi.array()
+                .max(4)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    description: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          })
+        )
+        .required(),
     }).required(),
     pageBody: Joi.string().allow(""), // Joi does not allow empty string (pageBody: '') for Joi.string() even if not required
   }).required(),

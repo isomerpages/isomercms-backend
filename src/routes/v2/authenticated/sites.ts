@@ -50,7 +50,6 @@ export class SitesRouter {
     infraService,
     repoCheckerService,
   }: SitesRouterProps) {
-    console.log({ repoCheckerService }, "in sites router")
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
     this.statsMiddleware = statsMiddleware

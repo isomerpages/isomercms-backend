@@ -121,12 +121,13 @@ export class FormsgGGsRepairRouter {
 
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
+    const LOCK_TIME_SECONDS = 15 * 60 // 15 minutes
     repoNames.forEach((repoName) => {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 
       repairs.push(
         ResultAsync.fromPromise(
-          lock(repoName),
+          lock(repoName, LOCK_TIME_SECONDS),
           (err) => new LockedError(`Unable to lock repo ${repoName}`)
         )
           .andThen(() => this.doesRepoNeedClone(repoName))
@@ -177,7 +178,7 @@ export class FormsgGGsRepairRouter {
             // Failure to unlock is not blocking
             ResultAsync.fromPromise(unlock(repoName), () => {
               logger.error(
-                "Failed to unlock repo - repo will unlock after 1 min"
+                "Failed to unlock repo - repo will unlock after at most 15 min"
               )
             })
             return okAsync(result)

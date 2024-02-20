@@ -35,10 +35,10 @@ const mockUnlock = (siteName) => {
   mockMutexObj[siteName] = false
 }
 
-const lock = async (siteName) => {
+const lock = async (siteName, lockLengthSeconds = 60) => {
   try {
     const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME =
-      Math.floor(new Date().valueOf() / 1000) + 60
+      Math.floor(new Date().valueOf() / 1000) + lockLengthSeconds
 
     if (isE2eTestRepo(siteName)) return
     if (!IS_DEV) {

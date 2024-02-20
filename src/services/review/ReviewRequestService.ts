@@ -434,71 +434,77 @@ export default class ReviewRequestService {
     // NOTE: This has a max of 30 pull requests
     // and returns only open pull requests.
     return Promise.all(
-      requests.map(async (req) => {
-        const { pullRequestNumber } = req.reviewMeta
-        // NOTE: We explicitly destructure as the raw data
-        // contains ALOT more than these fields, which we want to
-        // discard to lower retrieval times for FE
-        const {
-          title,
-          body,
-          created_at,
-        } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
-        const { files } = await this.apiService.getCommitDiff(siteName)
-        const displayedFiles = files
-          .filter((file) => {
-            const extractPlaceholderFileResult = extractPathInfo(
-              file.filename
-            ).andThen((pathInfo) =>
-              PlaceholderService.isPlaceholderFile(pathInfo)
-            )
-            return extractPlaceholderFileResult.isErr()
-          })
-          .map((file) => file.filename)
-
-        // It is the user's first view if the review request views table
-        // does not contain a record for the user and the review request
-        const isFirstView = !(await this.reviewRequestView.count({
-          where: {
-            reviewRequestId: req.id,
-            siteId: site.id,
-            userId,
-          },
-        }))
-
-        // It is a new comment to the user if any of the following
-        // conditions satisfy:
-        // 1. The review request views table does not contain a record
-        //    for the user and the review request.
-        // 2. The review request views table contains a record for that
-        //    user and review request, but the lastViewedAt entry is NULL.
-        // 3. The review request views table contains a record in the
-        //    lastViewedAt entry, and the comment has a timestamp greater
-        //    than the one stored in the database.
-        const allComments = await this.getComments(
-          sessionData,
-          site,
-          pullRequestNumber
-        )
-        const countNewComments = await Promise.all(
-          allComments.map(async (value) => value.isRead)
-        ).then((arr) => {
-          const unreadComments = arr.filter((isRead) => !isRead)
-          return unreadComments.length
+      requests
+        .filter((req) => {
+          if (req && req.reviewMeta && req.reviewMeta.pullRequestNumber)
+            return true
+          return false
         })
+        .map(async (req) => {
+          const { pullRequestNumber } = req.reviewMeta
+          // NOTE: We explicitly destructure as the raw data
+          // contains ALOT more than these fields, which we want to
+          // discard to lower retrieval times for FE
+          const {
+            title,
+            body,
+            created_at,
+          } = await this.apiService.getPullRequest(siteName, pullRequestNumber)
+          const { files } = await this.apiService.getCommitDiff(siteName)
+          const displayedFiles = files
+            .filter((file) => {
+              const extractPlaceholderFileResult = extractPathInfo(
+                file.filename
+              ).andThen((pathInfo) =>
+                PlaceholderService.isPlaceholderFile(pathInfo)
+              )
+              return extractPlaceholderFileResult.isErr()
+            })
+            .map((file) => file.filename)
 
-        return {
-          id: pullRequestNumber,
-          author: req.requestor.email || "Unknown user",
-          status: req.reviewStatus,
-          title,
-          description: body || "",
-          changedFiles: displayedFiles.length,
-          createdAt: new Date(created_at).getTime(),
-          newComments: countNewComments,
-          firstView: isFirstView,
-        }
-      })
+          // It is the user's first view if the review request views table
+          // does not contain a record for the user and the review request
+          const isFirstView = !(await this.reviewRequestView.count({
+            where: {
+              reviewRequestId: req.id,
+              siteId: site.id,
+              userId,
+            },
+          }))
+
+          // It is a new comment to the user if any of the following
+          // conditions satisfy:
+          // 1. The review request views table does not contain a record
+          //    for the user and the review request.
+          // 2. The review request views table contains a record for that
+          //    user and review request, but the lastViewedAt entry is NULL.
+          // 3. The review request views table contains a record in the
+          //    lastViewedAt entry, and the comment has a timestamp greater
+          //    than the one stored in the database.
+          const allComments = await this.getComments(
+            sessionData,
+            site,
+            pullRequestNumber
+          )
+          const countNewComments = await Promise.all(
+            allComments.map(async (value) => value.isRead)
+          ).then((arr) => {
+            const unreadComments = arr.filter((isRead) => !isRead)
+            return unreadComments.length
+          })
+
+          return {
+            id: pullRequestNumber,
+            author: req.requestor.email || "Unknown user",
+            status: req.reviewStatus,
+            title,
+            description: body || "",
+            changedFiles: displayedFiles.length,
+            createdAt: new Date(created_at).getTime(),
+            newComments: countNewComments,
+            firstView: isFirstView,
+          }
+        })
     )
   }
 

@@ -32,7 +32,6 @@ const { JSDOM } = jsdom
 interface RepoCheckerServiceProps {
   siteMemberRepository: ModelStatic<SiteMember>
   repoRepository: ModelStatic<Repo>
-  sitesService: SitesService
   gitFileSystemService: GitFileSystemService
   git: SimpleGit
 }
@@ -47,8 +46,6 @@ export const SITE_CHECKER_REPO_PATH = path.join(
 export default class RepoCheckerService {
   private readonly siteMemberRepository: RepoCheckerServiceProps["siteMemberRepository"]
 
-  private readonly sitesService: RepoCheckerServiceProps["sitesService"]
-
   private readonly gitFileSystemService: RepoCheckerServiceProps["gitFileSystemService"]
 
   private readonly git: RepoCheckerServiceProps["git"]
@@ -58,12 +55,11 @@ export default class RepoCheckerService {
   constructor({
     siteMemberRepository,
     repoRepository,
-    sitesService,
     gitFileSystemService,
     git,
   }: RepoCheckerServiceProps) {
     this.siteMemberRepository = siteMemberRepository
-    this.sitesService = sitesService
+
     this.gitFileSystemService = gitFileSystemService
     this.git = git
     this.repoRepository = repoRepository

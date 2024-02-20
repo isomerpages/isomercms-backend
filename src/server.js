@@ -304,7 +304,6 @@ const infraService = new InfraService({
 
 const repoCheckerService = new RepoCheckerService({
   siteMemberRepository: SiteMember,
-  sitesService,
   gitFileSystemService,
   repoRepository: Repo,
   git: simpleGitInstance,

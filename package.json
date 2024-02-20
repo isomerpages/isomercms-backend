@@ -1,6 +1,6 @@
 {
   "name": "isomercms",
-  "version": "0.66.3",
+  "version": "0.66.4",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

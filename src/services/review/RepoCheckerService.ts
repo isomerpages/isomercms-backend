@@ -421,7 +421,7 @@ export default class RepoCheckerService {
     ).map(() => errors)
   }
 
-  checkRepo(repo: string): ResultAsync<RepoErrorDto, never> {
+  checkRepo(repo: string): ResultAsync<RepoErrorDto, RepoErrorDto> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
@@ -464,7 +464,7 @@ export default class RepoCheckerService {
         }
         this.deleteLock(repo)
         logger.error(`Error running site checker for repo ${repo}: ${error}`)
-        return okAsync<RepoErrorDto>({
+        return errAsync<RepoErrorDto, RepoErrorDto>({
           status: "error",
         })
       })

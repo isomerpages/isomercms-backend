@@ -210,7 +210,7 @@ export class SitesRouter {
     if (result.isOk()) {
       return res.status(200).json(result.value)
     }
-    return res.status(404).json({ status: "error" })
+    return res.status(400).json({ status: "error" })
   }
 
   getRouter() {

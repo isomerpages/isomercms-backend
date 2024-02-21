@@ -415,57 +415,105 @@ export default class RepoCheckerService {
     ).map(() => errors)
   }
 
-  checkRepo(repo: string): ResultAsync<BrokenLinkErrorDto, BrokenLinkErrorDto> {
+  // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
+  csvToRepoError = (repo: string): Promise<RepoError[]> => {
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
+    const file = fs.createReadStream(filePath)
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        complete(results) {
+          // validate the csv
+          if (!results.data.every(isRepoError)) {
+            reject(new Error("Invalid CSV"))
+          }
+          resolve(results.data as RepoError[])
+        },
+        error(err) {
+          reject(err)
+        },
+      })
+    })
+  }
+
+  readRepoErrors = (
+    repo: string
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
+    if (!fs.existsSync(filePath)) {
+      return errAsync(new SiteCheckerError(`log file does not exist`))
+    }
+
+    return this.isCurrentlyLocked(repo).andThen((isLocked) => {
+      if (isLocked) {
+        return okAsync<BrokenLinkErrorDto>({
+          status: "loading",
+        })
+      }
+
+      return ResultAsync.fromPromise(this.csvToRepoError(repo), (error) => {
+        logger.error(`Error reading csv for repo ${repo}: ${error}`)
+        return new SiteCheckerError(
+          `Error reading csv for repo ${repo}: ${error}`
+        )
+      }).andThen((errors) =>
+        okAsync<BrokenLinkErrorDto>({
+          errors,
+          status: "success",
+        })
+      )
+    })
+  }
+
+  checkRepo(repo: string): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
      */
 
     let repoExists = true
-    return this.isCurrentlyLocked(repo)
-      .andThen((isLocked) => {
-        if (isLocked) {
-          return errAsync({
-            status: "loading",
-          })
-        }
-        return this.createLock(repo)
-      })
-      .andThen(() =>
-        this.cloner(repo).andThen((cloned) => {
-          repoExists = cloned
-
-          return this.checker(repo)
-            .andThen((errors) => this.reporter(repo, errors))
-            .map<BrokenLinkErrorDto>((errors) => ({
-              status: "success",
-              errors,
-            }))
-
-            .andThen((errors) => {
-              if (repoExists) {
-                return ok(errors)
-              }
-              // since this repo was cloned during this operation, we should remove it
-              return this.remover(repo).andThen(() => ok(errors))
-            })
-            .andThen((errors) =>
-              this.deleteLock(repo).andThen(() => ok(errors))
-            )
+    return this.isCurrentlyLocked(repo).andThen((isLocked) => {
+      if (isLocked) {
+        return okAsync<BrokenLinkErrorDto>({
+          status: "loading",
         })
-      )
-      .orElse((error) => {
-        if (error.status === "loading") {
-          return okAsync<BrokenLinkErrorDto>({
-            status: "loading",
+      }
+
+      // this process can run async, so we can just return the loading state early
+      this.createLock(repo)
+        .andThen(() =>
+          this.cloner(repo).andThen((cloned) => {
+            repoExists = cloned
+
+            return this.checker(repo)
+              .andThen((errors) => this.reporter(repo, errors))
+              .map<BrokenLinkErrorDto>((errors) => ({
+                status: "success",
+                errors,
+              }))
+
+              .andThen((errors) => {
+                if (repoExists) {
+                  return ok(errors)
+                }
+                // since this repo was cloned during this operation, we should remove it
+                return this.remover(repo).andThen(() => ok(errors))
+              })
+              .andThen((errors) =>
+                this.deleteLock(repo).andThen(() => ok(errors))
+              )
+              .orElse((error) => {
+                this.deleteLock(repo)
+                return errAsync(error)
+              })
           })
-        }
-        this.deleteLock(repo)
-        logger.error(`Error running site checker for repo ${repo}: ${error}`)
-        return errAsync<BrokenLinkErrorDto, BrokenLinkErrorDto>({
-          status: "error",
-        })
+        )
+        .then((result) => result)
+
+      return okAsync<BrokenLinkErrorDto>({
+        status: "loading",
       })
+    })
   }
 
   getPathInCms = (permalink: string, repoName: string) => {

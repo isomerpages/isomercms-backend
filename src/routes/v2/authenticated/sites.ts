@@ -203,6 +203,23 @@ export class SitesRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
+    const result = await this.repoCheckerService.readRepoErrors(
+      userWithSiteSessionData.siteName
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(400).json({ status: "error" })
+  }
+
+  checkLinks: RequestHandler<
+    { siteName: string },
+    BrokenLinkErrorDto | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
     const result = await this.repoCheckerService.checkRepo(
       userWithSiteSessionData.siteName
     )
@@ -273,6 +290,13 @@ export class SitesRouter {
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getLinkCheckerStatus)
+    )
+    router.post(
+      "/:siteName/checkLinks",
+      routeCheckerMiddleware.verifySiteName,
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteAdmin,
+      attachReadRouteHandlerWrapper(this.checkLinks)
     )
 
     // The /sites/preview is a POST endpoint as the frontend sends

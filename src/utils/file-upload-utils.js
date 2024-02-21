@@ -55,15 +55,28 @@ const validateAndSanitizeFileUpload = async (data) => {
   const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
 
+  // NOTE: This check is required for svg files.
+  // This is because svg files are a string based data type
+  // and not binary based.
+  // Hence, `FileType` wouldn't be able to detect the correct
+  // file type for svg files.
   if (isSvg(fileBuffer)) {
+    // NOTE: `isSvg` checks only using the first element,
+    // which is insufficient to guarantee that this file is safe.
+    // We run it thru the sanitizer again to ensure that the output
+    // is safe.
     const sanitizedBuffer = sanitizer.sanitize(fileBuffer)
-    return Buffer.from(sanitizedBuffer, "utf8").toString("base64")
+    return {
+      content: Buffer.from(sanitizedBuffer, "utf8").toString("base64"),
+      detectedFileType: { ext: "svg" },
+    }
   }
+
   if (
     detectedFileType &&
     ALLOWED_FILE_EXTENSIONS.includes(detectedFileType.ext)
   ) {
-    return content
+    return { content, detectedFileType }
   }
 
   return undefined

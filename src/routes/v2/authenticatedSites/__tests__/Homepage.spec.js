@@ -122,11 +122,6 @@ describe("Homepage Router", () => {
       const extraUpdateDetails = { ...updatePageDetails }
       // Add extra unspecified field
       extraUpdateDetails.content.frontMatter.extra = ""
-      const expectedServiceInput = {
-        content: updatePageDetails.content.pageBody,
-        frontMatter: updatePageDetails.content.frontMatter,
-        sha: updatePageDetails.sha,
-      }
 
       await request(app)
         .post(`/${siteName}/homepage`)

@@ -2,6 +2,10 @@ const { config } = require("@config/config")
 
 const { BadRequestError } = require("@errors/BadRequestError")
 
+const {
+  MediaFileService,
+} = require("@services/fileServices/MdPageServices/MediaFileService")
+
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
 describe("Media File Service", () => {
@@ -9,13 +13,14 @@ describe("Media File Service", () => {
   const accessToken = "test-token"
   const imageName = "test image.png"
   const imageEncodedName = encodeURIComponent(imageName)
-  const fileName = "test file.pdf"
+  const fileName = "test file.jpg"
   const fileEncodedName = encodeURIComponent(fileName)
   const directoryName = "images/subfolder"
-  const mockContent = "schema, test"
-  const mockSanitizedContent = "sanitized-test"
   const sha = "12345"
   const mockGithubSessionData = "githubData"
+  const mockContent =
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxMHEBMRBxMRFhUXFhgPGBAWFRYdFxIXFxYWFxUVFhMYHiogGBolGxgVITEiJikrOjEuFyA1OzMsNygtLisBCjxoMj5oZWxsbzwvaDI+Cg=="
+  const mockSanitizedContent = mockContent.split(",")[1]
 
   const sessionData = { siteName, accessToken }
 
@@ -34,22 +39,16 @@ describe("Media File Service", () => {
     updateRepoState: jest.fn(),
   }
 
+  // NOTE: Mock just the scan function
+  // as we want to omit network calls.
   jest.mock("@utils/file-upload-utils", () => ({
-    validateAndSanitizeFileUpload: jest
-      .fn()
-      .mockReturnValue(mockSanitizedContent),
-    ALLOWED_FILE_EXTENSIONS: ["pdf"],
+    ...jest.requireActual("@utils/file-upload-utils"),
     scanFileForVirus: jest.fn().mockReturnValue({ CleanResult: true }),
   }))
-
-  const {
-    MediaFileService,
-  } = require("@services/fileServices/MdPageServices/MediaFileService")
 
   const service = new MediaFileService({
     repoService: mockRepoService,
   })
-  const { validateAndSanitizeFileUpload } = require("@utils/file-upload-utils")
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -66,15 +65,16 @@ describe("Media File Service", () => {
       ).rejects.toThrowError(BadRequestError)
     })
 
-    mockRepoService.create.mockResolvedValueOnce({ sha })
     it("Creating pages works correctly", async () => {
-      await expect(
-        service.create(sessionData, {
-          fileName,
-          directoryName,
-          content: mockContent,
-        })
-      ).resolves.toMatchObject({
+      // Arrange
+      mockRepoService.create.mockResolvedValueOnce({ sha })
+
+      const result = await service.create(sessionData, {
+        fileName,
+        directoryName,
+        content: mockContent,
+      })
+      expect(result).toMatchObject({
         name: fileName,
         content: mockContent,
         sha,
@@ -85,7 +85,24 @@ describe("Media File Service", () => {
         directoryName,
         isMedia: true,
       })
-      expect(validateAndSanitizeFileUpload).toHaveBeenCalledWith(mockContent)
+    })
+
+    it("should ignore the extension provided by the user", async () => {
+      // Arrange
+      mockRepoService.create.mockResolvedValueOnce({ sha })
+      const fileNameWithWrongExt = "wrong.html"
+
+      // Act
+      const result = await service.create(sessionData, {
+        fileName: fileNameWithWrongExt,
+        directoryName,
+        content: mockContent,
+      })
+
+      // Assert
+      // NOTE: The original extension here is not used.
+      // Instead, we use the inferred extension.
+      expect(result.name).toBe("wrong.jpg")
     })
   })
 
@@ -153,8 +170,8 @@ describe("Media File Service", () => {
 
   describe("Update", () => {
     const oldSha = "54321"
-    mockRepoService.create.mockResolvedValueOnce({ sha })
     it("Updating media file content works correctly", async () => {
+      mockRepoService.create.mockResolvedValueOnce({ sha })
       await expect(
         service.update(sessionData, {
           fileName,
@@ -179,7 +196,6 @@ describe("Media File Service", () => {
         directoryName,
         isMedia: true,
       })
-      expect(validateAndSanitizeFileUpload).toHaveBeenCalledWith(mockContent)
     })
   })
 
@@ -197,7 +213,7 @@ describe("Media File Service", () => {
   })
 
   describe("Rename", () => {
-    const oldFileName = "test old file.pdf"
+    const oldFileName = "test old file.jpg"
 
     it("rejects renaming to page names with special characters", async () => {
       await expect(

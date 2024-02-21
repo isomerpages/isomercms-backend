@@ -1,4 +1,5 @@
 import axios from "axios"
+import urlTemplate from "url-template"
 
 import { config } from "@config/config"
 
@@ -62,7 +63,10 @@ const updatePasswordAndStopBuildNetlifySite = async (
   repoId: string,
   password: string
 ) => {
-  const endpoint = `https://api.netlify.com/api/v1/sites/${repoId}`
+  const endpointTemplate = urlTemplate.parse(
+    `https://api.netlify.com/api/v1/sites/{repoId}`
+  )
+  const endpoint = endpointTemplate.expand({ repoId })
   const headers = {
     Authorization: `Bearer ${NETLIFY_ACCESS_TOKEN}`,
     "Content-Type": "application/json",

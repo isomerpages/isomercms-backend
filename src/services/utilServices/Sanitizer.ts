@@ -1,5 +1,19 @@
 import DOMPurify from "isomorphic-dompurify"
 
+/**
+ * While we do have a CSP in place, we want to further restrict the content that
+ * that the user can input.
+ * NOTE: Any changes to this list should also be updated in frontend code
+ */
+const ALLOWED_SRC = [
+  "//www.instagram.com/embed.js",
+  "https://www.evvochannel.tv/jwplayer7/jwplayer.js",
+  "/jquery/resize-tables.js",
+  "/jquery/jquery.min.js",
+  "/jquery/bp-menu-new-tab.js",
+  "//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js",
+]
+
 DOMPurify.setConfig({
   ADD_TAGS: ["iframe", "#comment", "script"],
   ADD_ATTR: [
@@ -18,9 +32,14 @@ DOMPurify.setConfig({
 DOMPurify.addHook("uponSanitizeElement", (node, data) => {
   // Allow script tags if it has a src attribute
   // Script sources are handled by our CSP sanitiser
+
   if (
     data.tagName === "script" &&
-    !(node.hasAttribute("src") && node.innerHTML === "")
+    !(
+      node.hasAttribute("src") &&
+      node.innerHTML === "" &&
+      ALLOWED_SRC.includes(node.getAttribute("src") ?? "")
+    )
   ) {
     // Adapted from https://github.com/cure53/DOMPurify/blob/e0970d88053c1c564b6ccd633b4af7e7d9a10375/src/purify.js#L719-L736
     DOMPurify.removed.push({ element: node })

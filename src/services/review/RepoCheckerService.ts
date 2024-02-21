@@ -20,12 +20,11 @@ import {
   RepoErrorTypes,
   RepoError,
   isRepoError,
-  RepoErrorDto,
+  BrokenLinkErrorDto,
 } from "@root/types/siteChecker"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
 import GitFileSystemService from "../db/GitFileSystemService"
-import SitesService from "../identity/SitesService"
 
 const { JSDOM } = jsdom
 
@@ -43,6 +42,7 @@ export const SITE_CHECKER_REPO_PATH = path.join(
   SITE_CHECKER_REPO_NAME
 )
 
+const LOCK_CONTENT = "checker.lock"
 export default class RepoCheckerService {
   private readonly siteMemberRepository: RepoCheckerServiceProps["siteMemberRepository"]
 
@@ -74,7 +74,7 @@ export default class RepoCheckerService {
     }
 
     // check if checker.lock exists
-    const lockFilePath = path.join(logsFilePath, "checker.lock")
+    const lockFilePath = path.join(logsFilePath, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.access(lockFilePath, fs.constants.F_OK),
       () => okAsync(false)
@@ -85,7 +85,7 @@ export default class RepoCheckerService {
 
   createLock(repo: string): ResultAsync<undefined, SiteCheckerError> {
     // create a checker.lock file
-    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, "checker.lock")
+    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.writeFile(lockFilePath, "locked"),
       (error) => new SiteCheckerError(`${error}`)
@@ -94,7 +94,7 @@ export default class RepoCheckerService {
         ResultAsync.fromPromise(
           this.git
             .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .add([`${path.join(repo, "checker.lock")}`])
+            .add([`${path.join(repo, LOCK_CONTENT)}`])
             .commit(`Create lock for ${repo}`)
             .push(),
           (error) => new SiteCheckerError(`${error}`)
@@ -105,17 +105,16 @@ export default class RepoCheckerService {
 
   deleteLock(repo: string): ResultAsync<undefined, SiteCheckerError> {
     // delete the checker.lock file
-    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, "checker.lock")
+    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.unlink(lockFilePath),
       (error) => new SiteCheckerError(`${error}`)
     )
-      .map(() => undefined)
       .andThen(() =>
         ResultAsync.fromPromise(
           this.git
             .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .add([`${path.join(repo, "checker.lock")}`])
+            .add([`${path.join(repo, LOCK_CONTENT)}`])
             .commit(`Delete lock for ${repo}`)
             .push(),
           (error) => new SiteCheckerError(`${error}`)
@@ -249,13 +248,12 @@ export default class RepoCheckerService {
       .mapErr((error) => new SiteCheckerError(`${error}`))
   }
 
-  remover(repo: string, repoExists: boolean) {
+  // This function removes the recently cloned repo. This function should only be called in non-prod environments
+  remover(repo: string) {
     const NODE_ENV = config.get("env")
     if (NODE_ENV === "prod") {
-      // by right this should not happen, but just in case
-      return okAsync(undefined)
-    }
-    if (repoExists) {
+      // by right this should not happen,
+      // but just in case safely return without doing anything
       return okAsync(undefined)
     }
 
@@ -417,7 +415,7 @@ export default class RepoCheckerService {
     ).map(() => errors)
   }
 
-  checkRepo(repo: string): ResultAsync<RepoErrorDto, RepoErrorDto> {
+  checkRepo(repo: string): ResultAsync<BrokenLinkErrorDto, BrokenLinkErrorDto> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
@@ -439,14 +437,18 @@ export default class RepoCheckerService {
 
           return this.checker(repo)
             .andThen((errors) => this.reporter(repo, errors))
-            .map<RepoErrorDto>((errors) => ({
+            .map<BrokenLinkErrorDto>((errors) => ({
               status: "success",
               errors,
             }))
 
-            .andThen((errors) =>
-              this.remover(repo, repoExists).andThen(() => ok(errors))
-            )
+            .andThen((errors) => {
+              if (repoExists) {
+                return ok(errors)
+              }
+              // since this repo was cloned during this operation, we should remove it
+              return this.remover(repo).andThen(() => ok(errors))
+            })
             .andThen((errors) =>
               this.deleteLock(repo).andThen(() => ok(errors))
             )
@@ -454,13 +456,13 @@ export default class RepoCheckerService {
       )
       .orElse((error) => {
         if (error.status === "loading") {
-          return okAsync<RepoErrorDto>({
+          return okAsync<BrokenLinkErrorDto>({
             status: "loading",
           })
         }
         this.deleteLock(repo)
         logger.error(`Error running site checker for repo ${repo}: ${error}`)
-        return errAsync<RepoErrorDto, RepoErrorDto>({
+        return errAsync<BrokenLinkErrorDto, BrokenLinkErrorDto>({
           status: "error",
         })
       })

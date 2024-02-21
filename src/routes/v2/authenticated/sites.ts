@@ -18,7 +18,7 @@ import { ResponseErrorBody } from "@root/types/dto/error"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import { RepositoryData } from "@root/types/repoInfo"
-import { RepoErrorDto } from "@root/types/siteChecker"
+import { BrokenLinkErrorDto } from "@root/types/siteChecker"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
 import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import type SitesService from "@services/identity/SitesService"
@@ -197,7 +197,7 @@ export class SitesRouter {
 
   getLinkCheckerStatus: RequestHandler<
     { siteName: string },
-    RepoErrorDto | ResponseErrorBody,
+    BrokenLinkErrorDto | ResponseErrorBody,
     never,
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }

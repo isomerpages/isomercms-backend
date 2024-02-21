@@ -47,7 +47,7 @@ export function isRepoError(error: any): error is RepoError {
   )
 }
 
-export type RepoErrorDto =
+export type BrokenLinkErrorDto =
   | {
       status: "error" | "loading"
     }

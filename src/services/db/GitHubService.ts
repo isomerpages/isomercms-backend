@@ -808,8 +808,9 @@ export default class GitHubService {
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const refTemplate = urlTemplate.parse(`{siteName}/git/refs/heads/{
-      branchName}`)
+    const refTemplate = urlTemplate.parse(
+      `{siteName}/git/refs/heads/{branchName}`
+    )
     const refEndpoint = refTemplate.expand({
       siteName,
       branchName: branchName || STAGING_BRANCH,

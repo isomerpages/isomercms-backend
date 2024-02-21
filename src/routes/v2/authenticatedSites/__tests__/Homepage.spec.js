@@ -133,10 +133,7 @@ describe("Homepage Router", () => {
         .send(extraUpdateDetails)
         .expect(400)
 
-      expect(mockHomepagePageService.update).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData,
-        expectedServiceInput
-      )
+      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
     })
   })
 })

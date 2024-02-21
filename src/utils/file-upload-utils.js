@@ -1,12 +1,14 @@
 const CloudmersiveVirusApiClient = require("cloudmersive-virus-api-client")
+const DOMPurify = require("dompurify")
 const FileType = require("file-type")
 const isSvg = require("is-svg")
+const { JSDOM } = require("jsdom")
 
 const { config } = require("@config/config")
 
-const logger = require("@logger/logger").default
+const { window } = new JSDOM("<!DOCTYPE html>")
 
-const { sanitizer } = require("@services/utilServices/Sanitizer")
+const logger = require("@logger/logger").default
 
 const CLOUDMERSIVE_API_KEY = config.get("cloudmersiveKey")
 
@@ -31,6 +33,12 @@ apikey.apiKey = CLOUDMERSIVE_API_KEY
 
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi()
 
+// NOTE: This is NOT the default sanitiser;
+// instead, we are creaitng our own instance of DOMPurify
+// so that we can make it stricter solely
+// for fileuploads.
+const sanitizer = DOMPurify(window)
+
 const scanFileForVirus = (fileBuffer, timeout) => {
   if (timeout) {
     defaultCloudmersiveClient.timeout = timeout
@@ -54,7 +62,6 @@ const validateAndSanitizeFileUpload = async (data) => {
   const [, content] = data.split(",")
   const fileBuffer = Buffer.from(content, "base64")
   const detectedFileType = await FileType.fromBuffer(fileBuffer)
-
   // NOTE: This check is required for svg files.
   // This is because svg files are a string based data type
   // and not binary based.

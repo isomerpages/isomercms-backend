@@ -15,8 +15,9 @@ describe("file-upload-utils", () => {
     expect(result?.detectedFileType.ext).toBe(expectedExtension)
   })
 
-  it("should sanitize svgs with scripts", async () => {
+  it("should sanitize svgs with alerts", async () => {
     // Arrange
+    // NOTE: This is a svg with an `alert` in html comments
     const maliciousContent = `data:application/pdf;base64,PCEtLQphbGVydChkb2N1bWVudC5kb21haW4pCi8qCi0tPgo8c3ZnIGlkPSJzdmcyIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5MDAgOTAwIiB2ZXJzaW9uPSIxLjEiPgo8L3N2Zz4KPCEtLSAqLyAKLS0+Cg==`
     const expectedExtension = "svg"
 
@@ -28,5 +29,24 @@ describe("file-upload-utils", () => {
     expect(result).toBeDefined()
     expect(result?.detectedFileType.ext).toBe(expectedExtension)
     expect(sanitisedContent).not.toContain("alert")
+  })
+
+  it("should sanitize svgs with scripts", async () => {
+    // Arrange
+    // NOTE: Our sanitizer for files/html allows script tag
+    // however, the svg sanitizer does not as it is stricter
+    // and to prevent xss attacks.
+    const maliciousContent = `data:image/png;base64,${Buffer.from(
+      `<svg version="1.1" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" id="svg2"><script src = "evil.com"></script></svg>`
+    ).toString("base64")}`
+    const expectedExtension = "svg"
+
+    // Act
+    const result = await validateAndSanitizeFileUpload(maliciousContent)
+
+    // Assert
+    expect(result).toBeDefined()
+    expect(result?.detectedFileType.ext).toBe(expectedExtension)
+    expect(result).not.toContain("script")
   })
 })

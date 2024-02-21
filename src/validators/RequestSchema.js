@@ -1,5 +1,12 @@
 const Joi = require("joi")
 
+const {
+  MAX_HERO_KEY_HIGHLIGHTS,
+  MAX_ANNOUNCEMENT_ITEMS,
+  MAX_TEXTCARDS_CARDS,
+  MAX_INFOCOLS_BOXES,
+} = require("@root/constants")
+
 const FileSchema = Joi.object().keys({
   name: Joi.string().required(),
   type: Joi.string().valid("file").required(),
@@ -93,7 +100,7 @@ const UpdateHomepageSchema = Joi.object({
                 ),
               }),
               key_highlights: Joi.array()
-                .max(4)
+                .max(MAX_HERO_KEY_HIGHLIGHTS)
                 .items(
                   Joi.object({
                     title: Joi.string().required(),
@@ -147,7 +154,7 @@ const UpdateHomepageSchema = Joi.object({
               id: Joi.string().allow(""),
               subtitle: Joi.string().allow(""),
               announcement_items: Joi.array()
-                .max(5)
+                .max(MAX_ANNOUNCEMENT_ITEMS)
                 .items(
                   Joi.object({
                     title: Joi.string().required(),
@@ -168,7 +175,7 @@ const UpdateHomepageSchema = Joi.object({
               subtitle: Joi.string().allow(""),
               description: Joi.string().allow(""),
               cards: Joi.array()
-                .max(4)
+                .max(MAX_TEXTCARDS_CARDS)
                 .items(
                   Joi.object({
                     title: Joi.string().required(),
@@ -189,7 +196,7 @@ const UpdateHomepageSchema = Joi.object({
               url: Joi.string().allow(""),
               linktext: Joi.string().allow(""),
               infoboxes: Joi.array()
-                .max(4)
+                .max(MAX_INFOCOLS_BOXES)
                 .items(
                   Joi.object({
                     title: Joi.string().required(),

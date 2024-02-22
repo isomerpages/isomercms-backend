@@ -37,7 +37,7 @@ const mockUnlock = (siteName) => {
 
 const lock = async (siteName, lockLengthSeconds = 60) => {
   try {
-    const ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME =
+    const expiryTime =
       Math.floor(new Date().valueOf() / 1000) + lockLengthSeconds
 
     if (isE2eTestRepo(siteName)) return
@@ -46,7 +46,7 @@ const lock = async (siteName, lockLengthSeconds = 60) => {
         TableName: MUTEX_TABLE_NAME,
         Item: {
           repo_id: siteName,
-          expdate: ONE_MIN_FROM_CURR_DATE_IN_SECONDS_FROM_EPOCH_TIME,
+          expdate: expiryTime,
         },
         ConditionExpression: "attribute_not_exists(repo_id)",
       }

@@ -1,15 +1,18 @@
 import axios from "axios"
 import { JSDOM } from "jsdom"
 import { ResultAsync, okAsync, errAsync } from "neverthrow"
+import urlTemplate from "url-template"
 
 import PreviewParsingError from "@errors/PreviewParsingError"
 
 import { PreviewInfo } from "@root/types/previewInfo"
 
 export default class PreviewService {
-  getImageUrl = (siteUrl: string): ResultAsync<string, PreviewParsingError> =>
-    ResultAsync.fromPromise(
-      axios.get<string>(siteUrl),
+  getImageUrl = (siteUrl: string): ResultAsync<string, PreviewParsingError> => {
+    const endpointTemplate = urlTemplate.parse(`{siteUrl}`)
+    const endpoint = endpointTemplate.expand({ siteUrl })
+    return ResultAsync.fromPromise(
+      axios.get<string>(endpoint),
       () => new PreviewParsingError(siteUrl)
     ).andThen((documentResponse) => {
       const { window } = new JSDOM(documentResponse.data)
@@ -26,6 +29,7 @@ export default class PreviewService {
       }
       return errAsync(new PreviewParsingError(siteUrl))
     })
+  }
 
   getPreviewInfo = (siteUrl: string): Promise<PreviewInfo> =>
     this.getImageUrl(siteUrl).match<PreviewInfo>(

@@ -90,3 +90,9 @@ export const STAGING_BRANCH = "staging"
 export const STAGING_LITE_BRANCH = "staging-lite"
 export const PLACEHOLDER_FILE_NAME = ".keep"
 export const GIT_SYSTEM_DIRECTORY = ".git"
+
+// Homepage blocks limits
+export const MAX_HERO_KEY_HIGHLIGHTS = 4
+export const MAX_ANNOUNCEMENT_ITEMS = 5
+export const MAX_TEXTCARDS_CARDS = 4
+export const MAX_INFOCOLS_BOXES = 4

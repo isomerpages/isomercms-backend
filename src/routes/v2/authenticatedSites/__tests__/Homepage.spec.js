@@ -118,25 +118,17 @@ describe("Homepage Router", () => {
       )
     })
 
-    it("accepts valid homepage update requests with additional unspecified fields and returns the details of the file updated", async () => {
+    it("rejects homepage update requests with additional unspecified fields", async () => {
       const extraUpdateDetails = { ...updatePageDetails }
       // Add extra unspecified field
       extraUpdateDetails.content.frontMatter.extra = ""
-      const expectedServiceInput = {
-        content: updatePageDetails.content.pageBody,
-        frontMatter: updatePageDetails.content.frontMatter,
-        sha: updatePageDetails.sha,
-      }
 
       await request(app)
         .post(`/${siteName}/homepage`)
         .send(extraUpdateDetails)
-        .expect(200)
+        .expect(400)
 
-      expect(mockHomepagePageService.update).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData,
-        expectedServiceInput
-      )
+      expect(mockHomepagePageService.update).not.toHaveBeenCalled()
     })
   })
 })

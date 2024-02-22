@@ -33,9 +33,7 @@ class HomepageRouter {
   async updateHomepage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
-    const { error } = UpdateHomepageSchema.validate(req.body, {
-      allowUnknown: true,
-    })
+    const { error } = UpdateHomepageSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },

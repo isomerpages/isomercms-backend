@@ -1,4 +1,5 @@
 import axios from "axios"
+import urlTemplate from "url-template"
 
 import { config } from "@config/config"
 
@@ -14,15 +15,22 @@ const getEncodedFilePathAsUriComponent = (
   accessToken?: string
 ) => {
   const isSvg = filePath.endsWith(".svg")
-  const encodedFilePath = filePath
-    .split("/")
-    .map((v) => encodeURIComponent(v))
-    .join("/")
-  return `https://${
-    accessToken ? `${accessToken}@` : ""
-  }raw.githubusercontent.com/${GITHUB_ORG_NAME}/${siteName}/staging/${encodedFilePath}${
-    isSvg ? "?sanitize=true" : ""
-  }`
+  const endpointTemplate = urlTemplate.parse(
+    `https://${
+      accessToken ? `{accessToken}@` : ""
+    }raw.githubusercontent.com/{GITHUB_ORG_NAME}/{siteName}/staging/{filePath}${
+      isSvg ? "?sanitize=true" : ""
+    }`
+  )
+  const endpoint = accessToken
+    ? endpointTemplate.expand({
+        accessToken,
+        GITHUB_ORG_NAME,
+        siteName,
+        filePath,
+      })
+    : endpointTemplate.expand({ GITHUB_ORG_NAME, siteName, filePath })
+  return endpoint
 }
 
 export const getMediaFileInfo = async ({

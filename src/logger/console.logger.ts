@@ -21,18 +21,18 @@ const COLORS = {
 export const consoleLogger: ExtendedLogger = {
   info: (message: string | Record<string, unknown>): void => {
     // NOTE: This adds RGB to our console logs
-    console.log(COLORS.FOREGROUND.GREEN, `[INFO]: ${message}`)
+    console.log(COLORS.FOREGROUND.GREEN, `[INFO]: ${JSON.stringify(message)}`)
   },
   warn: (message: string | Record<string, unknown>): void => {
-    console.warn(COLORS.FOREGROUND.YELLOW, `[WARN]: ${message}`)
+    console.warn(COLORS.FOREGROUND.YELLOW, `[WARN]: ${JSON.stringify(message)}`)
   },
   error: (message: string | Record<string, unknown>): void => {
-    console.error(COLORS.FOREGROUND.RED, `[ERROR]: ${message}`)
+    console.error(COLORS.FOREGROUND.RED, `[ERROR]: ${JSON.stringify(message)}`)
   },
   debug: (message: string | Record<string, unknown>): void => {
-    console.debug(COLORS.FOREGROUND.BLUE, `[DEBUG]: ${message}`)
+    console.debug(COLORS.FOREGROUND.BLUE, `[DEBUG]: ${JSON.stringify(message)}`)
   },
   fatal: (message: string | Record<string, unknown>): void => {
-    console.error(COLORS.BACKGROUND.RED, `[FATAL]: ${message}`)
+    console.error(COLORS.BACKGROUND.RED, `[FATAL]: ${JSON.stringify(message)}`)
   },
 }

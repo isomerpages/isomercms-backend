@@ -8,6 +8,8 @@ import { config } from "@config/config"
 import { consoleLogger } from "./console.logger"
 import { LogMethod, Loggable } from "./logger.types"
 
+const { combine, timestamp, json, errors } = winston.format
+
 const withConsoleError = (logFn: LogMethod) => (message: Loggable): void => {
   try {
     logFn(message)
@@ -47,7 +49,11 @@ export default class CloudWatchLogger {
   _logger: winston.Logger
 
   constructor() {
-    this._logger = winston.createLogger()
+    this._logger = winston.createLogger({
+      level: "info",
+      format: combine(errors({ stack: true }), timestamp(), json()),
+      transports: [new winston.transports.Console()],
+    })
     this.init()
   }
 

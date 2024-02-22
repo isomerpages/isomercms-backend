@@ -5,6 +5,7 @@ import "module-alias/register"
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
+import { result } from "lodash"
 import nocache from "nocache"
 import simpleGit from "simple-git"
 
@@ -69,6 +70,7 @@ import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { mailer } from "@services/utilServices/MailClient"
 
+import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -85,6 +87,7 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
+import RepoCheckerService from "./services/review/RepoCheckerService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
@@ -151,6 +154,9 @@ const { errorHandler } = require("@middleware/errorHandler")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
+const {
+  FormsgSiteCheckerRouter,
+} = require("@root/routes/formsg/formsgSiteChecker")
 const {
   FormsgSiteCreateRouter,
 } = require("@root/routes/formsg/formsgSiteCreation")
@@ -295,6 +301,15 @@ const infraService = new InfraService({
   dynamoDBService,
   usersService,
 })
+
+const repoCheckerService = new RepoCheckerService({
+  siteMemberRepository: SiteMember,
+  sitesService,
+  gitFileSystemService,
+  repoRepository: Repo,
+  git: simpleGitInstance,
+})
+
 // poller site launch updates
 infraService.pollMessages()
 
@@ -374,6 +389,10 @@ const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
   reposService,
 })
 
+const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
+  repoCheckerService,
+})
+
 const app = express()
 
 if (isSecure) {
@@ -414,6 +433,7 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 app.use("/formsg", formsgGGsRepairRouter.getRouter())
+app.use("/formsg", formsgSiteCheckerRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

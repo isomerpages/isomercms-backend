@@ -44,11 +44,12 @@ export class IsomerLogger implements ExtendedLogger {
     message: Loggable,
     additionalData?: object
   ): void {
-    const structuredMessage = this.getStructuredMessage(
-      level,
-      message,
-      additionalData
-    )
+    // Directly use the message if it's an object, otherwise, generate the structured message
+    const structuredMessage =
+      typeof message === "object" && !additionalData
+        ? message // If message is already an object and there's no additionalData, use it directly.
+        : this.getStructuredMessage(level, message, additionalData) // Otherwise, generate a structured message.
+
     this.loggers.forEach((logger: any) => {
       if (typeof logger[level] === "function") {
         logger[level](structuredMessage)

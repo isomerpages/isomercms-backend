@@ -1,31 +1,16 @@
 import AWS from "aws-sdk"
 import Bluebird from "bluebird"
 import winston from "winston"
-import WinstonCloudwatch, { LogObject } from "winston-cloudwatch"
+import WinstonCloudwatch from "winston-cloudwatch"
 
 import { config } from "@config/config"
 
 import { consoleLogger } from "./console.logger"
 import { LogMethod, Loggable } from "./logger.types"
 
-const { combine, timestamp, json, errors } = winston.format
+const { combine, timestamp } = winston.format
 
-interface MessageFormatterParams {
-  level: string
-  message: string
-  timestamp: string
-  // Include any other properties you expect to use
-}
-
-const withConsoleError = (logFn: LogMethod) => (message: Loggable): void => {
-  try {
-    logFn(message)
-  } catch (err) {
-    consoleLogger.error(`${err}`)
-  }
-}
-
-// AWS
+// AWS Configuration
 const AWS_REGION_NAME = config.get("aws.region")
 AWS.config.update({ region: AWS_REGION_NAME })
 const awsMetadata = new AWS.MetadataService()
@@ -33,23 +18,17 @@ const metadataRequest = Bluebird.promisify<string, string>(
   awsMetadata.request.bind(awsMetadata)
 )
 
-// Constants
-// TODO: Check this env var as it is not in example
 const LOG_GROUP_NAME = `${process.env.AWS_BACKEND_EB_ENV_NAME}/nodejs.log`
 
-// Retrieve EC2 instance since that is the cloudwatch log stream name
 async function getEc2InstanceId(): Promise<string> {
-  let id: string
   try {
-    id = await metadataRequest("/latest/meta-data/instance-id").timeout(1000)
+    return await metadataRequest("/latest/meta-data/instance-id").timeout(1000)
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.log(
-      "Error getting ec2 instance id. This script is probably not running on ec2"
+      "Error getting EC2 instance ID. This script is probably not running on EC2"
     )
     throw error
   }
-  return id
 }
 
 export default class CloudWatchLogger {
@@ -58,53 +37,60 @@ export default class CloudWatchLogger {
   constructor() {
     this._logger = winston.createLogger({
       level: "info",
-      format: combine(errors({ stack: true }), timestamp(), json()),
-      transports: [new winston.transports.Console()],
+      format: combine(
+        timestamp({
+          format: "YYYY-MM-DD HH:mm:ss",
+        })
+      ),
+      transports: [
+        // Console transport using the same single-line JSON format
+        new winston.transports.Console({
+          format: combine(
+            timestamp({
+              format: "YYYY-MM-DD HH:mm:ss",
+            })
+          ),
+        }),
+      ],
     })
     this.init()
   }
 
   async init() {
-    try {
-      // attempt to log directly to cloudwatch
-      const logGroupName = LOG_GROUP_NAME
-      const logStreamName = await getEc2InstanceId()
-      const awsRegion = AWS_REGION_NAME
+    const logGroupName = LOG_GROUP_NAME
+    const logStreamName = await getEc2InstanceId()
+    const awsRegion = AWS_REGION_NAME
 
-      const cloudwatchConfig = {
-        logGroupName,
-        logStreamName,
-        awsRegion,
-        stderrLevels: ["error"],
-        format: winston.format.combine(
-          winston.format.timestamp({
-            format: "YYYY-MM-DD HH:mm:ss",
-          }),
-          winston.format.json()
-        ),
-        handleExceptions: true,
-        messageFormatter: (logObject: LogObject) => {
-          // Extract or default the timestamp
-          const timestamp = logObject.timestamp || new Date().toISOString()
-          return `[${timestamp}] ${logObject.level}: ${logObject.message}`
-        },
-      }
-
-      this._logger.add(new WinstonCloudwatch(cloudwatchConfig))
-    } catch (err) {
-      consoleLogger.error(`${err}`)
-      consoleLogger.error(`Failed to initiate CloudWatch logger`)
+    const cloudwatchConfig = {
+      logGroupName,
+      logStreamName,
+      awsRegion,
+      stderrLevels: ["error"],
+      format: combine(
+        timestamp({
+          format: "YYYY-MM-DD HH:mm:ss",
+        })
+      ),
+      handleExceptions: true,
     }
+
+    this._logger.add(new WinstonCloudwatch(cloudwatchConfig))
   }
 
-  // this method is used to log non-error messages, replacing console.log
   info = (message: string | Record<string, unknown>) =>
     withConsoleError(this._logger.info)(message)
 
   warn = (message: string | Record<string, unknown>) =>
     withConsoleError(this._logger.warn)(message)
 
-  // this method is used to log error messages and write to stderr, replacing console.error
   error = (message: string | Record<string, unknown>) =>
     withConsoleError(this._logger.error)(message)
+}
+
+const withConsoleError = (logFn: LogMethod) => (message: Loggable): void => {
+  try {
+    logFn(message)
+  } catch (err) {
+    consoleLogger.error(`${err}`)
+  }
 }

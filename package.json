@@ -37,6 +37,7 @@
     "@opengovsg/formsg-sdk": "^0.11.0",
     "@opengovsg/sgid-client": "^2.0.0",
     "@types/dompurify": "^3.0.5",
+    "@types/node": "^20.11.13",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1428.0",

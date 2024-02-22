@@ -43,6 +43,7 @@ describe("Github Service", () => {
   const subDirectoryName = `files/parent-file/sub-directory`
   const subDirectoryFileName = ".keep"
   const resourceCategoryName = "resources/some-folder"
+  const resourceCategoryParsedName = "resources%2Fsome-folder"
   const topLevelDirectoryFileName = "collection.yml"
   const resourceCategoryFileName = "index.html"
 
@@ -89,13 +90,14 @@ describe("Github Service", () => {
 
     it("should retrieve the right subcollection page file path", async () => {
       const subcollectionPath = `_${collectionName}/${subcollectionName}`
+      const parsedSubcollectionPath = `_${collectionName}%2F${subcollectionName}`
       expect(
         service.getFilePath({
           siteName,
           fileName,
           directoryName: subcollectionPath,
         })
-      ).toEqual(`${siteName}/contents/${subcollectionPath}/${fileName}`)
+      ).toEqual(`${siteName}/contents/${parsedSubcollectionPath}/${fileName}`)
     })
   })
 
@@ -110,7 +112,7 @@ describe("Github Service", () => {
       const specialDirName = `special?/direct ory`
       const specialParsedDirName = `${encodeURIComponent(
         "special?"
-      )}/${encodeURIComponent("direct ory")}`
+      )}%2F${encodeURIComponent("direct ory")}`
       expect(
         service.getFolderPath({ siteName, directoryName: specialDirName })
       ).toEqual(`${siteName}/contents/${specialParsedDirName}`)
@@ -118,10 +120,10 @@ describe("Github Service", () => {
   })
 
   describe("Create", () => {
-    const fileParentEndpoint = `${siteName}/contents/files/parent-file`
+    const fileParentParsedEndpoint = `${siteName}/contents/files%2Fparent-file`
     const folderParentEndpoint = `${siteName}/contents/${directoryName}`
     const folderEndpoint = `${folderParentEndpoint}/${fileName}`
-    const resourceRoomEndpoint = `${siteName}/contents/${resourceCategoryName}`
+    const resourceRoomEndpoint = `${siteName}/contents/${resourceCategoryParsedName}`
     const encodedContent = Base64.encode(content)
 
     const message = JSON.stringify({
@@ -331,13 +333,16 @@ describe("Github Service", () => {
           isMedia: false,
         })
       ).rejects.toThrowError()
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith(fileParentEndpoint, {
-        validateStatus,
-        headers: authHeader.headers,
-        params: {
-          ref: BRANCH_REF,
-        },
-      })
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        fileParentParsedEndpoint,
+        {
+          validateStatus,
+          headers: authHeader.headers,
+          params: {
+            ref: BRANCH_REF,
+          },
+        }
+      )
     })
 
     it("should throw an error if a resource is created while the resource folder is deleted", async () => {

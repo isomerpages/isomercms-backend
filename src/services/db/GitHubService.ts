@@ -1,6 +1,7 @@
 import { AxiosCacheInstance } from "axios-cache-interceptor"
 import { Base64 } from "js-base64"
 import { okAsync, errAsync, ResultAsync } from "neverthrow"
+import urlTemplate from "url-template"
 
 import { ConflictError, inputNameConflictErrorMsg } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
@@ -97,19 +98,31 @@ export default class GitHubService {
     fileName: string
     directoryName: string | undefined
   }) {
-    if (!directoryName)
-      return `${siteName}/contents/${encodeURIComponent(fileName)}`
-    const encodedDirPath = directoryName
-      .split("/")
-      .map((folder: string | number | boolean) => encodeURIComponent(folder))
-      .join("/")
-    return `${siteName}/contents/${encodedDirPath}/${encodeURIComponent(
-      fileName
-    )}`
+    if (!directoryName) {
+      const endpointTemplate = urlTemplate.parse(
+        `{siteName}/contents/{fileName}`
+      )
+      return endpointTemplate.expand({
+        siteName,
+        fileName,
+      })
+    }
+    const endpointTemplate = urlTemplate.parse(
+      `{siteName}/contents/{directoryName}/{fileName}`
+    )
+    return endpointTemplate.expand({
+      siteName,
+      directoryName,
+      fileName,
+    })
   }
 
   getBlobPath({ siteName, fileSha }: { siteName: string; fileSha: string }) {
-    return `${siteName}/git/blobs/${fileSha}`
+    const endpointTemplate = urlTemplate.parse(`{siteName}/git/blobs/{fileSha}`)
+    return endpointTemplate.expand({
+      siteName,
+      fileSha,
+    })
   }
 
   getFolderPath({
@@ -119,11 +132,13 @@ export default class GitHubService {
     siteName: string
     directoryName: string
   }) {
-    const encodedDirPath = directoryName
-      .split("/")
-      .map((folder: string | number | boolean) => encodeURIComponent(folder))
-      .join("/")
-    return `${siteName}/contents/${encodedDirPath}`
+    const endpointTemplate = urlTemplate.parse(
+      `{siteName}/contents/{directoryName}`
+    )
+    return endpointTemplate.expand({
+      siteName,
+      directoryName,
+    })
   }
 
   async create(
@@ -455,7 +470,8 @@ export default class GitHubService {
   ): Promise<GitHubRepoInfo> {
     const { siteName } = sessionData
     const { accessToken } = sessionData
-    const endpoint = `${siteName}`
+    const endpointTemplate = urlTemplate.parse(`{siteName}`)
+    const endpoint = endpointTemplate.expand({ siteName })
     const headers = {
       Authorization: `token ${accessToken}`,
     }
@@ -474,7 +490,8 @@ export default class GitHubService {
   async getRepoState(sessionData: UserWithSiteSessionData): Promise<RepoState> {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const endpoint = `${siteName}/commits`
+    const endpointTemplate = urlTemplate.parse(`{siteName}/commits`)
+    const endpoint = endpointTemplate.expand({ siteName })
     const headers = {
       Authorization: `token ${accessToken}`,
     }
@@ -502,7 +519,8 @@ export default class GitHubService {
     branch: string
   ) {
     const { accessToken, siteName } = sessionData
-    const endpoint = `${siteName}/commits/${branch}`
+    const endpointTemplate = urlTemplate.parse(`{siteName}/commits/{branch}`)
+    const endpoint = endpointTemplate.expand({ siteName, branch })
     const headers = {
       Authorization: `token ${accessToken}`,
     }
@@ -529,7 +547,8 @@ export default class GitHubService {
     path: string
   ) {
     const { accessToken, siteName } = sessionData
-    const endpoint = `${siteName}/commits`
+    const endpointTemplate = urlTemplate.parse(`{siteName}/commits`)
+    const endpoint = endpointTemplate.expand({ siteName })
     const headers = {
       Authorization: `token ${accessToken}`,
     }
@@ -556,7 +575,10 @@ export default class GitHubService {
     const { accessToken } = sessionData
     const { siteName } = sessionData
     const { treeSha } = githubSessionData.getGithubState()
-    const url = `${siteName}/git/trees/${treeSha}`
+    const urlEndpointTemplate = urlTemplate.parse(
+      `{siteName}/git/trees/{treeSha}`
+    )
+    const url = urlEndpointTemplate.expand({ siteName, treeSha })
 
     const params = {
       ref: STAGING_BRANCH,
@@ -582,7 +604,8 @@ export default class GitHubService {
   ) {
     const { accessToken, siteName, isomerUserId: userId } = sessionData
     const { treeSha, currentCommitSha } = githubSessionData.getGithubState()
-    const url = `${siteName}/git/trees`
+    const urlEndpointTemplate = urlTemplate.parse(`{siteName}/git/trees`)
+    const url = urlEndpointTemplate.expand({ siteName })
 
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -601,7 +624,8 @@ export default class GitHubService {
       data: { sha: newTreeSha },
     } = resp
 
-    const commitEndpoint = `${siteName}/git/commits`
+    const commitEndpointTemplate = urlTemplate.parse(`{siteName}/git/commits`)
+    const commitEndpoint = commitEndpointTemplate.expand({ siteName })
 
     const stringifiedMessage = JSON.stringify({
       message: message || `isomerCMS updated ${siteName} state`,
@@ -784,9 +808,13 @@ export default class GitHubService {
   ) {
     const { accessToken } = sessionData
     const { siteName } = sessionData
-    const refEndpoint = `${siteName}/git/refs/heads/${
-      branchName || STAGING_BRANCH
-    }`
+    const refTemplate = urlTemplate.parse(
+      `{siteName}/git/refs/heads/{branchName}`
+    )
+    const refEndpoint = refTemplate.expand({
+      siteName,
+      branchName: branchName || STAGING_BRANCH,
+    })
     const headers = {
       Authorization: `token ${accessToken}`,
     }
@@ -802,7 +830,10 @@ export default class GitHubService {
     const { accessToken } = sessionData
     const userId = sessionData.githubId
     const { siteName } = sessionData
-    const endpoint = `${siteName}/collaborators/${userId}`
+    const endpointTemplate = urlTemplate.parse(
+      `{siteName}/collaborators/{userId}`
+    )
+    const endpoint = endpointTemplate.expand({ siteName, userId })
 
     const headers = {
       Authorization: `token ${accessToken}`,
@@ -827,7 +858,8 @@ export default class GitHubService {
     shouldMakePrivate: boolean
   ): ResultAsync<null, NotFoundError | GitHubApiError> {
     const { siteName, isomerUserId } = sessionData
-    const endpoint = `${siteName}`
+    const endpointTemplate = urlTemplate.parse(`{siteName}`)
+    const endpoint = endpointTemplate.expand({ siteName })
 
     // Privatising a repo is restricted to repo admins - an admin token will be inserted in via our axios interceptor
     const headers = {

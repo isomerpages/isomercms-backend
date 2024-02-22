@@ -41,18 +41,31 @@ class MediaFileService {
         throw new BadRequestError("File did not pass virus scan")
       }
     }
+
     // Sanitize and validate file
-    const sanitizedContent = await validateAndSanitizeFileUpload(content)
-    if (!sanitizedContent) {
+    const sanitisationResult = await validateAndSanitizeFileUpload(content)
+    if (!sanitisationResult) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
+
+    const {
+      content: sanitizedContent,
+      detectedFileType: { ext },
+    } = sanitisationResult
+    // NOTE: We construct the extension based off what we detect as the file type
+    const constructedFileName = `${fileName
+      .split(".")
+      .slice(0, -1)
+      .join(".")}.${ext}`
+
     const { sha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
-      fileName,
+      fileName: constructedFileName,
       directoryName,
       isMedia: true,
     })
-    return { name: fileName, content, sha }
+
+    return { name: constructedFileName, content, sha }
   }
 
   async read(sessionData, { fileName, directoryName }) {
@@ -64,10 +77,17 @@ class MediaFileService {
 
   async update(sessionData, { fileName, directoryName, content, sha }) {
     this.mediaNameChecks({ directoryName, fileName })
-    const sanitizedContent = await validateAndSanitizeFileUpload(content)
-    if (!sanitizedContent) {
+    const sanitisationResult = await validateAndSanitizeFileUpload(content)
+    if (!sanitisationResult) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
+    const {
+      content: sanitizedContent,
+      detectedFileType: { ext },
+    } = sanitisationResult
+
+    // NOTE: We can trust the user input here
+    // as we are removing stuff from our system.
     await this.repoService.delete(sessionData, {
       sha,
       fileName,
@@ -75,7 +95,7 @@ class MediaFileService {
     })
     const { sha: newSha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
-      fileName,
+      fileName: `${fileName.split(".").slice(0, -1).join(".")}.${ext}`,
       directoryName,
       isMedia: true,
     })

@@ -1,7 +1,7 @@
 import DOMPurify from "isomorphic-dompurify"
 
 DOMPurify.setConfig({
-  ADD_TAGS: ["iframe", "#comment", "script"],
+  ADD_TAGS: ["iframe", "script"],
   ADD_ATTR: [
     "allow",
     "allowfullscreen",

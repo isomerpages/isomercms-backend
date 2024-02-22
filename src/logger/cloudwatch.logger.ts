@@ -1,7 +1,7 @@
 import AWS from "aws-sdk"
 import Bluebird from "bluebird"
 import winston from "winston"
-import WinstonCloudwatch from "winston-cloudwatch"
+import WinstonCloudwatch, { LogObject } from "winston-cloudwatch"
 
 import { config } from "@config/config"
 
@@ -9,6 +9,13 @@ import { consoleLogger } from "./console.logger"
 import { LogMethod, Loggable } from "./logger.types"
 
 const { combine, timestamp, json, errors } = winston.format
+
+interface MessageFormatterParams {
+  level: string
+  message: string
+  timestamp: string
+  // Include any other properties you expect to use
+}
 
 const withConsoleError = (logFn: LogMethod) => (message: Loggable): void => {
   try {
@@ -69,8 +76,18 @@ export default class CloudWatchLogger {
         logStreamName,
         awsRegion,
         stderrLevels: ["error"],
-        format: winston.format.simple(),
+        format: winston.format.combine(
+          winston.format.timestamp({
+            format: "YYYY-MM-DD HH:mm:ss",
+          }),
+          winston.format.json()
+        ),
         handleExceptions: true,
+        messageFormatter: (logObject: LogObject) => {
+          // Extract or default the timestamp
+          const timestamp = logObject.timestamp || new Date().toISOString()
+          return `[${timestamp}] ${logObject.level}: ${logObject.message}`
+        },
       }
 
       this._logger.add(new WinstonCloudwatch(cloudwatchConfig))

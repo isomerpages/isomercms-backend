@@ -39,35 +39,53 @@ export class IsomerLogger implements ExtendedLogger {
     this.formatters = []
   }
 
-  private getFormattedMessage = (message: Loggable): string => {
-    const baseMessage =
-      typeof message === "string" ? message : JSON.stringify(message)
-    return this.formatters.reduce((prev, cur) => cur(prev), baseMessage)
+  private getStructuredMessage = (
+    level: string,
+    message: Loggable,
+    additionalData?: object
+  ): string => {
+    const baseMessage = {
+      timestamp: timestampGenerator(),
+      level,
+      message: typeof message === "string" ? message : JSON.stringify(message),
+      ...additionalData, // Spread additional data into the log entry
+    }
+    return JSON.stringify(baseMessage) // Convert the log entry to a JSON string
   }
 
-  info: LogMethod = (message: Loggable): void => {
-    this.loggers.map((logger) => logger.info(this.getFormattedMessage(message)))
-  }
-
-  warn: LogMethod = (message: Loggable): void => {
-    this.loggers.map((logger) => logger.warn(this.getFormattedMessage(message)))
-  }
-
-  error: LogMethod = (message: Loggable): void => {
-    this.loggers.map((logger) =>
-      logger.error(this.getFormattedMessage(message))
+  info: LogMethod = (message: Loggable, additionalData?: object): void => {
+    this.loggers.forEach((logger) =>
+      logger.info(this.getStructuredMessage("info", message, additionalData))
     )
   }
 
-  debug: LogMethod = (message: Loggable): void => {
+  warn: LogMethod = (message: Loggable, additionalData?: object): void => {
+    this.loggers.forEach((logger) =>
+      logger.warn(this.getStructuredMessage("warn", message, additionalData))
+    )
+  }
+
+  error: LogMethod = (message: Loggable, additionalData?: object): void => {
+    this.loggers.forEach((logger) =>
+      logger.error(this.getStructuredMessage("error", message, additionalData))
+    )
+  }
+
+  debug: LogMethod = (message: Loggable, additionalData?: object): void => {
     this.loggers.forEach((logger) => {
-      if (hasDebug(logger)) logger.debug(this.getFormattedMessage(message))
+      if (hasDebug(logger))
+        logger.debug(
+          this.getStructuredMessage("debug", message, additionalData)
+        )
     })
   }
 
-  fatal: LogMethod = (message: Loggable): void => {
+  fatal: LogMethod = (message: Loggable, additionalData?: object): void => {
     this.loggers.forEach((logger) => {
-      if (hasFatal(logger)) logger.fatal(this.getFormattedMessage(message))
+      if (hasFatal(logger))
+        logger.fatal(
+          this.getStructuredMessage("fatal", message, additionalData)
+        )
     })
   }
 
@@ -76,13 +94,14 @@ export class IsomerLogger implements ExtendedLogger {
   }
 
   useFormatter(formatter: Formatter) {
-    this.formatters.push(formatter)
+    this.formatters.push(formatter) // Note: You might want to adjust formatter logic to work with structured logs
   }
 }
 
 const logger = new IsomerLogger()
 if (useConsoleLogger) logger.use(consoleLogger)
 if (useCloudwatchLogger) logger.use(new CloudWatchLogger())
-logger.useFormatter((message) => `${timestampGenerator()}: ${message}`)
+// Example formatter usage may need to be adjusted for structured logging
+// logger.useFormatter((message) => `${timestampGenerator()}: ${message}`);
 
 export default logger

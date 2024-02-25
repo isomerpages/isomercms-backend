@@ -9,7 +9,7 @@ import { marked } from "marked"
 import { ResultAsync, errAsync, ok, okAsync } from "neverthrow"
 import Papa from "papaparse"
 import { ModelStatic } from "sequelize"
-import { SimpleGit } from "simple-git"
+import { PushResult, SimpleGit } from "simple-git"
 
 import config from "@root/config/config"
 import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
@@ -65,7 +65,7 @@ export default class RepoCheckerService {
     this.repoRepository = repoRepository
   }
 
-  isCurrentlyLocked(repo: string): ResultAsync<boolean, never> {
+  isCurrentlyLocked(repo: string): ResultAsync<true, SiteCheckerError> {
     const logsFilePath = path.join(SITE_CHECKER_REPO_PATH, repo)
     // create logs folder if it does not exist
 
@@ -75,52 +75,47 @@ export default class RepoCheckerService {
 
     // check if checker.lock exists
     const lockFilePath = path.join(logsFilePath, LOCK_CONTENT)
+
     return ResultAsync.fromPromise(
       fs.promises.access(lockFilePath, fs.constants.F_OK),
-      () => okAsync(false)
-    )
-      .map(() => true)
-      .orElse(() => ok(false))
+      (err) => new SiteCheckerError(`${err}`)
+    ).map(() => true)
   }
 
-  createLock(repo: string): ResultAsync<undefined, SiteCheckerError> {
+  createLock(repo: string): ResultAsync<PushResult, SiteCheckerError> {
     // create a checker.lock file
     const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.writeFile(lockFilePath, "locked"),
       (error) => new SiteCheckerError(`${error}`)
-    )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .add([`${path.join(repo, LOCK_CONTENT)}`])
-            .commit(`Create lock for ${repo}`)
-            .push(),
-          (error) => new SiteCheckerError(`${error}`)
-        )
+    ).andThen(() =>
+      ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+          .add([`${path.join(repo, LOCK_CONTENT)}`])
+          .commit(`Create lock for ${repo}`)
+          .push(),
+        (error) => new SiteCheckerError(`${error}`)
       )
-      .map(() => undefined)
+    )
   }
 
-  deleteLock(repo: string): ResultAsync<undefined, SiteCheckerError> {
+  deleteLock(repo: string): ResultAsync<PushResult, SiteCheckerError> {
     // delete the checker.lock file
     const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.unlink(lockFilePath),
       (error) => new SiteCheckerError(`${error}`)
-    )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .add([`${path.join(repo, LOCK_CONTENT)}`])
-            .commit(`Delete lock for ${repo}`)
-            .push(),
-          (error) => new SiteCheckerError(`${error}`)
-        )
+    ).andThen(() =>
+      ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+          .add([`${path.join(repo, LOCK_CONTENT)}`])
+          .commit(`Delete lock for ${repo}`)
+          .push(),
+        (error) => new SiteCheckerError(`${error}`)
       )
-      .map(() => undefined)
+    )
   }
 
   /**

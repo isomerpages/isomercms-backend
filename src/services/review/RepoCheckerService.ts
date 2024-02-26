@@ -62,12 +62,12 @@ export default class RepoCheckerService {
             const href = tag.getAttribute("href")
             const text = tag.textContent
             if (href) {
-              const encodedHref = this.documentPathDecoder(href)
+              const decodedHref = this.documentPathDecoder(href)
               if (
-                !this.isExternalLinkOrPageRef(encodedHref) &&
-                !setOfAllMediaAndPagesPath.has(encodedHref) &&
+                !this.isExternalLinkOrPageRef(decodedHref) &&
+                !setOfAllMediaAndPagesPath.has(decodedHref) &&
                 // Amplify supports adding of trailing slash
-                !setOfAllMediaAndPagesPath.has(`${encodedHref}/`)
+                !setOfAllMediaAndPagesPath.has(`${decodedHref}/`)
               ) {
                 this.persistLogs(repo, [
                   new SiteCheckerError(
@@ -81,10 +81,10 @@ export default class RepoCheckerService {
           forEach(imgTags, (tag) => {
             const src = tag.getAttribute("src")
             if (src) {
-              const encodedSrc = this.documentPathDecoder(src)
+              const decodedSrc = this.documentPathDecoder(src)
               if (
-                !this.isExternalLinkOrPageRef(encodedSrc) &&
-                !setOfAllMediaAndPagesPath.has(encodedSrc)
+                !this.isExternalLinkOrPageRef(decodedSrc) &&
+                !setOfAllMediaAndPagesPath.has(decodedSrc)
               ) {
                 this.persistLogs(repo, [
                   new SiteCheckerError(
@@ -111,7 +111,7 @@ export default class RepoCheckerService {
   documentPathDecoder(documentPath: string) {
     for (let i = 0; i < ALLOWED_FILE_EXTENSIONS.length; i += 1) {
       if (documentPath.endsWith(ALLOWED_FILE_EXTENSIONS[i])) {
-        return decodeURIComponent(documentPath)
+        return decodeURI(documentPath)
       }
     }
     return documentPath

@@ -411,7 +411,7 @@ export default class RepoCheckerService {
   }
 
   // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
-  csvToRepoError = (repo: string): Promise<RepoError[]> => {
+  generateRepoErrorsFromCsv = (repo: string): Promise<RepoError[]> => {
     const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
     const file = fs.createReadStream(filePath)
     return new Promise((resolve, reject) => {
@@ -436,18 +436,22 @@ export default class RepoCheckerService {
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
     const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
     if (!fs.existsSync(filePath)) {
-      return errAsync(new SiteCheckerError(`log file does not exist`))
+      // start the checking of the repo async
+      return this.checkRepo(repo)
     }
 
     return this.isCurrentlyLocked(repo)
       .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
       .orElse(() =>
-        ResultAsync.fromPromise(this.csvToRepoError(repo), (error) => {
-          logger.error(`Error reading csv for repo ${repo}: ${error}`)
-          return new SiteCheckerError(
-            `Error reading csv for repo ${repo}: ${error}`
-          )
-        }).andThen((errors) =>
+        ResultAsync.fromPromise(
+          this.generateRepoErrorsFromCsv(repo),
+          (error) => {
+            logger.error(`Error reading csv for repo ${repo}: ${error}`)
+            return new SiteCheckerError(
+              `Error reading csv for repo ${repo}: ${error}`
+            )
+          }
+        ).andThen((errors) =>
           okAsync<BrokenLinkErrorDto>({
             errors,
             status: "success",

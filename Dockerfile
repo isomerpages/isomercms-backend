@@ -10,6 +10,8 @@ RUN adduser -u 900 webapp -D -h /home/webapp -s /bin/sh
 USER webapp
 COPY . .
 
+# NOTE: We need to set up as root again because we need to perform chmod
+# We will fix all the permissions issue with a final chown to webapp
 USER root
 
 RUN mkdir /home/webapp/.ssh

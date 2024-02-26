@@ -203,6 +203,28 @@ export default class GitFileSystemService {
       })
   }
 
+  // Determine if the given branch is present in the repo
+  isBranchPresent(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<boolean, never> {
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .revparse(["--verify", branchName]),
+      (error) => {
+        logger.info(
+          `Unable to ascertain that "${branchName}" branch is in ${efsVolPath}/${repoName}: ${error}`
+        )
+
+        return false
+      }
+    )
+      .andThen(() => okAsync(true))
+      .orElse(() => okAsync(false))
+  }
+
   // Ensure that the repository is in the specified branch
   ensureCorrectBranch(
     repoName: string,
@@ -318,7 +340,7 @@ export default class GitFileSystemService {
         .log([branchName]),
       (error) => {
         logger.error(
-          `Error when getting latest commit of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
+          `Error when getting Git log of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
         )
 
         if (error instanceof GitError) {
@@ -1610,8 +1632,14 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<GitHubCommitData, GitFileSystemError> {
-    return this.getGitLog(repoName, branchName)
-      .orElse(() => this.getGitLog(repoName, `origin/${branchName}`))
+    return this.isBranchPresent(repoName, branchName)
+      .andThen((isBranchLocallyPresent) => {
+        if (isBranchLocallyPresent) {
+          return this.getGitLog(repoName, branchName)
+        }
+
+        return this.getGitLog(repoName, `origin/${branchName}`)
+      })
       .andThen((logSummary) => {
         const possibleCommit = logSummary.latest
         if (this.isDefaultLogFields(possibleCommit)) {

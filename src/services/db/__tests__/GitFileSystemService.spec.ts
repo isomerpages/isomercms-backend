@@ -24,6 +24,7 @@ import {
 } from "@fixtures/github"
 import { MOCK_USER_ID_ONE } from "@fixtures/users"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
+import { MOCK_LATEST_LOG_ONE } from "@root/fixtures/review"
 import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
@@ -694,6 +695,97 @@ describe("GitFileSystemService", () => {
     })
   })
 
+  describe("getGitDiff", () => {
+    const spyCreateLocalTrackingBranchIfNotExists = jest.spyOn(
+      GitFileSystemService,
+      "createLocalTrackingBranchIfNotExists"
+    )
+    const mockCreateLocalTrackingBranchIfNotExists = jest
+      .fn()
+      .mockReturnValue(okAsync(true))
+
+    beforeAll(() => {
+      spyCreateLocalTrackingBranchIfNotExists.mockImplementation(
+        mockCreateLocalTrackingBranchIfNotExists
+      )
+    })
+
+    afterAll(() => {
+      spyCreateLocalTrackingBranchIfNotExists.mockRestore()
+    })
+
+    it("should return the git diff and defensively try creating local branches", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        diff: jest
+          .fn()
+          .mockResolvedValueOnce("fake-dir/fake-file\nanother-fake-file\n"),
+      })
+
+      const expected = ["fake-dir/fake-file", "another-fake-file"]
+
+      const actual = await GitFileSystemService.getGitDiff("fake-repo")
+
+      expect(actual._unsafeUnwrap()).toEqual(expected)
+      expect(mockCreateLocalTrackingBranchIfNotExists).toHaveBeenCalledTimes(2)
+    })
+
+    it("should return GitFileSystemError if an error occurred when getting the git diff", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        diff: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const actual = await GitFileSystemService.getGitDiff(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("getLatestLocalCommitOfPath", () => {
+    it("should return the latest commit for a valid path", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: MOCK_LATEST_LOG_ONE,
+        }),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfPath(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrap()).toEqual(MOCK_LATEST_LOG_ONE)
+    })
+
+    it("should return GitFileSystemError if an error occurred when getting the git log", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfPath(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return GitFileSystemError if there were no commits found", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({ latest: null }),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfPath(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
   describe("getGitLog", () => {
     it("should return the Git log for a valid branch", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
@@ -1227,6 +1319,51 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("mergeBranchToMaster", () => {
+    const spyEnsureCorrectBranch = jest.spyOn(
+      GitFileSystemService,
+      "ensureCorrectBranch"
+    )
+    const mockEnsureCorrectBranch = jest.fn().mockReturnValue(okAsync(true))
+
+    beforeAll(() => {
+      spyEnsureCorrectBranch.mockImplementation(mockEnsureCorrectBranch)
+    })
+
+    afterAll(() => {
+      spyEnsureCorrectBranch.mockRestore()
+    })
+
+    it("should merge a branch to master successfully", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
+      })
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        remote: jest
+          .fn()
+          .mockResolvedValueOnce(
+            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
+          ),
+      })
+      const mockMergeFn = jest.fn().mockResolvedValueOnce(undefined)
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        merge: mockMergeFn,
+      })
+
+      const result = await GitFileSystemService.mergeStagingToMaster(
+        "fake-repo"
+      )
+
+      expect(result.isOk()).toBeTrue()
+      // should checkout to master to merge, then back to staging again
+      expect(mockEnsureCorrectBranch.mock.calls).toEqual([
+        ["fake-repo", "master"],
+        ["fake-repo", "staging"],
+      ])
+      expect(mockMergeFn).toHaveBeenCalledWith(["staging", "--no-ff"])
     })
   })
 
@@ -3019,6 +3156,97 @@ describe("GitFileSystemService", () => {
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("doesLocalBranchExist", () => {
+    it("should return true if the local branch exists", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branchLocal: jest.fn().mockResolvedValueOnce({
+          all: ["staging"],
+        }),
+      })
+
+      const actual = await GitFileSystemService.doesLocalBranchExist(
+        "fake-repo",
+        "staging"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual(true)
+    })
+
+    it("should return false if the local branch does not exist", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branchLocal: jest.fn().mockResolvedValueOnce({
+          all: ["staging"],
+        }),
+      })
+
+      const actual = await GitFileSystemService.doesLocalBranchExist(
+        "fake-repo",
+        "master"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual(false)
+    })
+
+    it("should return GitFileSystemError if an error occurred when checking if the local branch exists", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branchLocal: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const actual = await GitFileSystemService.doesLocalBranchExist(
+        "fake-repo",
+        "master"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("createLocalTrackingBranchIfNotExists", () => {
+    it("should create local tracking branch if it does not exist yet", async () => {
+      jest
+        .spyOn(GitFileSystemService, "doesLocalBranchExist")
+        .mockReturnValueOnce(okAsync(false))
+
+      const branch = jest.fn().mockResolvedValueOnce(undefined)
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branch,
+      })
+
+      const result = await GitFileSystemService.createLocalTrackingBranchIfNotExists(
+        "fake-repo",
+        "master"
+      )
+
+      expect(result._unsafeUnwrap()).toEqual(true)
+      expect(branch).toHaveBeenCalledWith([
+        "--track",
+        "master",
+        "origin/master",
+      ])
+    })
+
+    it("should not create local tracking branch if it already exists", async () => {
+      jest
+        .spyOn(GitFileSystemService, "doesLocalBranchExist")
+        .mockReturnValueOnce(okAsync(true))
+
+      const branch = jest.fn()
+
+      MockSimpleGit.cwd.mockReturnValue({
+        branch,
+      })
+
+      const result = await GitFileSystemService.createLocalTrackingBranchIfNotExists(
+        "fake-repo",
+        "master"
+      )
+
+      expect(result._unsafeUnwrap()).toEqual(true)
+      expect(branch).not.toHaveBeenCalled()
     })
   })
 })

@@ -7,6 +7,7 @@ import {
   SimpleGit,
   DefaultLogFields,
   LogResult,
+  ListLogLine,
 } from "simple-git"
 
 import logger from "@logger/logger"
@@ -304,6 +305,92 @@ export default class GitFileSystemService {
         return new GitFileSystemError("An unknown error occurred")
       }
     )
+  }
+
+  /**
+   * Wrapper over `git diff --name-only` that also creates a local tracking branch for `base` and/or `head` if they do not exist.
+   * Note that `base` and `head` should be branch names, not commit hashes or other usually valid arguments for `git diff`.
+   */
+  getGitDiff(
+    repoName: string,
+    base = "master",
+    head = "staging"
+  ): ResultAsync<string[], GitFileSystemError> {
+    if (base === head) {
+      return okAsync([])
+    }
+    return this.createLocalTrackingBranchIfNotExists(repoName, base)
+      .andThen(() => this.createLocalTrackingBranchIfNotExists(repoName, head))
+      .andThen(() => this._getGitDiff(repoName, base, head))
+  }
+
+  private _getGitDiff(
+    repoName: string,
+    base = "master",
+    head = "staging"
+  ): ResultAsync<string[], GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch(head)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .diff([`${base}..${head}`, "--name-only"]),
+      (error) => {
+        logger.error(
+          `Error when getting diff files between "${base}" and "${head}": ${error}, when trying to access ${efsVolPath}/${repoName}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to retrieve git diff info from disk"
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).map((files) =>
+      files
+        .trim()
+        .split("\n")
+        .filter((file) => file !== "")
+    )
+  }
+
+  /**
+   * Get latest commit for a file path on a branch (including deleted files)
+   */
+  getLatestCommitOfPath(
+    repoName: string,
+    path: string,
+    branch = "staging"
+  ): ResultAsync<DefaultLogFields & ListLogLine, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch(branch)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .log(["-1", branch, "--", path]), // adding -- allows us to get logs even for deleted files
+      (error) => {
+        logger.error(
+          `Error when getting latest commit for "${path}" on "${branch}": ${error}, when trying to access ${efsVolPath}/${repoName}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to retrieve latest log info from disk"
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).andThen((logs) => {
+      if (logs.latest === null) {
+        return errAsync(
+          new GitFileSystemError(
+            `No commit was found for "${path}" on "${branch}"`
+          )
+        )
+      }
+      return okAsync(logs.latest)
+    })
   }
 
   // Get the Git log of a particular branch
@@ -703,6 +790,49 @@ export default class GitFileSystemService {
           )
         )
         .map((commitResult) => commitResult.commit)
+    })
+  }
+
+  mergeStagingToMaster(
+    repoName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch("staging")
+    return this.isValidGitRepo(repoName, "staging").andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
+        )
+      }
+
+      return (
+        this.ensureCorrectBranch(repoName, "master")
+          .andThen(() =>
+            ResultAsync.fromPromise(
+              this.git
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                .merge(["staging", "--no-ff"]), // ensure there is a merge commit
+              (error) => {
+                logger.error(
+                  `Error when merging staging to master for ${repoName}: ${error}`
+                )
+
+                if (error instanceof GitError) {
+                  return new GitFileSystemError(
+                    "Unable to merge changes from staging to master"
+                  )
+                }
+
+                return new GitFileSystemError(
+                  "An unknown error occurred when merging staging to master"
+                )
+              }
+            )
+          )
+          // make sure to checkout back to staging after merge
+          .andThen(() => this.ensureCorrectBranch(repoName, "staging"))
+      )
     })
   }
 
@@ -1684,6 +1814,58 @@ export default class GitFileSystemService {
         )
         .andThen(() => this.push(repoName, branchName, true))
         .map(() => undefined)
+    })
+  }
+
+  doesLocalBranchExist(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .branchLocal(),
+      (error) => {
+        logger.error(
+          `Error when checking if branch "${branchName}" exists: ${error}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            `Unable to check if branch ${branchName} exists`
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).map((branches) => branches.all.includes(branchName))
+  }
+
+  /**
+   * Does not create a new branch if it already exists
+   */
+  createLocalTrackingBranchIfNotExists(repoName: string, branchName: string) {
+    return this.doesLocalBranchExist(repoName, branchName).andThen((exists) => {
+      if (exists) {
+        return okAsync(true)
+      }
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .branch(["--track", branchName, `origin/${branchName}`]),
+        (error) => {
+          logger.error(`Error when creating local tracking branch: ${error}`)
+
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              `Unable to create local tracking branch ${branchName}`
+            )
+          }
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      ).map(() => true)
     })
   }
 }

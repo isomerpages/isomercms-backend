@@ -11,13 +11,14 @@ import { ALLOWED_FILE_EXTENSIONS } from "@utils/file-upload-utils"
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
-import { ReviewRequestStatus } from "@root/constants"
+import { FEATURE_FLAGS, ReviewRequestStatus } from "@root/constants"
 import { Repo, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import ConfigParseError from "@root/errors/ConfigParseError"
 import DatabaseError from "@root/errors/DatabaseError"
+import GitFileSystemError from "@root/errors/GitFileSystemError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
@@ -128,36 +129,20 @@ export default class ReviewRequestService {
   compareDiff = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
-  ): ResultAsync<
-    WithEditMeta<DisplayedEditedItemDto>[],
-    NetworkError | DatabaseError
-  > =>
-    ResultAsync.fromPromise(
-      this.apiService.getCommitDiff(userWithSiteSessionData.siteName),
-      // TODO: Write a handler for github errors to our own internal errors
-      () => new NetworkError()
-    )
-      .andThen(({ files, commits }) =>
-        ResultAsync.fromPromise(
-          this.computeShaMappings(commits),
-          () => new DatabaseError()
-        ).map((mappings) => ({ mappings, files }))
-      )
-      .andThen(({ mappings, files }) =>
-        ResultAsync.combine(
-          this.compareDiffWithMappings(
+  ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
+    this.apiService
+      .getFilesChanged(userWithSiteSessionData.siteName)
+      .andThen((filenames) => {
+        // map each filename to its edit metadata
+        const editMetadata = filenames.map((filename) =>
+          this.createEditedItemDtoWithEditMeta(
+            filename,
             userWithSiteSessionData,
-            stagingLink,
-            files,
-            mappings
-          ).map((res) =>
-            res
-              // NOTE: Need to type-hint so that we can recover
-              .map<WithEditMeta<EditedItemDto>>(_.identity)
-              .orElse((baseItem) => okAsync(injectDefaultEditMeta(baseItem)))
+            stagingLink
           )
         )
-      )
+        return ResultAsync.combine(editMetadata)
+      })
       .map((changedItems) =>
         changedItems.filter(
           (changedItem): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
@@ -165,59 +150,90 @@ export default class ReviewRequestService {
         )
       )
 
-  private compareDiffWithMappings = (
+  createEditedItemDtoWithEditMeta = (
+    filename: string,
     sessionData: UserWithSiteSessionData,
-    stagingLink: StagingPermalink,
-    files: RawFileChangeInfo[],
-    mappings: ShaMappings
-  ): ResultAsync<WithEditMeta<EditedItemDto>, BaseEditedItemDto>[] => {
-    // Step 1: Get the site name
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<EditedItemDto>, never> => {
     const { siteName } = sessionData
+    const editMeta = this.extractEditMeta(siteName, filename)
+    const editedItemInfo = this.extractEditedItemInfo(
+      filename,
+      sessionData,
+      stagingLink
+    )
 
-    return files.map(({ filename, contents_url: contents }) => {
-      const extractedPathResult = extractPathInfo(filename)
-      if (extractedPathResult.isErr()) {
-        return errAsync({
-          name: "",
-          path: [],
-          type: "file",
-        })
-      }
+    return ResultAsync.combine([editMeta, editedItemInfo]).map(
+      ([editMetadata, item]) => ({
+        ...item,
+        ...editMetadata,
+      })
+    )
+  }
 
-      const pathInfo = extractedPathResult.value
-
-      return this.extractConfigInfo(pathInfo)
-        .orElse(() => this.extractPlaceholderInfo(pathInfo))
-        .orElse(() => this.extractMediaInfo(pathInfo))
-        .asyncMap<EditedItemDto>(async (item) => item)
-        .orElse(() =>
-          this.extractPageInfo(pathInfo, sessionData, stagingLink, siteName)
-        )
-        .map<WithEditMeta<EditedItemDto>>((item) => {
-          const items = contents.split("?ref=")
-          // NOTE: We have to compute sha this way rather than
-          // taking the file sha.
-          // This is because the sha present on the file is
-          // a checksum of the files contents.
-          // And the actual commit sha is given by the ref param
-          const hash = items[items.length - 1]
+  extractEditMeta = (siteName: string, filename: string) =>
+    this.apiService
+      .getLatestLocalCommitOfPath(siteName, filename)
+      .andThen((latestLog) => {
+        const { userId } = fromGithubCommitMessage(latestLog.message)
+        return ResultAsync.fromPromise(
+          this.users.findByPk(userId),
+          () => new DatabaseError()
+        ).map((author) => {
+          const lastChangedTime = new Date(latestLog.date).getTime()
           return {
-            ...item,
-            lastEditedBy: mappings[hash]?.author || "Unknown user",
-            lastEditedTime: mappings[hash]?.unixTime || 0,
+            lastEditedBy: author?.email || latestLog.author_email,
+            lastEditedTime: lastChangedTime,
           }
         })
-
-        .orElse<BaseEditedItemDto>(() => {
-          const { path, name } = pathInfo
-          return errAsync({
-            name,
-            path: path.unwrapOr([]),
-            type: "page",
-          })
+      })
+      .orElse(() =>
+        ok({
+          lastEditedBy: "Unknown",
+          lastEditedTime: 0,
         })
-    })
-  }
+      )
+
+  extractEditedItemInfo = (
+    filename: string,
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<EditedItemDto, never> =>
+    extractPathInfo(filename)
+      .asyncMap(async (pathInfo) => pathInfo)
+      .andThen((pathInfo) =>
+        this.extractConfigInfo(pathInfo)
+          .orElse(() => this.extractPlaceholderInfo(pathInfo))
+          .orElse(() => this.extractMediaInfo(pathInfo))
+          .asyncMap<EditedItemDto>(async (item) => item)
+          .orElse(() =>
+            this.extractPageInfo(
+              pathInfo,
+              sessionData,
+              stagingLink,
+              sessionData.siteName
+            )
+          )
+          .orElse(() => {
+            const { path, name } = pathInfo
+            return okAsync<EditedItemDto>({
+              name,
+              path: path.unwrapOr([]),
+              type: "page",
+              stagingUrl: "",
+              cmsFileUrl: "",
+            })
+          })
+      )
+      .orElse(() =>
+        okAsync<EditedItemDto>({
+          name: "",
+          path: [],
+          type: "page",
+          stagingUrl: "",
+          cmsFileUrl: "",
+        })
+      )
 
   extractPageInfo = (
     pathInfo: PathInfo,
@@ -292,26 +308,6 @@ export default class ReviewRequestService {
       path: path.unwrapOr([""]),
       type: "placeholder",
     }))
-
-  computeShaMappings = async (commits: Commit[]): Promise<ShaMappings> => {
-    const mappings: ShaMappings = {}
-
-    // NOTE: commits from github are capped at 300.
-    // This implies that there might possibly be some files
-    // whose commit isn't being returned.
-    await Promise.all(
-      commits.map(async ({ commit, sha }) => {
-        const { userId } = fromGithubCommitMessage(commit.message)
-        const author = await this.users.findByPk(userId)
-        const lastChangedTime = new Date(commit.author.date).getTime()
-        mappings[sha] = {
-          author: author?.email || commit.author.name,
-          unixTime: lastChangedTime,
-        }
-      })
-    )
-    return mappings
-  }
 
   computeCommentData = async (
     comments: GithubCommentData[],
@@ -840,6 +836,7 @@ export default class ReviewRequestService {
     )
 
     await this.apiService.mergePullRequest(repoNameInGithub, pullRequestNumber)
+    await this.apiService.mergeStagingToMaster(repoNameInGithub)
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()

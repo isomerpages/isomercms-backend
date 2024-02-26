@@ -203,26 +203,32 @@ export default class GitFileSystemService {
       })
   }
 
-  // Determine if the given branch is present in the repo
-  isBranchPresent(
+  // Determine if the given branch is present in the local repo copy
+  isLocalBranchPresent(
     repoName: string,
     branchName: string
-  ): ResultAsync<boolean, never> {
+  ): ResultAsync<boolean, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .revparse(["--verify", branchName]),
+        .branchLocal(),
       (error) => {
-        logger.info(
-          `Unable to ascertain that "${branchName}" branch is in ${efsVolPath}/${repoName}: ${error}`
+        logger.error(
+          `Unable to get the list of local branches in ${efsVolPath}/${repoName}: ${JSON.stringify(
+            error
+          )}`
         )
 
-        return false
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to get the list of local branches"
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
       }
-    )
-      .andThen(() => okAsync(true))
-      .orElse(() => okAsync(false))
+    ).andThen((result) => okAsync(result.all.includes(branchName)))
   }
 
   // Ensure that the repository is in the specified branch
@@ -1632,7 +1638,7 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<GitHubCommitData, GitFileSystemError> {
-    return this.isBranchPresent(repoName, branchName)
+    return this.isLocalBranchPresent(repoName, branchName)
       .andThen((isBranchLocallyPresent) => {
         if (isBranchLocallyPresent) {
           return this.getGitLog(repoName, branchName)

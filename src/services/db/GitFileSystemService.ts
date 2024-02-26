@@ -228,7 +228,7 @@ export default class GitFileSystemService {
 
         return new GitFileSystemError("An unknown error occurred")
       }
-    ).andThen((result) => okAsync(result.all.includes(branchName)))
+    ).map((result) => result.all.includes(branchName))
   }
 
   // Ensure that the repository is in the specified branch

@@ -295,7 +295,7 @@ export class SitesRouter {
       "/:siteName/checkLinks",
       routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
-      this.authorizationMiddleware.verifySiteAdmin,
+      this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.checkLinks)
     )
 

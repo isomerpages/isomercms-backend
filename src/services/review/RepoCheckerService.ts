@@ -439,6 +439,8 @@ export default class RepoCheckerService {
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+        .fetch()
+        .merge(["origin/main"])
         .add(["."])
         .commit("site checker logs")
         .push(),

@@ -516,7 +516,10 @@ export default class RepoCheckerService {
      * the repo to the EFS
      */
     let repoExists = true
+    logger.info(`Link checker for ${repo} started`)
 
+    // time the process taken to check the repo
+    const start = process.hrtime()
     return this.isCurrentlyLocked(repo)
       .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
       .orElse(() =>
@@ -547,7 +550,13 @@ export default class RepoCheckerService {
                       return this.remover(repo).andThen(() => ok(errors))
                     })
                     .andThen((errors) =>
-                      this.deleteLock(repo).andThen(() => ok(errors))
+                      this.deleteLock(repo).andThen(() => {
+                        const end = process.hrtime(start)
+                        logger.info(
+                          `Link checker for ${repo} completed in ${end[0]}s`
+                        )
+                        return ok(errors)
+                      })
                     )
                     .orElse((error) => {
                       this.deleteLock(repo)

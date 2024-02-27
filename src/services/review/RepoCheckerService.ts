@@ -123,7 +123,7 @@ export default class RepoCheckerService {
     })
   }
 
-  isCurrentlyErrored(repo: string): ResultAsync<true, SiteCheckerError> {
+  isCurrentlyErrored(repo: string): ResultAsync<boolean, SiteCheckerError> {
     const errorLogFilePath = path.join(
       SITE_CHECKER_REPO_PATH,
       repo,
@@ -132,7 +132,9 @@ export default class RepoCheckerService {
     return ResultAsync.fromPromise(
       fs.promises.access(errorLogFilePath, fs.constants.F_OK),
       (err) => new SiteCheckerError(`${err}`)
-    ).map(() => true)
+    )
+      .map(() => true)
+      .orElse(() => okAsync(false))
   }
 
   deleteErrorLog(repo: string) {
@@ -261,15 +263,13 @@ export default class RepoCheckerService {
     return this.gitFileSystemService
       .isValidGitRepo(repo, STAGING_BRANCH)
       .andThen((isValidGitRepo) => {
-        // todo: check if this check works properly in staging and production env, seems to
-        // hit even when local has the necessary repo, not too sure why
-        logger.info(
-          `Repo ${repo} does not exist in efs for site checker, cloning...`
-        )
-
         if (isValidGitRepo) {
           return okAsync(false)
         }
+
+        logger.info(
+          `Repo ${repo} does not exist in efs for site checker, cloning...`
+        )
         // it is ok if file does not exist, just clone it for now
         return this.gitFileSystemService
           .cloneBranch(repo, true)
@@ -478,38 +478,32 @@ export default class RepoCheckerService {
       return errAsync(new SiteCheckerError(`Folder does not exist for ${repo}`))
     }
 
-    return this.isCurrentlyErrored(repo)
-      .andThen<ResultAsync<BrokenLinkErrorDto, SiteCheckerError>>(() =>
-        errAsync(new SiteCheckerError(`Error log exists for repo ${repo}`))
-      )
-      .orElse(() =>
-        this.isCurrentlyLocked(repo)
-          .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
-          .orElse(() =>
-            ResultAsync.fromPromise(
-              this.generateRepoErrorsFromCsv(repo),
-              (error) => {
-                logger.error(
-                  `SiteCheckerError: Error reading csv for repo ${repo}: ${error}`
-                )
-                return new SiteCheckerError(
-                  `Error reading csv for repo ${repo}: ${error}`
-                )
-              }
-            ).andThen((errors) =>
-              okAsync<BrokenLinkErrorDto>({
-                errors,
-                status: "success",
-              })
-            )
+    return this.isCurrentlyErrored(repo).andThen((isError) => {
+      if (isError) {
+        return errAsync(new SiteCheckerError(`Error checking repo ${repo}`))
+      }
+
+      return this.isCurrentlyLocked(repo)
+        .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+        .orElse(() =>
+          ResultAsync.fromPromise(
+            this.generateRepoErrorsFromCsv(repo),
+            (error) => {
+              logger.error(
+                `SiteCheckerError: Error reading csv for repo ${repo}: ${error}`
+              )
+              return new SiteCheckerError(
+                `Error reading csv for repo ${repo}: ${error}`
+              )
+            }
+          ).andThen((errors) =>
+            okAsync<BrokenLinkErrorDto>({
+              errors,
+              status: "success",
+            })
           )
-      )
-      .mapErr((error) => {
-        logger.error(
-          `SiteCheckerError: Error getting broken links for ${repo}: ${error}`
         )
-        return error
-      })
+    })
   }
 
   checkRepo(repo: string): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
@@ -525,47 +519,46 @@ export default class RepoCheckerService {
     return this.isCurrentlyLocked(repo)
       .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
       .orElse(() =>
-        this.isCurrentlyErrored(repo)
-          .andThen(() =>
+        this.isCurrentlyErrored(repo).andThen((isError) => {
+          if (isError) {
             // delete the error.log file + retry, safe operation since this is only user triggered and not automated
-            this.deleteErrorLog(repo).andThen(() => this.checkRepo(repo))
-          )
-          .orElse(() => {
-            // this process can run async, so we can just return the loading state early
-            this.createLock(repo)
-              .andThen(() =>
-                this.cloner(repo).andThen((cloned) => {
-                  repoExists = cloned
+            return this.deleteErrorLog(repo).andThen(() => this.checkRepo(repo))
+          }
 
-                  return this.checker(repo)
-                    .andThen((errors) => this.reporter(repo, errors))
-                    .map<BrokenLinkErrorDto>((errors) => ({
-                      status: "success",
-                      errors,
-                    }))
+          // this process can run async, so we can just return the loading state early
+          this.createLock(repo).andThen(() =>
+            this.cloner(repo)
+              .andThen((cloned) => {
+                repoExists = cloned
 
-                    .andThen((errors) => {
-                      if (repoExists) {
-                        return ok(errors)
-                      }
-                      // since this repo was cloned during this operation, we should remove it
-                      return this.remover(repo).andThen(() => ok(errors))
+                return this.checker(repo)
+                  .andThen((errors) => this.reporter(repo, errors))
+                  .map<BrokenLinkErrorDto>((errors) => ({
+                    status: "success",
+                    errors,
+                  }))
+
+                  .andThen((errors) => {
+                    if (repoExists) {
+                      return ok(errors)
+                    }
+                    // since this repo was cloned during this operation, we should remove it
+                    return this.remover(repo).andThen(() => ok(errors))
+                  })
+                  .andThen((errors) =>
+                    this.deleteLock(repo).andThen(() => {
+                      const end = process.hrtime(start)
+                      logger.info(
+                        `Link checker for ${repo} completed in ${end[0]}s`
+                      )
+                      return ok(errors)
                     })
-                    .andThen((errors) =>
-                      this.deleteLock(repo).andThen(() => {
-                        const end = process.hrtime(start)
-                        logger.info(
-                          `Link checker for ${repo} completed in ${end[0]}s`
-                        )
-                        return ok(errors)
-                      })
-                    )
-                    .orElse((error) => {
-                      this.deleteLock(repo)
-                      return errAsync(error)
-                    })
-                })
-              )
+                  )
+                  .orElse((error) => {
+                    this.deleteLock(repo)
+                    return errAsync(error)
+                  })
+              })
               .mapErr((error) => {
                 // create error.log file
                 this.createErrorLog(repo, error)
@@ -577,11 +570,9 @@ export default class RepoCheckerService {
                 )
                 return error
               })
-
-            return okAsync<BrokenLinkErrorDto>({
-              status: "loading",
-            })
-          })
+          )
+          return okAsync<BrokenLinkErrorDto>({ status: "loading" })
+        })
       )
   }
 

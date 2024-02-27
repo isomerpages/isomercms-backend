@@ -212,7 +212,7 @@ export class SitesRouter {
     return res.status(404).json({ status: "error" })
   }
 
-  checkLinks: RequestHandler<
+  triggerCheckLinks: RequestHandler<
     { siteName: string },
     BrokenLinkErrorDto | ResponseErrorBody,
     never,
@@ -296,7 +296,7 @@ export class SitesRouter {
       routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
-      attachReadRouteHandlerWrapper(this.checkLinks)
+      attachReadRouteHandlerWrapper(this.triggerCheckLinks)
     )
 
     // The /sites/preview is a POST endpoint as the frontend sends

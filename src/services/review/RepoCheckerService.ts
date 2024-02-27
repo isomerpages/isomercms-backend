@@ -9,7 +9,7 @@ import { marked } from "marked"
 import { ResultAsync, errAsync, ok, okAsync } from "neverthrow"
 import Papa from "papaparse"
 import { ModelStatic } from "sequelize"
-import { PushResult, SimpleGit } from "simple-git"
+import { PullResult, PushResult, SimpleGit } from "simple-git"
 
 import config from "@root/config/config"
 import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
@@ -43,6 +43,9 @@ export const SITE_CHECKER_REPO_PATH = path.join(
 )
 
 const LOCK_CONTENT = "checker.lock"
+const REPO_ERROR_LOG = "error.log"
+const REPO_LOG = "log.csv"
+
 export default class RepoCheckerService {
   private readonly siteMemberRepository: RepoCheckerServiceProps["siteMemberRepository"]
 
@@ -83,8 +86,12 @@ export default class RepoCheckerService {
   }
 
   createLock(repo: string): ResultAsync<PushResult, SiteCheckerError> {
+    const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true })
+    }
     // create a checker.lock file
-    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
+    const lockFilePath = path.join(folderPath, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.writeFile(lockFilePath, "locked"),
       (error) => new SiteCheckerError(`${error}`)
@@ -116,6 +123,74 @@ export default class RepoCheckerService {
         (error) => new SiteCheckerError(`${error}`)
       )
     )
+  }
+
+  createErrorLog(repo: string, error: SiteCheckerError) {
+    const errorLogFilePath = path.join(
+      SITE_CHECKER_REPO_PATH,
+      repo,
+      REPO_ERROR_LOG
+    )
+    return ResultAsync.fromPromise(
+      fs.promises.writeFile(errorLogFilePath, error.message),
+      (err) => new SiteCheckerError(`${err}`)
+    )
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.git
+            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+            .add([`${path.join(repo, REPO_ERROR_LOG)}`])
+            .commit(`Create error log for ${repo}`)
+            .push(),
+          (err) => new SiteCheckerError(`${err}`)
+        )
+      )
+      .mapErr((err) => {
+        logger.error(
+          `SiteCheckerError: Error creating error log for repo ${repo}: ${err}`
+        )
+        return err
+      })
+  }
+
+  isCurrentlyErrored(repo: string): ResultAsync<true, SiteCheckerError> {
+    const errorLogFilePath = path.join(
+      SITE_CHECKER_REPO_PATH,
+      repo,
+      REPO_ERROR_LOG
+    )
+    return ResultAsync.fromPromise(
+      fs.promises.access(errorLogFilePath, fs.constants.F_OK),
+      (err) => new SiteCheckerError(`${err}`)
+    ).map(() => true)
+  }
+
+  deleteErrorLog(repo: string): ResultAsync<PushResult, SiteCheckerError> {
+    const errorLogFilePath = path.join(
+      SITE_CHECKER_REPO_PATH,
+      repo,
+      REPO_ERROR_LOG
+    )
+    return ResultAsync.fromPromise(
+      fs.promises.unlink(errorLogFilePath),
+      (error) => new SiteCheckerError(`${error}`)
+    )
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.git
+            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+            .add([`${path.join(repo, REPO_ERROR_LOG)}`])
+            .commit(`Delete error log for ${repo}`)
+            .push(),
+          (error) => new SiteCheckerError(`${error}`)
+        )
+      )
+      .mapErr((error) => {
+        logger.error(
+          `SiteCheckerError: Error deleting error log for repo ${repo}: ${error}`
+        )
+        return error
+      })
   }
 
   /**
@@ -201,7 +276,9 @@ export default class RepoCheckerService {
     )
       .andThen(() => ok(undefined))
       .orElse((errors) => {
-        logger.error(`Error running site checker for repos: ${errors}`)
+        logger.error(
+          `SiteCheckerError: Error running site checker for repos: ${errors}`
+        )
         return errAsync(errors)
       })
   }
@@ -374,7 +451,9 @@ export default class RepoCheckerService {
         logger.info(`Site checker for repo ${repo} completed successfully!`)
         return ResultAsync.combineWithAllErrors(findErrors)
           .orElse((e) => {
-            logger.error(`Error running site checker for repo ${repo}: ${e}`)
+            logger.error(
+              `SiteCheckerError: Error running site checker for repo ${repo}: ${e}`
+            )
             // it is ok to have errors, still report the found errors for now
             return okAsync([undefined])
           })
@@ -386,13 +465,11 @@ export default class RepoCheckerService {
     repo: string,
     errors: RepoError[]
   ): ResultAsync<RepoError[], SiteCheckerError> {
-    // todo: make sure to set up repo in efs in both staging and production environments
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
-
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true })
     }
-    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
     const stringifiedErrors = this.convertToCSV(errors)
     if (!fs.existsSync(filePath)) {
       fs.appendFileSync(filePath, stringifiedErrors)
@@ -410,9 +487,45 @@ export default class RepoCheckerService {
     ).map(() => errors)
   }
 
+  syncReports() {
+    /**
+     * We get the latest changes from the remote repo
+     * and merge them into the local repo if possible
+     * if there are manual conflicts, we will have to reset
+     * as the sane default
+     */
+
+    return ResultAsync.fromPromise<
+      PullResult | string | PushResult,
+      SiteCheckerError
+    >(
+      this.git
+        .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+        .pull("origin", "main"),
+      (error) => new SiteCheckerError(`${error}`)
+    )
+      .orElse(() =>
+        ResultAsync.fromPromise(
+          this.git
+            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+            .merge(["origin/main"])
+            .push(),
+          (error) => new SiteCheckerError(`${error}`)
+        )
+      )
+      .orElse(() =>
+        ResultAsync.fromPromise(
+          this.git
+            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+            .reset(["--hard", "origin/main"]),
+          (resetError) => new SiteCheckerError(`${resetError}`)
+        )
+      )
+  }
+
   // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
   generateRepoErrorsFromCsv = (repo: string): Promise<RepoError[]> => {
-    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
     const file = fs.createReadStream(filePath)
     return new Promise((resolve, reject) => {
       Papa.parse(file, {
@@ -424,8 +537,8 @@ export default class RepoCheckerService {
           }
           resolve(results.data as RepoError[])
         },
-        error(err) {
-          reject(err)
+        error(error) {
+          reject(error)
         },
       })
     })
@@ -434,30 +547,44 @@ export default class RepoCheckerService {
   readRepoErrors = (
     repo: string
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
-    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
     if (!fs.existsSync(filePath)) {
-      // start the checking of the repo async
-      return this.checkRepo(repo)
+      logger.error(`SiteCheckerError: Folder does not exist for ${repo}`)
+      return errAsync(new SiteCheckerError(`Folder does not exist for ${repo}`))
     }
 
-    return this.isCurrentlyLocked(repo)
-      .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
-      .orElse(() =>
-        ResultAsync.fromPromise(
-          this.generateRepoErrorsFromCsv(repo),
-          (error) => {
-            logger.error(`Error reading csv for repo ${repo}: ${error}`)
-            return new SiteCheckerError(
-              `Error reading csv for repo ${repo}: ${error}`
-            )
-          }
-        ).andThen((errors) =>
-          okAsync<BrokenLinkErrorDto>({
-            errors,
-            status: "success",
-          })
-        )
+    return this.isCurrentlyErrored(repo)
+      .andThen<ResultAsync<BrokenLinkErrorDto, SiteCheckerError>>(() =>
+        errAsync(new SiteCheckerError(`Error log exists for repo ${repo}`))
       )
+      .orElse(() =>
+        this.isCurrentlyLocked(repo)
+          .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+          .orElse(() =>
+            ResultAsync.fromPromise(
+              this.generateRepoErrorsFromCsv(repo),
+              (error) => {
+                logger.error(
+                  `SiteCheckerError: Error reading csv for repo ${repo}: ${error}`
+                )
+                return new SiteCheckerError(
+                  `Error reading csv for repo ${repo}: ${error}`
+                )
+              }
+            ).andThen((errors) =>
+              okAsync<BrokenLinkErrorDto>({
+                errors,
+                status: "success",
+              })
+            )
+          )
+      )
+      .mapErr((error) => {
+        logger.error(
+          `SiteCheckerError: Error getting broken links for ${repo}: ${error}`
+        )
+        return error
+      })
   }
 
   checkRepo(repo: string): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
@@ -466,43 +593,64 @@ export default class RepoCheckerService {
      * the repo to the EFS
      */
     let repoExists = true
-    return this.isCurrentlyLocked(repo)
-      .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
-      .orElse(() => {
-        // this process can run async, so we can just return the loading state early
-        this.createLock(repo)
-          .andThen(() =>
-            this.cloner(repo).andThen((cloned) => {
-              repoExists = cloned
 
-              return this.checker(repo)
-                .andThen((errors) => this.reporter(repo, errors))
-                .map<BrokenLinkErrorDto>((errors) => ({
-                  status: "success",
-                  errors,
-                }))
+    return this.syncReports()
+      .andThen(() =>
+        this.isCurrentlyLocked(repo)
+          .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+          .orElse(() =>
+            this.isCurrentlyErrored(repo)
+              .andThen(() =>
+                // delete the error.log file + retry, safe operation since this is only user triggered and not automated
+                this.deleteErrorLog(repo).andThen(() => this.checkRepo(repo))
+              )
+              .orElse(() => {
+                // this process can run async, so we can just return the loading state early
+                this.createLock(repo)
+                  .andThen(() =>
+                    this.cloner(repo).andThen((cloned) => {
+                      repoExists = cloned
 
-                .andThen((errors) => {
-                  if (repoExists) {
-                    return ok(errors)
-                  }
-                  // since this repo was cloned during this operation, we should remove it
-                  return this.remover(repo).andThen(() => ok(errors))
+                      return this.checker(repo)
+                        .andThen((errors) => this.reporter(repo, errors))
+                        .map<BrokenLinkErrorDto>((errors) => ({
+                          status: "success",
+                          errors,
+                        }))
+
+                        .andThen((errors) => {
+                          if (repoExists) {
+                            return ok(errors)
+                          }
+                          // since this repo was cloned during this operation, we should remove it
+                          return this.remover(repo).andThen(() => ok(errors))
+                        })
+                        .andThen((errors) =>
+                          this.deleteLock(repo).andThen(() => ok(errors))
+                        )
+                        .orElse((error) => {
+                          this.deleteLock(repo)
+                          return errAsync(error)
+                        })
+                    })
+                  )
+                  .mapErr((error) => {
+                    // create error.log file
+                    this.createErrorLog(repo, error)
+                    return error
+                  })
+
+                return okAsync<BrokenLinkErrorDto>({
+                  status: "loading",
                 })
-                .andThen((errors) =>
-                  this.deleteLock(repo).andThen(() => ok(errors))
-                )
-                .orElse((error) => {
-                  this.deleteLock(repo)
-                  return errAsync(error)
-                })
-            })
+              })
           )
-          .then((result) => result)
-
-        return okAsync<BrokenLinkErrorDto>({
-          status: "loading",
-        })
+      )
+      .mapErr((error) => {
+        logger.error(
+          `SiteCheckerError: Error checking repo ${repo}: ${error.message}`
+        )
+        return error
       })
   }
 
@@ -624,11 +772,6 @@ export default class RepoCheckerService {
     })
   }
 
-  emailErrors(errors: RepoError[]): ResultAsync<undefined, Error> {
-    // todo: send email to admin@isomer.gov.sg
-    return errAsync(new Error("Not implemented"))
-  }
-
   getAllMediaPath(dirPath: string): ResultAsync<Set<string>, SiteCheckerError> {
     const filesRootDir = path.join(dirPath, "files")
     const imagesRootDir = path.join(dirPath, "images")
@@ -645,7 +788,7 @@ export default class RepoCheckerService {
 
   outputHumanReadableErrors(repoName: string) {
     const csvData = fs.readFileSync(
-      path.join(SITE_CHECKER_REPO_PATH, repoName, "log.csv"),
+      path.join(SITE_CHECKER_REPO_PATH, repoName, REPO_LOG),
       "utf8"
     )
 

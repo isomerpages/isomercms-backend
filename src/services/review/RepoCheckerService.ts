@@ -9,7 +9,7 @@ import { marked } from "marked"
 import { ResultAsync, errAsync, ok, okAsync } from "neverthrow"
 import Papa from "papaparse"
 import { ModelStatic } from "sequelize"
-import { PullResult, PushResult, SimpleGit } from "simple-git"
+import { SimpleGit } from "simple-git"
 
 import config from "@root/config/config"
 import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
@@ -85,7 +85,7 @@ export default class RepoCheckerService {
     ).map(() => true)
   }
 
-  createLock(repo: string): ResultAsync<PushResult, SiteCheckerError> {
+  createLock(repo: string) {
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true })
@@ -95,33 +95,14 @@ export default class RepoCheckerService {
     return ResultAsync.fromPromise(
       fs.promises.writeFile(lockFilePath, "locked"),
       (error) => new SiteCheckerError(`${error}`)
-    ).andThen(() =>
-      ResultAsync.fromPromise(
-        this.git
-          .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-          .add([`${path.join(repo, LOCK_CONTENT)}`])
-          .commit(`Create lock for ${repo}`)
-          .push(),
-        (error) => new SiteCheckerError(`${error}`)
-      )
     )
   }
 
-  deleteLock(repo: string): ResultAsync<PushResult, SiteCheckerError> {
-    // delete the checker.lock file
+  deleteLock(repo: string) {
     const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
     return ResultAsync.fromPromise(
       fs.promises.unlink(lockFilePath),
       (error) => new SiteCheckerError(`${error}`)
-    ).andThen(() =>
-      ResultAsync.fromPromise(
-        this.git
-          .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-          .add([`${path.join(repo, LOCK_CONTENT)}`])
-          .commit(`Delete lock for ${repo}`)
-          .push(),
-        (error) => new SiteCheckerError(`${error}`)
-      )
     )
   }
 
@@ -134,23 +115,12 @@ export default class RepoCheckerService {
     return ResultAsync.fromPromise(
       fs.promises.writeFile(errorLogFilePath, error.message),
       (err) => new SiteCheckerError(`${err}`)
-    )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .add([`${path.join(repo, REPO_ERROR_LOG)}`])
-            .commit(`Create error log for ${repo}`)
-            .push(),
-          (err) => new SiteCheckerError(`${err}`)
-        )
+    ).mapErr((err) => {
+      logger.error(
+        `SiteCheckerError: Error creating error log for repo ${repo}: ${err}`
       )
-      .mapErr((err) => {
-        logger.error(
-          `SiteCheckerError: Error creating error log for repo ${repo}: ${err}`
-        )
-        return err
-      })
+      return err
+    })
   }
 
   isCurrentlyErrored(repo: string): ResultAsync<true, SiteCheckerError> {
@@ -165,7 +135,7 @@ export default class RepoCheckerService {
     ).map(() => true)
   }
 
-  deleteErrorLog(repo: string): ResultAsync<PushResult, SiteCheckerError> {
+  deleteErrorLog(repo: string) {
     const errorLogFilePath = path.join(
       SITE_CHECKER_REPO_PATH,
       repo,
@@ -174,23 +144,12 @@ export default class RepoCheckerService {
     return ResultAsync.fromPromise(
       fs.promises.unlink(errorLogFilePath),
       (error) => new SiteCheckerError(`${error}`)
-    )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .add([`${path.join(repo, REPO_ERROR_LOG)}`])
-            .commit(`Delete error log for ${repo}`)
-            .push(),
-          (error) => new SiteCheckerError(`${error}`)
-        )
+    ).mapErr((error) => {
+      logger.error(
+        `SiteCheckerError: Error deleting error log for repo ${repo}: ${error}`
       )
-      .mapErr((error) => {
-        logger.error(
-          `SiteCheckerError: Error deleting error log for repo ${repo}: ${error}`
-        )
-        return error
-      })
+      return error
+    })
   }
 
   /**
@@ -476,7 +435,7 @@ export default class RepoCheckerService {
     } else {
       fs.writeFileSync(filePath, stringifiedErrors)
     }
-
+    // pushing since there is no real time requirement for user
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
@@ -485,42 +444,6 @@ export default class RepoCheckerService {
         .push(),
       (error) => new SiteCheckerError(`${error}`)
     ).map(() => errors)
-  }
-
-  syncReports() {
-    /**
-     * We get the latest changes from the remote repo
-     * and merge them into the local repo if possible
-     * if there are manual conflicts, we will have to reset
-     * as the sane default
-     */
-
-    return ResultAsync.fromPromise<
-      PullResult | string | PushResult,
-      SiteCheckerError
-    >(
-      this.git
-        .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-        .pull("origin", "main"),
-      (error) => new SiteCheckerError(`${error}`)
-    )
-      .orElse(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .merge(["origin/main"])
-            .push(),
-          (error) => new SiteCheckerError(`${error}`)
-        )
-      )
-      .orElse(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .reset(["--hard", "origin/main"]),
-          (resetError) => new SiteCheckerError(`${resetError}`)
-        )
-      )
   }
 
   // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
@@ -594,64 +517,61 @@ export default class RepoCheckerService {
      */
     let repoExists = true
 
-    return this.syncReports()
-      .andThen(() =>
-        this.isCurrentlyLocked(repo)
-          .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
-          .orElse(() =>
-            this.isCurrentlyErrored(repo)
-              .andThen(() =>
-                // delete the error.log file + retry, safe operation since this is only user triggered and not automated
-                this.deleteErrorLog(repo).andThen(() => this.checkRepo(repo))
-              )
-              .orElse(() => {
-                // this process can run async, so we can just return the loading state early
-                this.createLock(repo)
-                  .andThen(() =>
-                    this.cloner(repo).andThen((cloned) => {
-                      repoExists = cloned
-
-                      return this.checker(repo)
-                        .andThen((errors) => this.reporter(repo, errors))
-                        .map<BrokenLinkErrorDto>((errors) => ({
-                          status: "success",
-                          errors,
-                        }))
-
-                        .andThen((errors) => {
-                          if (repoExists) {
-                            return ok(errors)
-                          }
-                          // since this repo was cloned during this operation, we should remove it
-                          return this.remover(repo).andThen(() => ok(errors))
-                        })
-                        .andThen((errors) =>
-                          this.deleteLock(repo).andThen(() => ok(errors))
-                        )
-                        .orElse((error) => {
-                          this.deleteLock(repo)
-                          return errAsync(error)
-                        })
-                    })
-                  )
-                  .mapErr((error) => {
-                    // create error.log file
-                    this.createErrorLog(repo, error)
-                    return error
-                  })
-
-                return okAsync<BrokenLinkErrorDto>({
-                  status: "loading",
-                })
-              })
+    return this.isCurrentlyLocked(repo)
+      .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+      .orElse(() =>
+        this.isCurrentlyErrored(repo)
+          .andThen(() =>
+            // delete the error.log file + retry, safe operation since this is only user triggered and not automated
+            this.deleteErrorLog(repo).andThen(() => this.checkRepo(repo))
           )
+          .orElse(() => {
+            // this process can run async, so we can just return the loading state early
+            this.createLock(repo)
+              .andThen(() =>
+                this.cloner(repo).andThen((cloned) => {
+                  repoExists = cloned
+
+                  return this.checker(repo)
+                    .andThen((errors) => this.reporter(repo, errors))
+                    .map<BrokenLinkErrorDto>((errors) => ({
+                      status: "success",
+                      errors,
+                    }))
+
+                    .andThen((errors) => {
+                      if (repoExists) {
+                        return ok(errors)
+                      }
+                      // since this repo was cloned during this operation, we should remove it
+                      return this.remover(repo).andThen(() => ok(errors))
+                    })
+                    .andThen((errors) =>
+                      this.deleteLock(repo).andThen(() => ok(errors))
+                    )
+                    .orElse((error) => {
+                      this.deleteLock(repo)
+                      return errAsync(error)
+                    })
+                })
+              )
+              .mapErr((error) => {
+                // create error.log file
+                this.createErrorLog(repo, error)
+                return error
+              })
+              .mapErr((error) => {
+                logger.error(
+                  `SiteCheckerError: Error checking repo ${repo}: ${error}`
+                )
+                return error
+              })
+
+            return okAsync<BrokenLinkErrorDto>({
+              status: "loading",
+            })
+          })
       )
-      .mapErr((error) => {
-        logger.error(
-          `SiteCheckerError: Error checking repo ${repo}: ${error.message}`
-        )
-        return error
-      })
   }
 
   getPathInCms = (permalink: string, repoName: string) => {

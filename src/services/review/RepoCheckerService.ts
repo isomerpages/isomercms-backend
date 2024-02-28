@@ -528,10 +528,10 @@ export default class RepoCheckerService {
             this.deleteErrorLog(repo).andThen(() =>
               this.checkRepo(repo, startTime)
             )
+          } else {
+            // this process can run async, so we can just return the loading state early
+            this.checkRepo(repo, startTime)
           }
-
-          // this process can run async, so we can just return the loading state early
-          this.checkRepo(repo, startTime)
           return okAsync<BrokenLinkErrorDto>({ status: "loading" })
         })
       )
@@ -576,7 +576,6 @@ export default class RepoCheckerService {
       this.cloner(repo)
         .andThen((cloned) => {
           const repoExists = !cloned
-          console.log({ repoExists })
 
           return this.checker(repo)
             .andThen((errors) => this.reporter(repo, errors))

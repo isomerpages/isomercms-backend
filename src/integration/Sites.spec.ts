@@ -17,6 +17,7 @@ import {
   Deployment,
   Launch,
   Redirection,
+  ReviewComment,
 } from "@database/models"
 import { generateRouter } from "@fixtures/app"
 import UserSessionData from "@root/classes/UserSessionData"
@@ -51,6 +52,7 @@ import DynamoDBDocClient from "@root/services/infra/DynamoDBClient"
 import DynamoDBService from "@root/services/infra/DynamoDBService"
 import InfraService from "@root/services/infra/InfraService"
 import StepFunctionsService from "@root/services/infra/StepFunctionsService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import RepoCheckerService from "@root/services/review/RepoCheckerService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import MailClient from "@root/services/utilServices/MailClient"
@@ -78,6 +80,7 @@ const gitHubService = new RepoService({
   gitFileSystemService,
   gitFileCommitService,
 })
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
@@ -119,6 +122,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
+  reviewCommentService,
   mockMailer,
   User,
   ReviewRequest,

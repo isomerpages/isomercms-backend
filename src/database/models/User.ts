@@ -14,6 +14,7 @@ import { Launch } from "@database/models/Launch"
 import { Site } from "@database/models/Site"
 import { SiteMember } from "@database/models/SiteMember"
 
+import { ReviewComment } from "./ReviewComment"
 import { ReviewRequest } from "./ReviewRequest"
 
 @Table({ tableName: "users", paranoid: true })
@@ -83,4 +84,7 @@ export class User extends Model {
 
   @HasMany(() => ReviewRequest)
   reviewRequests?: ReviewRequest[]
+
+  @HasMany(() => ReviewComment)
+  reviewComments?: ReviewComment[]
 }

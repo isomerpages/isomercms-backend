@@ -11,6 +11,7 @@ import {
   IsomerAdmin,
   Notification,
   Repo,
+  ReviewComment,
   Reviewer,
   ReviewMeta,
   ReviewRequest,
@@ -90,6 +91,7 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import MailClient from "@root/services/utilServices/MailClient"
 import { ReviewRequestDto } from "@root/types/dto/review"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
@@ -115,6 +117,7 @@ const gitHubService = new RepoService({
   gitFileSystemService,
   gitFileCommitService,
 })
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
@@ -156,6 +159,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as RepoService,
+  reviewCommentService,
   mockMailer,
   User,
   ReviewRequest,
@@ -353,6 +357,9 @@ describe("Review Requests Integration Tests", () => {
       await Reviewer.destroy({
         where: {},
       })
+      await ReviewComment.destroy({
+        where: {},
+      })
       await ReviewRequest.destroy({
         where: {},
       })
@@ -519,6 +526,13 @@ describe("Review Requests Integration Tests", () => {
         pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
         reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
       })
+      await ReviewComment.create({
+        reviewId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+        comment: MOCK_GITHUB_COMMENT_BODY_ONE,
+        createdAt: new Date().getTime(),
+        updatedAt: new Date().getTime(),
+      })
     })
 
     afterAll(async () => {
@@ -526,6 +540,9 @@ describe("Review Requests Integration Tests", () => {
         where: {},
       })
       await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewComment.destroy({
         where: {},
       })
       await ReviewRequest.destroy({
@@ -652,9 +669,13 @@ describe("Review Requests Integration Tests", () => {
       await ReviewRequestView.destroy({
         where: {},
       })
-      await ReviewRequest.destroy({
-        where: {},
-      })
+      try {
+        await ReviewRequest.destroy({
+          where: {},
+        })
+      } catch (e) {
+        console.log(`Error for review request`, e)
+      }
     })
 
     it("should mark all existing review requests as viewed for the user", async () => {
@@ -1830,6 +1851,9 @@ describe("Review Requests Integration Tests", () => {
 
     afterAll(async () => {
       await ReviewMeta.destroy({
+        where: {},
+      })
+      await ReviewComment.destroy({
         where: {},
       })
       await ReviewRequest.destroy({

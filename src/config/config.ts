@@ -319,7 +319,6 @@ const config = convict({
     s3Bucket: {
       doc: "S3 Bucket used to upload new gazettes",
       env: "EGAZETTE_S3_BUCKET",
-      sensitive: true,
       format: "required-string",
       default: "",
     },
@@ -328,7 +327,6 @@ const config = convict({
     datasetId: {
       doc: "DGS dataset id",
       env: "DATAGOV_RESOURCE_ID",
-      sensitive: true,
       format: "required-string",
       default: "",
     },
@@ -358,7 +356,6 @@ const config = convict({
     indexName: {
       doc: "Algolia api key",
       env: "ALGOLIA_INDEX_NAME",
-      sensitive: true,
       format: "required-string",
       default: "",
     },

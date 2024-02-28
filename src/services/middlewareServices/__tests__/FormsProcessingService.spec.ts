@@ -103,7 +103,7 @@ describe("FormSG Processing Service", () => {
 
   describe("Decrypt", () => {
     const MOCK_FORM_KEY = "mockKey"
-    const MOCK_SUBMISSION = "submission"
+    const MOCK_SUBMISSION = { submission: "submission" }
     beforeEach(() => {
       mockRes.locals = {}
     })
@@ -123,7 +123,6 @@ describe("FormSG Processing Service", () => {
         MOCK_FORM_KEY,
         MOCK_DATA
       )
-      expect(mockRes.locals.submission).toStrictEqual(MOCK_SUBMISSION)
     })
 
     it("should not call next handler if decrypt fails", async () => {

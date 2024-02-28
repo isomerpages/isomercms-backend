@@ -220,7 +220,7 @@ export class SitesRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
-    const result = await this.repoCheckerService.checkRepo(
+    const result = await this.repoCheckerService.runBrokenLinkChecker(
       userWithSiteSessionData.siteName
     )
     if (result.isOk()) {

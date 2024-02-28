@@ -252,7 +252,7 @@ export default class RepoCheckerService {
    */
   async runCheckerForReposInSeq(repos: string[]): Promise<void> {
     for (const repoName of repos) {
-      const result = await this.checkRepo(repoName)
+      const result = await this.runBrokenLinkChecker(repoName)
       if (result.isErr()) {
         logger.error(`Something went wrong when checking repo: ${result.error}`)
       }
@@ -506,71 +506,31 @@ export default class RepoCheckerService {
     })
   }
 
-  checkRepo(repo: string): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
+  runBrokenLinkChecker(
+    repo: string
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
      */
-    let repoExists = true
+
     logger.info(`Link checker for ${repo} started`)
 
     // time the process taken to check the repo
-    const start = process.hrtime()
+    const startTime = process.hrtime()
     return this.isCurrentlyLocked(repo)
       .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
       .orElse(() =>
         this.isCurrentlyErrored(repo).andThen((isError) => {
           if (isError) {
             // delete the error.log file + retry, safe operation since this is only user triggered and not automated
-            return this.deleteErrorLog(repo).andThen(() => this.checkRepo(repo))
+            this.deleteErrorLog(repo).andThen(() =>
+              this.checkRepo(repo, startTime)
+            )
           }
 
           // this process can run async, so we can just return the loading state early
-          this.createLock(repo).andThen(() =>
-            this.cloner(repo)
-              .andThen((cloned) => {
-                repoExists = cloned
-
-                return this.checker(repo)
-                  .andThen((errors) => this.reporter(repo, errors))
-                  .map<BrokenLinkErrorDto>((errors) => ({
-                    status: "success",
-                    errors,
-                  }))
-
-                  .andThen((errors) => {
-                    if (repoExists) {
-                      return ok(errors)
-                    }
-                    // since this repo was cloned during this operation, we should remove it
-                    return this.remover(repo).andThen(() => ok(errors))
-                  })
-                  .andThen((errors) =>
-                    this.deleteLock(repo).andThen(() => {
-                      const end = process.hrtime(start)
-                      logger.info(
-                        `Link checker for ${repo} completed in ${end[0]}s`
-                      )
-                      return ok(errors)
-                    })
-                  )
-                  .orElse((error) => {
-                    this.deleteLock(repo)
-                    return errAsync(error)
-                  })
-              })
-              .mapErr((error) => {
-                // create error.log file
-                this.createErrorLog(repo, error)
-                return error
-              })
-              .mapErr((error) => {
-                logger.error(
-                  `SiteCheckerError: Error checking repo ${repo}: ${error}`
-                )
-                return error
-              })
-          )
+          this.checkRepo(repo, startTime)
           return okAsync<BrokenLinkErrorDto>({ status: "loading" })
         })
       )
@@ -605,6 +565,56 @@ export default class RepoCheckerService {
 
     const fileName = paths[1]
     return `${initialPath}/folders/${folderName}/editPage/${fileName}`
+  }
+
+  checkRepo = (
+    repo: string,
+    start: [number, number]
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
+    let repoExists = true
+    return this.createLock(repo).andThen(() =>
+      this.cloner(repo)
+        .andThen((cloned) => {
+          repoExists = cloned
+
+          return this.checker(repo)
+            .andThen((errors) => this.reporter(repo, errors))
+            .map<BrokenLinkErrorDto>((errors) => ({
+              status: "success",
+              errors,
+            }))
+
+            .andThen((errors) => {
+              if (repoExists) {
+                return ok(errors)
+              }
+              // since this repo was cloned during this operation, we should remove it
+              return this.remover(repo).andThen(() => ok(errors))
+            })
+            .andThen((errors) =>
+              this.deleteLock(repo).andThen(() => {
+                const end = process.hrtime(start)
+                logger.info(`Link checker for ${repo} completed in ${end[0]}s`)
+                return ok(errors)
+              })
+            )
+            .orElse((error) => {
+              this.deleteLock(repo)
+              return errAsync(error)
+            })
+        })
+        .mapErr((error) => {
+          // create error.log file
+          this.createErrorLog(repo, error)
+          return error
+        })
+        .mapErr((error) => {
+          logger.error(
+            `SiteCheckerError: Error checking repo ${repo}: ${error}`
+          )
+          return error
+        })
+    )
   }
 
   convertToCSV(errors: RepoError[]) {

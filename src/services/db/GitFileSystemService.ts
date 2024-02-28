@@ -26,6 +26,7 @@ import {
 } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
+import config from "@root/config/config"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
 import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
@@ -170,10 +171,12 @@ export default class GitFileSystemService {
       })
       .orElse((error) => {
         if (error instanceof NotFoundError) {
-          logger.error(`Repo: ${repoName}, branch: ${branchName} is not found`)
-          return err(false)
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} is not found ${error}`
+          )
+          return errAsync(false)
         }
-        return err(error)
+        return errAsync(error)
       })
       .andThen(() => this.isGitInitialized(repoName, isStaging))
       .andThen((isGitInitialized) => {
@@ -1719,5 +1722,36 @@ export default class GitFileSystemService {
         .andThen(() => this.push(repoName, branchName, true))
         .map(() => undefined)
     })
+  }
+
+  removeRepo(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<void, GitFileSystemError> {
+    // Defensively check if this is not production env
+    const NODE_ENV = config.get("env")
+    if (NODE_ENV === "prod") {
+      return errAsync(
+        new GitFileSystemError("Cannot remove repo in production environment")
+      )
+    }
+
+    // remove the repo from the EFS volume
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    return ResultAsync.fromPromise(
+      fs.promises.rm(`${efsVolPath}/${repoName}`, {
+        recursive: true,
+        force: true,
+      }),
+      (error) => {
+        logger.error(
+          `Error when removing ${repoName} from EFS volume: ${error}`
+        )
+
+        return new GitFileSystemError(
+          `Unable to remove repo from EFS volume: ${error}`
+        )
+      }
+    ).map(() => undefined)
   }
 }

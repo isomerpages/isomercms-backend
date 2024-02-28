@@ -12,11 +12,13 @@ import { attachSiteHandler } from "@root/middleware"
 import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 import { StatsMiddleware } from "@root/middleware/stats"
 import InfraService from "@root/services/infra/InfraService"
+import RepoCheckerService from "@root/services/review/RepoCheckerService"
 import type { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import { RepositoryData } from "@root/types/repoInfo"
+import { BrokenLinkErrorDto } from "@root/types/siteChecker"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
 import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import type SitesService from "@services/identity/SitesService"
@@ -26,6 +28,7 @@ type SitesRouterProps = {
   infraService: InfraService
   authorizationMiddleware: AuthorizationMiddleware
   statsMiddleware: StatsMiddleware
+  repoCheckerService: RepoCheckerService
 }
 
 // eslint-disable-next-line import/prefer-default-export
@@ -38,16 +41,20 @@ export class SitesRouter {
 
   private readonly infraService
 
+  private readonly repoCheckerService
+
   constructor({
     sitesService,
     authorizationMiddleware,
     statsMiddleware,
     infraService,
+    repoCheckerService,
   }: SitesRouterProps) {
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
     this.statsMiddleware = statsMiddleware
     this.infraService = infraService
+    this.repoCheckerService = repoCheckerService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -188,6 +195,40 @@ export class SitesRouter {
     return res.status(404).json({ message: "Unable to get staging status" })
   }
 
+  getLinkCheckerStatus: RequestHandler<
+    { siteName: string },
+    BrokenLinkErrorDto | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const result = await this.repoCheckerService.readRepoErrors(
+      userWithSiteSessionData.siteName
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(404).json({ status: "error" })
+  }
+
+  triggerCheckLinks: RequestHandler<
+    { siteName: string },
+    BrokenLinkErrorDto | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const result = await this.repoCheckerService.runBrokenLinkChecker(
+      userWithSiteSessionData.siteName
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(400).json({ status: "error" })
+  }
+
   getRouter() {
     const router = express.Router({ mergeParams: true })
     const routeCheckerMiddleware = new RouteCheckerMiddleware()
@@ -242,6 +283,20 @@ export class SitesRouter {
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getUserStagingSiteBuildStatus)
+    )
+    router.get(
+      "/:siteName/getLinkCheckerStatus",
+      routeCheckerMiddleware.verifySiteName,
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.getLinkCheckerStatus)
+    )
+    router.post(
+      "/:siteName/checkLinks",
+      routeCheckerMiddleware.verifySiteName,
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.triggerCheckLinks)
     )
 
     // The /sites/preview is a POST endpoint as the frontend sends

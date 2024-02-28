@@ -55,9 +55,9 @@ import RepoService from "../db/RepoService"
 import { PageService } from "../fileServices/MdPageServices/PageService"
 import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
+import MailClient from "../utilServices/MailClient"
 
 import ReviewCommentService from "./ReviewCommentService"
-import MailClient from "../utilServices/MailClient"
 
 const injectDefaultEditMeta = ({
   path,
@@ -858,18 +858,29 @@ export default class ReviewRequestService {
   ): Promise<ReviewComment> => {
     const { siteName, isomerUserId } = sessionData
 
+    logger.info(
+      `Creating comment for PR ${pullRequestNumber}, site: ${siteName}`
+    )
     // get id of review request
     const reviewMeta = await this.reviewMeta.findOne({
       where: { pullRequestNumber },
     })
 
     if (reviewMeta?.reviewId) {
-      return await this.reviewCommentService.createCommentForReviewRequest(
-        reviewMeta?.reviewId,
-        isomerUserId,
-        message
-      )
+      try {
+        return await this.reviewCommentService.createCommentForReviewRequest(
+          reviewMeta?.reviewId,
+          isomerUserId,
+          message
+        )
+      } catch (e) {
+        logger.error(
+          `Error creating comment in DB for PR ${pullRequestNumber}, site: ${siteName}`
+        )
+        throw new DatabaseError("Error creating comment in DB")
+      }
     }
+    logger.info(`No review request found for PR ${pullRequestNumber}`)
     throw new RequestNotFoundError("Review Request not found")
   }
 
@@ -916,9 +927,18 @@ export default class ReviewRequestService {
     })
 
     const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
-    const allComments = await this.reviewCommentService.getCommentsForReviewRequest(
-      reviewMeta.reviewId
-    )
+    let allComments = []
+    try {
+      allComments = await this.reviewCommentService.getCommentsForReviewRequest(
+        reviewMeta.reviewId
+      )
+    } catch (e) {
+      logger.error(
+        `Error getting comments for PR ${pullRequestNumber}, site: ${siteName}`
+      )
+      throw new DatabaseError("Error getting comments for PR")
+    }
+
     // if comments exist in DB return those, else return from GitHub
     let commentsFromDB: CommentItem[] = []
     if (allComments && allComments.length !== 0) {

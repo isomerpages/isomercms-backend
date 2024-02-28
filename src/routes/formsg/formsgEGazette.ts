@@ -1,4 +1,5 @@
 import { DecryptedContentAndAttachments } from "@opengovsg/formsg-sdk/dist/types"
+import axios, { AxiosRequestConfig } from "axios"
 import express from "express"
 
 import { config } from "@config/config"
@@ -12,9 +13,21 @@ import S3Service from "@root/services/egazette/S3Service"
 import SearchService from "@root/services/egazette/SearchService"
 import { RequestHandler } from "@root/types"
 import { getField } from "@root/utils/formsg-utils"
+import { mailer } from "@services/utilServices/MailClient"
 
 const EGAZETTE_FORM_KEY = config.get("formSg.eGazetteFormKey")
 const EGAZETTE_S3_BUCKET = config.get("egazette.s3Bucket")
+const DATASET_ID = config.get("dgs.datasetId")
+const DGS_API_KEY = config.get("dgs.apiKey")
+
+const dgsApiDomain = "https://api-staging.data.gov.sg"
+const axiosConfig: AxiosRequestConfig = {
+  baseURL: dgsApiDomain,
+  headers: {
+    "x-dgs-admin-api-key": DGS_API_KEY,
+  },
+}
+const axiosInstance = axios.create(axiosConfig)
 
 const formStructure = {
   publisherEmail: "Email",
@@ -92,22 +105,12 @@ export class FormsgEGazetteRouter {
     never,
     { submission: DecryptedPayload }
   > = async (req, res) => {
+    const { submissionId } = req.body.data
     logger.info("Received egazette publish request")
 
     const { responses } = res.locals.submission.content
 
     // Retrieve form details
-
-    // Gazette Notification Number
-    const gazetteNotificationNum = getField(
-      responses,
-      formStructure.gazetteDetails.notificationNumber
-    )
-    if (!gazetteNotificationNum) {
-      logger.error(
-        "Gazette notification number is missing in form submission. Skip processing..."
-      )
-    }
 
     // Publisher Email
     const publisherEmail = getField(responses, formStructure.publisherEmail)
@@ -115,18 +118,37 @@ export class FormsgEGazetteRouter {
       logger.error(
         "Missing publisher email in form submission. Skip processing..."
       )
+      return res.sendStatus(200)
     }
 
     // Gazette Title
     const gazetteTitle = getField(responses, formStructure.gazetteDetails.title)
     if (!gazetteTitle) {
-      logger.error("Missing title for the gazette. Skipping...")
+      const errMessage = `Missing title for the gazette of submission ${submissionId}.`
+      logger.error(`${errMessage}`)
+      await this.sendFailureEmail(publisherEmail, "", submissionId, errMessage)
+      return res.sendStatus(200)
+    }
+
+    // Gazette Notification Number
+    const gazetteNotificationNum = getField(
+      responses,
+      formStructure.gazetteDetails.notificationNumber
+    )
+    if (!gazetteNotificationNum) {
+      const errMessage = `Missing gazette notification number for the gazette of submission ${submissionId}.`
+      logger.error(errMessage)
+      await this.sendFailureEmail(publisherEmail, "", submissionId, errMessage)
+      return res.sendStatus(200)
     }
 
     // Publish Time
     const publishTime = res.locals.submission.createdAt
     if (!publishTime) {
-      logger.error("No publish time found. Skipping...")
+      const errMessage = `Missing publish time for the gazette of submission ${submissionId}.`
+      logger.error(errMessage)
+      await this.sendFailureEmail(publisherEmail, "", submissionId, errMessage)
+      return res.sendStatus(200)
     }
 
     // Gazette Category
@@ -135,7 +157,10 @@ export class FormsgEGazetteRouter {
       formStructure.gazetteDetails.category
     )
     if (!gazetteCategory) {
-      logger.error("Missing category for the gazette. Skipping...")
+      const errMessage = `Missing category for the gazette of submission ${submissionId}.`
+      logger.error(errMessage)
+      await this.sendFailureEmail(publisherEmail, "", submissionId, errMessage)
+      return res.sendStatus(200)
     }
 
     // Gazette Sub-Category
@@ -169,8 +194,13 @@ export class FormsgEGazetteRouter {
         gazetteCategory === "Legislative Gazettes") &&
       !gazetteSubCategory
     ) {
-      logger.error(`Missing sub-category for ${gazetteCategory}. Skipping...`)
+      const errMessage = `Missing sub-category for the gazette of submission ${submissionId}.`
+      logger.error(errMessage)
+      await this.sendFailureEmail(publisherEmail, "", submissionId, errMessage)
+      return res.sendStatus(200)
     }
+
+    res.sendStatus(200) // we have received the form and obtained relevant field
 
     console.log(`Aggregated details from subsmission`, {
       publisherEmail,
@@ -192,40 +222,113 @@ export class FormsgEGazetteRouter {
       throw new Error("More than 1 attachment found!")
     }
 
-    for (const [key, value] of Object.entries(attachments)) {
-      if (value) {
-        try {
-          const uploadResponse = await this.s3Service.uploadBlob(
-            EGAZETTE_S3_BUCKET,
-            objectKey,
-            value.content
-          )
-          logger.info("Successfully uploaded gazette to S3 bucket")
-        } catch (err) {
-          logger.error(
-            `Uploading gazette to S3 Bucket failed with error: ${JSON.stringify(
-              err
-            )}`
-          )
-          // TODO: possibly alert admin/publisher that this failed
-          // Stop execution if S3 upload is not successful
-          return
-        }
+    const value = Object.values(attachments)[0]
+    if (value) {
+      try {
+        const uploadResponse = await this.s3Service.uploadBlob(
+          EGAZETTE_S3_BUCKET,
+          objectKey,
+          value.content
+        )
+        logger.info("Successfully uploaded gazette to S3 bucket")
+      } catch (err) {
+        const errMessage = `Uploading gazette to S3 Bucket failed with error: ${JSON.stringify(
+          err
+        )}`
+        logger.error(errMessage)
+        await this.sendFailureEmail(
+          publisherEmail,
+          gazetteTitle,
+          submissionId,
+          errMessage
+        )
+        return
       }
     }
 
     // Add to search index
     // NOTE: Using `!` here to force unwrap as validation has been done above
-    await this.addToSearchIndex(
-      gazetteCategory!,
-      gazetteSubCategory!,
-      gazetteNotificationNum!,
-      gazetteTitle!,
-      publishTime,
-      objectKey
-    )
+    try {
+      await this.addToSearchIndex(
+        gazetteCategory,
+        gazetteSubCategory!,
+        gazetteNotificationNum,
+        gazetteTitle,
+        publishTime,
+        objectKey
+      )
+    } catch (err) {
+      const errMessage = `Uploading to search index failed with error: ${JSON.stringify(
+        err
+      )}`
+      logger.error(errMessage)
+      await this.sendFailureEmail(
+        publisherEmail,
+        gazetteTitle,
+        submissionId,
+        errMessage
+      )
+      return
+    }
 
-    return res.sendStatus(200)
+    try {
+      const subjectField = `<a href='https://${EGAZETTE_S3_BUCKET}.s3.amazonaws.com/${objectKey}'>${gazetteTitle}</a>`
+      // TODO: replace with json - each subcategory has their own respective resourceId
+      const dgsRecords = await this.fetchDgsRecords(DATASET_ID)
+      dgsRecords.push({
+        _id: dgsRecords.length + 1,
+        Notification_No: gazetteNotificationNum,
+        Subject: subjectField,
+        Published_Date: publishTime,
+      })
+      await this.updateDgsRecords(
+        DATASET_ID,
+        dgsRecords.map(({ _id, ...record }) => record)
+      )
+    } catch (err) {
+      const errMessage = `Uploading to DGS failed with error: ${JSON.stringify(
+        err
+      )}`
+      logger.error(errMessage)
+      await this.sendFailureEmail(
+        publisherEmail,
+        gazetteTitle,
+        submissionId,
+        errMessage
+      )
+      return
+    }
+
+    await this.sendSuccessEmail(
+      publisherEmail,
+      gazetteTitle,
+      submissionId,
+      getS3ObjectUrl(EGAZETTE_S3_BUCKET, config.get("aws.region"), objectKey)
+    )
+  }
+
+  async sendFailureEmail(
+    email: string,
+    gazetteName: string,
+    submissionId: string,
+    error: string
+  ) {
+    const subject = `[Isomer] Upload gazette ${gazetteName} FAILURE`
+    const html = `<p>Gazette ${gazetteName} was <b>not</b> uploaded successfully. (Form submission id [${submissionId}])</p>
+      <p>${error}</p>`
+    await mailer.sendMail(email, subject, html)
+  }
+
+  async sendSuccessEmail(
+    email: string,
+    gazetteName: string,
+    submissionId: string,
+    url: string
+  ) {
+    const subject = `[Isomer] Upload gazette ${gazetteName} SUCCESS`
+    const html = `<p>Gazette ${gazetteName} was uploaded successfully. (Form submission id [${submissionId}])</p>
+      <p>The file can be accessed at ${url}</p>`
+    await mailer.sendMail(email, subject, html)
   }
 
   async addToSearchIndex(
@@ -271,10 +374,110 @@ export class FormsgEGazetteRouter {
     } catch (e) {
       logger.error(
         `Adding to search index failed with error: ${JSON.stringify(e)}`
-
-        // TODO: possibly alert admin/publisher that this failed
       )
     }
+  }
+
+  async fetchDgsRecords(resourceId: string) {
+    // const domain = "https://data.gov.sg"
+    const domain =
+      "https://35q3y4991j.execute-api.ap-southeast-1.amazonaws.com/"
+    let records: object[] = []
+    let url = `${domain}/api/action/datastore_search?resource_id=${resourceId}`
+
+    try {
+      while (url) {
+        let response = null
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          response = await axios.get(url)
+        } catch (err) {
+          const errorMessage = `Error when retrieving DGS records: ${err}`
+          throw new Error(errorMessage)
+        }
+
+        const { data } = response
+        if (data && data.success) {
+          records = records.concat(data.result.records)
+
+          // Check if there's a next URL
+          if (
+            data.result._links &&
+            data.result._links.next &&
+            ((data.result.total > 100 && !data.result.offset) || // default is return 100
+              data.result.offset < data.result.total)
+          ) {
+            url = domain + data.result._links.next // Construct the next URL
+          } else {
+            break
+          }
+        } else {
+          throw new Error(
+            "API response when retrieving DGS records was unsuccessful."
+          )
+        }
+      }
+    } catch (error) {
+      const errorMessage = `Error fetching paginated data from API: ${JSON.stringify(
+        error
+      )}`
+      logger.error(errorMessage)
+      throw error // Propagate the error up to be handled in the calling function
+    }
+
+    return records // Return the combined records from all pages
+  }
+
+  formatDgsSubmission(objects: any[]): string {
+    const headers = ["Notification_No", "Subject", "Published_Date"]
+    const headerRow = headers.join(",")
+
+    const csvRows = objects.map((obj) =>
+      headers.map((header) => obj[header]).join(",")
+    )
+    const csvContent = [headerRow, ...csvRows].join("\n")
+
+    return csvContent
+  }
+
+  async updateDgsRecords(resourceId: string, records: object[]) {
+    const endpoint = `/v2/admin/api/datasets/${resourceId}/upload-link`
+
+    try {
+      const uploadEndpoint = await axiosInstance.get<{
+        data: {
+          url: string
+        }
+      }>(endpoint)
+
+      await axios.put(
+        uploadEndpoint.data.data.url,
+        this.formatDgsSubmission(records)
+      )
+
+      await this.pollUpdates(resourceId)
+    } catch (error) {
+      const errorMessage = `Error when updating records: ${JSON.stringify(
+        error
+      )}`
+      logger.error(errorMessage)
+      throw error
+    }
+  }
+
+  async pollUpdates(resourceId: string): Promise<boolean> {
+    const POLLING_INTERVAL = 30 * 1000 // Poll every 30 seconds
+    // Await first - querying too quickly returns the previous ingestion result
+    await new Promise((resolve) => setTimeout(resolve, POLLING_INTERVAL))
+    const ingestionEndpoint = `/v2/admin/api/datasets/${resourceId}/ingestion-status`
+    const statusResp = await axiosInstance.get(ingestionEndpoint)
+    if (statusResp.data.data.status === "INGESTION_SUCCESS") return true
+    if (
+      statusResp.data.data.status === "VALIDATION_FAILED" ||
+      statusResp.data.data.status === "INGESTION_FAILED"
+    )
+      throw new Error(`Failed to upload to DGS: ${statusResp.data.data.status}`)
+    return this.pollUpdates(resourceId)
   }
 
   getRouter() {

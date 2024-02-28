@@ -324,6 +324,22 @@ const config = convict({
       default: "",
     },
   },
+  dgs: {
+    datasetId: {
+      doc: "DGS dataset id",
+      env: "DATAGOV_RESOURCE_ID",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    apiKey: {
+      doc: "DGS api key",
+      env: "DATAGOV_API_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+  },
   algolia: {
     appId: {
       doc: "Algolia app id",
@@ -335,6 +351,13 @@ const config = convict({
     apiKey: {
       doc: "Algolia api key",
       env: "ALGOLIA_API_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    indexName: {
+      doc: "Algolia api key",
+      env: "ALGOLIA_INDEX_NAME",
       sensitive: true,
       format: "required-string",
       default: "",

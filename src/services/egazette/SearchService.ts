@@ -1,5 +1,7 @@
 import algoliasearch, { SearchClient, SearchIndex } from "algoliasearch"
 
+import { config } from "@config/config"
+
 import logger from "@root/logger/logger"
 // TODO: Update import
 import { SearchRecord } from "@root/routes/formsg/formsgEGazette"
@@ -11,7 +13,9 @@ class SearchService {
 
   constructor(client: SearchClient) {
     this.searchClient = client
-    this.searchIndex = this.searchClient.initIndex("ogp-egazettes")
+    this.searchIndex = this.searchClient.initIndex(
+      config.get("algolia.indexName")
+    )
     this.setUpIndex()
   }
 

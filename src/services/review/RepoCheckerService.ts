@@ -439,6 +439,7 @@ export default class RepoCheckerService {
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+        .checkout("main")
         .fetch()
         .merge(["origin/main"])
         .add(["."])
@@ -570,12 +571,12 @@ export default class RepoCheckerService {
   checkRepo = (
     repo: string,
     start: [number, number]
-  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
-    let repoExists = true
-    return this.createLock(repo).andThen(() =>
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> =>
+    this.createLock(repo).andThen(() =>
       this.cloner(repo)
         .andThen((cloned) => {
-          repoExists = cloned
+          const repoExists = !cloned
+          console.log({ repoExists })
 
           return this.checker(repo)
             .andThen((errors) => this.reporter(repo, errors))
@@ -615,7 +616,6 @@ export default class RepoCheckerService {
           return error
         })
     )
-  }
 
   convertToCSV(errors: RepoError[]) {
     const data = errors.map((error) => ({

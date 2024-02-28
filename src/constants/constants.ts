@@ -61,6 +61,7 @@ export const ISOMER_ADMIN_REPOS = [
   "ci-test",
   "infra",
   "markdown-helper",
+  "isomer-site-checker",
 ]
 export const ISOMER_E2E_TEST_REPOS = [
   "e2e-test-repo",

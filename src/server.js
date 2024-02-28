@@ -5,6 +5,7 @@ import "module-alias/register"
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
+import { result } from "lodash"
 import nocache from "nocache"
 import simpleGit from "simple-git"
 
@@ -30,6 +31,7 @@ import {
   Notification,
   ReviewRequest,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequestView,
 } from "@database/models"
@@ -69,6 +71,7 @@ import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { mailer } from "@services/utilServices/MailClient"
 
+import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
@@ -85,6 +88,8 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
+import ReviewCommentService from "./services/review/ReviewCommentService"
+import RepoCheckerService from "./services/review/RepoCheckerService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
@@ -108,6 +113,7 @@ const sequelize = initSequelize([
   IsomerAdmin,
   Notification,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequest,
   ReviewRequestView,
@@ -151,6 +157,9 @@ const { errorHandler } = require("@middleware/errorHandler")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
+const {
+  FormsgSiteCheckerRouter,
+} = require("@root/routes/formsg/formsgSiteChecker")
 const {
   FormsgSiteCreateRouter,
 } = require("@root/routes/formsg/formsgSiteCreation")
@@ -215,8 +224,10 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
+  reviewCommentService,
   mailer,
   User,
   ReviewRequest,
@@ -227,6 +238,7 @@ const reviewRequestService = new ReviewRequestService(
   new ConfigService(),
   sequelize
 )
+
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
 const previewService = new PreviewService()
@@ -295,6 +307,14 @@ const infraService = new InfraService({
   dynamoDBService,
   usersService,
 })
+
+const repoCheckerService = new RepoCheckerService({
+  siteMemberRepository: SiteMember,
+  gitFileSystemService,
+  repoRepository: Repo,
+  git: simpleGitInstance,
+})
+
 // poller site launch updates
 infraService.pollMessages()
 
@@ -334,6 +354,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   reviewRouter,
   notificationsService,
   infraService,
+  repoCheckerService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
@@ -372,6 +393,10 @@ const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
 const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
   gitFileSystemService,
   reposService,
+})
+
+const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
+  repoCheckerService,
 })
 
 const app = express()
@@ -414,6 +439,7 @@ app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 app.use("/formsg", formsgGGsRepairRouter.getRouter())
+app.use("/formsg", formsgSiteCheckerRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {
@@ -436,6 +462,7 @@ sequelize
   .authenticate()
   .then(() => {
     logger.info("Connection has been established successfully.")
+    ReviewComment.sync()
     bootstrap(app)
   })
   .catch((err) => {

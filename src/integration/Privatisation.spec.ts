@@ -10,6 +10,7 @@ import {
   Deployment,
   IsomerAdmin,
   Repo,
+  ReviewComment,
   Reviewer,
   ReviewMeta,
   ReviewRequest,
@@ -63,6 +64,7 @@ import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import MailClient from "@root/services/utilServices/MailClient"
 import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
 import GitFileSystemService from "@services/db/GitFileSystemService"
@@ -109,6 +111,7 @@ const gitHubService = new RepoService({
   gitFileSystemService,
   gitFileCommitService,
 })
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
@@ -150,6 +153,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (gitHubService as unknown) as RepoService,
+  reviewCommentService,
   mockMailer,
   User,
   ReviewRequest,

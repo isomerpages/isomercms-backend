@@ -26,6 +26,7 @@ import {
 } from "@constants/constants"
 
 import { SessionDataProps } from "@root/classes"
+import config from "@root/config/config"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
 import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
@@ -170,10 +171,12 @@ export default class GitFileSystemService {
       })
       .orElse((error) => {
         if (error instanceof NotFoundError) {
-          logger.error(`Repo: ${repoName}, branch: ${branchName} is not found`)
-          return err(false)
+          logger.error(
+            `Repo: ${repoName}, branch: ${branchName} is not found ${error}`
+          )
+          return errAsync(false)
         }
-        return err(error)
+        return errAsync(error)
       })
       .andThen(() => this.isGitInitialized(repoName, isStaging))
       .andThen((isGitInitialized) => {
@@ -201,6 +204,34 @@ export default class GitFileSystemService {
         }
         return errAsync(error)
       })
+  }
+
+  // Determine if the given branch is present in the local repo copy
+  isLocalBranchPresent(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        .branchLocal(),
+      (error) => {
+        logger.error(
+          `Unable to get the list of local branches in ${efsVolPath}/${repoName}: ${JSON.stringify(
+            error
+          )}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to get the list of local branches"
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).map((result) => result.all.includes(branchName))
   }
 
   // Ensure that the repository is in the specified branch
@@ -318,7 +349,7 @@ export default class GitFileSystemService {
         .log([branchName]),
       (error) => {
         logger.error(
-          `Error when getting latest commit of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
+          `Error when getting Git log of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
         )
 
         if (error instanceof GitError) {
@@ -1610,8 +1641,14 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<GitHubCommitData, GitFileSystemError> {
-    return this.getGitLog(repoName, branchName)
-      .orElse(() => this.getGitLog(repoName, `origin/${branchName}`))
+    return this.isLocalBranchPresent(repoName, branchName)
+      .andThen((isBranchLocallyPresent) => {
+        if (isBranchLocallyPresent) {
+          return this.getGitLog(repoName, branchName)
+        }
+
+        return this.getGitLog(repoName, `origin/${branchName}`)
+      })
       .andThen((logSummary) => {
         const possibleCommit = logSummary.latest
         if (this.isDefaultLogFields(possibleCommit)) {
@@ -1685,5 +1722,36 @@ export default class GitFileSystemService {
         .andThen(() => this.push(repoName, branchName, true))
         .map(() => undefined)
     })
+  }
+
+  removeRepo(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<void, GitFileSystemError> {
+    // Defensively check if this is not production env
+    const NODE_ENV = config.get("env")
+    if (NODE_ENV === "prod") {
+      return errAsync(
+        new GitFileSystemError("Cannot remove repo in production environment")
+      )
+    }
+
+    // remove the repo from the EFS volume
+    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+    return ResultAsync.fromPromise(
+      fs.promises.rm(`${efsVolPath}/${repoName}`, {
+        recursive: true,
+        force: true,
+      }),
+      (error) => {
+        logger.error(
+          `Error when removing ${repoName} from EFS volume: ${error}`
+        )
+
+        return new GitFileSystemError(
+          `Unable to remove repo from EFS volume: ${error}`
+        )
+      }
+    ).map(() => undefined)
   }
 }

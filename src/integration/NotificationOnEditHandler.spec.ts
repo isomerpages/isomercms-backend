@@ -45,6 +45,7 @@ import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/Fo
 import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import MailClient from "@root/services/utilServices/MailClient"
 import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
@@ -62,6 +63,10 @@ const mockGithubService = {
   getPullRequest: jest.fn(),
   getComments: jest.fn(),
   getCommitDiff: jest.fn(),
+}
+const mockReviewCommentService = {
+  getCommentsForReviewRequest: jest.fn(),
+  createCommentForReviewRequest: jest.fn(),
 }
 const mockMailer = ({
   sendMail: jest.fn(),
@@ -118,6 +123,7 @@ const pageService = new PageService({
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
   (mockGithubService as unknown) as RepoService,
+  (mockReviewCommentService as unknown) as ReviewCommentService,
   mockMailer,
   User,
   ReviewRequest,

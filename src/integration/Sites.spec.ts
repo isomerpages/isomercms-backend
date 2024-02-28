@@ -51,6 +51,7 @@ import DynamoDBDocClient from "@root/services/infra/DynamoDBClient"
 import DynamoDBService from "@root/services/infra/DynamoDBService"
 import InfraService from "@root/services/infra/InfraService"
 import StepFunctionsService from "@root/services/infra/StepFunctionsService"
+import RepoCheckerService from "@root/services/review/RepoCheckerService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import MailClient from "@root/services/utilServices/MailClient"
 import GitFileSystemService from "@services/db/GitFileSystemService"
@@ -196,11 +197,23 @@ const infraService = new InfraService({
   usersService,
 })
 
+const siteMemberRepository = SiteMember
+const repoRepository = Repo
+const git = simpleGit()
+
+const repoCheckerService = new RepoCheckerService({
+  siteMemberRepository,
+  repoRepository,
+  gitFileSystemService,
+  git,
+})
+
 const SitesRouter = new _SitesRouter({
   sitesService,
   authorizationMiddleware,
   statsMiddleware,
   infraService,
+  repoCheckerService,
 })
 const sitesSubrouter = SitesRouter.getRouter()
 

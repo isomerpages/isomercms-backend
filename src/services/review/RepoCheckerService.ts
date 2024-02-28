@@ -443,7 +443,7 @@ export default class RepoCheckerService {
         .fetch()
         .merge(["origin/main"])
         .add(["."])
-        .commit("site checker logs")
+        .commit(`Site checker logs added for ${repo}`)
         .push(),
       (error) => new SiteCheckerError(`${error}`)
     ).map(() => errors)

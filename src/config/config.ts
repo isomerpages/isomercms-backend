@@ -307,6 +307,13 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    siteCheckerFormKey: {
+      doc: "FormSG API key for site checker form",
+      env: "SITE_CHECKER_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {

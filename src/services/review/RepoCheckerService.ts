@@ -16,18 +16,21 @@ import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
 import { Deployment, Repo, Site, SiteMember } from "@root/database/models"
 import SiteCheckerError from "@root/errors/SiteCheckerError"
 import logger from "@root/logger/logger"
-import { RepoErrorTypes, RepoError, isRepoError } from "@root/types/siteChecker"
+import {
+  RepoErrorTypes,
+  RepoError,
+  isRepoError,
+  BrokenLinkErrorDto,
+} from "@root/types/siteChecker"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 
 import GitFileSystemService from "../db/GitFileSystemService"
-import SitesService from "../identity/SitesService"
 
 const { JSDOM } = jsdom
 
 interface RepoCheckerServiceProps {
   siteMemberRepository: ModelStatic<SiteMember>
   repoRepository: ModelStatic<Repo>
-  sitesService: SitesService
   gitFileSystemService: GitFileSystemService
   git: SimpleGit
 }
@@ -39,10 +42,12 @@ export const SITE_CHECKER_REPO_PATH = path.join(
   SITE_CHECKER_REPO_NAME
 )
 
+const LOCK_CONTENT = "checker.lock"
+const REPO_ERROR_LOG = "error.log"
+const REPO_LOG = "log.csv"
+
 export default class RepoCheckerService {
   private readonly siteMemberRepository: RepoCheckerServiceProps["siteMemberRepository"]
-
-  private readonly sitesService: RepoCheckerServiceProps["sitesService"]
 
   private readonly gitFileSystemService: RepoCheckerServiceProps["gitFileSystemService"]
 
@@ -53,15 +58,100 @@ export default class RepoCheckerService {
   constructor({
     siteMemberRepository,
     repoRepository,
-    sitesService,
     gitFileSystemService,
     git,
   }: RepoCheckerServiceProps) {
     this.siteMemberRepository = siteMemberRepository
-    this.sitesService = sitesService
+
     this.gitFileSystemService = gitFileSystemService
     this.git = git
     this.repoRepository = repoRepository
+  }
+
+  isCurrentlyLocked(repo: string): ResultAsync<true, SiteCheckerError> {
+    const logsFilePath = path.join(SITE_CHECKER_REPO_PATH, repo)
+    // create logs folder if it does not exist
+
+    if (!fs.existsSync(logsFilePath)) {
+      fs.mkdirSync(logsFilePath, { recursive: true })
+    }
+
+    // check if checker.lock exists
+    const lockFilePath = path.join(logsFilePath, LOCK_CONTENT)
+
+    return ResultAsync.fromPromise(
+      fs.promises.access(lockFilePath, fs.constants.F_OK),
+      (err) => new SiteCheckerError(`${err}`)
+    ).map(() => true)
+  }
+
+  createLock(repo: string) {
+    const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true })
+    }
+    // create a checker.lock file
+    const lockFilePath = path.join(folderPath, LOCK_CONTENT)
+    return ResultAsync.fromPromise(
+      fs.promises.writeFile(lockFilePath, "locked"),
+      (error) => new SiteCheckerError(`${error}`)
+    )
+  }
+
+  deleteLock(repo: string) {
+    const lockFilePath = path.join(SITE_CHECKER_REPO_PATH, repo, LOCK_CONTENT)
+    return ResultAsync.fromPromise(
+      fs.promises.unlink(lockFilePath),
+      (error) => new SiteCheckerError(`${error}`)
+    )
+  }
+
+  createErrorLog(repo: string, error: SiteCheckerError) {
+    const errorLogFilePath = path.join(
+      SITE_CHECKER_REPO_PATH,
+      repo,
+      REPO_ERROR_LOG
+    )
+    return ResultAsync.fromPromise(
+      fs.promises.writeFile(errorLogFilePath, error.message),
+      (err) => new SiteCheckerError(`${err}`)
+    ).mapErr((err) => {
+      logger.error(
+        `SiteCheckerError: Error creating error log for repo ${repo}: ${err}`
+      )
+      return err
+    })
+  }
+
+  isCurrentlyErrored(repo: string): ResultAsync<boolean, SiteCheckerError> {
+    const errorLogFilePath = path.join(
+      SITE_CHECKER_REPO_PATH,
+      repo,
+      REPO_ERROR_LOG
+    )
+    return ResultAsync.fromPromise(
+      fs.promises.access(errorLogFilePath, fs.constants.F_OK),
+      (err) => new SiteCheckerError(`${err}`)
+    )
+      .map(() => true)
+      .orElse(() => okAsync(false))
+  }
+
+  deleteErrorLog(repo: string) {
+    const errorLogFilePath = path.join(
+      SITE_CHECKER_REPO_PATH,
+      repo,
+      REPO_ERROR_LOG
+    )
+    return ResultAsync.fromPromise(
+      fs.promises.unlink(errorLogFilePath),
+      (error) => new SiteCheckerError(`${error}`)
+    ).mapErr((error) => {
+      logger.error(
+        `SiteCheckerError: Error deleting error log for repo ${repo}: ${error}`
+      )
+      return error
+    })
   }
 
   /**
@@ -147,7 +237,9 @@ export default class RepoCheckerService {
     )
       .andThen(() => ok(undefined))
       .orElse((errors) => {
-        logger.error(`Error running site checker for repos: ${errors}`)
+        logger.error(
+          `SiteCheckerError: Error running site checker for repos: ${errors}`
+        )
         return errAsync(errors)
       })
   }
@@ -160,7 +252,7 @@ export default class RepoCheckerService {
    */
   async runCheckerForReposInSeq(repos: string[]): Promise<void> {
     for (const repoName of repos) {
-      const result = await this.checkRepo(repoName)
+      const result = await this.runBrokenLinkChecker(repoName)
       if (result.isErr()) {
         logger.error(`Something went wrong when checking repo: ${result.error}`)
       }
@@ -171,15 +263,13 @@ export default class RepoCheckerService {
     return this.gitFileSystemService
       .isValidGitRepo(repo, STAGING_BRANCH)
       .andThen((isValidGitRepo) => {
-        // todo: check if this check works properly in staging and production env, seems to
-        // hit even when local has the necessary repo, not too sure why
-        logger.info(
-          `Repo ${repo} does not exist in efs for site checker, cloning...`
-        )
-
         if (isValidGitRepo) {
           return okAsync(false)
         }
+
+        logger.info(
+          `Repo ${repo} does not exist in efs for site checker, cloning...`
+        )
         // it is ok if file does not exist, just clone it for now
         return this.gitFileSystemService
           .cloneBranch(repo, true)
@@ -189,8 +279,12 @@ export default class RepoCheckerService {
       .mapErr((error) => new SiteCheckerError(`${error}`))
   }
 
-  remover(repo: string, repoExists: boolean) {
-    if (repoExists) {
+  // This function removes the recently cloned repo. This function should only be called in non-prod environments
+  remover(repo: string) {
+    const NODE_ENV = config.get("env")
+    if (NODE_ENV === "prod") {
+      // by right this should not happen,
+      // but just in case safely return without doing anything
       return okAsync(undefined)
     }
 
@@ -316,7 +410,9 @@ export default class RepoCheckerService {
         logger.info(`Site checker for repo ${repo} completed successfully!`)
         return ResultAsync.combineWithAllErrors(findErrors)
           .orElse((e) => {
-            logger.error(`Error running site checker for repo ${repo}: ${e}`)
+            logger.error(
+              `SiteCheckerError: Error running site checker for repo ${repo}: ${e}`
+            )
             // it is ok to have errors, still report the found errors for now
             return okAsync([undefined])
           })
@@ -324,46 +420,121 @@ export default class RepoCheckerService {
       })
   }
 
-  reporter(repo: string, errors: RepoError[]) {
-    // todo: make sure to set up repo in efs in both staging and production environments
+  reporter(
+    repo: string,
+    errors: RepoError[]
+  ): ResultAsync<RepoError[], SiteCheckerError> {
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
-
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true })
     }
-    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, "log.csv")
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
     const stringifiedErrors = this.convertToCSV(errors)
     if (!fs.existsSync(filePath)) {
       fs.appendFileSync(filePath, stringifiedErrors)
     } else {
       fs.writeFileSync(filePath, stringifiedErrors)
     }
-
+    // pushing since there is no real time requirement for user
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+        .checkout("main")
+        .fetch()
+        .merge(["origin/main"])
         .add(["."])
-        .commit("site checker logs")
+        .commit(`Site checker logs added for ${repo}`)
         .push(),
       (error) => new SiteCheckerError(`${error}`)
-    )
+    ).map(() => errors)
   }
 
-  checkRepo(repo: string): ResultAsync<undefined, SiteCheckerError> {
+  // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
+  generateRepoErrorsFromCsv = (repo: string): Promise<RepoError[]> => {
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
+    const file = fs.createReadStream(filePath)
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        complete(results) {
+          // validate the csv
+          if (!results.data.every(isRepoError)) {
+            reject(new Error("Invalid CSV"))
+          }
+          resolve(results.data as RepoError[])
+        },
+        error(error) {
+          reject(error)
+        },
+      })
+    })
+  }
+
+  readRepoErrors = (
+    repo: string
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
+    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
+    if (!fs.existsSync(filePath)) {
+      logger.error(`SiteCheckerError: Folder does not exist for ${repo}`)
+      return errAsync(new SiteCheckerError(`Folder does not exist for ${repo}`))
+    }
+
+    return this.isCurrentlyErrored(repo).andThen((isError) => {
+      if (isError) {
+        return errAsync(new SiteCheckerError(`Error checking repo ${repo}`))
+      }
+
+      return this.isCurrentlyLocked(repo)
+        .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+        .orElse(() =>
+          ResultAsync.fromPromise(
+            this.generateRepoErrorsFromCsv(repo),
+            (error) => {
+              logger.error(
+                `SiteCheckerError: Error reading csv for repo ${repo}: ${error}`
+              )
+              return new SiteCheckerError(
+                `Error reading csv for repo ${repo}: ${error}`
+              )
+            }
+          ).andThen((errors) =>
+            okAsync<BrokenLinkErrorDto>({
+              errors,
+              status: "success",
+            })
+          )
+        )
+    })
+  }
+
+  runBrokenLinkChecker(
+    repo: string
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
      */
 
-    let repoExists = true
+    logger.info(`Link checker for ${repo} started`)
 
-    return this.cloner(repo).andThen((cloned) => {
-      repoExists = cloned
-      return this.checker(repo)
-        .andThen((errors) => this.reporter(repo, errors))
-        .andThen(() => this.remover(repo, repoExists))
-        .andThen(() => okAsync(undefined))
-    })
+    // time the process taken to check the repo
+    const startTime = process.hrtime()
+    return this.isCurrentlyLocked(repo)
+      .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+      .orElse(() =>
+        this.isCurrentlyErrored(repo).andThen((isError) => {
+          if (isError) {
+            // delete the error.log file + retry, safe operation since this is only user triggered and not automated
+            this.deleteErrorLog(repo).andThen(() =>
+              this.checkRepo(repo, startTime)
+            )
+          } else {
+            // this process can run async, so we can just return the loading state early
+            this.checkRepo(repo, startTime)
+          }
+          return okAsync<BrokenLinkErrorDto>({ status: "loading" })
+        })
+      )
   }
 
   getPathInCms = (permalink: string, repoName: string) => {
@@ -396,6 +567,54 @@ export default class RepoCheckerService {
     const fileName = paths[1]
     return `${initialPath}/folders/${folderName}/editPage/${fileName}`
   }
+
+  checkRepo = (
+    repo: string,
+    start: [number, number]
+  ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> =>
+    this.createLock(repo).andThen(() =>
+      this.cloner(repo)
+        .andThen((cloned) => {
+          const repoExists = !cloned
+
+          return this.checker(repo)
+            .andThen((errors) => this.reporter(repo, errors))
+            .map<BrokenLinkErrorDto>((errors) => ({
+              status: "success",
+              errors,
+            }))
+
+            .andThen((errors) => {
+              if (repoExists) {
+                return ok(errors)
+              }
+              // since this repo was cloned during this operation, we should remove it
+              return this.remover(repo).andThen(() => ok(errors))
+            })
+            .andThen((errors) =>
+              this.deleteLock(repo).andThen(() => {
+                const end = process.hrtime(start)
+                logger.info(`Link checker for ${repo} completed in ${end[0]}s`)
+                return ok(errors)
+              })
+            )
+            .orElse((error) => {
+              this.deleteLock(repo)
+              return errAsync(error)
+            })
+        })
+        .mapErr((error) => {
+          // create error.log file
+          this.createErrorLog(repo, error)
+          return error
+        })
+        .mapErr((error) => {
+          logger.error(
+            `SiteCheckerError: Error checking repo ${repo}: ${error}`
+          )
+          return error
+        })
+    )
 
   convertToCSV(errors: RepoError[]) {
     const data = errors.map((error) => ({
@@ -484,29 +703,23 @@ export default class RepoCheckerService {
     })
   }
 
-  emailErrors(errors: RepoError[]): ResultAsync<undefined, Error> {
-    // todo: send email to admin@isomer.gov.sg
-    return errAsync(new Error("Not implemented"))
-  }
-
   getAllMediaPath(dirPath: string): ResultAsync<Set<string>, SiteCheckerError> {
     const filesRootDir = path.join(dirPath, "files")
     const imagesRootDir = path.join(dirPath, "images")
 
-    return ResultAsync.fromPromise(
-      this.traverseDirectory(filesRootDir, dirPath),
-      (e) => new SiteCheckerError(`Failed to traverse directory: ${e}`)
+    return this.traverseDirectory(
+      filesRootDir,
+      dirPath
     ).andThen((assetFilesPath) =>
-      ResultAsync.fromPromise(
-        this.traverseDirectory(imagesRootDir, dirPath),
-        (e) => new SiteCheckerError(`Failed to traverse directory: ${e}`)
-      ).map((imagesPath) => new Set([...assetFilesPath, ...imagesPath]))
+      this.traverseDirectory(imagesRootDir, dirPath).map(
+        (imagesPath) => new Set([...assetFilesPath, ...imagesPath])
+      )
     )
   }
 
   outputHumanReadableErrors(repoName: string) {
     const csvData = fs.readFileSync(
-      path.join(SITE_CHECKER_REPO_PATH, repoName, "log.csv"),
+      path.join(SITE_CHECKER_REPO_PATH, repoName, REPO_LOG),
       "utf8"
     )
 
@@ -552,22 +765,31 @@ export default class RepoCheckerService {
     )
   }
 
-  // todo: refactor to use neverthrow
-  async traverseDirectory(dir: string, relativePath: string) {
+  traverseDirectory(
+    dir: string,
+    relativePath: string
+  ): ResultAsync<Set<string>, SiteCheckerError> {
     const filePaths = new Set<string>()
-    const files = await fs.promises.readdir(dir, {
-      recursive: true,
-      withFileTypes: true,
-    })
+    return ResultAsync.fromPromise(
+      fs.promises.readdir(dir, {
+        recursive: true,
+        withFileTypes: true,
+      }),
+      (error) => new SiteCheckerError(`${error}`)
+    ).andThen((files) => {
+      files.map((entry) => {
+        const res = path.resolve(
+          relativePath,
+          path.join(entry.path, entry.name)
+        )
+        if (!entry.isDirectory()) {
+          filePaths.add(decodeURIComponent(res.slice(relativePath.length)))
+        }
+        return entry
+      })
 
-    const promises = files.map(async (entry) => {
-      const res = path.resolve(relativePath, path.join(entry.path, entry.name))
-      if (!entry.isDirectory()) {
-        filePaths.add(decodeURIComponent(res.slice(relativePath.length)))
-      }
+      return ok(filePaths)
     })
-    await Promise.all(promises)
-    return filePaths
   }
 
   // todo: refactor to use neverthrow

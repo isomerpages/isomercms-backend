@@ -304,7 +304,6 @@ const infraService = new InfraService({
 
 const repoCheckerService = new RepoCheckerService({
   siteMemberRepository: SiteMember,
-  sitesService,
   gitFileSystemService,
   repoRepository: Repo,
   git: simpleGitInstance,
@@ -349,6 +348,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   reviewRouter,
   notificationsService,
   infraService,
+  repoCheckerService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({

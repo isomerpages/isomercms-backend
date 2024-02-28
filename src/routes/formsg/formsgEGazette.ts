@@ -275,11 +275,15 @@ export class FormsgEGazetteRouter {
       const subjectField = `<a href='https://${EGAZETTE_S3_BUCKET}.s3.amazonaws.com/${objectKey}'>${gazetteTitle}</a>`
       // TODO: replace with json - each subcategory has their own respective resourceId
       const dgsRecords = await this.fetchDgsRecords(DATASET_ID)
+      const timeOffset = 8 * 60 * 60 * 1000
+      const publishTimeObject = new Date(
+        new Date(publishTime).getTime() + timeOffset
+      )
       dgsRecords.push({
         _id: dgsRecords.length + 1,
         Notification_No: gazetteNotificationNum,
         Subject: subjectField,
-        Published_Date: publishTime,
+        Published_Date: publishTimeObject.toISOString().split("T")[0],
       })
       await this.updateDgsRecords(DATASET_ID, dgsRecords)
     } catch (err) {

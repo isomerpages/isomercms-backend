@@ -281,10 +281,7 @@ export class FormsgEGazetteRouter {
         Subject: subjectField,
         Published_Date: publishTime,
       })
-      await this.updateDgsRecords(
-        DATASET_ID,
-        dgsRecords.map(({ _id, ...record }) => record)
-      )
+      await this.updateDgsRecords(DATASET_ID, dgsRecords)
     } catch (err) {
       const errMessage = `Uploading to DGS failed with error: ${JSON.stringify(
         err

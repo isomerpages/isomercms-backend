@@ -252,7 +252,7 @@ export default class RepoCheckerService {
    */
   async runCheckerForReposInSeq(repos: string[]): Promise<void> {
     for (const repoName of repos) {
-      const result = await this.runBrokenLinkChecker(repoName)
+      const result = await this.runBrokenLinkChecker(repoName, true)
       if (result.isErr()) {
         logger.error(`Something went wrong when checking repo: ${result.error}`)
       }
@@ -420,10 +420,7 @@ export default class RepoCheckerService {
       })
   }
 
-  reporter(
-    repo: string,
-    errors: RepoError[]
-  ): ResultAsync<RepoError[], SiteCheckerError> {
+  reporter(repo: string, errors: RepoError[]): ResultAsync<RepoError[], never> {
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true })
@@ -435,6 +432,7 @@ export default class RepoCheckerService {
     } else {
       fs.writeFileSync(filePath, stringifiedErrors)
     }
+
     // pushing since there is no real time requirement for user
     return ResultAsync.fromPromise(
       this.git
@@ -446,7 +444,19 @@ export default class RepoCheckerService {
         .commit(`Site checker logs added for ${repo}`)
         .push(),
       (error) => new SiteCheckerError(`${error}`)
-    ).map(() => errors)
+    )
+      .map(() => errors)
+      .orElse(() => {
+        /**
+         * Actually committing the repo to remote is not a critical operation, and done for observability.
+         * If it fails, we can still return the broken links report to the user.
+         * We also do not want to log the actual error as it could cause other alarms to go off.
+         */
+        logger.info(
+          `SiteCheckerInfo: Error pushing logs for ${repo} to remote isomer-site-checker repo`
+        )
+        return ok(errors)
+      })
   }
 
   // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
@@ -507,8 +517,19 @@ export default class RepoCheckerService {
     })
   }
 
+  /**
+   * Run the broken link checker for a single repo
+   * @param repo - the name of the repo to check
+   * @param isBlocking - whether the operation should only return after completion/error thrown of the check
+   * @returns a promise that resolves to the result of the check
+   * @throws an error if the operation fails
+   * @remarks
+   * isBlocking is used to determine if the operation should return early with a loading state, or only return after the check is completed.
+   * As such, a user triggered operation should not be blocking, while an automated operation should be blocking.
+   */
   runBrokenLinkChecker(
-    repo: string
+    repo: string,
+    isBlocking = false
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
@@ -523,14 +544,20 @@ export default class RepoCheckerService {
       .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
       .orElse(() =>
         this.isCurrentlyErrored(repo).andThen((isError) => {
+          let blockingOperation
+
           if (isError) {
             // delete the error.log file + retry, safe operation since this is only user triggered and not automated
-            this.deleteErrorLog(repo).andThen(() =>
+            blockingOperation = this.deleteErrorLog(repo).andThen(() =>
               this.checkRepo(repo, startTime)
             )
           } else {
             // this process can run async, so we can just return the loading state early
-            this.checkRepo(repo, startTime)
+            blockingOperation = this.checkRepo(repo, startTime)
+          }
+
+          if (isBlocking) {
+            return blockingOperation
           }
           return okAsync<BrokenLinkErrorDto>({ status: "loading" })
         })

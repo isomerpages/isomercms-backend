@@ -113,6 +113,7 @@ export class FormsgGGsRepairRouter {
       logger.error("Requester email is not from @open.gov.sg")
       return
     }
+    res.sendStatus(200) // we have received the form and obtained relevant field
     this.handleGGsFormSubmission(repoNames, requesterEmail)
   }
 
@@ -121,7 +122,7 @@ export class FormsgGGsRepairRouter {
 
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
-    const LOCK_TIME_SECONDS = 15 * 60 // 15 minutes
+    const LOCK_TIME_SECONDS = 5 * 60 * repoNames.length // 5 minutes per repo being fixed
     repoNames.forEach((repoName) => {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 

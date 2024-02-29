@@ -27,9 +27,6 @@ RUN npm ci
 RUN rm -rf /var/cache/apk/*
 
 RUN git config --system --add safe.directory '*'
-RUN echo "[user]" > /root/.gitconfig
-RUN echo "  name = Isomer Admin" >> /root/.gitconfig
-RUN echo "  email = admin@isomer.gov.sg" >> /root/.gitconfig
 
 RUN chmod +x ./scripts/02_fetch_ssh_keys.sh
 
@@ -38,5 +35,10 @@ RUN chown -R webapp:webapp /home/webapp/.ssh
 # NOTE: We need to run the app as webapp, otherwise we will encounter
 # permissions issues on EFS, and all files will be erroneously owned by root.
 USER webapp
+
+RUN echo "[user]" > /home/webapp/.gitconfig
+RUN echo "  name = Isomer Admin" >> /home/webapp/.gitconfig
+RUN echo "  email = admin@isomer.gov.sg" >> /home/webapp/.gitconfig
+
 EXPOSE "8081"
 CMD ["bash", "-c", "bash ./scripts/02_fetch_ssh_keys.sh & npm run start:ecs:$NODE_ENV"]

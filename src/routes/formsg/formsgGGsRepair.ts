@@ -122,7 +122,7 @@ export class FormsgGGsRepairRouter {
 
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
-    const LOCK_TIME_SECONDS = 5 * 60 * repoNames.length // 5 minutes per repo being fixed
+    const LOCK_TIME_SECONDS = 15 * 60 // 15 minutes
     repoNames.forEach((repoName) => {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 

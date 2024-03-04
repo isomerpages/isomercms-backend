@@ -265,7 +265,7 @@ export default class ReposService {
       .checkout("staging") // reset local branch back to staging
 
     // Make sure the local path is empty, just in case dir was used on a previous attempt.
-    await this.setUpStagingLite(stgDir, stgLiteDir, repoUrl)
+    await this.setUpStagingLite(stgLiteDir, repoUrl)
   }
 
   createDnsIndirectionFile = (
@@ -375,15 +375,22 @@ export const createRecords = (zoneId: string): Record[] => {
       .map(() => undefined)
   }
 
-  async setUpStagingLite(stgDir: string, stgLiteDir: string, repoUrl: string) {
+  async setUpStagingLite(stgLiteDir: string, repoUrl: string) {
     fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
     // create a empty folder stgLiteDir
     fs.mkdirSync(stgLiteDir)
-    fs.cpSync(stgDir, stgLiteDir, { recursive: true })
 
     // note: for some reason, combining below commands led to race conditions
     // so we have to do it separately
     // Create staging lite branch in other repo path
+
+    await this.simpleGit
+      .cwd({ path: stgLiteDir, root: false })
+      .clone(repoUrl, stgLiteDir)
+    await this.simpleGit.cwd({ path: stgLiteDir, root: false }).pull() // some repos are large, clone takes time
+    await this.simpleGit
+      .cwd({ path: stgLiteDir, root: false })
+      .checkout("staging")
 
     if (fs.existsSync(path.join(`${stgLiteDir}`, `images`))) {
       await this.simpleGit

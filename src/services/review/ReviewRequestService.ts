@@ -1,4 +1,3 @@
-import { AxiosResponse } from "axios"
 import _, { sortBy, unionBy } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
@@ -11,7 +10,7 @@ import { ALLOWED_FILE_EXTENSIONS } from "@utils/file-upload-utils"
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
-import { FEATURE_FLAGS, ReviewRequestStatus } from "@root/constants"
+import { ReviewRequestStatus } from "@root/constants"
 import { Repo, ReviewComment, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
@@ -20,14 +19,12 @@ import ConfigParseError from "@root/errors/ConfigParseError"
 import DatabaseError from "@root/errors/DatabaseError"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
-import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
 import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import logger from "@root/logger/logger"
 import {
-  BaseEditedItemDto,
   CommentItem,
   DashboardReviewRequestDto,
   DisplayedEditedItemDto,
@@ -41,12 +38,7 @@ import {
   WithEditMeta,
 } from "@root/types/dto/review"
 import { isIsomerError } from "@root/types/error"
-import {
-  Commit,
-  fromGithubCommitMessage,
-  RawFileChangeInfo,
-  ShaMappings,
-} from "@root/types/github"
+import { fromGithubCommitMessage } from "@root/types/github"
 import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
 import { PathInfo } from "@root/types/util"
@@ -59,19 +51,6 @@ import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
 import MailClient from "../utilServices/MailClient"
 
 import ReviewCommentService from "./ReviewCommentService"
-
-const injectDefaultEditMeta = ({
-  path,
-  name,
-}: BaseEditedItemDto): WithEditMeta<EditedPageDto> => ({
-  lastEditedBy: "Unknown",
-  lastEditedTime: 0,
-  type: "page",
-  cmsFileUrl: "",
-  stagingUrl: "",
-  path,
-  name,
-})
 
 /**
  * NOTE: This class does not belong as a subset of GitHub service.

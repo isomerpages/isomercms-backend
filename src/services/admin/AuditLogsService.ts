@@ -431,7 +431,7 @@ class AuditLogsService {
                   .getUTCSeconds()
                   .toString()
                   .padStart(2, "0")
-                const recordTime = `${recordHour}:${recordMinute}:${recordSecond}`
+                const recordTime = `${recordHour}:${recordMinute}:${recordSecond} (UTC)`
 
                 return `${csv}${recordDate},${recordTime},${activity},"${actor}","${page}","${remarks}"\n`
               },

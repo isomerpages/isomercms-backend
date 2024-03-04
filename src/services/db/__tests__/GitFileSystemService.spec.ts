@@ -3260,7 +3260,7 @@ describe("GitFileSystemService", () => {
     })
   })
 
-  describe("doesLocalBranchExist", () => {
+  describe("isLocalBranchPresent", () => {
     it("should return true if the local branch exists", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         branchLocal: jest.fn().mockResolvedValueOnce({
@@ -3268,7 +3268,7 @@ describe("GitFileSystemService", () => {
         }),
       })
 
-      const actual = await GitFileSystemService.doesLocalBranchExist(
+      const actual = await GitFileSystemService.isLocalBranchPresent(
         "fake-repo",
         "staging"
       )
@@ -3283,7 +3283,7 @@ describe("GitFileSystemService", () => {
         }),
       })
 
-      const actual = await GitFileSystemService.doesLocalBranchExist(
+      const actual = await GitFileSystemService.isLocalBranchPresent(
         "fake-repo",
         "master"
       )
@@ -3296,7 +3296,7 @@ describe("GitFileSystemService", () => {
         branchLocal: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const actual = await GitFileSystemService.doesLocalBranchExist(
+      const actual = await GitFileSystemService.isLocalBranchPresent(
         "fake-repo",
         "master"
       )
@@ -3308,7 +3308,7 @@ describe("GitFileSystemService", () => {
   describe("createLocalTrackingBranchIfNotExists", () => {
     it("should create local tracking branch if it does not exist yet", async () => {
       jest
-        .spyOn(GitFileSystemService, "doesLocalBranchExist")
+        .spyOn(GitFileSystemService, "isLocalBranchPresent")
         .mockReturnValueOnce(okAsync(false))
 
       const branch = jest.fn().mockResolvedValueOnce(undefined)
@@ -3332,7 +3332,7 @@ describe("GitFileSystemService", () => {
 
     it("should not create local tracking branch if it already exists", async () => {
       jest
-        .spyOn(GitFileSystemService, "doesLocalBranchExist")
+        .spyOn(GitFileSystemService, "isLocalBranchPresent")
         .mockReturnValueOnce(okAsync(true))
 
       const branch = jest.fn()

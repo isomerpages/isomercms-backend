@@ -1854,36 +1854,11 @@ export default class GitFileSystemService {
     })
   }
 
-  doesLocalBranchExist(
-    repoName: string,
-    branchName: string
-  ): ResultAsync<boolean, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .branchLocal(),
-      (error) => {
-        logger.error(
-          `Error when checking if branch "${branchName}" exists: ${error}`
-        )
-
-        if (error instanceof GitError) {
-          return new GitFileSystemError(
-            `Unable to check if branch ${branchName} exists`
-          )
-        }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    ).map((branches) => branches.all.includes(branchName))
-  }
-
   /**
    * Does not create a new branch if it already exists
    */
   createLocalTrackingBranchIfNotExists(repoName: string, branchName: string) {
-    return this.doesLocalBranchExist(repoName, branchName).andThen((exists) => {
+    return this.isLocalBranchPresent(repoName, branchName).andThen((exists) => {
       if (exists) {
         return okAsync(true)
       }

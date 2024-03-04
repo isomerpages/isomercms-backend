@@ -88,7 +88,7 @@ const MockReviewApi = {
   getPullRequest: jest.fn(),
   getFilesChanged: jest.fn(),
   getLatestLocalCommitOfPath: jest.fn(),
-  mergeStagingToMaster: jest.fn(),
+  pullMaster: jest.fn(),
 }
 
 const MockReviewCommentApi = {
@@ -1186,7 +1186,7 @@ describe("ReviewRequestService", () => {
       const mockReviewRequestOpen = _.clone(MockReviewRequest)
       MockReviewApi.approvePullRequest.mockResolvedValueOnce(undefined)
       MockReviewApi.mergePullRequest.mockResolvedValueOnce(undefined)
-      MockReviewApi.mergeStagingToMaster.mockResolvedValueOnce(undefined)
+      MockReviewApi.pullMaster.mockResolvedValueOnce(undefined)
 
       // Act
       await ReviewRequestService.mergeReviewRequest(mockReviewRequestOpen)
@@ -1199,7 +1199,7 @@ describe("ReviewRequestService", () => {
       )
       expect(MockReviewApi.approvePullRequest).toHaveBeenCalled()
       expect(MockReviewApi.mergePullRequest).toHaveBeenCalled()
-      expect(MockReviewApi.mergeStagingToMaster).toHaveBeenCalled()
+      expect(MockReviewApi.pullMaster).toHaveBeenCalled()
       expect(mockReviewRequestOpen.save).toHaveBeenCalled()
     })
   })

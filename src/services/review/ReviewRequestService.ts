@@ -818,7 +818,7 @@ export default class ReviewRequestService {
     )
 
     await this.apiService.mergePullRequest(repoNameInGithub, pullRequestNumber)
-    await this.apiService.mergeStagingToMaster(repoNameInGithub)
+    await this.apiService.pullMaster(repoNameInGithub)
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()

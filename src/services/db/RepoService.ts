@@ -66,8 +66,18 @@ export default class RepoService extends GitHubService {
     return ReviewApi.getCommitDiff(siteName, base, head)
   }
 
-  mergeStagingToMaster(siteName: string) {
-    return this.gitFileSystemService.mergeStagingToMaster(siteName)
+  pullMaster(siteName: string) {
+    return (
+      this.gitFileSystemService
+        .pull(siteName, "master")
+        .andThen(() =>
+          this.gitFileSystemService.ensureCorrectBranch(siteName, "staging")
+        )
+        // in case pull fails, make sure to checkout to staging
+        .orElse(() =>
+          this.gitFileSystemService.ensureCorrectBranch(siteName, "staging")
+        )
+    )
   }
 
   createPullRequest(

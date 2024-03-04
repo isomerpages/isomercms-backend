@@ -204,7 +204,7 @@ describe("Users Router", () => {
       const expected = 200
       let otp = ""
       mockAxios.post.mockImplementationOnce((_, email) => {
-        otp = extractEmailOtp(email.body)
+        otp = extractEmailOtp(JSON.stringify(email))
         // NOTE: We are casting as `any` here because
         // the underlying type used by `mockAxios` is
         // not a promise and we do not have the type installed.
@@ -308,7 +308,7 @@ describe("Users Router", () => {
       const expected = 200
       let otp
       mockAxios.post.mockImplementation((_: any, email: any) => {
-        otp = extractEmailOtp(email.body)
+        otp = extractEmailOtp(JSON.stringify(email))
         // NOTE: We are casting as `any` here because
         // the underlying type used by `mockAxios` is
         // not a promise and we do not have the type installed.

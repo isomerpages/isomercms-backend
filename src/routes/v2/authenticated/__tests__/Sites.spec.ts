@@ -13,6 +13,7 @@ import {
 } from "@fixtures/sessionData"
 import { StatsMiddleware } from "@root/middleware/stats"
 import InfraService from "@root/services/infra/InfraService"
+import RepoCheckerService from "@root/services/review/RepoCheckerService"
 import type SitesService from "@services/identity/SitesService"
 
 import { SitesRouter } from "../sites"
@@ -38,11 +39,16 @@ describe("Sites Router", () => {
     countMigratedSites: jest.fn(),
   }
 
+  const mockRepoCheckerService = {
+    checkRepo: jest.fn(),
+  }
+
   const router = new SitesRouter({
     sitesService: (mockSitesService as unknown) as SitesService,
     authorizationMiddleware: (mockAuthorizationMiddleware as unknown) as AuthorizationMiddleware,
     statsMiddleware: (mockStatsMiddleware as unknown) as StatsMiddleware,
     infraService: (mockInfraService as unknown) as InfraService,
+    repoCheckerService: (mockRepoCheckerService as unknown) as RepoCheckerService,
   })
 
   const subrouter = express()

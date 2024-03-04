@@ -52,6 +52,8 @@ import {
   MOCK_REVIEW_REQUEST_VIEW_ONE,
   MOCK_PULL_REQUEST_FILES_CHANGED,
   MOCK_FILENAME_TO_LATEST_LOG_MAP,
+  MOCK_REVIEW_REQUEST_META,
+  MOCK_REVIEW_REQUEST_COMMENT,
 } from "@root/fixtures/review"
 import {
   mockEmail,
@@ -63,6 +65,8 @@ import MailClient from "@root/services/utilServices/MailClient"
 import { GithubCommentData } from "@root/types/dto/review"
 import RepoService from "@services/db/RepoService"
 import _ReviewRequestService from "@services/review/ReviewRequestService"
+
+import ReviewCommentService from "../ReviewCommentService"
 
 const MockPageService: {
   [K in keyof PageService]: ReturnType<typeof jest.fn>
@@ -87,6 +91,11 @@ const MockReviewApi = {
   mergeStagingToMaster: jest.fn(),
 }
 
+const MockReviewCommentApi = {
+  getCommentsForReviewRequest: jest.fn(),
+  createCommentForReviewRequest: jest.fn(),
+}
+
 const MockUsersRepository = {
   findByPk: jest.fn(),
 }
@@ -103,6 +112,7 @@ const MockReviewersRepository = {
 
 const MockReviewMetaRepository = {
   create: jest.fn(),
+  findOne: jest.fn(),
 }
 
 const MockReviewRequestViewRepository = {
@@ -134,6 +144,7 @@ const mockMailer = ({
 
 const ReviewRequestService = new _ReviewRequestService(
   (MockReviewApi as unknown) as RepoService,
+  (MockReviewCommentApi as unknown) as ReviewCommentService,
   mockMailer,
   (MockUsersRepository as unknown) as ModelStatic<User>,
   (MockReviewRequestRepository as unknown) as ModelStatic<ReviewRequest>,
@@ -448,14 +459,23 @@ describe("ReviewRequestService", () => {
       MockReviewRequestRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_ONE
       )
+
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(0)
+
+      MockReviewMetaRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_META
+      )
       MockReviewApi.getComments.mockResolvedValueOnce([
         MOCK_GITHUB_COMMENT_DATA_ONE,
         MOCK_GITHUB_COMMENT_DATA_TWO,
       ])
+
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(null)
+      MockReviewCommentApi.getCommentsForReviewRequest([
+        MOCK_REVIEW_REQUEST_COMMENT,
+      ])
       MockUsersRepository.findByPk.mockResolvedValueOnce({
         email: MOCK_IDENTITY_EMAIL_ONE,
       })
@@ -522,6 +542,9 @@ describe("ReviewRequestService", () => {
         MOCK_GITHUB_COMMENT_DATA_ONE,
         MOCK_GITHUB_COMMENT_DATA_TWO,
       ])
+      MockReviewMetaRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_META
+      )
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_VIEW_ONE
       )
@@ -531,6 +554,9 @@ describe("ReviewRequestService", () => {
       MockUsersRepository.findByPk.mockResolvedValueOnce({
         email: MOCK_IDENTITY_EMAIL_TWO,
       })
+      MockReviewCommentApi.getCommentsForReviewRequest([
+        MOCK_REVIEW_REQUEST_COMMENT,
+      ])
 
       // Act
       const actual = await ReviewRequestService.listValidReviewRequests(
@@ -587,6 +613,9 @@ describe("ReviewRequestService", () => {
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
+      MockReviewMetaRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_META
+      )
       MockReviewApi.getComments.mockResolvedValueOnce([])
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_VIEW_ONE
@@ -648,6 +677,9 @@ describe("ReviewRequestService", () => {
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
       MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
       MockReviewRequestViewRepository.count.mockResolvedValueOnce(1)
+      MockReviewMetaRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_META
+      )
       MockReviewApi.getComments.mockResolvedValueOnce([])
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_VIEW_ONE
@@ -1176,6 +1208,9 @@ describe("ReviewRequestService", () => {
     it("should create a new comment successfully", async () => {
       // Arrange
       MockReviewApi.createComment.mockResolvedValueOnce(undefined)
+      MockReviewMetaRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_META
+      )
 
       // Act
       await ReviewRequestService.createComment(
@@ -1185,8 +1220,9 @@ describe("ReviewRequestService", () => {
       )
 
       // Assert
-      expect(MockReviewApi.createComment).toHaveBeenCalledWith(
-        mockUserWithSiteSessionData.siteName,
+      expect(
+        MockReviewCommentApi.createCommentForReviewRequest
+      ).toHaveBeenCalledWith(
         MOCK_REVIEW_REQUEST_ONE.id,
         mockUserWithSiteSessionData.isomerUserId,
         MOCK_GITHUB_COMMENT_ONE
@@ -1215,6 +1251,9 @@ describe("ReviewRequestService", () => {
           isRead: false,
         },
       ]
+      MockReviewMetaRepository.findOne.mockResolvedValueOnce(
+        MOCK_REVIEW_REQUEST_META
+      )
       MockReviewApi.getComments.mockResolvedValueOnce(mockComments)
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_VIEW_ONE

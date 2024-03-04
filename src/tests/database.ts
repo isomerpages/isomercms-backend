@@ -16,6 +16,7 @@ import {
   Notification,
   ReviewRequest,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequestView,
 } from "@database/models"
@@ -37,6 +38,7 @@ sequelize.addModels([
   Redirection,
   IsomerAdmin,
   Notification,
+  ReviewComment,
   ReviewRequest,
   ReviewMeta,
   Reviewer,

@@ -26,6 +26,7 @@ const getAuthenticatedSubrouter = ({
   reviewRouter,
   notificationsService,
   infraService,
+  repoCheckerService,
 }) => {
   const netlifyTomlService = new NetlifyTomlService()
 
@@ -34,6 +35,7 @@ const getAuthenticatedSubrouter = ({
     authorizationMiddleware,
     statsMiddleware,
     infraService,
+    repoCheckerService,
   })
   const collaboratorsRouter = new CollaboratorsRouter({
     collaboratorsService,

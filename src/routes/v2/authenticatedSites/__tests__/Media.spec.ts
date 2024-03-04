@@ -7,6 +7,7 @@ import {
   mockGithubSessionData,
 } from "@root/fixtures/sessionData"
 import { MOCK_REPO_NAME_ONE } from "@root/fixtures/sites"
+import catchNonExistentRoutesMiddleware from "@root/middleware/catchNonExistentRouteHandler"
 import { attachReadRouteHandlerWrapper } from "@root/middleware/routeHandler"
 import { MediaDirectoryService } from "@root/services/directoryServices/MediaDirectoryService"
 import { MediaFileService } from "@root/services/fileServices/MdPageServices/MediaFileService"
@@ -79,6 +80,8 @@ describe("Media Router", () => {
     "/:siteName/media/:directoryName/pages/:fileName",
     attachReadRouteHandlerWrapper(router.deleteMediaFile)
   )
+
+  subrouter.use(catchNonExistentRoutesMiddleware)
 
   const app = generateRouterForDefaultUserWithSite(subrouter)
   const siteName = MOCK_REPO_NAME_ONE
@@ -436,6 +439,12 @@ describe("Media Router", () => {
         undefined,
         expectedServiceInput
       )
+    })
+  })
+
+  describe("catchNonExistentRoutes", () => {
+    it("returns 404 for non-existent routes", async () => {
+      await request(app).get(`/${siteName}/media/imagesblah/pages`).expect(404)
     })
   })
 })

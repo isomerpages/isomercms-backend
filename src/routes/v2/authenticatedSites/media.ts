@@ -11,6 +11,7 @@ import {
 import GithubSessionData from "@classes/GithubSessionData"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
+import { catchNonExistentRoutesMiddleware } from "@root/middleware/catchNonExistentRouteHandler"
 import type {
   MediaDirOutput,
   MediaFileOutput,
@@ -83,6 +84,7 @@ export class MediaRouter {
     { page: number; limit: number; search: string },
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    console.log("in listMediaDirectoryFiles")
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params
@@ -444,6 +446,8 @@ export class MediaRouter {
       "/:directoryName/pages/:fileName",
       attachRollbackRouteHandlerWrapper(this.deleteMediaFile)
     )
+
+    router.use(catchNonExistentRoutesMiddleware)
 
     return router
   }

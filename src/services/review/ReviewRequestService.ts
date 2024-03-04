@@ -164,13 +164,10 @@ export default class ReviewRequestService {
         return ResultAsync.fromPromise(
           this.users.findByPk(userId),
           () => new DatabaseError()
-        ).map((author) => {
-          const lastChangedTime = new Date(latestLog.date).getTime()
-          return {
-            lastEditedBy: author?.email || latestLog.author_email,
-            lastEditedTime: lastChangedTime,
-          }
-        })
+        ).map((author) => ({
+          lastEditedBy: author?.email || latestLog.author_email,
+          lastEditedTime: new Date(latestLog.date).getTime(),
+        }))
       })
       .orElse(() =>
         ok({

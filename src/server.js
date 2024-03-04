@@ -74,10 +74,12 @@ import { mailer } from "@services/utilServices/MailClient"
 import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
+import { FormsgSiteAuditLogsRouter } from "./routes/formsg/formsgSiteAuditLogs"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
+import AuditLogsService from "./services/admin/AuditLogsService"
 import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
@@ -88,8 +90,8 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
-import ReviewCommentService from "./services/review/ReviewCommentService"
 import RepoCheckerService from "./services/review/RepoCheckerService"
+import ReviewCommentService from "./services/review/ReviewCommentService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
@@ -315,6 +317,14 @@ const repoCheckerService = new RepoCheckerService({
   git: simpleGitInstance,
 })
 
+const auditLogsService = new AuditLogsService({
+  collaboratorsService,
+  isomerAdminsService,
+  reviewRequestService,
+  sitesService,
+  usersService,
+})
+
 // poller site launch updates
 infraService.pollMessages()
 
@@ -399,6 +409,10 @@ const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
   repoCheckerService,
 })
 
+const formsgSiteAuditLogsRouter = new FormsgSiteAuditLogsRouter({
+  auditLogsService,
+})
+
 const app = express()
 
 if (isSecure) {
@@ -440,6 +454,7 @@ app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 app.use("/formsg", formsgGGsRepairRouter.getRouter())
 app.use("/formsg", formsgSiteCheckerRouter.getRouter())
+app.use("/formsg", formsgSiteAuditLogsRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

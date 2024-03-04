@@ -695,7 +695,7 @@ describe("GitFileSystemService", () => {
     })
   })
 
-  describe("getGitDiff", () => {
+  describe("getFilesChanged", () => {
     const spyCreateLocalTrackingBranchIfNotExists = jest.spyOn(
       GitFileSystemService,
       "createLocalTrackingBranchIfNotExists"
@@ -714,7 +714,7 @@ describe("GitFileSystemService", () => {
       spyCreateLocalTrackingBranchIfNotExists.mockRestore()
     })
 
-    it("should return the git diff and defensively try creating local branches", async () => {
+    it("should return the files changed and defensively try creating local branches", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
         diff: jest
           .fn()
@@ -723,7 +723,7 @@ describe("GitFileSystemService", () => {
 
       const expected = ["fake-dir/fake-file", "another-fake-file"]
 
-      const actual = await GitFileSystemService.getGitDiff("fake-repo")
+      const actual = await GitFileSystemService.getFilesChanged("fake-repo")
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
       expect(mockCreateLocalTrackingBranchIfNotExists).toHaveBeenCalledTimes(2)
@@ -734,7 +734,7 @@ describe("GitFileSystemService", () => {
         diff: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const actual = await GitFileSystemService.getGitDiff(
+      const actual = await GitFileSystemService.getFilesChanged(
         "fake-repo",
         "fake-dir/fake-file"
       )

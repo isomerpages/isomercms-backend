@@ -55,7 +55,7 @@ export default class RepoService extends GitHubService {
   }
 
   getFilesChanged(siteName: string, base?: string, head?: string) {
-    return this.gitFileSystemService.getGitDiff(siteName, base, head)
+    return this.gitFileSystemService.getFilesChanged(siteName, base, head)
   }
 
   getLatestLocalCommitOfPath(repoName: string, path: string) {

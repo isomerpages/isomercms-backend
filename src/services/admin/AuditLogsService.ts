@@ -17,6 +17,7 @@ import { IsomerCommitMessage } from "@root/types/github"
 import { tokenServiceInstance } from "@services/db/TokenService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
+import NotificationsService from "@services/identity/NotificationsService"
 import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
@@ -25,6 +26,7 @@ import { mailer } from "@services/utilServices/MailClient"
 interface AuditLogsServiceProps {
   collaboratorsService: CollaboratorsService
   isomerAdminsService: IsomerAdminsService
+  notificationsService: NotificationsService
   reviewRequestService: ReviewRequestService
   sitesService: SitesService
   usersService: UsersService
@@ -35,6 +37,8 @@ class AuditLogsService {
 
   private readonly isomerAdminsService: AuditLogsServiceProps["isomerAdminsService"]
 
+  private readonly notificationsService: AuditLogsServiceProps["notificationsService"]
+
   private readonly reviewRequestService: AuditLogsServiceProps["reviewRequestService"]
 
   private readonly sitesService: AuditLogsServiceProps["sitesService"]
@@ -44,12 +48,14 @@ class AuditLogsService {
   constructor({
     collaboratorsService,
     isomerAdminsService,
+    notificationsService,
     reviewRequestService,
     sitesService,
     usersService,
   }: AuditLogsServiceProps) {
     this.collaboratorsService = collaboratorsService
     this.isomerAdminsService = isomerAdminsService
+    this.notificationsService = notificationsService
     this.reviewRequestService = reviewRequestService
     this.sitesService = sitesService
     this.usersService = usersService
@@ -279,33 +285,73 @@ class AuditLogsService {
               .getBySiteName(sessionData.siteName)
               .andThen((site) =>
                 ResultAsync.combine(
-                  pulls.map((pull) =>
-                    ResultAsync.fromPromise(
-                      this.reviewRequestService.getReviewRequest(
-                        site,
-                        pull.number
+                  pulls.flatMap((pull) =>
+                    ResultAsync.combine([
+                      ResultAsync.fromPromise(
+                        this.reviewRequestService.getReviewRequest(
+                          site,
+                          pull.number
+                        ),
+                        (error) => {
+                          logger.error(
+                            `Error occurred while retrieving review request data from the database for pull request ${pull.number} of site ${sessionData.siteName}: ${error}`
+                          )
+                          return new DatabaseError(
+                            "Error occurred while retrieving review request data from the database"
+                          )
+                        }
                       ),
-                      (error) => {
-                        logger.error(
-                          `Error occurred while retrieving review request data from the database for pull request ${pull.number} of site ${sessionData.siteName}: ${error}`
+                      this.notificationsService.findAllForSite({
+                        siteName: sessionData.siteName,
+                      }),
+                    ]).map<AuditLog[]>(([reviewRequest, notifications]) => [
+                      // When pull/review request is published/merged
+                      {
+                        timestamp: new Date(pull.merged_at || ""),
+                        activity: AuditableActivityNames.PublishedChanges,
+                        actor:
+                          "requestor" in reviewRequest &&
+                          reviewRequest.requestor.email
+                            ? reviewRequest.requestor.email
+                            : pull.user?.login || "Unknown user",
+                        page: "",
+                        remarks: `GitHub Pull Request ID #${pull.number}`,
+                      },
+
+                      // When review request is created
+                      ...notifications
+                        .filter(
+                          (notification) =>
+                            notification.link.endsWith(`/${pull.number}`) &&
+                            notification.type === "request_created"
                         )
-                        return new DatabaseError(
-                          "Error occurred while retrieving review request data from the database"
+                        .map((notification) => ({
+                          timestamp: notification.createdAt,
+                          activity: AuditableActivityNames.RequestedReview,
+                          actor: notification.sourceUsername,
+                          page: "",
+                          remarks: `GitHub Pull Request ID #${pull.number}`,
+                        }))
+                        .slice(0, 1),
+
+                      // When review request is approved
+                      ...notifications
+                        .filter(
+                          (notification) =>
+                            notification.link.endsWith(`/${pull.number}`) &&
+                            notification.type === "request_approved"
                         )
-                      }
-                    ).map<AuditLog>((reviewRequest) => ({
-                      timestamp: new Date(pull.merged_at || ""),
-                      activity: AuditableActivityNames.PublishedChanges,
-                      actor:
-                        "requestor" in reviewRequest &&
-                        reviewRequest.requestor.email
-                          ? reviewRequest.requestor.email
-                          : pull.user?.login || "Unknown user",
-                      page: "",
-                      remarks: `GitHub Pull Request ID #${pull.number}`,
-                    }))
+                        .map((notification) => ({
+                          timestamp: notification.createdAt,
+                          activity: AuditableActivityNames.ApprovedReview,
+                          actor: notification.sourceUsername,
+                          page: "",
+                          remarks: `GitHub Pull Request ID #${pull.number}`,
+                        }))
+                        .slice(0, 1),
+                    ])
                   )
-                )
+                ).map((pullsAuditLogs) => pullsAuditLogs.flat())
               )
           )
           .andThen((publishedChanges) =>
@@ -421,7 +467,7 @@ class AuditLogsService {
       )
       .andThen((auditLogDtos) => {
         // Step 5: Prepare the audit log CSV files for each repo
-        const auditLogHeader = "Date,Time,Activity,User,Page,Remarks\n"
+        const auditLogHeader = "Date,Time (UTC),Activity,User,Page,Remarks\n"
 
         return ResultAsync.combine(
           auditLogDtos.map(({ siteName, auditLogs, snapshotTime }) => {
@@ -440,7 +486,7 @@ class AuditLogsService {
                   .getUTCSeconds()
                   .toString()
                   .padStart(2, "0")
-                const recordTime = `${recordHour}:${recordMinute}:${recordSecond} (UTC)`
+                const recordTime = `${recordHour}:${recordMinute}:${recordSecond}`
 
                 return `${csv}${recordDate},${recordTime},${activity},"${actor}","${page}","${remarks}"\n`
               },

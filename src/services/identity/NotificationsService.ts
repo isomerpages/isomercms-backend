@@ -1,6 +1,9 @@
+import { ResultAsync } from "neverthrow"
 import { FindOptions, ModelStatic, Op, Sequelize } from "sequelize"
 
 import { Notification, Site, Repo, SiteMember } from "@database/models"
+import DatabaseError from "@root/errors/DatabaseError"
+import logger from "@root/logger/logger"
 import {
   NotificationType,
   getNotificationExpiryDate,
@@ -45,6 +48,47 @@ class NotificationsService {
       sourceUsername: notification.sourceUsername,
       type: notification.type,
     }))
+  }
+
+  findAllForSite({
+    siteName,
+    findOptions,
+  }: {
+    siteName: string
+    findOptions?: FindOptions<Notification>
+  }): ResultAsync<Notification[], DatabaseError> {
+    return ResultAsync.fromPromise(
+      this.repository.findAll({
+        include: [
+          {
+            model: Site,
+            as: "site",
+            required: true,
+            include: [
+              {
+                model: Repo,
+                required: true,
+                where: {
+                  name: siteName,
+                },
+              },
+            ],
+          },
+        ],
+        ...findOptions,
+      }),
+      (error) => {
+        logger.error(
+          `Error finding notifications for site ${siteName}: ${JSON.stringify(
+            error
+          )}`
+        )
+
+        return new DatabaseError(
+          `Error finding notifications for site ${siteName}`
+        )
+      }
+    )
   }
 
   async findAll({

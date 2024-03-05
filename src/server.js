@@ -320,6 +320,7 @@ const repoCheckerService = new RepoCheckerService({
 const auditLogsService = new AuditLogsService({
   collaboratorsService,
   isomerAdminsService,
+  notificationsService,
   reviewRequestService,
   sitesService,
   usersService,

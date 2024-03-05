@@ -1,7 +1,5 @@
 import rateLimit from "express-rate-limit"
 
-import { config } from "@config/config"
-
 import { BaseIsomerError } from "@root/errors/BaseError"
 import { isSecure } from "@root/utils/auth-utils"
 
@@ -16,8 +14,8 @@ const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 // but not on the other, leading to inconsistent behaviour.
 // eslint-disable-next-line import/prefer-default-export
 export const rateLimiter = rateLimit({
-  windowMs: config.get("auth.tokenExpiryInMs"),
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 1 hour)
+  windowMs: DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS,
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // We know that this key exists in a secure env (Cloudflare)

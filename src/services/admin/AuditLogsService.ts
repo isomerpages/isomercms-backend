@@ -6,6 +6,7 @@ import { ResultAsync, errAsync, okAsync } from "neverthrow"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { CollaboratorRoles, EFS_VOL_PATH_AUDIT_LOGS } from "@root/constants"
+import { User } from "@root/database/models/User"
 import AuditLogsError from "@root/errors/AuditLogsError"
 import DatabaseError from "@root/errors/DatabaseError"
 import { ForbiddenError } from "@root/errors/ForbiddenError"
@@ -345,7 +346,7 @@ class AuditLogsService {
       .andThen((user) =>
         // Step 2: Check if the user is a collaborator of ALL given repos
         ResultAsync.combine([
-          okAsync(user),
+          okAsync<User, never>(user),
           ...repoNames.map((repoName) =>
             ResultAsync.fromPromise(
               this.collaboratorsService.getRole(repoName, user.id.toString()),

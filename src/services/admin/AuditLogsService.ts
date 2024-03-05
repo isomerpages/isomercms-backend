@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 
 import { Octokit } from "@octokit/rest"
+import moment from "moment-timezone"
 import { ResultAsync, errAsync, okAsync } from "neverthrow"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
@@ -157,8 +158,8 @@ class AuditLogsService {
       octokit.paginate(octokit.repos.listCommits, {
         owner: "isomerpages",
         repo: sessionData.siteName,
-        since: sinceDate,
-        until: untilDate,
+        since: moment(sinceDate).startOf("day").toISOString(),
+        until: moment(untilDate).endOf("day").toISOString(),
         per_page: 100,
       }),
       (error) => {
@@ -246,8 +247,6 @@ class AuditLogsService {
           octokit.paginate(octokit.pulls.list, {
             owner: "isomerpages",
             repo: sessionData.siteName,
-            since: sinceDate,
-            until: untilDate,
             per_page: 100,
             state: "closed",
             base: "master",
@@ -265,7 +264,16 @@ class AuditLogsService {
             )
           }
         )
-          .andThen((pulls) => okAsync(pulls.filter((pull) => pull.merged_at)))
+          .andThen((pulls) =>
+            okAsync(
+              pulls.filter(
+                (pull) =>
+                  pull.merged_at &&
+                  moment(sinceDate).startOf("day").isBefore(pull.merged_at) &&
+                  moment(untilDate).endOf("day").isAfter(pull.merged_at)
+              )
+            )
+          )
           .andThen((pulls) =>
             this.sitesService
               .getBySiteName(sessionData.siteName)

@@ -1,4 +1,8 @@
+import fs from "fs"
+import path from "path"
+
 import axios from "axios"
+import FormData from "form-data"
 
 import { config } from "@config/config"
 
@@ -37,19 +41,26 @@ class MailClient {
   async sendMail(
     recipient: string,
     subject: string,
-    body: string
+    body: string,
+    attachments?: string[]
   ): Promise<void> {
     const sendEndpoint = `${POSTMAN_API_URL}/transactional/email/send`
-    const email = {
-      subject,
-      from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
-      body,
-      recipient,
-      reply_to: "noreply@isomer.gov.sg",
-    }
+    const form = new FormData()
+    form.append("subject", subject)
+    form.append("from", "IsomerCMS <donotreply@isomer.gov.sg>")
+    form.append("body", body)
+    form.append("recipient", recipient)
+    form.append("reply_to", "noreply@isomer.gov.sg")
+    attachments?.forEach((attachment) => {
+      form.append(
+        "attachments",
+        fs.readFileSync(attachment),
+        path.basename(attachment)
+      )
+    })
 
     try {
-      const sendMailResponse = await axios.post<MailData>(sendEndpoint, email, {
+      const sendMailResponse = await axios.post<MailData>(sendEndpoint, form, {
         headers: {
           Authorization: `Bearer ${this.POSTMAN_API_KEY}`,
         },

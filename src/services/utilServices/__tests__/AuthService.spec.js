@@ -1,5 +1,7 @@
 const { validateStatus } = require("@utils/axios-utils")
 
+const { okAsync, errAsync } = require("neverthrow")
+
 jest.mock("axios", () => ({
   get: jest.fn(),
   post: jest.fn(),
@@ -148,12 +150,18 @@ describe("Auth Service", () => {
   describe("verifyOtp", () => {
     const mockOtp = "123456"
     it("should be able to verify otp, login, and return token if correct", async () => {
-      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => true)
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() =>
+        okAsync(true)
+      )
+      mockUsersService.loginWithEmail.mockResolvedValueOnce({
+        id: mockIsomerUserId,
+        email: mockEmail,
+      })
       jwtUtils.signToken.mockImplementationOnce(() => signedEmailToken)
 
-      await expect(
-        service.verifyOtp({ email: mockEmail, otp: mockOtp })
-      ).resolves.toEqual(signedEmailToken)
+      const result = await service.verifyOtp({ email: mockEmail, otp: mockOtp })
+
+      expect(result._unsafeUnwrap()).toEqual(signedEmailToken)
       expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
         mockOtp
@@ -162,7 +170,9 @@ describe("Auth Service", () => {
     })
 
     it("should throw an error if otp is incorrect", async () => {
-      mockUsersService.verifyEmailOtp.mockImplementationOnce(() => false)
+      mockUsersService.verifyEmailOtp.mockImplementationOnce(() =>
+        errAsync(new BadRequestError("Invalid OTP"))
+      )
 
       await expect(
         service.verifyOtp({ email: mockEmail, otp: mockOtp })

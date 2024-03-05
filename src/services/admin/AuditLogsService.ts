@@ -11,7 +11,7 @@ import AuditLogsError from "@root/errors/AuditLogsError"
 import DatabaseError from "@root/errors/DatabaseError"
 import { ForbiddenError } from "@root/errors/ForbiddenError"
 import logger from "@root/logger/logger"
-import { AuditLog, AuditableActivity } from "@root/types/auditLog"
+import { AuditLog, AuditableActivityNames } from "@root/types/auditLog"
 import { IsomerCommitMessage } from "@root/types/github"
 import { tokenServiceInstance } from "@services/db/TokenService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -201,7 +201,7 @@ class AuditLogsService {
                     .andThen((actorEmail) =>
                       okAsync({
                         timestamp: new Date(commit.commit.author?.date || ""),
-                        activity: AuditableActivity.SavedChanges,
+                        activity: AuditableActivityNames.SavedChanges,
                         actor: actorEmail,
                         page: parsedMessage.fileName || "",
                         remarks: parsedMessage.message,
@@ -230,9 +230,9 @@ class AuditLogsService {
                   return errAsync(error)
                 })
                 .andThen((actorEmail) =>
-                  okAsync({
+                  okAsync<AuditLog, never>({
                     timestamp: new Date(commit.commit.author?.date || ""),
-                    activity: AuditableActivity.SavedChanges,
+                    activity: AuditableActivityNames.SavedChanges,
                     actor: actorEmail,
                     page: "",
                     remarks: message,
@@ -285,9 +285,9 @@ class AuditLogsService {
                           "Error occurred while retrieving review request data from the database"
                         )
                       }
-                    ).map((reviewRequest) => ({
+                    ).map<AuditLog>((reviewRequest) => ({
                       timestamp: new Date(pull.merged_at || ""),
-                      activity: AuditableActivity.PublishedChanges,
+                      activity: AuditableActivityNames.PublishedChanges,
                       actor:
                         "requestor" in reviewRequest &&
                         reviewRequest.requestor.email

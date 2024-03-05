@@ -250,7 +250,9 @@ class UsersService {
     }
 
     // increment attempts
-    await otpEntry.update({ attempts: otpEntry.attempts + 1 })
+    await this.otpRepository.increment("attempts", {
+      where: { id: otpEntry.id },
+    })
 
     const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
     if (!isValidOtp) {

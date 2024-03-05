@@ -84,7 +84,6 @@ export class MediaRouter {
     { page: number; limit: number; search: string },
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
-    console.log("in listMediaDirectoryFiles")
     const { userWithSiteSessionData } = res.locals
 
     const { directoryName } = req.params

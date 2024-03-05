@@ -9,7 +9,7 @@ import { marked } from "marked"
 import { ResultAsync, errAsync, ok, okAsync } from "neverthrow"
 import Papa from "papaparse"
 import { ModelStatic } from "sequelize"
-import { SimpleGit } from "simple-git"
+import { CommitResult, PushResult, SimpleGit, Response } from "simple-git"
 
 import config from "@root/config/config"
 import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
@@ -293,6 +293,16 @@ export default class RepoCheckerService {
       .mapErr((error) => new SiteCheckerError(`${error}`))
   }
 
+  getResourceRoomPath(repoPath: string) {
+    const configPath = path.join(repoPath, "_config.yml")
+    const fileContent = fs.readFileSync(configPath, "utf8")
+    const resourceRoom = fileContent
+      .split("resources_name: ")[1]
+      .split("\n")[0]
+      .trim()
+    return resourceRoom
+  }
+
   checker(repo: string): ResultAsync<RepoError[], SiteCheckerError> {
     const repoPath = path.join(EFS_VOL_PATH_STAGING, repo)
     const mdFiles = new Set<string>()
@@ -330,6 +340,7 @@ export default class RepoCheckerService {
           if (!filePermalink) {
             continue
           }
+          const normalisedPermalink = this.permalinkNormaliser(filePermalink)
 
           // we are only parsing out the front matter
           const fileContent = file.split("---")?.slice(2).join("---")
@@ -345,62 +356,59 @@ export default class RepoCheckerService {
               const anchorTags = dom.window.document.querySelectorAll("a")
               forEach(anchorTags, (tag) => {
                 const href = tag.getAttribute("href")
-                const text = tag.textContent || ""
-                if (!href) {
+                const text = tag.textContent
+
+                if (!text) {
+                  // while rendered in the dom, unlikely to be
+                  // noticed by end citizen.
+                  return
+                }
+                if (!tag.hasAttribute("href")) {
                   const error: RepoError = {
                     type: RepoErrorTypes.BROKEN_LINK,
                     linkToAsset: "",
                     viewablePageInCms: this.getPathInCms(fileName, repo),
-                    viewablePageInStaging: path.join(filePermalink),
+                    viewablePageInStaging: path.join(normalisedPermalink),
                     linkedText: text,
                   }
                   errors.push(error)
-                } else {
-                  const decodedHref = this.mediaPathDecoder(href)
-                  if (
-                    !this.isExternalLinkOrPageRef(decodedHref) &&
-                    !setOfAllMediaAndPagesPath.has(decodedHref) &&
-                    // Amplify supports adding of trailing slash
-                    !setOfAllMediaAndPagesPath.has(`${decodedHref}/`)
-                  ) {
-                    const error: RepoError = {
-                      type: RepoErrorTypes.BROKEN_LINK,
-                      linkToAsset: href,
+                }
+                if (!href) {
+                  // could be intentional linking to self
+                  // eg. <a href>Back to top</a>
+                  return
+                }
 
-                      viewablePageInCms: this.getPathInCms(fileName, repo),
-                      viewablePageInStaging: path.join(filePermalink),
-                      linkedText: text,
-                    }
-                    errors.push(error)
+                if (!this.hasValidReference(setOfAllMediaAndPagesPath, href)) {
+                  const error: RepoError = {
+                    type: RepoErrorTypes.BROKEN_LINK,
+                    linkToAsset: href,
+
+                    viewablePageInCms: this.getPathInCms(fileName, repo),
+                    viewablePageInStaging: path.join(normalisedPermalink),
+                    linkedText: text,
                   }
+                  errors.push(error)
                 }
               })
               const imgTags = dom.window.document.querySelectorAll("img")
               forEach(imgTags, (tag) => {
                 const src = tag.getAttribute("src")
                 if (!src) {
+                  // while rendered in the dom, unlikely to be
+                  // noticed by end citizen.
+                  return
+                }
+
+                //! todo: include check for post bundled files https://github.com/isomerpages/isomerpages-template/tree/staging/assets/img
+                if (!this.hasValidReference(setOfAllMediaAndPagesPath, src)) {
                   const error: RepoError = {
                     type: RepoErrorTypes.BROKEN_IMAGE,
-                    linkToAsset: "",
+                    linkToAsset: src,
                     viewablePageInCms: this.getPathInCms(fileName, repo),
-                    viewablePageInStaging: path.join(filePermalink),
+                    viewablePageInStaging: path.join(normalisedPermalink),
                   }
                   errors.push(error)
-                } else {
-                  const decodedSrc = this.mediaPathDecoder(src)
-                  //! todo: include check for post bundled files https://github.com/isomerpages/isomerpages-template/tree/staging/assets/img
-                  if (
-                    !this.isExternalLinkOrPageRef(decodedSrc) &&
-                    !setOfAllMediaAndPagesPath.has(decodedSrc)
-                  ) {
-                    const error: RepoError = {
-                      type: RepoErrorTypes.BROKEN_IMAGE,
-                      linkToAsset: src,
-                      viewablePageInCms: this.getPathInCms(fileName, repo),
-                      viewablePageInStaging: path.join(filePermalink),
-                    }
-                    errors.push(error)
-                  }
                 }
               })
               return ok(undefined)
@@ -420,6 +428,24 @@ export default class RepoCheckerService {
       })
   }
 
+  hasValidReference(setOfAllMediaAndPagesPath: Set<string>, src: string) {
+    if (this.isExternalLinkOrPageRef(src)) {
+      return true
+    }
+
+    const decodedSrc = this.mediaPathDecoder(src)
+
+    if (setOfAllMediaAndPagesPath.has(decodedSrc)) {
+      return true
+    }
+
+    // Amplify allows for trailing slash
+    if (setOfAllMediaAndPagesPath.has(`${decodedSrc}/`)) {
+      return true
+    }
+    return false
+  }
+
   reporter(repo: string, errors: RepoError[]): ResultAsync<RepoError[], never> {
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
     if (!fs.existsSync(folderPath)) {
@@ -433,16 +459,24 @@ export default class RepoCheckerService {
       fs.writeFileSync(filePath, stringifiedErrors)
     }
 
+    let gitOperations:
+      | Response<CommitResult>
+      | Response<PushResult> = this.git
+      .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+      .checkout("main")
+      .fetch()
+      .merge(["origin/main"])
+      .add(["."])
+      .commit(`Site checker logs added for ${repo}`)
+
+    const isProd = config.get("env") === "prod"
+    if (isProd) {
+      gitOperations = gitOperations.push()
+    }
+
     // pushing since there is no real time requirement for user
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-        .checkout("main")
-        .fetch()
-        .merge(["origin/main"])
-        .add(["."])
-        .commit(`Site checker logs added for ${repo}`)
-        .push(),
+    return ResultAsync.fromPromise<CommitResult | PushResult, SiteCheckerError>(
+      gitOperations,
       (error) => new SiteCheckerError(`${error}`)
     )
       .map(() => errors)
@@ -568,7 +602,7 @@ export default class RepoCheckerService {
     const paths = permalink.split("/")
     const initialPath = `/sites/${repoName}`
 
-    const isUngroupedPages = paths.length === 2
+    const isUngroupedPages = paths.length === 2 && paths[0] === "pages"
     if (isUngroupedPages) {
       const fileName = paths[1]
       return `${initialPath}/editPage/${fileName}`
@@ -578,7 +612,7 @@ export default class RepoCheckerService {
     if (isResource) {
       const resourceRoomName = paths[0]
       const resourceCategoryName = paths[1]
-      const resourceName = paths[2]
+      const resourceName = paths[3]
       return `${initialPath}/resourceRoom/${resourceRoomName}/resourceCategory/${resourceCategoryName}/editPage/${resourceName}`
     }
 
@@ -664,24 +698,15 @@ export default class RepoCheckerService {
 
   isExternalLinkOrPageRef(link: string) {
     // todo: check for schema rather than just substrings
-
-    const incorrectRef =
-      link.includes(".netlify.app") ||
-      link.includes(".amplifyapp.com") ||
-      link.includes("https://raw.githubusercontent.com/isomerpages/")
-
-    if (incorrectRef) {
-      return false
-    }
-
+    const trimmedLink = link.trim()
     return (
       // intentionally allowing http to lessen user confusion
-      link.startsWith("http://") ||
-      link.startsWith("https://") ||
-      link.startsWith("mailto:") ||
-      link.startsWith("#") ||
-      link.startsWith("tel:") ||
-      link.startsWith("sms:")
+      trimmedLink.startsWith("http://") ||
+      trimmedLink.startsWith("https://") ||
+      trimmedLink.startsWith("mailto:") ||
+      trimmedLink.startsWith("#") ||
+      trimmedLink.startsWith("tel:") ||
+      trimmedLink.startsWith("sms:")
     )
   }
 
@@ -705,8 +730,16 @@ export default class RepoCheckerService {
 
   mediaPathDecoder = (mediaPath: string) => {
     for (let i = 0; i < ALLOWED_FILE_EXTENSIONS.length; i += 1) {
-      if (mediaPath.toLowerCase().endsWith(ALLOWED_FILE_EXTENSIONS[i])) {
-        return decodeURI(mediaPath)
+      let pathWithoutQueryParams = mediaPath
+      if (mediaPath.includes("?")) {
+        pathWithoutQueryParams = mediaPath.split("?").slice(0, -1).join("")
+      }
+      if (
+        pathWithoutQueryParams
+          .toLowerCase()
+          .endsWith(ALLOWED_FILE_EXTENSIONS[i])
+      ) {
+        return decodeURIComponent(pathWithoutQueryParams)
       }
     }
     return mediaPath
@@ -819,6 +852,29 @@ export default class RepoCheckerService {
     })
   }
 
+  permalinkNormaliser(permalink: string) {
+    let finalPermalink = permalink
+
+    if (finalPermalink.startsWith(`'`)) {
+      finalPermalink = finalPermalink.slice(1)
+    }
+    if (finalPermalink.endsWith(`'`)) {
+      finalPermalink = finalPermalink.slice(0, -1)
+    }
+    if (finalPermalink.startsWith(`"`)) {
+      finalPermalink = finalPermalink.slice(1)
+    }
+    if (finalPermalink.endsWith(`"`)) {
+      finalPermalink = finalPermalink.slice(0, -1)
+    }
+
+    if (!finalPermalink.startsWith("/")) {
+      finalPermalink = `/${finalPermalink}`
+    }
+
+    return finalPermalink
+  }
+
   // todo: refactor to use neverthrow
   async getAllPermalinks(repoPath: string, mdFiles: Set<string>) {
     const setOfAllPermalinks = new Set<string>()
@@ -846,12 +902,16 @@ export default class RepoCheckerService {
             }
             errors.push(error)
           } else {
-            setOfAllPermalinks.add(permalink)
+            setOfAllPermalinks.add(this.permalinkNormaliser(permalink))
           }
         })
       })
 
     await Promise.all(promises)
+    const resourceRoom = this.getResourceRoomPath(repoPath)
+    if (resourceRoom) {
+      setOfAllPermalinks.add(this.permalinkNormaliser(resourceRoom))
+    }
 
     // this should be only after all files have been parsed
     return [setOfAllPermalinks, errors] as const

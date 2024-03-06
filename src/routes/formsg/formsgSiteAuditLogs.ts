@@ -48,7 +48,7 @@ export class FormsgSiteAuditLogsRouter {
       logger.error(
         "No requester email was provided in site audit logs form submission"
       )
-      return
+      return res.sendStatus(400)
     }
 
     const repoNamesFromTable = getFieldsFromTable(responses, REPO_NAME_FIELD)
@@ -57,7 +57,7 @@ export class FormsgSiteAuditLogsRouter {
       logger.error(
         "No repo names were provided in site audit logs form submission"
       )
-      return
+      return res.sendStatus(400)
     }
 
     repoNamesFromTable.forEach((repoName) => {

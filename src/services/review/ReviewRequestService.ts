@@ -163,21 +163,35 @@ export default class ReviewRequestService {
     this.apiService
       .getLatestLocalCommitOfPath(siteName, filename)
       .andThen((latestLog) => {
+        const lastEditedTime = new Date(latestLog.date).getTime()
         const { userId } = fromGithubCommitMessage(latestLog.message)
         return ResultAsync.fromPromise(
           this.users.findByPk(userId),
-          () => new DatabaseError()
-        ).map((author) => ({
-          lastEditedBy: author?.email || latestLog.author_email,
-          lastEditedTime: new Date(latestLog.date).getTime(),
-        }))
+          () => new DatabaseError(`Error while finding userId: ${userId}`)
+        )
+          .map((author) => ({
+            lastEditedBy: author?.email || latestLog.author_email,
+            lastEditedTime,
+          }))
+          .orElse((error) => {
+            logger.warn(
+              `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
+            )
+            return ok({
+              lastEditedBy: "Unknown",
+              lastEditedTime,
+            })
+          })
       })
-      .orElse(() =>
-        ok({
+      .orElse((error) => {
+        logger.warn(
+          `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
+        )
+        return ok({
           lastEditedBy: "Unknown",
           lastEditedTime: 0,
         })
-      )
+      })
 
   extractEditedItemInfo = (
     filename: string,

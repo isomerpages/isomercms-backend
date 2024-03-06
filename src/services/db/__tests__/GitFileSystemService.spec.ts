@@ -726,7 +726,7 @@ describe("GitFileSystemService", () => {
       const actual = await GitFileSystemService.getFilesChanged("fake-repo")
 
       expect(actual._unsafeUnwrap()).toEqual(expected)
-      expect(mockCreateLocalTrackingBranchIfNotExists).toHaveBeenCalledTimes(2)
+      expect(mockCreateLocalTrackingBranchIfNotExists).toHaveBeenCalled()
     })
 
     it("should return GitFileSystemError if an error occurred when getting the git diff", async () => {
@@ -734,10 +734,7 @@ describe("GitFileSystemService", () => {
         diff: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
-      const actual = await GitFileSystemService.getFilesChanged(
-        "fake-repo",
-        "fake-dir/fake-file"
-      )
+      const actual = await GitFileSystemService.getFilesChanged("fake-repo")
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })

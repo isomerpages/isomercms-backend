@@ -339,45 +339,38 @@ export default class GitFileSystemService {
   }
 
   /**
-   * Wrapper over `git diff --name-only` that also creates a local tracking branch for `base` and/or `head` if they do not exist.
-   * Note that `base` and `head` should be branch names, not commit hashes or other usually valid arguments for `git diff`.
+   * Wrapper over `git diff --name-only` that also creates `master` branch if it does not exist.
    */
-  getFilesChanged(
-    repoName: string,
-    base = "master",
-    head = "staging"
-  ): ResultAsync<string[], GitFileSystemError> {
-    if (base === head) {
-      return okAsync([])
-    }
-    return this.createLocalTrackingBranchIfNotExists(repoName, base)
-      .andThen(() => this.createLocalTrackingBranchIfNotExists(repoName, head))
-      .andThen(() => {
-        const efsVolPath = this.getEfsVolPathFromBranch(head)
-        return ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-            .diff([`${base}..${head}`, "--name-only"]),
-          (error) => {
-            logger.error(
-              `Error when getting diff files between "${base}" and "${head}": ${error}, when trying to access ${efsVolPath}/${repoName}`
+  getFilesChanged(repoName: string): ResultAsync<string[], GitFileSystemError> {
+    return this.createLocalTrackingBranchIfNotExists(
+      repoName,
+      "master"
+    ).andThen(() => {
+      const efsVolPath = this.getEfsVolPathFromBranch("staging")
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .diff(["master..staging", "--name-only"]),
+        (error) => {
+          logger.error(
+            `Error when getting diff files between master and staging: ${error}, when trying to access ${efsVolPath}/${repoName}`
+          )
+
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              "Unable to retrieve git diff info from disk"
             )
-
-            if (error instanceof GitError) {
-              return new GitFileSystemError(
-                "Unable to retrieve git diff info from disk"
-              )
-            }
-
-            return new GitFileSystemError("An unknown error occurred")
           }
-        ).map((files) =>
-          files
-            .trim()
-            .split("\n")
-            .filter((file) => file !== "")
-        )
-      })
+
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      ).map((files) =>
+        files
+          .trim()
+          .split("\n")
+          .filter((file) => file !== "")
+      )
+    })
   }
 
   /**

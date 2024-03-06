@@ -1319,51 +1319,6 @@ describe("GitFileSystemService", () => {
     })
   })
 
-  describe("mergeBranchToMaster", () => {
-    const spyEnsureCorrectBranch = jest.spyOn(
-      GitFileSystemService,
-      "ensureCorrectBranch"
-    )
-    const mockEnsureCorrectBranch = jest.fn().mockReturnValue(okAsync(true))
-
-    beforeAll(() => {
-      spyEnsureCorrectBranch.mockImplementation(mockEnsureCorrectBranch)
-    })
-
-    afterAll(() => {
-      spyEnsureCorrectBranch.mockRestore()
-    })
-
-    it("should merge a branch to master successfully", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        checkIsRepo: jest.fn().mockResolvedValueOnce(true),
-      })
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        remote: jest
-          .fn()
-          .mockResolvedValueOnce(
-            `git@github.com:${ISOMER_GITHUB_ORG_NAME}/fake-repo.git`
-          ),
-      })
-      const mockMergeFn = jest.fn().mockResolvedValueOnce(undefined)
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        merge: mockMergeFn,
-      })
-
-      const result = await GitFileSystemService.mergeStagingToMaster(
-        "fake-repo"
-      )
-
-      expect(result.isOk()).toBeTrue()
-      // should checkout to master to merge, then back to staging again
-      expect(mockEnsureCorrectBranch.mock.calls).toEqual([
-        ["fake-repo", "master"],
-        ["fake-repo", "staging"],
-      ])
-      expect(mockMergeFn).toHaveBeenCalledWith(["staging", "--no-ff"])
-    })
-  })
-
   describe("create", () => {
     it("should create a non-media file successfully", async () => {
       const expectedSha = "fake-hash"

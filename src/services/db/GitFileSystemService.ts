@@ -785,51 +785,6 @@ export default class GitFileSystemService {
     })
   }
 
-  mergeStagingToMaster(
-    repoName: string
-  ): ResultAsync<boolean, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPathFromBranch("staging")
-    return this.isValidGitRepo(repoName, "staging").andThen((isValid) => {
-      if (!isValid) {
-        return errAsync(
-          new GitFileSystemError(
-            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
-          )
-        )
-      }
-
-      return (
-        this.ensureCorrectBranch(repoName, "master")
-          .andThen(() =>
-            ResultAsync.fromPromise(
-              this.git
-                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                // --no-ff ensures there is a merge commit even if it could have been a fast-forward merge
-                // TODO: use GitHub PR merge commit message format when migrating off PR flow
-                .merge(["staging", "--no-ff"]),
-              (error) => {
-                logger.error(
-                  `Error when merging staging to master for ${repoName}: ${error}`
-                )
-
-                if (error instanceof GitError) {
-                  return new GitFileSystemError(
-                    "Unable to merge changes from staging to master"
-                  )
-                }
-
-                return new GitFileSystemError(
-                  "An unknown error occurred when merging staging to master"
-                )
-              }
-            )
-          )
-          // make sure to checkout back to staging after merge
-          .andThen(() => this.ensureCorrectBranch(repoName, "staging"))
-      )
-    })
-  }
-
   // Creates a file and the associated directory if it doesn't exist
   create(
     repoName: string,

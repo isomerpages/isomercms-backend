@@ -67,11 +67,13 @@ class AuditLogsService {
       this.isomerAdminsService.isUserIsomerAdmin(userId),
       (error) => {
         logger.error(
-          `Error getting user's Isomer admin status from the database: ${error}`
+          `Site audit log error: Unable to get user's Isomer admin status from the database: ${JSON.stringify(
+            error
+          )}`
         )
 
         return new DatabaseError(
-          "Error getting user's Isomer admin status from the database"
+          "Error getting user's permissions from the database"
         )
       }
     )
@@ -85,7 +87,9 @@ class AuditLogsService {
       .orElse(() =>
         ResultAsync.fromPromise(this.usersService.findById(userId), (error) => {
           logger.error(
-            `Error getting user data from the database using the user ID (${userId}): ${error}`
+            `Site audit log error: Unable to get user data from the database using the user ID (${userId}): ${JSON.stringify(
+              error
+            )}`
           )
 
           return new DatabaseError(
@@ -106,7 +110,9 @@ class AuditLogsService {
       this.usersService.findByGitHubId(gitHubId),
       (error) => {
         logger.error(
-          `Error getting user data from the database using the GitHub ID (${gitHubId}): ${error}`
+          `Site audit log error: Unable to get user data from the database using the GitHub ID (${gitHubId}): ${JSON.stringify(
+            error
+          )}`
         )
 
         return new DatabaseError(
@@ -125,11 +131,13 @@ class AuditLogsService {
             this.isomerAdminsService.isUserIsomerAdmin(user.id.toString()),
             (error) => {
               logger.error(
-                `Error getting user's Isomer admin status from the database: ${error}`
+                `Site audit log error: Unable to get user's Isomer admin status from the database: ${JSON.stringify(
+                  error
+                )}`
               )
 
               return new DatabaseError(
-                "Error getting user's Isomer admin status from the database"
+                "Error getting user's permissions from the database"
               )
             }
           ),
@@ -171,7 +179,7 @@ class AuditLogsService {
       }),
       (error) => {
         logger.error(
-          `Error occurred when getting the list of commits for the site ${
+          `Site audit log error: Unable to get the list of commits for the site ${
             sessionData.siteName
           } from GitHub: ${JSON.stringify(error)}`
         )
@@ -217,7 +225,9 @@ class AuditLogsService {
                     )
                 } catch (error) {
                   logger.error(
-                    `Error parsing JSON in commit ${commit.sha} from ${sessionData.siteName}: ${error}\n`
+                    `Site audit log error: Unable to parse JSON in commit ${
+                      commit.sha
+                    } from ${sessionData.siteName}: ${JSON.stringify(error)}\n`
                   )
                   return errAsync(
                     new AuditLogsError("Error parsing JSON in commit")
@@ -261,7 +271,7 @@ class AuditLogsService {
           }),
           (error) => {
             logger.error(
-              `Error occurred when getting the list of pull requests for the site ${
+              `Site audit log error: Unable to get the list of pull requests for the site ${
                 sessionData.siteName
               } from GitHub: ${JSON.stringify(error)}`
             )
@@ -295,7 +305,7 @@ class AuditLogsService {
                         ),
                         (error) => {
                           logger.error(
-                            `Error occurred while retrieving review request data from the database for pull request ${pull.number} of site ${sessionData.siteName}: ${error}`
+                            `Site audit log error: Unable to retrieve review request data from the database for pull request ${pull.number} of site ${sessionData.siteName}: ${error}`
                           )
                           return new DatabaseError(
                             "Error occurred while retrieving review request data from the database"
@@ -378,15 +388,20 @@ class AuditLogsService {
     )
 
     // Step 1: Check if the user exists
-    return ResultAsync.fromPromise(this.usersService.findByEmail(email), () => {
-      logger.error(
-        `Error occurred while retrieving user data from the database for email ${email}`
-      )
+    return ResultAsync.fromPromise(
+      this.usersService.findByEmail(email),
+      (error) => {
+        logger.error(
+          `Site audit log error: Unable to retrieve user data from the database for email ${email}: ${JSON.stringify(
+            error
+          )}`
+        )
 
-      return new DatabaseError(
-        "Error occurred while retrieving user data from the database"
-      )
-    })
+        return new DatabaseError(
+          "Error occurred while retrieving user data from the database"
+        )
+      }
+    )
       .andThen((user) => {
         if (!user) {
           logger.warn(`Email address ${email} is not registered on Isomer CMS`)
@@ -514,12 +529,12 @@ class AuditLogsService {
               ),
               (error) => {
                 logger.error(
-                  `Error occurred while writing audit log CSV file for repo ${siteName}: ${JSON.stringify(
+                  `Site audit log error: Unable to write audit log CSV file for repo ${siteName}: ${JSON.stringify(
                     error
                   )}`
                 )
                 return new AuditLogsError(
-                  `Error occurred while writing audit log CSV file for repo ${siteName}`
+                  `Unable to write audit log CSV file for repo ${siteName}`
                 )
               }
             ).map(() => csvFilePath)

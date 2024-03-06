@@ -464,7 +464,7 @@ class AuditLogsService {
         ResultAsync.combine(
           repoNames.map((repoName) => {
             const userSessionData = new UserWithSiteSessionData({
-              githubId: user.githubId,
+              githubId: "isomeradmin", // Fake GitHub ID, no real need for this here
               accessToken,
               isomerUserId: user.id.toString(),
               email,

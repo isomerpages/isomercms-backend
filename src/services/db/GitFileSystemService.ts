@@ -1827,7 +1827,10 @@ export default class GitFileSystemService {
   /**
    * Creates a new branch `branchName` to track `origin/branchName`, if it doesn't exist yet
    */
-  createLocalTrackingBranchIfNotExists(repoName: string, branchName: string) {
+  createLocalTrackingBranchIfNotExists(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
     return this.isLocalBranchPresent(repoName, branchName).andThen((exists) => {
       if (exists) {
         return okAsync(true)

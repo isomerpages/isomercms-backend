@@ -156,7 +156,10 @@ export default class ReviewRequestService {
     )
   }
 
-  extractEditMeta = (siteName: string, filename: string) =>
+  extractEditMeta = (
+    siteName: string,
+    filename: string
+  ): ResultAsync<WithEditMeta<unknown>, never> =>
     this.apiService
       .getLatestLocalCommitOfPath(siteName, filename)
       .andThen((latestLog) => {

@@ -562,7 +562,7 @@ export default class GitFileSystemService {
   pull(
     repoName: string,
     branchName: string
-  ): ResultAsync<string, GitFileSystemError> {
+  ): ResultAsync<boolean, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
@@ -579,29 +579,9 @@ export default class GitFileSystemService {
             .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
             .pull(),
           (error) => {
-            // Full error message 1: Your configuration specifies to merge
-            // with the ref 'refs/heads/staging' from the remote, but no
-            // such ref was fetched.
-            // Full error message 2: error: cannot lock ref
-            // 'refs/remotes/origin/staging': is at <new sha> but expected <old sha>
-            // Full error message 3: Cannot fast-forward your working tree.
-            // Full error message 4: Need to specify how to reconcile divergent branches.
-            // These are known errors that can be safely ignored
-            if (
-              error instanceof GitError &&
-              (error.message.includes("but no such ref was fetched.") ||
-                error.message.includes("error: cannot lock ref") ||
-                error.message.includes(
-                  "Cannot fast-forward your working tree"
-                ) ||
-                error.message.includes(
-                  "Need to specify how to reconcile divergent branches"
-                ))
-            ) {
-              return false
-            }
-
-            logger.error(`Error when pulling ${repoName}: ${error}`)
+            logger.error(
+              `Error when pulling ${branchName} for ${repoName}: ${error}`
+            )
 
             if (error instanceof GitError) {
               return new GitFileSystemError(
@@ -613,13 +593,7 @@ export default class GitFileSystemService {
           }
         )
           .map(() => true)
-          .orElse((error) => {
-            if (typeof error === "boolean") {
-              return okAsync(true)
-            }
-            return errAsync(error)
-          })
-          .map(() => `${efsVolPath}/${repoName}`)
+          .orElse((error) => errAsync(error))
       )
     })
   }

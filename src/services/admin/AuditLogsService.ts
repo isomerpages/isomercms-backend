@@ -4,6 +4,7 @@ import path from "path"
 import { Octokit } from "@octokit/rest"
 import moment from "moment-timezone"
 import { ResultAsync, errAsync, okAsync } from "neverthrow"
+import Papa from "papaparse"
 
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { CollaboratorRoles, EFS_VOL_PATH_AUDIT_LOGS } from "@root/constants"
@@ -467,12 +468,19 @@ class AuditLogsService {
       )
       .andThen((auditLogDtos) => {
         // Step 5: Prepare the audit log CSV files for each repo
-        const auditLogHeader = "Date,Time (UTC),Activity,User,Page,Remarks\n"
+        const auditLogHeaders = [
+          "Date",
+          "Time (UTC)",
+          "Activity",
+          "User",
+          "Page",
+          "Remarks",
+        ]
 
         return ResultAsync.combine(
           auditLogDtos.map(({ siteName, auditLogs, snapshotTime }) => {
-            const csvContent = auditLogs.reduce(
-              (csv, { timestamp, activity, actor, page, remarks }) => {
+            const csvContent = auditLogs.map(
+              ({ timestamp, activity, actor, page, remarks }) => {
                 const recordDate = timestamp.toISOString().split("T")[0]
                 const recordHour = timestamp
                   .getUTCHours()
@@ -488,16 +496,22 @@ class AuditLogsService {
                   .padStart(2, "0")
                 const recordTime = `${recordHour}:${recordMinute}:${recordSecond}`
 
-                return `${csv}${recordDate},${recordTime},${activity},"${actor}","${page}","${remarks}"\n`
-              },
-              auditLogHeader
+                return [recordDate, recordTime, activity, actor, page, remarks]
+              }
             )
             const csvFileDate = snapshotTime.toISOString().split("T")[0]
             const csvFileName = `audit-logs_${siteName}_${csvFileDate}_${formSubmissionId}.csv`
             const csvFilePath = path.join(EFS_VOL_PATH_AUDIT_LOGS, csvFileName)
 
             return ResultAsync.fromPromise(
-              fs.promises.writeFile(csvFilePath, csvContent, "utf-8"),
+              fs.promises.writeFile(
+                csvFilePath,
+                Papa.unparse({
+                  fields: auditLogHeaders,
+                  data: csvContent,
+                }),
+                "utf-8"
+              ),
               (error) => {
                 logger.error(
                   `Error occurred while writing audit log CSV file for repo ${siteName}: ${JSON.stringify(

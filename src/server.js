@@ -74,10 +74,12 @@ import { mailer } from "@services/utilServices/MailClient"
 import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
+import { FormsgSiteAuditLogsRouter } from "./routes/formsg/formsgSiteAuditLogs"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
+import AuditLogsService from "./services/admin/AuditLogsService"
 import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
@@ -315,6 +317,15 @@ const repoCheckerService = new RepoCheckerService({
   git: simpleGitInstance,
 })
 
+const auditLogsService = new AuditLogsService({
+  collaboratorsService,
+  isomerAdminsService,
+  notificationsService,
+  reviewRequestService,
+  sitesService,
+  usersService,
+})
+
 // poller site launch updates
 infraService.pollMessages()
 
@@ -399,6 +410,10 @@ const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
   repoCheckerService,
 })
 
+const formsgSiteAuditLogsRouter = new FormsgSiteAuditLogsRouter({
+  auditLogsService,
+})
+
 const app = express()
 
 app.use(helmet())
@@ -435,6 +450,7 @@ app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
 app.use("/formsg", formsgGGsRepairRouter.getRouter())
 app.use("/formsg", formsgSiteCheckerRouter.getRouter())
+app.use("/formsg", formsgSiteAuditLogsRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

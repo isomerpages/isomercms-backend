@@ -811,7 +811,9 @@ export default class GitFileSystemService {
             ResultAsync.fromPromise(
               this.git
                 .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                .merge(["staging", "--no-ff"]), // ensure there is a merge commit
+                // --no-ff ensures there is a merge commit even if it could have been a fast-forward merge
+                // TODO: use GitHub PR merge commit message format when migrating off PR flow
+                .merge(["staging", "--no-ff"]),
               (error) => {
                 logger.error(
                   `Error when merging staging to master for ${repoName}: ${error}`
@@ -1823,7 +1825,7 @@ export default class GitFileSystemService {
   }
 
   /**
-   * Does not create a new branch if it already exists
+   * Creates a new branch `branchName` to track `origin/branchName`, if it doesn't exist yet
    */
   createLocalTrackingBranchIfNotExists(repoName: string, branchName: string) {
     return this.isLocalBranchPresent(repoName, branchName).andThen((exists) => {

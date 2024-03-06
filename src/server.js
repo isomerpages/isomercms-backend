@@ -88,8 +88,8 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
-import ReviewCommentService from "./services/review/ReviewCommentService"
 import RepoCheckerService from "./services/review/RepoCheckerService"
+import ReviewCommentService from "./services/review/ReviewCommentService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
@@ -97,7 +97,7 @@ import { setBrowserPolyfills } from "./utils/growthbook-utils"
 
 const path = require("path")
 
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiryInMs")
 
 const sequelize = initSequelize([
   Site,
@@ -401,11 +401,6 @@ const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
 
 const app = express()
 
-if (isSecure) {
-  // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
-  // This is trusted because our security groups block all other access to the server
-  app.set("trust proxy", true)
-}
 app.use(helmet())
 
 // use growthbook across routes

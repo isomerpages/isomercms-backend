@@ -315,6 +315,7 @@ const repoCheckerService = new RepoCheckerService({
   gitFileSystemService,
   repoRepository: Repo,
   git: simpleGitInstance,
+  pageService,
 })
 
 const auditLogsService = new AuditLogsService({

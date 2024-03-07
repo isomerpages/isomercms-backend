@@ -15,7 +15,7 @@ interface FormsgSiteAuditLogsRouterProps {
 
 const SITE_AUDIT_LOGS_FORM_KEY = config.get("formSg.siteAuditLogsFormKey")
 
-const REQUESTER_EMAIL_FIELD = "Where should we send the email address to?"
+const REQUESTER_EMAIL_FIELD = "Which email address should we send the logs to?"
 const REPO_NAME_FIELD =
   "What is the name of the Isomer site that you need logs for? (Repo Name (in GitHub))"
 const LOGS_TIMEFRAME_FIELD = "I need a log of edits made in:"

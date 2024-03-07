@@ -10,9 +10,15 @@ import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
-import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
+import { lock, unlock } from "@utils/mutex-utils"
+
+import {
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+} from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
+import LockedError from "@root/errors/LockedError"
 import { consoleLogger } from "@root/logger/console.logger"
 import logger from "@root/logger/logger"
 import { attachFormSGHandler } from "@root/middleware"
@@ -107,19 +113,25 @@ export class FormsgGGsRepairRouter {
       logger.error("Requester email is not from @open.gov.sg")
       return
     }
+    res.sendStatus(200) // we have received the form and obtained relevant field
     this.handleGGsFormSubmission(repoNames, requesterEmail)
   }
 
   handleGGsFormSubmission = (repoNames: string[], requesterEmail: string) => {
-    const repairs: ResultAsync<string, GitFileSystemError>[] = []
+    const repairs: ResultAsync<string, GitFileSystemError | LockedError>[] = []
 
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
+    const LOCK_TIME_SECONDS = 15 * 60 // 15 minutes
     repoNames.forEach((repoName) => {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 
       repairs.push(
-        this.doesRepoNeedClone(repoName)
+        ResultAsync.fromPromise(
+          lock(repoName, LOCK_TIME_SECONDS),
+          (err) => new LockedError(`Unable to lock repo ${repoName}`)
+        )
+          .andThen(() => this.doesRepoNeedClone(repoName))
           .andThen(() => {
             const isStaging = true
             return (
@@ -162,6 +174,15 @@ export class FormsgGGsRepairRouter {
                 return okAsync(result)
               })
           )
+          .andThen((result) => {
+            // Failure to unlock is not blocking
+            ResultAsync.fromPromise(unlock(repoName), () => {
+              logger.error(
+                "Failed to unlock repo - repo will unlock after at most 15 min"
+              )
+            })
+            return okAsync(result)
+          })
       )
     })
 

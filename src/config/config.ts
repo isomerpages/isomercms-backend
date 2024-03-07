@@ -96,7 +96,7 @@ const config = convict({
       format: ["localhost", "cms.isomer.gov.sg", "isomer.gov.sg"],
       default: "localhost",
     },
-    tokenExpiryInMs: {
+    tokenExpiry: {
       doc: "Expiry duration for auth token in milliseconds",
       env: "AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS",
       format: "required-positive-number",

@@ -550,6 +550,36 @@ export default class GitFileSystemService {
       })
   }
 
+  fastForwardMaster(
+    repoName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch("master")
+    return this.isValidGitRepo(repoName, "master").andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
+        )
+      }
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          // fast forwards master to origin/master without requiring checkout
+          .fetch(["origin", "master:master"]),
+        (error) => {
+          logger.error(`Error when fetching master for ${repoName}: ${error}`)
+          if (error instanceof GitError) {
+            return new GitFileSystemError("Unable to fetch master branch")
+          }
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      )
+        .map(() => true)
+        .orElse((error) => errAsync(error))
+    })
+  }
+
   // Pull the latest changes from upstream Git hosting provider
   // TODO: Pulling is a very expensive operation, should find a way to optimise
   pull(

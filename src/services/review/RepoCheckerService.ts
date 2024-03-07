@@ -334,7 +334,7 @@ export default class RepoCheckerService {
         .orElse((error) => {
           // Some repos have an inconsistent structure, the entire site checker should not fail because of this
           logger.info(
-            `SiteCheckerError: Error getting viewable link in cms, ${error} for repo ${repoPath}`
+            `SiteCheckerInfo: Error getting viewable link in cms, ${error} for repo ${repoPath}`
           )
           return okAsync(mapOfMdFilesAndViewableLinkInCms)
         })

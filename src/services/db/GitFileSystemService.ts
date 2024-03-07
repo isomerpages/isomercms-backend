@@ -385,7 +385,8 @@ export default class GitFileSystemService {
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .log(["-1", branch, "--", path]), // adding -- allows us to get logs even for deleted files
+        // -1 to return latest commit only, -- to get logs even for deleted files
+        .log(["-1", branch, "--", path]),
       (error) => {
         logger.error(
           `Error when getting latest commit for "${path}" on "${branch}": ${error}, when trying to access ${efsVolPath}/${repoName}`

@@ -1194,7 +1194,7 @@ describe("ReviewRequestService", () => {
       const mockReviewRequestOpen = _.clone(MockReviewRequest)
       MockReviewApi.approvePullRequest.mockResolvedValueOnce(undefined)
       MockReviewApi.mergePullRequest.mockResolvedValueOnce(undefined)
-      MockReviewApi.fastForwardMaster.mockResolvedValueOnce(undefined)
+      MockReviewApi.fastForwardMaster.mockReturnValueOnce(okAsync(true))
 
       // Act
       await ReviewRequestService.mergeReviewRequest(mockReviewRequestOpen)

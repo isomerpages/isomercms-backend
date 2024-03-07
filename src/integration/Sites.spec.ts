@@ -52,8 +52,8 @@ import DynamoDBDocClient from "@root/services/infra/DynamoDBClient"
 import DynamoDBService from "@root/services/infra/DynamoDBService"
 import InfraService from "@root/services/infra/InfraService"
 import StepFunctionsService from "@root/services/infra/StepFunctionsService"
-import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import RepoCheckerService from "@root/services/review/RepoCheckerService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
 import MailClient from "@root/services/utilServices/MailClient"
 import GitFileSystemService from "@services/db/GitFileSystemService"
@@ -210,6 +210,7 @@ const repoCheckerService = new RepoCheckerService({
   repoRepository,
   gitFileSystemService,
   git,
+  pageService,
 })
 
 const SitesRouter = new _SitesRouter({

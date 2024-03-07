@@ -87,6 +87,10 @@ export const EFS_VOL_PATH_STAGING_LITE = path.join(
   config.get("aws.efs.volPath"),
   "repos-lite"
 )
+export const EFS_VOL_PATH_AUDIT_LOGS = path.join(
+  config.get("aws.efs.volPath"),
+  "audit-logs"
+)
 export const STAGING_BRANCH = "staging"
 export const STAGING_LITE_BRANCH = "staging-lite"
 export const PLACEHOLDER_FILE_NAME = ".keep"

@@ -1,6 +1,6 @@
 {
   "name": "isomercms",
-  "version": "0.68.2",
+  "version": "0.69.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -65,6 +65,7 @@
     "express-rate-limit": "^6.7.0",
     "express-session": "^1.17.3",
     "file-type": "^16.5.4",
+    "form-data": "^4.0.0",
     "glob": "^10.3.10",
     "helmet": "^4.6.0",
     "hot-shots": "^10.0.0",

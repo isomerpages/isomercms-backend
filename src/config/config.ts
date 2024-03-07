@@ -314,6 +314,13 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    siteAuditLogsFormKey: {
+      doc: "FormSG API key for site audit logs form",
+      env: "SITE_AUDIT_LOGS_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {

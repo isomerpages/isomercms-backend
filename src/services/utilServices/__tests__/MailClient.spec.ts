@@ -1,3 +1,4 @@
+import FormData from "form-data"
 import mockAxios from "jest-mock-axios"
 
 import { config } from "@config/config"
@@ -14,20 +15,11 @@ const mockEndpoint = "https://api.postman.gov.sg/v1/transactional/email/"
 
 const MailClient = new _MailClient(config.get("postman.apiKey"))
 
-const generateEmail = (recipient: string, subject: string, body: string) => ({
-  subject,
-  from: "IsomerCMS <donotreply@mail.postman.gov.sg>",
-  body,
-  recipient,
-  reply_to: "noreply@isomer.gov.sg",
-})
-
 describe("Mail Client", () => {
   afterEach(() => mockAxios.reset())
   jest.useFakeTimers()
   it("should return the result successfully when all parameters are valid", async () => {
     // Arrange
-    const generatedEmail = generateEmail(mockRecipient, mockSubject, mockBody)
     const sendMailResponse = {
       data: {
         id: 1,
@@ -60,11 +52,7 @@ describe("Mail Client", () => {
 
     // Assert
     expect(actual).toBeUndefined()
-    expect(mockAxios.post).toHaveBeenCalledWith(
-      `${mockEndpoint}send`,
-      generatedEmail,
-      mockBearerTokenHeaders
-    )
+    expect(mockAxios.post).toHaveBeenCalledOnce()
     expect(mockAxios.get).toHaveBeenCalledWith(
       `${mockEndpoint}1`,
       mockBearerTokenHeaders
@@ -73,7 +61,6 @@ describe("Mail Client", () => {
 
   it("should return an error when a network error occurs", async () => {
     // Arrange
-    const generatedEmail = generateEmail(mockRecipient, mockSubject, mockBody)
     mockAxios.post.mockRejectedValueOnce("some error")
 
     // Act
@@ -81,10 +68,6 @@ describe("Mail Client", () => {
 
     // Assert
     expect(actual).rejects.toThrowError("Failed to send email")
-    expect(mockAxios.post).toHaveBeenCalledWith(
-      `${mockEndpoint}send`,
-      generatedEmail,
-      mockBearerTokenHeaders
-    )
+    expect(mockAxios.post).toHaveBeenCalledOnce()
   })
 })

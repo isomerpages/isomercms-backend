@@ -302,11 +302,10 @@ export class PageService {
           : err(new MissingResourceRoomError())
     )
 
-  retrieveCmsPermalink = (
+  retrieveRelativeCmsPermalink = (
     pageName: PageName,
-    siteName: string
+    baseUrl: string
   ): ResultAsync<string, BaseIsomerError> => {
-    const baseUrl = `${FRONTEND_URL}/sites/${siteName}`
     switch (pageName.kind) {
       case "Homepage": {
         return okAsync(`${baseUrl}/homepage`)
@@ -348,6 +347,14 @@ export class PageService {
         )
       }
     }
+  }
+
+  retrieveCmsPermalink = (
+    pageName: PageName,
+    siteName: string
+  ): ResultAsync<string, BaseIsomerError> => {
+    const baseUrl = `${FRONTEND_URL}/sites/${siteName}`
+    return this.retrieveRelativeCmsPermalink(pageName, baseUrl)
   }
 
   retrieveStagingPermalink = (

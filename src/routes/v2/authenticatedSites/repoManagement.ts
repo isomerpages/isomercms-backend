@@ -11,6 +11,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import { attachSiteHandler } from "@root/middleware"
 import type { RequestHandler } from "@root/types"
+import { ResetRepoSchema } from "@root/validators/RequestSchema"
 import RepoManagementService from "@services/admin/RepoManagementService"
 
 interface RepoManagementRouterProps {
@@ -41,6 +42,11 @@ export class RepoManagementRouter {
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
     const { branchName, commitSha } = req.body
+    const { error } = ResetRepoSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
 
     return this.repoManagementService
       .resetRepo(userWithSiteSessionData, branchName, commitSha)

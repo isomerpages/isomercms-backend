@@ -31,6 +31,11 @@ import {
   BlobDiffDto,
   EditedItemDto,
 } from "@root/types/dto/review"
+import {
+  CreateCommentSchema,
+  CreateReviewRequestSchema,
+  UpdateReviewRequestSchema,
+} from "@root/validators/RequestSchema"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
 export class ReviewsRouter {
@@ -147,6 +152,11 @@ export class ReviewsRouter {
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { error } = CreateReviewRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     // Step 1: Check that the site exists
     const { siteName } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
@@ -566,6 +576,11 @@ export class ReviewsRouter {
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { error } = UpdateReviewRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
     const { userWithSiteSessionData } = res.locals
@@ -959,6 +974,11 @@ export class ReviewsRouter {
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { error } = CreateCommentSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { siteName, requestId } = req.params
     const { message } = req.body
     const { userWithSiteSessionData } = res.locals
@@ -1152,7 +1172,7 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(404).json({
+      return res.status(403).json({
         message: "Only the requestor can close the Review Request!",
       })
     }

@@ -221,7 +221,7 @@ export class SitesRouter {
   > = async (req, res) => {
     const { userWithSiteSessionData } = res.locals
     const result = await this.repoCheckerService.runBrokenLinkChecker(
-      userWithSiteSessionData.siteName
+      userWithSiteSessionData
     )
     if (result.isOk()) {
       return res.status(200).json(result.value)

@@ -975,9 +975,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
-      )
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -992,7 +994,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/123456`)
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/123456`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1007,9 +1013,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
-      )
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
 
       // Assert
       expect(actual.statusCode).toEqual(403)
@@ -1078,24 +1086,6 @@ describe("Review Requests Integration Tests", () => {
       })
     })
 
-    it("should close the review request successfully", async () => {
-      // Arrange
-      const app = generateRouterForUserWithSite(
-        subrouter,
-        MOCK_USER_SESSION_DATA_ONE,
-        MOCK_REPO_NAME_ONE
-      )
-      mockGenericAxios.patch.mockResolvedValueOnce(null)
-
-      // Act
-      const actual = await request(app).delete(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
-      )
-
-      // Assert
-      expect(actual.statusCode).toEqual(200)
-    })
-
     it("should return 404 if site is not found", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
@@ -1105,7 +1095,7 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
+      const actual = await request(app).delete(
         `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
       )
 
@@ -1122,7 +1112,7 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/123456`)
+      const actual = await request(app).delete(`/${MOCK_REPO_NAME_ONE}/123456`)
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1137,7 +1127,7 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
+      const actual = await request(app).delete(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
       )
 
@@ -1154,12 +1144,30 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
+      const actual = await request(app).delete(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
       )
 
       // Assert
       expect(actual.statusCode).toEqual(403)
+    })
+
+    it("should close the review request successfully", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.patch.mockResolvedValueOnce(null)
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
     })
   })
 
@@ -1871,9 +1879,11 @@ describe("Review Requests Integration Tests", () => {
       mockGenericAxios.post.mockResolvedValueOnce(null)
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
-      )
+      const actual = await request(app)
+        .post(
+          `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+        )
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(200)
@@ -1888,9 +1898,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
-      )
+      const actual = await request(app)
+        .post(
+          `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+        )
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1905,9 +1917,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
-      )
+      const actual = await request(app)
+        .post(
+          `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+        )
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1922,9 +1936,9 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/123456/comments`
-      )
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/123456/comments`)
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(404)

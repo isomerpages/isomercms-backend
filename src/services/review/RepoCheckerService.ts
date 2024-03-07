@@ -11,9 +11,13 @@ import Papa from "papaparse"
 import { ModelStatic } from "sequelize"
 import { CommitResult, PushResult, SimpleGit, Response } from "simple-git"
 
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import config from "@root/config/config"
 import { EFS_VOL_PATH_STAGING, STAGING_BRANCH } from "@root/constants"
 import { Deployment, Repo, Site, SiteMember } from "@root/database/models"
+import { BaseIsomerError } from "@root/errors/BaseError"
+import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
+import { NotFoundError } from "@root/errors/NotFoundError"
 import SiteCheckerError from "@root/errors/SiteCheckerError"
 import logger from "@root/logger/logger"
 import {
@@ -22,9 +26,10 @@ import {
   isRepoError,
   BrokenLinkErrorDto,
 } from "@root/types/siteChecker"
-import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
+import { extractPathInfo } from "@root/utils/files"
 
 import GitFileSystemService from "../db/GitFileSystemService"
+import { PageService } from "../fileServices/MdPageServices/PageService"
 
 const { JSDOM } = jsdom
 
@@ -33,6 +38,7 @@ interface RepoCheckerServiceProps {
   repoRepository: ModelStatic<Repo>
   gitFileSystemService: GitFileSystemService
   git: SimpleGit
+  pageService: PageService
 }
 
 export const SITE_CHECKER_REPO_NAME = "isomer-site-checker"
@@ -55,17 +61,20 @@ export default class RepoCheckerService {
 
   private readonly repoRepository: RepoCheckerServiceProps["repoRepository"]
 
+  private readonly pageService: RepoCheckerServiceProps["pageService"]
+
   constructor({
     siteMemberRepository,
     repoRepository,
     gitFileSystemService,
     git,
+    pageService,
   }: RepoCheckerServiceProps) {
     this.siteMemberRepository = siteMemberRepository
-
     this.gitFileSystemService = gitFileSystemService
     this.git = git
     this.repoRepository = repoRepository
+    this.pageService = pageService
   }
 
   isCurrentlyLocked(repo: string): ResultAsync<true, SiteCheckerError> {
@@ -252,7 +261,14 @@ export default class RepoCheckerService {
    */
   async runCheckerForReposInSeq(repos: string[]): Promise<void> {
     for (const repoName of repos) {
-      const result = await this.runBrokenLinkChecker(repoName, true)
+      // this is only triggered via the formsg for admins, therefore can construct a mock
+      const userWithSiteSessionData = ({
+        siteName: repoName,
+      } as unknown) as UserWithSiteSessionData
+      const result = await this.runBrokenLinkChecker(
+        userWithSiteSessionData,
+        true
+      )
       if (result.isErr()) {
         logger.error(`Something went wrong when checking repo: ${result.error}`)
       }
@@ -293,31 +309,60 @@ export default class RepoCheckerService {
       .mapErr((error) => new SiteCheckerError(`${error}`))
   }
 
-  getResourceRoomPath(repoPath: string) {
-    const configPath = path.join(repoPath, "_config.yml")
-    const fileContent = fs.readFileSync(configPath, "utf8")
-    const resourceRoom = fileContent
-      .split("resources_name: ")[1]
-      .split("\n")[0]
-      .trim()
-    return resourceRoom
+  getMapOfMdFilesAndViewableLinkInCms(
+    repoPath: string,
+    userWithSiteSessionData: UserWithSiteSessionData
+  ) {
+    return this.getListOfMarkdownFiles(repoPath).andThen((files) => {
+      const mapOfMdFilesAndViewableLinkInCms = new Map<string, string>()
+      const results: ResultAsync<
+        Map<string, string>,
+        NotFoundError | BaseIsomerError | MissingResourceRoomError
+      >[] = []
+      for (const file of files) {
+        results.push(
+          this.getPathInCms(
+            file,
+            userWithSiteSessionData
+          ).map((viewablePageInCms) =>
+            mapOfMdFilesAndViewableLinkInCms.set(file, viewablePageInCms)
+          )
+        )
+      }
+      return ResultAsync.combineWithAllErrors(results)
+        .map(() => mapOfMdFilesAndViewableLinkInCms)
+        .orElse((error) => {
+          // Some repos have an inconsistent structure, the entire site checker should not fail because of this
+          logger.info(
+            `SiteCheckerError: Error getting viewable link in cms, ${error} for repo ${repoPath}`
+          )
+          return okAsync(mapOfMdFilesAndViewableLinkInCms)
+        })
+    })
   }
 
-  checker(repo: string): ResultAsync<RepoError[], SiteCheckerError> {
+  checker(
+    repo: string,
+    userWithSiteSessionData: UserWithSiteSessionData
+  ): ResultAsync<RepoError[], SiteCheckerError> {
     const repoPath = path.join(EFS_VOL_PATH_STAGING, repo)
-    const mdFiles = new Set<string>()
+    let mapOfMdFilesAndViewableLinkInCms = new Map<string, string>()
     const errors: RepoError[] = []
-
-    return this.getListOfMarkdownFiles(repoPath)
-      .andThen((files) => {
-        files.forEach((file) => {
-          mdFiles.add(file)
-        })
+    return this.getMapOfMdFilesAndViewableLinkInCms(
+      repoPath,
+      userWithSiteSessionData
+    )
+      .andThen((map) => {
+        mapOfMdFilesAndViewableLinkInCms = map
         return this.getAllMediaPath(repoPath)
       })
       .andThen((setOfAllMediaPath) =>
         ResultAsync.fromPromise(
-          this.getAllPermalinks(repoPath, mdFiles),
+          this.getAllPermalinks(
+            repoPath,
+            [...mapOfMdFilesAndViewableLinkInCms.keys()],
+            userWithSiteSessionData
+          ),
           (error) => new SiteCheckerError(`${error}`)
         ).andThen(([setOfAllPermalinks, duplicatePermalinkErrors]) => {
           errors.push(...duplicatePermalinkErrors)
@@ -326,7 +371,10 @@ export default class RepoCheckerService {
       )
       .andThen((setOfAllMediaAndPagesPath) => {
         const findErrors = []
-        for (const fileName of mdFiles) {
+        for (const [
+          fileName,
+          viewablePageInCms,
+        ] of mapOfMdFilesAndViewableLinkInCms) {
           const file = fs.readFileSync(path.join(repoPath, fileName), "utf8")
 
           const filePermalink = file
@@ -340,7 +388,7 @@ export default class RepoCheckerService {
           if (!filePermalink) {
             continue
           }
-          const normalisedPermalink = this.permalinkNormaliser(filePermalink)
+          const normalisedPermalink = this.normalisePermalink(filePermalink)
 
           // we are only parsing out the front matter
           const fileContent = file.split("---")?.slice(2).join("---")
@@ -367,7 +415,7 @@ export default class RepoCheckerService {
                   const error: RepoError = {
                     type: RepoErrorTypes.BROKEN_LINK,
                     linkToAsset: "",
-                    viewablePageInCms: this.getPathInCms(fileName, repo),
+                    viewablePageInCms,
                     viewablePageInStaging: path.join(normalisedPermalink),
                     linkedText: text,
                   }
@@ -383,8 +431,7 @@ export default class RepoCheckerService {
                   const error: RepoError = {
                     type: RepoErrorTypes.BROKEN_LINK,
                     linkToAsset: href,
-
-                    viewablePageInCms: this.getPathInCms(fileName, repo),
+                    viewablePageInCms,
                     viewablePageInStaging: path.join(normalisedPermalink),
                     linkedText: text,
                   }
@@ -405,7 +452,7 @@ export default class RepoCheckerService {
                   const error: RepoError = {
                     type: RepoErrorTypes.BROKEN_IMAGE,
                     linkToAsset: src,
-                    viewablePageInCms: this.getPathInCms(fileName, repo),
+                    viewablePageInCms,
                     viewablePageInStaging: path.join(normalisedPermalink),
                   }
                   errors.push(error)
@@ -562,14 +609,14 @@ export default class RepoCheckerService {
    * As such, a user triggered operation should not be blocking, while an automated operation should be blocking.
    */
   runBrokenLinkChecker(
-    repo: string,
+    userWithSiteSessionData: UserWithSiteSessionData,
     isBlocking = false
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> {
     /**
      * To allow for an easy running of the script, we can temporarily clone
      * the repo to the EFS
      */
-
+    const { siteName: repo } = userWithSiteSessionData
     logger.info(`Link checker for ${repo} started`)
 
     // time the process taken to check the repo
@@ -583,11 +630,15 @@ export default class RepoCheckerService {
           if (isError) {
             // delete the error.log file + retry, safe operation since this is only user triggered and not automated
             blockingOperation = this.deleteErrorLog(repo).andThen(() =>
-              this.checkRepo(repo, startTime)
+              this.checkRepo(repo, startTime, userWithSiteSessionData)
             )
           } else {
             // this process can run async, so we can just return the loading state early
-            blockingOperation = this.checkRepo(repo, startTime)
+            blockingOperation = this.checkRepo(
+              repo,
+              startTime,
+              userWithSiteSessionData
+            )
           }
 
           if (isBlocking) {
@@ -598,47 +649,31 @@ export default class RepoCheckerService {
       )
   }
 
-  getPathInCms = (permalink: string, repoName: string) => {
-    const paths = permalink.split("/")
-    const initialPath = `/sites/${repoName}`
-
-    const isUngroupedPages = paths.length === 2 && paths[0] === "pages"
-    if (isUngroupedPages) {
-      const fileName = paths[1]
-      return `${initialPath}/editPage/${fileName}`
+  getPathInCms = (permalink: string, sessionData: UserWithSiteSessionData) => {
+    const pathInfo = extractPathInfo(permalink)
+    if (pathInfo.isErr()) {
+      return errAsync(new SiteCheckerError("Invalid permalink"))
     }
-
-    const isResource = !permalink.startsWith("_")
-    if (isResource) {
-      const resourceRoomName = paths[0]
-      const resourceCategoryName = paths[1]
-      const resourceName = paths[3]
-      return `${initialPath}/resourceRoom/${resourceRoomName}/resourceCategory/${resourceCategoryName}/editPage/${resourceName}`
-    }
-
-    const hasSubFolder = paths.length === 3
-    const folderName = paths[0].replace("_", "")
-
-    if (hasSubFolder) {
-      const subFolderName = paths[1]
-      const fileName = paths[2]
-      return `${initialPath}/folders/${folderName}/subfolders/${subFolderName}/editPage/${fileName}`
-    }
-
-    const fileName = paths[1]
-    return `${initialPath}/folders/${folderName}/editPage/${fileName}`
+    const { siteName } = sessionData
+    const baseUrl = `/sites/${siteName}`
+    return this.pageService
+      .parsePageName(pathInfo.value, sessionData)
+      .andThen((page) =>
+        this.pageService.retrieveRelativeCmsPermalink(page, baseUrl)
+      )
   }
 
   checkRepo = (
     repo: string,
-    start: [number, number]
+    start: [number, number],
+    userWithSiteSessionData: UserWithSiteSessionData
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> =>
     this.createLock(repo).andThen(() =>
       this.cloner(repo)
         .andThen((cloned) => {
           const repoExists = !cloned
 
-          return this.checker(repo)
+          return this.checker(repo, userWithSiteSessionData)
             .andThen((errors) => this.reporter(repo, errors))
             .map<BrokenLinkErrorDto>((errors) => ({
               status: "success",
@@ -729,20 +764,12 @@ export default class RepoCheckerService {
   }
 
   mediaPathDecoder = (mediaPath: string) => {
-    for (let i = 0; i < ALLOWED_FILE_EXTENSIONS.length; i += 1) {
-      let pathWithoutQueryParams = mediaPath
-      if (mediaPath.includes("?")) {
-        pathWithoutQueryParams = mediaPath.split("?").slice(0, -1).join("")
-      }
-      if (
-        pathWithoutQueryParams
-          .toLowerCase()
-          .endsWith(ALLOWED_FILE_EXTENSIONS[i])
-      ) {
-        return decodeURIComponent(pathWithoutQueryParams)
-      }
+    let pathWithoutQueryParams = mediaPath
+    if (!mediaPath.includes("?")) {
+      pathWithoutQueryParams = mediaPath.split("?").at(0) || ""
     }
-    return mediaPath
+
+    return decodeURIComponent(pathWithoutQueryParams)
   }
 
   getListOfMarkdownFiles(
@@ -852,21 +879,8 @@ export default class RepoCheckerService {
     })
   }
 
-  permalinkNormaliser(permalink: string) {
-    let finalPermalink = permalink
-
-    if (finalPermalink.startsWith(`'`)) {
-      finalPermalink = finalPermalink.slice(1)
-    }
-    if (finalPermalink.endsWith(`'`)) {
-      finalPermalink = finalPermalink.slice(0, -1)
-    }
-    if (finalPermalink.startsWith(`"`)) {
-      finalPermalink = finalPermalink.slice(1)
-    }
-    if (finalPermalink.endsWith(`"`)) {
-      finalPermalink = finalPermalink.slice(0, -1)
-    }
+  normalisePermalink(permalink: string) {
+    let finalPermalink = permalink.replace(/^['"]|['"]$/g, "")
 
     if (!finalPermalink.startsWith("/")) {
       finalPermalink = `/${finalPermalink}`
@@ -876,9 +890,13 @@ export default class RepoCheckerService {
   }
 
   // todo: refactor to use neverthrow
-  async getAllPermalinks(repoPath: string, mdFiles: Set<string>) {
+  async getAllPermalinks(
+    repoPath: string,
+    mdFiles: string[],
+    userWithSiteSessionData: UserWithSiteSessionData
+  ) {
     const setOfAllPermalinks = new Set<string>()
-    const files = [...mdFiles]
+    const files = mdFiles
     const errors: RepoError[] = []
     const promises = files
       .filter((file) => !file.startsWith(".") && file.endsWith(".md")) // should not have .git
@@ -902,15 +920,19 @@ export default class RepoCheckerService {
             }
             errors.push(error)
           } else {
-            setOfAllPermalinks.add(this.permalinkNormaliser(permalink))
+            setOfAllPermalinks.add(this.normalisePermalink(permalink))
           }
         })
       })
 
     await Promise.all(promises)
-    const resourceRoom = this.getResourceRoomPath(repoPath)
-    if (resourceRoom) {
-      setOfAllPermalinks.add(this.permalinkNormaliser(resourceRoom))
+
+    const resourceRoom = await this.pageService.extractResourceRoomName(
+      userWithSiteSessionData
+    )
+
+    if (resourceRoom.isOk()) {
+      setOfAllPermalinks.add(this.normalisePermalink(resourceRoom.value.name))
     }
 
     // this should be only after all files have been parsed

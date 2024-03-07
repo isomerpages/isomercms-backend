@@ -71,6 +71,7 @@ const MockPageService: {
   parsePageName: jest.fn(),
   retrieveStagingPermalink: jest.fn(),
   retrieveCmsPermalink: jest.fn(),
+  retrieveRelativeCmsPermalink: jest.fn(),
 }
 const MockReviewApi = {
   approvePullRequest: jest.fn(),

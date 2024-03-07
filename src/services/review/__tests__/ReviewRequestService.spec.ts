@@ -57,7 +57,9 @@ import {
 } from "@root/fixtures/review"
 import {
   mockEmail,
+  mockGrowthBook,
   mockUserWithSiteSessionData,
+  mockUserWithSiteSessionDataAndGrowthBook,
 } from "@root/fixtures/sessionData"
 import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
@@ -162,11 +164,13 @@ const SpyReviewRequestService = {
   getReviewRequest: jest.spyOn(ReviewRequestService, "getReviewRequest"),
 }
 
+const gbSpy = jest.spyOn(mockGrowthBook, "getFeatureValue")
+
 describe("ReviewRequestService", () => {
   // Prevent inter-test pollution of mocks
   afterEach(() => jest.clearAllMocks())
 
-  describe("compareDiff", () => {
+  describe("compareDiffLocal", () => {
     afterEach(() => MockUsersRepository.findByPk.mockReset())
     it("should return an array of edited item objects", async () => {
       // Arrange
@@ -216,7 +220,7 @@ describe("ReviewRequestService", () => {
       ])
 
       // Act
-      const actual = await ReviewRequestService.compareDiff(
+      const actual = await ReviewRequestService.compareDiffLocal(
         mockUserWithSiteSessionData,
         MOCK_STAGING_URL_GITHUB
       )
@@ -234,7 +238,7 @@ describe("ReviewRequestService", () => {
       const expected = ok([])
 
       // Act
-      const actual = await ReviewRequestService.compareDiff(
+      const actual = await ReviewRequestService.compareDiffLocal(
         mockUserWithSiteSessionData,
         MOCK_STAGING_URL_GITHUB
       )
@@ -978,12 +982,14 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
-      const compareDiff = jest.fn().mockReturnValue(mockFilesChanged)
-      ReviewRequestService.compareDiff = compareDiff
+      const compareDiffLocal = jest.fn().mockReturnValue(mockFilesChanged)
+      ReviewRequestService.compareDiffLocal = compareDiffLocal
+
+      gbSpy.mockReturnValueOnce(true)
 
       // Act
       const actual = await ReviewRequestService.getFullReviewRequest(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
         MOCK_REVIEW_REQUEST_ONE.id,
         MOCK_STAGING_URL_GITHUB
@@ -993,7 +999,7 @@ describe("ReviewRequestService", () => {
       expect(actual).toEqual(ok(expected))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalled()
-      expect(compareDiff).toHaveBeenCalled()
+      expect(compareDiffLocal).toHaveBeenCalled()
     })
 
     it("should filter out placeholder files from changedItems", async () => {
@@ -1062,12 +1068,13 @@ describe("ReviewRequestService", () => {
         err("not a config file")
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
-      const compareDiff = jest.fn().mockReturnValue(mockFilesChanged)
-      ReviewRequestService.compareDiff = compareDiff
+      const compareDiffLocal = jest.fn().mockReturnValue(mockFilesChanged)
+      ReviewRequestService.compareDiffLocal = compareDiffLocal
+      gbSpy.mockReturnValueOnce(true)
 
       // Act
       const actual = await ReviewRequestService.getFullReviewRequest(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
         MOCK_REVIEW_REQUEST_ONE.id,
         MOCK_STAGING_URL_GITHUB
@@ -1077,18 +1084,19 @@ describe("ReviewRequestService", () => {
       expect(actual).toEqual(ok(expected))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalled()
-      expect(compareDiff).toHaveBeenCalled()
+      expect(compareDiffLocal).toHaveBeenCalled()
     })
 
     it("should return an error if the review request is not found", async () => {
       // Arrange
       MockReviewRequestRepository.findOne.mockResolvedValueOnce(null)
-      const compareDiff = jest.fn()
-      ReviewRequestService.compareDiff = compareDiff
+      const compareDiffLocal = jest.fn()
+      ReviewRequestService.compareDiffLocal = compareDiffLocal
+      gbSpy.mockReturnValueOnce(true)
 
       // Act
       const actual = await ReviewRequestService.getFullReviewRequest(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
         MOCK_REVIEW_REQUEST_ONE.id,
         MOCK_STAGING_URL_GITHUB
@@ -1098,7 +1106,7 @@ describe("ReviewRequestService", () => {
       expect(actual).toEqual(err(new RequestNotFoundError()))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).not.toHaveBeenCalled()
-      expect(compareDiff).not.toHaveBeenCalled()
+      expect(compareDiffLocal).not.toHaveBeenCalled()
     })
   })
 

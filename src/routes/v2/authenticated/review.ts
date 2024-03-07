@@ -12,7 +12,11 @@ import {
 import UserSessionData from "@classes/UserSessionData"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
-import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
+import {
+  CollaboratorRoles,
+  FEATURE_FLAGS,
+  ReviewRequestStatus,
+} from "@root/constants"
 import { SiteMember, User } from "@root/database/models"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import { NotFoundError } from "@root/errors/NotFoundError"
@@ -125,12 +129,23 @@ export class ReviewsRouter {
 
     return this.sitesService
       .getStagingUrl(userWithSiteSessionData)
-      .andThen((stagingLink) =>
-        this.reviewRequestService.compareDiff(
+      .andThen((stagingLink) => {
+        if (
+          userWithSiteSessionData.growthbook?.getFeatureValue(
+            FEATURE_FLAGS.IS_LOCAL_DIFF_ENABLED,
+            false
+          )
+        ) {
+          return this.reviewRequestService.compareDiffLocal(
+            userWithSiteSessionData,
+            stagingLink
+          )
+        }
+        return this.reviewRequestService.compareDiff(
           userWithSiteSessionData,
           stagingLink
         )
-      )
+      })
       .map((items) => res.status(200).json({ items }))
       .mapErr((err) => {
         if (err instanceof MissingSiteError || err instanceof NotFoundError) {

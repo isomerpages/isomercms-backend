@@ -10,7 +10,7 @@ import { ALLOWED_FILE_EXTENSIONS } from "@utils/file-upload-utils"
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
-import { ReviewRequestStatus } from "@root/constants"
+import { FEATURE_FLAGS, ReviewRequestStatus } from "@root/constants"
 import { Repo, ReviewComment, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
@@ -19,12 +19,14 @@ import ConfigParseError from "@root/errors/ConfigParseError"
 import DatabaseError from "@root/errors/DatabaseError"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
+import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import PageParseError from "@root/errors/PageParseError"
 import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import logger from "@root/logger/logger"
 import {
+  BaseEditedItemDto,
   CommentItem,
   DashboardReviewRequestDto,
   DisplayedEditedItemDto,
@@ -38,7 +40,12 @@ import {
   WithEditMeta,
 } from "@root/types/dto/review"
 import { isIsomerError } from "@root/types/error"
-import { fromGithubCommitMessage } from "@root/types/github"
+import {
+  Commit,
+  fromGithubCommitMessage,
+  RawFileChangeInfo,
+  ShaMappings,
+} from "@root/types/github"
 import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
 import { PathInfo } from "@root/types/util"
@@ -51,6 +58,19 @@ import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
 import MailClient from "../utilServices/MailClient"
 
 import ReviewCommentService from "./ReviewCommentService"
+
+const injectDefaultEditMeta = ({
+  path,
+  name,
+}: BaseEditedItemDto): WithEditMeta<EditedPageDto> => ({
+  lastEditedBy: "Unknown",
+  lastEditedTime: 0,
+  type: "page",
+  cmsFileUrl: "",
+  stagingUrl: "",
+  path,
+  name,
+})
 
 /**
  * NOTE: This class does not belong as a subset of GitHub service.
@@ -111,7 +131,7 @@ export default class ReviewRequestService {
     this.sequelize = sequelize
   }
 
-  compareDiff = (
+  compareDiffLocal = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
   ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
@@ -234,6 +254,100 @@ export default class ReviewRequestService {
         })
       )
 
+  compareDiff = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<
+    WithEditMeta<DisplayedEditedItemDto>[],
+    NetworkError | DatabaseError
+  > =>
+    ResultAsync.fromPromise(
+      this.apiService.getCommitDiff(userWithSiteSessionData.siteName),
+      // TODO: Write a handler for github errors to our own internal errors
+      () => new NetworkError()
+    )
+      .andThen(({ files, commits }) =>
+        ResultAsync.fromPromise(
+          this.computeShaMappings(commits),
+          () => new DatabaseError()
+        ).map((mappings) => ({ mappings, files }))
+      )
+      .andThen(({ mappings, files }) =>
+        ResultAsync.combine(
+          this.compareDiffWithMappings(
+            userWithSiteSessionData,
+            stagingLink,
+            files,
+            mappings
+          ).map((res) =>
+            res
+              // NOTE: Need to type-hint so that we can recover
+              .map<WithEditMeta<EditedItemDto>>(_.identity)
+              .orElse((baseItem) => okAsync(injectDefaultEditMeta(baseItem)))
+          )
+        )
+      )
+      .map((changedItems) =>
+        changedItems.filter(
+          (changedItem): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+            changedItem.type !== "placeholder"
+        )
+      )
+
+  private compareDiffWithMappings = (
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink,
+    files: RawFileChangeInfo[],
+    mappings: ShaMappings
+  ): ResultAsync<WithEditMeta<EditedItemDto>, BaseEditedItemDto>[] => {
+    // Step 1: Get the site name
+    const { siteName } = sessionData
+
+    return files.map(({ filename, contents_url: contents }) => {
+      const extractedPathResult = extractPathInfo(filename)
+      if (extractedPathResult.isErr()) {
+        return errAsync({
+          name: "",
+          path: [],
+          type: "file",
+        })
+      }
+
+      const pathInfo = extractedPathResult.value
+
+      return this.extractConfigInfo(pathInfo)
+        .orElse(() => this.extractPlaceholderInfo(pathInfo))
+        .orElse(() => this.extractMediaInfo(pathInfo))
+        .asyncMap<EditedItemDto>(async (item) => item)
+        .orElse(() =>
+          this.extractPageInfo(pathInfo, sessionData, stagingLink, siteName)
+        )
+        .map<WithEditMeta<EditedItemDto>>((item) => {
+          const items = contents.split("?ref=")
+          // NOTE: We have to compute sha this way rather than
+          // taking the file sha.
+          // This is because the sha present on the file is
+          // a checksum of the files contents.
+          // And the actual commit sha is given by the ref param
+          const hash = items[items.length - 1]
+          return {
+            ...item,
+            lastEditedBy: mappings[hash]?.author || "Unknown user",
+            lastEditedTime: mappings[hash]?.unixTime || 0,
+          }
+        })
+
+        .orElse<BaseEditedItemDto>(() => {
+          const { path, name } = pathInfo
+          return errAsync({
+            name,
+            path: path.unwrapOr([]),
+            type: "page",
+          })
+        })
+    })
+  }
+
   extractPageInfo = (
     pathInfo: PathInfo,
     sessionData: UserWithSiteSessionData,
@@ -307,6 +421,26 @@ export default class ReviewRequestService {
       path: path.unwrapOr([""]),
       type: "placeholder",
     }))
+
+  computeShaMappings = async (commits: Commit[]): Promise<ShaMappings> => {
+    const mappings: ShaMappings = {}
+
+    // NOTE: commits from github are capped at 300.
+    // This implies that there might possibly be some files
+    // whose commit isn't being returned.
+    await Promise.all(
+      commits.map(async ({ commit, sha }) => {
+        const { userId } = fromGithubCommitMessage(commit.message)
+        const author = await this.users.findByPk(userId)
+        const lastChangedTime = new Date(commit.author.date).getTime()
+        mappings[sha] = {
+          author: author?.email || commit.author.name,
+          unixTime: lastChangedTime,
+        }
+      })
+    )
+    return mappings
+  }
 
   computeCommentData = async (
     comments: GithubCommentData[],
@@ -770,17 +904,31 @@ export default class ReviewRequestService {
             reviewRequestedTime: new Date(created_at).getTime(),
           }))
       )
-      .andThen((rest) =>
+      .andThen((rest) => {
         // Step 2: Get the list of changed files using Github's API
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
-        this.compareDiff(userWithSiteSessionData, stagingLink).map(
+        if (
+          userWithSiteSessionData.growthbook?.getFeatureValue(
+            FEATURE_FLAGS.IS_LOCAL_DIFF_ENABLED,
+            false
+          )
+        ) {
+          return this.compareDiffLocal(
+            userWithSiteSessionData,
+            stagingLink
+          ).map((changedItems) => ({
+            ...rest,
+            changedItems,
+          }))
+        }
+        return this.compareDiff(userWithSiteSessionData, stagingLink).map(
           (changedItems) => ({
             ...rest,
             changedItems,
           })
         )
-      )
+      })
   }
 
   updateReviewRequest = async (

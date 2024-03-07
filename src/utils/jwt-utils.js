@@ -7,7 +7,7 @@ const { config } = require("@config/config")
 
 const JWT_SECRET = config.get("auth.jwtSecret")
 const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry").toString()
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiryInMs").toString()
 
 const jwtUtil = {
   decodeToken: _.wrap(jwt.decode, (decode, token) => decode(token)),

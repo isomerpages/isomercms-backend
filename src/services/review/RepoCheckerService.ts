@@ -506,7 +506,12 @@ export default class RepoCheckerService {
       fs.writeFileSync(filePath, stringifiedErrors)
     }
 
-    let gitOperations:
+    const isProd = config.get("env") === "prod"
+    if (!isProd) {
+      return okAsync(errors)
+    }
+
+    const gitOperations:
       | Response<CommitResult>
       | Response<PushResult> = this.git
       .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
@@ -515,11 +520,7 @@ export default class RepoCheckerService {
       .merge(["origin/main"])
       .add(["."])
       .commit(`Site checker logs added for ${repo}`)
-
-    const isProd = config.get("env") === "prod"
-    if (isProd) {
-      gitOperations = gitOperations.push()
-    }
+      .push()
 
     // pushing since there is no real time requirement for user
     return ResultAsync.fromPromise<CommitResult | PushResult, SiteCheckerError>(

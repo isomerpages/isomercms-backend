@@ -983,7 +983,16 @@ export default class ReviewRequestService {
     )
 
     await this.apiService.mergePullRequest(repoNameInGithub, pullRequestNumber)
-    await this.apiService.fastForwardMaster(repoNameInGithub)
+
+    // RR merge should still succeed even if fast forward fails
+    await this.apiService
+      .fastForwardMaster(repoNameInGithub)
+      .orElse((error) => {
+        logger.error(
+          `Error when fast forwarding master for ${repoNameInGithub}: ${error}`
+        )
+        return ok(false)
+      })
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()

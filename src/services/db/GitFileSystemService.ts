@@ -563,21 +563,25 @@ export default class GitFileSystemService {
           )
         )
       }
-      return ResultAsync.fromPromise(
-        this.git
-          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-          // fast forwards master to origin/master without requiring checkout
-          .fetch(["origin", "master:master"]),
-        (error) => {
-          logger.error(`Error when fetching master for ${repoName}: ${error}`)
-          if (error instanceof GitError) {
-            return new GitFileSystemError("Unable to fetch master branch")
-          }
-          return new GitFileSystemError("An unknown error occurred")
-        }
-      )
+      return this.createLocalTrackingBranchIfNotExists(repoName, "master")
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              // fast forwards master to origin/master without requiring checkout
+              .fetch(["origin", "master:master"]),
+            (error) => {
+              logger.error(
+                `Error when fast forwarding master for ${repoName}: ${error}`
+              )
+              if (error instanceof GitError) {
+                return new GitFileSystemError("Unable to fetch master branch")
+              }
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
         .map(() => true)
-        .orElse((error) => errAsync(error))
     })
   }
 

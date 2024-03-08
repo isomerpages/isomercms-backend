@@ -528,6 +528,28 @@ describe("Users Router", () => {
       expect(actual.statusCode).toBe(expected)
     })
 
+    it("should return 400 when the request body format is wrong", async () => {
+      // Arrange
+      const expected = 400
+      const otp = "123456"
+      mockAxios.post.mockResolvedValueOnce(200)
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      // Act
+      const actual = await request(app)
+        .post("/mobile/verifyOtp")
+        .send({
+          mobile: [mockValidNumber, "98765432"],
+          otp,
+        })
+
+      // Assert
+      expect(actual.statusCode).toBe(expected)
+    })
+
     it("should return 400 when there is no otp", async () => {
       // Arrange
       const expected = 400

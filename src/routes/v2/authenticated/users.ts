@@ -110,14 +110,14 @@ export class UsersRouter {
     { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { mobile, otp } = req.body
-    if (!mobile || !validator.isMobilePhone(mobile)) {
-      throw new BadRequestError("Please provide a valid mobile number")
-    }
     const { error } = VerifyMobileNumberOtpSchema.validate(req.body)
     if (error)
       return res.status(400).json({
         message: `Invalid request format: ${error.message}`,
       })
+    if (!mobile || !validator.isMobilePhone(mobile)) {
+      throw new BadRequestError("Please provide a valid mobile number")
+    }
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
 

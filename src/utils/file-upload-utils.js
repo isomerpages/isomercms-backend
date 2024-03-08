@@ -47,7 +47,7 @@ const scanFileForVirus = (fileBuffer, timeout) => {
     apiInstance.scanFile(fileBuffer, (error, data) => {
       if (error) {
         logger.error(
-          `Error when calling Cloudmersive Virus Scan API: ${error.message}`
+          `Error when calling Cloudmersive Virus Scan API for the following file content: ${fileBuffer}: ${error.message}`
         )
         failure(error)
       } else {

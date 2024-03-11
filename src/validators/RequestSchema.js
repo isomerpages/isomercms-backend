@@ -450,6 +450,9 @@ const CreateCollaboratorRequestSchema = Joi.object().keys({
 
 const CollateUserFeedbackRequestSchema = Joi.object().keys({
   userType: Joi.string().valid(...Object.values(UserTypes)),
+  rating: Joi.number().required(),
+  feedback: Joi.string().required(),
+  email: Joi.string().required(),
 })
 
 const CreateReviewRequestSchema = Joi.object().keys({
@@ -473,7 +476,6 @@ const LaunchSiteSchema = Joi.object().keys({
 
 const GetPreviewInfoSchema = Joi.object().keys({
   sites: Joi.array().items(Joi.string()).required(),
-  email: EmailSchema,
 })
 
 const VerifyEmailOtpSchema = Joi.object().keys({

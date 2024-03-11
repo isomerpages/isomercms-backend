@@ -179,7 +179,7 @@ export class SitesRouter {
   getPreviewInfo: RequestHandler<
     { siteName: string },
     PreviewInfo[] | ResponseErrorBody,
-    { sites: string[]; email: string },
+    { sites: string[] },
     never,
     { userSessionData: UserSessionData }
   > = async (req, res) => {

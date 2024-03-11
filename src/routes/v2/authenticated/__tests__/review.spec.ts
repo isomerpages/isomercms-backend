@@ -182,6 +182,7 @@ describe("Review Requests Router", () => {
   })
 
   describe("createReviewRequest", () => {
+    const mockEmail = "mock@test.gov.sg"
     it("should return 200 with the pull request number of the created review request", async () => {
       // Arrange
       const mockPullRequestNumber = 1
@@ -235,7 +236,11 @@ describe("Review Requests Router", () => {
       // Act
       const response = await request(app)
         .post("/mockSite/review/request")
-        .send({})
+        .send({
+          reviewers: [mockEmail],
+          title: "Fake title",
+          description: "",
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -257,7 +262,11 @@ describe("Review Requests Router", () => {
       // Act
       const response = await request(app)
         .post("/mockSite/review/request")
-        .send({})
+        .send({
+          reviewers: [mockEmail],
+          title: "Fake title",
+          description: "",
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -614,10 +623,10 @@ describe("Review Requests Router", () => {
   })
 
   describe("updateReviewRequest", () => {
+    const mockReviewer = "reviewer@test.gov.sg"
     it("should return 200 with the updated review request", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: MOCK_USER_EMAIL_ONE } }
-      const mockReviewer = "reviewer@test.gov.sg"
 
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
@@ -659,7 +668,11 @@ describe("Review Requests Router", () => {
       )
 
       // Act
-      const response = await request(app).post(`/mockSite/review/12345`)
+      const response = await request(app)
+        .post(`/mockSite/review/12345`)
+        .send({
+          reviewers: [mockReviewer],
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -679,7 +692,11 @@ describe("Review Requests Router", () => {
       )
 
       // Act
-      const response = await request(app).post(`/mockSite/review/12345`)
+      const response = await request(app)
+        .post(`/mockSite/review/12345`)
+        .send({
+          reviewers: [mockReviewer],
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -700,7 +717,11 @@ describe("Review Requests Router", () => {
       )
 
       // Act
-      const response = await request(app).post(`/mockSite/review/12345`)
+      const response = await request(app)
+        .post(`/mockSite/review/12345`)
+        .send({
+          reviewers: [mockReviewer],
+        })
 
       // Assert
       expect(response.status).toEqual(403)
@@ -1274,7 +1295,7 @@ describe("Review Requests Router", () => {
       expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
-    it("should return 404 if the user is not the requestor of the review request", async () => {
+    it("should return 403 if the user is not the requestor of the review request", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: "other@test.gov.sg" } }
 
@@ -1286,7 +1307,7 @@ describe("Review Requests Router", () => {
       const response = await request(app).delete(`/mockSite/review/12345`)
 
       // Assert
-      expect(response.status).toEqual(404)
+      expect(response.status).toEqual(403)
       expect(mockSitesService.getBySiteName).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.getReviewRequest).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.closeReviewRequest).not.toHaveBeenCalled()

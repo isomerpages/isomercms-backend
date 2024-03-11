@@ -13,6 +13,10 @@ import UserSessionData from "@classes/UserSessionData"
 
 import DatabaseError from "@root/errors/DatabaseError"
 import { isError, RequestHandler } from "@root/types"
+import {
+  VerifyEmailOtpSchema,
+  VerifyMobileNumberOtpSchema,
+} from "@root/validators/RequestSchema"
 import UsersService from "@services/identity/UsersService"
 
 interface UsersRouterProps {
@@ -68,6 +72,11 @@ export class UsersRouter {
     { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { email, otp } = req.body
+    const { error } = VerifyEmailOtpSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
     const parsedEmail = email.toLowerCase()
@@ -120,6 +129,14 @@ export class UsersRouter {
     { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { mobile, otp } = req.body
+    const { error } = VerifyMobileNumberOtpSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
+    if (!mobile || !validator.isMobilePhone(mobile)) {
+      throw new BadRequestError("Please provide a valid mobile number")
+    }
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
 

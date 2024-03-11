@@ -6,6 +6,9 @@ const {
   MAX_TEXTCARDS_CARDS,
   MAX_INFOCOLS_BOXES,
 } = require("@root/constants")
+const { UserTypes } = require("@root/types/user")
+
+const EmailSchema = Joi.string().email().required()
 
 const FileSchema = Joi.object().keys({
   name: Joi.string().required(),
@@ -435,7 +438,61 @@ const UpdateRepoPasswordRequestSchema = Joi.object().keys({
   enablePassword: Joi.boolean().required(),
 })
 
+const VerifyRequestSchema = Joi.object().keys({
+  email: EmailSchema,
+  otp: Joi.string().required(),
+})
+
+const CreateCollaboratorRequestSchema = Joi.object().keys({
+  email: EmailSchema,
+  acknowledge: Joi.boolean().optional(),
+})
+
+const CollateUserFeedbackRequestSchema = Joi.object().keys({
+  userType: Joi.string().valid(...Object.values(UserTypes)),
+})
+
+const CreateReviewRequestSchema = Joi.object().keys({
+  reviewers: Joi.array().items(Joi.string()).required(),
+  title: Joi.string().required(),
+  description: Joi.string().allow(""),
+})
+
+const UpdateReviewRequestSchema = Joi.object().keys({
+  reviewers: Joi.array().items(Joi.string()).required(),
+})
+
+const CreateCommentSchema = Joi.object().keys({
+  message: Joi.string().required(),
+})
+
+const LaunchSiteSchema = Joi.object().keys({
+  siteUrl: Joi.string().required(),
+  useWwwSubdomain: Joi.boolean().required(),
+})
+
+const GetPreviewInfoSchema = Joi.object().keys({
+  sites: Joi.array().items(Joi.string()).required(),
+  email: EmailSchema,
+})
+
+const VerifyEmailOtpSchema = Joi.object().keys({
+  email: EmailSchema,
+  otp: Joi.string().length(6).required(),
+})
+
+const VerifyMobileNumberOtpSchema = Joi.object().keys({
+  mobile: Joi.string().required(),
+  otp: Joi.string().length(6).required(),
+})
+
+const ResetRepoSchema = Joi.object().keys({
+  branchName: Joi.string().required(),
+  commitSha: Joi.string().required(),
+})
+
 module.exports = {
+  EmailSchema,
   UpdateContactUsSchema,
   UpdateHomepageSchema,
   CreatePageRequestSchema,
@@ -461,4 +518,15 @@ module.exports = {
   UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
   UpdateRepoPasswordRequestSchema,
+  VerifyRequestSchema,
+  CreateCollaboratorRequestSchema,
+  CollateUserFeedbackRequestSchema,
+  CreateReviewRequestSchema,
+  UpdateReviewRequestSchema,
+  CreateCommentSchema,
+  LaunchSiteSchema,
+  GetPreviewInfoSchema,
+  VerifyEmailOtpSchema,
+  VerifyMobileNumberOtpSchema,
+  ResetRepoSchema,
 }

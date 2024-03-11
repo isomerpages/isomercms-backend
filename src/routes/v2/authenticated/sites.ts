@@ -21,6 +21,10 @@ import { RepositoryData } from "@root/types/repoInfo"
 import { BrokenLinkErrorDto } from "@root/types/siteChecker"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
 import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
+import {
+  GetPreviewInfoSchema,
+  LaunchSiteSchema,
+} from "@root/validators/RequestSchema"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
@@ -137,6 +141,11 @@ export class SitesRouter {
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = (req, res) => {
+    const { error } = LaunchSiteSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { userWithSiteSessionData } = res.locals
     const { email } = userWithSiteSessionData
     // Note, launching the site is an async operation,
@@ -173,10 +182,16 @@ export class SitesRouter {
     { sites: string[]; email: string },
     never,
     { userSessionData: UserSessionData }
-  > = async (req, res) =>
-    this.sitesService
+  > = async (req, res) => {
+    const { error } = GetPreviewInfoSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
+    return this.sitesService
       .getSitesPreview(req.body.sites, res.locals.userSessionData)
       .then((previews) => res.status(200).json(previews))
+  }
 
   getUserStagingSiteBuildStatus: RequestHandler<
     { siteName: string },

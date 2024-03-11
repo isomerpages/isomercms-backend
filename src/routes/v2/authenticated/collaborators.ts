@@ -13,6 +13,7 @@ import { attachSiteHandler } from "@root/middleware"
 import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 import { RequestHandler } from "@root/types"
 import { UserDto } from "@root/types/dto/review"
+import { CreateCollaboratorRequestSchema } from "@root/validators/RequestSchema"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 
 interface CollaboratorsRouterProps {
@@ -43,6 +44,11 @@ export class CollaboratorsRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     const { email, acknowledge = false } = req.body
+    const { error } = CreateCollaboratorRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { siteName } = req.params
     const { userWithSiteSessionData } = res.locals
     logger.info(

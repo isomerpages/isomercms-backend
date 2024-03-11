@@ -5,6 +5,7 @@ import { ISOMER_ADMIN_EMAIL } from "@root/constants"
 import { mailer } from "@root/services/utilServices/MailClient"
 import { RequestHandler } from "@root/types"
 import { FeedbackDto } from "@root/types/dto/feedback"
+import { CollateUserFeedbackRequestSchema } from "@root/validators/RequestSchema"
 import { statsService } from "@services/infra/StatsService"
 
 const getFeedbackHtml = ({
@@ -30,6 +31,11 @@ export class MetricsRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = (req, res) => {
     const { userType } = req.body
+    const { error } = CollateUserFeedbackRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     mailer.sendMail(
       ISOMER_ADMIN_EMAIL,
       "[METRICS] User feedback",

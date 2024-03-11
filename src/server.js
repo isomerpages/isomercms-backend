@@ -90,8 +90,8 @@ import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
-import ReviewCommentService from "./services/review/ReviewCommentService"
 import RepoCheckerService from "./services/review/RepoCheckerService"
+import ReviewCommentService from "./services/review/ReviewCommentService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
@@ -99,7 +99,7 @@ import { setBrowserPolyfills } from "./utils/growthbook-utils"
 
 const path = require("path")
 
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiryInMs")
 
 const sequelize = initSequelize([
   Site,

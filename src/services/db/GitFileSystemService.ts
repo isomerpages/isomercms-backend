@@ -1,4 +1,5 @@
 import fs from "fs"
+import path from "path"
 
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
@@ -567,7 +568,7 @@ export default class GitFileSystemService {
         .andThen(() =>
           ResultAsync.fromPromise(
             this.git
-              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .cwd({ path: path.join(efsVolPath, repoName), root: false })
               // fast forwards master to origin/master without requiring checkout
               .fetch(["origin", "master:master"]),
             (error) => {

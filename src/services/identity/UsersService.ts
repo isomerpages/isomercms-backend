@@ -241,7 +241,7 @@ class UsersService {
     // TODO: Change all the following to use AuthError after FE fix
     return okAsync(otp)
       .andThen((otp) => {
-        if (!otp || otp === "") {
+        if (!otp) {
           return errAsync(new BadRequestError("Empty OTP provided"))
         }
 

@@ -131,6 +131,17 @@ export default class ReviewRequestService {
     this.sequelize = sequelize
   }
 
+  compareDiff = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
+    userWithSiteSessionData.growthbook?.getFeatureValue(
+      FEATURE_FLAGS.IS_LOCAL_DIFF_ENABLED,
+      false
+    )
+      ? this.compareDiffLocal(userWithSiteSessionData, stagingLink)
+      : this.compareDiffGitHub(userWithSiteSessionData, stagingLink)
+
   compareDiffLocal = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
@@ -254,7 +265,7 @@ export default class ReviewRequestService {
         })
       )
 
-  compareDiff = (
+  compareDiffGitHub = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
   ): ResultAsync<
@@ -904,31 +915,17 @@ export default class ReviewRequestService {
             reviewRequestedTime: new Date(created_at).getTime(),
           }))
       )
-      .andThen((rest) => {
+      .andThen((rest) =>
         // Step 2: Get the list of changed files using Github's API
         // Refer here for details; https://docs.github.com/en/rest/commits/commits#compare-two-commits
         // Note that we need a triple dot (...) between base and head refs
-        if (
-          userWithSiteSessionData.growthbook?.getFeatureValue(
-            FEATURE_FLAGS.IS_LOCAL_DIFF_ENABLED,
-            false
-          )
-        ) {
-          return this.compareDiffLocal(
-            userWithSiteSessionData,
-            stagingLink
-          ).map((changedItems) => ({
-            ...rest,
-            changedItems,
-          }))
-        }
-        return this.compareDiff(userWithSiteSessionData, stagingLink).map(
+        this.compareDiff(userWithSiteSessionData, stagingLink).map(
           (changedItems) => ({
             ...rest,
             changedItems,
           })
         )
-      })
+      )
   }
 
   updateReviewRequest = async (

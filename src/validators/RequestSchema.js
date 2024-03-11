@@ -451,7 +451,7 @@ const CreateCollaboratorRequestSchema = Joi.object().keys({
 const CollateUserFeedbackRequestSchema = Joi.object().keys({
   userType: Joi.string().valid(...Object.values(UserTypes)),
   rating: Joi.number().required(),
-  feedback: Joi.string().required(),
+  feedback: Joi.string().optional(),
   email: Joi.string().required(),
 })
 

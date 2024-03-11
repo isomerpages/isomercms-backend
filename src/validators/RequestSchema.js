@@ -478,12 +478,12 @@ const GetPreviewInfoSchema = Joi.object().keys({
 
 const VerifyEmailOtpSchema = Joi.object().keys({
   email: EmailSchema,
-  otp: Joi.string().required(),
+  otp: Joi.string().length(6).required(),
 })
 
 const VerifyMobileNumberOtpSchema = Joi.object().keys({
   mobile: Joi.string().required(),
-  otp: Joi.string().required(),
+  otp: Joi.string().length(6).required(),
 })
 
 const ResetRepoSchema = Joi.object().keys({

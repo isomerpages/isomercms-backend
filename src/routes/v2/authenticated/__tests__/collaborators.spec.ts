@@ -13,7 +13,7 @@ import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 
 describe("Collaborator Router", () => {
-  const MOCK_EMAIL = "mockemail"
+  const MOCK_EMAIL = "mockemail@email.com"
   const MOCK_ACK_VALUE = true
   const mockCollaboratorsService = {
     create: jest.fn(),

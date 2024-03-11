@@ -40,7 +40,7 @@ const subrouter = express()
 // that allows us to set this properties also
 subrouter.use((req, res, next) => {
   const userSessionData = new UserSessionData({
-    isomerUserId: req.body.userId,
+    isomerUserId: mockIsomerUserId,
     githubId: req.body.githubId,
     email: req.body.email,
   })
@@ -223,7 +223,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp,
-        userId: mockIsomerUserId,
       })
       const updatedUser = await User.findOne({
         where: {
@@ -252,7 +251,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: wrongOtp,
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -274,7 +272,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: "",
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -296,7 +293,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: undefined,
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -326,7 +322,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp,
-        userId: mockIsomerUserId,
       })
       const oldOtp = otp
 
@@ -342,7 +337,6 @@ describe("Users Router", () => {
       const newActual = await request(app).post("/email/verifyOtp").send({
         email: mockValidEmail,
         otp: oldOtp,
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -366,7 +360,6 @@ describe("Users Router", () => {
         const actual = await request(app).post("/email/verifyOtp").send({
           email: mockValidEmail,
           otp: mockInvalidOtp,
-          userId: mockIsomerUserId,
         })
         const otpEntry = await Otp.findOne({
           where: { email: mockValidEmail },
@@ -377,12 +370,10 @@ describe("Users Router", () => {
 
         if (i <= maxNumOfOtpAttempts) {
           expect(otpEntry?.attempts).toBe(i)
-          expect(actual.body.error.message).toBe("OTP is not valid")
+          expect(actual.body.message).toBe("OTP is not valid")
         } else {
           expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
-          expect(actual.body.error.message).toBe(
-            "Max number of attempts reached"
-          )
+          expect(actual.body.message).toBe("Max number of attempts reached")
         }
       }
     })
@@ -402,7 +393,6 @@ describe("Users Router", () => {
         await request(app).post("/email/verifyOtp").send({
           email: mockValidEmail,
           otp: mockInvalidOtp,
-          userId: mockIsomerUserId,
         })
       }
 
@@ -504,7 +494,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp,
-        userId: mockIsomerUserId,
       })
       const updatedUser = await User.findOne({
         where: {
@@ -531,8 +520,29 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: wrongOtp,
-        userId: mockIsomerUserId,
       })
+
+      // Assert
+      expect(actual.statusCode).toBe(expected)
+    })
+
+    it("should return 400 when the request body format is wrong", async () => {
+      // Arrange
+      const expected = 400
+      const otp = "123456"
+      mockAxios.post.mockResolvedValueOnce(200)
+      await User.create({ id: mockIsomerUserId })
+      await request(app).post("/mobile/otp").send({
+        mobile: mockValidNumber,
+      })
+
+      // Act
+      const actual = await request(app)
+        .post("/mobile/verifyOtp")
+        .send({
+          mobile: [mockValidNumber, "98765432"],
+          otp,
+        })
 
       // Assert
       expect(actual.statusCode).toBe(expected)
@@ -551,7 +561,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: "",
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -571,7 +580,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: undefined,
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -596,7 +604,6 @@ describe("Users Router", () => {
       const actual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp,
-        userId: mockIsomerUserId,
       })
       const oldOtp = otp
 
@@ -612,7 +619,6 @@ describe("Users Router", () => {
       const newActual = await request(app).post("/mobile/verifyOtp").send({
         mobile: mockValidNumber,
         otp: oldOtp,
-        userId: mockIsomerUserId,
       })
 
       // Assert
@@ -634,7 +640,6 @@ describe("Users Router", () => {
         const actual = await request(app).post("/mobile/verifyOtp").send({
           mobile: mockValidNumber,
           otp: mockInvalidOtp,
-          userId: mockIsomerUserId,
         })
         const otpEntry = await Otp.findOne({
           where: { mobileNumber: mockValidNumber },
@@ -645,12 +650,10 @@ describe("Users Router", () => {
 
         if (i <= maxNumOfOtpAttempts) {
           expect(otpEntry?.attempts).toBe(i)
-          expect(actual.body.error.message).toBe("OTP is not valid")
+          expect(actual.body.message).toBe("OTP is not valid")
         } else {
           expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
-          expect(actual.body.error.message).toBe(
-            "Max number of attempts reached"
-          )
+          expect(actual.body.message).toBe("Max number of attempts reached")
         }
       }
     })
@@ -668,7 +671,6 @@ describe("Users Router", () => {
         await request(app).post("/mobile/verifyOtp").send({
           mobile: mockValidNumber,
           otp: mockInvalidOtp,
-          userId: mockIsomerUserId,
         })
       }
 

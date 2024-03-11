@@ -20,6 +20,7 @@ import { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { isPublicOfficerData, PublicOfficerData } from "@root/types/sgid"
 import { isSecure } from "@root/utils/auth-utils"
+import { EmailSchema } from "@root/validators/RequestSchema"
 import UsersService from "@services/identity/UsersService"
 import SgidAuthService from "@services/utilServices/SgidAuthService"
 
@@ -167,6 +168,11 @@ export class SgidAuthRouter {
     never
   > = async (req, res) => {
     const { email } = req.body
+    const { error } = EmailSchema.validate(email)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const token = req.cookies[SGID_MULTIUSER_COOKIE_NAME]
     res.clearCookie(SGID_MULTIUSER_COOKIE_NAME, { path: "/" })
 

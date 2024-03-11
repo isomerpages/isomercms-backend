@@ -21,7 +21,7 @@ import {
 export const mockAccessToken = "mockAccessToken"
 export const mockGithubId = "mockGithubId"
 export const mockIsomerUserId = "1"
-export const mockEmail = "mockEmail"
+export const mockEmail = "mockEmail@email.com"
 export const mockTreeSha = "mockTreeSha"
 export const mockCurrentCommitSha = "mockCurrentCommitSha"
 export const mockSiteName = "mockSiteName"

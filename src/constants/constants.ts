@@ -71,7 +71,12 @@ export const ISOMER_E2E_TEST_REPOS = [
 
 export const INACTIVE_USER_THRESHOLD_DAYS = 60
 export const GITHUB_ORG_REPOS_ENDPOINT = `https://api.github.com/orgs/${ISOMER_GITHUB_ORG_NAME}/repos`
-export const REDIRECTION_SERVER_IP = config.get("redirectionServer.elasticIp")
+
+export const REDIRECTION_SERVER_IPS = [
+  "18.136.36.203",
+  "18.138.108.8",
+  "18.139.47.66",
+]
 export const DNS_INDIRECTION_DOMAIN = "hostedon.isomer.gov.sg"
 export const DNS_INDIRECTION_REPO = "isomer-indirection"
 export const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"

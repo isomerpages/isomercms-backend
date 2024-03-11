@@ -21,7 +21,7 @@ import {
   SiteStatus,
   JobStatus,
   RedirectionTypes,
-  REDIRECTION_SERVER_IP,
+  REDIRECTION_SERVER_IPS,
   ISOMER_SUPPORT_EMAIL,
   DNS_INDIRECTION_DOMAIN,
 } from "@root/constants"
@@ -543,7 +543,9 @@ export default class InfraService {
 
       if (redirectionDomainList?.length) {
         newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
-        newLaunchParams.redirectionDomainTarget = REDIRECTION_SERVER_IP
+        // any IP is ok
+        const [redirectionServerIp] = REDIRECTION_SERVER_IPS
+        newLaunchParams.redirectionDomainTarget = redirectionServerIp
       }
 
       // Create launches records table
@@ -565,12 +567,12 @@ export default class InfraService {
       }
 
       if (newLaunchParams.redirectionDomainSource) {
-        const redirectionDomainObject = {
-          source: newLaunchParams.primaryDomainSource,
-          target: REDIRECTION_SERVER_IP,
+        const redirectionDomainObject = REDIRECTION_SERVER_IPS.map((ip) => ({
+          source: newLaunchParams.redirectionDomainSource as string, // checked above
+          target: ip,
           type: RedirectionTypes.A,
-        }
-        message.redirectionDomain = [redirectionDomainObject]
+        }))
+        message.redirectionDomain = redirectionDomainObject
       }
 
       await this.dynamoDBService.createItem(message)

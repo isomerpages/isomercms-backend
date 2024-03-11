@@ -31,13 +31,11 @@ export interface SiteLaunchMessage {
   requestorEmail: string
   agencyEmail: string
   githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
+  redirectionDomain?: {
+    source: string
+    target: string
+    type: string
+  }[]
   status?: SiteLaunchStatus
   statusMetadata?: string
 }

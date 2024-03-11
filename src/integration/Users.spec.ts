@@ -377,12 +377,10 @@ describe("Users Router", () => {
 
         if (i <= maxNumOfOtpAttempts) {
           expect(otpEntry?.attempts).toBe(i)
-          expect(actual.body.error.message).toBe("OTP is not valid")
+          expect(actual.body.message).toBe("OTP is not valid")
         } else {
           expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
-          expect(actual.body.error.message).toBe(
-            "Max number of attempts reached"
-          )
+          expect(actual.body.message).toBe("Max number of attempts reached")
         }
       }
     })
@@ -645,12 +643,10 @@ describe("Users Router", () => {
 
         if (i <= maxNumOfOtpAttempts) {
           expect(otpEntry?.attempts).toBe(i)
-          expect(actual.body.error.message).toBe("OTP is not valid")
+          expect(actual.body.message).toBe("OTP is not valid")
         } else {
           expect(otpEntry?.attempts).toBe(maxNumOfOtpAttempts)
-          expect(actual.body.error.message).toBe(
-            "Max number of attempts reached"
-          )
+          expect(actual.body.message).toBe("Max number of attempts reached")
         }
       }
     })

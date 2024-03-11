@@ -106,7 +106,7 @@ class AuthRouter {
         message: `Invalid request format: ${error.message}`,
       })
     const email = rawEmail.toLowerCase()
-    const userInfo = await this.authService.verifyOtp({ email, otp })
+    const userInfo = (await this.authService.verifyOtp({ email, otp })).value
     Object.assign(req.session, { userInfo })
     logger.info(`User ${userInfo.email} successfully logged in`)
     return res.sendStatus(200)

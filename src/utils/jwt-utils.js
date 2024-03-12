@@ -1,5 +1,5 @@
-const CryptoJS = require("crypto-js")
-const AES = require("crypto-js/aes")
+const crypto = require("crypto")
+
 const jwt = require("jsonwebtoken")
 const _ = require("lodash")
 
@@ -20,12 +20,29 @@ const jwtUtil = {
       expiresIn: AUTH_TOKEN_EXPIRY_MS,
     })
   ),
-  encryptToken: _.wrap(AES.encrypt, (encrypt, token) =>
-    encrypt(token, ENCRYPTION_SECRET).toString()
-  ),
-  decryptToken: _.wrap(AES.decrypt, (decrypt, token) =>
-    decrypt(token, ENCRYPTION_SECRET).toString(CryptoJS.enc.Utf8)
-  ),
+  encryptToken: (token) => {
+    // NOTE: The iv here is 16 characters long.
+    // This is because we generate 8 random bytes (1 byte = 8 bits)
+    // but hex is 4 bits per character..
+    const iv = crypto.randomBytes(8).toString("hex")
+    const cipher = crypto.createCipheriv("aes-256-cbc", ENCRYPTION_SECRET, iv)
+    let encrypted = cipher.update(token, "utf8", "base64")
+    encrypted += cipher.final("base64")
+
+    return `${iv}${encrypted}`
+  },
+  decryptToken: (encrypted) => {
+    const iv = encrypted.slice(0, 16)
+    const encryptedText = encrypted.slice(16)
+    const decipher = crypto.createDecipheriv(
+      "aes-256-cbc",
+      ENCRYPTION_SECRET,
+      iv
+    )
+    let decrypted = decipher.update(encryptedText, "base64", "utf8")
+    decrypted += decipher.final("utf8")
+    return decrypted
+  },
 }
 
 module.exports = jwtUtil

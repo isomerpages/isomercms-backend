@@ -1,5 +1,6 @@
 const express = require("express")
 const session = require("express-session")
+const { okAsync } = require("neverthrow")
 const request = require("supertest")
 
 const { config } = require("@config/config")
@@ -118,9 +119,11 @@ describe("Unlinked Pages Router", () => {
   })
   describe("verify", () => {
     const mockOtp = "123456"
-    mockAuthService.verifyOtp.mockImplementationOnce(() => ({
-      email: mockEmail,
-    }))
+    mockAuthService.verifyOtp.mockImplementationOnce(() =>
+      okAsync({
+        email: mockEmail,
+      })
+    )
     it("adds the cookie on login", async () => {
       mockAuthService.getAuthRedirectDetails.mockResolvedValueOnce(cookieToken)
       await request(app)

@@ -133,7 +133,7 @@ describe("GitFileSystemService", () => {
       const actual = result
         ._unsafeUnwrap()
         .sort((a, b) => a.name.localeCompare(b.name))
-      console.log(actual)
+
       expect(actual).toMatchObject([
         expectedAnotherFakeDir,
         expectedAnotherFakeFile,

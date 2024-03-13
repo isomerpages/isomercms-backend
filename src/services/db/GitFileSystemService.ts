@@ -1,4 +1,5 @@
 import fs from "fs"
+import path from "path"
 
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
@@ -7,6 +8,7 @@ import {
   SimpleGit,
   DefaultLogFields,
   LogResult,
+  ListLogLine,
 } from "simple-git"
 
 import logger from "@logger/logger"
@@ -337,6 +339,80 @@ export default class GitFileSystemService {
     )
   }
 
+  /**
+   * Wrapper over `git diff --name-only` that also creates `master` branch if it does not exist.
+   */
+  getFilesChanged(repoName: string): ResultAsync<string[], GitFileSystemError> {
+    return this.createLocalTrackingBranchIfNotExists(
+      repoName,
+      "master"
+    ).andThen(() => {
+      const efsVolPath = this.getEfsVolPathFromBranch("staging")
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .diff(["master..staging", "--name-only"]),
+        (error) => {
+          logger.error(
+            `Error when getting diff files between master and staging: ${error}, when trying to access ${efsVolPath}/${repoName}`
+          )
+
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              "Unable to retrieve git diff info from disk"
+            )
+          }
+
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      ).map((files) =>
+        files
+          .trim()
+          .split("\n")
+          .filter((file) => file !== "")
+      )
+    })
+  }
+
+  /**
+   * Get latest commit for a file path on a branch (including deleted files)
+   */
+  getLatestCommitOfPath(
+    repoName: string,
+    path: string,
+    branch = "staging"
+  ): ResultAsync<DefaultLogFields & ListLogLine, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch(branch)
+    return ResultAsync.fromPromise(
+      this.git
+        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+        // -1 to return latest commit only, -- to get logs even for deleted files
+        .log(["-1", branch, "--", path]),
+      (error) => {
+        logger.error(
+          `Error when getting latest commit for "${path}" on "${branch}": ${error}, when trying to access ${efsVolPath}/${repoName}`
+        )
+
+        if (error instanceof GitError) {
+          return new GitFileSystemError(
+            "Unable to retrieve latest log info from disk"
+          )
+        }
+
+        return new GitFileSystemError("An unknown error occurred")
+      }
+    ).andThen((logs) => {
+      if (logs.latest === null) {
+        return errAsync(
+          new GitFileSystemError(
+            `No commit was found for "${path}" on "${branch}"`
+          )
+        )
+      }
+      return okAsync(logs.latest)
+    })
+  }
+
   // Get the Git log of a particular branch
   getGitLog(
     repoName: string,
@@ -476,12 +552,46 @@ export default class GitFileSystemService {
       })
   }
 
+  fastForwardMaster(
+    repoName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
+    const efsVolPath = this.getEfsVolPathFromBranch("master")
+    return this.isValidGitRepo(repoName, "master").andThen((isValid) => {
+      if (!isValid) {
+        return errAsync(
+          new GitFileSystemError(
+            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+          )
+        )
+      }
+      return this.createLocalTrackingBranchIfNotExists(repoName, "master")
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git
+              .cwd({ path: path.join(efsVolPath, repoName), root: false })
+              // fast forwards master to origin/master without requiring checkout
+              .fetch(["origin", "master:master"]),
+            (error) => {
+              logger.error(
+                `Error when fast forwarding master for ${repoName}: ${error}`
+              )
+              if (error instanceof GitError) {
+                return new GitFileSystemError("Unable to fetch master branch")
+              }
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .map(() => true)
+    })
+  }
+
   // Pull the latest changes from upstream Git hosting provider
   // TODO: Pulling is a very expensive operation, should find a way to optimise
   pull(
     repoName: string,
     branchName: string
-  ): ResultAsync<string, GitFileSystemError> {
+  ): ResultAsync<boolean, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
     return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
       if (!isValid) {
@@ -498,29 +608,9 @@ export default class GitFileSystemService {
             .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
             .pull(),
           (error) => {
-            // Full error message 1: Your configuration specifies to merge
-            // with the ref 'refs/heads/staging' from the remote, but no
-            // such ref was fetched.
-            // Full error message 2: error: cannot lock ref
-            // 'refs/remotes/origin/staging': is at <new sha> but expected <old sha>
-            // Full error message 3: Cannot fast-forward your working tree.
-            // Full error message 4: Need to specify how to reconcile divergent branches.
-            // These are known errors that can be safely ignored
-            if (
-              error instanceof GitError &&
-              (error.message.includes("but no such ref was fetched.") ||
-                error.message.includes("error: cannot lock ref") ||
-                error.message.includes(
-                  "Cannot fast-forward your working tree"
-                ) ||
-                error.message.includes(
-                  "Need to specify how to reconcile divergent branches"
-                ))
-            ) {
-              return false
-            }
-
-            logger.error(`Error when pulling ${repoName}: ${error}`)
+            logger.error(
+              `Error when pulling ${branchName} for ${repoName}: ${error}`
+            )
 
             if (error instanceof GitError) {
               return new GitFileSystemError(
@@ -532,13 +622,7 @@ export default class GitFileSystemService {
           }
         )
           .map(() => true)
-          .orElse((error) => {
-            if (typeof error === "boolean") {
-              return okAsync(true)
-            }
-            return errAsync(error)
-          })
-          .map(() => `${efsVolPath}/${repoName}`)
+          .orElse((error) => errAsync(error))
       )
     })
   }
@@ -1721,6 +1805,36 @@ export default class GitFileSystemService {
         )
         .andThen(() => this.push(repoName, branchName, true))
         .map(() => undefined)
+    })
+  }
+
+  /**
+   * Creates a new branch `branchName` to track `origin/branchName`, if it doesn't exist yet
+   */
+  createLocalTrackingBranchIfNotExists(
+    repoName: string,
+    branchName: string
+  ): ResultAsync<boolean, GitFileSystemError> {
+    return this.isLocalBranchPresent(repoName, branchName).andThen((exists) => {
+      if (exists) {
+        return okAsync(true)
+      }
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .branch(["--track", branchName, `origin/${branchName}`]),
+        (error) => {
+          logger.error(`Error when creating local tracking branch: ${error}`)
+
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              `Unable to create local tracking branch ${branchName}`
+            )
+          }
+          return new GitFileSystemError("An unknown error occurred")
+        }
+      ).map(() => true)
     })
   }
 

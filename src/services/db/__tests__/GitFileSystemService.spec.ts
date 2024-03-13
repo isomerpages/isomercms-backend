@@ -24,6 +24,7 @@ import {
 } from "@fixtures/github"
 import { MOCK_USER_ID_ONE } from "@fixtures/users"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
+import { MOCK_LATEST_LOG_ONE } from "@root/fixtures/review"
 import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"
@@ -691,6 +692,94 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+  })
+
+  describe("getFilesChanged", () => {
+    const spyCreateLocalTrackingBranchIfNotExists = jest.spyOn(
+      GitFileSystemService,
+      "createLocalTrackingBranchIfNotExists"
+    )
+    const mockCreateLocalTrackingBranchIfNotExists = jest
+      .fn()
+      .mockReturnValue(okAsync(true))
+
+    beforeAll(() => {
+      spyCreateLocalTrackingBranchIfNotExists.mockImplementation(
+        mockCreateLocalTrackingBranchIfNotExists
+      )
+    })
+
+    afterAll(() => {
+      spyCreateLocalTrackingBranchIfNotExists.mockRestore()
+    })
+
+    it("should return the files changed and defensively try creating local branches", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        diff: jest
+          .fn()
+          .mockResolvedValueOnce("fake-dir/fake-file\nanother-fake-file\n"),
+      })
+
+      const expected = ["fake-dir/fake-file", "another-fake-file"]
+
+      const actual = await GitFileSystemService.getFilesChanged("fake-repo")
+
+      expect(actual._unsafeUnwrap()).toEqual(expected)
+      expect(mockCreateLocalTrackingBranchIfNotExists).toHaveBeenCalled()
+    })
+
+    it("should return GitFileSystemError if an error occurred when getting the git diff", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        diff: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const actual = await GitFileSystemService.getFilesChanged("fake-repo")
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("getLatestLocalCommitOfPath", () => {
+    it("should return the latest commit for a valid path", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({
+          latest: MOCK_LATEST_LOG_ONE,
+        }),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfPath(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrap()).toEqual(MOCK_LATEST_LOG_ONE)
+    })
+
+    it("should return GitFileSystemError if an error occurred when getting the git log", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfPath(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return GitFileSystemError if there were no commits found", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log: jest.fn().mockResolvedValueOnce({ latest: null }),
+      })
+
+      const result = await GitFileSystemService.getLatestCommitOfPath(
+        "fake-repo",
+        "fake-dir/fake-file"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
   })
 
@@ -3120,6 +3209,97 @@ describe("GitFileSystemService", () => {
       )
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("isLocalBranchPresent", () => {
+    it("should return true if the local branch exists", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branchLocal: jest.fn().mockResolvedValueOnce({
+          all: ["staging"],
+        }),
+      })
+
+      const actual = await GitFileSystemService.isLocalBranchPresent(
+        "fake-repo",
+        "staging"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual(true)
+    })
+
+    it("should return false if the local branch does not exist", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branchLocal: jest.fn().mockResolvedValueOnce({
+          all: ["staging"],
+        }),
+      })
+
+      const actual = await GitFileSystemService.isLocalBranchPresent(
+        "fake-repo",
+        "master"
+      )
+
+      expect(actual._unsafeUnwrap()).toEqual(false)
+    })
+
+    it("should return GitFileSystemError if an error occurred when checking if the local branch exists", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branchLocal: jest.fn().mockRejectedValueOnce(new GitError()),
+      })
+
+      const actual = await GitFileSystemService.isLocalBranchPresent(
+        "fake-repo",
+        "master"
+      )
+
+      expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+  })
+
+  describe("createLocalTrackingBranchIfNotExists", () => {
+    it("should create local tracking branch if it does not exist yet", async () => {
+      jest
+        .spyOn(GitFileSystemService, "isLocalBranchPresent")
+        .mockReturnValueOnce(okAsync(false))
+
+      const branch = jest.fn().mockResolvedValueOnce(undefined)
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        branch,
+      })
+
+      const result = await GitFileSystemService.createLocalTrackingBranchIfNotExists(
+        "fake-repo",
+        "master"
+      )
+
+      expect(result._unsafeUnwrap()).toEqual(true)
+      expect(branch).toHaveBeenCalledWith([
+        "--track",
+        "master",
+        "origin/master",
+      ])
+    })
+
+    it("should not create local tracking branch if it already exists", async () => {
+      jest
+        .spyOn(GitFileSystemService, "isLocalBranchPresent")
+        .mockReturnValueOnce(okAsync(true))
+
+      const branch = jest.fn()
+
+      MockSimpleGit.cwd.mockReturnValue({
+        branch,
+      })
+
+      const result = await GitFileSystemService.createLocalTrackingBranchIfNotExists(
+        "fake-repo",
+        "master"
+      )
+
+      expect(result._unsafeUnwrap()).toEqual(true)
+      expect(branch).not.toHaveBeenCalled()
     })
   })
 })

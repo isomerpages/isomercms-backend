@@ -19,8 +19,6 @@ import {
   mockCollaboratorContributor1,
   mockSiteOrmResponseWithAllCollaborators,
   MOCK_COMMIT_FILEPATH_TWO,
-  MOCK_COMMIT_MESSAGE_ONE,
-  MOCK_COMMIT_MESSAGE_TWO,
   MOCK_GITHUB_COMMENT_DATA_ONE,
   MOCK_GITHUB_COMMENT_DATA_TWO,
   MOCK_GITHUB_COMMENT_ONE,
@@ -36,6 +34,9 @@ import {
   MOCK_IDENTITY_EMAIL_ONE,
   MOCK_IDENTITY_EMAIL_THREE,
   MOCK_IDENTITY_EMAIL_TWO,
+  MOCK_COMMIT_FILENAME_ONE,
+  MOCK_COMMIT_FILEPATH_ONE,
+  MOCK_COMMIT_FILENAME_TWO,
 } from "@root/fixtures/identity"
 import { MOCK_STAGING_URL_GITHUB } from "@root/fixtures/repoInfo"
 import {
@@ -49,15 +50,21 @@ import {
   MOCK_PULL_REQUEST_ONE,
   MOCK_REVIEW_REQUEST_ONE,
   MOCK_REVIEW_REQUEST_VIEW_ONE,
+  MOCK_PULL_REQUEST_FILES_CHANGED,
+  MOCK_FILENAME_TO_LATEST_LOG_MAP,
   MOCK_REVIEW_REQUEST_META,
   MOCK_REVIEW_REQUEST_COMMENT,
 } from "@root/fixtures/review"
-import { mockUserWithSiteSessionData } from "@root/fixtures/sessionData"
+import {
+  mockEmail,
+  mockGrowthBook,
+  mockUserWithSiteSessionData,
+  mockUserWithSiteSessionDataAndGrowthBook,
+} from "@root/fixtures/sessionData"
 import { PageService } from "@root/services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import MailClient from "@root/services/utilServices/MailClient"
 import { GithubCommentData } from "@root/types/dto/review"
-import { Commit } from "@root/types/github"
 import RepoService from "@services/db/RepoService"
 import _ReviewRequestService from "@services/review/ReviewRequestService"
 
@@ -82,6 +89,9 @@ const MockReviewApi = {
   getComments: jest.fn(),
   getCommitDiff: jest.fn(),
   getPullRequest: jest.fn(),
+  getFilesChanged: jest.fn(),
+  getLatestLocalCommitOfPath: jest.fn(),
+  fastForwardMaster: jest.fn(),
 }
 
 const MockReviewCommentApi = {
@@ -151,46 +161,30 @@ const ReviewRequestService = new _ReviewRequestService(
 
 const SpyReviewRequestService = {
   computeCommentData: jest.spyOn(ReviewRequestService, "computeCommentData"),
-  computeShaMappings: jest.spyOn(ReviewRequestService, "computeShaMappings"),
   getComments: jest.spyOn(ReviewRequestService, "getComments"),
   getReviewRequest: jest.spyOn(ReviewRequestService, "getReviewRequest"),
 }
+
+const gbSpy = jest.spyOn(mockGrowthBook, "getFeatureValue")
 
 describe("ReviewRequestService", () => {
   // Prevent inter-test pollution of mocks
   afterEach(() => jest.clearAllMocks())
 
-  describe("compareDiff", () => {
+  describe("compareDiffLocal", () => {
+    afterEach(() => MockUsersRepository.findByPk.mockReset())
     it("should return an array of edited item objects", async () => {
       // Arrange
-      const mockCommitDiff = {
-        files: [
-          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
-          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
-        ],
-        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
-      }
-      const expected = ok([
-        {
-          type: "page",
-          name: MOCK_PULL_REQUEST_FILE_FILENAME_ONE,
-          path: [],
-          cmsFileUrl: "www.google.com",
-          stagingUrl: "www.google.com",
-          lastEditedBy: MOCK_GITHUB_NAME_ONE,
-          lastEditedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
-        },
-        {
-          type: "page",
-          name: MOCK_PULL_REQUEST_FILE_FILENAME_TWO,
-          path: MOCK_COMMIT_FILEPATH_TWO.split("/"),
-          cmsFileUrl: "www.google.com",
-          stagingUrl: "www.google.com",
-          lastEditedBy: MOCK_GITHUB_NAME_TWO,
-          lastEditedTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
-        },
-      ])
-      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
+      MockReviewApi.getFilesChanged.mockReturnValue(
+        okAsync(MOCK_PULL_REQUEST_FILES_CHANGED)
+      )
+      MockReviewApi.getLatestLocalCommitOfPath = jest.fn(
+        (repoName: string, path: string) =>
+          okAsync(MOCK_FILENAME_TO_LATEST_LOG_MAP[path])
+      )
+      MockUsersRepository.findByPk.mockResolvedValue({
+        email: mockEmail,
+      })
       MockPageService.parsePageName.mockReturnValue(okAsync("mock page name"))
       MockPageService.retrieveStagingPermalink.mockReturnValue(
         okAsync("www.google.com")
@@ -205,144 +199,56 @@ describe("ReviewRequestService", () => {
         err("not a config file")
       )
 
+      const expected = ok([
+        {
+          type: "page",
+          name: MOCK_COMMIT_FILENAME_ONE,
+          path: MOCK_COMMIT_FILEPATH_ONE.split("/").slice(0, -1),
+          cmsFileUrl: "www.google.com",
+          stagingUrl: "www.google.com",
+          lastEditedBy: mockEmail,
+          lastEditedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
+        },
+        {
+          type: "page",
+          name: MOCK_COMMIT_FILENAME_TWO,
+          path: MOCK_COMMIT_FILEPATH_TWO.split("/").slice(0, -1),
+          cmsFileUrl: "www.google.com",
+          stagingUrl: "www.google.com",
+          lastEditedBy: mockEmail,
+          lastEditedTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
+        },
+      ])
+
       // Act
-      const actual = await ReviewRequestService.compareDiff(
+      const actual = await ReviewRequestService.compareDiffLocal(
         mockUserWithSiteSessionData,
         MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
+      expect(MockReviewApi.getFilesChanged).toHaveBeenCalled()
+      expect(MockReviewApi.getLatestLocalCommitOfPath).toHaveBeenCalledTimes(2)
       expect(MockPageService.retrieveStagingPermalink).toHaveBeenCalled()
     })
 
-    it("should return an empty array if there are no file changes or commits", async () => {
+    it("should return an empty array if there are no file changes", async () => {
       // Arrange
-      const mockCommitDiff = {
-        files: [],
-        commits: [],
-      }
+      MockReviewApi.getFilesChanged.mockReturnValue(okAsync([]))
       const expected = ok([])
-      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
 
       // Act
-      const actual = await ReviewRequestService.compareDiff(
+      const actual = await ReviewRequestService.compareDiffLocal(
         mockUserWithSiteSessionData,
         MOCK_STAGING_URL_GITHUB
       )
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
+      expect(MockReviewApi.getFilesChanged).toHaveBeenCalled()
+      expect(MockReviewApi.getLatestLocalCommitOfPath).not.toHaveBeenCalled()
       expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
-    })
-
-    it("should return an empty array if there are no file changes only", async () => {
-      // Arrange
-      const mockCommitDiff = {
-        files: [],
-        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
-      }
-      const expected = ok([])
-      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
-
-      // Act
-      const actual = await ReviewRequestService.compareDiff(
-        mockUserWithSiteSessionData,
-        MOCK_STAGING_URL_GITHUB
-      )
-
-      // Assert
-      expect(actual).toEqual(expected)
-      expect(SpyReviewRequestService.computeShaMappings).toHaveBeenCalled()
-      expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
-    })
-  })
-
-  describe("computeShaMappings", () => {
-    it("should return the correct sha mappings for pure identity commits", async () => {
-      // Arrange
-      const mockCommits: Commit[] = [
-        MOCK_PULL_REQUEST_COMMIT_ONE,
-        MOCK_PULL_REQUEST_COMMIT_TWO,
-      ]
-      const expected = {
-        [MOCK_PULL_REQUEST_COMMIT_ONE.sha]: {
-          author: MOCK_IDENTITY_EMAIL_ONE,
-          unixTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
-        },
-        [MOCK_PULL_REQUEST_COMMIT_TWO.sha]: {
-          author: MOCK_IDENTITY_EMAIL_TWO,
-          unixTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
-        },
-      }
-      MockUsersRepository.findByPk.mockResolvedValueOnce({
-        email: MOCK_IDENTITY_EMAIL_ONE,
-      })
-      MockUsersRepository.findByPk.mockResolvedValueOnce({
-        email: MOCK_IDENTITY_EMAIL_TWO,
-      })
-
-      // Act
-      const actual = await ReviewRequestService.computeShaMappings(mockCommits)
-
-      // Assert
-      expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
-    })
-
-    it("should return the correct sha mappings for non-identity commits", async () => {
-      // Arrange
-      const mockNonIdentityCommitOne = _.set(
-        _.clone(MOCK_PULL_REQUEST_COMMIT_ONE),
-        "commit.message",
-        MOCK_COMMIT_MESSAGE_ONE
-      )
-      const mockNonIdentityCommitTwo = _.set(
-        _.clone(MOCK_PULL_REQUEST_COMMIT_TWO),
-        "commit.message",
-        MOCK_COMMIT_MESSAGE_TWO
-      )
-
-      const mockCommits: Commit[] = [
-        mockNonIdentityCommitOne,
-        mockNonIdentityCommitTwo,
-      ]
-      const expected = {
-        [MOCK_PULL_REQUEST_COMMIT_ONE.sha]: {
-          author: MOCK_GITHUB_NAME_ONE,
-          unixTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
-        },
-        [MOCK_PULL_REQUEST_COMMIT_TWO.sha]: {
-          author: MOCK_GITHUB_NAME_TWO,
-          unixTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
-        },
-      }
-      MockUsersRepository.findByPk.mockResolvedValueOnce(null)
-      MockUsersRepository.findByPk.mockResolvedValueOnce(null)
-
-      // Act
-      const actual = await ReviewRequestService.computeShaMappings(mockCommits)
-
-      // Assert
-      expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
-      expect(MockUsersRepository.findByPk).toHaveBeenNthCalledWith(1, undefined)
-      expect(MockUsersRepository.findByPk).toHaveBeenNthCalledWith(2, undefined)
-    })
-
-    it("should return an empty object if there are no commits", async () => {
-      // Arrange
-      const mockCommits: Commit[] = []
-      const expected = {}
-
-      // Act
-      const actual = await ReviewRequestService.computeShaMappings(mockCommits)
-
-      // Assert
-      expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).not.toHaveBeenCalled()
     })
   })
 
@@ -1061,10 +967,7 @@ describe("ReviewRequestService", () => {
   describe("getFullReviewRequest", () => {
     it("should return the full review request object successfully", async () => {
       // Arrange
-      const mockCommitDiff = {
-        files: [],
-        commits: [],
-      }
+      const mockFilesChanged = okAsync([])
       const expected = {
         reviewUrl: MOCK_REVIEW_REQUEST_ONE.reviewMeta.reviewLink,
         title: MOCK_PULL_REQUEST_ONE.title,
@@ -1080,11 +983,14 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
-      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
+      const compareDiffLocal = jest.fn().mockReturnValue(mockFilesChanged)
+      ReviewRequestService.compareDiffLocal = compareDiffLocal
+
+      gbSpy.mockReturnValueOnce(true)
 
       // Act
       const actual = await ReviewRequestService.getFullReviewRequest(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
         MOCK_REVIEW_REQUEST_ONE.id,
         MOCK_STAGING_URL_GITHUB
@@ -1094,19 +1000,31 @@ describe("ReviewRequestService", () => {
       expect(actual).toEqual(ok(expected))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalled()
-      expect(MockReviewApi.getCommitDiff).toHaveBeenCalled()
+      expect(compareDiffLocal).toHaveBeenCalled()
     })
 
     it("should filter out placeholder files from changedItems", async () => {
       // Arrange
-      const mockCommitDiff = {
-        files: [
-          MOCK_PULL_REQUEST_FILECHANGEINFO_ONE,
-          MOCK_PULL_REQUEST_FILECHANGEINFO_TWO,
-          MOCK_PULL_REQUEST_FILECHANGEINFO_PLACEHOLDER,
-        ],
-        commits: [MOCK_PULL_REQUEST_COMMIT_ONE, MOCK_PULL_REQUEST_COMMIT_TWO],
-      }
+      const mockFilesChanged = okAsync([
+        {
+          cmsFileUrl: "www.google.com",
+          lastEditedBy: MOCK_GITHUB_NAME_ONE,
+          lastEditedTime: new Date(MOCK_GITHUB_DATE_ONE).getTime(),
+          name: MOCK_PULL_REQUEST_FILE_FILENAME_ONE,
+          path: [],
+          stagingUrl: "www.google.com",
+          type: "page",
+        },
+        {
+          cmsFileUrl: "www.google.com",
+          lastEditedBy: MOCK_GITHUB_NAME_TWO,
+          lastEditedTime: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
+          name: MOCK_PULL_REQUEST_FILE_FILENAME_TWO,
+          path: MOCK_COMMIT_FILEPATH_TWO.split("/"),
+          stagingUrl: "www.google.com",
+          type: "page",
+        },
+      ])
       const expected = {
         reviewUrl: MOCK_REVIEW_REQUEST_ONE.reviewMeta.reviewLink,
         title: MOCK_PULL_REQUEST_ONE.title,
@@ -1151,11 +1069,13 @@ describe("ReviewRequestService", () => {
         err("not a config file")
       )
       MockReviewApi.getPullRequest.mockResolvedValueOnce(MOCK_PULL_REQUEST_ONE)
-      MockReviewApi.getCommitDiff.mockResolvedValueOnce(mockCommitDiff)
+      const compareDiffLocal = jest.fn().mockReturnValue(mockFilesChanged)
+      ReviewRequestService.compareDiffLocal = compareDiffLocal
+      gbSpy.mockReturnValueOnce(true)
 
       // Act
       const actual = await ReviewRequestService.getFullReviewRequest(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
         MOCK_REVIEW_REQUEST_ONE.id,
         MOCK_STAGING_URL_GITHUB
@@ -1165,16 +1085,19 @@ describe("ReviewRequestService", () => {
       expect(actual).toEqual(ok(expected))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).toHaveBeenCalled()
-      expect(MockReviewApi.getCommitDiff).toHaveBeenCalled()
+      expect(compareDiffLocal).toHaveBeenCalled()
     })
 
     it("should return an error if the review request is not found", async () => {
       // Arrange
       MockReviewRequestRepository.findOne.mockResolvedValueOnce(null)
+      const compareDiffLocal = jest.fn()
+      ReviewRequestService.compareDiffLocal = compareDiffLocal
+      gbSpy.mockReturnValueOnce(true)
 
       // Act
       const actual = await ReviewRequestService.getFullReviewRequest(
-        mockUserWithSiteSessionData,
+        mockUserWithSiteSessionDataAndGrowthBook,
         mockSiteOrmResponseWithAllCollaborators as Attributes<Site>,
         MOCK_REVIEW_REQUEST_ONE.id,
         MOCK_STAGING_URL_GITHUB
@@ -1184,7 +1107,7 @@ describe("ReviewRequestService", () => {
       expect(actual).toEqual(err(new RequestNotFoundError()))
       expect(MockReviewRequestRepository.findOne).toHaveBeenCalled()
       expect(MockReviewApi.getPullRequest).not.toHaveBeenCalled()
-      expect(MockReviewApi.getCommitDiff).not.toHaveBeenCalled()
+      expect(compareDiffLocal).not.toHaveBeenCalled()
     })
   })
 
@@ -1272,6 +1195,7 @@ describe("ReviewRequestService", () => {
       const mockReviewRequestOpen = _.clone(MockReviewRequest)
       MockReviewApi.approvePullRequest.mockResolvedValueOnce(undefined)
       MockReviewApi.mergePullRequest.mockResolvedValueOnce(undefined)
+      MockReviewApi.fastForwardMaster.mockReturnValueOnce(okAsync(true))
 
       // Act
       await ReviewRequestService.mergeReviewRequest(mockReviewRequestOpen)
@@ -1284,6 +1208,7 @@ describe("ReviewRequestService", () => {
       )
       expect(MockReviewApi.approvePullRequest).toHaveBeenCalled()
       expect(MockReviewApi.mergePullRequest).toHaveBeenCalled()
+      expect(MockReviewApi.fastForwardMaster).toHaveBeenCalled()
       expect(mockReviewRequestOpen.save).toHaveBeenCalled()
     })
   })

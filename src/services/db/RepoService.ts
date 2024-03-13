@@ -54,8 +54,20 @@ export default class RepoService extends GitHubService {
     this.gitFileCommitService = gitFileCommitService
   }
 
+  getFilesChanged(siteName: string) {
+    return this.gitFileSystemService.getFilesChanged(siteName)
+  }
+
+  getLatestLocalCommitOfPath(repoName: string, path: string) {
+    return this.gitFileSystemService.getLatestCommitOfPath(repoName, path)
+  }
+
   getCommitDiff(siteName: string, base?: string, head?: string) {
     return ReviewApi.getCommitDiff(siteName, base, head)
+  }
+
+  fastForwardMaster(siteName: string) {
+    return this.gitFileSystemService.fastForwardMaster(siteName)
   }
 
   createPullRequest(

@@ -1,4 +1,3 @@
-import { AxiosResponse } from "axios"
 import _, { sortBy, unionBy } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
@@ -11,13 +10,14 @@ import { ALLOWED_FILE_EXTENSIONS } from "@utils/file-upload-utils"
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
-import { ReviewRequestStatus } from "@root/constants"
+import { FEATURE_FLAGS, ReviewRequestStatus } from "@root/constants"
 import { Repo, ReviewComment, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import ConfigParseError from "@root/errors/ConfigParseError"
 import DatabaseError from "@root/errors/DatabaseError"
+import GitFileSystemError from "@root/errors/GitFileSystemError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
@@ -132,6 +132,140 @@ export default class ReviewRequestService {
   }
 
   compareDiff = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
+    userWithSiteSessionData.growthbook?.getFeatureValue(
+      FEATURE_FLAGS.IS_LOCAL_DIFF_ENABLED,
+      false
+    )
+      ? this.compareDiffLocal(userWithSiteSessionData, stagingLink)
+      : this.compareDiffGitHub(userWithSiteSessionData, stagingLink)
+
+  compareDiffLocal = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
+    this.apiService
+      .getFilesChanged(userWithSiteSessionData.siteName)
+      .andThen((filenames) => {
+        // map each filename to its edit metadata
+        const editMetadata = filenames.map((filename) =>
+          this.createEditedItemDtoWithEditMeta(
+            filename,
+            userWithSiteSessionData,
+            stagingLink
+          )
+        )
+        return ResultAsync.combine(editMetadata)
+      })
+      .map((changedItems) =>
+        changedItems.filter(
+          (changedItem): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+            changedItem.type !== "placeholder"
+        )
+      )
+
+  createEditedItemDtoWithEditMeta = (
+    filename: string,
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<EditedItemDto>, never> => {
+    const { siteName } = sessionData
+    const editMeta = this.extractEditMeta(siteName, filename)
+    const editedItemInfo = this.extractEditedItemInfo(
+      filename,
+      sessionData,
+      stagingLink
+    )
+
+    return ResultAsync.combine([editMeta, editedItemInfo]).map(
+      ([editMetadata, item]) => ({
+        ...item,
+        ...editMetadata,
+      })
+    )
+  }
+
+  extractEditMeta = (
+    siteName: string,
+    filename: string
+  ): ResultAsync<WithEditMeta<unknown>, never> =>
+    this.apiService
+      .getLatestLocalCommitOfPath(siteName, filename)
+      .andThen((latestLog) => {
+        const lastEditedTime = new Date(latestLog.date).getTime()
+        const { userId } = fromGithubCommitMessage(latestLog.message)
+        return ResultAsync.fromPromise(
+          this.users.findByPk(userId),
+          () => new DatabaseError(`Error while finding userId: ${userId}`)
+        )
+          .map((author) => ({
+            lastEditedBy: author?.email || latestLog.author_email,
+            lastEditedTime,
+          }))
+          .orElse((error) => {
+            logger.warn(
+              `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
+            )
+            return ok({
+              lastEditedBy: "Unknown",
+              lastEditedTime,
+            })
+          })
+      })
+      .orElse((error) => {
+        logger.warn(
+          `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
+        )
+        return ok({
+          lastEditedBy: "Unknown",
+          lastEditedTime: 0,
+        })
+      })
+
+  extractEditedItemInfo = (
+    filename: string,
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<EditedItemDto, never> =>
+    extractPathInfo(filename)
+      .asyncMap(async (pathInfo) => pathInfo)
+      .andThen((pathInfo) =>
+        this.extractConfigInfo(pathInfo)
+          .orElse(() => this.extractPlaceholderInfo(pathInfo))
+          .orElse(() => this.extractMediaInfo(pathInfo))
+          .asyncMap<EditedItemDto>(async (item) => item)
+          .orElse(() =>
+            this.extractPageInfo(
+              pathInfo,
+              sessionData,
+              stagingLink,
+              sessionData.siteName
+            )
+          )
+          .orElse(() => {
+            const { path, name } = pathInfo
+            return okAsync<EditedItemDto>({
+              name,
+              path: path.unwrapOr([]),
+              type: "page",
+              stagingUrl: "",
+              cmsFileUrl: "",
+            })
+          })
+      )
+      .orElse(() =>
+        okAsync<EditedItemDto>({
+          name: "",
+          path: [],
+          type: "page",
+          stagingUrl: "",
+          cmsFileUrl: "",
+        })
+      )
+
+  compareDiffGitHub = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
   ): ResultAsync<
@@ -846,6 +980,16 @@ export default class ReviewRequestService {
     )
 
     await this.apiService.mergePullRequest(repoNameInGithub, pullRequestNumber)
+
+    // RR merge should still succeed even if fast forward fails
+    await this.apiService
+      .fastForwardMaster(repoNameInGithub)
+      .orElse((error) => {
+        logger.error(
+          `Error when fast forwarding master for ${repoNameInGithub}: ${error}`
+        )
+        return ok(false)
+      })
 
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()

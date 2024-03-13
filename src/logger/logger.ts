@@ -76,12 +76,10 @@ export class IsomerLogger implements ExtendedLogger {
 
 const logger = new IsomerLogger()
 
-if (!USE_CONSOLE_LOGGER) {
-  logger.use(pinoLogger)
-}
-
 if (USE_CONSOLE_LOGGER) {
   logger.use(consoleLogger)
+} else {
+  logger.use(pinoLogger)
 }
 
 export default logger

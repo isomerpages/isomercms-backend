@@ -1,5 +1,6 @@
 import { groupBy } from "lodash"
 
+import { REDIRECTION_SERVER_IPS } from "@root/constants"
 import { DigType } from "@root/types/dig"
 
 export interface DigDNSRecord {
@@ -72,7 +73,7 @@ export function getDNSRecordsEmailBody(
 
     html += `<tr style="${headerRowStyle}">
           <td style="${repoNameStyle}" rowspan="${
-      hasRedirection ? 4 : 3
+      hasRedirection ? 3 + REDIRECTION_SERVER_IPS.length : 3
     }">${repoName}</td>
         </tr>`
     groupedDnsRecords[repoName].forEach((dnsRecords) => {
@@ -95,13 +96,15 @@ export function getDNSRecordsEmailBody(
         </tr>`
 
       if (hasRedirection) {
-        html += `
+        for (let i = 0; i < REDIRECTION_SERVER_IPS.length; i += 1) {
+          html += `
           <tr style="${tdStyle}">
             <td style="${tdStyle}">${dnsRecords.primaryDomainSource}</td>
-            <td style="${tdStyle}">${dnsRecords.redirectionDomainTarget}</td>
+            <td style="${tdStyle}">${REDIRECTION_SERVER_IPS[i]}</td>
             <td style="${tdStyle}">A Record</td>
           </tr>
         `
+        }
       }
     })
   })

@@ -13,7 +13,7 @@ import {
   JobStatus,
   RedirectionTypes,
   SiteStatus,
-  REDIRECTION_SERVER_IP,
+  REDIRECTION_SERVER_IPS,
 } from "@root/constants/constants"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
 import { AmplifyError } from "@root/types/index"
@@ -217,13 +217,11 @@ export class LaunchesService {
           type: RedirectionTypes.CNAME,
         },
         ...(doesRedirectionRecordExist
-          ? [
-              {
-                source: redirectionRecord.value.source,
-                target: REDIRECTION_SERVER_IP,
-                type: RedirectionTypes.A,
-              },
-            ]
+          ? REDIRECTION_SERVER_IPS.map((ip) => ({
+              source: redirectionRecord.value!.source, // safe as we check for existence above
+              target: ip,
+              type: RedirectionTypes.A,
+            }))
           : []),
       ],
     })

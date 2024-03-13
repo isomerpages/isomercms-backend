@@ -250,7 +250,7 @@ describe("AuthenticationMiddlewareService", () => {
       const expected = MOCK_GITHUB_USER_PROPS.userInfo
       const decryptSpy = jest.spyOn(jwtUtil, "decryptToken")
       decryptSpy.mockReturnValueOnce(
-        MOCK_GITHUB_USER_PROPS.userInfo?.accessToken
+        MOCK_GITHUB_USER_PROPS.userInfo!.accessToken!
       )
 
       // Act

@@ -5,6 +5,7 @@ import {
   DecryptedContentAndAttachments,
   DecryptedFile,
 } from "@opengovsg/formsg-sdk/dist/types"
+import { consoleLogger } from "@root/logger/console.logger"
 import express, { RequestHandler } from "express"
 import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
@@ -16,7 +17,6 @@ import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
 import LockedError from "@root/errors/LockedError"
-import { consoleLogger } from "@root/logger/console.logger"
 import logger from "@root/logger/logger"
 import { attachFormSGHandler } from "@root/middleware"
 import GitFileSystemService from "@root/services/db/GitFileSystemService"
@@ -203,7 +203,7 @@ export class FormsgGGsRepairRouter {
               errors ? `with errors ${errors}` : `without errors`
             } and clonedRepos ${clonedStagingRepos} and syncedRepos ${syncedStagingAndStagingLiteRepos}`
             // Logging information in case email sending fails
-            consoleLogger.error(
+            logger.error(
               `There was an error sending email to ${requesterEmail}: ${error}\n The content of the email is: ${emailContent}`
             )
           }

@@ -56,6 +56,8 @@ git push origin ${release_version}
 # extract changelog to inject into the PR
 pr_body_file=.pr_body_${release_version}
 pr_body_file_grouped=.pr_body_${release_version}_grouped
+pr_body_file_tests=.pr_body_${release_version}_tests
+pr_body_file_notes=.pr_body_${release_version}_notes
 
 awk "/^#### \[${release_version}\]/{flag=1;next}/####/{flag=0}flag" CHANGELOG.md | sed -E '/^([^-]|[[:space:]]*$)/d' > ${pr_body_file}
 
@@ -63,33 +65,40 @@ awk "/^#### \[${release_version}\]/{flag=1;next}/####/{flag=0}flag" CHANGELOG.md
 echo "## New" > ${pr_body_file_grouped}
 echo "" >> ${pr_body_file_grouped}
 grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} >> ${pr_body_file_grouped}
+echo "" >> ${pr_body_file_grouped}
 
 # Show dependency upgrades
 deps=$(grep -E -- '- [a-z]+\(deps\)' ${pr_body_file})
 if [[ ${deps} =~ [^[:space:]] ]]; then
-  echo "" >> ${pr_body_file_grouped}
   echo "## Dependencies" >> ${pr_body_file_grouped}
   echo "" >> ${pr_body_file_grouped}
   echo "${deps}" >> ${pr_body_file_grouped}
+  echo "" >> ${pr_body_file_grouped}
 fi
 
 # Show dev-dependency upgrades
 devdeps=$(grep -E -- '- [a-z]+\(deps-dev\)' ${pr_body_file})
 if [[ ${devdeps} =~ [^[:space:]] ]]; then
-  echo "" >> ${pr_body_file_grouped}
   echo "## Dev-Dependencies" >> ${pr_body_file_grouped}
   echo "" >> ${pr_body_file_grouped}
   echo "${devdeps}" >> ${pr_body_file_grouped}
+  echo "" >> ${pr_body_file_grouped}
 fi
 
 # Login to github to be able to query PR info
-gh auth login
+
+if ! gh auth status >/dev/null 2>&1; then
+    gh auth login
+fi
 
 repo_url=$(gh repo view --json url --jq '.url')
 
 # Extract tests and deploy notes from each feature PR
-tests_section="## Tests\n\n"
-notes_section="## Deploy Notes\n\n"
+echo "## Tests" > ${pr_body_file_tests}
+echo "" >> ${pr_body_file_tests}
+
+echo "## Deploy Notes" > ${pr_body_file_notes}
+echo "" >> ${pr_body_file_notes}
 
 # Find relevant line items (feature PRs; not auto dep upgrades or release prs)
 grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (release|backport) v' | grep -v -E -- '- \d+\.\d+\.\d+ ' | while read line_item; do
@@ -98,22 +107,26 @@ grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (rele
 
   tests=$(echo "$pr_content" | awk "/^## Test/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
   if [[ ${tests} =~ [^[:space:]] ]]; then
-    tests_section+="$(echo ${line_item} | sed "s/^- /### /")\n"
-    tests_section+="${tests}\n\n"
+    echo "${line_item}" | sed "s/^- /### /" >> ${pr_body_file_tests}
+    echo "${tests}" >> ${pr_body_file_tests}
+    echo "" >> ${pr_body_file_tests}
   fi
 
   notes=$(echo "$pr_content" | awk "/^## Deploy Notes/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
   if [[ ${notes} =~ [^[:space:]] ]]; then
-    notes_section+="$(echo ${line_item} | sed "s/^- /### /")\n"
-    notes_section+="${notes}\n\n"
+    echo "${line_item}" | sed "s/^- /### /" >> ${pr_body_file_notes}
+    echo "${notes}" >> ${pr_body_file_notes}
+    echo "" >> ${pr_body_file_notes}
   fi
+done
 
+cat ${pr_body_file_tests} >> ${pr_body_file_grouped}
+cat ${pr_body_file_notes} >> ${pr_body_file_grouped}
 
-echo "${tests_section}\n" >> ${pr_body_file_grouped}
-echo "${notes_section}\n" >> ${pr_body_file_grouped}
 echo "" >> ${pr_body_file_grouped}
-echo "" >> ${pr_body_file_grouped}
+
 echo "**Full Changelog**: ${repo_url}/compare/${current_version}..${release_version}" >> ${pr_body_file_grouped}
+
 
 # release pr
 release_pr_url=$(gh pr create \
@@ -141,5 +154,7 @@ gh release create \
 # cleanup
 rm ${pr_body_file}
 rm ${pr_body_file_grouped}
+rm ${pr_body_file_tests}
+rm ${pr_body_file_notes}
 git checkout develop
 git branch -D ${release_branch}

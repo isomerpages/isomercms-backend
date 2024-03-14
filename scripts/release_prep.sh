@@ -54,58 +54,58 @@ git push origin ${release_version}
 
 # extract changelog to inject into the PR
 pr_body_file=.pr_body_${release_version}
-pr_body_file_groupped=.pr_body_${release_version}_groupped
+pr_body_file_grouped=.pr_body_${release_version}_grouped
 
 awk "/^#### \[${release_version}\]/{flag=1;next}/####/{flag=0}flag" CHANGELOG.md | sed -E '/^([^-]|[[:space:]]*$)/d' > ${pr_body_file}
 
-echo "## New" > ${pr_body_file_groupped}
-echo "" >> ${pr_body_file_groupped}
-grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} >> ${pr_body_file_groupped}
+echo "## New" > ${pr_body_file_grouped}
+echo "" >> ${pr_body_file_grouped}
+grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} >> ${pr_body_file_grouped}
 
 deps=$(grep -E -- '- [a-z]+\(deps\)' ${pr_body_file})
 if [[ ${deps} =~ [^[:space:]] ]]; then
-  echo "" >> ${pr_body_file_groupped}
-  echo "## Dependencies" >> ${pr_body_file_groupped}
-  echo "" >> ${pr_body_file_groupped}
-  echo "${deps}" >> ${pr_body_file_groupped}
+  echo "" >> ${pr_body_file_grouped}
+  echo "## Dependencies" >> ${pr_body_file_grouped}
+  echo "" >> ${pr_body_file_grouped}
+  echo "${deps}" >> ${pr_body_file_grouped}
 fi
 
 devdeps=$(grep -E -- '- [a-z]+\(deps-dev\)' ${pr_body_file})
 if [[ ${devdeps} =~ [^[:space:]] ]]; then
-  echo "" >> ${pr_body_file_groupped}
-  echo "## Dev-Dependencies" >> ${pr_body_file_groupped}
-  echo "" >> ${pr_body_file_groupped}
-  echo "${devdeps}" >> ${pr_body_file_groupped}
+  echo "" >> ${pr_body_file_grouped}
+  echo "## Dev-Dependencies" >> ${pr_body_file_grouped}
+  echo "" >> ${pr_body_file_grouped}
+  echo "${devdeps}" >> ${pr_body_file_grouped}
 fi
 
 gh auth login
 
 ## Extract test procedures from each feature PRs
-echo "" >> ${pr_body_file_groupped}
-echo "## Tests" >> ${pr_body_file_groupped}
-echo "" >> ${pr_body_file_groupped}
+echo "" >> ${pr_body_file_grouped}
+echo "## Tests" >> ${pr_body_file_grouped}
+echo "" >> ${pr_body_file_grouped}
 grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (release|backport) v' | grep -v -E -- '- \d+\.\d+\.\d+ ' | while read line_item; do
   pr_id=$(echo ${line_item} | grep -o -E '\[`#\d+`\]' | grep -o -E '\d+')
   pr_content=$(gh pr view ${pr_id})
   tests=$(echo "$pr_content" | awk "/^## Test/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
   if [[ ${tests} =~ [^[:space:]] ]]; then
-    echo ${line_item} | sed "s/^- /### /" >> ${pr_body_file_groupped}
-    echo "${tests}" >> ${pr_body_file_groupped}
-    echo "" >> ${pr_body_file_groupped}
+    echo ${line_item} | sed "s/^- /### /" >> ${pr_body_file_grouped}
+    echo "${tests}" >> ${pr_body_file_grouped}
+    echo "" >> ${pr_body_file_grouped}
   fi
 done
 
 repo_url=$(gh repo view --json url --jq '.url')
 
-echo "" >> ${pr_body_file_groupped}
-echo "**Full Changelog**: ${repo_url}/compare/${current_version}..${release_version}" >> ${pr_body_file_groupped}
+echo "" >> ${pr_body_file_grouped}
+echo "**Full Changelog**: ${repo_url}/compare/${current_version}..${release_version}" >> ${pr_body_file_grouped}
 
 # release pr
 release_pr_url=$(gh pr create \
   -H ${release_branch} \
   -B master \
   -t "release ${release_version}" \
-  -F ${pr_body_file_groupped})
+  -F ${pr_body_file_grouped})
 
 # backport pr
 gh pr create \
@@ -125,6 +125,6 @@ gh release create \
 
 # cleanup
 rm ${pr_body_file}
-rm ${pr_body_file_groupped}
+rm ${pr_body_file_grouped}
 git checkout develop
 git branch -D ${release_branch}

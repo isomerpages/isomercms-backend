@@ -5,7 +5,6 @@ import {
   DecryptedContentAndAttachments,
   DecryptedFile,
 } from "@opengovsg/formsg-sdk/dist/types"
-import { consoleLogger } from "@root/logger/console.logger"
 import express, { RequestHandler } from "express"
 import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 

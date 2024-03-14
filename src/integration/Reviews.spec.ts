@@ -1,5 +1,6 @@
 import express from "express"
 import mockAxios from "jest-mock-axios"
+import { okAsync } from "neverthrow"
 import simpleGit from "simple-git"
 import request from "supertest"
 
@@ -279,29 +280,37 @@ describe("Review Requests Integration Tests", () => {
   })
 
   describe("/compare", () => {
-    it("should get GitHub diff response for a valid site member", async () => {
+    it("should get git diff for a valid site member", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_ONE
       )
-      mockAxios.get.mockResolvedValue({
-        data: { content: MOCK_GITHUB_FRONTMATTER },
-      })
-      mockGenericAxios.get.mockResolvedValueOnce({
-        data: {
-          files: [
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
-          ],
-          commits: [
-            MOCK_GITHUB_COMMIT_ALPHA_ONE,
-            MOCK_GITHUB_COMMIT_ALPHA_TWO,
-            MOCK_GITHUB_COMMIT_ALPHA_THREE,
-          ],
-        },
-      })
+
+      jest.spyOn(reviewRequestService, "compareDiff").mockReturnValueOnce(
+        okAsync([
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
+            path: [],
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          },
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          },
+        ])
+      )
+
       const expected = {
         items: [
           {
@@ -803,19 +812,28 @@ describe("Review Requests Integration Tests", () => {
       mockGenericAxios.get.mockResolvedValueOnce({
         data: MOCK_PULL_REQUEST_ONE,
       })
-      mockGenericAxios.get.mockResolvedValueOnce({
-        data: {
-          files: [
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
-          ],
-          commits: [
-            MOCK_GITHUB_COMMIT_ALPHA_ONE,
-            MOCK_GITHUB_COMMIT_ALPHA_TWO,
-            MOCK_GITHUB_COMMIT_ALPHA_THREE,
-          ],
-        },
-      })
+      jest.spyOn(reviewRequestService, "compareDiff").mockReturnValueOnce(
+        okAsync([
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
+            path: [],
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
+          },
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
+          },
+        ])
+      )
       const expected: ReviewRequestDto = {
         reviewUrl: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
         title: MOCK_PULL_REQUEST_TITLE_ONE,

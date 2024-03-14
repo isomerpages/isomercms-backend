@@ -1,8 +1,5 @@
-import moment from "moment-timezone"
-
 import { config } from "@root/config/config"
 
-import CloudWatchLogger from "./cloudwatch.logger"
 import { consoleLogger } from "./console.logger"
 import {
   Formatter,
@@ -14,14 +11,11 @@ import {
   LoggerVariants,
   WithFatal,
 } from "./logger.types"
+import { pinoLogger } from "./pino.logger"
 
 const NODE_ENV = config.get("env")
-const useCloudwatchLogger =
-  NODE_ENV === "prod" || NODE_ENV === "vapt" || NODE_ENV === "staging"
-const useConsoleLogger = !(NODE_ENV === "test")
 
-const timestampGenerator = () =>
-  moment().tz("Asia/Singapore").format("YYYY-MM-DD HH:mm:ss")
+const USE_CONSOLE_LOGGER = NODE_ENV === "dev" || NODE_ENV === "test"
 
 const hasDebug = (logger: LoggerVariants): logger is WithDebug<Logger> =>
   (logger as WithDebug<Logger>).debug !== undefined
@@ -81,8 +75,11 @@ export class IsomerLogger implements ExtendedLogger {
 }
 
 const logger = new IsomerLogger()
-if (useConsoleLogger) logger.use(consoleLogger)
-if (useCloudwatchLogger) logger.use(new CloudWatchLogger())
-logger.useFormatter((message) => `${timestampGenerator()}: ${message}`)
+
+if (USE_CONSOLE_LOGGER) {
+  logger.use(consoleLogger)
+} else {
+  logger.use(pinoLogger)
+}
 
 export default logger

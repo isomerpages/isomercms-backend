@@ -401,14 +401,6 @@ const config = convict({
       default: false,
     },
   },
-  redirectionServer: {
-    elasticIp: {
-      doc: "Elastic IP of the redirection server",
-      env: "REDIRECTION_SERVER_ELASTIC_IP",
-      format: String,
-      default: "18.136.36.203",
-    },
-  },
   netlify: {
     accessToken: {
       doc: "Access token for netlify actions",

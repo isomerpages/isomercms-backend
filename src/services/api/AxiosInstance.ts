@@ -46,17 +46,12 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   // NOTE: This also implies that the user has not provided
   // their own github token and hence, are email login users.
   const isEmailLoginUser = getIsEmailUserFromAuthMessage(authMessage)
+  const span = tracer.scope().active()
 
   if (isEmailLoginUser) {
     const accessToken = await tokenServiceInstance.getAccessToken()
     if (accessToken.isOk()) {
-      tracer.use("http", {
-        hooks: {
-          request: (span, req, res) => {
-            span?.setTag("user.type", "email")
-          },
-        },
-      })
+      span?.setTag("user.type", "email")
       const requestMethod = axiosConfig.method ?? "undefined method"
       logger.info(
         `Email login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
@@ -71,13 +66,9 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
       }
     }
   }
-  tracer.use("http", {
-    hooks: {
-      request: (span, req, res) => {
-        span?.setTag("user.type", "github")
-      },
-    },
-  })
+
+  span?.setTag("user.type", "github")
+
   const requestMethod = axiosConfig.method ?? "undefined method"
   logger.info(
     `Github login user made ${requestMethod} call to Github API: ${axiosConfig.url}`

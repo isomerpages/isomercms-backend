@@ -16,4 +16,5 @@ export type AuditLog = {
   actor: string
   page: string
   remarks: string
+  link?: string
 }

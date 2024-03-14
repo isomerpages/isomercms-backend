@@ -12,10 +12,7 @@ import { config } from "@config/config"
 
 import { lock, unlock } from "@utils/mutex-utils"
 
-import {
-  EFS_VOL_PATH_STAGING,
-  EFS_VOL_PATH_STAGING_LITE,
-} from "@root/constants"
+import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
 import LockedError from "@root/errors/LockedError"

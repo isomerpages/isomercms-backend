@@ -215,12 +215,13 @@ class AuditLogsService {
                       return errAsync(error)
                     })
                     .andThen((actorEmail) =>
-                      okAsync({
+                      okAsync<AuditLog, never>({
                         timestamp: new Date(commit.commit.author?.date || ""),
                         activity: AuditableActivityNames.SavedChanges,
                         actor: actorEmail,
                         page: parsedMessage.fileName || "",
                         remarks: parsedMessage.message,
+                        link: commit.html_url,
                       })
                     )
                 } catch (error) {
@@ -254,6 +255,7 @@ class AuditLogsService {
                     actor: actorEmail,
                     page: "",
                     remarks: message,
+                    link: commit.html_url,
                   })
                 )
             })
@@ -327,6 +329,7 @@ class AuditLogsService {
                             : pull.user?.login || "Unknown user",
                         page: "",
                         remarks: `GitHub Pull Request ID #${pull.number}`,
+                        link: pull.html_url,
                       },
 
                       // When review request is created
@@ -342,6 +345,7 @@ class AuditLogsService {
                           actor: notification.sourceUsername,
                           page: "",
                           remarks: `GitHub Pull Request ID #${pull.number}`,
+                          link: pull.html_url,
                         }))
                         .slice(0, 1),
 
@@ -358,6 +362,7 @@ class AuditLogsService {
                           actor: notification.sourceUsername,
                           page: "",
                           remarks: `GitHub Pull Request ID #${pull.number}`,
+                          link: pull.html_url,
                         }))
                         .slice(0, 1),
                     ])
@@ -490,12 +495,13 @@ class AuditLogsService {
           "User",
           "Page",
           "Remarks",
+          "Link",
         ]
 
         return ResultAsync.combine(
           auditLogDtos.map(({ siteName, auditLogs, snapshotTime }) => {
             const csvContent = auditLogs.map(
-              ({ timestamp, activity, actor, page, remarks }) => {
+              ({ timestamp, activity, actor, page, remarks, link }) => {
                 const recordDate = timestamp.toISOString().split("T")[0]
                 const recordHour = timestamp
                   .getUTCHours()
@@ -511,7 +517,15 @@ class AuditLogsService {
                   .padStart(2, "0")
                 const recordTime = `${recordHour}:${recordMinute}:${recordSecond}`
 
-                return [recordDate, recordTime, activity, actor, page, remarks]
+                return [
+                  recordDate,
+                  recordTime,
+                  activity,
+                  actor,
+                  page,
+                  remarks,
+                  link,
+                ]
               }
             )
             const csvFileDate = snapshotTime.toISOString().split("T")[0]

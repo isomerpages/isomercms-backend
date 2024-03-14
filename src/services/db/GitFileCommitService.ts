@@ -83,12 +83,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingCreateResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingCreateResult.error} when creating commit to staging for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
+      )
       throw stagingCreateResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteCreateResult &&
       stagingLiteCreateResult.isErr()
     ) {
+      logger.error(
+        `CommitServiceError: ${stagingLiteCreateResult.error} when creating commit to staging-lite for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
+      )
       throw stagingLiteCreateResult.error
     }
 
@@ -140,12 +146,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingUpdateResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingUpdateResult.error} when updating in staging for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
+      )
       throw stagingUpdateResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteUpdateResult &&
       stagingLiteUpdateResult.isErr()
     ) {
+      logger.error(
+        `CommitServiceError: ${stagingLiteUpdateResult.error} when updating to staging-lite for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
+      )
       throw stagingLiteUpdateResult.error
     }
 
@@ -190,12 +202,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingDeleteResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingDeleteResult.error} when deleting in staging for ${sessionData.siteName} for directory ${directoryName}`
+      )
       throw stagingDeleteResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteDeleteResult &&
       stagingLiteDeleteResult.isErr()
     ) {
+      logger.error(
+        `CommitServiceError: ${stagingLiteDeleteResult.error} when deleting in staging-lite for ${sessionData.siteName} for directory ${directoryName}`
+      )
       throw stagingLiteDeleteResult.error
     }
 
@@ -246,12 +264,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingDeleteResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingDeleteResult.error} when deleting in staging for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
+      )
       throw stagingDeleteResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteDeleteResult &&
       stagingLiteDeleteResult.isErr()
     ) {
+      logger.error(
+        `CommitServiceError: ${stagingLiteDeleteResult.error} when deleting in staging-lite for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
+      )
       throw stagingLiteDeleteResult.error
     }
 
@@ -289,12 +313,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingDeleteResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingDeleteResult.error} when deleting in staging for ${sessionData.siteName} for multiple files ${items}`
+      )
       throw stagingDeleteResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteDeleteResult &&
       stagingLiteDeleteResult.isErr()
     ) {
+      logger.error(
+        `CommitServiceError: ${stagingLiteDeleteResult.error} when deleting in staging-lite for ${sessionData.siteName} for multiple files ${items}`
+      )
       throw stagingLiteDeleteResult.error
     }
 
@@ -321,6 +351,9 @@ export default class GitFileCommitService {
     )
 
     if (stagingRenameResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingRenameResult.error} when renaming in staging for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
+      )
       throw stagingRenameResult.error
     }
 
@@ -338,6 +371,9 @@ export default class GitFileCommitService {
         message
       )
       if (stagingLiteRenameResult.isErr()) {
+        logger.error(
+          `CommitServiceError: ${stagingLiteRenameResult.error} when renaming in staging-lite for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
+        )
         throw stagingLiteRenameResult.error
       }
     }
@@ -366,6 +402,9 @@ export default class GitFileCommitService {
       message
     )
     if (stagingMvFilesResult.isErr()) {
+      logger.error(
+        `CommitServiceError: ${stagingMvFilesResult.error} when moving in staging for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
+      )
       throw stagingMvFilesResult.error
     }
 
@@ -384,6 +423,9 @@ export default class GitFileCommitService {
         message
       )
       if (stagingLiteMvFilesResult.isErr()) {
+        logger.error(
+          `CommitServiceError: ${stagingLiteMvFilesResult.error} when moving in staging-lite for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
+        )
         throw stagingLiteMvFilesResult.error
       }
     }

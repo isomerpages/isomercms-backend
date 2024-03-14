@@ -5,7 +5,8 @@ set -x
 # pre-requisites: install github CLI
 # - github documentation: https://github.com/cli/cli#installation
 # - github is remote 'origin'
-# - PRs use test section LAST with heading "## Tests"
+# - PRs should use a test section by convention starting with "## Test" (captures "Tests" "Testing")
+# - PRs should use a deploy notes section by convention starting with "## Deploy Notes"
 # - ALL build and release PRs start with "build: "
 #
 # To run, from root of project:

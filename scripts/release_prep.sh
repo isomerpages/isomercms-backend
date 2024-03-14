@@ -114,6 +114,14 @@ gh pr create \
   -t "backport ${release_version}" \
   -b "Details in ${release_pr_url}"
 
+# prep draft release
+gh release create \
+  --draft \
+  --title "${release_version}" \
+  --generate-notes \
+  --notes-start-tag "${current_version}" \
+  --verify-tag \
+  "${release_version}"
 
 # cleanup
 rm ${pr_body_file}

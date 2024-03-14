@@ -85,41 +85,31 @@ fi
 # Login to github to be able to query PR info
 gh auth login
 
-# Extract test procedures from each feature PR
-echo "" >> ${pr_body_file_grouped}
-echo "## Tests" >> ${pr_body_file_grouped}
-echo "" >> ${pr_body_file_grouped}
-grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (release|backport) v' | grep -v -E -- '- \d+\.\d+\.\d+ ' | while read line_item; do
-  pr_id=$(echo ${line_item} | grep -o -E '\[`#\d+`\]' | grep -o -E '\d+')
-  pr_content=$(gh pr view ${pr_id})
-  tests=$(echo "$pr_content" | awk "/^## Test/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
-  if [[ ${tests} =~ [^[:space:]] ]]; then
-    echo ${line_item} | sed "s/^- /### /" >> ${pr_body_file_grouped}
-    echo "${tests}" >> ${pr_body_file_grouped}
-    echo "" >> ${pr_body_file_grouped}
-  fi
-done
-
-# Extract deploy notes from each feature PR
-# (contains duplication from previous blocks for tests, but makes it easy to understand the similarity and what's going on)
-# TODO: refactor to remove duplication
-echo "" >> ${pr_body_file_grouped}
-echo "## Deploy Notes" >> ${pr_body_file_grouped}
-echo "" >> ${pr_body_file_grouped}
-grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (release|backport) v' | grep -v -E -- '- \d+\.\d+\.\d+ ' | while read line_item; do
-  pr_id=$(echo ${line_item} | grep -o -E '\[`#\d+`\]' | grep -o -E '\d+')
-  pr_content=$(gh pr view ${pr_id})
-  notes=$(echo "$pr_content" | awk "/^## Deploy Notes/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
-  if [[ ${notes} =~ [^[:space:]] ]]; then
-    echo ${line_item} | sed "s/^- /### /" >> ${pr_body_file_grouped}
-    echo "${notes}" >> ${pr_body_file_grouped}
-    echo "" >> ${pr_body_file_grouped}
-  fi
-done
-
-
 repo_url=$(gh repo view --json url --jq '.url')
 
+# Extract tests and deploy notes from each feature PR
+tests_section="## Tests\n\n"
+notes_section="## Deploy Notes\n\n"
+
+grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (release|backport) v' | grep -v -E -- '- \d+\.\d+\.\d+ ' | while read line_item; do
+  pr_id=$(echo ${line_item} | grep -o -E '\[`#\d+`\]' | grep -o -E '\d+')
+  pr_content=$(gh pr view ${pr_id})
+
+  tests=$(echo "$pr_content" | awk "/^## Test/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
+  if [[ ${tests} =~ [^[:space:]] ]]; then
+    tests_section+="$(echo ${line_item} | sed "s/^- /### /")\n"
+    tests_section+="${tests}\n\n"
+  fi
+
+  notes=$(echo "$pr_content" | awk "/^## Deploy Notes/{flag=1;next}/^## /{flag=0}flag" | sed -E "s/\[[Xx]\]/[ ]/" | sed -E "s/^(###+) /\1## /")
+  if [[ ${notes} =~ [^[:space:]] ]]; then
+    notes_section+="$(echo ${line_item} | sed "s/^- /### /")\n"
+    notes_section+="${notes}\n\n"
+  fi
+
+
+echo "${tests_section}\n" >> ${pr_body_file_grouped}
+echo "${notes_section}\n" >> ${pr_body_file_grouped}
 echo "" >> ${pr_body_file_grouped}
 echo "" >> ${pr_body_file_grouped}
 echo "**Full Changelog**: ${repo_url}/compare/${current_version}..${release_version}" >> ${pr_body_file_grouped}

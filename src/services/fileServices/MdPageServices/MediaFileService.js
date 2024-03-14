@@ -12,11 +12,11 @@ const {
 const { isMediaPathValid } = require("@validators/validators")
 
 const { getFileExt } = require("@root/utils/files")
-const { getMediaFileInfo } = require("@root/utils/media-utils")
+const { isCloudmersiveEnabled } = require("@root/utils/growthbook-utils")
 
 class MediaFileService {
-  constructor({ gitHubService }) {
-    this.gitHubService = gitHubService
+  constructor({ repoService }) {
+    this.repoService = repoService
   }
 
   mediaNameChecks({ directoryName, fileName }) {
@@ -33,64 +33,69 @@ class MediaFileService {
     const fileBuffer = Buffer.from(fileContent, "base64")
 
     // Scan file for virus - cloudmersive API
-    const virusScanRes = await scanFileForVirus(fileBuffer)
-    logger.info(`File scan result: ${virusScanRes.CleanResult}`)
-    if (!virusScanRes || !virusScanRes.CleanResult) {
-      throw new BadRequestError("File did not pass virus scan")
+    const cmConfig = isCloudmersiveEnabled(sessionData.growthbook)
+    if (cmConfig.is_enabled) {
+      const virusScanRes = await scanFileForVirus(fileBuffer, cmConfig.timeout)
+      logger.info(`File scan result: ${virusScanRes.CleanResult}`)
+      if (!virusScanRes || !virusScanRes.CleanResult) {
+        throw new BadRequestError("File did not pass virus scan")
+      }
     }
 
     // Sanitize and validate file
-    const sanitizedContent = await validateAndSanitizeFileUpload(content)
-    if (!sanitizedContent) {
+    const sanitisationResult = await validateAndSanitizeFileUpload(content)
+    if (!sanitisationResult) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    const { sha } = await this.gitHubService.create(sessionData, {
+
+    const {
       content: sanitizedContent,
-      fileName,
+      detectedFileType: { ext },
+    } = sanitisationResult
+    // NOTE: We construct the extension based off what we detect as the file type
+    const constructedFileName = `${fileName
+      .split(".")
+      .slice(0, -1)
+      .join(".")}.${ext}`
+
+    const { sha } = await this.repoService.create(sessionData, {
+      content: sanitizedContent,
+      fileName: constructedFileName,
       directoryName,
       isMedia: true,
     })
-    return { name: fileName, content, sha }
+
+    return { name: constructedFileName, content, sha }
   }
 
   async read(sessionData, { fileName, directoryName }) {
-    const { siteName } = sessionData
-    const directoryData = await this.gitHubService.readDirectory(sessionData, {
+    return this.repoService.readMediaFile(sessionData, {
+      fileName,
       directoryName,
     })
-    const mediaType = directoryName.split("/")[0]
-
-    const targetFile = directoryData.find(
-      (fileOrDir) => fileOrDir.name === fileName
-    )
-    const { private: isPrivate } = await this.gitHubService.getRepoInfo(
-      sessionData
-    )
-    const fileData = await getMediaFileInfo({
-      file: targetFile,
-      siteName,
-      directoryName,
-      mediaType,
-      isPrivate,
-    })
-
-    return fileData
   }
 
   async update(sessionData, { fileName, directoryName, content, sha }) {
     this.mediaNameChecks({ directoryName, fileName })
-    const sanitizedContent = await validateAndSanitizeFileUpload(content)
-    if (!sanitizedContent) {
+    const sanitisationResult = await validateAndSanitizeFileUpload(content)
+    if (!sanitisationResult) {
       throw new MediaTypeError(`File extension is not within the approved list`)
     }
-    await this.gitHubService.delete(sessionData, {
+    const {
+      content: sanitizedContent,
+      detectedFileType: { ext },
+    } = sanitisationResult
+
+    // NOTE: We can trust the user input here
+    // as we are removing stuff from our system.
+    await this.repoService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
     })
-    const { sha: newSha } = await this.gitHubService.create(sessionData, {
+    const { sha: newSha } = await this.repoService.create(sessionData, {
       content: sanitizedContent,
-      fileName,
+      fileName: `${fileName.split(".").slice(0, -1).join(".")}.${ext}`,
       directoryName,
       isMedia: true,
     })
@@ -104,7 +109,7 @@ class MediaFileService {
 
   async delete(sessionData, { fileName, directoryName, sha }) {
     this.mediaNameChecks({ directoryName, fileName })
-    return this.gitHubService.delete(sessionData, {
+    return this.repoService.delete(sessionData, {
       sha,
       fileName,
       directoryName,
@@ -132,49 +137,37 @@ class MediaFileService {
       )
     }
 
-    const gitTree = await this.gitHubService.getTree(
+    const { newSha: newCommitSha } = await this.repoService.renameSinglePath(
       sessionData,
       githubSessionData,
-      {
-        isRecursive: true,
-      }
+      `${directoryName}/${oldFileName}`,
+      `${directoryName}/${newFileName}`,
+      `Renamed ${oldFileName} to ${newFileName}`
     )
-    const newGitTree = []
-    gitTree.forEach((item) => {
-      if (item.path.startsWith(`${directoryName}/`) && item.type !== "tree") {
-        const fileName = item.path.split(`${directoryName}/`)[1]
-        if (fileName === oldFileName) {
-          // Delete old file
-          newGitTree.push({
-            ...item,
-            sha: null,
-          })
-          // Add file to target directory
-          newGitTree.push({
-            ...item,
-            path: `${directoryName}/${newFileName}`,
-          })
-        }
-      }
-    })
-
-    const newCommitSha = await this.gitHubService.updateTree(
-      sessionData,
-      githubSessionData,
-      {
-        gitTree: newGitTree,
-        message: `Renamed ${oldFileName} to ${newFileName}`,
-      }
-    )
-    await this.gitHubService.updateRepoState(sessionData, {
-      commitSha: newCommitSha,
-    })
 
     return {
       name: newFileName,
       oldSha: sha,
-      sha,
+      sha: newCommitSha,
     }
+  }
+
+  async deleteMultipleFiles(sessionData, githubSessionData, { items }) {
+    items.forEach((item) => {
+      const directoryName = item.filePath.split("/").slice(0, -1).join("/")
+      const fileName = item.filePath.split("/").pop()
+
+      this.mediaNameChecks({
+        directoryName,
+        fileName,
+      })
+    })
+
+    return this.repoService.deleteMultipleFiles(
+      sessionData,
+      githubSessionData,
+      { items }
+    )
   }
 }
 

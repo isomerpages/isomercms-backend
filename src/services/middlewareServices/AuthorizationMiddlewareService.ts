@@ -47,8 +47,10 @@ export default class AuthorizationMiddlewareService {
       userId
     )
     return collaboratorType === CollaboratorRoles.Admin
-      ? collaboratorRole === CollaboratorRoles.Admin
-      : collaboratorRole === CollaboratorRoles.Admin ||
+      ? collaboratorRole === CollaboratorRoles.IsomerAdmin ||
+          collaboratorRole === CollaboratorRoles.Admin
+      : collaboratorRole === CollaboratorRoles.IsomerAdmin ||
+          collaboratorRole === CollaboratorRoles.Admin ||
           collaboratorRole === CollaboratorRoles.Contributor
   }
 

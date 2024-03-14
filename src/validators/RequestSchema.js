@@ -1,5 +1,15 @@
 const Joi = require("joi")
 
+const {
+  MAX_HERO_KEY_HIGHLIGHTS,
+  MAX_ANNOUNCEMENT_ITEMS,
+  MAX_TEXTCARDS_CARDS,
+  MAX_INFOCOLS_BOXES,
+} = require("@root/constants")
+const { UserTypes } = require("@root/types/user")
+
+const EmailSchema = Joi.string().email().required()
+
 const FileSchema = Joi.object().keys({
   name: Joi.string().required(),
   type: Joi.string().valid("file").required(),
@@ -19,22 +29,20 @@ const UpdateContactUsSchema = Joi.object({
       permalink: Joi.string().required(),
       feedback: Joi.string().allow(""),
       agency_name: Joi.string().required(),
-      locations: Joi.array()
-        .items(
-          Joi.object({
-            address: Joi.array().items(Joi.string().allow("")),
-            operating_hours: Joi.array().items(
-              Joi.object({
-                days: Joi.string().allow(""),
-                time: Joi.string().allow(""),
-                description: Joi.string().allow(""),
-              })
-            ),
-            maps_link: Joi.string().allow(""),
-            title: Joi.string().allow(""),
-          })
-        )
-        .required(),
+      locations: Joi.array().items(
+        Joi.object({
+          address: Joi.array().items(Joi.string().allow("")),
+          operating_hours: Joi.array().items(
+            Joi.object({
+              days: Joi.string().allow(""),
+              time: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+            })
+          ),
+          maps_link: Joi.string().allow(""),
+          title: Joi.string().allow(""),
+        })
+      ),
       contacts: Joi.array()
         .items(
           Joi.object({
@@ -65,7 +73,143 @@ const UpdateHomepageSchema = Joi.object({
       permalink: Joi.string().required(),
       notification: Joi.string().allow(""),
       image: Joi.string(),
-      sections: Joi.array().required(),
+      sections: Joi.array()
+        .items(
+          // Hero section
+          Joi.object({
+            hero: Joi.object({
+              variant: Joi.string().allow(
+                "side",
+                "image",
+                "floating",
+                "center",
+                ""
+              ),
+              backgroundColor: Joi.string().allow("black", "white", "gray", ""),
+              background: Joi.string().allow(""),
+              size: Joi.string().allow("sm", "md", ""),
+              alignment: Joi.string().allow("left", "right", ""),
+              title: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+              dropdown: Joi.object({
+                title: Joi.string().required(),
+                options: Joi.array().items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    url: Joi.string().required(),
+                  })
+                ),
+              }),
+              key_highlights: Joi.array()
+                .max(MAX_HERO_KEY_HIGHLIGHTS)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    description: Joi.string().allow(""),
+                    url: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          }),
+
+          // Resources section
+          Joi.object({
+            resources: Joi.object({
+              title: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+            }),
+          }),
+
+          // Infobar section
+          Joi.object({
+            infobar: Joi.object({
+              title: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+            }),
+          }),
+
+          // Infopic section
+          Joi.object({
+            infopic: Joi.object({
+              title: Joi.string(),
+              subtitle: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+              button: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+              image: Joi.string(),
+              alt: Joi.string(),
+            }),
+          }),
+
+          // Announcements section
+          Joi.object({
+            announcements: Joi.object({
+              title: Joi.string().allow(""),
+              id: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              announcement_items: Joi.array()
+                .max(MAX_ANNOUNCEMENT_ITEMS)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    date: Joi.string().required(),
+                    announcement: Joi.string().required(),
+                    link_text: Joi.string().allow(""),
+                    link_url: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          }),
+
+          // Textcard section
+          Joi.object({
+            textcards: Joi.object({
+              title: Joi.string().required(),
+              id: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              description: Joi.string().allow(""),
+              cards: Joi.array()
+                .max(MAX_TEXTCARDS_CARDS)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    description: Joi.string().allow(""),
+                    linktext: Joi.string().allow(""),
+                    url: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          }),
+
+          // Infocols section
+          Joi.object({
+            infocols: Joi.object({
+              title: Joi.string().required(),
+              id: Joi.string().allow(""),
+              subtitle: Joi.string().allow(""),
+              url: Joi.string().allow(""),
+              linktext: Joi.string().allow(""),
+              infoboxes: Joi.array()
+                .max(MAX_INFOCOLS_BOXES)
+                .items(
+                  Joi.object({
+                    title: Joi.string().required(),
+                    description: Joi.string().allow(""),
+                  })
+                ),
+            }),
+          })
+        )
+        .required(),
     }).required(),
     pageBody: Joi.string().allow(""), // Joi does not allow empty string (pageBody: '') for Joi.string() even if not required
   }).required(),
@@ -207,6 +351,17 @@ const DeleteMediaFileRequestSchema = Joi.object().keys({
   sha: Joi.string().required(),
 })
 
+const DeleteMultipleMediaFilesRequestSchema = Joi.object().keys({
+  items: Joi.array()
+    .items(
+      Joi.object().keys({
+        filePath: Joi.string().required(),
+        sha: Joi.string().required(),
+      })
+    )
+    .required(),
+})
+
 const UpdateNavigationRequestSchema = Joi.object().keys({
   content: Joi.object()
     .keys({
@@ -252,7 +407,6 @@ const UpdateSettingsRequestSchema = Joi.object().keys({
   "facebook-pixel": Joi.string()
     .regex(/^[0-9]{15,16}$/)
     .allow(""),
-  google_analytics: Joi.string().allow(""),
   google_analytics_ga4: Joi.string().allow(""),
   "linkedin-insights": Joi.string().allow(""),
   is_government: Joi.boolean(),
@@ -284,7 +438,63 @@ const UpdateRepoPasswordRequestSchema = Joi.object().keys({
   enablePassword: Joi.boolean().required(),
 })
 
+const VerifyRequestSchema = Joi.object().keys({
+  email: EmailSchema,
+  otp: Joi.string().required(),
+})
+
+const CreateCollaboratorRequestSchema = Joi.object().keys({
+  email: EmailSchema,
+  acknowledge: Joi.boolean().optional(),
+})
+
+const CollateUserFeedbackRequestSchema = Joi.object().keys({
+  userType: Joi.string().valid(...Object.values(UserTypes)),
+  rating: Joi.number().required(),
+  feedback: Joi.string().optional(),
+  email: Joi.string().required(),
+})
+
+const CreateReviewRequestSchema = Joi.object().keys({
+  reviewers: Joi.array().items(Joi.string()).required(),
+  title: Joi.string().required(),
+  description: Joi.string().allow(""),
+})
+
+const UpdateReviewRequestSchema = Joi.object().keys({
+  reviewers: Joi.array().items(Joi.string()).required(),
+})
+
+const CreateCommentSchema = Joi.object().keys({
+  message: Joi.string().required(),
+})
+
+const LaunchSiteSchema = Joi.object().keys({
+  siteUrl: Joi.string().required(),
+  useWwwSubdomain: Joi.boolean().required(),
+})
+
+const GetPreviewInfoSchema = Joi.object().keys({
+  sites: Joi.array().items(Joi.string()).required(),
+})
+
+const VerifyEmailOtpSchema = Joi.object().keys({
+  email: EmailSchema,
+  otp: Joi.string().length(6).required(),
+})
+
+const VerifyMobileNumberOtpSchema = Joi.object().keys({
+  mobile: Joi.string().required(),
+  otp: Joi.string().length(6).required(),
+})
+
+const ResetRepoSchema = Joi.object().keys({
+  branchName: Joi.string().required(),
+  commitSha: Joi.string().required(),
+})
+
 module.exports = {
+  EmailSchema,
   UpdateContactUsSchema,
   UpdateHomepageSchema,
   CreatePageRequestSchema,
@@ -306,7 +516,19 @@ module.exports = {
   CreateMediaFileRequestSchema,
   UpdateMediaFileRequestSchema,
   DeleteMediaFileRequestSchema,
+  DeleteMultipleMediaFilesRequestSchema,
   UpdateNavigationRequestSchema,
   UpdateSettingsRequestSchema,
   UpdateRepoPasswordRequestSchema,
+  VerifyRequestSchema,
+  CreateCollaboratorRequestSchema,
+  CollateUserFeedbackRequestSchema,
+  CreateReviewRequestSchema,
+  UpdateReviewRequestSchema,
+  CreateCommentSchema,
+  LaunchSiteSchema,
+  GetPreviewInfoSchema,
+  VerifyEmailOtpSchema,
+  VerifyMobileNumberOtpSchema,
+  ResetRepoSchema,
 }

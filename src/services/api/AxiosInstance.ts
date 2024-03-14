@@ -1,5 +1,5 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
-import { setupCache } from "axios-cache-interceptor"
+import axios, { AxiosRequestConfig } from "axios"
+import { CacheAxiosResponse, setupCache } from "axios-cache-interceptor"
 import _ from "lodash"
 
 import { config } from "@config/config"
@@ -13,7 +13,9 @@ import { tokenServiceInstance } from "@services/db/TokenService"
 
 import { statsService } from "../infra/StatsService"
 
-const GITHUB_EXPERIMENTAL_TRIAL_SITES = ["pa-corp"]
+const GGS_EXPERIMENTAL_TRACKING_SITES = config
+  .get("featureFlags.ggsTrackedSites")
+  .split(",")
 
 const REPOS_SUBSTRING = "repos/isomerpages"
 const extractRepoNameFromGithubUrl = (url: string): string => {
@@ -44,17 +46,12 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   // NOTE: This also implies that the user has not provided
   // their own github token and hence, are email login users.
   const isEmailLoginUser = getIsEmailUserFromAuthMessage(authMessage)
+  const span = tracer.scope().active()
 
   if (isEmailLoginUser) {
     const accessToken = await tokenServiceInstance.getAccessToken()
     if (accessToken.isOk()) {
-      tracer.use("http", {
-        hooks: {
-          request: (span, req, res) => {
-            span?.setTag("user.type", "email")
-          },
-        },
-      })
+      span?.setTag("user.type", "email")
       const requestMethod = axiosConfig.method ?? "undefined method"
       logger.info(
         `Email login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
@@ -69,13 +66,9 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
       }
     }
   }
-  tracer.use("http", {
-    hooks: {
-      request: (span, req, res) => {
-        span?.setTag("user.type", "github")
-      },
-    },
-  })
+
+  span?.setTag("user.type", "github")
+
   const requestMethod = axiosConfig.method ?? "undefined method"
   logger.info(
     `Github login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
@@ -89,17 +82,17 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   }
 }
 
-const respHandler = (response: AxiosResponse) => {
+const respHandler = (response: CacheAxiosResponse) => {
   // Any status code that lie within the range of 2xx will cause this function to trigger
   tokenServiceInstance.onResponse(response)
   return response
 }
 
-const githubApiInterceptor = (resp: AxiosResponse) => {
+const githubApiInterceptor = (resp: CacheAxiosResponse) => {
   const fullUrl = `${resp.config.baseURL || ""}${resp.config.url || ""}`
   if (
     resp.status !== 304 &&
-    _.some(GITHUB_EXPERIMENTAL_TRIAL_SITES, (site) => fullUrl.includes(site)) &&
+    _.some(GGS_EXPERIMENTAL_TRACKING_SITES, (site) => fullUrl.includes(site)) &&
     resp.config.method
   ) {
     statsService.incrementGithubApiCall(
@@ -124,7 +117,11 @@ isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 isomerRepoAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
-const genericGitHubAxiosInstance = axios.create()
+const genericGitHubAxiosInstance = setupCache(axios.create(), {
+  interpretHeader: true,
+  etag: true,
+  headerInterpreter: customHeaderInterpreter,
+})
 genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
 genericGitHubAxiosInstance.interceptors.response.use(respHandler)
 genericGitHubAxiosInstance.interceptors.response.use(githubApiInterceptor)

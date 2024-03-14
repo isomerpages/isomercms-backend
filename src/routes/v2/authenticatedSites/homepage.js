@@ -6,7 +6,7 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 const {
   attachReadRouteHandlerWrapper,
-  attachWriteRouteHandlerWrapper,
+  attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
 const { UpdateHomepageSchema } = require("@validators/RequestSchema")
@@ -33,9 +33,7 @@ class HomepageRouter {
   async updateHomepage(req, res, next) {
     const { userWithSiteSessionData } = res.locals
 
-    const { error } = UpdateHomepageSchema.validate(req.body, {
-      allowUnknown: true,
-    })
+    const { error } = UpdateHomepageSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
@@ -59,7 +57,7 @@ class HomepageRouter {
     const router = express.Router({ mergeParams: true })
 
     router.get("/", attachReadRouteHandlerWrapper(this.readHomepage))
-    router.post("/", attachWriteRouteHandlerWrapper(this.updateHomepage))
+    router.post("/", attachRollbackRouteHandlerWrapper(this.updateHomepage))
 
     return router
   }

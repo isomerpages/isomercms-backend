@@ -11,6 +11,7 @@ const UNLINKED_PAGES_DIRECTORY_NAME = "pages"
 
 class UnlinkedPageService {
   constructor({ gitHubService }) {
+    // NOTE: This is actually `RepoService`
     this.gitHubService = gitHubService
   }
 
@@ -50,6 +51,10 @@ class UnlinkedPageService {
 
   async update(sessionData, { fileName, content, frontMatter, sha }) {
     const newContent = convertDataToMarkdown(frontMatter, content)
+    const {
+      frontMatter: newFrontMatter,
+      pageContent: newPageContent,
+    } = retrieveDataFromMarkdown(newContent)
     const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
@@ -58,7 +63,7 @@ class UnlinkedPageService {
     })
     return {
       fileName,
-      content: { frontMatter, pageBody: content },
+      content: { frontMatter: newFrontMatter, pageBody: newPageContent },
       oldSha: sha,
       newSha,
     }

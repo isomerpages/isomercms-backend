@@ -1,5 +1,6 @@
 import autoBind from "auto-bind"
 import express from "express"
+import { ResultAsync } from "neverthrow"
 import validator from "validator"
 
 import logger from "@logger/logger"
@@ -10,7 +11,12 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserSessionData from "@classes/UserSessionData"
 
+import DatabaseError from "@root/errors/DatabaseError"
 import { isError, RequestHandler } from "@root/types"
+import {
+  VerifyEmailOtpSchema,
+  VerifyMobileNumberOtpSchema,
+} from "@root/validators/RequestSchema"
 import UsersService from "@services/identity/UsersService"
 
 interface UsersRouterProps {
@@ -66,17 +72,39 @@ export class UsersRouter {
     { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { email, otp } = req.body
+    const { error } = VerifyEmailOtpSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
     const parsedEmail = email.toLowerCase()
 
-    const isOtpValid = await this.usersService.verifyEmailOtp(parsedEmail, otp)
-    if (!isOtpValid) {
-      throw new BadRequestError("Invalid OTP")
-    }
-
-    await this.usersService.updateUserByIsomerId(userId, { email: parsedEmail })
-    res.sendStatus(200)
+    return this.usersService
+      .verifyEmailOtp(parsedEmail, otp)
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.usersService.updateUserByIsomerId(userId, {
+            email: parsedEmail,
+          }),
+          (error) => {
+            logger.error(
+              `Error updating user email by Isomer ID: ${JSON.stringify(error)}`
+            )
+            return new DatabaseError(
+              "An error occurred when updating the database"
+            )
+          }
+        )
+      )
+      .map(() => res.sendStatus(200))
+      .mapErr((error) => {
+        if (error instanceof BadRequestError) {
+          return res.status(400).json({ message: error.message })
+        }
+        return res.status(500).json({ message: error.message })
+      })
   }
 
   sendMobileNumberOtp: RequestHandler<
@@ -101,18 +129,43 @@ export class UsersRouter {
     { userSessionData: UserSessionData }
   > = async (req, res) => {
     const { mobile, otp } = req.body
+    const { error } = VerifyMobileNumberOtpSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
+    if (!mobile || !validator.isMobilePhone(mobile)) {
+      throw new BadRequestError("Please provide a valid mobile number")
+    }
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
 
-    const isOtpValid = await this.usersService.verifyMobileOtp(mobile, otp)
-    if (!isOtpValid) {
-      throw new BadRequestError("Invalid OTP")
-    }
-
-    await this.usersService.updateUserByIsomerId(userId, {
-      contactNumber: mobile,
-    })
-    return res.sendStatus(200)
+    return this.usersService
+      .verifyMobileOtp(mobile, otp)
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.usersService.updateUserByIsomerId(userId, {
+            contactNumber: mobile,
+          }),
+          (error) => {
+            logger.error(
+              `Error updating user contact number by Isomer ID: ${JSON.stringify(
+                error
+              )}`
+            )
+            return new DatabaseError(
+              "An error occurred when updating the database"
+            )
+          }
+        )
+      )
+      .map(() => res.sendStatus(200))
+      .mapErr((error) => {
+        if (error instanceof BadRequestError) {
+          return res.status(400).json({ message: error.message })
+        }
+        return res.status(500).json({ message: error.message })
+      })
   }
 
   getRouter() {

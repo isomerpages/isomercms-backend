@@ -5,11 +5,15 @@ import "module-alias/register"
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
+import { result } from "lodash"
 import nocache from "nocache"
+import simpleGit from "simple-git"
 
 import { config } from "@config/config"
 
 import logger from "@logger/logger"
+
+import { MAX_CONCURRENT_GIT_PROCESSES } from "@constants/constants"
 
 import initSequelize from "@database/index"
 import {
@@ -27,6 +31,7 @@ import {
   Notification,
   ReviewRequest,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequestView,
 } from "@database/models"
@@ -34,6 +39,7 @@ import bootstrap from "@root/bootstrap"
 import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
+  featureFlagMiddleware,
 } from "@root/middleware"
 import { statsMiddleware } from "@root/middleware/stats"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
@@ -63,28 +69,37 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
+import { mailer } from "@services/utilServices/MailClient"
 
+import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
-import getAuthenticatedSubrouterV1 from "./routes/v1/authenticated"
-import getAuthenticatedSitesSubrouterV1 from "./routes/v1/authenticatedSites"
+import { FormsgSiteAuditLogsRouter } from "./routes/formsg/formsgSiteAuditLogs"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
+import AuditLogsService from "./services/admin/AuditLogsService"
+import RepoManagementService from "./services/admin/RepoManagementService"
+import GitFileCommitService from "./services/db/GitFileCommitService"
+import GitFileSystemService from "./services/db/GitFileSystemService"
+import RepoService from "./services/db/RepoService"
 import { PageService } from "./services/fileServices/MdPageServices/PageService"
 import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigService"
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
+import RepoCheckerService from "./services/review/RepoCheckerService"
+import ReviewCommentService from "./services/review/ReviewCommentService"
 import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
+import { setBrowserPolyfills } from "./utils/growthbook-utils"
 
 const path = require("path")
 
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry")
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiryInMs")
 
 const sequelize = initSequelize([
   Site,
@@ -100,6 +115,7 @@ const sequelize = initSequelize([
   IsomerAdmin,
   Notification,
   ReviewMeta,
+  ReviewComment,
   Reviewer,
   ReviewRequest,
   ReviewRequestView,
@@ -140,21 +156,46 @@ const FRONTEND_URL = config.get("app.frontendUrl")
 // Import routes
 const { errorHandler } = require("@middleware/errorHandler")
 
-const { FormsgRouter } = require("@routes/formsgSiteCreation")
-const { FormsgSiteLaunchRouter } = require("@routes/formsgSiteLaunch")
 const { AuthRouter } = require("@routes/v2/auth")
 
-const { GitHubService } = require("@services/db/GitHubService")
+const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
+const {
+  FormsgSiteCheckerRouter,
+} = require("@root/routes/formsg/formsgSiteChecker")
+const {
+  FormsgSiteCreateRouter,
+} = require("@root/routes/formsg/formsgSiteCreation")
+const {
+  FormsgSiteLaunchRouter,
+} = require("@root/routes/formsg/formsgSiteLaunch")
 const { AuthService } = require("@services/utilServices/AuthService")
 
+// growthbook polyfills
+setBrowserPolyfills()
+
 const authService = new AuthService({ usersService })
-const gitHubService = new GitHubService({
-  axiosInstance: isomerRepoAxiosInstance,
+const simpleGitInstance = new simpleGit({
+  maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES,
+})
+
+const gitFileSystemService = new GitFileSystemService(simpleGitInstance)
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+
+const gitHubService = new RepoService({
+  isomerRepoAxiosInstance,
+  gitFileSystemService,
+  gitFileCommitService,
+})
+
+const repoManagementService = new RepoManagementService({
+  repoService: gitHubService,
 })
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,
@@ -185,8 +226,11 @@ const pageService = new PageService({
   unlinkedPageService,
   resourceRoomDirectoryService,
 })
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const reviewRequestService = new ReviewRequestService(
   gitHubService,
+  reviewCommentService,
+  mailer,
   User,
   ReviewRequest,
   Reviewer,
@@ -196,9 +240,13 @@ const reviewRequestService = new ReviewRequestService(
   new ConfigService(),
   sequelize
 )
+
 const cacheRefreshInterval = 1000 * 60 * 5 // 5 minutes
 const sitesCacheService = new SitesCacheService(cacheRefreshInterval)
 const previewService = new PreviewService()
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 const sitesService = new SitesService({
   siteRepository: Site,
   gitHubService,
@@ -208,11 +256,13 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService,
   previewService,
+  deploymentsService,
 })
-const reposService = new ReposService({ repository: Repo })
-const deploymentsService = new DeploymentsService({
-  deploymentsRepository: Deployment,
+const reposService = new ReposService({
+  repository: Repo,
+  simpleGit: simpleGitInstance,
 })
+
 const launchClient = new LaunchClient()
 const launchesService = new LaunchesService({
   launchesRepository: Launch,
@@ -233,6 +283,7 @@ const identityAuthService = getIdentityAuthService(gitHubService)
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,
+  isomerAdminsService,
   sitesService,
   usersService,
   whitelist: Whitelist,
@@ -258,6 +309,24 @@ const infraService = new InfraService({
   dynamoDBService,
   usersService,
 })
+
+const repoCheckerService = new RepoCheckerService({
+  siteMemberRepository: SiteMember,
+  gitFileSystemService,
+  repoRepository: Repo,
+  git: simpleGitInstance,
+  pageService,
+})
+
+const auditLogsService = new AuditLogsService({
+  collaboratorsService,
+  isomerAdminsService,
+  notificationsService,
+  reviewRequestService,
+  sitesService,
+  usersService,
+})
+
 // poller site launch updates
 infraService.pollMessages()
 
@@ -283,17 +352,6 @@ const reviewRouter = new ReviewsRouter(
   notificationsService,
   gitHubService
 )
-const authenticatedSubrouterV1 = getAuthenticatedSubrouterV1({
-  authenticationMiddleware,
-  statsMiddleware,
-  usersService,
-  apiLogger,
-})
-const authenticatedSitesSubrouterV1 = getAuthenticatedSitesSubrouterV1({
-  authenticationMiddleware,
-  authorizationMiddleware,
-  apiLogger,
-})
 
 const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authenticationMiddleware,
@@ -308,6 +366,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   reviewRouter,
   notificationsService,
   infraService,
+  repoCheckerService,
 })
 
 const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
@@ -319,6 +378,7 @@ const authenticatedSitesSubrouterV2 = getAuthenticatedSitesSubrouter({
   notificationOnEditHandler,
   sitesService,
   deploymentsService,
+  repoManagementService,
 })
 const sgidAuthRouter = new SgidAuthRouter({
   usersService,
@@ -332,10 +392,27 @@ const authV2Router = new AuthRouter({
   statsMiddleware,
   sgidAuthRouter,
 })
-const formsgRouter = new FormsgRouter({ usersService, infraService })
+const formsgSiteCreateRouter = new FormsgSiteCreateRouter({
+  usersService,
+  infraService,
+  gitFileSystemService,
+})
 const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
   usersService,
   infraService,
+})
+
+const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
+  gitFileSystemService,
+  reposService,
+})
+
+const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
+  repoCheckerService,
+})
+
+const formsgSiteAuditLogsRouter = new FormsgSiteAuditLogsRouter({
+  auditLogsService,
 })
 
 const app = express()
@@ -346,6 +423,9 @@ if (isSecure) {
   app.set("trust proxy", true)
 }
 app.use(helmet())
+
+// use growthbook across routes
+app.use(featureFlagMiddleware)
 
 app.use(
   cors({
@@ -365,13 +445,6 @@ app.use(sessionMiddleware)
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
 // Routes layer setup
-// To avoid refactoring auth router v1 to use dependency injection
-app.use("/v1/auth", authV2Router.getRouter())
-// Endpoints which have siteName, used to inject site access token
-app.use("/v1/sites/:siteName", authenticatedSitesSubrouterV1)
-// Endpoints which require login, but not site access token
-app.use("/v1", authenticatedSubrouterV1)
-
 app.use("/v2/auth", authV2Router.getRouter())
 // Endpoints which have require login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
@@ -379,8 +452,11 @@ app.use("/v2", authenticatedSubrouterV2)
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
 
 // FormSG Backend handler routes
-app.use("/formsg", formsgRouter.getRouter())
+app.use("/formsg", formsgSiteCreateRouter.getRouter())
 app.use("/formsg", formsgSiteLaunchRouter.getRouter())
+app.use("/formsg", formsgGGsRepairRouter.getRouter())
+app.use("/formsg", formsgSiteCheckerRouter.getRouter())
+app.use("/formsg", formsgSiteAuditLogsRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {
@@ -403,6 +479,7 @@ sequelize
   .authenticate()
   .then(() => {
     logger.info("Connection has been established successfully.")
+    ReviewComment.sync()
     bootstrap(app)
   })
   .catch((err) => {

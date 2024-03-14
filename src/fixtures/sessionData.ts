@@ -1,7 +1,12 @@
+import { GrowthBook } from "@growthbook/growthbook"
+
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserSessionData from "@root/classes/UserSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { FeatureFlags } from "@root/types/featureFlags"
+import { RawGitTreeEntry } from "@root/types/github"
 
+import { MOCK_REPO_NAME_ONE } from "./sites"
 import {
   MOCK_USER_EMAIL_ONE,
   MOCK_USER_EMAIL_TWO,
@@ -16,10 +21,29 @@ import {
 export const mockAccessToken = "mockAccessToken"
 export const mockGithubId = "mockGithubId"
 export const mockIsomerUserId = "1"
-export const mockEmail = "mockEmail"
+export const mockEmail = "mockEmail@email.com"
 export const mockTreeSha = "mockTreeSha"
 export const mockCurrentCommitSha = "mockCurrentCommitSha"
 export const mockSiteName = "mockSiteName"
+export const mockGrowthBook = new GrowthBook<FeatureFlags>()
+
+export const gitTree: RawGitTreeEntry[] = [
+  {
+    path: "directory/file1.txt",
+    type: "tree",
+    sha: "fake-sha-1",
+    mode: "100644",
+    url: "fake-url-1",
+  },
+  {
+    path: "directory/file2.txt",
+    type: "file",
+    sha: "fake-sha-2",
+    mode: "100644",
+    url: "fake-url-2",
+    size: 100,
+  },
+]
 
 export const mockGithubState = {
   treeSha: mockTreeSha,
@@ -40,6 +64,17 @@ export const mockUserWithSiteSessionData = new UserWithSiteSessionData({
   email: mockEmail,
   siteName: mockSiteName,
 })
+
+export const mockUserWithSiteSessionDataAndGrowthBook = new UserWithSiteSessionData(
+  {
+    githubId: mockGithubId,
+    accessToken: mockAccessToken,
+    isomerUserId: mockIsomerUserId,
+    email: mockEmail,
+    siteName: mockSiteName,
+    growthbook: mockGrowthBook,
+  }
+)
 
 export const mockGithubSessionData = new GithubSessionData({
   treeSha: mockTreeSha,
@@ -71,3 +106,11 @@ export const MOCK_USER_SESSION_DATA_FOUR = new UserSessionData({
   isomerUserId: String(MOCK_USER_ID_FOUR),
   email: MOCK_USER_EMAIL_FOUR,
 })
+
+export const MOCK_USER_WITH_SITE_SESSION_DATA_ONE = new UserWithSiteSessionData(
+  {
+    isomerUserId: String(MOCK_USER_ID_ONE),
+    email: MOCK_USER_EMAIL_ONE,
+    siteName: MOCK_REPO_NAME_ONE,
+  }
+)

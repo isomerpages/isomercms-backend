@@ -1,14 +1,5 @@
-import { AxiosResponse } from "axios"
-import _ from "lodash"
-import {
-  err,
-  errAsync,
-  ok,
-  okAsync,
-  Result,
-  ResultAsync,
-  combine,
-} from "neverthrow"
+import _, { sortBy, unionBy } from "lodash"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 
@@ -19,13 +10,14 @@ import { ALLOWED_FILE_EXTENSIONS } from "@utils/file-upload-utils"
 import { Reviewer } from "@database/models/Reviewers"
 import { ReviewMeta } from "@database/models/ReviewMeta"
 import { ReviewRequest } from "@database/models/ReviewRequest"
-import { ReviewRequestStatus } from "@root/constants"
-import { Repo, ReviewRequestView } from "@root/database/models"
+import { FEATURE_FLAGS, ReviewRequestStatus } from "@root/constants"
+import { Repo, ReviewComment, ReviewRequestView } from "@root/database/models"
 import { Site } from "@root/database/models/Site"
 import { User } from "@root/database/models/User"
 import { BaseIsomerError } from "@root/errors/BaseError"
 import ConfigParseError from "@root/errors/ConfigParseError"
 import DatabaseError from "@root/errors/DatabaseError"
+import GitFileSystemError from "@root/errors/GitFileSystemError"
 import MissingResourceRoomError from "@root/errors/MissingResourceRoomError"
 import NetworkError from "@root/errors/NetworkError"
 import { NotFoundError } from "@root/errors/NotFoundError"
@@ -58,11 +50,14 @@ import { StagingPermalink } from "@root/types/pages"
 import { RequestChangeInfo } from "@root/types/review"
 import { PathInfo } from "@root/types/util"
 import { extractPathInfo, getFileExt } from "@root/utils/files"
-import * as ReviewApi from "@services/db/review"
 
+import RepoService from "../db/RepoService"
 import { PageService } from "../fileServices/MdPageServices/PageService"
 import PlaceholderService from "../fileServices/utils/PlaceholderService"
 import { ConfigService } from "../fileServices/YmlFileServices/ConfigService"
+import MailClient from "../utilServices/MailClient"
+
+import ReviewCommentService from "./ReviewCommentService"
 
 const injectDefaultEditMeta = ({
   path,
@@ -88,7 +83,11 @@ const injectDefaultEditMeta = ({
  * Separately, this also allows us to add typings into this service.
  */
 export default class ReviewRequestService {
-  private readonly apiService: typeof ReviewApi
+  private readonly apiService: RepoService
+
+  private readonly reviewCommentService: ReviewCommentService
+
+  private readonly mailer: MailClient
 
   private readonly repository: ModelStatic<ReviewRequest>
 
@@ -107,7 +106,9 @@ export default class ReviewRequestService {
   private readonly sequelize: Sequelize
 
   constructor(
-    apiService: typeof ReviewApi,
+    apiService: RepoService,
+    reviewCommentService: ReviewCommentService,
+    mailer: MailClient,
     users: ModelStatic<User>,
     repository: ModelStatic<ReviewRequest>,
     reviewers: ModelStatic<Reviewer>,
@@ -118,6 +119,8 @@ export default class ReviewRequestService {
     sequelize: Sequelize
   ) {
     this.apiService = apiService
+    this.reviewCommentService = reviewCommentService
+    this.mailer = mailer
     this.users = users
     this.repository = repository
     this.reviewers = reviewers
@@ -129,6 +132,140 @@ export default class ReviewRequestService {
   }
 
   compareDiff = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
+    userWithSiteSessionData.growthbook?.getFeatureValue(
+      FEATURE_FLAGS.IS_LOCAL_DIFF_ENABLED,
+      false
+    )
+      ? this.compareDiffLocal(userWithSiteSessionData, stagingLink)
+      : this.compareDiffGitHub(userWithSiteSessionData, stagingLink)
+
+  compareDiffLocal = (
+    userWithSiteSessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<DisplayedEditedItemDto>[], GitFileSystemError> =>
+    this.apiService
+      .getFilesChanged(userWithSiteSessionData.siteName)
+      .andThen((filenames) => {
+        // map each filename to its edit metadata
+        const editMetadata = filenames.map((filename) =>
+          this.createEditedItemDtoWithEditMeta(
+            filename,
+            userWithSiteSessionData,
+            stagingLink
+          )
+        )
+        return ResultAsync.combine(editMetadata)
+      })
+      .map((changedItems) =>
+        changedItems.filter(
+          (changedItem): changedItem is WithEditMeta<DisplayedEditedItemDto> =>
+            changedItem.type !== "placeholder"
+        )
+      )
+
+  createEditedItemDtoWithEditMeta = (
+    filename: string,
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<WithEditMeta<EditedItemDto>, never> => {
+    const { siteName } = sessionData
+    const editMeta = this.extractEditMeta(siteName, filename)
+    const editedItemInfo = this.extractEditedItemInfo(
+      filename,
+      sessionData,
+      stagingLink
+    )
+
+    return ResultAsync.combine([editMeta, editedItemInfo]).map(
+      ([editMetadata, item]) => ({
+        ...item,
+        ...editMetadata,
+      })
+    )
+  }
+
+  extractEditMeta = (
+    siteName: string,
+    filename: string
+  ): ResultAsync<WithEditMeta<unknown>, never> =>
+    this.apiService
+      .getLatestLocalCommitOfPath(siteName, filename)
+      .andThen((latestLog) => {
+        const lastEditedTime = new Date(latestLog.date).getTime()
+        const { userId } = fromGithubCommitMessage(latestLog.message)
+        return ResultAsync.fromPromise(
+          this.users.findByPk(userId),
+          () => new DatabaseError(`Error while finding userId: ${userId}`)
+        )
+          .map((author) => ({
+            lastEditedBy: author?.email || latestLog.author_email,
+            lastEditedTime,
+          }))
+          .orElse((error) => {
+            logger.warn(
+              `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
+            )
+            return ok({
+              lastEditedBy: "Unknown",
+              lastEditedTime,
+            })
+          })
+      })
+      .orElse((error) => {
+        logger.warn(
+          `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
+        )
+        return ok({
+          lastEditedBy: "Unknown",
+          lastEditedTime: 0,
+        })
+      })
+
+  extractEditedItemInfo = (
+    filename: string,
+    sessionData: UserWithSiteSessionData,
+    stagingLink: StagingPermalink
+  ): ResultAsync<EditedItemDto, never> =>
+    extractPathInfo(filename)
+      .asyncMap(async (pathInfo) => pathInfo)
+      .andThen((pathInfo) =>
+        this.extractConfigInfo(pathInfo)
+          .orElse(() => this.extractPlaceholderInfo(pathInfo))
+          .orElse(() => this.extractMediaInfo(pathInfo))
+          .asyncMap<EditedItemDto>(async (item) => item)
+          .orElse(() =>
+            this.extractPageInfo(
+              pathInfo,
+              sessionData,
+              stagingLink,
+              sessionData.siteName
+            )
+          )
+          .orElse(() => {
+            const { path, name } = pathInfo
+            return okAsync<EditedItemDto>({
+              name,
+              path: path.unwrapOr([]),
+              type: "page",
+              stagingUrl: "",
+              cmsFileUrl: "",
+            })
+          })
+      )
+      .orElse(() =>
+        okAsync<EditedItemDto>({
+          name: "",
+          path: [],
+          type: "page",
+          stagingUrl: "",
+          cmsFileUrl: "",
+        })
+      )
+
+  compareDiffGitHub = (
     userWithSiteSessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
   ): ResultAsync<
@@ -147,7 +284,7 @@ export default class ReviewRequestService {
         ).map((mappings) => ({ mappings, files }))
       )
       .andThen(({ mappings, files }) =>
-        combine(
+        ResultAsync.combine(
           this.compareDiffWithMappings(
             userWithSiteSessionData,
             stagingLink,
@@ -235,7 +372,7 @@ export default class ReviewRequestService {
     return this.pageService
       .parsePageName(pathInfo, sessionData)
       .andThen((pageName) =>
-        combine([
+        ResultAsync.combine([
           this.pageService.retrieveCmsPermalink(pageName, siteName),
           this.pageService.retrieveStagingPermalink(
             sessionData,
@@ -260,7 +397,7 @@ export default class ReviewRequestService {
     path,
   }: PathInfo): Result<EditedMediaDto, PageParseError> => {
     const fileExt = getFileExt(name)
-    if (ALLOWED_FILE_EXTENSIONS.includes(fileExt)) {
+    if (ALLOWED_FILE_EXTENSIONS.includes(fileExt.toLowerCase())) {
       return ok({
         name,
         path: path.unwrapOr([""]),
@@ -357,13 +494,35 @@ export default class ReviewRequestService {
       requestorId: requestor.id,
       siteId: site.id,
     })
+    const subject = `[${siteName}] You've been requested to review some changes`
+    const emailBody = `<p>Hi there,</p>
+    <p>${requestor.email} has requested you to review and approve changes made to ${siteName}. You can see the changes and approve them, or add comments for site collaborators to see.</p>
+    <br />
+    <p><a href="https://cms.isomer.gov.sg/sites/${siteName}/review/${pullRequestNumber}" target="_blank">Click to see the review request on IsomerCMS</a></p>
+    <br />
+    <p>If this is your first time approving or publishing a review request, <a href="https://guide.isomer.gov.sg/publish-changes-and-site-launch/for-email-login-users/approve-and-publish-a-review-request" target="_blank">this article from our Isomer Guide</a> might help.</p>
+    <br />
+    <p>Best,<br />
+    The Isomer Team</p>`
     await Promise.all(
-      reviewers.map(({ id }) =>
-        this.reviewers.create({
+      reviewers.map(async ({ id, email: reviewerEmail }) => {
+        await this.reviewers.create({
           requestId: reviewRequest.id,
           reviewerId: id,
         })
-      )
+        if (!reviewerEmail) {
+          // Should not reach here
+          throw new Error(`Reviewer with id ${id} has no email`)
+        }
+        try {
+          await this.mailer.sendMail(reviewerEmail, subject, emailBody)
+        } catch (mailerErr) {
+          // Non-blocking
+          logger.error(
+            `Error when sending reviewer mail to ${reviewerEmail}: ${mailerErr}`
+          )
+        }
+      })
     )
 
     await this.reviewMeta.create({
@@ -822,6 +981,16 @@ export default class ReviewRequestService {
 
     await this.apiService.mergePullRequest(repoNameInGithub, pullRequestNumber)
 
+    // RR merge should still succeed even if fast forward fails
+    await this.apiService
+      .fastForwardMaster(repoNameInGithub)
+      .orElse((error) => {
+        logger.error(
+          `Error when fast forwarding master for ${repoNameInGithub}: ${error}`
+        )
+        return ok(false)
+      })
+
     reviewRequest.reviewStatus = ReviewRequestStatus.Merged
     return reviewRequest.save()
   }
@@ -830,15 +999,33 @@ export default class ReviewRequestService {
     sessionData: UserWithSiteSessionData,
     pullRequestNumber: number,
     message: string
-  ): Promise<AxiosResponse<void>> => {
+  ): Promise<ReviewComment> => {
     const { siteName, isomerUserId } = sessionData
 
-    return this.apiService.createComment(
-      siteName,
-      pullRequestNumber,
-      isomerUserId,
-      message
+    logger.info(
+      `Creating comment for PR ${pullRequestNumber}, site: ${siteName}`
     )
+    // get id of review request
+    const reviewMeta = await this.reviewMeta.findOne({
+      where: { pullRequestNumber },
+    })
+
+    if (reviewMeta?.reviewId) {
+      try {
+        return await this.reviewCommentService.createCommentForReviewRequest(
+          reviewMeta?.reviewId,
+          isomerUserId,
+          message
+        )
+      } catch (e) {
+        logger.error(
+          `Error creating comment in DB for PR ${pullRequestNumber}, site: ${siteName}`
+        )
+        throw new DatabaseError("Error creating comment in DB")
+      }
+    }
+    logger.info(`No review request found for PR ${pullRequestNumber}`)
+    throw new RequestNotFoundError("Review Request not found")
   }
 
   getComments = async (
@@ -847,6 +1034,14 @@ export default class ReviewRequestService {
     pullRequestNumber: number
   ): Promise<CommentItem[]> => {
     const { siteName, isomerUserId: userId } = sessionData
+
+    // get review request id
+    const reviewMeta = await this.reviewMeta.findOne({
+      where: { pullRequestNumber },
+    })
+    if (!reviewMeta || !reviewMeta.reviewId) {
+      throw new RequestNotFoundError("Review Request not found")
+    }
 
     const comments = await this.apiService.getComments(
       siteName,
@@ -876,8 +1071,40 @@ export default class ReviewRequestService {
     })
 
     const viewedTime = requestsView ? new Date(requestsView.lastViewedAt) : null
+    let allComments = []
+    try {
+      allComments = await this.reviewCommentService.getCommentsForReviewRequest(
+        reviewMeta.reviewId
+      )
+    } catch (e) {
+      logger.error(
+        `Error getting comments for PR ${pullRequestNumber}, site: ${siteName}`
+      )
+      throw new DatabaseError("Error getting comments for PR")
+    }
 
-    return this.computeCommentData(comments, viewedTime)
+    // if comments exist in DB return those, else return from GitHub
+    let commentsFromDB: CommentItem[] = []
+    if (allComments && allComments.length !== 0) {
+      commentsFromDB = allComments.map((rawComment) => ({
+        user: rawComment.user.email || "",
+        createdAt: rawComment.createdAt.getTime(),
+        message: rawComment.comment,
+        isRead: viewedTime ? rawComment.createdAt < viewedTime : false,
+      }))
+    }
+    // Note: temporarily till all existing RRs depending on GitHub
+    // are merged, we will combine both the DB and GitHub without
+    // duplicates
+    // TODO: Remove after dependency of GitHub is removed
+    const commentsFromGitHub = await this.computeCommentData(
+      comments,
+      viewedTime
+    )
+    return sortBy(
+      unionBy(commentsFromDB, commentsFromGitHub, "message"),
+      "createdAt"
+    )
   }
 
   getBlob = async (repo: string, path: string, ref: string): Promise<string> =>

@@ -1,4 +1,5 @@
-import { errAsync, okAsync } from "neverthrow"
+import { JobStatus } from "@aws-sdk/client-amplify"
+import { Result, ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
 
 import { config } from "@config/config"
@@ -6,8 +7,10 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 import { Deployment, Repo, Site } from "@database/models"
+import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { AmplifyError, AmplifyInfo } from "@root/types/index"
+import { BuildStatus, StatusStates } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
 import { decryptPassword, encryptPassword } from "@root/utils/crypto-utils"
 import DeploymentClient from "@services/identity/DeploymentClient"
@@ -43,34 +46,69 @@ class DeploymentsService {
     repoName: string
     site: Site
   }): Promise<Deployment> => {
-    const amplifyResult = await this.createAmplifyAppOnAws(repoName)
-    if (amplifyResult.isErr()) {
-      logger.error(`Amplify set up error: ${amplifyResult.error}`)
-      throw amplifyResult.error
+    const [
+      amplifyStagingResult,
+      amplifyStagingLiteResult,
+    ] = await this.createAmplifyAppsOnAws(repoName)
+    if (amplifyStagingResult.isErr()) {
+      logger.error(
+        `Amplify set up error for main app: ${amplifyStagingResult.error}`
+      )
+      throw amplifyStagingResult.error
     }
-    const amplifyInfo = amplifyResult.value
+
+    if (amplifyStagingLiteResult.isErr()) {
+      logger.error(
+        `Amplify set up error for staging-lite app: ${amplifyStagingLiteResult.error}`
+      )
+      throw amplifyStagingLiteResult.error
+    }
+
+    const amplifyInfoStaging = amplifyStagingResult.value
+    const amplifyInfoStagingLite = amplifyStagingLiteResult.value
 
     return this.create({
       stagingUrl: Brand.fromString(
-        `https://staging.${amplifyInfo.defaultDomain}`
+        `https://staging-lite.${amplifyStagingLiteResult.value.defaultDomain}`
       ),
       productionUrl: Brand.fromString(
-        `https://master.${amplifyInfo.defaultDomain}`
+        `https://master.${amplifyStagingResult.value.defaultDomain}`
       ),
       site,
       siteId: site.id,
-      hostingId: amplifyInfo.id,
+      hostingId: amplifyInfoStaging.id,
+      stagingLiteHostingId: amplifyInfoStagingLite.id,
     })
   }
 
-  createAmplifyAppOnAws = async (repoName: string) => {
+  createAmplifyAppsOnAws = async (repoName: string) => {
+    const stagingApp = await this.createAmplifyAppOnAws(
+      repoName,
+      repoName,
+      false
+    )
+    const stagingLiteApp = await this.createAmplifyAppOnAws(
+      repoName,
+      `${repoName}-staging-lite`,
+      true
+    )
+    return [stagingApp, stagingLiteApp]
+  }
+
+  createAmplifyAppOnAws = async (
+    repoName: string,
+    appName: string,
+    isStagingLite: boolean
+  ): Promise<Result<AmplifyInfo, AmplifyError>> => {
     const repoUrl = `https://github.com/isomerpages/${repoName}`
     logger.info(`PublishToAmplify ${repoUrl}`)
 
-    const createAppOptions = this.deploymentClient.generateCreateAppInput(
+    const createAppOptions = this.deploymentClient.generateCreateAppInput({
+      appName,
+      repoUrl,
       repoName,
-      repoUrl
-    )
+      isStagingLite,
+    })
     // 1. Create Amplify app
     return this.deploymentClient
       .sendCreateApp(createAppOptions)
@@ -99,24 +137,57 @@ class DeploymentsService {
           repository: repoUrl,
         }
 
-        // 2. Create Master branch
+        // 2. Create branch command inputs
         const createMasterBranchInput = this.deploymentClient.generateCreateBranchInput(
           amplifyInfo.id,
           "master"
         )
-        return this.deploymentClient
-          .sendCreateBranch(createMasterBranchInput)
-          .map(() => amplifyInfo)
-      })
-      .andThen((amplifyInfo) => {
-        // 3. Create Staging branch
+
         const createStagingBranchInput = this.deploymentClient.generateCreateBranchInput(
           amplifyInfo.id,
           "staging"
         )
+
+        const createStagingLiteBranchInput = this.deploymentClient.generateCreateBranchInput(
+          amplifyInfo.id,
+          "staging-lite"
+        )
+
+        // 3. Create branches
+        if (isStagingLite) {
+          return this.deploymentClient
+            .sendCreateBranch(createStagingLiteBranchInput)
+            .andThen(() =>
+              this.deploymentClient.sendStartJobCommand({
+                appId: amplifyInfo.id,
+                branchName: "staging-lite",
+                jobType: "RELEASE",
+              })
+            )
+            .map(() => amplifyInfo)
+        }
         return this.deploymentClient
-          .sendCreateBranch(createStagingBranchInput)
+          .sendCreateBranch(createMasterBranchInput)
+          .andThen(() =>
+            this.deploymentClient.sendStartJobCommand({
+              appId: amplifyInfo.id,
+              branchName: "master",
+              jobType: "RELEASE",
+            })
+          )
           .map(() => amplifyInfo)
+          .andThen(() =>
+            this.deploymentClient
+              .sendCreateBranch(createStagingBranchInput)
+              .andThen(() =>
+                this.deploymentClient.sendStartJobCommand({
+                  appId: amplifyInfo.id,
+                  branchName: "staging",
+                  jobType: "RELEASE",
+                })
+              )
+              .map(() => amplifyInfo)
+          )
       })
   }
 
@@ -131,9 +202,14 @@ class DeploymentsService {
     return okAsync(deploymentInfo)
   }
 
-  deletePassword = async (appId: string, deploymentId: number) => {
+  deletePassword = async (
+    appId: string,
+    deploymentId: number,
+    isStagingLite: boolean
+  ) => {
     const updateAppInput = this.deploymentClient.generateDeletePasswordInput(
-      appId
+      appId,
+      isStagingLite ? "staging-lite" : "staging"
     )
     const updateResp = await this.deploymentClient.sendUpdateApp(updateAppInput)
 
@@ -178,9 +254,22 @@ class DeploymentsService {
       return errAsync(
         new NotFoundError(`Deployment for site ${repoName} does not exist`)
       )
-    const { id, hostingId: appId } = deploymentInfo
+    const {
+      id,
+      hostingId: appId,
+      stagingLiteHostingId: stagingLiteId,
+    } = deploymentInfo
 
-    if (!enablePassword) return this.deletePassword(appId, id)
+    if (!enablePassword) {
+      const stagingRes = await this.deletePassword(appId, id, false)
+      if (!stagingLiteId || stagingRes.isErr()) return stagingRes
+      const stagingLiteRes = await this.deletePassword(stagingLiteId, id, true)
+      if (stagingLiteRes.isErr())
+        logger.error(
+          `Privatisation adjustment failed for ${repoName} - requires manual fixing of inconsistent state`
+        )
+      return stagingLiteRes
+    }
 
     const {
       encryptedPassword: oldEncryptedPassword,
@@ -202,6 +291,24 @@ class DeploymentsService {
       return updateResp
     }
 
+    if (stagingLiteId) {
+      const updateStagingLiteInput = this.deploymentClient.generateUpdatePasswordInput(
+        stagingLiteId,
+        password,
+        "staging-lite"
+      )
+
+      const updateStagingLiteResp = await this.deploymentClient.sendUpdateApp(
+        updateStagingLiteInput
+      )
+      if (updateStagingLiteResp.isErr()) {
+        logger.error(
+          `Privatisation adjustment failed for ${repoName} - requires manual fixing of inconsistent state`
+        )
+        return updateStagingLiteResp
+      }
+    }
+
     const { encryptedPassword, iv } = encryptPassword(password, SECRET_KEY)
     await this.deploymentsRepository.update(
       {
@@ -214,6 +321,81 @@ class DeploymentsService {
 
     return updateResp
   }
+
+  updateStagingUrl = async (siteId: number, stagingUrl: string) => {
+    const deploymentInfo = await this.deploymentsRepository.findOne({
+      where: {
+        siteId,
+      },
+    })
+    if (!deploymentInfo)
+      return errAsync(new NotFoundError("Site has not been deployed!"))
+    logger.info(`Updating staging url for ${siteId} to ${stagingUrl}`)
+    await this.deploymentsRepository.update(
+      {
+        stagingUrl,
+      },
+      { where: { siteId } }
+    )
+    return okAsync(deploymentInfo)
+  }
+
+  getStagingSiteBuildStatus = (
+    siteId: string,
+    isRepoWhiteListedForBuildRed: boolean
+  ): ResultAsync<BuildStatus, NotFoundError | AmplifyError> =>
+    fromPromise(
+      this.deploymentsRepository.findOne({
+        where: {
+          siteId,
+        },
+      }),
+      () => new NotFoundError("Site has not been deployed!")
+    )
+      .andThen((deploymentInfo) => {
+        if (!deploymentInfo) {
+          return errAsync(new NotFoundError("Site has not been deployed!"))
+        }
+        return okAsync(deploymentInfo)
+      })
+      .andThen((deploymentInfo) => {
+        let userStagingApp: string
+        const { hostingId, stagingLiteHostingId } = deploymentInfo
+        if (isRepoWhiteListedForBuildRed) {
+          userStagingApp = stagingLiteHostingId
+        } else {
+          userStagingApp = hostingId
+        }
+
+        if (!userStagingApp) {
+          return errAsync(
+            new NotFoundError("Staging site has not been deployed!")
+          )
+        }
+        return okAsync(userStagingApp)
+      })
+      .andThen((userStagingApp) => {
+        const branchName = isRepoWhiteListedForBuildRed
+          ? STAGING_LITE_BRANCH
+          : STAGING_BRANCH
+        return this.deploymentClient.getJobSummaries(userStagingApp, branchName)
+      })
+      .andThen((jobSummaries) => {
+        if (jobSummaries.length === 0) {
+          return okAsync(StatusStates.pending)
+        }
+
+        const jobSummary = jobSummaries[0]
+
+        switch (jobSummary.status) {
+          case JobStatus.SUCCEED:
+            return okAsync(StatusStates.ready)
+          case JobStatus.FAILED:
+            return okAsync(StatusStates.error)
+          default:
+            return okAsync(StatusStates.pending)
+        }
+      })
 }
 
 export default DeploymentsService

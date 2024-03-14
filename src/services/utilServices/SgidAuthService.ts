@@ -5,13 +5,28 @@ import {
   SgidCreateRedirectUrlError,
   SgidFetchAccessTokenError,
   SgidFetchUserInfoError,
-} from "@root/errors/SgidErrors"
+} from "@root/errors/SgidError"
 import logger from "@root/logger/logger"
+import { PublicOfficerData } from "@root/types/sgid"
 
-const SGID_WORK_EMAIL_SCOPE = "ogpofficerinfo.work_email"
+const SGID_WORK_EMAIL_SCOPE = "pocdex.public_officer_details"
 
 interface SgidAuthServiceProps {
   sgidClient: SgidClient
+}
+
+// Retrieved data format
+interface SgidPublicOfficerDetails {
+  // eslint-disable-next-line camelcase
+  work_email: string
+  // eslint-disable-next-line camelcase
+  agency_name: string
+  // eslint-disable-next-line camelcase
+  department_name: string
+  // eslint-disable-next-line camelcase
+  employment_type: string
+  // eslint-disable-next-line camelcase
+  employment_title: string
 }
 
 export default class SgidAuthService {
@@ -66,17 +81,28 @@ export default class SgidAuthService {
     )
   }
 
-  retrieveSgidUserEmail(
+  retrieveSgidUserData(
     accessToken: string,
     sub: string
-  ): ResultAsync<string | undefined, SgidFetchUserInfoError> {
+  ): ResultAsync<PublicOfficerData[] | undefined, SgidFetchUserInfoError> {
     return ResultAsync.fromPromise(
       this.sgidClient
         .userinfo({
           accessToken,
           sub,
         })
-        .then(({ data }) => data[SGID_WORK_EMAIL_SCOPE]),
+        .then(({ data }) => {
+          const employmentDetails: SgidPublicOfficerDetails[] = JSON.parse(
+            data[SGID_WORK_EMAIL_SCOPE]
+          )
+          const employmentResp = employmentDetails.map((detail) => ({
+            email: detail.work_email,
+            agencyName: detail.agency_name,
+            departmentName: detail.department_name,
+            employmentTitle: detail.employment_title,
+          }))
+          return employmentResp
+        }),
       (error) => {
         logger.error(`Error while retrieving user info from sgid: ${error}`)
         return new SgidFetchUserInfoError()

@@ -9,12 +9,15 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import { RequestHandler } from "@root/types"
+import { GrowthBookAttributes } from "@root/types/featureFlags"
 import IdentityAuthService from "@services/identity/AuthService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import AuthenticationMiddlewareService from "@services/middlewareServices/AuthenticationMiddlewareService"
 import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 import FormsProcessingService from "@services/middlewareServices/FormsProcessingService"
+
+import { featureFlagMiddleware } from "./featureFlag"
 
 const getAuthenticationMiddleware = () => {
   const authenticationMiddlewareService = new AuthenticationMiddlewareService()
@@ -82,11 +85,26 @@ const attachSiteHandler: RequestHandler<
     params: { siteName },
   } = req
   const { userSessionData } = res.locals
+
+  // populate growthbook
+  if (req.growthbook) {
+    const { isomerUserId, email, githubId } = userSessionData
+    const gbAttributes: GrowthBookAttributes = {
+      isomerUserId,
+      email,
+      siteName,
+    }
+    if (githubId) gbAttributes.githubId = githubId
+    req.growthbook.setAttributes(gbAttributes)
+  }
+
   const userWithSiteSessionData = new UserWithSiteSessionData({
     ...userSessionData.getGithubParams(),
     siteName,
+    growthbook: req.growthbook, // inject into session
   })
   res.locals.userWithSiteSessionData = userWithSiteSessionData
+
   return next()
 }
 
@@ -95,4 +113,5 @@ export {
   getAuthorizationMiddleware,
   attachFormSGHandler,
   attachSiteHandler,
+  featureFlagMiddleware,
 }

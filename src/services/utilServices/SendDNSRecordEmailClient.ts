@@ -1,13 +1,15 @@
 import { groupBy } from "lodash"
 
+import { REDIRECTION_SERVER_IPS } from "@root/constants"
 import { DigType } from "@root/types/dig"
 
-export interface QuadARecord {
+export interface DigDNSRecord {
   domain: string
   class: string
   type: DigType
   value: string
 }
+
 export interface DnsRecordsEmailProps {
   requesterEmail: string
   repoName: string
@@ -15,9 +17,11 @@ export interface DnsRecordsEmailProps {
   domainValidationTarget: string
   primaryDomainSource: string
   primaryDomainTarget: string
+  indirectionDomain: string
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
-  quadARecords?: QuadARecord[]
+  quadARecords?: DigDNSRecord[]
+  addCAARecord?: boolean
 }
 
 export interface LaunchFailureEmailProps {
@@ -69,14 +73,14 @@ export function getDNSRecordsEmailBody(
 
     html += `<tr style="${headerRowStyle}">
           <td style="${repoNameStyle}" rowspan="${
-      hasRedirection ? 4 : 3
+      hasRedirection ? 3 + REDIRECTION_SERVER_IPS.length : 3
     }">${repoName}</td>
         </tr>`
     groupedDnsRecords[repoName].forEach((dnsRecords) => {
       // check if dnsRecords.redirectionDomain is undefined
       html += `
         <tr style="${tdStyle}">
-  
+
           <td style="${tdStyle}">${dnsRecords.domainValidationSource}</td>
           <td style="${tdStyle}">${dnsRecords.domainValidationTarget}</td>
           <td style="${tdStyle}">CNAME</td>
@@ -87,18 +91,20 @@ export function getDNSRecordsEmailBody(
           ? `www.${dnsRecords.primaryDomainSource}`
           : dnsRecords.primaryDomainSource
       }</td>
-          <td style="${tdStyle}">${dnsRecords.primaryDomainTarget}</td>
+          <td style="${tdStyle}">${dnsRecords.indirectionDomain}</td>
           <td style="${tdStyle}">CNAME</td>
         </tr>`
 
       if (hasRedirection) {
-        html += `
+        for (let i = 0; i < REDIRECTION_SERVER_IPS.length; i += 1) {
+          html += `
           <tr style="${tdStyle}">
             <td style="${tdStyle}">${dnsRecords.primaryDomainSource}</td>
-            <td style="${tdStyle}">${dnsRecords.redirectionDomainTarget}</td>
+            <td style="${tdStyle}">${REDIRECTION_SERVER_IPS[i]}</td>
             <td style="${tdStyle}">A Record</td>
           </tr>
         `
+        }
       }
     })
   })
@@ -108,7 +114,42 @@ export function getDNSRecordsEmailBody(
   </table>`
 
   Object.keys(groupedDnsRecords).forEach((repoName) => {
-    const allQuadARecordsForRepo: QuadARecord[] = []
+    groupedDnsRecords[repoName].forEach((dnsRecord) => {
+      if (dnsRecord.addCAARecord) {
+        html += `<p style="${bodyFooterStyle}">Please add CAA records for the following repo: <b>${repoName}</b>.`
+
+        html += ` <table style="${tableStyle}">
+        <thead>
+          <tr style="${headerRowStyle}">
+            <th style="${thStyle}">Repo Name</th>
+            <th style="${thStyle}">Type</th>
+            <th style="${thStyle}">Flags</th>
+            <th style="${thStyle}">Tag</th>
+            <th style="${thStyle}">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="${tdStyle}">
+            <td style="${tdStyle}  background-color: #f2f2f2" rowspan="2" >${repoName}</td>
+            <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+            <td style="${tdStyle}">0</td>
+            <td style="${tdStyle}">issue</td>
+            <td style="${tdStyle}">amazontrust.com</td>
+          </tr>
+          <tr style="${tdStyle}">
+            <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+            <td style="${tdStyle}">0</td>
+            <td style="${tdStyle}">issuewild</td>
+            <td style="${tdStyle}">amazontrust.com</td>
+          </tr>
+        </tbody>
+  </table>`
+      }
+    })
+  })
+
+  Object.keys(groupedDnsRecords).forEach((repoName) => {
+    const allQuadARecordsForRepo: DigDNSRecord[] = []
     groupedDnsRecords[repoName].forEach((dnsRecord) => {
       if (dnsRecord.quadARecords) {
         allQuadARecordsForRepo.push(...dnsRecord.quadARecords)
@@ -146,7 +187,6 @@ export function getDNSRecordsEmailBody(
   })
 
   html += `<p style="${bodyFooterStyle}">This email was sent from the Isomer CMS backend.</p>`
-
   return html
 }
 

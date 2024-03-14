@@ -13,6 +13,7 @@ const mockLaunch: SiteLaunchMessage = {
   primaryDomainTarget: "myapp.example.com",
   domainValidationSource: "example.com",
   domainValidationTarget: "myapp.example.com",
+  indirectionDomain: "example.hostedon.example.com",
   requestorEmail: "john@example.com",
   agencyEmail: "agency@example.com",
   githubRedirectionUrl: "https://github.com/my-repo",

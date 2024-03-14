@@ -1,6 +1,7 @@
 import express from "express"
 import mockAxios from "jest-mock-axios"
 import { ok, okAsync } from "neverthrow"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import { SitesRouter as _SitesRouter } from "@routes/v2/authenticated/sites"
@@ -9,6 +10,7 @@ import {
   Deployment,
   IsomerAdmin,
   Repo,
+  ReviewComment,
   Reviewer,
   ReviewMeta,
   ReviewRequest,
@@ -43,6 +45,7 @@ import {
 import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { SettingsRouter as _SettingsRouter } from "@root/routes/v2/authenticatedSites/settings"
 import { SettingsService } from "@root/services/configServices/SettingsService"
+import GitFileCommitService from "@root/services/db/GitFileCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -61,8 +64,11 @@ import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import AuthorizationMiddlewareService from "@root/services/middlewareServices/AuthorizationMiddlewareService"
-import { GitHubService } from "@services/db/GitHubService"
-import * as ReviewApi from "@services/db/review"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
+import MailClient from "@root/services/utilServices/MailClient"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import GitFileSystemService from "@services/db/GitFileSystemService"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getIdentityAuthService, getUsersService } from "@services/identity"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
@@ -94,14 +100,26 @@ jest.mock("../services/identity/DeploymentClient", () =>
       .mockImplementation(() => ok(mockDeleteInput)),
   }))
 )
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
 
-const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
+const gitHubService = new RepoService({
+  isomerRepoAxiosInstance,
+  gitFileSystemService,
+  gitFileCommitService,
+})
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,
@@ -134,7 +152,9 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (gitHubService as unknown) as typeof ReviewApi,
+  (gitHubService as unknown) as RepoService,
+  reviewCommentService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,
@@ -144,6 +164,10 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -159,6 +183,7 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const navYmlService = new NavYmlService({
   gitHubService,
@@ -166,14 +191,12 @@ const navYmlService = new NavYmlService({
 const homepagePageService = new HomepagePageService({
   gitHubService,
 })
-const deploymentsService = new DeploymentsService({
-  deploymentsRepository: Deployment,
-})
 
 const identityAuthService = getIdentityAuthService(gitHubService)
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,
+  isomerAdminsService,
   sitesService,
   usersService,
   whitelist: Whitelist,

@@ -103,8 +103,8 @@ describe("Sanitized markdown utils test", () => {
       )
     })
 
-    it("should inject a html comment tag when the string is empty", () => {
-      expect(sanitizer.sanitize("")).toBe(HTML_COMMENT_TAG)
+    it("should not perform sanitisation when the string is empty", () => {
+      expect(sanitizer.sanitize("")).toBe("")
     })
   })
 })

@@ -55,7 +55,6 @@ resources_name: resources
 is_government: false
 shareicon: /images/isomer-logo.svg
 facebook-pixel: "123456789012345"
-google_analytics: UA-39345131-33
 google_analytics_ga4: GA-test
 linkedin-insights: "12345"
 `
@@ -112,7 +111,6 @@ const configContent = {
   is_government: false,
   shareicon: "/images/isomer-logo.svg",
   "facebook-pixel": "123456789012345",
-  google_analytics: "UA-39345131-33",
   google_analytics_ga4: "GA-test",
   "linkedin-insights": "12345",
 }
@@ -127,7 +125,6 @@ const configResponse = {
   shareicon: configContent.shareicon,
   is_government: configContent.is_government,
   facebook_pixel: configContent["facebook-pixel"],
-  google_analytics: configContent.google_analytics,
   google_analytics_ga4: configContent.google_analytics_ga4,
   linkedin_insights: configContent["linkedin-insights"],
   colors: configContent.colors,

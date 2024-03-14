@@ -57,6 +57,12 @@ export class Deployment extends Model {
   hostingId!: string
 
   @Column({
+    allowNull: false,
+    type: DataType.TEXT,
+  })
+  stagingLiteHostingId!: string
+
+  @Column({
     allowNull: true,
     type: DataType.TEXT,
   })

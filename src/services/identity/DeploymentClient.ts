@@ -10,8 +10,14 @@ import {
   UpdateBranchCommand,
   UpdateBranchCommandOutput,
   UpdateBranchCommandInput,
+  ListJobsCommand,
+  ListJobsCommandOutput,
+  JobSummary,
+  StartJobCommand,
+  StartJobCommandOutput,
+  StartJobCommandInput,
 } from "@aws-sdk/client-amplify"
-import { ResultAsync } from "neverthrow"
+import { ResultAsync, errAsync, fromPromise, okAsync } from "neverthrow"
 
 import { config } from "@config/config"
 
@@ -69,23 +75,63 @@ class DeploymentClient {
       this.amplifyClient.send(new UpdateBranchCommand(options))
     ) as ResultAsync<UpdateBranchCommandOutput, AmplifyError>
 
-  generateCreateAppInput = (
-    repoName: string,
+  sendListJobsApp = (appId: string, branchName: string) =>
+    wrap(
+      this.amplifyClient.send(new ListJobsCommand({ appId, branchName }))
+    ) as ResultAsync<ListJobsCommandOutput, AmplifyError>
+
+  sendStartJobCommand = (options: StartJobCommandInput) =>
+    wrap(this.amplifyClient.send(new StartJobCommand(options))) as ResultAsync<
+      StartJobCommandOutput,
+      AmplifyError
+    >
+
+  generateCreateAppInput = ({
+    appName,
+    repoName,
+    repoUrl,
+    isStagingLite,
+  }: {
+    appName: string
     repoUrl: string
-  ): CreateAppCommandInput => ({
-    name: repoName,
-    accessToken: SYSTEM_GITHUB_TOKEN,
-    repository: repoUrl,
-    buildSpec: AMPLIFY_BUILD_SPEC,
-    environmentVariables: {
-      JEKYLL_ENV: "development",
-    },
-    customRules: [{ source: "/<*>", target: "/404.html", status: "404" }],
-  })
+    repoName: string
+    isStagingLite: boolean
+  }): CreateAppCommandInput => {
+    const stgLiteRedirectRules = [
+      {
+        source: "/files/<*>",
+        target: `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/files/<*>`,
+        status: "200",
+      },
+      {
+        source: "/images/<*>",
+        target: `https://raw.githubusercontent.com/isomerpages/${repoName}/staging/images/<*>`,
+        status: "200",
+      },
+    ]
+    const defaultRedirectRules = [
+      { source: "/<*>", target: "/404.html", status: "404" },
+    ]
+
+    const redirectRules = isStagingLite
+      ? [...stgLiteRedirectRules, ...defaultRedirectRules]
+      : defaultRedirectRules
+
+    return {
+      name: appName,
+      accessToken: SYSTEM_GITHUB_TOKEN,
+      repository: repoUrl,
+      buildSpec: AMPLIFY_BUILD_SPEC,
+      environmentVariables: {
+        JEKYLL_ENV: "development",
+      },
+      customRules: redirectRules,
+    }
+  }
 
   generateCreateBranchInput = (
     appId: string,
-    branchName: "master" | "staging"
+    branchName: "master" | "staging" | "staging-lite"
   ): CreateBranchCommandInput => ({
     appId,
     framework: "Jekyll",
@@ -97,22 +143,43 @@ class DeploymentClient {
     },
   })
 
-  generateDeletePasswordInput = (appId: string): UpdateBranchCommandInput => ({
+  generateDeletePasswordInput = (
+    appId: string,
+    branchName = "staging"
+  ): UpdateBranchCommandInput => ({
     appId,
-    branchName: "staging",
+    branchName,
     enableBasicAuth: false,
     basicAuthCredentials: "",
   })
 
   generateUpdatePasswordInput = (
     appId: string,
-    password: string
+    password: string,
+    branchName = "staging"
   ): UpdateBranchCommandInput => ({
     appId,
-    branchName: "staging",
+    branchName,
     enableBasicAuth: true,
     basicAuthCredentials: Buffer.from(`user:${password}`).toString("base64"),
   })
+
+  getJobSummaries = (
+    appId: string,
+    branchName: string
+  ): ResultAsync<JobSummary[], AmplifyError> =>
+    fromPromise(
+      this.sendListJobsApp(appId, branchName),
+      (err) => new AmplifyError(`${err}`)
+    ).andThen((resp) => {
+      if (resp.isErr()) {
+        return errAsync(resp.error)
+      }
+      if (!resp.value.jobSummaries) {
+        return errAsync(new AmplifyError("No job summaries"))
+      }
+      return okAsync(resp.value.jobSummaries)
+    })
 }
 
 export default DeploymentClient

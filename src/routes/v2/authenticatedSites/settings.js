@@ -6,8 +6,8 @@ const { BadRequestError } = require("@errors/BadRequestError")
 
 // Import middleware
 const {
-  attachReadRouteHandlerWrapper,
   attachWriteRouteHandlerWrapper,
+  attachReadRouteHandlerWrapper,
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 

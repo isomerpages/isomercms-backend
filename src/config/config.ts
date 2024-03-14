@@ -96,7 +96,7 @@ const config = convict({
       format: ["localhost", "cms.isomer.gov.sg", "isomer.gov.sg"],
       default: "localhost",
     },
-    tokenExpiry: {
+    tokenExpiryInMs: {
       doc: "Expiry duration for auth token in milliseconds",
       env: "AUTH_TOKEN_EXPIRY_DURATION_IN_MILLISECONDS",
       format: "required-positive-number",
@@ -191,7 +191,7 @@ const config = convict({
         doc: "Path to the EFS volume for storing the Git repositories",
         env: "EFS_VOL_PATH",
         format: "required-string",
-        default: "/efs/repos",
+        default: "/efs",
       },
     },
     stepFunctions: {
@@ -258,7 +258,17 @@ const config = convict({
   dataDog: {
     env: {
       doc: "The DataDog environment",
-      format: ["development", "local", "staging", "production"],
+      format: [
+        "development",
+        "local",
+        "staging",
+        "vapt",
+        "uat",
+        "production",
+        "prod",
+        "stg",
+        "dev",
+      ],
       env: "DD_ENV",
       default: "local",
     },
@@ -279,6 +289,34 @@ const config = convict({
     siteCreateFormKey: {
       doc: "FormSG API key for site creation form",
       env: "SITE_CREATE_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    siteLaunchFormKey: {
+      doc: "FormSG API key for site launch form",
+      env: "SITE_LAUNCH_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    ggsRepairFormKey: {
+      doc: "FormSG API key for GGs repair form",
+      env: "GGS_REPAIR_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    siteCheckerFormKey: {
+      doc: "FormSG API key for site checker form",
+      env: "SITE_CHECKER_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
+    siteAuditLogsFormKey: {
+      doc: "FormSG API key for site audit logs form",
+      env: "SITE_AUDIT_LOGS_FORM_KEY",
       sensitive: true,
       format: "required-string",
       default: "",
@@ -363,14 +401,6 @@ const config = convict({
       default: false,
     },
   },
-  redirectionServer: {
-    elasticIp: {
-      doc: "Elastic IP of the redirection server",
-      env: "REDIRECTION_SERVER_ELASTIC_IP",
-      format: String,
-      default: "18.136.36.203",
-    },
-  },
   netlify: {
     accessToken: {
       doc: "Access token for netlify actions",
@@ -383,25 +413,49 @@ const config = convict({
     clientId: {
       doc: "sgID client ID provided during client registration",
       env: "SGID_CLIENT_ID",
-      format: "required-string",
-      default: "",
+      format: String,
+      default: "mock-client-id",
     },
     clientSecret: {
       doc: "sgID client secret provided during client registration",
       env: "SGID_CLIENT_SECRET",
-      format: "required-string",
-      default: "",
+      format: String,
+      default: "mock-client-secret",
     },
     privateKey: {
       doc: "sgID client private key provided during client registration",
       env: "SGID_PRIVATE_KEY",
-      format: "required-string",
-      default: "",
+      format: String,
+      default: "mock-private-key",
     },
     redirectUri: {
       doc: "URL to redirect to after authentication with sgID",
       env: "SGID_REDIRECT_URI",
+      format: String,
+      default: "mock-redirect-uri",
+    },
+  },
+  growthbook: {
+    clientKey: {
+      doc: "GrowthBook SDK client key",
+      env: "GROWTHBOOK_CLIENT_KEY",
       format: "required-string",
+      default: "",
+    },
+  },
+  featureFlags: {
+    ggsTrackedSites: {
+      doc: "Comma-separated list of tracked sites for GitHub API hits",
+      env: "GGS_EXPERIMENTAL_TRACKING_SITES",
+      format: String,
+      default: "",
+    },
+  },
+  uptimeRobot: {
+    apiKey: {
+      doc: "Uptime Robot API key",
+      env: "UPTIME_ROBOT_API_KEY",
+      format: String,
       default: "",
     },
   },

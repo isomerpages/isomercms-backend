@@ -36,13 +36,15 @@ mockGenericAxios.get.mockResolvedValue({
 describe("Media utils test", () => {
   it("should return mediaUrl as raw github information for images in public repos", async () => {
     const expectedResp = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_FILE_NAME
       )}`,
       name: MEDIA_FILE_NAME,
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(IMAGE_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
@@ -51,13 +53,15 @@ describe("Media utils test", () => {
 
   it("should handle nested images in public repos", async () => {
     const expectedResp = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_SUBDIRECTORY_NAME
-      )}/${encodeURIComponent(MEDIA_FILE_NAME)}`,
+      )}%2F${encodeURIComponent(MEDIA_FILE_NAME)}`,
       name: MEDIA_FILE_NAME,
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_SUBDIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(
       await getMediaFileInfo(NESTED_IMAGE_FILE_PUBLIC_INPUT)
@@ -66,13 +70,15 @@ describe("Media utils test", () => {
 
   it("should return mediaUrl as raw github information for svgs with sanitisation in public repos", async () => {
     const expectedResp = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_FILE_NAME
       )}.svg?sanitize=true`,
       name: `${MEDIA_FILE_NAME}.svg`,
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(SVG_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
@@ -81,13 +87,15 @@ describe("Media utils test", () => {
 
   it("should return mediaUrl as raw github information for files in public repos", async () => {
     const expectedResp = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_FILE_NAME
       )}`,
       name: MEDIA_FILE_NAME,
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(PDF_FILE_PUBLIC_INPUT)).toStrictEqual(
       expectedResp
@@ -100,6 +108,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     const resp = await getMediaFileInfo(IMAGE_FILE_PRIVATE_INPUT)
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
@@ -107,7 +117,7 @@ describe("Media utils test", () => {
     expect(
       mockGenericAxios.get
     ).toHaveBeenCalledWith(
-      `https://token@raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      `https://token@raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_FILE_NAME
       )}`,
       { responseType: "arraybuffer" }
@@ -120,6 +130,8 @@ describe("Media utils test", () => {
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}.svg`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     const resp = await getMediaFileInfo(SVG_FILE_PRIVATE_INPUT)
     expect(resp).toStrictEqual(expect.objectContaining(expectedPartialResp))
@@ -127,7 +139,7 @@ describe("Media utils test", () => {
     expect(
       mockGenericAxios.get
     ).toHaveBeenCalledWith(
-      `https://token@raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      `https://token@raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_FILE_NAME
       )}.svg?sanitize=true`,
       { responseType: "arraybuffer" }
@@ -136,13 +148,15 @@ describe("Media utils test", () => {
 
   it("should return mediaUrl as raw github information information for files in private repos", async () => {
     const expectedResp = {
-      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}/${encodeURIComponent(
+      mediaUrl: `https://raw.githubusercontent.com/${GITHUB_ORG_NAME}/${MEDIA_SITE_NAME}/staging/${MEDIA_DIRECTORY_NAME}%2F${encodeURIComponent(
         MEDIA_FILE_NAME
       )}`,
       name: MEDIA_FILE_NAME,
       sha: MEDIA_FILE_SHA,
       mediaPath: `${MEDIA_DIRECTORY_NAME}/${MEDIA_FILE_NAME}`,
       type: "file",
+      addedTime: 0,
+      size: 1234,
     }
     expect(await getMediaFileInfo(PDF_FILE_PRIVATE_INPUT)).toStrictEqual(
       expectedResp

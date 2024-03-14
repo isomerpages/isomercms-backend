@@ -1,9 +1,12 @@
 import express from "express"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import {
+  Deployment,
   Notification,
   Repo,
+  ReviewComment,
   Reviewer,
   ReviewMeta,
   ReviewRequest,
@@ -31,8 +34,7 @@ import {
 } from "@root/fixtures/sessionData"
 import { getAuthorizationMiddleware } from "@root/middleware"
 import { NotificationsRouter as _NotificationsRouter } from "@root/routes/v2/authenticated/notifications"
-import { genericGitHubAxiosInstance } from "@root/services/api/AxiosInstance"
-import { GitHubService } from "@root/services/db/GitHubService"
+import GitFileCommitService from "@root/services/db/GitFileCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -47,11 +49,16 @@ import { ConfigService } from "@root/services/fileServices/YmlFileServices/Confi
 import { ConfigYmlService } from "@root/services/fileServices/YmlFileServices/ConfigYmlService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
+import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
 import SitesService from "@root/services/identity/SitesService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
 import ReviewRequestService from "@root/services/review/ReviewRequestService"
-import * as ReviewApi from "@services/db/review"
+import MailClient from "@root/services/utilServices/MailClient"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import GitFileSystemService from "@services/db/GitFileSystemService"
+import RepoService from "@services/db/RepoService"
 import {
   getIdentityAuthService,
   getUsersService,
@@ -64,15 +71,25 @@ const MOCK_SITE = "mockSite"
 const MOCK_SITE_ID = "1"
 const MOCK_SITE_MEMBER_ID = "1"
 
-const gitHubService = new GitHubService({
-  axiosInstance: genericGitHubAxiosInstance,
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+const gitHubService = new RepoService({
+  isomerRepoAxiosInstance,
+  gitFileSystemService,
+  gitFileCommitService,
 })
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const identityAuthService = getIdentityAuthService(gitHubService)
 const usersService = getUsersService(sequelize)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,
@@ -105,7 +122,9 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (gitHubService as unknown) as typeof ReviewApi,
+  (gitHubService as unknown) as RepoService,
+  reviewCommentService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,
@@ -115,6 +134,10 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -130,10 +153,12 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,
+  isomerAdminsService,
   sitesService,
   usersService,
   whitelist: Whitelist,

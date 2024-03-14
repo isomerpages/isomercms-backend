@@ -1,5 +1,7 @@
 import express from "express"
 import mockAxios from "jest-mock-axios"
+import { okAsync } from "neverthrow"
+import simpleGit from "simple-git"
 import request from "supertest"
 
 import { ReviewsRouter as _ReviewsRouter } from "@routes/v2/authenticated/review"
@@ -10,6 +12,7 @@ import {
   IsomerAdmin,
   Notification,
   Repo,
+  ReviewComment,
   Reviewer,
   ReviewMeta,
   ReviewRequest,
@@ -73,6 +76,7 @@ import {
   MOCK_USER_ID_TWO,
 } from "@fixtures/users"
 import { ReviewRequestStatus } from "@root/constants"
+import GitFileCommitService from "@root/services/db/GitFileCommitService"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { ResourceRoomDirectoryService } from "@root/services/directoryServices/ResourceRoomDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
@@ -85,11 +89,15 @@ import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
+import MailClient from "@root/services/utilServices/MailClient"
 import { ReviewRequestDto } from "@root/types/dto/review"
-import { GitHubService } from "@services/db/GitHubService"
-import * as ReviewApi from "@services/db/review"
+import { isomerRepoAxiosInstance } from "@services/api/AxiosInstance"
+import GitFileSystemService from "@services/db/GitFileSystemService"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -98,13 +106,27 @@ import SitesService from "@services/identity/SitesService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { sequelize } from "@tests/database"
 
-const gitHubService = new GitHubService({ axiosInstance: mockAxios.create() })
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
+
+const gitFileSystemService = new GitFileSystemService(simpleGit())
+const gitFileCommitService = new GitFileCommitService(gitFileSystemService)
+
+const gitHubService = new RepoService({
+  isomerRepoAxiosInstance,
+  gitFileSystemService,
+  gitFileCommitService,
+})
+const reviewCommentService = new ReviewCommentService(ReviewComment)
 const configYmlService = new ConfigYmlService({ gitHubService })
 const usersService = getUsersService(sequelize)
 const isomerAdminsService = new IsomerAdminsService({ repository: IsomerAdmin })
 const footerYmlService = new FooterYmlService({ gitHubService })
 const collectionYmlService = new CollectionYmlService({ gitHubService })
-const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+const baseDirectoryService = new BaseDirectoryService({
+  repoService: gitHubService,
+})
 
 const contactUsService = new ContactUsPageService({
   gitHubService,
@@ -137,7 +159,9 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (gitHubService as unknown) as typeof ReviewApi,
+  (gitHubService as unknown) as RepoService,
+  reviewCommentService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,
@@ -147,6 +171,9 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -162,10 +189,12 @@ const sitesService = new SitesService({
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,
+  isomerAdminsService,
   sitesService,
   usersService,
   whitelist: Whitelist,
@@ -251,29 +280,37 @@ describe("Review Requests Integration Tests", () => {
   })
 
   describe("/compare", () => {
-    it("should get GitHub diff response for a valid site member", async () => {
+    it("should get git diff for a valid site member", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
         subrouter,
         MOCK_USER_SESSION_DATA_ONE,
         MOCK_REPO_NAME_ONE
       )
-      mockAxios.get.mockResolvedValue({
-        data: { content: MOCK_GITHUB_FRONTMATTER },
-      })
-      mockGenericAxios.get.mockResolvedValueOnce({
-        data: {
-          files: [
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
-          ],
-          commits: [
-            MOCK_GITHUB_COMMIT_ALPHA_ONE,
-            MOCK_GITHUB_COMMIT_ALPHA_TWO,
-            MOCK_GITHUB_COMMIT_ALPHA_THREE,
-          ],
-        },
-      })
+
+      jest.spyOn(reviewRequestService, "compareDiff").mockReturnValueOnce(
+        okAsync([
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
+            path: [],
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          },
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          },
+        ])
+      )
+
       const expected = {
         items: [
           {
@@ -327,6 +364,9 @@ describe("Review Requests Integration Tests", () => {
         where: {},
       })
       await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewComment.destroy({
         where: {},
       })
       await ReviewRequest.destroy({
@@ -495,6 +535,13 @@ describe("Review Requests Integration Tests", () => {
         pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
         reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
       })
+      await ReviewComment.create({
+        reviewId: reviewRequest?.id,
+        reviewerId: MOCK_USER_ID_TWO,
+        comment: MOCK_GITHUB_COMMENT_BODY_ONE,
+        createdAt: new Date().getTime(),
+        updatedAt: new Date().getTime(),
+      })
     })
 
     afterAll(async () => {
@@ -502,6 +549,9 @@ describe("Review Requests Integration Tests", () => {
         where: {},
       })
       await Reviewer.destroy({
+        where: {},
+      })
+      await ReviewComment.destroy({
         where: {},
       })
       await ReviewRequest.destroy({
@@ -628,9 +678,13 @@ describe("Review Requests Integration Tests", () => {
       await ReviewRequestView.destroy({
         where: {},
       })
-      await ReviewRequest.destroy({
-        where: {},
-      })
+      try {
+        await ReviewRequest.destroy({
+          where: {},
+        })
+      } catch (e) {
+        console.log(`Error for review request`, e)
+      }
     })
 
     it("should mark all existing review requests as viewed for the user", async () => {
@@ -758,19 +812,28 @@ describe("Review Requests Integration Tests", () => {
       mockGenericAxios.get.mockResolvedValueOnce({
         data: MOCK_PULL_REQUEST_ONE,
       })
-      mockGenericAxios.get.mockResolvedValueOnce({
-        data: {
-          files: [
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_ONE,
-            MOCK_GITHUB_FILE_CHANGE_INFO_ALPHA_TWO,
-          ],
-          commits: [
-            MOCK_GITHUB_COMMIT_ALPHA_ONE,
-            MOCK_GITHUB_COMMIT_ALPHA_TWO,
-            MOCK_GITHUB_COMMIT_ALPHA_THREE,
-          ],
-        },
-      })
+      jest.spyOn(reviewRequestService, "compareDiff").mockReturnValueOnce(
+        okAsync([
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_ONE,
+            path: [],
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/homepage`,
+          },
+          {
+            type: "page",
+            name: MOCK_GITHUB_FILENAME_ALPHA_TWO,
+            path: MOCK_GITHUB_FILEPATH_ALPHA_TWO.split("/").filter((x) => x),
+            lastEditedBy: MOCK_USER_EMAIL_TWO,
+            lastEditedTime: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+            stagingUrl: `${MOCK_DEPLOYMENT_DBENTRY_ONE.stagingUrl}${MOCK_PAGE_PERMALINK}`,
+            cmsFileUrl: `${FRONTEND_URL}/sites/${MOCK_REPO_NAME_ONE}/editPage/${MOCK_GITHUB_FILENAME_ALPHA_TWO}`,
+          },
+        ])
+      )
       const expected: ReviewRequestDto = {
         reviewUrl: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_ONE}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
         title: MOCK_PULL_REQUEST_TITLE_ONE,
@@ -930,9 +993,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
-      )
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -947,7 +1012,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/123456`)
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/123456`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -962,9 +1031,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
-      )
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`)
+        .send({
+          reviewers: [MOCK_USER_EMAIL_THREE],
+        })
 
       // Assert
       expect(actual.statusCode).toEqual(403)
@@ -1033,24 +1104,6 @@ describe("Review Requests Integration Tests", () => {
       })
     })
 
-    it("should close the review request successfully", async () => {
-      // Arrange
-      const app = generateRouterForUserWithSite(
-        subrouter,
-        MOCK_USER_SESSION_DATA_ONE,
-        MOCK_REPO_NAME_ONE
-      )
-      mockGenericAxios.patch.mockResolvedValueOnce(null)
-
-      // Act
-      const actual = await request(app).delete(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
-      )
-
-      // Assert
-      expect(actual.statusCode).toEqual(200)
-    })
-
     it("should return 404 if site is not found", async () => {
       // Arrange
       const app = generateRouterForUserWithSite(
@@ -1060,7 +1113,7 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
+      const actual = await request(app).delete(
         `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
       )
 
@@ -1077,7 +1130,7 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(`/${MOCK_REPO_NAME_ONE}/123456`)
+      const actual = await request(app).delete(`/${MOCK_REPO_NAME_ONE}/123456`)
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1092,7 +1145,7 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
+      const actual = await request(app).delete(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
       )
 
@@ -1109,12 +1162,30 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
+      const actual = await request(app).delete(
         `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
       )
 
       // Assert
       expect(actual.statusCode).toEqual(403)
+    })
+
+    it("should close the review request successfully", async () => {
+      // Arrange
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_ONE,
+        MOCK_REPO_NAME_ONE
+      )
+      mockGenericAxios.patch.mockResolvedValueOnce(null)
+
+      // Act
+      const actual = await request(app).delete(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
     })
   })
 
@@ -1808,6 +1879,9 @@ describe("Review Requests Integration Tests", () => {
       await ReviewMeta.destroy({
         where: {},
       })
+      await ReviewComment.destroy({
+        where: {},
+      })
       await ReviewRequest.destroy({
         where: {},
       })
@@ -1823,9 +1897,11 @@ describe("Review Requests Integration Tests", () => {
       mockGenericAxios.post.mockResolvedValueOnce(null)
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
-      )
+      const actual = await request(app)
+        .post(
+          `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+        )
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(200)
@@ -1840,9 +1916,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
-      )
+      const actual = await request(app)
+        .post(
+          `/${MOCK_REPO_NAME_TWO}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+        )
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1857,9 +1935,11 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
-      )
+      const actual = await request(app)
+        .post(
+          `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+        )
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(404)
@@ -1874,9 +1954,9 @@ describe("Review Requests Integration Tests", () => {
       )
 
       // Act
-      const actual = await request(app).post(
-        `/${MOCK_REPO_NAME_ONE}/123456/comments`
-      )
+      const actual = await request(app)
+        .post(`/${MOCK_REPO_NAME_ONE}/123456/comments`)
+        .send({ message: "blahblah" })
 
       // Assert
       expect(actual.statusCode).toEqual(404)

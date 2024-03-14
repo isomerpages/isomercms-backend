@@ -9,21 +9,19 @@ env:
   PRODUCTION_BRANCH: refs/heads/master
   STAGING_BRANCH: refs/heads/staging
   EB_APP: isomer-cms
-  EB_ENV_PRODUCTION: cms-backend-prod-node16
-  EB_ENV_STAGING: cms-backend-staging-node16
+  EB_ENV_PRODUCTION: cms-backend-prod-node18
+  EB_ENV_STAGING: cms-backend-staging-node18
   COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
 jobs:
   install:
-    # NOTE: Netlify uses ubuntu 16.08 but Github Actions does not offer it by default.
-    # Hence, we default to the latest version.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Cache Node.js modules
         uses: actions/cache@v2
         with:
@@ -43,7 +41,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Load Node.js modules
         uses: actions/cache@v2
         with:
@@ -62,7 +60,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Load Node.js modules
         uses: actions/cache@v2
         with:
@@ -80,7 +78,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "18.x"
       - name: Load Node.js modules
         uses: actions/cache@v2
         with:
@@ -88,9 +86,8 @@ jobs:
           path: ~/.npm
           key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: npm run dev:services
+      - run: npm run test:docker
       - run: . .env.test && npx jest --runInBand
-      - run: docker compose down
 
   gatekeep:
     name: Determine if Build & Deploy is needed
@@ -105,13 +102,12 @@ jobs:
           import os
           ref = os.environ['GITHUB_REF']
           prod = os.environ['PRODUCTION_BRANCH']
-          staging = os.environ['STAGING_BRANCH']
-          if ref == prod or ref == staging:
+          if ref == prod:
             print('::set-output name=proceed::true')
           else:
             print('::set-output name=proceed::false')
 
-  deploy:
+  deploy_eb:
     name: Build and deploy to EB
     runs-on: ubuntu-latest
     needs: [gatekeep]
@@ -121,7 +117,7 @@ jobs:
         - name: Use Node.js
           uses: actions/setup-node@v3
           with:
-            node-version: '16.x'
+            node-version: '18.x'
         - name: Cache Node.js modules
           uses: actions/cache@v2
           with:
@@ -165,16 +161,11 @@ jobs:
             import os
             branch = os.environ['GITHUB_REF']
             production = os.environ['PRODUCTION_BRANCH']
-            staging = os.environ['STAGING_BRANCH']
             eb_app = os.environ['EB_APP']
             eb_env_production = os.environ['EB_ENV_PRODUCTION']
-            eb_env_staging = os.environ['EB_ENV_STAGING']
             if branch == production:
               print('::set-output name=eb_app::' + eb_app)
               print('::set-output name=eb_env::' + eb_env_production)
-            elif branch == staging:
-              print('::set-output name=eb_app::' + eb_app)
-              print('::set-output name=eb_env::' + eb_env_staging)
           id: select_eb_vars
         - name: Deploy to EB
           uses: opengovsg/beanstalk-deploy@v11
@@ -189,3 +180,12 @@ jobs:
             deployment_package: deploy.zip
             wait_for_deployment: true
             wait_for_environment_recovery: true
+
+  # NOTE: Not combining with above workflow to allow parallel execution
+  deploy_ecs:
+    name: Build and deploy to ECS
+    needs: [gatekeep]
+    if: needs.gatekeep.outputs.proceed == 'true'
+    uses: ./.github/workflows/deploy_prod.yml
+    secrets: inherit
+      

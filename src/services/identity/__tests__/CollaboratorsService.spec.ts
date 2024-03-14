@@ -15,11 +15,13 @@ import {
 } from "@fixtures/identity"
 import {
   CollaboratorRoles,
+  CollaboratorRolesWithoutIsomerAdmin,
   INACTIVE_USER_THRESHOLD_DAYS,
 } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { ConflictError } from "@root/errors/ConflictError"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
+import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
 
@@ -41,16 +43,20 @@ describe("CollaboratorsService", () => {
     findAll: jest.fn(),
   }
 
+  const mockIsomerAdminsService = {
+    isUserIsomerAdmin: jest.fn(),
+  }
   const mockSitesService = {
     getBySiteName: jest.fn(),
   }
   const mockUsersService = {
-    findByEmail: jest.fn(),
+    findOrCreateByEmail: jest.fn(),
   }
 
   const collaboratorsService = new CollaboratorsService({
     siteRepository: (mockSiteRepo as unknown) as ModelStatic<Site>,
     siteMemberRepository: (mockSiteMemberRepo as unknown) as ModelStatic<SiteMember>,
+    isomerAdminsService: (mockIsomerAdminsService as unknown) as IsomerAdminsService,
     sitesService: (mockSitesService as unknown) as SitesService,
     usersService: (mockUsersService as unknown) as UsersService,
     whitelist: (mockWhitelistRepo as unknown) as ModelStatic<Whitelist>,
@@ -179,12 +185,14 @@ describe("CollaboratorsService", () => {
       mockSiteRepo.findOne.mockResolvedValue(
         mockSiteOrmResponseWithOneAdminCollaborator
       )
+      mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
       expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.Admin)
     })
 
@@ -193,12 +201,14 @@ describe("CollaboratorsService", () => {
       mockSiteRepo.findOne.mockResolvedValue(
         mockSiteOrmResponseWithOneContributorCollaborator
       )
+      mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
       expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.Contributor)
     })
 
@@ -207,24 +217,44 @@ describe("CollaboratorsService", () => {
       mockSiteRepo.findOne.mockResolvedValue(
         mockSiteOrmResponseWithNoCollaborators
       )
+      mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
       expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(null)
+    })
+
+    it("should retrieve correct Isomer admin role if user is not a collaborator but is an Isomer admin", async () => {
+      // Arrange
+      mockSiteRepo.findOne.mockResolvedValue(
+        mockSiteOrmResponseWithNoCollaborators
+      )
+      mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(true)
+
+      // Act
+      const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
+
+      // Assert
+      expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
+      expect(role).toStrictEqual(CollaboratorRoles.IsomerAdmin)
     })
 
     it("should retrieve correct null role if site does not exist", async () => {
       // Arrange
       mockSiteRepo.findOne.mockResolvedValue([])
+      mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
       expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(null)
     })
   })
@@ -286,11 +316,11 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockReturnValue(
         okAsync({ id: mockSiteId })
       )
-      mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
+      mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
 
@@ -306,7 +336,9 @@ describe("CollaboratorsService", () => {
         mockEmailAddress
       )
       expect(mockSitesService.getBySiteName).toBeCalledWith(mockSiteName)
-      expect(mockUsersService.findByEmail).toBeCalledWith(mockEmailAddress)
+      expect(mockUsersService.findOrCreateByEmail).toBeCalledWith(
+        mockEmailAddress
+      )
       expect(mockSiteMemberRepo.findOne).toBeCalled()
       expect(mockSiteMemberRepo.create).toBeCalled()
       expect(resp).toStrictEqual(mockSiteMemberRecord)
@@ -317,9 +349,9 @@ describe("CollaboratorsService", () => {
       const MALFORMED_EMAIL = "test"
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
-      mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
+      mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
 
@@ -333,7 +365,9 @@ describe("CollaboratorsService", () => {
       // Assert
       expect(collaboratorsService.deriveAllowedRoleFromEmail).not.toBeCalled()
       expect(mockSitesService.getBySiteName).not.toBeCalledWith(mockSiteName)
-      expect(mockUsersService.findByEmail).not.toBeCalledWith(mockEmailAddress)
+      expect(mockUsersService.findOrCreateByEmail).not.toBeCalledWith(
+        mockEmailAddress
+      )
       expect(mockSiteMemberRepo.findOne).not.toBeCalled()
       expect(mockSiteMemberRepo.create).not.toBeCalled()
       expect(resp instanceof BadRequestError).toBe(true)
@@ -343,9 +377,9 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => null
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue({ id: mockSiteId })
-      mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
+      mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
 
@@ -361,7 +395,7 @@ describe("CollaboratorsService", () => {
         mockEmailAddress
       )
       expect(mockSitesService.getBySiteName).not.toBeCalled()
-      expect(mockUsersService.findByEmail).not.toBeCalled()
+      expect(mockUsersService.findOrCreateByEmail).not.toBeCalled()
       expect(mockSiteMemberRepo.findOne).not.toBeCalled()
       expect(mockSiteMemberRepo.create).not.toBeCalled()
       expect(resp instanceof ForbiddenError).toBe(true)
@@ -371,9 +405,9 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue(errAsync(null))
-      mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
+      mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
 
@@ -389,37 +423,7 @@ describe("CollaboratorsService", () => {
         mockEmailAddress
       )
       expect(mockSitesService.getBySiteName).toBeCalledWith(mockSiteName)
-      expect(mockUsersService.findByEmail).not.toBeCalled()
-      expect(mockSiteMemberRepo.findOne).not.toBeCalled()
-      expect(mockSiteMemberRepo.create).not.toBeCalled()
-      expect(resp instanceof NotFoundError).toBe(true)
-    })
-
-    it("should return error if user does not exist", async () => {
-      // Arrange
-      collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
-        () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
-      mockSitesService.getBySiteName.mockResolvedValue(
-        okAsync({ id: mockSiteId })
-      )
-      mockUsersService.findByEmail.mockResolvedValue(null)
-      mockSiteMemberRepo.findOne.mockResolvedValue(null)
-      mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
-
-      // Act
-      const resp = await collaboratorsService.create(
-        mockSiteName,
-        mockEmailAddress,
-        false
-      )
-
-      // Assert
-      expect(collaboratorsService.deriveAllowedRoleFromEmail).toBeCalledWith(
-        mockEmailAddress
-      )
-      expect(mockSitesService.getBySiteName).toBeCalledWith(mockSiteName)
-      expect(mockUsersService.findByEmail).toBeCalledWith(mockEmailAddress)
+      expect(mockUsersService.findOrCreateByEmail).not.toBeCalled()
       expect(mockSiteMemberRepo.findOne).not.toBeCalled()
       expect(mockSiteMemberRepo.create).not.toBeCalled()
       expect(resp instanceof NotFoundError).toBe(true)
@@ -429,11 +433,11 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Admin
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue(
         okAsync({ id: mockSiteId })
       )
-      mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
+      mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(mockSiteMemberRecord)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
 
@@ -449,7 +453,9 @@ describe("CollaboratorsService", () => {
         mockEmailAddress
       )
       expect(mockSitesService.getBySiteName).toBeCalledWith(mockSiteName)
-      expect(mockUsersService.findByEmail).toBeCalledWith(mockEmailAddress)
+      expect(mockUsersService.findOrCreateByEmail).toBeCalledWith(
+        mockEmailAddress
+      )
       expect(mockSiteMemberRepo.findOne).toBeCalled()
       expect(mockSiteMemberRepo.create).not.toBeCalled()
       expect(resp instanceof ConflictError).toBe(true)
@@ -459,11 +465,11 @@ describe("CollaboratorsService", () => {
       // Arrange
       collaboratorsService.deriveAllowedRoleFromEmail = (jest.fn(
         () => CollaboratorRoles.Contributor
-      ) as unknown) as () => Promise<CollaboratorRoles | null>
+      ) as unknown) as () => Promise<CollaboratorRolesWithoutIsomerAdmin | null>
       mockSitesService.getBySiteName.mockResolvedValue(
         okAsync({ id: mockSiteId })
       )
-      mockUsersService.findByEmail.mockResolvedValue({ id: mockUserId })
+      mockUsersService.findOrCreateByEmail.mockResolvedValue({ id: mockUserId })
       mockSiteMemberRepo.findOne.mockResolvedValue(null)
       mockSiteMemberRepo.create.mockResolvedValue(mockSiteMemberRecord)
 
@@ -479,7 +485,9 @@ describe("CollaboratorsService", () => {
         mockEmailAddress
       )
       expect(mockSitesService.getBySiteName).toBeCalledWith(mockSiteName)
-      expect(mockUsersService.findByEmail).toBeCalledWith(mockEmailAddress)
+      expect(mockUsersService.findOrCreateByEmail).toBeCalledWith(
+        mockEmailAddress
+      )
       expect(mockSiteMemberRepo.findOne).toBeCalled()
       expect(mockSiteMemberRepo.create).not.toBeCalled()
       expect(resp instanceof UnprocessableError).toBe(true)

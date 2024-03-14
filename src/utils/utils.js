@@ -1,4 +1,5 @@
 const slugify = require("slugify")
+const urlTemplate = require("url-template")
 
 const { config } = require("@config/config")
 
@@ -11,15 +12,17 @@ async function getCommitAndTreeSha(repo, accessToken, branchRef = "staging") {
     Authorization: `token ${accessToken}`,
   }
   // Get the commits of the repo
-  const { data: commits } = await genericGitHubAxiosInstance.get(
-    `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/commits`,
-    {
-      params: {
-        ref: branchRef,
-      },
-      headers,
-    }
+  const endpointTemplate = urlTemplate.parse(
+    `https://api.github.com/repos/{GITHUB_ORG_NAME}/{repo}/commits`
   )
+  const endpoint = endpointTemplate.expand({ GITHUB_ORG_NAME, repo })
+
+  const { data: commits } = await genericGitHubAxiosInstance.get(endpoint, {
+    params: {
+      sha: branchRef,
+    },
+    headers,
+  })
   // Get the tree sha of the latest commit
   const {
     commit: {
@@ -50,15 +53,16 @@ async function getTree(
 
   if (isRecursive) params.recursive = true
 
+  const endpointTemplate = urlTemplate.parse(
+    `https://api.github.com/repos/{GITHUB_ORG_NAME}/{repo}/git/trees/{treeSha}`
+  )
+  const endpoint = endpointTemplate.expand({ GITHUB_ORG_NAME, repo, treeSha })
   const {
     data: { tree: gitTree },
-  } = await genericGitHubAxiosInstance.get(
-    `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees/${treeSha}`,
-    {
-      params,
-      headers,
-    }
-  )
+  } = await genericGitHubAxiosInstance.get(endpoint, {
+    params,
+    headers,
+  })
 
   return gitTree
 }
@@ -76,8 +80,12 @@ async function sendTree(
   const headers = {
     Authorization: `token ${accessToken}`,
   }
+  const endpointTemplate = urlTemplate.parse(
+    `https://api.github.com/repos/{GITHUB_ORG_NAME}/{repo}/git/trees`
+  )
+  const endpoint = endpointTemplate.expand({ GITHUB_ORG_NAME, repo })
   const resp = await genericGitHubAxiosInstance.post(
-    `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/trees`,
+    endpoint,
     {
       tree: gitTree,
       base_tree: baseTreeSha,
@@ -91,9 +99,21 @@ async function sendTree(
     data: { sha: newTreeSha },
   } = resp
 
-  const baseRefEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/refs`
-  const baseCommitEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/commits`
-  const refEndpoint = `${baseRefEndpoint}/heads/${branchRef}`
+  const refEndpointTemplate = urlTemplate.parse(
+    `https://api.github.com/repos/{GITHUB_ORG_NAME}/{repo}/git/refs/heads/{branchRef}`
+  )
+  const refEndpoint = refEndpointTemplate.expand({
+    GITHUB_ORG_NAME,
+    repo,
+    branchRef,
+  })
+  const baseCommitEndpointTemplate = urlTemplate.parse(
+    `https://api.github.com/repos/{GITHUB_ORG_NAME}/{repo}/git/commits`
+  )
+  const baseCommitEndpoint = baseCommitEndpointTemplate.expand({
+    GITHUB_ORG_NAME,
+    repo,
+  })
 
   const newCommitResp = await genericGitHubAxiosInstance.post(
     baseCommitEndpoint,
@@ -136,8 +156,14 @@ async function revertCommit(
     Authorization: `token ${accessToken}`,
   }
 
-  const baseRefEndpoint = `https://api.github.com/repos/${GITHUB_ORG_NAME}/${repo}/git/refs`
-  const refEndpoint = `${baseRefEndpoint}/heads/${branchRef}`
+  const refEndpointTemplate = urlTemplate.parse(
+    `https://api.github.com/repos/{GITHUB_ORG_NAME}/{repo}/git/refs/heads/{branchRef}`
+  )
+  const refEndpoint = refEndpointTemplate.expand({
+    GITHUB_ORG_NAME,
+    repo,
+    branchRef,
+  })
 
   /**
    * The `staging` branch reference will now point to `currentCommitSha`

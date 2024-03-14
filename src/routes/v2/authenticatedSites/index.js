@@ -1,4 +1,5 @@
 import { attachSiteHandler } from "@root/middleware"
+import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 
 const express = require("express")
 
@@ -10,11 +11,11 @@ const {
 } = require("@routes/v2/authenticatedSites/collections")
 const { ContactUsRouter } = require("@routes/v2/authenticatedSites/contactUs")
 const { HomepageRouter } = require("@routes/v2/authenticatedSites/homepage")
-const {
-  MediaCategoriesRouter,
-} = require("@routes/v2/authenticatedSites/mediaCategories")
-const { MediaFilesRouter } = require("@routes/v2/authenticatedSites/mediaFiles")
+const { MediaRouter } = require("@routes/v2/authenticatedSites/media")
 const { NavigationRouter } = require("@routes/v2/authenticatedSites/navigation")
+const {
+  RepoManagementRouter,
+} = require("@routes/v2/authenticatedSites/repoManagement")
 const {
   ResourceCategoriesRouter,
 } = require("@routes/v2/authenticatedSites/resourceCategories")
@@ -92,6 +93,7 @@ const getAuthenticatedSitesSubrouter = ({
   notificationOnEditHandler,
   sitesService,
   deploymentsService,
+  repoManagementService,
 }) => {
   const collectionYmlService = new CollectionYmlService({ gitHubService })
   const homepagePageService = new HomepagePageService({ gitHubService })
@@ -107,13 +109,15 @@ const getAuthenticatedSitesSubrouter = ({
   })
   const unlinkedPageService = new UnlinkedPageService({ gitHubService })
   const resourcePageService = new ResourcePageService({ gitHubService })
-  const mediaFileService = new MediaFileService({ gitHubService })
+  const mediaFileService = new MediaFileService({ repoService: gitHubService })
   const moverService = new MoverService({
     unlinkedPageService,
     collectionPageService,
     subcollectionPageService,
   })
-  const baseDirectoryService = new BaseDirectoryService({ gitHubService })
+  const baseDirectoryService = new BaseDirectoryService({
+    repoService: gitHubService,
+  })
   const unlinkedPagesDirectoryService = new UnlinkedPagesDirectoryService({
     baseDirectoryService,
     moverService,
@@ -176,11 +180,9 @@ const getAuthenticatedSitesSubrouter = ({
   const resourceDirectoryV2Router = new ResourceCategoriesRouter({
     resourceDirectoryService,
   })
-  const mediaFilesV2Router = new MediaFilesRouter({
-    mediaFileService,
-  })
-  const mediaDirectoryV2Router = new MediaCategoriesRouter({
+  const mediaV2Router = new MediaRouter({
     mediaDirectoryService,
+    mediaFileService,
   })
   const resourceRoomV2Router = new ResourceRoomRouter({
     resourceRoomDirectoryService,
@@ -194,9 +196,15 @@ const getAuthenticatedSitesSubrouter = ({
   const navigationV2Router = new NavigationRouter({
     navigationYmlService: navYmlService,
   })
+  const repoManagementV2Router = new RepoManagementRouter({
+    repoManagementService,
+    authorizationMiddleware,
+  })
+  const routeCheckerMiddleware = new RouteCheckerMiddleware()
 
   const authenticatedSitesSubrouter = express.Router({ mergeParams: true })
 
+  authenticatedSitesSubrouter.use(routeCheckerMiddleware.verifySiteName)
   authenticatedSitesSubrouter.use(authenticationMiddleware.verifyAccess)
   authenticatedSitesSubrouter.use(attachSiteHandler)
   // NOTE: apiLogger needs to be after `verifyJwt` as it logs the github username
@@ -221,11 +229,7 @@ const getAuthenticatedSitesSubrouter = ({
     "/resourceRoom/:resourceRoomName/resources",
     resourceDirectoryV2Router.getRouter()
   )
-  authenticatedSitesSubrouter.use(
-    "/media/:directoryName/pages",
-    mediaFilesV2Router.getRouter()
-  )
-  authenticatedSitesSubrouter.use("/media", mediaDirectoryV2Router.getRouter())
+  authenticatedSitesSubrouter.use("/media", mediaV2Router.getRouter())
   authenticatedSitesSubrouter.use("/navigation", navigationV2Router.getRouter())
   authenticatedSitesSubrouter.use(
     "/resourceRoom",
@@ -234,6 +238,7 @@ const getAuthenticatedSitesSubrouter = ({
   authenticatedSitesSubrouter.use("/contactUs", contactUsV2Router.getRouter())
   authenticatedSitesSubrouter.use("/homepage", homepageV2Router.getRouter())
   authenticatedSitesSubrouter.use("/settings", settingsV2Router.getRouter())
+  authenticatedSitesSubrouter.use("/admin", repoManagementV2Router.getRouter())
   authenticatedSitesSubrouter.use(notificationOnEditHandler.createNotification)
 
   return authenticatedSitesSubrouter

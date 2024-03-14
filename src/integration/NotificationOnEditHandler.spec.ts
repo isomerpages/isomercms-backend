@@ -6,6 +6,7 @@ import { NotificationOnEditHandler } from "@middleware/notificationOnEditHandler
 import UserSessionData from "@classes/UserSessionData"
 
 import {
+  Deployment,
   Notification,
   Repo,
   Reviewer,
@@ -41,10 +42,12 @@ import { UnlinkedPageService } from "@root/services/fileServices/MdPageServices/
 import { CollectionYmlService } from "@root/services/fileServices/YmlFileServices/CollectionYmlService"
 import { ConfigService } from "@root/services/fileServices/YmlFileServices/ConfigService"
 import { FooterYmlService } from "@root/services/fileServices/YmlFileServices/FooterYmlService"
+import DeploymentsService from "@root/services/identity/DeploymentsService"
 import PreviewService from "@root/services/identity/PreviewService"
 import { SitesCacheService } from "@root/services/identity/SitesCacheService"
-import { GitHubService } from "@services/db/GitHubService"
-import * as ReviewApi from "@services/db/review"
+import ReviewCommentService from "@root/services/review/ReviewCommentService"
+import MailClient from "@root/services/utilServices/MailClient"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import { getUsersService, notificationsService } from "@services/identity"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
@@ -61,6 +64,13 @@ const mockGithubService = {
   getComments: jest.fn(),
   getCommitDiff: jest.fn(),
 }
+const mockReviewCommentService = {
+  getCommentsForReviewRequest: jest.fn(),
+  createCommentForReviewRequest: jest.fn(),
+}
+const mockMailer = ({
+  sendMail: jest.fn(),
+} as unknown) as MailClient
 const usersService = getUsersService(sequelize)
 const footerYmlService = new FooterYmlService({
   gitHubService: mockGithubService,
@@ -69,7 +79,7 @@ const collectionYmlService = new CollectionYmlService({
   gitHubService: mockGithubService,
 })
 const baseDirectoryService = new BaseDirectoryService({
-  gitHubService: mockGithubService,
+  repoService: mockGithubService,
 })
 
 const contactUsService = new ContactUsPageService({
@@ -112,7 +122,9 @@ const pageService = new PageService({
 })
 const configService = new ConfigService()
 const reviewRequestService = new ReviewRequestService(
-  (mockGithubService as unknown) as typeof ReviewApi,
+  (mockGithubService as unknown) as RepoService,
+  (mockReviewCommentService as unknown) as ReviewCommentService,
+  mockMailer,
   User,
   ReviewRequest,
   Reviewer,
@@ -122,6 +134,9 @@ const reviewRequestService = new ReviewRequestService(
   configService,
   sequelize
 )
+const deploymentsService = new DeploymentsService({
+  deploymentsRepository: Deployment,
+})
 // Using a mock SitesCacheService as the actual service has setInterval
 // which causes tests to not exit.
 const MockSitesCacheService = {
@@ -130,17 +145,19 @@ const MockSitesCacheService = {
 const MockPreviewService = {}
 const sitesService = new SitesService({
   siteRepository: Site,
-  gitHubService: (mockGithubService as unknown) as GitHubService,
+  gitHubService: (mockGithubService as unknown) as RepoService,
   configYmlService: (jest.fn() as unknown) as ConfigYmlService,
   usersService,
   isomerAdminsService: (jest.fn() as unknown) as IsomerAdminsService,
   reviewRequestService,
   sitesCacheService: (MockSitesCacheService as unknown) as SitesCacheService,
   previewService: (MockPreviewService as unknown) as PreviewService,
+  deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
   siteRepository: Site,
   siteMemberRepository: SiteMember,
+  isomerAdminsService: (jest.fn() as unknown) as IsomerAdminsService,
   sitesService,
   usersService,
   whitelist: Whitelist,

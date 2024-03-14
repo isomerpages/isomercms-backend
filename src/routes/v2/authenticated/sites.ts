@@ -1,7 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import autoBind from "auto-bind"
 import express from "express"
-import { fromPromise } from "neverthrow"
 
 import type { AuthorizationMiddleware } from "@middleware/authorization"
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
@@ -10,14 +9,22 @@ import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import type UserSessionData from "@root/classes/UserSessionData"
 import { attachSiteHandler } from "@root/middleware"
+import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 import { StatsMiddleware } from "@root/middleware/stats"
 import InfraService from "@root/services/infra/InfraService"
+import RepoCheckerService from "@root/services/review/RepoCheckerService"
 import type { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import { RepositoryData } from "@root/types/repoInfo"
+import { BrokenLinkErrorDto } from "@root/types/siteChecker"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
+import {
+  GetPreviewInfoSchema,
+  LaunchSiteSchema,
+} from "@root/validators/RequestSchema"
 import type SitesService from "@services/identity/SitesService"
 
 type SitesRouterProps = {
@@ -25,6 +32,7 @@ type SitesRouterProps = {
   infraService: InfraService
   authorizationMiddleware: AuthorizationMiddleware
   statsMiddleware: StatsMiddleware
+  repoCheckerService: RepoCheckerService
 }
 
 // eslint-disable-next-line import/prefer-default-export
@@ -37,16 +45,20 @@ export class SitesRouter {
 
   private readonly infraService
 
+  private readonly repoCheckerService
+
   constructor({
     sitesService,
     authorizationMiddleware,
     statsMiddleware,
     infraService,
+    repoCheckerService,
   }: SitesRouterProps) {
     this.sitesService = sitesService
     this.authorizationMiddleware = authorizationMiddleware
     this.statsMiddleware = statsMiddleware
     this.infraService = infraService
+    this.repoCheckerService = repoCheckerService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
   }
@@ -129,6 +141,11 @@ export class SitesRouter {
     never,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = (req, res) => {
+    const { error } = LaunchSiteSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { userWithSiteSessionData } = res.locals
     const { email } = userWithSiteSessionData
     // Note, launching the site is an async operation,
@@ -162,16 +179,74 @@ export class SitesRouter {
   getPreviewInfo: RequestHandler<
     { siteName: string },
     PreviewInfo[] | ResponseErrorBody,
-    { sites: string[]; email: string },
+    { sites: string[] },
     never,
     { userSessionData: UserSessionData }
-  > = async (req, res) =>
-    this.sitesService
+  > = async (req, res) => {
+    const { error } = GetPreviewInfoSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
+    return this.sitesService
       .getSitesPreview(req.body.sites, res.locals.userSessionData)
       .then((previews) => res.status(200).json(previews))
+  }
+
+  getUserStagingSiteBuildStatus: RequestHandler<
+    { siteName: string },
+    StagingBuildStatus | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const result = await this.sitesService.getUserStagingSiteBuildStatus(
+      userWithSiteSessionData
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(404).json({ message: "Unable to get staging status" })
+  }
+
+  getLinkCheckerStatus: RequestHandler<
+    { siteName: string },
+    BrokenLinkErrorDto | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const result = await this.repoCheckerService.readRepoErrors(
+      userWithSiteSessionData.siteName
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(404).json({ status: "error" })
+  }
+
+  triggerCheckLinks: RequestHandler<
+    { siteName: string },
+    BrokenLinkErrorDto | ResponseErrorBody,
+    never,
+    never,
+    { userWithSiteSessionData: UserWithSiteSessionData }
+  > = async (req, res) => {
+    const { userWithSiteSessionData } = res.locals
+    const result = await this.repoCheckerService.runBrokenLinkChecker(
+      userWithSiteSessionData
+    )
+    if (result.isOk()) {
+      return res.status(200).json(result.value)
+    }
+    return res.status(400).json({ status: "error" })
+  }
 
   getRouter() {
     const router = express.Router({ mergeParams: true })
+    const routeCheckerMiddleware = new RouteCheckerMiddleware()
 
     router.get(
       "/",
@@ -180,36 +255,63 @@ export class SitesRouter {
     )
     router.get(
       "/:siteName/lastUpdated",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getLastUpdated)
     )
     router.get(
       "/:siteName/stagingUrl",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getStagingUrl)
     )
     router.get(
       "/:siteName/siteUrl",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       attachReadRouteHandlerWrapper(this.getSiteUrl)
     )
     router.get(
       "/:siteName/info",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getSiteInfo)
     )
     router.get(
       "/:siteName/launchInfo",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteMember,
       attachReadRouteHandlerWrapper(this.getSiteLaunchInfo)
     )
     router.post(
       "/:siteName/launchSite",
+      routeCheckerMiddleware.verifySiteName,
       attachSiteHandler,
       this.authorizationMiddleware.verifySiteAdmin,
       attachReadRouteHandlerWrapper(this.launchSite)
+    )
+    router.get(
+      "/:siteName/getStagingBuildStatus",
+      routeCheckerMiddleware.verifySiteName,
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.getUserStagingSiteBuildStatus)
+    )
+    router.get(
+      "/:siteName/getLinkCheckerStatus",
+      routeCheckerMiddleware.verifySiteName,
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.getLinkCheckerStatus)
+    )
+    router.post(
+      "/:siteName/checkLinks",
+      routeCheckerMiddleware.verifySiteName,
+      attachSiteHandler,
+      this.authorizationMiddleware.verifySiteMember,
+      attachReadRouteHandlerWrapper(this.triggerCheckLinks)
     )
 
     // The /sites/preview is a POST endpoint as the frontend sends

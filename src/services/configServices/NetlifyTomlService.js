@@ -1,3 +1,4 @@
+const { Base64 } = require("js-base64")
 const toml = require("toml")
 
 const { config } = require("@config/config")

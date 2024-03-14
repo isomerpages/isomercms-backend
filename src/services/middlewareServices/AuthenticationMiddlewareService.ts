@@ -16,6 +16,7 @@ import {
   E2E_TEST_EMAIL,
   E2E_ISOMER_ID,
   CollaboratorRoles,
+  CollaboratorRolesWithoutIsomerAdmin,
 } from "@root/constants"
 import { Site, SiteMember, User } from "@root/database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
@@ -28,16 +29,12 @@ export const E2E_EMAIL_TEST_SITE = {
   name: "e2e email test site",
   repo: "e2e-email-test-repo",
 }
+export const E2E_NOT_GGS_TEST_REPO = "e2e-notggs-test-repo"
 const E2E_TEST_SECRET = config.get("cypress.e2eTestSecret")
 
 export const E2E_TEST_GH_TOKEN = config.get("cypress.e2eTestGithubToken")
 export const E2E_TEST_GITHUB_USER = "e2e-test"
-const GENERAL_ACCESS_PATHS = [
-  "/v1/sites",
-  "/v1/auth/whoami",
-  "/v2/sites",
-  "/v2/auth/whoami",
-]
+const GENERAL_ACCESS_PATHS = ["/v2/sites", "/v2/auth/whoami"]
 
 interface E2eCookie {
   isomercmsE2E: string
@@ -85,7 +82,7 @@ const getUserType = (userType: string): TestUserTypes => {
 }
 
 const generateE2eEmailUser = async (
-  role: CollaboratorRoles,
+  role: CollaboratorRolesWithoutIsomerAdmin,
   site?: string,
   email?: string
 ): Promise<SessionDataProps> => {
@@ -166,7 +163,7 @@ export default class AuthenticationMiddlewareService {
     if (!cookies) return false
 
     const { isomercmsE2E, e2eUserType } = cookies
-    const urlTokens = url.split("/") // urls take the form "/v1/sites/<repo>/<path>""
+    const urlTokens = url.split("/") // urls take the form "/v2/sites/<repo>/<path>""
 
     // NOTE: If the cookie is not set, this is an actual user.
     if (!isomercmsE2E || !e2eUserType) return false
@@ -190,7 +187,8 @@ export default class AuthenticationMiddlewareService {
       (userType === E2E_USERS.Email.Admin ||
         userType === E2E_USERS.Email.Collaborator)
     const isGithubE2eAccess =
-      repo === E2E_TEST_REPO && userType === "Github user"
+      (repo === E2E_TEST_REPO || repo === E2E_NOT_GGS_TEST_REPO) &&
+      userType === "Github user"
 
     if (!isGithubE2eAccess && !isEmailE2eAccess)
       throw new AuthError(

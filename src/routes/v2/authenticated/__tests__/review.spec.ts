@@ -13,7 +13,7 @@ import { mockUserId } from "@fixtures/identity"
 import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@fixtures/users"
 import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import MissingSiteError from "@root/errors/MissingSiteError"
-import { GitHubService } from "@root/services/db/GitHubService"
+import GitHubService from "@root/services/db/GitHubService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import NotificationsService from "@services/identity/NotificationsService"
 import SitesService from "@services/identity/SitesService"
@@ -45,7 +45,6 @@ describe("Review Requests Router", () => {
 
   const mockIdentityUsersService = {
     findByEmail: jest.fn(),
-    getSiteMember: jest.fn(),
   }
 
   const mockSitesService = {
@@ -147,7 +146,9 @@ describe("Review Requests Router", () => {
     it("should return 200 with the list of changed files", async () => {
       // Arrange
       const mockFilesChanged = ["file1", "file2"]
-      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce("user")
+      mockCollaboratorsService.getRole.mockResolvedValueOnce(
+        CollaboratorRoles.Admin
+      )
       mockReviewRequestService.compareDiff.mockReturnValueOnce(
         okAsync(mockFilesChanged)
       )
@@ -161,13 +162,13 @@ describe("Review Requests Router", () => {
       // Assert
       expect(response.status).toEqual(200)
       expect(response.body).toEqual({ items: mockFilesChanged })
-      expect(mockIdentityUsersService.getSiteMember).toHaveBeenCalledTimes(1)
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.compareDiff).toHaveBeenCalledTimes(1)
     })
 
     it("should return 404 if user is not a site member", async () => {
       // Arrange
-      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce(null)
+      mockCollaboratorsService.getRole.mockResolvedValueOnce(null)
       mockSitesService.getBySiteName.mockResolvedValueOnce(ok(true))
 
       // Act
@@ -175,12 +176,13 @@ describe("Review Requests Router", () => {
 
       // Assert
       expect(response.status).toEqual(404)
-      expect(mockIdentityUsersService.getSiteMember).toHaveBeenCalledTimes(1)
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.compareDiff).not.toHaveBeenCalled()
     })
   })
 
   describe("createReviewRequest", () => {
+    const mockEmail = "mock@test.gov.sg"
     it("should return 200 with the pull request number of the created review request", async () => {
       // Arrange
       const mockPullRequestNumber = 1
@@ -234,7 +236,11 @@ describe("Review Requests Router", () => {
       // Act
       const response = await request(app)
         .post("/mockSite/review/request")
-        .send({})
+        .send({
+          reviewers: [mockEmail],
+          title: "Fake title",
+          description: "",
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -256,7 +262,11 @@ describe("Review Requests Router", () => {
       // Act
       const response = await request(app)
         .post("/mockSite/review/request")
-        .send({})
+        .send({
+          reviewers: [mockEmail],
+          title: "Fake title",
+          description: "",
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -358,7 +368,6 @@ describe("Review Requests Router", () => {
     it("should return 404 if the site does not exist", async () => {
       // Arrange
       mockGithubService.getRepoInfo.mockRejectedValueOnce(false)
-      mockIdentityUsersService.getSiteMember.mockResolvedValueOnce({})
       mockSitesService.getBySiteName.mockReturnValueOnce(
         err(new MissingSiteError("site"))
       )
@@ -614,10 +623,10 @@ describe("Review Requests Router", () => {
   })
 
   describe("updateReviewRequest", () => {
+    const mockReviewer = "reviewer@test.gov.sg"
     it("should return 200 with the updated review request", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: MOCK_USER_EMAIL_ONE } }
-      const mockReviewer = "reviewer@test.gov.sg"
 
       mockReviewRequestService.getReviewRequest.mockResolvedValueOnce(
         mockReviewRequest
@@ -659,7 +668,11 @@ describe("Review Requests Router", () => {
       )
 
       // Act
-      const response = await request(app).post(`/mockSite/review/12345`)
+      const response = await request(app)
+        .post(`/mockSite/review/12345`)
+        .send({
+          reviewers: [mockReviewer],
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -679,7 +692,11 @@ describe("Review Requests Router", () => {
       )
 
       // Act
-      const response = await request(app).post(`/mockSite/review/12345`)
+      const response = await request(app)
+        .post(`/mockSite/review/12345`)
+        .send({
+          reviewers: [mockReviewer],
+        })
 
       // Assert
       expect(response.status).toEqual(404)
@@ -700,7 +717,11 @@ describe("Review Requests Router", () => {
       )
 
       // Act
-      const response = await request(app).post(`/mockSite/review/12345`)
+      const response = await request(app)
+        .post(`/mockSite/review/12345`)
+        .send({
+          reviewers: [mockReviewer],
+        })
 
       // Assert
       expect(response.status).toEqual(403)
@@ -1274,7 +1295,7 @@ describe("Review Requests Router", () => {
       expect(mockNotificationsService.create).not.toHaveBeenCalled()
     })
 
-    it("should return 404 if the user is not the requestor of the review request", async () => {
+    it("should return 403 if the user is not the requestor of the review request", async () => {
       // Arrange
       const mockReviewRequest = { requestor: { email: "other@test.gov.sg" } }
 
@@ -1286,7 +1307,7 @@ describe("Review Requests Router", () => {
       const response = await request(app).delete(`/mockSite/review/12345`)
 
       // Assert
-      expect(response.status).toEqual(404)
+      expect(response.status).toEqual(403)
       expect(mockSitesService.getBySiteName).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.getReviewRequest).toHaveBeenCalledTimes(1)
       expect(mockReviewRequestService.closeReviewRequest).not.toHaveBeenCalled()

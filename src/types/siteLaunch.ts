@@ -27,16 +27,15 @@ export interface SiteLaunchMessage {
   primaryDomainTarget: string
   domainValidationSource: string
   domainValidationTarget: string
+  indirectionDomain: string
   requestorEmail: string
   agencyEmail: string
   githubRedirectionUrl?: string
-  redirectionDomain?: [
-    {
-      source: string
-      target: string
-      type: string
-    }
-  ]
+  redirectionDomain?: {
+    source: string
+    target: string
+    type: string
+  }[]
   status?: SiteLaunchStatus
   statusMetadata?: string
 }
@@ -55,6 +54,7 @@ export function isSiteLaunchMessage(obj: unknown): obj is SiteLaunchMessage {
     typeof message.primaryDomainTarget === "string" &&
     typeof message.domainValidationSource === "string" &&
     typeof message.domainValidationTarget === "string" &&
+    typeof message.indirectionDomain === "string" &&
     typeof message.requestorEmail === "string" &&
     typeof message.agencyEmail === "string" &&
     (typeof message.githubRedirectionUrl === "undefined" ||

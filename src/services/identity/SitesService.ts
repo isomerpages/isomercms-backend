@@ -16,29 +16,38 @@ import {
   getAllRepoData,
   SitesCacheService,
 } from "@root/services/identity/SitesCacheService"
+import { AmplifyError } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { ConfigYmlData } from "@root/types/configYml"
 import { ProdPermalink, StagingPermalink } from "@root/types/pages"
 import { PreviewInfo } from "@root/types/previewInfo"
 import type { RepositoryData, SiteUrls } from "@root/types/repoInfo"
 import { SiteInfo } from "@root/types/siteInfo"
+import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
 import { Brand } from "@root/types/util"
+import {
+  isReduceBuildTimesWhitelistedRepo,
+  isShowStagingBuildStatusWhitelistedRepo,
+} from "@root/utils/growthbook-utils"
 import { safeJsonParse } from "@root/utils/json"
-import { GitHubService } from "@services/db/GitHubService"
+import RepoService from "@services/db/RepoService"
 import { ConfigYmlService } from "@services/fileServices/YmlFileServices/ConfigYmlService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 
+import DeploymentsService from "./DeploymentsService"
+
 interface SitesServiceProps {
   siteRepository: ModelStatic<Site>
-  gitHubService: GitHubService
+  gitHubService: RepoService
   configYmlService: ConfigYmlService
   usersService: UsersService
   isomerAdminsService: IsomerAdminsService
   reviewRequestService: ReviewRequestService
   sitesCacheService: SitesCacheService
   previewService: PreviewService
+  deploymentsService: DeploymentsService
 }
 
 class SitesService {
@@ -60,6 +69,8 @@ class SitesService {
 
   private readonly previewService: SitesServiceProps["previewService"]
 
+  private readonly deploymentsService: SitesServiceProps["deploymentsService"]
+
   constructor({
     siteRepository,
     gitHubService,
@@ -69,6 +80,7 @@ class SitesService {
     reviewRequestService,
     sitesCacheService,
     previewService,
+    deploymentsService,
   }: SitesServiceProps) {
     this.siteRepository = siteRepository
     this.gitHubService = gitHubService
@@ -78,6 +90,7 @@ class SitesService {
     this.reviewRequestService = reviewRequestService
     this.sitesCacheService = sitesCacheService
     this.previewService = previewService
+    this.deploymentsService = deploymentsService
   }
 
   isGitHubCommitData(commit: unknown): commit is GitHubCommitData {
@@ -259,6 +272,10 @@ class SitesService {
       .orElse(() => okAsync(this.extractAuthorEmail(commit)))
   }
 
+  async updateDbWithStagingUrl(site: Site, stagingUrl: StagingPermalink) {
+    this.deploymentsService.updateStagingUrl(site.id, stagingUrl)
+  }
+
   // Tries to get the site urls in the following order:
   // 1. From the deployments database table
   // 2. From the config.yml file
@@ -291,11 +308,64 @@ class SitesService {
         // and legacy sites using github login will not.
         // Hence, for such sites, extract their URLs through
         // the _config.yml or github description
-        .andThen((site) =>
-          site?.deployment
-            ? okAsync(site.deployment)
-            : okAsync({ stagingUrl: undefined, productionUrl: undefined })
-        )
+        .andThen((site) => {
+          if (
+            !site ||
+            !site.deployment ||
+            !site.deployment.stagingUrl ||
+            !site.deployment.productionUrl
+          ) {
+            // Guard clause, this will throw a not found error later on
+            return okAsync({
+              stagingUrl: undefined,
+              productionUrl: undefined,
+            })
+          }
+
+          if (!sessionData.growthbook) {
+            // Not enough info to determine if the feature flag is synced with db
+            return okAsync(site.deployment)
+          }
+
+          // Privatisation has priority over growthbook - if private, automatically use staging
+          const isPrivateSiteSyncedWithDb =
+            site.isPrivate && site?.deployment?.stagingUrl.includes("staging.")
+
+          const featureFlagSyncedWithDb =
+            !site.isPrivate &&
+            ((isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+              site?.deployment?.stagingUrl.includes("staging-lite.")) ||
+              // useful for rollbacks
+              (!isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
+                site?.deployment?.stagingUrl.includes("staging.")))
+
+          if (isPrivateSiteSyncedWithDb || featureFlagSyncedWithDb) {
+            return okAsync(site.deployment)
+          }
+
+          let stagingUrl: StagingPermalink
+          if (site.isPrivate) {
+            stagingUrl = Brand.fromString(
+              `https://staging.${site.deployment.hostingId}.amplifyapp.com`
+            )
+          } else if (
+            isReduceBuildTimesWhitelistedRepo(sessionData.growthbook)
+          ) {
+            stagingUrl = Brand.fromString(
+              `https://staging-lite.${site.deployment.stagingLiteHostingId}.amplifyapp.com`
+            )
+          } else {
+            stagingUrl = Brand.fromString(
+              `https://staging.${site.deployment.hostingId}.amplifyapp.com`
+            )
+          }
+          // Non-blocking control flow
+          this.updateDbWithStagingUrl(site, stagingUrl)
+          return okAsync({
+            ...site.deployment,
+            stagingUrl,
+          })
+        })
         .andThen(({ stagingUrl, productionUrl }) => {
           const siteUrls = {
             staging: stagingUrl,
@@ -372,6 +442,7 @@ class SitesService {
     createParams: Partial<Site> & {
       name: Site["name"]
       creator: Site["creator"]
+      creatorId: Site["creatorId"]
     }
   ) {
     return this.siteRepository.create(createParams)
@@ -481,6 +552,26 @@ class SitesService {
         }
       })
     )
+  }
+
+  getUserStagingSiteBuildStatus(
+    userSessionData: UserWithSiteSessionData
+  ): ResultAsync<
+    StagingBuildStatus,
+    NotFoundError | MissingSiteError | AmplifyError
+  > {
+    const { siteName, growthbook } = userSessionData
+    if (!isShowStagingBuildStatusWhitelistedRepo(growthbook)) {
+      return errAsync(new NotFoundError())
+    }
+    return this.getBySiteName(siteName)
+      .andThen((site) =>
+        this.deploymentsService.getStagingSiteBuildStatus(
+          site.id.toString(),
+          isReduceBuildTimesWhitelistedRepo(growthbook)
+        )
+      )
+      .map((status) => ({ status }))
   }
 }
 

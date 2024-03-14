@@ -16,7 +16,7 @@ import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import { SiteMember, User } from "@root/database/models"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import { NotFoundError } from "@root/errors/NotFoundError"
-import { GitHubService } from "@root/services/db/GitHubService"
+import GitHubService from "@root/services/db/GitHubService"
 import CollaboratorsService from "@root/services/identity/CollaboratorsService"
 import NotificationsService from "@root/services/identity/NotificationsService"
 import SitesService from "@root/services/identity/SitesService"
@@ -31,6 +31,11 @@ import {
   BlobDiffDto,
   EditedItemDto,
 } from "@root/types/dto/review"
+import {
+  CreateCommentSchema,
+  CreateReviewRequestSchema,
+  UpdateReviewRequestSchema,
+} from "@root/validators/RequestSchema"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 // eslint-disable-next-line import/prefer-default-export
 export class ReviewsRouter {
@@ -114,12 +119,12 @@ export class ReviewsRouter {
     }
 
     // Check if they have access to site
-    const possibleSiteMember = await this.identityUsersService.getSiteMember(
-      userWithSiteSessionData.isomerUserId,
-      siteName
+    const role = await this.collaboratorsService.getRole(
+      siteName,
+      userWithSiteSessionData.isomerUserId
     )
 
-    if (!possibleSiteMember) {
+    if (!role) {
       return res.status(404).json({ message: "No site members found" })
     }
 
@@ -147,6 +152,11 @@ export class ReviewsRouter {
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { error } = CreateReviewRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     // Step 1: Check that the site exists
     const { siteName } = req.params
     const site = await this.sitesService.getBySiteName(siteName)
@@ -311,6 +321,15 @@ export class ReviewsRouter {
     // Step 2: Check that user exists.
     // Having session data is proof that this user exists
     // as otherwise, they would be rejected by our middleware
+    // Reject if the user is on GitHub login and the site is already migrated
+    const isGitHubUser = !userWithSiteSessionData.isEmailUser()
+
+    if (isGitHubUser) {
+      return res.status(404).send({
+        message: "GitHub users should not be editing a migrated site!",
+      })
+    }
+
     // Check if they are a collaborator
     const role = await this.collaboratorsService.getRole(
       siteName,
@@ -557,6 +576,11 @@ export class ReviewsRouter {
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { error } = UpdateReviewRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     // Step 1: Check that the site exists
     const { siteName, requestId } = req.params
     const { userWithSiteSessionData } = res.locals
@@ -950,6 +974,11 @@ export class ReviewsRouter {
     unknown,
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
+    const { error } = CreateCommentSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const { siteName, requestId } = req.params
     const { message } = req.body
     const { userWithSiteSessionData } = res.locals
@@ -1143,7 +1172,7 @@ export class ReviewsRouter {
           requestId,
         },
       })
-      return res.status(404).json({
+      return res.status(403).json({
         message: "Only the requestor can close the Review Request!",
       })
     }
@@ -1265,7 +1294,9 @@ export class ReviewsRouter {
     { userWithSiteSessionData: UserWithSiteSessionData }
   > = async (req, res) => {
     // Step 1: Check that the site exists
-    const { siteName, requestId } = req.params
+    // NOTE: We don't check for the existence of the review request, as we
+    // assume that we are comparing between the staging and master branch
+    const { siteName } = req.params
     const { path } = req.query
     const { userWithSiteSessionData } = res.locals
     const site = await this.sitesService.getBySiteName(siteName)
@@ -1299,30 +1330,7 @@ export class ReviewsRouter {
       })
     }
 
-    // Step 2: Retrieve review request
-    const possibleReviewRequest = await this.reviewRequestService.getReviewRequest(
-      site.value,
-      requestId
-    )
-
-    if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "getBlob",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-          requestId,
-          file: path,
-        },
-      })
-      return res.status(404).send({
-        message: "Please ensure that the site exists!",
-      })
-    }
-
-    // Step 3: Check if the user is a contributor of the site
+    // Step 2: Check if the user is a contributor of the site
     const role = await this.collaboratorsService.getRole(
       siteName,
       userWithSiteSessionData.isomerUserId
@@ -1397,7 +1405,7 @@ export class ReviewsRouter {
     )
     router.get(
       "/:requestId/comments",
-      attachWriteRouteHandlerWrapper(this.getComments)
+      attachReadRouteHandlerWrapper(this.getComments)
     )
     router.post(
       "/:requestId/comments",

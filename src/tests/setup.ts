@@ -13,8 +13,6 @@ import { Umzug, SequelizeStorage } from "umzug"
 import { sequelize } from "@tests/database"
 
 const setupDb = async () => {
-  console.log("setting up database for testing")
-
   const migrator = new Umzug({
     migrations: {
       glob: "src/database/migrations/*.js",
@@ -43,4 +41,11 @@ const setupDb = async () => {
   return migrator
 }
 
-export default setupDb
+const setup = async () => {
+  console.log("setting up environment variables")
+
+  console.log("setting up database for testing")
+  return await setupDb()
+}
+
+export default setup

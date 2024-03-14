@@ -11,6 +11,11 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 const FRONTEND_URL = config.get("app.frontendUrl")
 const { isSecure } = require("@utils/auth-utils")
 
+const {
+  EmailSchema,
+  VerifyRequestSchema,
+} = require("@root/validators/RequestSchema")
+
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const CSRF_COOKIE_NAME = "isomer-csrf"
 const COOKIE_NAME = "isomercms"
@@ -76,6 +81,11 @@ class AuthRouter {
 
   async login(req, res) {
     const { email: rawEmail } = req.body
+    const { error } = EmailSchema.validate(rawEmail)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const email = rawEmail.toLowerCase()
     try {
       await this.authService.sendOtp(email)
@@ -90,8 +100,13 @@ class AuthRouter {
 
   async verify(req, res) {
     const { email: rawEmail, otp } = req.body
+    const { error } = VerifyRequestSchema.validate(req.body)
+    if (error)
+      return res.status(400).json({
+        message: `Invalid request format: ${error.message}`,
+      })
     const email = rawEmail.toLowerCase()
-    const userInfo = await this.authService.verifyOtp({ email, otp })
+    const userInfo = (await this.authService.verifyOtp({ email, otp })).value
     Object.assign(req.session, { userInfo })
     logger.info(`User ${userInfo.email} successfully logged in`)
     return res.sendStatus(200)

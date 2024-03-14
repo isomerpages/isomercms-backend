@@ -1,4 +1,5 @@
-import { Op, ModelStatic } from "sequelize"
+import { ResultAsync, errAsync, okAsync } from "neverthrow"
+import { Op, ModelStatic, Transaction } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
@@ -6,6 +7,8 @@ import { config } from "@config/config"
 
 import { Otp, Repo, Site, User, Whitelist, SiteMember } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
+import DatabaseError from "@root/errors/DatabaseError"
+import logger from "@root/logger/logger"
 import { milliSecondsToMinutes } from "@root/utils/time-utils"
 import SmsClient from "@services/identity/SmsClient"
 import MailClient from "@services/utilServices/MailClient"
@@ -77,50 +80,6 @@ class UsersService {
 
   async findByGitHubId(githubId: string) {
     return this.repository.findOne({ where: { githubId } })
-  }
-
-  async getSiteMember(userId: string, siteName: string): Promise<User | null> {
-    return this.repository.findOne({
-      where: { id: userId },
-      include: [
-        {
-          model: Site,
-          as: "site_members",
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
-    })
-  }
-
-  async getSiteAdmin(userId: string, siteName: string) {
-    return this.repository.findOne({
-      where: { id: userId, role: "ADMIN" },
-      include: [
-        {
-          model: SiteMember,
-          as: "site_members",
-          required: true,
-          include: [
-            {
-              model: Repo,
-              required: true,
-              where: {
-                name: siteName,
-              },
-            },
-          ],
-        },
-      ],
-    })
   }
 
   async findSitesByUserId(
@@ -205,6 +164,7 @@ class UsersService {
         transaction,
       })
       user.lastLoggedIn = new Date()
+
       return user.save({ transaction })
     })
   }
@@ -273,56 +233,201 @@ class UsersService {
     await this.smsClient.sendSms(mobileNumber, message)
   }
 
-  private async verifyOtp(otpEntry: Otp | null, otp: string) {
+  private verifyOtp(
+    otpEntry: Otp | null,
+    otp: string,
+    transaction: Transaction
+  ) {
     // TODO: Change all the following to use AuthError after FE fix
-    if (!otp || otp === "") {
-      throw new BadRequestError("Empty OTP provided")
-    }
+    return okAsync(otp)
+      .andThen((otp) => {
+        if (!otp) {
+          return errAsync(new BadRequestError("Empty OTP provided"))
+        }
 
-    if (!otpEntry) {
-      throw new BadRequestError("OTP not found")
-    }
+        return okAsync(otp)
+      })
+      .andThen(() => {
+        if (!otpEntry) {
+          return errAsync(new BadRequestError("OTP not found"))
+        }
 
-    if (otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
-      throw new BadRequestError("Max number of attempts reached")
-    }
+        return okAsync(otpEntry)
+      })
+      .andThen((otpDbEntry) => {
+        if (otpDbEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
+          return errAsync(new BadRequestError("Max number of attempts reached"))
+        }
 
-    if (!otpEntry?.hashedOtp) {
-      await otpEntry.destroy()
-      throw new BadRequestError("Hashed OTP not found")
-    }
+        return okAsync(otpDbEntry)
+      })
+      .andThen((otpDbEntry) => {
+        if (!otpDbEntry.hashedOtp) {
+          return ResultAsync.fromPromise(
+            otpDbEntry.destroy({ transaction }),
+            (error) => {
+              logger.error(
+                `Error destroying OTP entry: ${JSON.stringify(error)}`
+              )
 
-    // increment attempts
-    await otpEntry.update({ attempts: otpEntry.attempts + 1 })
+              return new DatabaseError("Error destroying OTP entry in database")
+            }
+          ).andThen(() => errAsync(new BadRequestError("Hashed OTP not found")))
+        }
 
-    const isValidOtp = await this.otpService.verifyOtp(otp, otpEntry.hashedOtp)
-    if (!isValidOtp) {
-      throw new BadRequestError("OTP is not valid")
-    }
+        return okAsync(otpDbEntry)
+      })
+      .andThen((otpDbEntry) =>
+        // increment attempts
+        ResultAsync.fromPromise(
+          this.otpRepository.increment("attempts", {
+            where: { id: otpDbEntry.id },
+            transaction,
+          }),
+          (error) => {
+            logger.error(
+              `Error incrementing OTP attempts: ${JSON.stringify(error)}`
+            )
 
-    if (isValidOtp && otpEntry.expiresAt < new Date()) {
-      await otpEntry.destroy()
-      throw new BadRequestError("OTP has expired")
-    }
+            return new DatabaseError("Error incrementing OTP attempts")
+          }
+        ).map(() => otpDbEntry)
+      )
+      .andThen((otpDbEntry) =>
+        ResultAsync.combine([
+          okAsync(otpDbEntry),
+          ResultAsync.fromPromise(
+            this.otpService.verifyOtp(otp, otpDbEntry.hashedOtp),
+            (error) => {
+              logger.error(`Error verifying OTP: ${JSON.stringify(error)}`)
 
-    // destroy otp before returning true since otp has been "used"
-    await otpEntry.destroy()
-    return true
+              return new BadRequestError("Error verifying OTP")
+            }
+          ),
+        ])
+      )
+      .andThen(([otpDbEntry, isValidOtp]) => {
+        if (!isValidOtp) {
+          return errAsync(new BadRequestError("OTP is not valid"))
+        }
+
+        if (isValidOtp && otpDbEntry.expiresAt < new Date()) {
+          return ResultAsync.fromPromise(
+            otpDbEntry.destroy({ transaction }),
+            (error) => {
+              logger.error(
+                `Error destroying OTP entry: ${JSON.stringify(error)}`
+              )
+
+              return new DatabaseError("Error destroying OTP entry in database")
+            }
+          ).andThen(() => errAsync(new BadRequestError("OTP has expired")))
+        }
+
+        return okAsync(otpDbEntry)
+      })
+      .andThen((otpDbEntry) =>
+        // destroy otp before returning true since otp has been "used"
+        ResultAsync.fromPromise(
+          otpDbEntry.destroy({ transaction }),
+          (error) => {
+            logger.error(`Error destroying OTP entry: ${JSON.stringify(error)}`)
+
+            return new DatabaseError("Error destroying OTP entry in database")
+          }
+        )
+          .andThen(() =>
+            ResultAsync.fromPromise(transaction.commit(), (txError) => {
+              logger.error(
+                `Error committing transaction: ${JSON.stringify(txError)}`
+              )
+              return new DatabaseError("Error committing transaction")
+            })
+          )
+          .map(() => true)
+      )
+      .orElse((error) =>
+        ResultAsync.fromPromise(transaction.commit(), (txError) => {
+          logger.error(
+            `Error committing transaction: ${JSON.stringify(txError)}`
+          )
+          return new DatabaseError("Error committing transaction")
+        }).andThen(() => errAsync(error))
+      )
   }
 
-  async verifyEmailOtp(email: string, otp: string) {
+  verifyEmailOtp(email: string, otp: string) {
     const parsedEmail = email.toLowerCase()
-    const otpEntry = await this.otpRepository.findOne({
-      where: { email: parsedEmail },
+
+    return ResultAsync.fromPromise(this.sequelize.transaction(), (error) => {
+      logger.error(
+        `Error starting database transaction: ${JSON.stringify(error)}`
+      )
+
+      return new BadRequestError("Error starting database transaction")
     })
-    return this.verifyOtp(otpEntry, otp)
+      .andThen((transaction) =>
+        ResultAsync.combine([
+          ResultAsync.fromPromise(
+            this.otpRepository.findOne({
+              where: { email: parsedEmail },
+              lock: true,
+              transaction,
+            }),
+            (error) => {
+              logger.error(
+                `Error finding OTP entry when verifying email OTP: ${JSON.stringify(
+                  error
+                )}`
+              )
+
+              return new BadRequestError(
+                "Error finding OTP entry when verifying email OTP"
+              )
+            }
+          ),
+          okAsync(transaction),
+        ])
+      )
+      .andThen(([otpEntry, transaction]) =>
+        this.verifyOtp(otpEntry, otp, transaction)
+      )
   }
 
-  async verifyMobileOtp(mobileNumber: string, otp: string) {
-    const otpEntry = await this.otpRepository.findOne({
-      where: { mobileNumber },
+  verifyMobileOtp(mobileNumber: string, otp: string) {
+    return ResultAsync.fromPromise(this.sequelize.transaction(), (error) => {
+      logger.error(
+        `Error starting database transaction: ${JSON.stringify(error)}`
+      )
+
+      return new BadRequestError("Error starting database transaction")
     })
-    return this.verifyOtp(otpEntry, otp)
+      .andThen((transaction) =>
+        ResultAsync.combine([
+          ResultAsync.fromPromise(
+            this.otpRepository.findOne({
+              where: { mobileNumber },
+              lock: true,
+              transaction,
+            }),
+            (error) => {
+              logger.error(
+                `Error finding OTP entry when verifying mobile OTP: ${JSON.stringify(
+                  error
+                )}`
+              )
+
+              return new BadRequestError(
+                "Error finding OTP entry when verifying mobile OTP"
+              )
+            }
+          ),
+          okAsync(transaction),
+        ])
+      )
+      .andThen(([otpEntry, transaction]) =>
+        this.verifyOtp(otpEntry, otp, transaction)
+      )
   }
 
   private getOtpExpiry() {

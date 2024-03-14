@@ -1,0 +1,30 @@
+version: "3"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - ./:/opt/isomercms-backend
+      - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
+      - "~/.gitconfig:/etc/gitconfig"
+
+  postgres:
+    image: "postgres:13-alpine"
+    environment:
+      POSTGRES_USER: isomer
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: isomercms_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - isomercms_data:/var/lib/postgresql/data
+
+volumes:
+  isomercms_data:

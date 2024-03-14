@@ -1,4 +1,5 @@
 import { SubDomainSettings } from "aws-sdk/clients/amplify"
+import axios from "axios"
 import Joi from "joi"
 import {
   Err,
@@ -20,9 +21,11 @@ import {
   SiteStatus,
   JobStatus,
   RedirectionTypes,
-  REDIRECTION_SERVER_IP,
-  ISOMER_ADMIN_EMAIL,
+  REDIRECTION_SERVER_IPS,
+  ISOMER_SUPPORT_EMAIL,
+  DNS_INDIRECTION_DOMAIN,
 } from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
@@ -31,6 +34,7 @@ import { AmplifyError } from "@root/types/amplify"
 import {
   DnsResultsForSite,
   SiteLaunchDto,
+  SiteLaunchStatus,
   SiteLaunchStatusObject,
 } from "@root/types/siteInfo"
 import { SiteLaunchMessage } from "@root/types/siteLaunch"
@@ -206,6 +210,8 @@ export default class InfraService {
     return url
   }
 
+  convertDotsToDashes = (url: string) => url.replace(/\./g, "-")
+
   isValidUrl(url: string): boolean {
     const schema = Joi.string().domain()
     // joi reports initial "_" for certificates as as an invalid url WRONGLY,
@@ -318,6 +324,22 @@ export default class InfraService {
     })
   }
 
+  getIndirectionDomain(
+    primaryDomain: string,
+    primaryDomainTarget: string
+  ): ResultAsync<string, GitHubApiError> {
+    const indirectionSubdomain = this.convertDotsToDashes(primaryDomain)
+    const indirectionDomain = `${indirectionSubdomain}.${DNS_INDIRECTION_DOMAIN}`
+
+    return this.reposService
+      .createDnsIndirectionFile(
+        indirectionSubdomain,
+        primaryDomain,
+        primaryDomainTarget
+      )
+      .map(() => indirectionDomain)
+  }
+
   getGeneratedDnsRecords = async (
     siteName: string
   ): Promise<
@@ -346,7 +368,7 @@ export default class InfraService {
     }
     if (site.value.siteStatus !== SiteStatus.Launched) {
       return okAsync<SiteLaunchDto>({
-        siteStatus: SiteLaunchStatusObject.NotLaunched,
+        siteLaunchStatus: SiteLaunchStatusObject.NotLaunched,
       })
     }
 
@@ -355,12 +377,21 @@ export default class InfraService {
       return errAsync(generatedDnsRecords.error)
     }
 
+    let siteLaunchStatus: SiteLaunchStatus
+    switch (site.value.jobStatus) {
+      case JobStatus.Ready:
+        siteLaunchStatus = SiteLaunchStatusObject.Launched
+        break
+      case JobStatus.Failed:
+        siteLaunchStatus = SiteLaunchStatusObject.Failure
+        break
+      default:
+        siteLaunchStatus = SiteLaunchStatusObject.Launching
+        break
+    }
+
     return okAsync<SiteLaunchDto>({
-      siteStatus:
-        // status is only successful iff job is ready
-        site.value.jobStatus === JobStatus.Ready
-          ? SiteLaunchStatusObject.Launched
-          : SiteLaunchStatusObject.Launching,
+      siteLaunchStatus,
       dnsRecords: generatedDnsRecords.value.dnsRecords,
       siteUrl: generatedDnsRecords.value.siteUrl,
     })
@@ -476,6 +507,23 @@ export default class InfraService {
         (subDomain) => subDomain.subDomainSetting?.prefix
       )
 
+      // Indirection domain should look something like this:
+      // blah-gov-sg.hostedon.isomer.gov.sg
+      const indirectionDomain = await this.getIndirectionDomain(
+        primaryDomain,
+        primaryDomainTarget
+      )
+
+      if (indirectionDomain.isErr()) {
+        return errAsync(
+          new AmplifyError(
+            `Error creating indirection domain: ${indirectionDomain.error}`,
+            repoName,
+            appId
+          )
+        )
+      }
+
       /**
        * Amplify only stores the prefix.
        * ie: if I wanted to have a www.blah.gov.sg -> gibberish.cloudfront.net,
@@ -490,11 +538,14 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        indirectionDomain: indirectionDomain.value,
       }
 
       if (redirectionDomainList?.length) {
         newLaunchParams.redirectionDomainSource = `www.${primaryDomain}` // we only support 'www' redirections for now
-        newLaunchParams.redirectionDomainTarget = REDIRECTION_SERVER_IP
+        // any IP is ok
+        const [redirectionServerIp] = REDIRECTION_SERVER_IPS
+        newLaunchParams.redirectionDomainTarget = redirectionServerIp
       }
 
       // Create launches records table
@@ -510,17 +561,18 @@ export default class InfraService {
         primaryDomainTarget,
         domainValidationSource,
         domainValidationTarget,
+        indirectionDomain: indirectionDomain.value,
         requestorEmail: requestor.email ? requestor.email : "",
         agencyEmail: agency.email ? agency.email : "", // TODO: remove conditional after making email not optional/nullable
       }
 
       if (newLaunchParams.redirectionDomainSource) {
-        const redirectionDomainObject = {
-          source: newLaunchParams.primaryDomainSource,
-          target: REDIRECTION_SERVER_IP,
+        const redirectionDomainObject = REDIRECTION_SERVER_IPS.map((ip) => ({
+          source: newLaunchParams.redirectionDomainSource as string, // checked above
+          target: ip,
           type: RedirectionTypes.A,
-        }
-        message.redirectionDomain = [redirectionDomainObject]
+        }))
+        message.redirectionDomain = redirectionDomainObject
       }
 
       await this.dynamoDBService.createItem(message)
@@ -556,6 +608,9 @@ export default class InfraService {
               siteStatus: SiteStatus.Launched,
               jobStatus: JobStatus.Ready,
             }
+
+            // Create better uptime monitor iff site launch is a success
+            await this.createMonitor(message.primaryDomainSource)
           } else {
             updateSiteLaunchParams = {
               id: site.value.id,
@@ -565,13 +620,90 @@ export default class InfraService {
           }
 
           await this.sitesService.update(updateSiteLaunchParams)
-
           await this.sendEmailUpdate(message, isSuccess)
         })
       )
     } catch (error) {
       logger.error(`Error in site update: ${error}`)
     }
+  }
+
+  private async createMonitor(baseDomain: string) {
+    const uptimeRobotBaseUrl = "https://api.uptimerobot.com/v2"
+    try {
+      const UPTIME_ROBOT_API_KEY = config.get("uptimeRobot.apiKey")
+      const getResp = await axios.post<{ monitors: { id: string }[] }>(
+        `${uptimeRobotBaseUrl}/getMonitors?format=json`,
+        {
+          api_key: UPTIME_ROBOT_API_KEY,
+          search: baseDomain,
+        }
+      )
+      const affectedMonitorIds = getResp.data.monitors.map(
+        (monitor) => monitor.id
+      )
+      const getAlertContactsResp = await axios.post<{
+        alert_contacts: { id: string }[]
+      }>(`${uptimeRobotBaseUrl}/getAlertContacts?format=json`, {
+        api_key: UPTIME_ROBOT_API_KEY,
+      })
+      const alertContacts = getAlertContactsResp.data.alert_contacts
+        .map(
+          (contact) => `${contact.id}_0_0` // numbers at the end represent threshold + recurrence, always 0 for free plan
+        )
+        .join("-")
+      if (affectedMonitorIds.length === 0) {
+        // Create new monitor
+        await axios.post<{ monitors: { id: string }[] }>(
+          `${uptimeRobotBaseUrl}/newMonitor?format=json`,
+          {
+            api_key: UPTIME_ROBOT_API_KEY,
+            friendly_name: baseDomain,
+            url: `https://${baseDomain}`,
+            type: 1, // HTTP(S)
+            interval: 30,
+            timeout: 30,
+            alert_contacts: alertContacts,
+            http_method: 2, // GET
+          }
+        )
+      } else {
+        // Edit existing monitor
+        // We only edit the first matching monitor, in the case where multiple monitors exist
+        await axios.post<{ monitors: { id: string }[] }>(
+          `${uptimeRobotBaseUrl}/editMonitor?format=json`,
+          {
+            api_key: UPTIME_ROBOT_API_KEY,
+            id: affectedMonitorIds[0],
+            friendly_name: baseDomain,
+            url: `https://${baseDomain}`,
+            type: 1, // HTTP(S)
+            interval: 30,
+            timeout: 30,
+            alert_contacts: alertContacts,
+            http_method: 2, // GET
+          }
+        )
+      }
+    } catch (uptimerobotErr) {
+      // Non-blocking error, since site launch is still successful
+      const errMessage = `Unable to create better uptime monitor for ${baseDomain}. Error: ${uptimerobotErr}`
+      logger.error(errMessage)
+      try {
+        await this.sendMonitorCreationFailure(baseDomain)
+      } catch (monitorFailureEmailErr) {
+        logger.error(
+          `Failed to send error email for ${baseDomain}: ${monitorFailureEmailErr}`
+        )
+      }
+    }
+  }
+
+  sendMonitorCreationFailure = async (baseDomain: string): Promise<void> => {
+    const email = ISOMER_SUPPORT_EMAIL
+    const subject = `[Isomer] Monitor creation FAILURE`
+    const html = `The Uptime Robot monitor for the following site was not created successfully: ${baseDomain}`
+    await mailer.sendMail(email, subject, html)
   }
 
   pollMessages = async () => {
@@ -601,7 +733,9 @@ export default class InfraService {
       emailDetails = failureEmailDetails
     }
 
-    const targetEmail = isSuccess ? message.requestorEmail : ISOMER_ADMIN_EMAIL
+    const targetEmail = isSuccess
+      ? message.requestorEmail
+      : ISOMER_SUPPORT_EMAIL
 
     await mailer.sendMail(targetEmail, emailDetails.subject, emailDetails.body)
   }

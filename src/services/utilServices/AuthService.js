@@ -1,4 +1,5 @@
 const axios = require("axios")
+const { ResultAsync } = require("neverthrow")
 const queryString = require("query-string")
 const uuid = require("uuid/v4")
 
@@ -17,7 +18,8 @@ const {
   E2E_TEST_EMAIL,
 } = require("@root/constants")
 const { BadRequestError } = require("@root/errors/BadRequestError")
-const logger = require("@root/logger/logger")
+const { DatabaseError } = require("@root/errors/DatabaseError")
+const logger = require("@root/logger/logger").default
 const { isError } = require("@root/types")
 
 const CLIENT_ID = config.get("github.clientId")
@@ -124,18 +126,28 @@ class AuthService {
   }
 
   async verifyOtp({ email, otp }) {
-    const isOtpValid = await this.usersService.verifyEmailOtp(email, otp)
-
-    if (!isOtpValid) {
-      throw new BadRequestError("You have entered an invalid OTP.")
-    }
-    // Create user if does not exists. Set last logged in to current time.
-    const user = await this.usersService.loginWithEmail(email)
-    const userInfo = {
-      isomerUserId: user.id,
-      email: user.email,
-    }
-    return userInfo
+    return this.usersService
+      .verifyEmailOtp(email, otp)
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.usersService.loginWithEmail(email),
+          (error) => {
+            logger.error(
+              `Error logging user in via email: ${JSON.stringify(error)}`
+            )
+            return new DatabaseError(
+              "An error occurred when logging user in via email"
+            )
+          }
+        )
+      )
+      .map((user) => ({
+        isomerUserId: user.id,
+        email: user.email,
+      }))
+      .mapErr((error) => {
+        throw error
+      })
   }
 
   async getUserInfo(sessionData) {

@@ -1,7 +1,12 @@
+import { GrowthBook } from "@growthbook/growthbook"
+
+import { FeatureFlags } from "@root/types/featureFlags"
+
 import UserSessionData, { SessionDataProps } from "./UserSessionData"
 
 export type UserWithSiteSessionDataProps = SessionDataProps & {
   siteName: string
+  growthbook?: GrowthBook
 }
 
 /**
@@ -11,9 +16,14 @@ export type UserWithSiteSessionDataProps = SessionDataProps & {
 class UserWithSiteSessionData extends UserSessionData {
   readonly siteName: string
 
+  readonly growthbook?: GrowthBook<FeatureFlags>
+
   constructor(props: UserWithSiteSessionDataProps) {
     super(props)
     this.siteName = props.siteName
+    if (props.growthbook) {
+      this.growthbook = props.growthbook
+    }
   }
 
   getGithubParamsWithSite() {

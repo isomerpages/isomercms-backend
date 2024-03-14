@@ -43,4 +43,5 @@ module.exports = {
     max: DB_MAX_POOL,
     acquire: DB_ACQUIRE,
   },
+  logging: false,
 }

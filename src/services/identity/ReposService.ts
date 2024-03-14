@@ -1,28 +1,45 @@
+import { exec } from "child_process"
 import fs from "fs"
+import path from "path"
 
+import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { GetResponseTypeFromEndpointMethod } from "@octokit/types"
-import git from "isomorphic-git"
-import http from "isomorphic-git/http/node"
+import { ResultAsync, errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
+import { SimpleGit } from "simple-git"
 
 import { config } from "@config/config"
 
 import { UnprocessableError } from "@errors/UnprocessableError"
 
 import { Repo, Site } from "@database/models"
+import {
+  DNS_INDIRECTION_REPO,
+  EFS_VOL_PATH_STAGING,
+  EFS_VOL_PATH_STAGING_LITE,
+} from "@root/constants"
+import GitHubApiError from "@root/errors/GitHubApiError"
+import logger from "@root/logger/logger"
 
 const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 const octokit = new Octokit({ auth: SYSTEM_GITHUB_TOKEN })
+const OctokitRetry = Octokit.plugin(retry as any)
+const octokitWithRetry = new OctokitRetry({
+  auth: SYSTEM_GITHUB_TOKEN,
+  request: { retries: 5 },
+})
 
 // Constants
 const SITE_CREATION_BASE_REPO_URL =
   "https://github.com/isomerpages/site-creation-base"
 const ISOMER_GITHUB_ORGANIZATION_NAME = "isomerpages"
+const ISOMER_GITHUB_EMAIL = "isomeradmin@users.noreply.github.com"
 
 interface ReposServiceProps {
   repository: ModelStatic<Repo>
+  simpleGit: SimpleGit
 }
 
 type octokitCreateTeamResponseType = GetResponseTypeFromEndpointMethod<
@@ -45,11 +62,18 @@ export default class ReposService {
   // but having this seems to help navigation in some editors.
   private readonly repository: ReposServiceProps["repository"]
 
-  constructor({ repository }: ReposServiceProps) {
+  private readonly simpleGit: SimpleGit
+
+  constructor({ repository, simpleGit }: ReposServiceProps) {
     this.repository = repository
+    this.simpleGit = simpleGit
   }
 
-  getLocalRepoPath = (repoName: string) => `/tmp/${repoName}`
+  getLocalStagingRepoPath = (repoName: string) =>
+    path.join(EFS_VOL_PATH_STAGING, repoName)
+
+  getLocalStagingLiteRepoPath = (repoName: string) =>
+    path.join(EFS_VOL_PATH_STAGING_LITE, repoName)
 
   create = (createParams: repoCreateParamsType): Promise<Repo> =>
     this.repository.create(createParams)
@@ -69,7 +93,8 @@ export default class ReposService {
     if (!isEmailLogin) {
       await this.createTeamOnGitHub(repoName)
     }
-    await this.generateRepoAndPublishToGitHub(repoName, repoUrl)
+    const sshRepoUrl = `git@github.com:${ISOMER_GITHUB_ORGANIZATION_NAME}/${repoName}.git`
+    await this.generateRepoAndPublishToGitHub(repoName, sshRepoUrl)
     return this.create({
       name: repoName,
       url: repoUrl,
@@ -92,43 +117,38 @@ export default class ReposService {
     productionUrl: string,
     stagingUrl: string
   ) => {
-    const dir = this.getLocalRepoPath(repoName)
+    const dir = this.getLocalStagingRepoPath(repoName)
 
     // 1. Set URLs in local _config.yml
     this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
 
     // 2. Commit changes in local repo
-    await git.add({ fs, dir, filepath: "." })
-    await git.commit({
-      fs,
-      dir,
-      message: "Set URLs",
-      author: {
-        name: ISOMER_GITHUB_ORGANIZATION_NAME,
-        email: "isomeradmin@users.noreply.github.com",
-      },
-    })
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .checkout("staging") // ensure on staging branch
+      .add(".")
+      .addConfig("user.name", ISOMER_GITHUB_ORGANIZATION_NAME)
+      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
+      .commit("Set URLs")
 
     // 3. Push changes to staging branch
-    const remote = "origin"
-    await git.push({
-      fs,
-      http,
-      dir,
-      remote,
-      remoteRef: "staging",
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    })
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .push("origin", "staging")
 
-    // 4. Push changes to master branch
-    await git.push({
-      fs,
-      http,
-      dir,
-      remote,
-      remoteRef: "master",
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
-    })
+    // 4. Merge these changes into master branch
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .checkout("master")
+      .merge(["staging"])
+
+    // 5. Push changes to master branch
+    await this.simpleGit
+      .cwd({ path: dir, root: false })
+      .push("origin", "master")
+
+    // 6. Checkout back to staging branch
+    await this.simpleGit.cwd({ path: dir, root: false }).checkout("staging")
   }
 
   private setUrlsInLocalConfig(
@@ -203,63 +223,199 @@ export default class ReposService {
     repoName: string,
     repoUrl: string
   ): Promise<void> => {
-    const dir = this.getLocalRepoPath(repoName)
+    const stgDir = this.getLocalStagingRepoPath(repoName)
+    const stgLiteDir = this.getLocalStagingLiteRepoPath(repoName)
 
     // Make sure the local path is empty, just in case dir was used on a previous attempt.
-    fs.rmSync(`${dir}`, { recursive: true, force: true })
+    fs.rmSync(`${stgDir}`, { recursive: true, force: true })
 
     // Clone base repo locally
-    await git.clone({
-      fs,
-      http,
-      dir,
-      ref: "staging",
-      singleBranch: true,
-      url: SITE_CREATION_BASE_REPO_URL,
-      depth: 1,
-    })
+    fs.mkdirSync(stgDir)
+    await this.simpleGit
+      .cwd({ path: stgDir, root: false })
+      .clone(SITE_CREATION_BASE_REPO_URL, stgDir, ["-b", "staging"])
 
     // Clear git
-    fs.rmSync(`${dir}/.git`, { recursive: true, force: true })
+    fs.rmSync(`${stgDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
-    await git.init({ fs, dir, defaultBranch: "staging" })
-    await git.add({ fs, dir, filepath: "." })
-    await git.commit({
-      fs,
-      dir,
-      message: "Initial commit",
-      author: {
-        name: "isomeradmin",
-        email: "isomeradmin@users.noreply.github.com",
-      },
-    })
+    await this.simpleGit
+      .cwd({ path: stgDir, root: false })
+      .init(["--initial-branch=staging"])
+      .checkoutLocalBranch("staging")
 
-    const remote = "origin"
-    const addRemoteConfig = {
-      fs,
-      dir,
-      remote,
-      url: repoUrl,
-    }
-    await git.addRemote(addRemoteConfig)
+    // Add all the changes
+    await this.simpleGit.cwd({ path: stgDir, root: false }).add(".")
 
-    // Push contents, staging first then master,
-    // so that staging is default branch
-    const repoPushConfig = {
-      fs,
-      http,
-      dir,
-      remote,
-      onAuth: () => ({ username: "user", password: SYSTEM_GITHUB_TOKEN }),
+    // Commit
+    await this.simpleGit
+      .cwd({ path: stgDir, root: false })
+      .addConfig("user.name", "isomeradmin")
+      .addConfig("user.email", ISOMER_GITHUB_EMAIL)
+      .commit("Initial commit")
+
+    // Push to origin
+    await this.simpleGit
+      .cwd({ path: stgDir, root: false })
+      .addRemote("origin", repoUrl)
+      .checkout("staging")
+      .push(["-u", "origin", "staging"]) // push to staging first to make it the default branch on GitHub
+      .checkoutLocalBranch("master")
+      .push(["-u", "origin", "master"])
+      .checkout("staging") // reset local branch back to staging
+
+    // Make sure the local path is empty, just in case dir was used on a previous attempt.
+    await this.setUpStagingLite(stgLiteDir, repoUrl)
+  }
+
+  createDnsIndirectionFile = (
+    indirectionSubdomain: string,
+    primaryDomain: string,
+    primaryDomainTarget: string
+  ): ResultAsync<void, GitHubApiError> => {
+    const template = `import { Record } from "@pulumi/aws/route53";
+import { CLOUDFRONT_HOSTED_ZONE_ID } from "../constants";
+
+export const createRecords = (zoneId: string): Record[] => {
+  const records = [
+    new Record("${primaryDomain} A", {
+      name: "${indirectionSubdomain}",
+      type: "A",
+      zoneId: zoneId,
+      aliases: [
+        {
+          name: "${primaryDomainTarget}",
+          zoneId: CLOUDFRONT_HOSTED_ZONE_ID,
+          evaluateTargetHealth: false,
+        },
+      ],
+    }),
+
+    new Record("${primaryDomain} AAAA", {
+      name: "${indirectionSubdomain}",
+      type: "AAAA",
+      zoneId: zoneId,
+      aliases: [
+        {
+          name: "${primaryDomainTarget}",
+          zoneId: CLOUDFRONT_HOSTED_ZONE_ID,
+          evaluateTargetHealth: false,
+        },
+      ],
+    }),
+  ];
+
+  return records;
+};
+`
+
+    return ResultAsync.fromPromise(
+      octokit.repos.getContent({
+        owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+        repo: DNS_INDIRECTION_REPO,
+        path: `dns/${primaryDomain}.ts`,
+      }),
+      () => errAsync<true>(true)
+    )
+      .andThen((response) => {
+        if (Array.isArray(response.data)) {
+          logger.error(
+            `Error creating DNS indirection file for ${primaryDomain}`
+          )
+
+          return errAsync(
+            new GitHubApiError("Unable to create DNS indirection file")
+          )
+        }
+
+        const { sha } = response.data
+        return okAsync(sha)
+      })
+      .andThen((sha) =>
+        ResultAsync.fromPromise(
+          octokitWithRetry.repos.createOrUpdateFileContents({
+            owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+            repo: DNS_INDIRECTION_REPO,
+            path: `dns/${primaryDomain}.ts`,
+            message: `Update ${primaryDomain}.ts`,
+            content: Buffer.from(template).toString("base64"),
+            sha,
+          }),
+          (error) => {
+            logger.error(
+              `Error creating DNS indirection file for ${primaryDomain}: ${error}`
+            )
+
+            return new GitHubApiError("Unable to create DNS indirection file")
+          }
+        )
+      )
+      .orElse((error) => {
+        if (error instanceof GitHubApiError) {
+          return errAsync(error)
+        }
+
+        return ResultAsync.fromPromise(
+          octokitWithRetry.repos.createOrUpdateFileContents({
+            owner: ISOMER_GITHUB_ORGANIZATION_NAME,
+            repo: DNS_INDIRECTION_REPO,
+            path: `dns/${primaryDomain}.ts`,
+            message: `Create ${primaryDomain}.ts`,
+            content: Buffer.from(template).toString("base64"),
+          }),
+          (error) => {
+            logger.error(
+              `Error creating DNS indirection file for ${primaryDomain}: ${error}`
+            )
+
+            return new GitHubApiError("Unable to create DNS indirection file")
+          }
+        )
+      })
+      .map(() => undefined)
+  }
+
+  async setUpStagingLite(stgLiteDir: string, repoUrl: string) {
+    fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
+    // create a empty folder stgLiteDir
+    fs.mkdirSync(stgLiteDir)
+
+    // note: for some reason, combining below commands led to race conditions
+    // so we have to do it separately
+    // Create staging lite branch in other repo path
+
+    await this.simpleGit
+      .cwd({ path: stgLiteDir, root: false })
+      .clone(repoUrl, stgLiteDir)
+    await this.simpleGit.cwd({ path: stgLiteDir, root: false }).pull() // some repos are large, clone takes time
+    await this.simpleGit
+      .cwd({ path: stgLiteDir, root: false })
+      .checkout("staging")
+
+    if (fs.existsSync(path.join(`${stgLiteDir}`, `images`))) {
+      await this.simpleGit
+        .cwd({ path: stgLiteDir, root: false })
+        .rm(["-r", "images"])
     }
-    await git.push({
-      ...repoPushConfig,
-      remoteRef: "staging",
-    })
-    await git.push({
-      ...repoPushConfig,
-      remoteRef: "master",
-    })
+
+    if (fs.existsSync(path.join(`${stgLiteDir}`, `files`))) {
+      await this.simpleGit
+        .cwd({ path: stgLiteDir, root: false })
+        .rm(["-r", "files"])
+    }
+
+    // Clear git
+    fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
+
+    // Prepare git repo
+    await this.simpleGit
+      .cwd({ path: stgLiteDir, root: false })
+      .init()
+      .checkoutLocalBranch("staging-lite")
+      .add(".")
+      .commit("Initial commit")
+      .addRemote("origin", repoUrl)
+      .push(["origin", "staging-lite", "-f"])
+    return stgLiteDir
   }
 }

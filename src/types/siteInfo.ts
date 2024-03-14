@@ -26,12 +26,13 @@ export const SiteLaunchStatusObject = {
   Launched: "LAUNCHED",
   NotLaunched: "NOT_LAUNCHED",
   Launching: "LAUNCHING",
+  Failure: "FAILED",
 } as const
 
 export type SiteLaunchStatus = typeof SiteLaunchStatusObject[keyof typeof SiteLaunchStatusObject]
 
 export interface SiteLaunchDto {
-  siteStatus: SiteLaunchStatus
+  siteLaunchStatus: SiteLaunchStatus
   dnsRecords?: DNSRecord[]
   siteUrl?: string
 }

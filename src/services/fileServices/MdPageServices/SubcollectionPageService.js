@@ -69,6 +69,10 @@ class SubcollectionPageService {
   ) {
     const parsedDirectoryName = `_${collectionName}/${subcollectionName}`
     const newContent = convertDataToMarkdown(frontMatter, content)
+    const {
+      frontMatter: newFrontMatter,
+      pageContent: newPageContent,
+    } = retrieveDataFromMarkdown(newContent)
     const { newSha } = await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
@@ -77,7 +81,7 @@ class SubcollectionPageService {
     })
     return {
       fileName,
-      content: { frontMatter, pageBody: content },
+      content: { frontMatter: newFrontMatter, pageBody: newPageContent },
       oldSha: sha,
       newSha,
     }

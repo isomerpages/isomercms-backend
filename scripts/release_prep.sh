@@ -91,6 +91,7 @@ repo_url=$(gh repo view --json url --jq '.url')
 tests_section="## Tests\n\n"
 notes_section="## Deploy Notes\n\n"
 
+# Find relevant line items (feature PRs; not auto dep upgrades or release prs)
 grep -v -E -- '- [a-z]+\(deps(-dev)?\)' ${pr_body_file} | grep -v -E -- '- (release|backport) v' | grep -v -E -- '- \d+\.\d+\.\d+ ' | while read line_item; do
   pr_id=$(echo ${line_item} | grep -o -E '\[`#\d+`\]' | grep -o -E '\d+')
   pr_content=$(gh pr view ${pr_id})

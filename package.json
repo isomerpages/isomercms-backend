@@ -142,7 +142,7 @@
     "eslint-plugin-jest": "^27.9.0",
     "eslint-plugin-only-warn": "^1.0.2",
     "eslint-plugin-prettier": "^4.2.1",
-    "husky": "^6.0.0",
+    "husky": "^9.0.11",
     "jest": "^27.5.1",
     "jest-extended": "^4.0.2",
     "jest-mock-axios": "^4.5.0",

@@ -21,7 +21,8 @@ if [[ ${has_local_changes} ]]; then
   exit 1
 fi
 
-git fetch --all --tags
+git fetch --tags --force
+git fetch --all
 git reset --hard
 git pull
 git checkout develop

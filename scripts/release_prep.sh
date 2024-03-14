@@ -54,12 +54,13 @@ git push origin ${may_force_push} HEAD:${release_branch}
 git push -f origin HEAD:staging
 git push origin ${release_version}
 
-# extract changelog to inject into the PR
+# Prep temp files to hold extracted content
 pr_body_file=.pr_body_${release_version}
 pr_body_file_grouped=.pr_body_${release_version}_grouped
 pr_body_file_tests=.pr_body_${release_version}_tests
 pr_body_file_notes=.pr_body_${release_version}_notes
 
+# Extract the changelog for the release version specifically, and discard irrelevant lines (empty or not starting with a dash)
 awk "/^#### \[${release_version}\]/{flag=1;next}/####/{flag=0}flag" CHANGELOG.md | sed -E '/^([^-]|[[:space:]]*$)/d' > ${pr_body_file}
 
 # Show new items

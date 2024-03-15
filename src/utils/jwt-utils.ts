@@ -8,8 +8,7 @@ import _ from "lodash"
 import { config } from "@config/config"
 
 const JWT_SECRET = config.get("auth.jwtSecret")
-// const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")
-const ENCRYPTION_SECRET = Buffer.from(crypto.randomBytes(16)).toString("hex")
+const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")
 const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry").toString()
 
 const IV_LENGTH = 16
@@ -17,7 +16,7 @@ const AUTH_TAG_LENGTH = 32
 
 type Algo = "aes-256-gcm" | "aes-cbc"
 
-const encryptAesGcm = (token: string, secret: string) => {
+export const encryptAesGcm = (token: string, secret: string) => {
   // NOTE: The iv here is 16 characters long.
   // This is because we generate 8 random bytes (1 byte = 8 bits)
   // but hex is 4 bits per character..
@@ -39,7 +38,7 @@ const encryptAesGcm = (token: string, secret: string) => {
   return `${iv}${authTag}${encrypted}`
 }
 
-const decryptAesGcm = (encrypted: string, secret: string) => {
+export const decryptAesGcm = (encrypted: string, secret: string) => {
   const iv = encrypted.slice(0, IV_LENGTH)
   const authTag = Buffer.from(
     encrypted.slice(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH),

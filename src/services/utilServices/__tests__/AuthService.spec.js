@@ -17,7 +17,7 @@ const { config } = require("@config/config")
 const { AuthError } = require("@errors/AuthError")
 const { BadRequestError } = require("@errors/BadRequestError")
 
-const jwtUtils = require("@utils/jwt-utils")
+const jwtUtils = require("@utils/jwt-utils").default
 
 const {
   mockUserWithSiteSessionData,

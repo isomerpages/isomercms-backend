@@ -10,7 +10,7 @@ const { AuthError } = require("@errors/AuthError")
 const { ForbiddenError } = require("@errors/ForbiddenError")
 
 const { validateStatus } = require("@utils/axios-utils")
-const jwtUtils = require("@utils/jwt-utils")
+const jwtUtils = require("@utils/jwt-utils").default
 
 const {
   E2E_ISOMER_ID,

@@ -75,7 +75,7 @@ class AuthRouter {
       state,
     })
     logger.info(`User ${userInfo.email} successfully logged in`)
-    Object.assign(req.session, { userInfo })
+    Object.assign(req.session, { ...userInfo, algo: "aes-256-gcm" })
     return res.redirect(`${FRONTEND_URL}/sites`)
   }
 

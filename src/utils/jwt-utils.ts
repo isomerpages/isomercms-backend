@@ -1,9 +1,9 @@
-const crypto = require("crypto")
+import crypto from "crypto"
 
-const jwt = require("jsonwebtoken")
-const _ = require("lodash")
+import jwt from "jsonwebtoken"
+import _ from "lodash"
 
-const { config } = require("@config/config")
+import { config } from "@config/config"
 
 const JWT_SECRET = config.get("auth.jwtSecret")
 // const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")
@@ -14,17 +14,17 @@ const IV_LENGTH = 16
 const AUTH_TAG_LENGTH = 32
 
 const jwtUtil = {
-  decodeToken: _.wrap(jwt.decode, (decode, token) => decode(token)),
-  verifyToken: _.wrap(jwt.verify, (verify, token) =>
+  decodeToken: _.wrap(jwt.decode, (decode, token: string) => decode(token)),
+  verifyToken: _.wrap(jwt.verify, (verify, token: string) =>
     verify(token, JWT_SECRET, { algorithms: ["HS256"] })
   ),
-  signToken: _.wrap(jwt.sign, (sign, content) =>
+  signToken: _.wrap(jwt.sign, (sign, content: string) =>
     sign(content, JWT_SECRET, {
       algorithm: "HS256",
       expiresIn: AUTH_TOKEN_EXPIRY_MS,
     })
   ),
-  encryptToken: (token) => {
+  encryptToken: (token: string) => {
     // NOTE: The iv here is 16 characters long.
     // This is because we generate 8 random bytes (1 byte = 8 bits)
     // but hex is 4 bits per character..
@@ -38,7 +38,7 @@ const jwtUtil = {
 
     return `${iv}${authTag}${encrypted}`
   },
-  decryptToken: (encrypted) => {
+  decryptToken: (encrypted: string) => {
     const iv = encrypted.slice(0, IV_LENGTH)
     const authTag = Buffer.from(
       encrypted.slice(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH),

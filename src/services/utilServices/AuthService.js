@@ -94,7 +94,7 @@ class AuthService {
     if (!user) throw Error("Failed to create user")
 
     const userInfo = {
-      accessToken: jwtUtils.encryptToken(accessToken),
+      accessToken: jwtUtils.encryptToken(accessToken, "aes-256-gcm"),
       githubId,
       isomerUserId: user.id,
       email: user.email,

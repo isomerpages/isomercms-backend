@@ -221,7 +221,7 @@ export default class AuthenticationMiddlewareService {
         email,
       } = userInfo
       const accessToken = retrievedToken
-        ? jwtUtils.decryptToken(retrievedToken)
+        ? jwtUtils.decryptToken(retrievedToken, "aes-256-gcm")
         : ""
       return {
         accessToken,

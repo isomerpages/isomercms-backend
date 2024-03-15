@@ -9,7 +9,7 @@ import { GrowthBookAttributes } from "@root/types/featureFlags"
 import { RequestWithGrowthBook } from "@root/types/request"
 
 interface RequestWithSession extends RequestWithGrowthBook {
-  session: Session & SessionData & { algo: "aes-256-gcm" }
+  session: Session & SessionData
 }
 
 // eslint-disable-next-line import/prefer-default-export

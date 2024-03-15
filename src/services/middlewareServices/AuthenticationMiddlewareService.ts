@@ -57,7 +57,6 @@ export type VerifyAccessProps = UnverifiedSession & {
     "e2eUserType" | "isomercmsE2E" | "site" | "email"
   >
   url: string
-  algo?: "aes-256-gcm"
 }
 
 const E2E_USERS = {
@@ -203,7 +202,6 @@ export default class AuthenticationMiddlewareService {
     cookies,
     url,
     userInfo,
-    algo,
   }: VerifyAccessProps): Promise<SessionDataProps> {
     const e2eUserType = this.verifyE2E({ cookies, url })
     if (e2eUserType) {
@@ -223,7 +221,7 @@ export default class AuthenticationMiddlewareService {
         email,
       } = userInfo
       const accessToken = retrievedToken
-        ? jwtUtils.decryptToken(retrievedToken, "aes-256-gcm")
+        ? jwtUtils.decryptToken(retrievedToken)
         : ""
       return {
         accessToken,

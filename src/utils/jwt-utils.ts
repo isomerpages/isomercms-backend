@@ -7,7 +7,7 @@ import { config } from "@config/config"
 
 const JWT_SECRET = config.get("auth.jwtSecret")
 const ENCRYPTION_SECRET = config.get("auth.encryptionSecret")
-const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiry").toString()
+const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiryInMs").toString()
 
 export default {
   decodeToken: _.wrap(jwt.decode, (decode, token: string) => decode(token)),

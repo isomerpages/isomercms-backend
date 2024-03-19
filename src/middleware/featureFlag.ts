@@ -4,6 +4,16 @@ import logger from "@root/logger/logger"
 import { RequestHandlerWithGrowthbook } from "@root/types"
 import { getNewGrowthbookInstance } from "@root/utils/growthbook-utils"
 
+// Keep one GrowthBook instance at module level
+// The instance will handle internal cache refreshes via a SSE connection
+const gb = getNewGrowthbookInstance(config.get("growthbook.clientKey"))
+
+gb.loadFeatures({ autoRefresh: true }).catch((e: unknown) => {
+  logger.error(
+    `Failed to load features from GrowthBook at startup: ${JSON.stringify(e)}`
+  )
+})
+
 export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
   never,
   unknown,
@@ -20,12 +30,11 @@ export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
 
   // Wait for features to load (will be cached in-memory for future requests)
   req.growthbook
-    .loadFeatures({ autoRefresh: true })
-    .then(() => next())
+    .loadFeatures()
     .catch((e: unknown) => {
       logger.error(
         `Failed to load features from GrowthBook: ${JSON.stringify(e)}`
       )
-      next()
     })
+    .then(() => next())
 }

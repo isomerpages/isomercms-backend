@@ -42,7 +42,6 @@ export class AuthenticationMiddleware {
         cookies,
         url,
         userInfo: session.userInfo,
-        algo: session.algo,
       })
       const userSessionData = new UserSessionData({
         isomerUserId,

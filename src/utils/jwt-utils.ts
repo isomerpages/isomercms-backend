@@ -14,12 +14,11 @@ export default {
   verifyToken: _.wrap(jwt.verify, (verify, token: string) =>
     verify(token, JWT_SECRET, { algorithms: ["HS256"] })
   ),
-  signToken: _.wrap(jwt.sign, (sign, content: string) =>
-    sign(content, JWT_SECRET, {
+  signToken: (content: string | object | Buffer) =>
+    jwt.sign(content, JWT_SECRET, {
       algorithm: "HS256",
       expiresIn: AUTH_TOKEN_EXPIRY_MS,
-    })
-  ),
+    }),
   encryptToken: (token: string, secret?: string) => {
     const encryptionSecret = secret ?? ENCRYPTION_SECRET
 

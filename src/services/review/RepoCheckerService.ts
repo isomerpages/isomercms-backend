@@ -27,6 +27,7 @@ import {
   BrokenLinkErrorDto,
 } from "@root/types/siteChecker"
 import { extractPathInfo } from "@root/utils/files"
+import { doesDirectoryExist } from "@root/utils/fs-utils"
 
 import GitFileSystemService from "../db/GitFileSystemService"
 import { PageService } from "../fileServices/MdPageServices/PageService"
@@ -77,33 +78,63 @@ export default class RepoCheckerService {
     this.pageService = pageService
   }
 
+  createLogsFolder(repo: string): ResultAsync<true, SiteCheckerError> {
+    const logsFilePath = path.join(SITE_CHECKER_REPO_PATH, repo)
+
+    // create logs folder if it does not exist
+    return doesDirectoryExist(logsFilePath)
+      .mapErr((err) => {
+        logger.error(
+          `SiteCheckerError: error finding if logs directory exists for ${repo} :${err}`
+        )
+        return new SiteCheckerError(
+          `Error finding if logs directory exists for ${repo} :${err}`
+        )
+      })
+      .andThen((doesLogsFolderExist) => {
+        if (!doesLogsFolderExist) {
+          return ResultAsync.fromPromise(
+            fs.promises.mkdir(logsFilePath, { recursive: true }),
+            (err) => {
+              logger.error(
+                `SiteCheckerError: Unable to create logs dir: ${err}`
+              )
+              return new SiteCheckerError(
+                `SiteCheckerError: Unable to create logs dir: ${err}`
+              )
+            }
+          ).map<true>(() => true)
+        }
+        return okAsync<true>(true)
+      })
+  }
+
   isCurrentlyLocked(repo: string): ResultAsync<true, SiteCheckerError> {
     const logsFilePath = path.join(SITE_CHECKER_REPO_PATH, repo)
-    // create logs folder if it does not exist
-
-    if (!fs.existsSync(logsFilePath)) {
-      fs.mkdirSync(logsFilePath, { recursive: true })
-    }
-
     // check if checker.lock exists
     const lockFilePath = path.join(logsFilePath, LOCK_CONTENT)
-
-    return ResultAsync.fromPromise(
-      fs.promises.access(lockFilePath, fs.constants.F_OK),
-      (err) => new SiteCheckerError(`${err}`)
-    ).map(() => true)
+    return this.createLogsFolder(repo)
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          fs.promises.access(lockFilePath, fs.constants.F_OK),
+          (err) =>
+            new SiteCheckerError(
+              `Unable to determine if the lock folder exists for ${repo}: ${err}`
+            )
+        )
+      )
+      .map(() => true)
   }
 
   createLock(repo: string) {
     const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true })
-    }
     // create a checker.lock file
     const lockFilePath = path.join(folderPath, LOCK_CONTENT)
-    return ResultAsync.fromPromise(
-      fs.promises.writeFile(lockFilePath, "locked"),
-      (error) => new SiteCheckerError(`${error}`)
+    return this.createLogsFolder(repo).andThen(() =>
+      ResultAsync.fromPromise(
+        fs.promises.writeFile(lockFilePath, "locked"),
+        (error) => new SiteCheckerError(`${error}`)
+      )
     )
   }
 
@@ -375,92 +406,104 @@ export default class RepoCheckerService {
           fileName,
           viewablePageInCms,
         ] of mapOfMdFilesAndViewableLinkInCms) {
-          const file = fs.readFileSync(path.join(repoPath, fileName), "utf8")
-
-          const filePermalink = file
-            .split("---")
-            ?.at(1)
-            ?.split("permalink: ")
-            ?.at(1)
-            ?.split("\n")
-            ?.at(0)
-
-          if (!filePermalink) {
-            continue
-          }
-          const normalisedPermalink = this.normalisePermalink(filePermalink)
-
-          // we are only parsing out the front matter
-          const fileContent = file.split("---")?.slice(2).join("---")
-          if (!fileContent) {
-            continue
-          }
-          findErrors.push(
-            ResultAsync.fromPromise(
-              Promise.resolve(marked.parse(fileContent)),
-              (err) => new SiteCheckerError(`${err}`)
-            ).andThen((html) => {
-              const dom = new JSDOM(html)
-              const anchorTags = dom.window.document.querySelectorAll("a")
-              forEach(anchorTags, (tag) => {
-                const href = tag.getAttribute("href")
-                const text = tag.textContent
-
-                if (!text) {
-                  // while rendered in the dom, unlikely to be
-                  // noticed by end citizen.
-                  return
-                }
-                if (!tag.hasAttribute("href")) {
-                  const error: RepoError = {
-                    type: RepoErrorTypes.BROKEN_LINK,
-                    linkToAsset: "",
-                    viewablePageInCms,
-                    viewablePageInStaging: path.join(normalisedPermalink),
-                    linkedText: text,
-                  }
-                  errors.push(error)
-                }
-                if (!href) {
-                  // could be intentional linking to self
-                  // eg. <a href>Back to top</a>
-                  return
-                }
-
-                if (!this.hasValidReference(setOfAllMediaAndPagesPath, href)) {
-                  const error: RepoError = {
-                    type: RepoErrorTypes.BROKEN_LINK,
-                    linkToAsset: href,
-                    viewablePageInCms,
-                    viewablePageInStaging: path.join(normalisedPermalink),
-                    linkedText: text,
-                  }
-                  errors.push(error)
-                }
-              })
-              const imgTags = dom.window.document.querySelectorAll("img")
-              forEach(imgTags, (tag) => {
-                const src = tag.getAttribute("src")
-                if (!src) {
-                  // while rendered in the dom, unlikely to be
-                  // noticed by end citizen.
-                  return
-                }
-
-                //! todo: include check for post bundled files https://github.com/isomerpages/isomerpages-template/tree/staging/assets/img
-                if (!this.hasValidReference(setOfAllMediaAndPagesPath, src)) {
-                  const error: RepoError = {
-                    type: RepoErrorTypes.BROKEN_IMAGE,
-                    linkToAsset: src,
-                    viewablePageInCms,
-                    viewablePageInStaging: path.join(normalisedPermalink),
-                  }
-                  errors.push(error)
-                }
-              })
-              return ok(undefined)
-            })
+          const siteError = ResultAsync.fromPromise(
+            fs.promises.readFile(path.join(repoPath, fileName), "utf8"),
+            (error) =>
+              new SiteCheckerError(
+                `SiteCheckerError: error reading file ${fileName}: ${error}`
+              )
           )
+            .andThen((file) => {
+              const filePermalink = file
+                .split("---")
+                ?.at(1)
+                ?.split("permalink: ")
+                ?.at(1)
+                ?.split("\n")
+                ?.at(0)
+
+              if (!filePermalink) {
+                return errAsync("No permalink found in front matter")
+              }
+              const normalisedPermalink = this.normalisePermalink(filePermalink)
+
+              // we are only parsing out the front matter
+              const fileContent = file.split("---")?.slice(2).join("---")
+              if (!fileContent) {
+                return errAsync("No file content found")
+              }
+              return okAsync({ fileContent, normalisedPermalink })
+            })
+            .andThen(({ fileContent, normalisedPermalink }) =>
+              ResultAsync.fromPromise(
+                Promise.resolve(marked.parse(fileContent)),
+                (err) => new SiteCheckerError(`${err}`)
+              ).andThen((html) => {
+                const dom = new JSDOM(html)
+                const anchorTags = dom.window.document.querySelectorAll("a")
+                forEach(anchorTags, (tag) => {
+                  const href = tag.getAttribute("href")
+                  const text = tag.textContent
+
+                  if (!text) {
+                    // while rendered in the dom, unlikely to be
+                    // noticed by end citizen.
+                    return
+                  }
+                  if (!tag.hasAttribute("href")) {
+                    const error: RepoError = {
+                      type: RepoErrorTypes.BROKEN_LINK,
+                      linkToAsset: "",
+                      viewablePageInCms,
+                      viewablePageInStaging: path.join(normalisedPermalink),
+                      linkedText: text,
+                    }
+                    errors.push(error)
+                  }
+                  if (!href) {
+                    // could be intentional linking to self
+                    // eg. <a href>Back to top</a>
+                    return
+                  }
+
+                  if (
+                    !this.hasValidReference(setOfAllMediaAndPagesPath, href)
+                  ) {
+                    const error: RepoError = {
+                      type: RepoErrorTypes.BROKEN_LINK,
+                      linkToAsset: href,
+                      viewablePageInCms,
+                      viewablePageInStaging: path.join(normalisedPermalink),
+                      linkedText: text,
+                    }
+                    errors.push(error)
+                  }
+                })
+                const imgTags = dom.window.document.querySelectorAll("img")
+                forEach(imgTags, (tag) => {
+                  const src = tag.getAttribute("src")
+                  if (!src) {
+                    // while rendered in the dom, unlikely to be
+                    // noticed by end citizen.
+                    return
+                  }
+
+                  //! todo: include check for post bundled files https://github.com/isomerpages/isomerpages-template/tree/staging/assets/img
+                  if (!this.hasValidReference(setOfAllMediaAndPagesPath, src)) {
+                    const error: RepoError = {
+                      type: RepoErrorTypes.BROKEN_IMAGE,
+                      linkToAsset: src,
+                      viewablePageInCms,
+                      viewablePageInStaging: path.join(normalisedPermalink),
+                    }
+                    errors.push(error)
+                  }
+                })
+                return ok(undefined)
+              })
+            )
+
+          findErrors.push(siteError)
         }
         logger.info(`Site checker for repo ${repo} completed successfully!`)
         return ResultAsync.combineWithAllErrors(findErrors)
@@ -493,52 +536,60 @@ export default class RepoCheckerService {
     return false
   }
 
-  reporter(repo: string, errors: RepoError[]): ResultAsync<RepoError[], never> {
-    const folderPath = path.join(SITE_CHECKER_REPO_PATH, repo)
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true })
-    }
-    const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
-    const stringifiedErrors = this.convertToCSV(errors)
-    if (!fs.existsSync(filePath)) {
-      fs.appendFileSync(filePath, stringifiedErrors)
-    } else {
-      fs.writeFileSync(filePath, stringifiedErrors)
-    }
+  reporter(
+    repo: string,
+    errors: RepoError[]
+  ): ResultAsync<RepoError[], SiteCheckerError> {
+    return this.createLogsFolder(repo).andThen(() => {
+      const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
+      const stringifiedErrors = this.convertToCSV(errors)
 
-    const isProd = config.get("env") === "prod"
-    if (!isProd) {
-      return okAsync(errors)
-    }
+      return ResultAsync.fromPromise(
+        fs.promises.writeFile(filePath, stringifiedErrors),
+        (writeFileError) => {
+          logger.error(
+            `SiteCheckerError: Error creating log file for ${repo} :${writeFileError}`
+          )
+          return new SiteCheckerError(
+            `Error creating log file for ${repo} :${writeFileError}`
+          )
+        }
+      ).andThen(() => {
+        const isProd = config.get("env") === "prod"
+        if (!isProd) {
+          return okAsync(errors)
+        }
 
-    const gitOperations:
-      | Response<CommitResult>
-      | Response<PushResult> = this.git
-      .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-      .checkout("main")
-      .fetch()
-      .merge(["origin/main"])
-      .add(["."])
-      .commit(`Site checker logs added for ${repo}`)
-      .push()
+        const gitOperations:
+          | Response<CommitResult>
+          | Response<PushResult> = this.git
+          .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+          .checkout("main")
+          .fetch()
+          .merge(["origin/main"])
+          .add(["."])
+          .commit(`Site checker logs added for ${repo}`)
+          .push()
 
-    // pushing since there is no real time requirement for user
-    return ResultAsync.fromPromise<CommitResult | PushResult, SiteCheckerError>(
-      gitOperations,
-      (error) => new SiteCheckerError(`${error}`)
-    )
-      .map(() => errors)
-      .orElse(() => {
-        /**
-         * Actually committing the repo to remote is not a critical operation, and done for observability.
-         * If it fails, we can still return the broken links report to the user.
-         * We also do not want to log the actual error as it could cause other alarms to go off.
-         */
-        logger.info(
-          `SiteCheckerInfo: Error pushing logs for ${repo} to remote isomer-site-checker repo`
-        )
-        return ok(errors)
+        // pushing since there is no real time requirement for user
+        return ResultAsync.fromPromise<
+          CommitResult | PushResult,
+          SiteCheckerError
+        >(gitOperations, (error) => new SiteCheckerError(`${error}`))
+          .map(() => errors)
+          .orElse(() => {
+            /**
+             * Actually committing the repo to remote is not a critical operation, and done for observability.
+             * If it fails, we can still return the broken links report to the user.
+             * We also do not want to log the actual error as it could cause other alarms to go off.
+             */
+            logger.info(
+              `SiteCheckerInfo: Error pushing logs for ${repo} to remote isomer-site-checker repo`
+            )
+            return ok(errors)
+          })
       })
+    })
   }
 
   // adapted from https://stackoverflow.com/questions/56427009/how-to-return-papa-parsed-csv-via-promise-async-await
@@ -566,37 +617,40 @@ export default class RepoCheckerService {
     repo: string
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
     const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
-    if (!fs.existsSync(filePath)) {
-      logger.error(`SiteCheckerError: Folder does not exist for ${repo}`)
-      return errAsync(new SiteCheckerError(`Folder does not exist for ${repo}`))
-    }
 
-    return this.isCurrentlyErrored(repo).andThen((isError) => {
-      if (isError) {
-        return errAsync(new SiteCheckerError(`Error checking repo ${repo}`))
-      }
+    return ResultAsync.fromPromise(fs.promises.stat(filePath), () => {
+      logger.error(
+        `SiteCheckerError: Error reading log file for ${repo}: file does not exist`
+      )
+      return new SiteCheckerError(`Folder does not exist for ${repo}`)
+    }).andThen(() =>
+      this.isCurrentlyErrored(repo).andThen((isError) => {
+        if (isError) {
+          return errAsync(new SiteCheckerError(`Error checking repo ${repo}`))
+        }
 
-      return this.isCurrentlyLocked(repo)
-        .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
-        .orElse(() =>
-          ResultAsync.fromPromise(
-            this.generateRepoErrorsFromCsv(repo),
-            (error) => {
-              logger.error(
-                `SiteCheckerError: Error reading csv for repo ${repo}: ${error}`
-              )
-              return new SiteCheckerError(
-                `Error reading csv for repo ${repo}: ${error}`
-              )
-            }
-          ).andThen((errors) =>
-            okAsync<BrokenLinkErrorDto>({
-              errors,
-              status: "success",
-            })
+        return this.isCurrentlyLocked(repo)
+          .andThen(() => okAsync<BrokenLinkErrorDto>({ status: "loading" }))
+          .orElse(() =>
+            ResultAsync.fromPromise(
+              this.generateRepoErrorsFromCsv(repo),
+              (error) => {
+                logger.error(
+                  `SiteCheckerError: Error reading csv for repo ${repo}: ${error}`
+                )
+                return new SiteCheckerError(
+                  `Error reading csv for repo ${repo}: ${error}`
+                )
+              }
+            ).andThen((errors) =>
+              okAsync<BrokenLinkErrorDto>({
+                errors,
+                status: "success",
+              })
+            )
           )
-        )
-    })
+      })
+    )
   }
 
   /**
@@ -806,18 +860,16 @@ export default class RepoCheckerService {
   }
 
   outputHumanReadableErrors(repoName: string) {
-    const csvData = fs.readFileSync(
-      path.join(SITE_CHECKER_REPO_PATH, repoName, REPO_LOG),
-      "utf8"
+    return ResultAsync.fromPromise(
+      this.generateRepoErrorsFromCsv(repoName),
+      (err) => {
+        logger.error(`SiteCheckerError: Error reading errors from csv: ${err}`)
+        return new SiteCheckerError(`Error reading errors from csv: ${err}`)
+      }
     )
-
-    const report: string[] = []
-
-    Papa.parse(csvData, {
-      header: true,
-      complete(results) {
-        results.data.forEach((row) => {
-          if (!isRepoError(row)) return
+      .andThen((errors) => {
+        const report: string[] = []
+        errors.forEach((row) => {
           if (row.type === "broken-image") {
             report.push(`Broken image: ${row.linkToAsset}`)
             report.push(`Edit page: ${row.viewablePageInCms}`)
@@ -843,14 +895,25 @@ export default class RepoCheckerService {
             report.push("\n")
           }
         })
-      },
-    })
 
-    // write report to file
-    fs.writeFileSync(
-      path.join(SITE_CHECKER_REPO_PATH, repoName, "report.txt"),
-      report.join("\n")
-    )
+        return ok(report)
+      })
+      .andThen((report) =>
+        ResultAsync.fromPromise(
+          fs.promises.writeFile(
+            path.join(SITE_CHECKER_REPO_PATH, repoName, "report.txt"),
+            report.join("\n")
+          ),
+          (err) => {
+            logger.error(
+              `SiteCheckerError: Error writing report to file: ${err}`
+            )
+            return new SiteCheckerError(
+              `SiteCheckerError: Error writing report to file: ${err}`
+            )
+          }
+        )
+      )
   }
 
   traverseDirectory(

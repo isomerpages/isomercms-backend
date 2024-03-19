@@ -31,7 +31,7 @@
     "@aws-sdk/client-cloudwatch-logs": "^3.370.0",
     "@aws-sdk/client-secrets-manager": "^3.389.0",
     "@aws-sdk/lib-dynamodb": "^3.521.0",
-    "@growthbook/growthbook": "^0.27.0",
+    "@growthbook/growthbook": "^0.34.0",
     "@octokit/plugin-retry": "^6.0.0",
     "@octokit/rest": "^18.12.0",
     "@opengovsg/formsg-sdk": "^0.11.0",

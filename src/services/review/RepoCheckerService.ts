@@ -426,11 +426,10 @@ export default class RepoCheckerService {
                 return errAsync("No permalink found in front matter")
               }
               const normalisedPermalink = this.normalisePermalink(filePermalink)
-
               // we are only parsing out the front matter
               const fileContent = file.split("---")?.slice(2).join("---")
               if (!fileContent) {
-                return errAsync("No file content found")
+                return errAsync(`No page content for ${fileName}`) // it is ok to have no page content
               }
               return okAsync({ fileContent, normalisedPermalink })
             })
@@ -508,9 +507,14 @@ export default class RepoCheckerService {
         logger.info(`Site checker for repo ${repo} completed successfully!`)
         return ResultAsync.combineWithAllErrors(findErrors)
           .orElse((e) => {
-            logger.error(
-              `SiteCheckerError: Error running site checker for repo ${repo}: ${e}`
-            )
+            const siteCheckerErrors = e.filter(
+              (err) => err instanceof SiteCheckerError
+            ) as SiteCheckerError[] // type cast safe as we are filtering
+            if (siteCheckerErrors.length > 0) {
+              logger.error(
+                `SiteCheckerError: Error running site checker for repo ${repo}: ${e}`
+              )
+            }
             // it is ok to have errors, still report the found errors for now
             return okAsync([undefined])
           })

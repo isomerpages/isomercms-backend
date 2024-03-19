@@ -8,7 +8,7 @@ describe("jwt utils", () => {
   it("should encrypt and decrypt token using aes cbc", () => {
     // Arrange
     const original = "secret"
-    const secret = crypto.randomBytes(16).toString("hex")
+    const secret = crypto.randomBytes(20).toString("hex")
 
     // Act
     const result = decryptToken(encryptToken(original, secret), secret)

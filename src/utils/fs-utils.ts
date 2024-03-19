@@ -1,13 +1,20 @@
 /* eslint-disable import/prefer-default-export */
 import * as fs from "fs/promises"
 
-export async function doesDirectoryExist(path: string): Promise<boolean> {
-  let result = false
-  try {
-    const stat = await fs.stat(path)
-    result = stat.isDirectory()
-  } catch (e) {
-    result = false
-  }
-  return result
+import { ResultAsync, errAsync, okAsync } from "neverthrow"
+
+export function doesDirectoryExist(path: string): ResultAsync<boolean, Error> {
+  return ResultAsync.fromPromise(fs.stat(path), (e) => e)
+    .map((stat) => stat.isDirectory())
+    .orElse((e) => {
+      if (
+        typeof e === "object" &&
+        e !== null &&
+        "code" in e &&
+        e.code === "ENOENT"
+      ) {
+        return okAsync(false)
+      }
+      return errAsync(new Error(`Error occurred when checking directory: ${e}`))
+    })
 }

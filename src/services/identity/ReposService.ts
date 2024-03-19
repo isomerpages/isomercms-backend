@@ -399,21 +399,29 @@ export const createRecords = (zoneId: string): Record[] => {
       .cwd({ path: stgLiteDir, root: false })
       .checkout("staging")
 
-    const doesImagesFolderExist = await doesDirectoryExist(
+    const doesImagesFolderExistResult = await doesDirectoryExist(
       path.join(`${stgLiteDir}`, `images`)
     )
 
-    if (doesImagesFolderExist) {
+    if (doesImagesFolderExistResult.isErr()) {
+      throw doesImagesFolderExistResult.error
+    }
+
+    if (doesImagesFolderExistResult.value) {
       await this.simpleGit
         .cwd({ path: stgLiteDir, root: false })
         .rm(["-r", "images"])
     }
 
-    const doesFilesFolderExist = await doesDirectoryExist(
+    const doesFilesFolderExistResult = await doesDirectoryExist(
       path.join(`${stgLiteDir}`, `files`)
     )
 
-    if (doesFilesFolderExist) {
+    if (doesFilesFolderExistResult.isErr()) {
+      throw doesFilesFolderExistResult.error
+    }
+
+    if (doesFilesFolderExistResult.value) {
       await this.simpleGit
         .cwd({ path: stgLiteDir, root: false })
         .rm(["-r", "files"])

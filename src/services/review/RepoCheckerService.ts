@@ -78,32 +78,35 @@ export default class RepoCheckerService {
     this.pageService = pageService
   }
 
-  createLogsFolder(
-    repo: string
-  ): ResultAsync<string | undefined, SiteCheckerError> {
+  createLogsFolder(repo: string): ResultAsync<true, SiteCheckerError> {
     const logsFilePath = path.join(SITE_CHECKER_REPO_PATH, repo)
+
     // create logs folder if it does not exist
-    return ResultAsync.fromPromise(doesDirectoryExist(logsFilePath), (err) => {
-      logger.error(
-        `SiteCheckerError: error finding if logs directory exists for ${repo} :${err}`
-      )
-      return new SiteCheckerError(
-        `Error finding if logs directory exists for ${repo} :${err}`
-      )
-    }).andThen((doesLogsFolderExist) => {
-      if (!doesLogsFolderExist) {
-        return ResultAsync.fromPromise(
-          fs.promises.mkdir(logsFilePath, { recursive: true }),
-          (err) => {
-            logger.error(`SiteCheckerError: Unable to create logs dir: ${err}`)
-            return new SiteCheckerError(
-              `SiteCheckerError: Unable to create logs dir: ${err}`
-            )
-          }
+    return doesDirectoryExist(logsFilePath)
+      .mapErr((err) => {
+        logger.error(
+          `SiteCheckerError: error finding if logs directory exists for ${repo} :${err}`
         )
-      }
-      return okAsync("ok")
-    })
+        return new SiteCheckerError(
+          `Error finding if logs directory exists for ${repo} :${err}`
+        )
+      })
+      .andThen((doesLogsFolderExist) => {
+        if (!doesLogsFolderExist) {
+          return ResultAsync.fromPromise(
+            fs.promises.mkdir(logsFilePath, { recursive: true }),
+            (err) => {
+              logger.error(
+                `SiteCheckerError: Unable to create logs dir: ${err}`
+              )
+              return new SiteCheckerError(
+                `SiteCheckerError: Unable to create logs dir: ${err}`
+              )
+            }
+          ).map<true>(() => true)
+        }
+        return okAsync<true>(true)
+      })
   }
 
   isCurrentlyLocked(repo: string): ResultAsync<true, SiteCheckerError> {
@@ -114,7 +117,10 @@ export default class RepoCheckerService {
       .andThen(() =>
         ResultAsync.fromPromise(
           fs.promises.access(lockFilePath, fs.constants.F_OK),
-          (err) => new SiteCheckerError(`${err}`)
+          (err) =>
+            new SiteCheckerError(
+              `Unable to determine if the lock folder exists for ${repo}: ${err}`
+            )
         )
       )
       .map(() => true)
@@ -400,108 +406,104 @@ export default class RepoCheckerService {
           fileName,
           viewablePageInCms,
         ] of mapOfMdFilesAndViewableLinkInCms) {
-          findErrors.push(
-            ResultAsync.fromPromise(
-              fs.promises.readFile(path.join(repoPath, fileName), "utf8"),
-              (error) =>
-                new SiteCheckerError(
-                  `SiteCheckerError: error reading file ${fileName}: ${error}`
-                )
-            )
-              .andThen((file) => {
-                const filePermalink = file
-                  .split("---")
-                  ?.at(1)
-                  ?.split("permalink: ")
-                  ?.at(1)
-                  ?.split("\n")
-                  ?.at(0)
-
-                if (!filePermalink) {
-                  return errAsync("No permalink found in front matter")
-                }
-                const normalisedPermalink = this.normalisePermalink(
-                  filePermalink
-                )
-
-                // we are only parsing out the front matter
-                const fileContent = file.split("---")?.slice(2).join("---")
-                if (!fileContent) {
-                  return errAsync("No file content found")
-                }
-                return okAsync({ fileContent, normalisedPermalink })
-              })
-              .andThen(({ fileContent, normalisedPermalink }) =>
-                ResultAsync.fromPromise(
-                  Promise.resolve(marked.parse(fileContent)),
-                  (err) => new SiteCheckerError(`${err}`)
-                ).andThen((html) => {
-                  const dom = new JSDOM(html)
-                  const anchorTags = dom.window.document.querySelectorAll("a")
-                  forEach(anchorTags, (tag) => {
-                    const href = tag.getAttribute("href")
-                    const text = tag.textContent
-
-                    if (!text) {
-                      // while rendered in the dom, unlikely to be
-                      // noticed by end citizen.
-                      return
-                    }
-                    if (!tag.hasAttribute("href")) {
-                      const error: RepoError = {
-                        type: RepoErrorTypes.BROKEN_LINK,
-                        linkToAsset: "",
-                        viewablePageInCms,
-                        viewablePageInStaging: path.join(normalisedPermalink),
-                        linkedText: text,
-                      }
-                      errors.push(error)
-                    }
-                    if (!href) {
-                      // could be intentional linking to self
-                      // eg. <a href>Back to top</a>
-                      return
-                    }
-
-                    if (
-                      !this.hasValidReference(setOfAllMediaAndPagesPath, href)
-                    ) {
-                      const error: RepoError = {
-                        type: RepoErrorTypes.BROKEN_LINK,
-                        linkToAsset: href,
-                        viewablePageInCms,
-                        viewablePageInStaging: path.join(normalisedPermalink),
-                        linkedText: text,
-                      }
-                      errors.push(error)
-                    }
-                  })
-                  const imgTags = dom.window.document.querySelectorAll("img")
-                  forEach(imgTags, (tag) => {
-                    const src = tag.getAttribute("src")
-                    if (!src) {
-                      // while rendered in the dom, unlikely to be
-                      // noticed by end citizen.
-                      return
-                    }
-
-                    //! todo: include check for post bundled files https://github.com/isomerpages/isomerpages-template/tree/staging/assets/img
-                    if (
-                      !this.hasValidReference(setOfAllMediaAndPagesPath, src)
-                    ) {
-                      const error: RepoError = {
-                        type: RepoErrorTypes.BROKEN_IMAGE,
-                        linkToAsset: src,
-                        viewablePageInCms,
-                        viewablePageInStaging: path.join(normalisedPermalink),
-                      }
-                      errors.push(error)
-                    }
-                  })
-                  return ok(undefined)
-                })
+          const siteError = ResultAsync.fromPromise(
+            fs.promises.readFile(path.join(repoPath, fileName), "utf8"),
+            (error) =>
+              new SiteCheckerError(
+                `SiteCheckerError: error reading file ${fileName}: ${error}`
               )
           )
+            .andThen((file) => {
+              const filePermalink = file
+                .split("---")
+                ?.at(1)
+                ?.split("permalink: ")
+                ?.at(1)
+                ?.split("\n")
+                ?.at(0)
+
+              if (!filePermalink) {
+                return errAsync("No permalink found in front matter")
+              }
+              const normalisedPermalink = this.normalisePermalink(filePermalink)
+
+              // we are only parsing out the front matter
+              const fileContent = file.split("---")?.slice(2).join("---")
+              if (!fileContent) {
+                return errAsync("No file content found")
+              }
+              return okAsync({ fileContent, normalisedPermalink })
+            })
+            .andThen(({ fileContent, normalisedPermalink }) =>
+              ResultAsync.fromPromise(
+                Promise.resolve(marked.parse(fileContent)),
+                (err) => new SiteCheckerError(`${err}`)
+              ).andThen((html) => {
+                const dom = new JSDOM(html)
+                const anchorTags = dom.window.document.querySelectorAll("a")
+                forEach(anchorTags, (tag) => {
+                  const href = tag.getAttribute("href")
+                  const text = tag.textContent
+
+                  if (!text) {
+                    // while rendered in the dom, unlikely to be
+                    // noticed by end citizen.
+                    return
+                  }
+                  if (!tag.hasAttribute("href")) {
+                    const error: RepoError = {
+                      type: RepoErrorTypes.BROKEN_LINK,
+                      linkToAsset: "",
+                      viewablePageInCms,
+                      viewablePageInStaging: path.join(normalisedPermalink),
+                      linkedText: text,
+                    }
+                    errors.push(error)
+                  }
+                  if (!href) {
+                    // could be intentional linking to self
+                    // eg. <a href>Back to top</a>
+                    return
+                  }
+
+                  if (
+                    !this.hasValidReference(setOfAllMediaAndPagesPath, href)
+                  ) {
+                    const error: RepoError = {
+                      type: RepoErrorTypes.BROKEN_LINK,
+                      linkToAsset: href,
+                      viewablePageInCms,
+                      viewablePageInStaging: path.join(normalisedPermalink),
+                      linkedText: text,
+                    }
+                    errors.push(error)
+                  }
+                })
+                const imgTags = dom.window.document.querySelectorAll("img")
+                forEach(imgTags, (tag) => {
+                  const src = tag.getAttribute("src")
+                  if (!src) {
+                    // while rendered in the dom, unlikely to be
+                    // noticed by end citizen.
+                    return
+                  }
+
+                  //! todo: include check for post bundled files https://github.com/isomerpages/isomerpages-template/tree/staging/assets/img
+                  if (!this.hasValidReference(setOfAllMediaAndPagesPath, src)) {
+                    const error: RepoError = {
+                      type: RepoErrorTypes.BROKEN_IMAGE,
+                      linkToAsset: src,
+                      viewablePageInCms,
+                      viewablePageInStaging: path.join(normalisedPermalink),
+                    }
+                    errors.push(error)
+                  }
+                })
+                return ok(undefined)
+              })
+            )
+
+          findErrors.push(siteError)
         }
         logger.info(`Site checker for repo ${repo} completed successfully!`)
         return ResultAsync.combineWithAllErrors(findErrors)
@@ -541,75 +543,52 @@ export default class RepoCheckerService {
     return this.createLogsFolder(repo).andThen(() => {
       const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
       const stringifiedErrors = this.convertToCSV(errors)
-      return ResultAsync.fromPromise<fs.Stats, false>(
-        fs.promises.stat(filePath),
-        () => false
-      )
-        .andThen(() =>
-          ResultAsync.fromPromise(
-            fs.promises.appendFile(filePath, stringifiedErrors),
-            (error) => {
-              logger.error(
-                `SiteCheckerError: Error appending to log file for ${repo}: ${error}`
-              )
-              return new SiteCheckerError(
-                `Error appending to log file for ${repo}: ${error}`
-              )
-            }
+
+      return ResultAsync.fromPromise(
+        fs.promises.writeFile(filePath, stringifiedErrors),
+        (writeFileError) => {
+          logger.error(
+            `SiteCheckerError: Error creating log file for ${repo} :${writeFileError}`
           )
-        )
-        .orElse((error) => {
-          if (error === false) {
-            return ResultAsync.fromPromise(
-              fs.promises.writeFile(filePath, stringifiedErrors),
-              (writeFileError) => {
-                logger.error(
-                  `SiteCheckerError: Error creating log file for ${repo} :${writeFileError}`
-                )
-                return new SiteCheckerError(
-                  `Error creating log file for ${repo} :${writeFileError}`
-                )
-              }
+          return new SiteCheckerError(
+            `Error creating log file for ${repo} :${writeFileError}`
+          )
+        }
+      ).andThen(() => {
+        const isProd = config.get("env") === "prod"
+        if (!isProd) {
+          return okAsync(errors)
+        }
+
+        const gitOperations:
+          | Response<CommitResult>
+          | Response<PushResult> = this.git
+          .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
+          .checkout("main")
+          .fetch()
+          .merge(["origin/main"])
+          .add(["."])
+          .commit(`Site checker logs added for ${repo}`)
+          .push()
+
+        // pushing since there is no real time requirement for user
+        return ResultAsync.fromPromise<
+          CommitResult | PushResult,
+          SiteCheckerError
+        >(gitOperations, (error) => new SiteCheckerError(`${error}`))
+          .map(() => errors)
+          .orElse(() => {
+            /**
+             * Actually committing the repo to remote is not a critical operation, and done for observability.
+             * If it fails, we can still return the broken links report to the user.
+             * We also do not want to log the actual error as it could cause other alarms to go off.
+             */
+            logger.info(
+              `SiteCheckerInfo: Error pushing logs for ${repo} to remote isomer-site-checker repo`
             )
-          }
-
-          return errAsync(error)
-        })
-        .andThen(() => {
-          const isProd = config.get("env") === "prod"
-          if (!isProd) {
-            return okAsync(errors)
-          }
-
-          const gitOperations:
-            | Response<CommitResult>
-            | Response<PushResult> = this.git
-            .cwd({ path: SITE_CHECKER_REPO_PATH, root: false })
-            .checkout("main")
-            .fetch()
-            .merge(["origin/main"])
-            .add(["."])
-            .commit(`Site checker logs added for ${repo}`)
-            .push()
-
-          // pushing since there is no real time requirement for user
-          return ResultAsync.fromPromise<
-            CommitResult | PushResult,
-            SiteCheckerError
-          >(gitOperations, (error) => new SiteCheckerError(`${error}`))
-            .map(() => errors)
-            .orElse(() => {
-              /**
-               * Actually committing the repo to remote is not a critical operation, and done for observability.
-               * If it fails, we can still return the broken links report to the user.
-               * We also do not want to log the actual error as it could cause other alarms to go off.
-               */
-              logger.info(
-                `SiteCheckerInfo: Error pushing logs for ${repo} to remote isomer-site-checker repo`
-              )
-              return ok(errors)
-            })
-        })
+            return ok(errors)
+          })
+      })
     })
   }
 
@@ -639,10 +618,12 @@ export default class RepoCheckerService {
   ): ResultAsync<BrokenLinkErrorDto, SiteCheckerError> => {
     const filePath = path.join(SITE_CHECKER_REPO_PATH, repo, REPO_LOG)
 
-    return ResultAsync.fromPromise(
-      fs.promises.stat(filePath),
-      () => new SiteCheckerError(`Folder does not exist for ${repo}`)
-    ).andThen(() =>
+    return ResultAsync.fromPromise(fs.promises.stat(filePath), () => {
+      logger.error(
+        `SiteCheckerError: Error reading log file for ${repo}: file does not exist`
+      )
+      return new SiteCheckerError(`Folder does not exist for ${repo}`)
+    }).andThen(() =>
       this.isCurrentlyErrored(repo).andThen((isError) => {
         if (isError) {
           return errAsync(new SiteCheckerError(`Error checking repo ${repo}`))

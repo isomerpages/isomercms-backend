@@ -1,42 +1,42 @@
+import _ from "lodash"
 import pino, { Logger as PinoLogger } from "pino"
-import { StackFrame, get } from "stack-trace"
+
+import { StackFrame, get, parse } from "./stack-trace"
 
 interface WarnMeta {
   params: Record<string, unknown>
 }
 
 interface ErrorMeta {
-  error: Error
+  error: unknown
 }
 
 const MAX_STACK_DEPTH = 3
 
-interface TraceMeta {
+export interface TraceMeta {
   file: string
   line: number
   func: string
-  method: string
 }
 
-const getTraceMeta = (frames: StackFrame[]): TraceMeta[] =>
+export const getTraceMeta = (frames: StackFrame[]): TraceMeta[] =>
   frames.map((frame) => ({
     file: frame.getFileName(),
     line: frame.getLineNumber(),
     func: frame.getFunctionName(),
-    method: frame.getMethodName(),
   }))
 
-class Logger {
-  private logger: PinoLogger
+export class Logger {
+  _logger: PinoLogger
 
   constructor(logger: PinoLogger) {
-    this.logger = logger
+    this._logger = logger
   }
 
   public child = (
     bindings: Record<string, unknown> & { module: string }
   ): Logger => {
-    const child = this.logger.child(bindings)
+    const child = this._logger.child(bindings)
     return new Logger(child)
   }
 
@@ -44,10 +44,10 @@ class Logger {
     message: string,
     meta: WarnMeta & ErrorMeta & Record<string, unknown>
   ): void => {
-    const stackFrames = get().slice(MAX_STACK_DEPTH)
-    const trace = getTraceMeta(stackFrames)
+    const stackFrames = meta.error instanceof Error ? parse(meta.error) : get()
+    const trace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
 
-    this.logger.error(message, {
+    this._logger.error(message, {
       isomer: {
         meta,
         trace,
@@ -55,22 +55,26 @@ class Logger {
     })
   }
 
-  public info = (message: string, meta: Record<string, unknown>): void => {
-    this.logger.info(message, {
-      isomer: {
-        meta,
-      },
-    })
+  public info = (message: string, meta?: Record<string, unknown>): void => {
+    if (_.isEmpty(meta)) {
+      this._logger.info(message)
+    } else {
+      this._logger.info(message, {
+        isomer: {
+          meta,
+        },
+      })
+    }
   }
 
   public warn = (
     message: string,
     meta: WarnMeta & Record<string, unknown>
   ): void => {
-    const stackFrames = get().slice(MAX_STACK_DEPTH)
+    const stackFrames = get().slice(0, MAX_STACK_DEPTH)
     const trace = getTraceMeta(stackFrames)
 
-    this.logger.warn(message, {
+    this._logger.warn(message, {
       isomer: {
         meta,
         trace,

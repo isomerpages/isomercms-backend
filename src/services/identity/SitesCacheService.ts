@@ -50,6 +50,10 @@ type FetchRepoPageResult = {
   links?: LinkSet
 }
 
+type CacheStore = {
+  [key: string]: RepositoryData
+}
+
 function parseGitHubLinkHeader(linkheader: string) {
   // example value: link: <https://api.github.com/organizations/40887764/repos?page=2>; rel="next", <https://api.github.com/organizations/40887764/repos?page=34>; rel="last"
   const links: LinkSet = {}
@@ -163,23 +167,28 @@ export async function getAllRepoData(
 }
 
 export class SitesCacheService {
-  private repoDataCache: RepositoryData[]
+  private repoDataCache: CacheStore
 
   private refreshInterval: number
 
   constructor(refreshInterval: number) {
-    this.repoDataCache = []
+    this.repoDataCache = {} as CacheStore
     this.refreshInterval = refreshInterval
     this.renewCache()
     setInterval(() => this.renewCache(), this.refreshInterval)
   }
 
   private async renewCache() {
-    this.repoDataCache = await getAllRepoData(undefined)
+    // Since the only cache API we expose is to retrieve repo info by repo name, we store the repos as a map in cache
+    // to have a O(1) retrieval later
+    const repos = await getAllRepoData(undefined)
+    this.repoDataCache = repos.reduce((acc, repo) => {
+      acc[repo.repoName] = repo
+      return acc
+    }, {} as CacheStore)
   }
 
   getLastUpdated(repoName: string) {
-    return this.repoDataCache.find((siteData) => siteData.repoName === repoName)
-      ?.lastUpdated
+    return this.repoDataCache[repoName]?.lastUpdated
   }
 }

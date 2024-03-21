@@ -26,7 +26,7 @@ type GitHubResponseHeaders = HeadersDefaults & {
 
 type Link = {
   relid: "first" | "last" | "prev" | "next"
-  link: string
+  url: string
   pagenum: number
 }
 
@@ -40,8 +40,7 @@ type LinkSet = {
 type LinkMatch = RegExpExecArray & {
   groups: {
     relid: "first" | "last" | "prev" | "next"
-    link: string
-    pagenum: string
+    url: string
   }
 }
 
@@ -58,15 +57,17 @@ function parseGitHubLinkHeader(linkheader: string) {
   // example value: link: <https://api.github.com/organizations/40887764/repos?page=2>; rel="next", <https://api.github.com/organizations/40887764/repos?page=34>; rel="last"
   const links: LinkSet = {}
 
-  const linkRe = /<(?<link>[^>]+\?page=(?<pagenum>\d+))>; rel="(?<relid>[a-z]+)"(, )?/g
+  const linkRe = /<(?<url>[^>]+)>; rel="(?<relid>[a-z]+)"(, )?/g
   let regRes: LinkMatch | null = null
 
   // eslint-disable-next-line no-cond-assign
   while ((regRes = linkRe.exec(linkheader) as LinkMatch) !== null) {
+    const url = new URL(regRes.groups.url)
+    const pageNum = url.searchParams.get("page") as string // Per specifications, we KNOW the github link urls WILL include a page number in the url
     links[regRes.groups.relid] = {
       relid: regRes.groups.relid,
-      link: regRes.groups.link,
-      pagenum: parseInt(regRes.groups.link, 10),
+      url: regRes.groups.url,
+      pagenum: parseInt(pageNum, 10),
     }
   }
 
@@ -108,7 +109,7 @@ async function fetchPageOfRepositories({
   page,
   getLinks,
 }: {
-  accessToken: string | undefined
+  accessToken?: string
   page: number
   getLinks?: boolean
 }): Promise<FetchRepoPageResult> {
@@ -166,6 +167,34 @@ export async function getAllRepoData(
   return firstPageRepos.concat(...pages2ToLast.map((res) => res.repos))
 }
 
+async function getAllRepoDataSequentially() {
+  // This function exists because when we refresh the cache on interval, we want to optimize for load
+  // distribution in the process over time, rather than optimize for time to refresh
+
+  const allRepos = []
+  let page = 1
+
+  // We disable the eslint rule no-await-in-loop, because we specifically want sequence here to distribute load
+  /* eslint-disable no-await-in-loop */
+  do {
+    const { repos, links } = await fetchPageOfRepositories({
+      page,
+      getLinks: true,
+    })
+
+    allRepos.push(...repos)
+
+    if (!links?.next) {
+      break
+    }
+
+    page = links.next.pagenum // Note that by right, we should follow the next link, rather than extract the page number from the link
+  } while (true) // eslint-disable-line no-constant-condition
+  /* eslint-enable no-await-in-loop */
+
+  return allRepos
+}
+
 export class SitesCacheService {
   private repoDataCache: CacheStore
 
@@ -173,19 +202,30 @@ export class SitesCacheService {
 
   constructor(refreshInterval: number) {
     this.repoDataCache = {} as CacheStore
-    this.refreshInterval = refreshInterval
-    this.renewCache()
+    this.refreshInterval = 90000
+
+    this.startCache()
+
     setInterval(() => this.renewCache(), this.refreshInterval)
   }
 
-  private async renewCache() {
+  private transformRepoList(repos: RepositoryData[]) {
     // Since the only cache API we expose is to retrieve repo info by repo name, we store the repos as a map in cache
     // to have a O(1) retrieval later
-    const repos = await getAllRepoData(undefined)
-    this.repoDataCache = repos.reduce((acc, repo) => {
+    return repos.reduce((acc, repo) => {
       acc[repo.repoName] = repo
       return acc
     }, {} as CacheStore)
+  }
+
+  private async startCache() {
+    const repos = await getAllRepoData(undefined)
+    this.repoDataCache = this.transformRepoList(repos)
+  }
+
+  private async renewCache() {
+    const repos = await getAllRepoDataSequentially()
+    this.repoDataCache = this.transformRepoList(repos)
   }
 
   getLastUpdated(repoName: string) {

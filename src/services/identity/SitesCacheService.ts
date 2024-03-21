@@ -1,6 +1,8 @@
 import { HeadersDefaults } from "axios"
 import _ from "lodash"
 
+import tracer from "@utils/tracer"
+
 import {
   GH_MAX_REPO_COUNT,
   ISOMER_ADMIN_REPOS,
@@ -224,8 +226,10 @@ export class SitesCacheService {
   }
 
   private async renewCache() {
-    const repos = await getAllRepoDataSequentially()
-    this.repoDataCache = this.transformRepoList(repos)
+    tracer.trace("SiteCache.renewCache", async () => {
+      const repos = await getAllRepoDataSequentially()
+      this.repoDataCache = this.transformRepoList(repos)
+    })
   }
 
   getLastUpdated(repoName: string) {

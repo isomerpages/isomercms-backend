@@ -29,7 +29,7 @@ import GitHubApiError from "@root/errors/GitHubApiError"
 import MissingSiteError from "@root/errors/MissingSiteError"
 import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import SiteLaunchError from "@root/errors/SiteLaunchError"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { AmplifyError } from "@root/types/amplify"
 import {
   DnsResultsForSite,
@@ -87,6 +87,8 @@ interface LaunchSiteFromCMSParams {
   useWww: boolean
   email: string
 }
+
+const logger = baseLogger.child({ module: "InfraService" })
 
 export default class InfraService {
   private readonly sitesService: InfraServiceProps["sitesService"]
@@ -624,7 +626,7 @@ export default class InfraService {
         })
       )
     } catch (error) {
-      logger.error(`Error in site update: ${error}`)
+      logger.error(`Error in site update: ${error}`, { error, params: {} })
     }
   }
 

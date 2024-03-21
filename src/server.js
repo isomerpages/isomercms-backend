@@ -5,13 +5,12 @@ import "module-alias/register"
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import session from "express-session"
-import { result } from "lodash"
 import nocache from "nocache"
 import simpleGit from "simple-git"
 
 import { config } from "@config/config"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import { MAX_CONCURRENT_GIT_PROCESSES } from "@constants/constants"
 
@@ -96,6 +95,8 @@ import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
 import { setBrowserPolyfills } from "./utils/growthbook-utils"
+
+const logger = baseLogger.child({ module: "server" })
 
 const path = require("path")
 

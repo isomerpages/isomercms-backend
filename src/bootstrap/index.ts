@@ -5,7 +5,9 @@ import { Express } from "express"
 
 import { config } from "@config/config"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
+
+const logger = baseLogger.child({ module: "bootstrap" })
 
 const debug = createDebug("isomercms:server")
 const PORT = config.get("port")
@@ -29,14 +31,19 @@ const createErrorListener = (port: number | string | false) => (
 
   const bind = typeof port === "string" ? `Pipe ${port}` : `Port ${port}`
 
+  const logMeta = {
+    error,
+    params: { port },
+  }
+
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case "EACCES":
-      logger.error(`${bind} requires elevated privileges`)
+      logger.error(`${bind} requires elevated privileges`, logMeta)
       process.exit(1)
     // eslint-disable-next-line no-fallthrough
     case "EADDRINUSE":
-      logger.error(`${bind} is already in use`)
+      logger.error(`${bind} is already in use`, logMeta)
       process.exit(1)
     // eslint-disable-next-line no-fallthrough
     default:

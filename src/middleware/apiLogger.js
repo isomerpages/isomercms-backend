@@ -2,7 +2,9 @@
 const express = require("express")
 
 // Logger
-const logger = require("@logger/logger").default
+const baseLogger = require("@logger/logger").default
+
+const logger = baseLogger.child({ module: "apiLogger" })
 
 const apiLogger = express.Router()
 

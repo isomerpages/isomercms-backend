@@ -1,3 +1,10 @@
+// NOTE: This is taken with reference from: https://github.com/felixge/node-stack-trace/blob/master/index.js
+// As the library itself is ESM, we require a dynamic import in order for it to work with our codebase,
+// which emits CJS.
+// This means that our logger has to be a `Promise`, which is not ideal.
+// Hence, all code in this file is strictly copy-pasted from the original source
+// and only types have been added.
+
 export interface StackFrame {
   getTypeName(): string
   getFunctionName(): string

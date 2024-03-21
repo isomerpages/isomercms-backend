@@ -78,7 +78,7 @@ const unlock = async (siteName) => {
       },
     }
     await docClient.delete(params).promise()
-    return logger.info(`Successfully unlocked repo ${siteName}`)
+    logger.info(`Successfully unlocked repo ${siteName}`)
   } catch (err) {
     logger.error(
       `Failed to unlock repo ${siteName}: ${JSON.stringify(

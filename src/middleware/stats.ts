@@ -14,7 +14,7 @@ const wrapAsRequestHandler = (sideEffect: SideEffect): RequestHandler => (
   res,
   next
 ) => {
-  sideEffect().catch(logger.info)
+  sideEffect().catch((err) => logger.error(err))
   next()
 }
 

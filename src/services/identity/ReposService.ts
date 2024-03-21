@@ -1,4 +1,3 @@
-import { exec } from "child_process"
 import fs from "fs"
 import path from "path"
 
@@ -22,6 +21,7 @@ import {
 } from "@root/constants"
 import GitHubApiError from "@root/errors/GitHubApiError"
 import logger from "@root/logger/logger"
+import { doesDirectoryExist } from "@root/utils/fs-utils"
 
 const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 const octokit = new Octokit({ auth: SYSTEM_GITHUB_TOKEN })
@@ -120,7 +120,7 @@ export default class ReposService {
     const dir = this.getLocalStagingRepoPath(repoName)
 
     // 1. Set URLs in local _config.yml
-    this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
+    await this.setUrlsInLocalConfig(dir, repoName, stagingUrl, productionUrl)
 
     // 2. Commit changes in local repo
     await this.simpleGit
@@ -151,14 +151,21 @@ export default class ReposService {
     await this.simpleGit.cwd({ path: dir, root: false }).checkout("staging")
   }
 
-  private setUrlsInLocalConfig(
+  private async setUrlsInLocalConfig(
     dir: string,
     repoName: string,
     stagingUrl: string,
     productionUrl: string
   ) {
     const configPath = `${dir}/_config.yml`
-    const configFile = fs.readFileSync(configPath, "utf-8")
+    let configFile: string
+    try {
+      configFile = await fs.promises.readFile(configPath, "utf-8")
+    } catch (error) {
+      throw new UnprocessableError(
+        `Error reading _config.yml for '${repoName}': ${error}`
+      )
+    }
     const lines = configFile.split("\n")
     const stagingIdx = lines.findIndex((line) => line.startsWith("staging:"))
     const prodIdx = lines.findIndex((line) => line.startsWith("prod:"))
@@ -169,7 +176,7 @@ export default class ReposService {
     }
     lines[stagingIdx] = `staging: ${stagingUrl}`
     lines[prodIdx] = `prod: ${productionUrl}`
-    fs.writeFileSync(configPath, lines.join("\n"))
+    await fs.promises.writeFile(configPath, lines.join("\n"))
   }
 
   createRepoOnGithub = (
@@ -227,16 +234,16 @@ export default class ReposService {
     const stgLiteDir = this.getLocalStagingLiteRepoPath(repoName)
 
     // Make sure the local path is empty, just in case dir was used on a previous attempt.
-    fs.rmSync(`${stgDir}`, { recursive: true, force: true })
+    await fs.promises.rm(`${stgDir}`, { recursive: true, force: true })
 
     // Clone base repo locally
-    fs.mkdirSync(stgDir)
+    await fs.promises.mkdir(stgDir)
     await this.simpleGit
       .cwd({ path: stgDir, root: false })
       .clone(SITE_CREATION_BASE_REPO_URL, stgDir, ["-b", "staging"])
 
     // Clear git
-    fs.rmSync(`${stgDir}/.git`, { recursive: true, force: true })
+    await fs.promises.rm(`${stgDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
     await this.simpleGit
@@ -376,9 +383,9 @@ export const createRecords = (zoneId: string): Record[] => {
   }
 
   async setUpStagingLite(stgLiteDir: string, repoUrl: string) {
-    fs.rmSync(`${stgLiteDir}`, { recursive: true, force: true })
+    await fs.promises.rm(`${stgLiteDir}`, { recursive: true, force: true })
     // create a empty folder stgLiteDir
-    fs.mkdirSync(stgLiteDir)
+    await fs.promises.mkdir(stgLiteDir)
 
     // note: for some reason, combining below commands led to race conditions
     // so we have to do it separately
@@ -392,20 +399,36 @@ export const createRecords = (zoneId: string): Record[] => {
       .cwd({ path: stgLiteDir, root: false })
       .checkout("staging")
 
-    if (fs.existsSync(path.join(`${stgLiteDir}`, `images`))) {
+    const doesImagesFolderExistResult = await doesDirectoryExist(
+      path.join(`${stgLiteDir}`, `images`)
+    )
+
+    if (doesImagesFolderExistResult.isErr()) {
+      throw doesImagesFolderExistResult.error
+    }
+
+    if (doesImagesFolderExistResult.value) {
       await this.simpleGit
         .cwd({ path: stgLiteDir, root: false })
         .rm(["-r", "images"])
     }
 
-    if (fs.existsSync(path.join(`${stgLiteDir}`, `files`))) {
+    const doesFilesFolderExistResult = await doesDirectoryExist(
+      path.join(`${stgLiteDir}`, `files`)
+    )
+
+    if (doesFilesFolderExistResult.isErr()) {
+      throw doesFilesFolderExistResult.error
+    }
+
+    if (doesFilesFolderExistResult.value) {
       await this.simpleGit
         .cwd({ path: stgLiteDir, root: false })
         .rm(["-r", "files"])
     }
 
     // Clear git
-    fs.rmSync(`${stgLiteDir}/.git`, { recursive: true, force: true })
+    await fs.promises.rm(`${stgLiteDir}/.git`, { recursive: true, force: true })
 
     // Prepare git repo
     await this.simpleGit

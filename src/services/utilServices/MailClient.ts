@@ -51,13 +51,14 @@ class MailClient {
     form.append("body", body)
     form.append("recipient", recipient)
     form.append("reply_to", "noreply@isomer.gov.sg")
-    attachments?.forEach((attachment) => {
-      form.append(
-        "attachments",
-        fs.readFileSync(attachment),
-        path.basename(attachment)
+    if (attachments) {
+      await Promise.all(
+        attachments?.map(async (attachment) => {
+          const content = await fs.promises.readFile(attachment)
+          form.append("attachments", content, path.basename(attachment))
+        })
       )
-    })
+    }
 
     try {
       const sendMailResponse = await axios.post<MailData>(sendEndpoint, form, {

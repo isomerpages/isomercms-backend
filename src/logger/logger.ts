@@ -95,6 +95,6 @@ const baseLogger = new Logger(
   })
   // NOTE: Cast so that consumers are forced to call `child`
   // and declare the module
-) as Pick<Logger, "child">
+)
 
 export default baseLogger

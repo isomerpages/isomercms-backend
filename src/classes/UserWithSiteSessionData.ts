@@ -1,4 +1,5 @@
 import { GrowthBook } from "@growthbook/growthbook"
+import _ from "lodash"
 
 import { FeatureFlags } from "@root/types/featureFlags"
 
@@ -8,6 +9,11 @@ export type UserWithSiteSessionDataProps = SessionDataProps & {
   siteName: string
   growthbook?: GrowthBook
 }
+
+type UserInfo = Pick<
+  UserWithSiteSessionData,
+  "githubId" | "siteName" | "isomerUserId" | "email"
+>
 
 /**
  * Object containing user information retrieved from the isomercms cookie, and the site being accessed.
@@ -29,6 +35,16 @@ class UserWithSiteSessionData extends UserSessionData {
   getGithubParamsWithSite() {
     return {
       ...super.getGithubParams(),
+      siteName: this.siteName,
+    }
+  }
+
+  getLogMeta = (): UserInfo => {
+    const meta = super.getGithubParams()
+    const redactedMeta = _.omit(meta, "accessToken")
+
+    return {
+      ...redactedMeta,
       siteName: this.siteName,
     }
   }

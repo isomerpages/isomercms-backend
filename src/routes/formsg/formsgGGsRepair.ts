@@ -16,7 +16,7 @@ import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import InitializationError from "@root/errors/InitializationError"
 import LockedError from "@root/errors/LockedError"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { attachFormSGHandler } from "@root/middleware"
 import GitFileSystemService from "@root/services/db/GitFileSystemService"
 import ReposService from "@root/services/identity/ReposService"
@@ -36,6 +36,8 @@ interface RepairEmailProps {
   errors: GitFileSystemError[]
   requesterEmail: string
 }
+
+const logger = baseLogger.child({ module: "formsgGGsRepair" })
 
 const REQUESTER_EMAIL_FIELD = "Email"
 const OPTION_TO_SUBMIT_CSV = "Do you want to upload list of sites as a CSV?"
@@ -67,6 +69,11 @@ export class FormsgGGsRepairRouter {
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const optionToSubmitCsv = getField(responses, OPTION_TO_SUBMIT_CSV)
     const repoNames: string[] = []
+    const params = {
+      repoNames,
+      requesterEmail,
+      submissionId: req.body.data.submissionId,
+    }
     if (optionToSubmitCsv === "Yes") {
       const attachmentId = getId(responses, ATTACHMENT)
       if (!attachmentId) {
@@ -76,7 +83,10 @@ export class FormsgGGsRepairRouter {
         res.locals.submission.attachments?.[attachmentId]
       const reposCsv = Buffer.from(decryptedFile.content).toString()
       if (!reposCsv.startsWith("repo_name")) {
-        logger.error("Invalid csv format")
+        logger.error("Invalid csv format", {
+          error: "Invalid csv format",
+          params,
+        })
         return
       }
       const repos = reposCsv.split("\n").slice(1)
@@ -84,14 +94,20 @@ export class FormsgGGsRepairRouter {
         repoNames.push(repo)
       })
       if (repoNames.length === 0) {
-        logger.error("No repo name provided")
+        logger.error("No repo name provided", {
+          error: "No repo name provided",
+          params,
+        })
         return
       }
     } else {
       const repoNamesFromTable = getFieldsFromTable(responses, REPO_NAME_FIELD)
 
       if (!repoNamesFromTable) {
-        logger.error("No repo name provided")
+        logger.error("No repo name provided", {
+          error: "No repo name provided",
+          params: { ...params, repoNamesFromTable },
+        })
         return
       }
       repoNamesFromTable.forEach((repoName) => {
@@ -106,7 +122,10 @@ export class FormsgGGsRepairRouter {
     }
 
     if (!requesterEmail?.endsWith("@open.gov.sg")) {
-      logger.error("Requester email is not from @open.gov.sg")
+      logger.error("Requester email is not from @open.gov.sg", {
+        error: "Requester email is not from @open.gov.sg",
+        params,
+      })
       return
     }
     res.sendStatus(200) // we have received the form and obtained relevant field
@@ -123,10 +142,16 @@ export class FormsgGGsRepairRouter {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 
       repairs.push(
-        ResultAsync.fromPromise(
-          lock(repoName, LOCK_TIME_SECONDS),
-          (err) => new LockedError(`Unable to lock repo ${repoName}`)
-        )
+        ResultAsync.fromPromise(lock(repoName, LOCK_TIME_SECONDS), () => {
+          const error = new LockedError(`Unable to lock repo ${repoName}`)
+          logger.error("Unable to lock repo", {
+            error,
+            params: {
+              repoName,
+            },
+          })
+          return error
+        })
           .andThen(() => this.doesRepoNeedClone(repoName))
           .andThen(() => {
             const isStaging = true
@@ -174,7 +199,14 @@ export class FormsgGGsRepairRouter {
             // Failure to unlock is not blocking
             ResultAsync.fromPromise(unlock(repoName), () => {
               logger.error(
-                "Failed to unlock repo - repo will unlock after at most 15 min"
+                "Failed to unlock repo - repo will unlock after at most 15 min",
+                {
+                  error: "Failed to unlock repo",
+                  params: {
+                    repoName,
+                    requesterEmail,
+                  },
+                }
               )
             })
             return okAsync(result)
@@ -201,10 +233,17 @@ export class FormsgGGsRepairRouter {
             const emailContent = `Sites have been repaired ${
               errors ? `with errors ${errors}` : `without errors`
             } and clonedRepos ${clonedStagingRepos} and syncedRepos ${syncedStagingAndStagingLiteRepos}`
+
             // Logging information in case email sending fails
-            logger.error(
-              `There was an error sending email to ${requesterEmail}: ${error}\n The content of the email is: ${emailContent}`
-            )
+            logger.error(`There was an error sending email`, {
+              error,
+              params: {
+                requesterEmail,
+                emailContent,
+                clonedStagingRepos,
+                syncedStagingAndStagingLiteRepos,
+              },
+            })
           }
         )
       )

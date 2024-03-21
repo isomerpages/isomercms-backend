@@ -4,7 +4,7 @@ import express, { RequestHandler } from "express"
 
 import { config } from "@config/config"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
 
@@ -22,6 +22,8 @@ const SITE_NAME_FIELD = "Site Name"
 const REPO_NAME_FIELD = "Repository Name"
 const OWNER_NAME_FIELD = "Site Owner E-mail"
 const LOGIN_TYPE_FIELD = "Login Type"
+
+const logger = baseLogger.child({ module: "formsgSiteCreation" })
 
 export interface FormsgRouterProps {
   usersService: UsersService
@@ -140,7 +142,14 @@ export class FormsgSiteCreateRouter {
         submissionId,
         `Error: ${err}`
       )
-      logger.error(JSON.stringify(err))
+      logger.error("Error creating site", {
+        error: err,
+        params: {
+          requesterEmail,
+          repoName,
+          submissionId,
+        },
+      })
     }
 
     return res.sendStatus(200)

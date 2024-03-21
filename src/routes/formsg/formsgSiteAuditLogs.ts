@@ -4,10 +4,12 @@ import express, { RequestHandler } from "express"
 
 import { config } from "@root/config/config"
 import InitializationError from "@root/errors/InitializationError"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { attachFormSGHandler } from "@root/middleware"
 import AuditLogsService from "@root/services/admin/AuditLogsService"
 import { getField, getFieldsFromTable } from "@root/utils/formsg-utils"
+
+const logger = baseLogger.child({ module: "formsgSiteAuditLogs" })
 
 interface FormsgSiteAuditLogsRouterProps {
   auditLogsService: AuditLogsService
@@ -43,10 +45,19 @@ export class FormsgSiteAuditLogsRouter {
     const { responses } = res.locals.submission.content
 
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
+    const params = {
+      requesterEmail,
+      submissionId: req.body.data.submissionId,
+    }
 
     if (!requesterEmail) {
       logger.error(
-        "No requester email was provided in site audit logs form submission"
+        "No requester email was provided in site audit logs form submission",
+        {
+          error:
+            "No requester email was provided in site audit logs form submission",
+          params,
+        }
       )
       return res.sendStatus(400)
     }
@@ -55,7 +66,12 @@ export class FormsgSiteAuditLogsRouter {
 
     if (!repoNamesFromTable) {
       logger.error(
-        "No repo names were provided in site audit logs form submission"
+        "No repo names were provided in site audit logs form submission",
+        {
+          error:
+            "No repo names were provided in site audit logs form submission",
+          params,
+        }
       )
       return res.sendStatus(400)
     }

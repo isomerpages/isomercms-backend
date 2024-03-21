@@ -2,7 +2,7 @@ import autoBind from "auto-bind"
 import express from "express"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
@@ -23,6 +23,8 @@ import { isSecure } from "@root/utils/auth-utils"
 import { EmailSchema } from "@root/validators/RequestSchema"
 import UsersService from "@services/identity/UsersService"
 import SgidAuthService from "@services/utilServices/SgidAuthService"
+
+const logger = baseLogger.child({ module: "sgidAuth" })
 
 const SGID_COOKIE_NAME = "isomer-sgid"
 const SGID_MULTIUSER_COOKIE_NAME = "isomer-multiuser-sgid"
@@ -85,7 +87,10 @@ export class SgidAuthRouter {
     const cookieData = req.cookies[SGID_COOKIE_NAME]
 
     if (!cookieData || !cookieData.nonce || !cookieData.codeVerifier) {
-      logger.error("Invalid cookie provided for sgid login")
+      logger.error("Invalid cookie provided for gid login", {
+        error: "invalid cookie",
+        params: { cookieData, authCode },
+      })
       return res.status(500).send()
     }
 
@@ -129,9 +134,12 @@ export class SgidAuthRouter {
       await ResultAsync.fromPromise(
         this.usersService.loginWithEmail(userData[0].email),
         (error) => {
-          logger.error(
-            `Error while retrieving user info from database: ${error}`
-          )
+          logger.error(`Error while retrieving user info from database`, {
+            error,
+            params: {
+              email: userData[0].email,
+            },
+          })
           return new DatabaseError()
         }
       )
@@ -176,12 +184,21 @@ export class SgidAuthRouter {
     const token = req.cookies[SGID_MULTIUSER_COOKIE_NAME]
     res.clearCookie(SGID_MULTIUSER_COOKIE_NAME, { path: "/" })
 
-    const safeVerify = Result.fromThrowable(jwtUtils.verifyToken, (error) => {
-      logger.error(
-        `Error - invalid token for sgid multiuser login ${email}: ${error}`
-      )
-      return new SgidVerifyUserError()
-    })
+    const safeVerify = Result.fromThrowable(
+      jwtUtils.verifyToken,
+      (verificationErr) => {
+        logger.error(
+          `Error - invalid token for sgid multiuser login ${email}`,
+          {
+            error: verificationErr,
+            params: {
+              email,
+            },
+          }
+        )
+        return new SgidVerifyUserError()
+      }
+    )
 
     await safeVerify(token)
       .andThen((verifiedToken) => {
@@ -197,31 +214,49 @@ export class SgidAuthRouter {
           )
             return ok(userData as PublicOfficerData[])
         }
+
+        const verificationError = new SgidVerifyUserError()
         logger.error(
-          `Error - token does not match expected format for sgid multiuser login ${email}`
+          `Error - token does not match expected format for sgid multiuser login ${email}`,
+          {
+            error: verificationError,
+            params: {
+              email,
+              verifiedToken,
+            },
+          }
         )
-        return err(new SgidVerifyUserError())
+        return err(verificationError)
       })
       .andThen((userData) => {
         const isValidUser =
           userData.filter((data) => data.email === email).length > 0
         if (!isValidUser) {
+          const verificationErr = new SgidVerifyUserError()
           logger.error(
-            `Error - user with emails ${userData
-              .map((data) => data.email)
-              .join(", ")} attempting to login with unverified email ${email}`
+            `Error - user with emails attempting to login with unverified email: ${email}`,
+            {
+              params: {
+                emails: userData.map((data) => data.email),
+                unverifiedEmail: email,
+              },
+              error: verificationErr,
+            }
           )
-          return err(new SgidVerifyUserError())
+          return err(verificationErr)
         }
         return ok(userData)
       })
       .asyncAndThen(() =>
         ResultAsync.fromPromise(
           this.usersService.loginWithEmail(email),
-          (error) => {
-            logger.error(
-              `Error while retrieving user info from database: ${error}`
-            )
+          (loginError) => {
+            logger.error(`Error while retrieving user info from database`, {
+              error: loginError,
+              params: {
+                email,
+              },
+            })
             return new DatabaseError()
           }
         )

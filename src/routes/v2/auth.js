@@ -3,7 +3,7 @@ const express = require("express")
 
 const { config } = require("@config/config")
 
-const logger = require("@logger/logger").default
+const baseLogger = require("@logger/logger").default
 
 // Import middleware
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
@@ -15,6 +15,8 @@ const {
   EmailSchema,
   VerifyRequestSchema,
 } = require("@root/validators/RequestSchema")
+
+const logger = baseLogger.child({ module: "routes/auth" })
 
 const CSRF_TOKEN_EXPIRY_MS = 600000
 const CSRF_COOKIE_NAME = "isomer-csrf"
@@ -92,7 +94,13 @@ class AuthRouter {
     } catch (err) {
       // Log, but don't return so responses are indistinguishable
       logger.error(
-        `Error occurred when attempting to login user ${email}: ${err}`
+        `Error occurred when attempting to login user with email: ${email}`,
+        {
+          error: err,
+          params: {
+            email,
+          },
+        }
       )
     }
     return res.sendStatus(200)

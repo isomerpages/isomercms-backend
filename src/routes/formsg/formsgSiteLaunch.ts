@@ -1,13 +1,12 @@
 import { DecryptedContentAndAttachments } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
-import axios from "axios"
 import express, { RequestHandler } from "express"
 import { err, ok } from "neverthrow"
 import dig from "node-dig-dns"
 
 import { config } from "@config/config"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import InitializationError from "@errors/InitializationError"
 
@@ -26,6 +25,8 @@ import TRUSTED_AMPLIFY_CAA_RECORDS from "@root/types/caaAmplify"
 import { DigResponse, DigType } from "@root/types/dig"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
+
+const logger = baseLogger.child({ module: "formsgSiteLaunch" })
 
 const SITE_LAUNCH_FORM_KEY = config.get("formSg.siteLaunchFormKey")
 const REQUESTER_EMAIL_FIELD = "Government Email"
@@ -234,12 +235,11 @@ export class FormsgSiteLaunchRouter {
         logger.info(`Received DIG response: ${JSON.stringify(result)}`)
         return result
       })
-      .catch((err: unknown) => {
-        logger.error(
-          `An error occurred while performing dig for domain: ${domain}: ${JSON.stringify(
-            err
-          )}`
-        )
+      .catch((error: unknown) => {
+        logger.error(`An error occurred while performing dig`, {
+          error,
+          params: { domain, digType },
+        })
         return null
       })
 
@@ -329,9 +329,16 @@ export class FormsgSiteLaunchRouter {
       })
 
       await this.sendLaunchError(submissionId, failureResults)
-    } catch (e) {
+    } catch (error) {
       logger.error(
-        `Something unexpected went wrong when launching sites from form submission ${submissionId}. Error: ${e}`
+        `Something unexpected went wrong when launching sites from form submission ${submissionId}.`,
+        {
+          error,
+          params: {
+            submissionId,
+            formResponses,
+          },
+        }
       )
     }
   }

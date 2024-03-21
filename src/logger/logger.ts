@@ -11,7 +11,7 @@ interface ErrorMeta {
   error: unknown
 }
 
-const MAX_STACK_DEPTH = 3
+const MAX_STACK_DEPTH = 5
 
 export interface TraceMeta {
   file: string
@@ -42,15 +42,15 @@ export class Logger {
 
   public error = (
     message: string,
-    meta: WarnMeta & ErrorMeta & Record<string, unknown>
+    meta?: WarnMeta & ErrorMeta & Record<string, unknown>
   ): void => {
-    const stackFrames = meta.error instanceof Error ? parse(meta.error) : get()
-    const trace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
+    const stackFrames = meta?.error instanceof Error ? parse(meta.error) : get()
+    const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
 
     this._logger.error(message, {
       isomer: {
         meta,
-        trace,
+        stackTrace,
       },
     })
   }
@@ -69,15 +69,15 @@ export class Logger {
 
   public warn = (
     message: string,
-    meta: WarnMeta & Record<string, unknown>
+    meta?: WarnMeta & Record<string, unknown>
   ): void => {
     const stackFrames = get().slice(0, MAX_STACK_DEPTH)
-    const trace = getTraceMeta(stackFrames)
+    const stackTrace = getTraceMeta(stackFrames)
 
     this._logger.warn(message, {
       isomer: {
         meta,
-        trace,
+        stackTrace,
       },
     })
   }

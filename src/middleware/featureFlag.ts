@@ -1,9 +1,12 @@
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
-import config from "@root/config/config"
-import logger from "@root/logger/logger"
+import { config } from "@root/config/config"
+import baseLogger from "@root/logger/logger"
 import { RequestHandlerWithGrowthbook } from "@root/types"
 import { getNewGrowthbookInstance } from "@root/utils/growthbook-utils"
 
+const logger = baseLogger.child({ module: "featureFlagMiddleware" })
+
+// eslint-disable-next-line import/prefer-default-export
 export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
   never,
   unknown,
@@ -23,9 +26,10 @@ export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
     .loadFeatures({ autoRefresh: true })
     .then(() => next())
     .catch((e: unknown) => {
-      logger.error(
-        `Failed to load features from GrowthBook: ${JSON.stringify(e)}`
-      )
+      logger.error(`Failed to load features from GrowthBook`, {
+        error: e,
+        params: req.locals.userWithSiteSessionData.getLogMeta(),
+      })
       next()
     })
 }

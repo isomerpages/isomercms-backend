@@ -18,11 +18,13 @@ import {
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
 import LockedError from "@root/errors/LockedError"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { FeatureFlags } from "@root/types/featureFlags"
 import { RequestHandler } from "@root/types/request"
 import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import GitFileSystemService from "@services/db/GitFileSystemService"
+
+const logger = baseLogger.child({ module: "routeHandler" })
 
 const backoffOptions: BackoffOptions = {
   numOfAttempts: 5,
@@ -40,12 +42,19 @@ const handleGitFileLock = async (repoName: string, next: NextFunction) => {
   }
   const isGitLocked = result.value
   if (isGitLocked) {
-    logger.error(`Failed to lock repo ${repoName}: git file system in use.`)
-    next(
-      new LockedError(
-        `Someone else is currently modifying repo ${repoName}. Please try again later.`
-      )
+    const error = new LockedError(
+      `Someone else is currently modifying repo ${repoName}. Please try again later.`
     )
+
+    logger.error(`Failed to lock repo ${repoName}: git file system in use.`, {
+      error,
+      params: {
+        repoName,
+        isGitLocked,
+      },
+    })
+
+    next(error)
     return false
   }
   return true
@@ -237,9 +246,10 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
       originalStagingCommitSha = currentStgCommitSha
     } catch (err) {
       await unlock(siteName)
-      logger.error(
-        `Failed to rollback repo ${siteName}: ${JSON.stringify(err)}`
-      )
+      logger.error(`Failed to rollback repo ${siteName}`, {
+        error: err,
+        params: userWithSiteSessionData.getLogMeta(),
+      })
       next(err)
       return
     }
@@ -304,9 +314,10 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
       }
     } catch (retryErr) {
       await unlock(siteName)
-      logger.error(
-        `Failed to rollback repo ${siteName}: ${JSON.stringify(retryErr)}`
-      )
+      logger.error(`Failed to rollback repo ${siteName}`, {
+        params: userWithSiteSessionData.getLogMeta(),
+        error: retryErr,
+      })
       next(retryErr)
       return
     }

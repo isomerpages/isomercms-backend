@@ -1,12 +1,14 @@
 import autoBind from "auto-bind"
 
 import { VersionNumber, Versions } from "@root/constants"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import {
   statsService as statsServiceInstance,
   StatsService,
 } from "@root/services/infra/StatsService"
 import { RequestHandler } from "@root/types"
+
+const logger = baseLogger.child({ module: "stats" })
 
 type SideEffect = () => Promise<void>
 const wrapAsRequestHandler = (sideEffect: SideEffect): RequestHandler => (
@@ -14,7 +16,9 @@ const wrapAsRequestHandler = (sideEffect: SideEffect): RequestHandler => (
   res,
   next
 ) => {
-  sideEffect().catch((err) => logger.error(err))
+  sideEffect().catch((err) =>
+    logger.error("Error in stats middleware", { error: err, params: {} })
+  )
   next()
 }
 

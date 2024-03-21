@@ -5,7 +5,9 @@ const _ = require("lodash")
 const { serializeError } = require("serialize-error")
 
 // Import logger
-const logger = require("@logger/logger").default
+const baseLogger = require("@logger/logger").default
+
+const logger = baseLogger.child({ module: "errorHandler" })
 
 function errorHandler(err, req, res, next) {
   if (!err) return next()
@@ -31,7 +33,7 @@ function errorHandler(err, req, res, next) {
 
   // Error handling for custom errors
   if (err.isIsomerError) {
-    logger.info(errMsg)
+    logger.error(errMsg, { error: err })
     if (err.isV2Err) {
       return res.status(err.status).json({
         error: IsomerError.toExternalRepresentation(err),
@@ -47,7 +49,7 @@ function errorHandler(err, req, res, next) {
   }
   if (err.name === "PayloadTooLargeError") {
     // Error thrown by large payload is done by express
-    logger.info(errMsg)
+    logger.error(errMsg, { error: err })
     return res.status(413).json({
       error: {
         name: err.name,
@@ -56,7 +58,7 @@ function errorHandler(err, req, res, next) {
       },
     })
   }
-  logger.info(`Unrecognized internal server error: ${errMsg}`)
+  logger.error(`Unrecognized internal server error: ${errMsg}`, { error: err })
   return res.status(500).json({
     error: {
       code: 500,

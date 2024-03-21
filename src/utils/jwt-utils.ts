@@ -22,13 +22,7 @@ export default {
   encryptToken: (token: string, secret?: string) => {
     const encryptionSecret = secret ?? ENCRYPTION_SECRET
 
-    const cipher = crypto.createCipher(
-      "aes-256-cbc",
-      // NOTE: Production encryption secret is 40 characters long,
-      // which is invalid for aes gcm.
-      // The secret has to be exactly 32 characters (256 bits) long.
-      encryptionSecret
-    )
+    const cipher = crypto.createCipher("aes-256-cbc", encryptionSecret)
     let encrypted = cipher.update(token, "utf8", "base64")
     encrypted += cipher.final("base64")
 
@@ -37,13 +31,7 @@ export default {
   decryptToken: (encrypted: string, secret?: string) => {
     const encryptionSecret = secret ?? ENCRYPTION_SECRET
 
-    const decipher = crypto.createDecipher(
-      "aes-256-cbc",
-      // NOTE: Production encryption secret is 40 characters long,
-      // which is invalid for aes gcm.
-      // The secret has to be exactly 32 characters (256 bits) long.
-      encryptionSecret
-    )
+    const decipher = crypto.createDecipher("aes-256-cbc", encryptionSecret)
     let decrypted = decipher.update(encrypted, "base64", "utf8")
     decrypted += decipher.final("utf8")
     return decrypted

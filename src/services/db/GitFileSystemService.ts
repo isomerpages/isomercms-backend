@@ -1,6 +1,9 @@
+import { createHash } from "crypto"
 import fs from "fs"
 import path from "path"
 
+import { crc32 } from "crc"
+import * as CRC32 from "crc-32"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
@@ -278,30 +281,8 @@ export default class GitFileSystemService {
   }
 
   // Obtain the Git blob hash of a file or directory
-  getGitBlobHash(
-    repoName: string,
-    filePath: string,
-    isStaging: boolean
-  ): ResultAsync<string, GitFileSystemError> {
-    const efsVolPath = isStaging
-      ? EFS_VOL_PATH_STAGING
-      : EFS_VOL_PATH_STAGING_LITE
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .revparse([`HEAD:${filePath}`]),
-      (error) => {
-        logger.error(
-          `Error when getting Git blob hash: ${error} when trying to access ${efsVolPath}/${repoName}`
-        )
-
-        if (error instanceof GitError) {
-          return new GitFileSystemError("Unable to determine Git blob hash")
-        }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    )
+  getGitBlobHash(): ResultAsync<string, GitFileSystemError> {
+    return okAsync("")
   }
 
   /**
@@ -325,6 +306,8 @@ export default class GitFileSystemService {
       fs.promises.stat(`${efsVolPath}/${repoName}/${filePath}`),
       (error) => {
         if (error instanceof Error && error.message.includes("ENOENT")) {
+          console.log(`${efsVolPath}/${repoName}/${filePath}`)
+          console.log({ repoName, filePath, efsVolPath, error })
           return new NotFoundError("File/Directory does not exist")
         }
 
@@ -654,6 +637,7 @@ export default class GitFileSystemService {
                   .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
                   .push(gitOptions),
             (error) => {
+              console.log({ error })
               logger.error(
                 `Error when pushing ${repoName}. Retrying git push operation for the first time...`
               )
@@ -960,7 +944,7 @@ export default class GitFileSystemService {
           return new GitFileSystemError("An unknown error occurred")
         }
       ),
-      this.getGitBlobHash(repoName, filePath, true),
+      this.getGitBlobHash(),
     ]).map((contentAndHash) => {
       const [content, sha] = contentAndHash
       const result: GitFile = {
@@ -1082,7 +1066,7 @@ export default class GitFileSystemService {
           const type = isDirectory ? "dir" : "file"
 
           if (includeSha) {
-            return this.getGitBlobHash(repoName, path, isStaging)
+            return this.getGitBlobHash()
               .orElse(() => okAsync(""))
               .andThen((sha) =>
                 ResultAsync.combine([
@@ -1146,7 +1130,7 @@ export default class GitFileSystemService {
       .andThen((paginatedDirectoryContents) => {
         const directories = paginatedDirectoryContents.directories.map(
           (directory) =>
-            this.getGitBlobHash(repoName, directory.path, isStaging)
+            this.getGitBlobHash()
               .orElse(() => okAsync(""))
               .andThen((sha) => {
                 const result: GitDirectoryItem = {
@@ -1159,7 +1143,7 @@ export default class GitFileSystemService {
         )
 
         const files = paginatedDirectoryContents.files.map((file) =>
-          this.getGitBlobHash(repoName, file.path, isStaging)
+          this.getGitBlobHash()
             .orElse(() => okAsync(""))
             .andThen((sha) => {
               const result: GitDirectoryItem = {
@@ -1227,7 +1211,8 @@ export default class GitFileSystemService {
         return okAsync(true)
       })
       .andThen(() =>
-        this.getGitBlobHash(repoName, filePath, isStaging).andThen((sha) => {
+        this.getGitBlobHash().andThen((sha) => {
+          console.log({ first: sha, second: oldSha })
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(
@@ -1334,7 +1319,7 @@ export default class GitFileSystemService {
         if (isDir) {
           return okAsync(true) // If it's a directory, skip the blob hash verification
         }
-        return this.getGitBlobHash(repoName, path, isStaging).andThen((sha) => {
+        return this.getGitBlobHash().andThen((sha) => {
           if (sha !== oldSha) {
             return errAsync(
               new ConflictError(
@@ -1433,11 +1418,7 @@ export default class GitFileSystemService {
             return true
           }
 
-          const result = await this.getGitBlobHash(
-            repoName,
-            itemStats.filePath,
-            isStaging
-          ).andThen((sha) => {
+          const result = await this.getGitBlobHash().andThen((sha) => {
             if (sha !== itemStats.sha) {
               return okAsync(false)
             }

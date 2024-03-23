@@ -51,6 +51,7 @@ describe("Resource Directory Service", () => {
     }),
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
+
   const {
     ResourceDirectoryService,
   } = require("@services/directoryServices/ResourceDirectoryService")
@@ -58,11 +59,11 @@ describe("Resource Directory Service", () => {
     baseDirectoryService: mockBaseDirectoryService,
     gitHubService: mockGitHubService,
   })
+
   const {
     convertDataToMarkdown,
     retrieveDataFromMarkdown,
   } = require("@utils/markdown-utils")
-
   beforeEach(() => {
     jest.clearAllMocks()
   })

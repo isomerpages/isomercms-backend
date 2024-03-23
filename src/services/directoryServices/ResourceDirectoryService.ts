@@ -1,38 +1,66 @@
-const { BadRequestError } = require("@errors/BadRequestError")
-const { NotFoundError } = require("@errors/NotFoundError")
+import { BadRequestError } from "@errors/BadRequestError"
+import { NotFoundError } from "@errors/NotFoundError"
 
-const {
+import {
   retrieveDataFromMarkdown,
   convertDataToMarkdown,
-} = require("@utils/markdown-utils")
-const { slugifyCollectionName } = require("@utils/utils")
+} from "@utils/markdown-utils"
+import { slugifyCollectionName } from "@utils/utils"
+
+import GithubSessionData from "@root/classes/GithubSessionData"
+import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
+import { GitDirectoryItem, GitFileItem } from "@root/types/gitfilesystem"
+import GitHubService from "@services/db/GitHubService"
+import { BaseDirectoryService } from "@services/directoryServices/BaseDirectoryService"
 
 const INDEX_FILE_NAME = "index.html"
 
-class ResourceDirectoryService {
-  constructor({ baseDirectoryService, gitHubService }) {
+export class ResourceDirectoryService {
+  private baseDirectoryService: BaseDirectoryService
+
+  private gitHubService: GitHubService
+
+  constructor({
+    baseDirectoryService,
+    gitHubService,
+  }: {
+    baseDirectoryService: BaseDirectoryService
+    gitHubService: GitHubService
+  }) {
     this.baseDirectoryService = baseDirectoryService
     this.gitHubService = gitHubService
   }
 
-  getResourceDirectoryPath({ resourceRoomName, resourceCategoryName }) {
+  getResourceDirectoryPath({
+    resourceRoomName,
+    resourceCategoryName,
+  }: {
+    resourceRoomName: string
+    resourceCategoryName: string
+  }): string {
     return `${resourceRoomName}/${resourceCategoryName}`
   }
 
-  async listFiles(sessionData, { resourceRoomName, resourceCategoryName }) {
+  async listFiles(
+    sessionData: UserWithSiteSessionData,
+    {
+      resourceRoomName,
+      resourceCategoryName,
+    }: { resourceRoomName: string; resourceCategoryName: string }
+  ): Promise<GitFileItem[]> {
     const resourceCategories = await this.baseDirectoryService.list(
       sessionData,
-      {
-        directoryName: `${resourceRoomName}`,
-      }
+      { directoryName: resourceRoomName }
     )
     if (
       !resourceCategories.find(
         (element) => element.name === resourceCategoryName
       )
-    )
+    ) {
       throw new NotFoundError("Resource category does not exist")
-    let files = []
+    }
+
+    let files: GitDirectoryItem[] = []
     try {
       files = await this.baseDirectoryService.list(sessionData, {
         directoryName: `${this.getResourceDirectoryPath({
@@ -44,43 +72,39 @@ class ResourceDirectoryService {
       if (!(error instanceof NotFoundError)) throw error
     }
 
-    return files.reduce((acc, curr) => {
-      if (curr.type === "file") {
-        const fileName = curr.name
-        const fileNameArray = fileName.split(".md")[0]
-        const tokenArray = fileNameArray.split("-")
-        const date = tokenArray.slice(0, 3).join("-")
+    return files
+      .map((curr: GitDirectoryItem): GitFileItem | undefined => {
+        if (curr.type === "file") {
+          const fileName = curr.name
+          const fileNameArray = fileName.split(".md")[0]
+          const tokenArray = fileNameArray.split("-")
+          const date = tokenArray.slice(0, 3).join("-")
+          const resourceType = ["file", "post", "link"].includes(tokenArray[3])
+            ? tokenArray[3]
+            : undefined
+          const titleTokenArray = resourceType
+            ? tokenArray.slice(4)
+            : tokenArray.slice(3)
+          const prettifiedTitleTokenArray = titleTokenArray.map(
+            (token: string) => token.charAt(0).toUpperCase() + token.slice(1)
+          )
+          const title = prettifiedTitleTokenArray.join(" ")
 
-        const resourceType = ["file", "post", "link"].includes(tokenArray[3])
-          ? tokenArray[3]
-          : undefined
-
-        const titleTokenArray = resourceType
-          ? tokenArray.slice(4)
-          : tokenArray.slice(3)
-        const prettifiedTitleTokenArray = titleTokenArray.map(
-          (token) => token.slice(0, 1).toUpperCase() + token.slice(1)
-        )
-        const title = prettifiedTitleTokenArray.join(" ")
-
-        acc.push({
-          name: curr.name,
-          type: "file",
-          title,
-          date,
-          resourceType,
-        })
-      }
-      return acc
-    }, [])
+          return { name: curr.name, type: "file", title, date, resourceType }
+        }
+        return undefined
+      })
+      .filter((file): file is GitFileItem => file !== undefined)
   }
 
   async createResourceDirectory(
-    sessionData,
-    { resourceRoomName, resourceCategoryName }
-  ) {
+    sessionData: UserWithSiteSessionData,
+    {
+      resourceRoomName,
+      resourceCategoryName,
+    }: { resourceRoomName: string; resourceCategoryName: string }
+  ): Promise<{ newDirectoryName: string }> {
     if (/[^a-zA-Z0-9- ]/g.test(resourceCategoryName)) {
-      // Contains non-allowed characters
       throw new BadRequestError(
         "Special characters not allowed in resource category name"
       )
@@ -88,10 +112,7 @@ class ResourceDirectoryService {
     const slugifiedResourceCategoryName = slugifyCollectionName(
       resourceCategoryName
     )
-    const frontMatter = {
-      layout: "resources-alt",
-      title: resourceCategoryName,
-    }
+    const frontMatter = { layout: "resources-alt", title: resourceCategoryName }
     const newContent = convertDataToMarkdown(frontMatter, "")
     await this.gitHubService.create(sessionData, {
       content: newContent,
@@ -100,23 +121,31 @@ class ResourceDirectoryService {
         resourceRoomName,
         resourceCategoryName: slugifiedResourceCategoryName,
       }),
+      isMedia: false,
     })
-    return {
-      newDirectoryName: slugifiedResourceCategoryName,
-    }
+
+    return { newDirectoryName: slugifiedResourceCategoryName }
   }
 
   async renameResourceDirectory(
-    sessionData,
-    githubSessionData,
-    { resourceRoomName, resourceCategoryName, newDirectoryName }
-  ) {
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    {
+      resourceRoomName,
+      resourceCategoryName,
+      newDirectoryName,
+    }: {
+      resourceRoomName: string
+      resourceCategoryName: string
+      newDirectoryName: string
+    }
+  ): Promise<void> {
     if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
-      // Contains non-allowed characters
       throw new BadRequestError(
         "Special characters not allowed in resource category name"
       )
     }
+
     const oldDirectoryName = this.getResourceDirectoryPath({
       resourceRoomName,
       resourceCategoryName,
@@ -144,6 +173,7 @@ class ResourceDirectoryService {
       newDirectoryName: newDirectoryPath,
       message: `Renaming resource category ${resourceCategoryName} to ${slugifiedNewResourceCategoryName}`,
     })
+
     await this.gitHubService.update(sessionData, {
       fileContent: newContent,
       sha,
@@ -153,10 +183,13 @@ class ResourceDirectoryService {
   }
 
   async deleteResourceDirectory(
-    sessionData,
-    githubSessionData,
-    { resourceRoomName, resourceCategoryName }
-  ) {
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    {
+      resourceRoomName,
+      resourceCategoryName,
+    }: { resourceRoomName: string; resourceCategoryName: string }
+  ): Promise<void> {
     await this.baseDirectoryService.delete(sessionData, githubSessionData, {
       directoryName: this.getResourceDirectoryPath({
         resourceRoomName,
@@ -167,10 +200,20 @@ class ResourceDirectoryService {
   }
 
   async moveResourcePages(
-    sessionData,
-    githubSessionData,
-    { resourceRoomName, resourceCategoryName, targetResourceCategory, objArray }
-  ) {
+    sessionData: UserWithSiteSessionData,
+    githubSessionData: GithubSessionData,
+    {
+      resourceRoomName,
+      resourceCategoryName,
+      targetResourceCategory,
+      objArray,
+    }: {
+      resourceRoomName: string
+      resourceCategoryName: string
+      targetResourceCategory: string
+      objArray: any[]
+    }
+  ): Promise<void> {
     const targetFiles = objArray.map((item) => item.name)
     const oldDirectoryName = `${this.getResourceDirectoryPath({
       resourceRoomName,
@@ -180,6 +223,7 @@ class ResourceDirectoryService {
       resourceRoomName,
       resourceCategoryName: targetResourceCategory,
     })}/_posts`
+
     await this.baseDirectoryService.moveFiles(sessionData, githubSessionData, {
       oldDirectoryName,
       newDirectoryName,

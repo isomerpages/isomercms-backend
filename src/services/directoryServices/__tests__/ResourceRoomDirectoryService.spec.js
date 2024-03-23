@@ -55,6 +55,7 @@ describe("Resource Room Directory Service", () => {
     }),
     convertDataToMarkdown: jest.fn().mockReturnValue(mockMarkdownContent),
   }))
+
   const {
     ResourceRoomDirectoryService,
   } = require("@services/directoryServices/ResourceRoomDirectoryService")

@@ -102,7 +102,7 @@ export class MediaRouter {
       }
     )
 
-    return res.status(200).json({ files, total })
+    return res.status(200).json({ files: files as MediaFileOutput[], total })
   }
 
   // List subdirectories within a media directory

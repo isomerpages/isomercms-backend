@@ -1,7 +1,9 @@
-import logger, { MAX_STACK_DEPTH, getTraceMeta } from "../logger"
+import baseLogger, { MAX_STACK_DEPTH, getTraceMeta } from "../logger"
 import { StackFrame, get, parse } from "../stack-trace"
 
 const MESSAGE = "logs are deadtrees"
+
+const logger = baseLogger.child({ module: "logger.spec.ts" })
 
 jest.mock("../stack-trace", () => {
   const actual = jest.requireActual("../stack-trace")
@@ -12,6 +14,12 @@ jest.mock("../stack-trace", () => {
 })
 
 describe("logger", () => {
+  const errorSpy = jest.spyOn(logger._logger, "error")
+
+  afterEach(() => {
+    errorSpy.mockClear()
+  })
+
   it("should call the underlying method on info", async () => {
     // Arrange
     const infoSpy = jest.spyOn(logger._logger, "info")
@@ -49,7 +57,6 @@ describe("logger", () => {
 
   it("should call the underlying method on error with the given `Error` when an error is passed", async () => {
     // Arrange
-    const errorSpy = jest.spyOn(logger._logger, "error")
     const mockError = new Error("mock error")
     const mockParams = { a: 1 }
 
@@ -70,7 +77,6 @@ describe("logger", () => {
 
   it("should call the underlying method on error when a string is passed", async () => {
     // Arrange
-    const errorSpy = jest.spyOn(logger._logger, "error")
     const mockParams = { a: 1 }
 
     // Act
@@ -82,6 +88,30 @@ describe("logger", () => {
     expect(errorSpy).toHaveBeenCalledWith(MESSAGE, {
       meta: {
         params: mockParams,
+      },
+      stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
+    })
+  })
+
+  it("should be able to parse properly if both error and message is passed ", async () => {
+    // Arrange
+    const mockError = new Error("mock error")
+    const mockParams = { a: 1 }
+
+    // Act
+    logger.error(MESSAGE, {
+      error: mockError,
+      params: mockParams,
+    })
+
+    // Assert
+    expect(errorSpy).toHaveBeenCalledWith(MESSAGE, {
+      meta: {
+        params: mockParams,
+        // NOTE: In the event that devs pass both `error` and `message`,
+        // we will preserve the error but preferentially
+        // get the stack trace from the message.
+        error: mockError,
       },
       stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
     })

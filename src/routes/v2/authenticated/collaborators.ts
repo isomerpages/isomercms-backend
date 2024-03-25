@@ -8,13 +8,14 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { BaseIsomerError } from "@root/errors/BaseError"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { attachSiteHandler } from "@root/middleware"
-import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 import { RequestHandler } from "@root/types"
 import { UserDto } from "@root/types/dto/review"
 import { CreateCollaboratorRequestSchema } from "@root/validators/RequestSchema"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
+
+const logger = baseLogger.child({ module: "collaborators" })
 
 interface CollaboratorsRouterProps {
   collaboratorsService: CollaboratorsService

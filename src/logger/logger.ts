@@ -106,4 +106,4 @@ const baseLogger = pino({
   },
 })
 
-export default new Logger(baseLogger)
+export default new Logger(baseLogger) as Pick<Logger, "child">

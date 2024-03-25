@@ -4,7 +4,7 @@ import _ from "lodash"
 
 import { config } from "@config/config"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import tracer from "@utils/tracer"
 
@@ -12,6 +12,8 @@ import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 import { tokenServiceInstance } from "@services/db/TokenService"
 
 import { statsService } from "../infra/StatsService"
+
+const logger = baseLogger.child({ module: "AxiosInstance" })
 
 const GGS_EXPERIMENTAL_TRACKING_SITES = config
   .get("featureFlags.ggsTrackedSites")

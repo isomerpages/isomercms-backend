@@ -3,7 +3,7 @@ import express from "express"
 import { ResultAsync } from "neverthrow"
 import validator from "validator"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import { BadRequestError } from "@errors/BadRequestError"
 
@@ -18,6 +18,8 @@ import {
   VerifyMobileNumberOtpSchema,
 } from "@root/validators/RequestSchema"
 import UsersService from "@services/identity/UsersService"
+
+const logger = baseLogger.child({ module: "users" })
 
 interface UsersRouterProps {
   usersService: UsersService
@@ -51,16 +53,12 @@ export class UsersRouter {
       await this.usersService.sendEmailOtp(email)
       return res.sendStatus(200)
     } catch (err) {
-      if (isError(err)) {
-        logger.error(err.message)
-        throw new BadRequestError(err.message)
-      } else {
-        // If we encountered something that isn't an error but still ends up in the error branch,
-        // log this to cloudwatch with the relevant details
-        logger.error(
-          `Encountered unknown error type: ${err} when sendEmailOtp with email: ${email}`
-        )
-      }
+      logger.error(err, {
+        params: {
+          email,
+        },
+      })
+      throw new BadRequestError(err.message)
     }
   }
 
@@ -88,10 +86,10 @@ export class UsersRouter {
           this.usersService.updateUserByIsomerId(userId, {
             email: parsedEmail,
           }),
-          (error) => {
-            logger.error(
-              `Error updating user email by Isomer ID: ${JSON.stringify(error)}`
-            )
+          (err) => {
+            logger.error(err, {
+              params: { email, otp, isomerUserId: userId },
+            })
             return new DatabaseError(
               "An error occurred when updating the database"
             )
@@ -147,12 +145,13 @@ export class UsersRouter {
           this.usersService.updateUserByIsomerId(userId, {
             contactNumber: mobile,
           }),
-          (error) => {
-            logger.error(
-              `Error updating user contact number by Isomer ID: ${JSON.stringify(
-                error
-              )}`
-            )
+          (err) => {
+            logger.error(err, {
+              params: {
+                isomerUserId: userId,
+                mobile,
+              },
+            })
             return new DatabaseError(
               "An error occurred when updating the database"
             )
@@ -160,11 +159,11 @@ export class UsersRouter {
         )
       )
       .map(() => res.sendStatus(200))
-      .mapErr((error) => {
-        if (error instanceof BadRequestError) {
-          return res.status(400).json({ message: error.message })
+      .mapErr((err) => {
+        if (err instanceof BadRequestError) {
+          return res.status(400).json({ message: err.message })
         }
-        return res.status(500).json({ message: error.message })
+        return res.status(500).json({ message: err.message })
       })
   }
 

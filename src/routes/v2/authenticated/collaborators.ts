@@ -53,7 +53,14 @@ export class CollaboratorsRouter {
     const { siteName } = req.params
     const { userWithSiteSessionData } = res.locals
     logger.info(
-      `Editing site members table by creating collaborator ${email} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`
+      `Editing site members table by creating collaborator ${email} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`,
+      {
+        params: {
+          email,
+          siteName,
+          isomerUserId: userWithSiteSessionData.isomerUserId,
+        },
+      }
     )
     const resp = await this.collaboratorsService.create(
       siteName,
@@ -78,7 +85,14 @@ export class CollaboratorsRouter {
     const { siteName, userId } = req.params
     const { userWithSiteSessionData } = res.locals
     logger.info(
-      `Editing site members table by deleting collaborator ${userId} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`
+      `Editing site members table by deleting collaborator ${userId} for site ${siteName} by user ${userWithSiteSessionData.isomerUserId}`,
+      {
+        params: {
+          siteName,
+          isomerUserId: userWithSiteSessionData.isomerUserId,
+          userId,
+        },
+      }
     )
 
     const resp = await this.collaboratorsService.delete(siteName, userId)

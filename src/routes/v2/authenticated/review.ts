@@ -2,7 +2,7 @@ import autoBind from "auto-bind"
 import express from "express"
 import _ from "lodash"
 
-import logger from "@logger/logger"
+import baseLogger from "@logger/logger"
 
 import {
   attachReadRouteHandlerWrapper,
@@ -37,6 +37,9 @@ import {
   UpdateReviewRequestSchema,
 } from "@root/validators/RequestSchema"
 import ReviewRequestService from "@services/review/ReviewRequestService"
+
+const logger = baseLogger.child({ module: "routes/v2/review" })
+
 // eslint-disable-next-line import/prefer-default-export
 export class ReviewsRouter {
   private readonly reviewRequestService
@@ -163,10 +166,8 @@ export class ReviewsRouter {
     const { userWithSiteSessionData } = res.locals
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "createReviewRequest",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -188,16 +189,16 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message:
-          "User attempted to create review request with invalid permissions",
-        method: "createReviewRequest",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-        },
-      })
+      logger.warn(
+        "User attempted to create review request with invalid permissions",
+        {
+          params: {
+            userId: userWithSiteSessionData.isomerUserId,
+            email: userWithSiteSessionData.email,
+            siteName,
+          },
+        }
+      )
       return res.status(404).send({
         message: "Only site members can request reviews!",
       })
@@ -304,10 +305,8 @@ export class ReviewsRouter {
     }
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "listReviews",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -337,10 +336,8 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message: "Insufficient permissions to view review request",
-        method: "listReviews",
-        meta: {
+      logger.warn("Insufficient permissions to view review request", {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -446,10 +443,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "markReviewRequestAsViewed",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -496,10 +491,8 @@ export class ReviewsRouter {
     }
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "getReviewRequest",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -521,10 +514,8 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message: "Insufficient permissions to retrieve review request",
-        method: "getReviewRequest",
-        meta: {
+      logger.warn("Insufficient permissions to retrieve review request", {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -551,10 +542,8 @@ export class ReviewsRouter {
     // in the result also but as it returns a promise at the moment,
     // we just do a simple check
     if (possibleReviewRequest.isErr()) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "getReviewRequest",
-        meta: {
+      logger.error(possibleReviewRequest.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -587,10 +576,8 @@ export class ReviewsRouter {
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "updateReviewRequest",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -609,10 +596,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "updateReviewRequest",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -625,16 +610,17 @@ export class ReviewsRouter {
     // Step 3: Check that the user updating is the requestor
     const { requestor } = possibleReviewRequest
     if (requestor.email !== userWithSiteSessionData.email) {
-      logger.error({
-        message: "Insufficient permissions to update review request",
-        method: "updateReviewRequest",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-          requestId,
-        },
-      })
+      logger.warn(
+        "Requestor email for review request does not match with user email",
+        {
+          params: {
+            userId: userWithSiteSessionData.isomerUserId,
+            email: userWithSiteSessionData.email,
+            siteName,
+            requestId,
+          },
+        }
+      )
       return res.status(403).json({
         message: "Only requestors can update the review request!",
       })
@@ -686,10 +672,8 @@ export class ReviewsRouter {
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "mergeReviewRequest",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userSessionData.isomerUserId,
           email: userSessionData.email,
           siteName,
@@ -710,10 +694,8 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message: "Insufficient permissions to merge review request",
-        method: "mergeReviewRequest",
-        meta: {
+      logger.warn("Insufficient permissions to merge review request", {
+        params: {
           userId: userSessionData.isomerUserId,
           email: userSessionData.email,
           siteName,
@@ -732,10 +714,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "mergeReviewRequest",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userSessionData.isomerUserId,
           email: userSessionData.email,
           siteName,
@@ -780,10 +760,8 @@ export class ReviewsRouter {
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "approveReviewRequest",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -805,10 +783,8 @@ export class ReviewsRouter {
       // NOTE: Only allow approving review requests that are currently open
       possibleReviewRequest.reviewStatus !== ReviewRequestStatus.Open
     ) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "approveReviewRequest",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -832,10 +808,8 @@ export class ReviewsRouter {
     )
 
     if (!isReviewer) {
-      logger.error({
-        message: "Insufficient permissions to approve review request",
-        method: "approveReviewRequest",
-        meta: {
+      logger.warn("Insufficient permissions to approve review request", {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -897,10 +871,8 @@ export class ReviewsRouter {
     }
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "getComments",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -921,16 +893,17 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message: "Insufficient permissions to retrieve review request comments",
-        method: "getComments",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-          requestId,
-        },
-      })
+      logger.warn(
+        "Insufficient permissions to retrieve review request comments",
+        {
+          params: {
+            userId: userWithSiteSessionData.isomerUserId,
+            email: userWithSiteSessionData.email,
+            siteName,
+            requestId,
+          },
+        }
+      )
       return res.status(404).send({
         message:
           "Only collaborators of a site can view review request comments!",
@@ -944,10 +917,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "getComments",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -986,10 +957,8 @@ export class ReviewsRouter {
     // Step 1: Check that the site exists
     const site = await this.sitesService.getBySiteName(siteName)
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "createComment",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1010,16 +979,17 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message: "Insufficient permissions to retrieve review request comments",
-        method: "createComment",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-          requestId,
-        },
-      })
+      logger.warn(
+        "Insufficient permissions to retrieve review request comments",
+        {
+          params: {
+            userId: userWithSiteSessionData.isomerUserId,
+            email: userWithSiteSessionData.email,
+            siteName,
+            requestId,
+          },
+        }
+      )
       return res.status(404).send({
         message:
           "Only collaborators of a site can view review request comments!",
@@ -1033,10 +1003,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "createComment",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1122,10 +1090,8 @@ export class ReviewsRouter {
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "closeReviewRequest",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1143,10 +1109,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "closeReviewRequest",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1162,10 +1126,8 @@ export class ReviewsRouter {
     const { requestor } = possibleReviewRequest
     const isRequestor = requestor.email === userWithSiteSessionData.email
     if (!isRequestor) {
-      logger.error({
-        message: "Insufficient permissions to close review request",
-        method: "closeReviewRequest",
-        meta: {
+      logger.error("Insufficient permissions to close review request", {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1220,10 +1182,8 @@ export class ReviewsRouter {
     const site = await this.sitesService.getBySiteName(siteName)
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "deleteReviewRequestApproval",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1241,10 +1201,8 @@ export class ReviewsRouter {
     )
 
     if (isIsomerError(possibleReviewRequest)) {
-      logger.error({
-        message: "Invalid review request requested",
-        method: "deleteReviewRequestApproval",
-        meta: {
+      logger.error(possibleReviewRequest, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1264,16 +1222,16 @@ export class ReviewsRouter {
     )
 
     if (!isReviewer) {
-      logger.error({
-        message:
-          "User with insufficient permissions attempted to delete approval",
-        method: "deleteReviewRequestApproval",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-        },
-      })
+      logger.warn(
+        "User with insufficient permissions attempted to delete approval",
+        {
+          params: {
+            userId: userWithSiteSessionData.isomerUserId,
+            email: userWithSiteSessionData.email,
+            siteName,
+          },
+        }
+      )
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })
@@ -1316,10 +1274,8 @@ export class ReviewsRouter {
     }
 
     if (site.isErr()) {
-      logger.error({
-        message: "Invalid site requested",
-        method: "getBlob",
-        meta: {
+      logger.error(site.error, {
+        params: {
           userId: userWithSiteSessionData.isomerUserId,
           email: userWithSiteSessionData.email,
           siteName,
@@ -1337,16 +1293,16 @@ export class ReviewsRouter {
     )
 
     if (!role) {
-      logger.error({
-        message:
-          "User with insufficient permissions attempted to retrieve blob diff",
-        method: "getBlob",
-        meta: {
-          userId: userWithSiteSessionData.isomerUserId,
-          email: userWithSiteSessionData.email,
-          siteName,
-        },
-      })
+      logger.warn(
+        "User with insufficient permissions attempted to retrieve blob diff",
+        {
+          params: {
+            userId: userWithSiteSessionData.isomerUserId,
+            email: userWithSiteSessionData.email,
+            siteName,
+          },
+        }
+      )
       return res.status(404).send({
         message: "Please ensure that the site exists!",
       })

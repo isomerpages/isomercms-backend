@@ -1,12 +1,14 @@
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
 import isFileAsset from "@root/utils/commit-utils"
 import { isReduceBuildTimesWhitelistedRepo } from "@root/utils/growthbook-utils"
 
 import GitFileSystemService from "./GitFileSystemService"
+
+const logger = baseLogger.child({ module: "GitFileCommitService" })
 
 /**
  * Responsibilities of this class
@@ -65,6 +67,11 @@ export default class GitFileCommitService {
       isMedia ? "base64" : "utf-8",
       STAGING_BRANCH
     )
+    const params = {
+      siteName: sessionData.siteName,
+      fileName,
+      directoryName,
+    }
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
       !isFileAsset({ directoryName, fileName })
@@ -83,18 +90,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingCreateResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingCreateResult.error} when creating commit to staging for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
-      )
+      logger.error(stagingCreateResult.error, {
+        params,
+      })
       throw stagingCreateResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteCreateResult &&
       stagingLiteCreateResult.isErr()
     ) {
-      logger.error(
-        `CommitServiceError: ${stagingLiteCreateResult.error} when creating commit to staging-lite for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
-      )
+      logger.error(stagingLiteCreateResult, {
+        params,
+      })
       throw stagingLiteCreateResult.error
     }
 
@@ -127,6 +134,11 @@ export default class GitFileCommitService {
       sessionData.isomerUserId,
       defaultBranch
     )
+    const params = {
+      siteName: sessionData.siteName,
+      fileName,
+      directoryName,
+    }
 
     const shouldUpdateStagingLite =
       !!filePath &&
@@ -146,18 +158,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingUpdateResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingUpdateResult.error} when updating in staging for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
-      )
+      logger.error(stagingUpdateResult.error, {
+        params,
+      })
       throw stagingUpdateResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteUpdateResult &&
       stagingLiteUpdateResult.isErr()
     ) {
-      logger.error(
-        `CommitServiceError: ${stagingLiteUpdateResult.error} when updating to staging-lite for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
-      )
+      logger.error(stagingLiteUpdateResult.error, {
+        params,
+      })
       throw stagingLiteUpdateResult.error
     }
 
@@ -185,6 +197,10 @@ export default class GitFileCommitService {
       true,
       defaultBranch
     )
+    const params = {
+      siteName: sessionData.siteName,
+      directoryName,
+    }
 
     const shouldUpdateStagingLite =
       isReduceBuildTimesWhitelistedRepo(sessionData.growthbook) &&
@@ -202,18 +218,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingDeleteResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingDeleteResult.error} when deleting in staging for ${sessionData.siteName} for directory ${directoryName}`
-      )
+      logger.error(stagingDeleteResult.error, {
+        params,
+      })
       throw stagingDeleteResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteDeleteResult &&
       stagingLiteDeleteResult.isErr()
     ) {
-      logger.error(
-        `CommitServiceError: ${stagingLiteDeleteResult.error} when deleting in staging-lite for ${sessionData.siteName} for directory ${directoryName}`
-      )
+      logger.error(stagingLiteDeleteResult.error, {
+        params,
+      })
       throw stagingLiteDeleteResult.error
     }
 
@@ -237,6 +253,11 @@ export default class GitFileCommitService {
     )
 
     const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+    const params = {
+      siteName: sessionData.siteName,
+      fileName,
+      directoryName,
+    }
 
     const stagingDeleteResult = await this.gitFileSystemService.delete(
       sessionData.siteName,
@@ -264,18 +285,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingDeleteResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingDeleteResult.error} when deleting in staging for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
-      )
+      logger.error(stagingDeleteResult.error, {
+        params,
+      })
       throw stagingDeleteResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteDeleteResult &&
       stagingLiteDeleteResult.isErr()
     ) {
-      logger.error(
-        `CommitServiceError: ${stagingLiteDeleteResult.error} when deleting in staging-lite for ${sessionData.siteName} for file ${fileName} in directory ${directoryName}`
-      )
+      logger.error(stagingLiteDeleteResult.error, {
+        params,
+      })
       throw stagingLiteDeleteResult.error
     }
 
@@ -290,6 +311,10 @@ export default class GitFileCommitService {
     logger.info(
       `Deleting multiple files in local Git file system for repo: ${sessionData.siteName}`
     )
+    const params = {
+      siteName: sessionData.siteName,
+      items,
+    }
 
     const stagingDeleteResult = await this.gitFileSystemService.deleteMultipleFiles(
       sessionData.siteName,
@@ -313,18 +338,18 @@ export default class GitFileCommitService {
     }
 
     if (stagingDeleteResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingDeleteResult.error} when deleting in staging for ${sessionData.siteName} for multiple files ${items}`
-      )
+      logger.error(stagingDeleteResult.error, {
+        params,
+      })
       throw stagingDeleteResult.error
     } else if (
       shouldUpdateStagingLite &&
       stagingLiteDeleteResult &&
       stagingLiteDeleteResult.isErr()
     ) {
-      logger.error(
-        `CommitServiceError: ${stagingLiteDeleteResult.error} when deleting in staging-lite for ${sessionData.siteName} for multiple files ${items}`
-      )
+      logger.error(stagingLiteDeleteResult.error, {
+        params,
+      })
       throw stagingLiteDeleteResult.error
     }
 
@@ -340,6 +365,11 @@ export default class GitFileCommitService {
   ): Promise<GitCommitResult> {
     const defaultBranch = STAGING_BRANCH
     logger.info("Renaming file/directory in local Git file system")
+    const params = {
+      siteName: sessionData.siteName,
+      oldPath,
+      newPath,
+    }
 
     const stagingRenameResult = await this.gitFileSystemService.renameSinglePath(
       sessionData.siteName,
@@ -351,9 +381,9 @@ export default class GitFileCommitService {
     )
 
     if (stagingRenameResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingRenameResult.error} when renaming in staging for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
-      )
+      logger.error(stagingRenameResult.error, {
+        params,
+      })
       throw stagingRenameResult.error
     }
 
@@ -371,9 +401,9 @@ export default class GitFileCommitService {
         message
       )
       if (stagingLiteRenameResult.isErr()) {
-        logger.error(
-          `CommitServiceError: ${stagingLiteRenameResult.error} when renaming in staging-lite for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
-        )
+        logger.error(stagingLiteRenameResult.error, {
+          params,
+        })
         throw stagingLiteRenameResult.error
       }
     }
@@ -391,6 +421,13 @@ export default class GitFileCommitService {
     message?: string
   ): Promise<GitCommitResult> {
     logger.info("Moving files in local Git file system")
+    const params = {
+      siteName: sessionData.siteName,
+      oldPath,
+      newPath,
+      targetFiles,
+      message,
+    }
     const defaultBranch = STAGING_BRANCH
     const stagingMvFilesResult = await this.gitFileSystemService.moveFiles(
       sessionData.siteName,
@@ -402,9 +439,9 @@ export default class GitFileCommitService {
       message
     )
     if (stagingMvFilesResult.isErr()) {
-      logger.error(
-        `CommitServiceError: ${stagingMvFilesResult.error} when moving in staging for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
-      )
+      logger.error(stagingMvFilesResult.error, {
+        params,
+      })
       throw stagingMvFilesResult.error
     }
 
@@ -423,9 +460,9 @@ export default class GitFileCommitService {
         message
       )
       if (stagingLiteMvFilesResult.isErr()) {
-        logger.error(
-          `CommitServiceError: ${stagingLiteMvFilesResult.error} when moving in staging-lite for ${sessionData.siteName} for directory ${oldPath} to ${newPath}`
-        )
+        logger.error(stagingLiteMvFilesResult.error, {
+          params,
+        })
         throw stagingLiteMvFilesResult.error
       }
     }

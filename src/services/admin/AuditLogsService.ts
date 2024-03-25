@@ -12,7 +12,7 @@ import { User } from "@root/database/models/User"
 import AuditLogsError from "@root/errors/AuditLogsError"
 import DatabaseError from "@root/errors/DatabaseError"
 import { ForbiddenError } from "@root/errors/ForbiddenError"
-import logger from "@root/logger/logger"
+import baseLogger from "@root/logger/logger"
 import { AuditLog, AuditableActivityNames } from "@root/types/auditLog"
 import { IsomerCommitMessage } from "@root/types/github"
 import { tokenServiceInstance } from "@services/db/TokenService"
@@ -23,6 +23,8 @@ import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { mailer } from "@services/utilServices/MailClient"
+
+const logger = baseLogger.child({ module: "AuditLogsService" })
 
 interface AuditLogsServiceProps {
   collaboratorsService: CollaboratorsService
@@ -66,11 +68,11 @@ class AuditLogsService {
     return ResultAsync.fromPromise(
       this.isomerAdminsService.isUserIsomerAdmin(userId),
       (error) => {
-        logger.error(
-          `Site audit log error: Unable to get user's Isomer admin status from the database: ${JSON.stringify(
-            error
-          )}`
-        )
+        logger.error(error, {
+          params: {
+            userId,
+          },
+        })
 
         return new DatabaseError(
           "Error getting user's permissions from the database"
@@ -86,11 +88,11 @@ class AuditLogsService {
       })
       .orElse(() =>
         ResultAsync.fromPromise(this.usersService.findById(userId), (error) => {
-          logger.error(
-            `Site audit log error: Unable to get user data from the database using the user ID (${userId}): ${JSON.stringify(
-              error
-            )}`
-          )
+          logger.error(error, {
+            params: {
+              userId,
+            },
+          })
 
           return new DatabaseError(
             "Error getting user data from the database using the user ID"
@@ -109,11 +111,7 @@ class AuditLogsService {
     return ResultAsync.fromPromise(
       this.usersService.findByGitHubId(gitHubId),
       (error) => {
-        logger.error(
-          `Site audit log error: Unable to get user data from the database using the GitHub ID (${gitHubId}): ${JSON.stringify(
-            error
-          )}`
-        )
+        logger.error(error, { params: { gitHubId } })
 
         return new DatabaseError(
           "Error getting user data from the database using the GitHub ID"
@@ -130,11 +128,12 @@ class AuditLogsService {
           ResultAsync.fromPromise(
             this.isomerAdminsService.isUserIsomerAdmin(user.id.toString()),
             (error) => {
-              logger.error(
-                `Site audit log error: Unable to get user's Isomer admin status from the database: ${JSON.stringify(
-                  error
-                )}`
-              )
+              logger.error(error, {
+                params: {
+                  gitHubId,
+                  userId: user.id,
+                },
+              })
 
               return new DatabaseError(
                 "Error getting user's permissions from the database"
@@ -178,11 +177,12 @@ class AuditLogsService {
         per_page: 100,
       }),
       (error) => {
-        logger.error(
-          `Site audit log error: Unable to get the list of commits for the site ${
-            sessionData.siteName
-          } from GitHub: ${JSON.stringify(error)}`
-        )
+        logger.error(error, {
+          params: {
+            siteName: sessionData.siteName,
+            isomerUserId: sessionData.isomerUserId,
+          },
+        })
 
         return new AuditLogsError(
           `Error occurred when getting the list of commits for the site ${sessionData.siteName}`
@@ -225,11 +225,13 @@ class AuditLogsService {
                       })
                     )
                 } catch (error) {
-                  logger.error(
-                    `Site audit log error: Unable to parse JSON in commit ${
-                      commit.sha
-                    } from ${sessionData.siteName}: ${JSON.stringify(error)}\n`
-                  )
+                  logger.error(error, {
+                    params: {
+                      siteName: sessionData.siteName,
+                      isomerUserId: sessionData.isomerUserId,
+                      commitSha: commit.sha,
+                    },
+                  })
                   return errAsync(
                     new AuditLogsError("Error parsing JSON in commit")
                   )
@@ -272,11 +274,11 @@ class AuditLogsService {
             head: "staging",
           }),
           (error) => {
-            logger.error(
-              `Site audit log error: Unable to get the list of pull requests for the site ${
-                sessionData.siteName
-              } from GitHub: ${JSON.stringify(error)}`
-            )
+            logger.error(error, {
+              params: {
+                siteName: sessionData.siteName,
+              },
+            })
 
             return new AuditLogsError(
               `Error occurred when getting the list of pull requests for the site ${sessionData.siteName}`
@@ -306,9 +308,12 @@ class AuditLogsService {
                           pull.number
                         ),
                         (error) => {
-                          logger.error(
-                            `Site audit log error: Unable to retrieve review request data from the database for pull request ${pull.number} of site ${sessionData.siteName}: ${error}`
-                          )
+                          logger.error(error, {
+                            params: {
+                              siteName: sessionData.siteName,
+                              pullNumber: pull.number,
+                            },
+                          })
                           return new DatabaseError(
                             "Error occurred while retrieving review request data from the database"
                           )
@@ -396,11 +401,12 @@ class AuditLogsService {
     return ResultAsync.fromPromise(
       this.usersService.findByEmail(email),
       (error) => {
-        logger.error(
-          `Site audit log error: Unable to retrieve user data from the database for email ${email}: ${JSON.stringify(
-            error
-          )}`
-        )
+        logger.error(error, {
+          params: {
+            email,
+            formSubmissionId,
+          },
+        })
 
         return new DatabaseError(
           "Error occurred while retrieving user data from the database"
@@ -542,11 +548,11 @@ class AuditLogsService {
                 "utf-8"
               ),
               (error) => {
-                logger.error(
-                  `Site audit log error: Unable to write audit log CSV file for repo ${siteName}: ${JSON.stringify(
-                    error
-                  )}`
-                )
+                logger.error(error, {
+                  params: {
+                    siteName,
+                  },
+                })
                 return new AuditLogsError(
                   `Unable to write audit log CSV file for repo ${siteName}`
                 )

@@ -7,11 +7,7 @@ interface WarnMeta {
   params: Record<string, unknown>
 }
 
-interface ErrorMeta {
-  error: unknown
-}
-
-const MAX_STACK_DEPTH = 5
+export const MAX_STACK_DEPTH = 5
 
 export interface TraceMeta {
   file: string
@@ -41,29 +37,35 @@ export class Logger {
   }
 
   public error = (
-    message: string,
-    meta?: WarnMeta & ErrorMeta & Record<string, unknown>
+    // NOTE: Giving type as `unknown` here
+    // because when we do a `catch`,
+    // the caught error will be of type `unknown`
+    messageOrError: unknown,
+    meta?: WarnMeta & Record<string, unknown>
   ): void => {
-    const stackFrames = meta?.error instanceof Error ? parse(meta.error) : get()
+    const stackFrames =
+      messageOrError instanceof Error ? parse(messageOrError) : get()
     const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
 
-    this._logger.error(message, {
-      isomer: {
+    if (typeof messageOrError === "string") {
+      this._logger.error(messageOrError, {
         meta,
         stackTrace,
-      },
-    })
+      })
+    } else {
+      this._logger.error({
+        error: messageOrError,
+        meta: _.omit(meta, "error"),
+        stackTrace,
+      })
+    }
   }
 
   public info = (message: string, meta?: Record<string, unknown>): void => {
     if (_.isEmpty(meta)) {
       this._logger.info(message)
     } else {
-      this._logger.info(message, {
-        isomer: {
-          meta,
-        },
-      })
+      this._logger.info(message, meta)
     }
   }
 
@@ -75,26 +77,33 @@ export class Logger {
     const stackTrace = getTraceMeta(stackFrames)
 
     this._logger.warn(message, {
-      isomer: {
-        meta,
-        stackTrace,
-      },
+      meta,
+      stackTrace,
     })
   }
 }
 
 // NOTE: `pino` writes to `stdout` by default
 // and this will get piped to our cloudwatch log group.
-const baseLogger = new Logger(
-  pino({
-    errorKey: "error",
-    messageKey: "message",
-    formatters: {
-      level: (label: string) => ({ level: label.toUpperCase() }),
+const baseLogger = pino({
+  errorKey: "error",
+  messageKey: "message",
+  formatters: {
+    level: (label: string) => ({ level: label.toUpperCase() }),
+  },
+  hooks: {
+    logMethod(inputArgs, method) {
+      // NOTE: Pino expects `message` as the second argument
+      // but in our present codebase,
+      // we pass it as the first argument
+      if (inputArgs.length >= 2) {
+        const arg1 = inputArgs.shift()
+        const arg2 = inputArgs.shift()
+        return method.apply(this, [arg2, arg1, ...inputArgs])
+      }
+      return method.apply(this, inputArgs)
     },
-  })
-  // NOTE: Cast so that consumers are forced to call `child`
-  // and declare the module
-)
+  },
+})
 
-export default baseLogger
+export default new Logger(baseLogger)

@@ -1,9 +1,6 @@
-import pino from "pino"
-
-import { Logger, TraceMeta, getTraceMeta } from "../logger"
+import logger, { MAX_STACK_DEPTH, getTraceMeta } from "../logger"
 import { StackFrame, get, parse } from "../stack-trace"
 
-const logger = new Logger(pino())
 const MESSAGE = "logs are deadtrees"
 
 jest.mock("../stack-trace", () => {
@@ -12,23 +9,6 @@ jest.mock("../stack-trace", () => {
     ...actual,
     get: jest.fn(),
   }
-})
-
-type LogMeta = {
-  isomer: {
-    meta: Record<string, unknown>
-    trace: TraceMeta[]
-  }
-}
-
-const formatMeta = (
-  meta: Record<string, unknown>,
-  trace: TraceMeta[]
-): LogMeta => ({
-  isomer: {
-    meta,
-    trace,
-  },
 })
 
 describe("logger", () => {
@@ -61,31 +41,49 @@ describe("logger", () => {
     })
 
     // Assert
-    expect(warnSpy).toHaveBeenCalledWith(
-      MESSAGE,
-      formatMeta({ params: mockParams }, getTraceMeta([mockStackFrame]))
-    )
+    expect(warnSpy).toHaveBeenCalledWith(MESSAGE, {
+      meta: { params: mockParams },
+      stackTrace: getTraceMeta([mockStackFrame]),
+    })
   })
 
-  it("should call the underlying method on error and have a stack trace by default", async () => {
+  it("should call the underlying method on error with the given `Error` when an error is passed", async () => {
     // Arrange
     const errorSpy = jest.spyOn(logger._logger, "error")
     const mockError = new Error("mock error")
     const mockParams = { a: 1 }
 
     // Act
-    logger.error(MESSAGE, {
-      error: mockError,
+    logger.error(mockError, {
       params: mockParams,
     })
 
     // Assert
-    expect(errorSpy).toHaveBeenCalledWith(
-      MESSAGE,
-      formatMeta(
-        { params: mockParams, error: mockError },
-        getTraceMeta(parse(mockError).slice(0, 3))
-      )
-    )
+    expect(errorSpy).toHaveBeenCalledWith({
+      error: mockError,
+      meta: {
+        params: mockParams,
+      },
+      stackTrace: getTraceMeta(parse(mockError).slice(0, MAX_STACK_DEPTH)),
+    })
+  })
+
+  it("should call the underlying method on error when a string is passed", async () => {
+    // Arrange
+    const errorSpy = jest.spyOn(logger._logger, "error")
+    const mockParams = { a: 1 }
+
+    // Act
+    logger.error(MESSAGE, {
+      params: mockParams,
+    })
+
+    // Assert
+    expect(errorSpy).toHaveBeenCalledWith(MESSAGE, {
+      meta: {
+        params: mockParams,
+      },
+      stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
+    })
   })
 })

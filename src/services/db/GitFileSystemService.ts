@@ -19,6 +19,8 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
+import tracer from "@utils/tracer"
+
 import {
   EFS_VOL_PATH_STAGING,
   EFS_VOL_PATH_STAGING_LITE,

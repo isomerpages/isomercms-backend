@@ -2,17 +2,11 @@
 import "./utils/tracer"
 import "module-alias/register"
 
-import path from "path"
-
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
-import cookieParser from "cookie-parser"
-import cors from "cors"
 import express from "express"
 import session from "express-session"
-import helmet from "helmet"
 import createError from "http-errors"
-import nocache from "nocache"
 import simpleGit from "simple-git"
 
 import { config } from "@config/config"
@@ -50,7 +44,6 @@ import bootstrap from "@root/bootstrap"
 import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
-  featureFlagMiddleware,
 } from "@root/middleware"
 import { statsMiddleware } from "@root/middleware/stats"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"

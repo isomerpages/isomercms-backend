@@ -4,8 +4,12 @@ import express from "express"
 
 import { infraService } from "@common/index"
 import { useSharedMiddleware } from "@common/middleware"
+import { config } from "@root/config/config"
+import logger from "@root/logger/logger"
 
 import { v2Router } from "./routes"
+
+const PORT = config.get("port")
 
 const app = express()
 
@@ -18,10 +22,6 @@ useSharedMiddleware(app)
 // FormSG Backend handler routes
 app.use("/", v2Router)
 
-app.get("/v2/infra/formsg/a", (req, res) => {
-  res.status(200).send("Hello World!")
-})
-
-app.listen(8081, () => {
-  console.log("Infra container is running on port 8081")
+app.listen(PORT, () => {
+  logger.info(`Infra container started on port ${PORT}`)
 })

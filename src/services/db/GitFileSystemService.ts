@@ -50,19 +50,25 @@ export default class GitFileSystemService {
   constructor(git: SimpleGit) {
     this.git = git
 
+    // Below is a "dirty" hack to instrument ALL methods of GitFileSystemService
+    // all methods will create spans for visibility in traces
+
     /* eslint-disable no-restricted-syntax */
+    /* eslint-disable @typescript-eslint/ban-ts-comment */
     for (const methodName of Object.getOwnPropertyNames(
       GitFileSystemService.prototype
     )) {
+      // @ts-ignore
       const method = this[methodName]
       if (typeof method === "function" && methodName !== "constructor") {
-        this[methodName] = (...args) => {
-          tracer.trace(`GitFileSystem.${methodName}`, () =>
-            method.call(this, ...args)
-          )
-        }
+        // @ts-ignore
+        this[methodName] = tracer.wrap(
+          `GitFileSystem.${methodName}`,
+          method.bind(this)
+        )
       }
     }
+    /* eslint-enable @typescript-eslint/ban-ts-comment */
     /* eslint-enable no-restricted-syntax */
   }
 

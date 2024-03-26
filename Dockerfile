@@ -40,5 +40,5 @@ RUN echo "[user]" > /home/webapp/.gitconfig
 RUN echo "  name = Isomer Admin" >> /home/webapp/.gitconfig
 RUN echo "  email = admin@isomer.gov.sg" >> /home/webapp/.gitconfig
 
-EXPOSE "8081"
+EXPOSE "8083"
 CMD ["bash", "-c", "bash ./scripts/02_fetch_ssh_keys.sh & npm run start:ecs:$NODE_ENV"]

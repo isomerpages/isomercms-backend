@@ -9,8 +9,8 @@ import logger from "@root/logger/logger"
 
 import { v2Router } from "./routes"
 
-const PORT = config.get("port")
-
+const BASE_PORT = config.get("port")
+const PORT = BASE_PORT + 1
 const app = express()
 
 // poller site launch updates

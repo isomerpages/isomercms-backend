@@ -15,7 +15,7 @@ services:
     build:
       dockerfile: ./infra/Dockerfile
     expose:
-      - "8081"
+      - "8082"
     env_file:
       - .env
     volumes:
@@ -30,7 +30,7 @@ services:
     depends_on:
       - postgres
     expose:
-      - "8081"
+      - "8083"
     env_file:
       - .env
     volumes:

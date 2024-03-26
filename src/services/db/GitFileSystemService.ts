@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 
+import tracer from "dd-trace"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
@@ -283,25 +284,27 @@ export default class GitFileSystemService {
     filePath: string,
     isStaging: boolean
   ): ResultAsync<string, GitFileSystemError> {
-    const efsVolPath = isStaging
-      ? EFS_VOL_PATH_STAGING
-      : EFS_VOL_PATH_STAGING_LITE
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .revparse([`HEAD:${filePath}`]),
-      (error) => {
-        logger.error(
-          `Error when getting Git blob hash: ${error} when trying to access ${efsVolPath}/${repoName}`
-        )
+    return tracer.trace("GitFileSystem.getGitBlobHash", () => {
+      const efsVolPath = isStaging
+        ? EFS_VOL_PATH_STAGING
+        : EFS_VOL_PATH_STAGING_LITE
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .revparse([`HEAD:${filePath}`]),
+        (error) => {
+          logger.error(
+            `Error when getting Git blob hash: ${error} when trying to access ${efsVolPath}/${repoName}`
+          )
 
-        if (error instanceof GitError) {
-          return new GitFileSystemError("Unable to determine Git blob hash")
+          if (error instanceof GitError) {
+            return new GitFileSystemError("Unable to determine Git blob hash")
+          }
+
+          return new GitFileSystemError("An unknown error occurred")
         }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    )
+      )
+    })
   }
 
   /**
@@ -445,35 +448,41 @@ export default class GitFileSystemService {
     commitSha: string,
     branchName: string
   ): ResultAsync<true, GitFileSystemError> {
-    logger.warn(
-      `Rolling repo ${repoName} back to ${commitSha} for ${branchName}`
-    )
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .reset(["--hard", commitSha])
-        .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE),
-      (error) => {
-        logger.error(`Error when rolling back to ${commitSha}: ${error}`)
+    return tracer.trace("GitFileSystem.rollback", () => {
+      logger.warn(
+        `Rolling repo ${repoName} back to ${commitSha} for ${branchName}`
+      )
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .reset(["--hard", commitSha])
+          .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE),
+        (error) => {
+          logger.error(`Error when rolling back to ${commitSha}: ${error}`)
 
-        if (error instanceof GitError) {
-          return new GitFileSystemError("Unable to rollback to original state")
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              "Unable to rollback to original state"
+            )
+          }
+
+          return new GitFileSystemError("An unknown error occurred")
         }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    ).andThen(() => okAsync<true>(true))
+      ).andThen(() => okAsync<true>(true))
+    })
   }
 
   // Clone repository from upstream Git hosting provider
   clone(repoName: string): ResultAsync<string, GitFileSystemError> {
-    return ResultAsync.combine([
-      this.cloneBranch(repoName, true),
-      this.cloneBranch(repoName, false),
-    ]).andThen(([stagingPath, _]) =>
-      // staging lite path not needed, promises are resolved in order
-      okAsync(stagingPath)
+    return tracer.trace("GitFileSystem.clone", () =>
+      ResultAsync.combine([
+        this.cloneBranch(repoName, true),
+        this.cloneBranch(repoName, false),
+      ]).andThen(([stagingPath, _]) =>
+        // staging lite path not needed, promises are resolved in order
+        okAsync(stagingPath)
+      )
     )
   }
 
@@ -481,75 +490,77 @@ export default class GitFileSystemService {
     repoName: string,
     isStaging: boolean
   ): ResultAsync<string, GitFileSystemError> {
-    const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
-    const efsVolPath = this.getEfsVolPath(isStaging)
-    const branch = isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH
+    return tracer.trace("GitFileSystem.cloneBranch", () => {
+      const originUrl = `git@github.com:${ISOMER_GITHUB_ORG_NAME}/${repoName}.git`
+      const efsVolPath = this.getEfsVolPath(isStaging)
+      const branch = isStaging ? STAGING_BRANCH : STAGING_LITE_BRANCH
 
-    return this.getFilePathStats(repoName, "", isStaging)
-      .andThen((stats) => ok(stats.isDirectory()))
-      .orElse((error) => {
-        if (error instanceof NotFoundError) {
-          return ok(false)
-        }
-        return err(error)
-      })
-      .andThen((isDirectory) => {
-        if (!isDirectory) {
-          const clonePromise = isStaging
-            ? this.git
-                .clone(originUrl, `${efsVolPath}/${repoName}`)
-                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                .checkout(branch)
-            : this.git
-                .clone(originUrl, `${efsVolPath}/${repoName}`, [
-                  "--branch",
-                  branch,
-                  "--single-branch",
-                ])
-                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+      return this.getFilePathStats(repoName, "", isStaging)
+        .andThen((stats) => ok(stats.isDirectory()))
+        .orElse((error) => {
+          if (error instanceof NotFoundError) {
+            return ok(false)
+          }
+          return err(error)
+        })
+        .andThen((isDirectory) => {
+          if (!isDirectory) {
+            const clonePromise = isStaging
+              ? this.git
+                  .clone(originUrl, `${efsVolPath}/${repoName}`)
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                  .checkout(branch)
+              : this.git
+                  .clone(originUrl, `${efsVolPath}/${repoName}`, [
+                    "--branch",
+                    branch,
+                    "--single-branch",
+                  ])
+                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
 
-          return ResultAsync.fromPromise(clonePromise, (error) => {
-            logger.error(`Error when cloning ${repoName}: ${error}`)
+            return ResultAsync.fromPromise(clonePromise, (error) => {
+              logger.error(`Error when cloning ${repoName}: ${error}`)
 
-            if (error instanceof GitError) {
-              return new GitFileSystemError(
-                isStaging
-                  ? `Unable to clone whole repo for ${repoName}`
-                  : `Unable to clone staging lite branch for ${repoName}`
-              )
-            }
-
-            return new GitFileSystemError("An unknown error occurred")
-          }).map(() => `${efsVolPath}/${repoName}`)
-        }
-
-        return this.isGitInitialized(repoName, isStaging)
-          .andThen((isGitInitialized) => {
-            if (!isGitInitialized) {
-              return errAsync(
-                new GitFileSystemError(
-                  `An existing folder "${repoName}" exists ${
-                    isStaging ? "in staging" : "in staging lite"
-                  } but is not a Git repo`
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  isStaging
+                    ? `Unable to clone whole repo for ${repoName}`
+                    : `Unable to clone staging lite branch for ${repoName}`
                 )
-              )
-            }
-            return okAsync(true)
-          })
-          .andThen(() => this.isOriginRemoteCorrect(repoName, isStaging))
-          .andThen((isOriginRemoteCorrect) => {
-            if (!isOriginRemoteCorrect) {
-              return errAsync(
-                new GitFileSystemError(
-                  `An existing folder "${repoName}" exists ${
-                    isStaging ? "in staging" : "in staging lite"
-                  } but is not the correct Git repo`
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }).map(() => `${efsVolPath}/${repoName}`)
+          }
+
+          return this.isGitInitialized(repoName, isStaging)
+            .andThen((isGitInitialized) => {
+              if (!isGitInitialized) {
+                return errAsync(
+                  new GitFileSystemError(
+                    `An existing folder "${repoName}" exists ${
+                      isStaging ? "in staging" : "in staging lite"
+                    } but is not a Git repo`
+                  )
                 )
-              )
-            }
-            return okAsync(`${efsVolPath}/${repoName}`)
-          })
-      })
+              }
+              return okAsync(true)
+            })
+            .andThen(() => this.isOriginRemoteCorrect(repoName, isStaging))
+            .andThen((isOriginRemoteCorrect) => {
+              if (!isOriginRemoteCorrect) {
+                return errAsync(
+                  new GitFileSystemError(
+                    `An existing folder "${repoName}" exists ${
+                      isStaging ? "in staging" : "in staging lite"
+                    } but is not the correct Git repo`
+                  )
+                )
+              }
+              return okAsync(`${efsVolPath}/${repoName}`)
+            })
+        })
+    })
   }
 
   fastForwardMaster(
@@ -592,38 +603,40 @@ export default class GitFileSystemService {
     repoName: string,
     branchName: string
   ): ResultAsync<boolean, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
-      if (!isValid) {
-        return errAsync(
-          new GitFileSystemError(
-            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
-          )
-        )
-      }
-
-      return this.ensureCorrectBranch(repoName, branchName).andThen(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-            .pull(),
-          (error) => {
-            logger.error(
-              `Error when pulling ${branchName} for ${repoName}: ${error}`
+    return tracer.trace("GitFileSystem.pull", () => {
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
+        if (!isValid) {
+          return errAsync(
+            new GitFileSystemError(
+              `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
             )
+          )
+        }
 
-            if (error instanceof GitError) {
-              return new GitFileSystemError(
-                "Unable to pull latest changes of repo"
+        return this.ensureCorrectBranch(repoName, branchName).andThen(() =>
+          ResultAsync.fromPromise(
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .pull(),
+            (error) => {
+              logger.error(
+                `Error when pulling ${branchName} for ${repoName}: ${error}`
               )
-            }
 
-            return new GitFileSystemError("An unknown error occurred")
-          }
+              if (error instanceof GitError) {
+                return new GitFileSystemError(
+                  "Unable to pull latest changes of repo"
+                )
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+            .map(() => true)
+            .orElse((error) => errAsync(error))
         )
-          .map(() => true)
-          .orElse((error) => errAsync(error))
-      )
+      })
     })
   }
 
@@ -633,93 +646,95 @@ export default class GitFileSystemService {
     branchName: string,
     isForce = false
   ): ResultAsync<string, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
-      if (!isValid) {
-        return errAsync(
-          new GitFileSystemError(
-            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+    return tracer.trace("GitFileSystem.push", () => {
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
+        if (!isValid) {
+          return errAsync(
+            new GitFileSystemError(
+              `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+            )
           )
-        )
-      }
-      const gitOptions = `origin ${branchName}`.split(" ")
-      return this.ensureCorrectBranch(repoName, branchName)
-        .andThen(() =>
-          ResultAsync.fromPromise(
-            isForce
-              ? this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push([...gitOptions, "--force"])
-              : this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(gitOptions),
-            (error) => {
-              logger.error(
-                `Error when pushing ${repoName}. Retrying git push operation for the first time...`
-              )
-
-              if (error instanceof GitError) {
-                return new GitFileSystemError(
-                  "Unable to push latest changes of repo"
+        }
+        const gitOptions = `origin ${branchName}`.split(" ")
+        return this.ensureCorrectBranch(repoName, branchName)
+          .andThen(() =>
+            ResultAsync.fromPromise(
+              isForce
+                ? this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .push([...gitOptions, "--force"])
+                : this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .push(gitOptions),
+              (error) => {
+                logger.error(
+                  `Error when pushing ${repoName}. Retrying git push operation for the first time...`
                 )
+
+                if (error instanceof GitError) {
+                  return new GitFileSystemError(
+                    "Unable to push latest changes of repo"
+                  )
+                }
+
+                return new GitFileSystemError("An unknown error occurred")
               }
-
-              return new GitFileSystemError("An unknown error occurred")
-            }
+            )
           )
-        )
-        .orElse(() =>
-          // Retry push once
-          ResultAsync.fromPromise(
-            isForce
-              ? this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push([...gitOptions, "--force"])
-              : this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(gitOptions),
-            (error) => {
-              logger.error(
-                `Error when pushing ${repoName}. Retrying git push operation for the second time...`
-              )
-
-              if (error instanceof GitError) {
-                return new GitFileSystemError(
-                  "Unable to push latest changes of repo"
+          .orElse(() =>
+            // Retry push once
+            ResultAsync.fromPromise(
+              isForce
+                ? this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .push([...gitOptions, "--force"])
+                : this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .push(gitOptions),
+              (error) => {
+                logger.error(
+                  `Error when pushing ${repoName}. Retrying git push operation for the second time...`
                 )
+
+                if (error instanceof GitError) {
+                  return new GitFileSystemError(
+                    "Unable to push latest changes of repo"
+                  )
+                }
+
+                return new GitFileSystemError("An unknown error occurred")
               }
-
-              return new GitFileSystemError("An unknown error occurred")
-            }
+            )
           )
-        )
-        .orElse(() =>
-          // Retry push twice
-          // TODO: To eliminate duplicate code by using a backoff or retry package
-          ResultAsync.fromPromise(
-            isForce
-              ? this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push([...gitOptions, "--force"])
-              : this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(gitOptions),
-            (error) => {
-              logger.error(
-                `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
-              )
-
-              if (error instanceof GitError) {
-                return new GitFileSystemError(
-                  "Unable to push latest changes of repo"
+          .orElse(() =>
+            // Retry push twice
+            // TODO: To eliminate duplicate code by using a backoff or retry package
+            ResultAsync.fromPromise(
+              isForce
+                ? this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .push([...gitOptions, "--force"])
+                : this.git
+                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                    .push(gitOptions),
+              (error) => {
+                logger.error(
+                  `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
                 )
-              }
 
-              return new GitFileSystemError("An unknown error occurred")
-            }
+                if (error instanceof GitError) {
+                  return new GitFileSystemError(
+                    "Unable to push latest changes of repo"
+                  )
+                }
+
+                return new GitFileSystemError("An unknown error occurred")
+              }
+            )
           )
-        )
-        .map(() => `${efsVolPath}/${repoName}`)
+          .map(() => `${efsVolPath}/${repoName}`)
+      })
     })
   }
 
@@ -732,92 +747,94 @@ export default class GitFileSystemService {
     branchName: string,
     skipGitAdd?: boolean
   ): ResultAsync<string, GitFileSystemError | GitFileSystemNeedsRollbackError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
-      if (!isValid) {
-        return errAsync(
-          new GitFileSystemError(
-            `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+    return tracer.trace("GitFileSystem.commit", () => {
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return this.isValidGitRepo(repoName, branchName).andThen((isValid) => {
+        if (!isValid) {
+          return errAsync(
+            new GitFileSystemError(
+              `Folder "${repoName}" for EFS vol path: "${efsVolPath}" is not a valid Git repo`
+            )
           )
-        )
-      }
+        }
 
-      if (pathSpec.length < 1) {
-        return errAsync(
-          new GitFileSystemError(
-            `Invalid pathSpec length: ${pathSpec.length}. Expected 1 or more`
+        if (pathSpec.length < 1) {
+          return errAsync(
+            new GitFileSystemError(
+              `Invalid pathSpec length: ${pathSpec.length}. Expected 1 or more`
+            )
           )
-        )
-      }
+        }
 
-      const commitMessageObj: Omit<IsomerCommitMessage, "fileName"> &
-        Partial<Pick<IsomerCommitMessage, "fileName">> = {
-        message,
-        userId,
-      }
+        const commitMessageObj: Omit<IsomerCommitMessage, "fileName"> &
+          Partial<Pick<IsomerCommitMessage, "fileName">> = {
+          message,
+          userId,
+        }
 
-      if (pathSpec.length === 1) {
-        commitMessageObj.fileName = pathSpec[0].split("/").pop()
-      }
+        if (pathSpec.length === 1) {
+          commitMessageObj.fileName = pathSpec[0].split("/").pop()
+        }
 
-      const commitMessage = JSON.stringify(commitMessageObj)
+        const commitMessage = JSON.stringify(commitMessageObj)
 
-      return this.ensureCorrectBranch(repoName, branchName)
-        .andThen(() => {
-          if (skipGitAdd) {
-            // This is necessary when we have performed a git mv
-            return okAsync(true)
-          }
+        return this.ensureCorrectBranch(repoName, branchName)
+          .andThen(() => {
+            if (skipGitAdd) {
+              // This is necessary when we have performed a git mv
+              return okAsync(true)
+            }
 
-          // Note: We need to add files sequentially due to the Git lock
-          return pathSpec.reduce(
-            (acc, curr) =>
-              acc.andThen(() =>
-                ResultAsync.fromPromise(
-                  this.git
-                    .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                    .add(curr),
-                  (error) => {
-                    logger.error(
-                      `Error when Git adding files to ${repoName}: ${error}`
-                    )
+            // Note: We need to add files sequentially due to the Git lock
+            return pathSpec.reduce(
+              (acc, curr) =>
+                acc.andThen(() =>
+                  ResultAsync.fromPromise(
+                    this.git
+                      .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                      .add(curr),
+                    (error) => {
+                      logger.error(
+                        `Error when Git adding files to ${repoName}: ${error}`
+                      )
 
-                    if (error instanceof GitError) {
+                      if (error instanceof GitError) {
+                        return new GitFileSystemNeedsRollbackError(
+                          "Unable to commit changes"
+                        )
+                      }
+
                       return new GitFileSystemNeedsRollbackError(
-                        "Unable to commit changes"
+                        "An unknown error occurred"
                       )
                     }
+                  )
+                ),
+              okAsync<unknown, GitFileSystemNeedsRollbackError>(undefined)
+            )
+          })
+          .andThen(() =>
+            ResultAsync.fromPromise(
+              this.git
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                .commit(commitMessage),
+              (error) => {
+                logger.error(`Error when committing ${repoName}: ${error}`)
 
-                    return new GitFileSystemNeedsRollbackError(
-                      "An unknown error occurred"
-                    )
-                  }
-                )
-              ),
-            okAsync<unknown, GitFileSystemNeedsRollbackError>(undefined)
-          )
-        })
-        .andThen(() =>
-          ResultAsync.fromPromise(
-            this.git
-              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-              .commit(commitMessage),
-            (error) => {
-              logger.error(`Error when committing ${repoName}: ${error}`)
+                if (error instanceof GitError) {
+                  return new GitFileSystemNeedsRollbackError(
+                    "Unable to commit changes"
+                  )
+                }
 
-              if (error instanceof GitError) {
                 return new GitFileSystemNeedsRollbackError(
-                  "Unable to commit changes"
+                  "An unknown error occurred"
                 )
               }
-
-              return new GitFileSystemNeedsRollbackError(
-                "An unknown error occurred"
-              )
-            }
+            )
           )
-        )
-        .map((commitResult) => commitResult.commit)
+          .map((commitResult) => commitResult.commit)
+      })
     })
   }
 
@@ -834,103 +851,107 @@ export default class GitFileSystemService {
     GitCommitResult,
     ConflictError | GitFileSystemError | NotFoundError
   > {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
-    const pathToEfsDir = `${efsVolPath}/${repoName}/${directoryName}/`
-    const pathToEfsFile = `${efsVolPath}/${repoName}/${filePath}`
-    const encodedContent = content
-    let oldStateSha = ""
+    return tracer.trace("GitFileSystem.create", () => {
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      const filePath = directoryName ? `${directoryName}/${fileName}` : fileName
+      const pathToEfsDir = `${efsVolPath}/${repoName}/${directoryName}/`
+      const pathToEfsFile = `${efsVolPath}/${repoName}/${filePath}`
+      const encodedContent = content
+      let oldStateSha = ""
 
-    return this.getLatestCommitOfBranch(repoName, branchName)
-      .andThen((latestCommit) => {
-        const { sha } = latestCommit
-        if (!sha) {
-          return errAsync(new GitFileSystemError("An unknown error occurred"))
-        }
-        oldStateSha = sha
-        return okAsync(true)
-      })
-      .andThen(() =>
-        this.getFilePathStats(
-          repoName,
-          directoryName,
-          branchName !== STAGING_LITE_BRANCH
-        )
-      )
-      .andThen((stats) => {
-        if (stats.isDirectory()) return ok(true)
-        return err(new NotFoundError())
-      })
-      .orElse((error) => {
-        if (error instanceof NotFoundError) {
-          // Create directory if it does not already exist
-          return ResultAsync.fromPromise(
-            fs.promises.mkdir(pathToEfsDir),
-            (mkdirErr) => {
-              logger.error(
-                `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`
-              )
-              return new GitFileSystemError("An unknown error occurred")
-            }
-          ).map(() => true)
-        }
-        return err(error)
-      })
-      .andThen(() =>
-        this.getFilePathStats(
-          repoName,
-          filePath,
-          branchName !== STAGING_LITE_BRANCH
-        )
-      )
-      .andThen((stats) => {
-        if (stats.isFile())
-          return err(
-            new ConflictError(
-              `File ${filePath} already exists in repo ${repoName}`
-            )
-          )
-        return ok(true)
-      })
-      .orElse((error) => {
-        if (error instanceof NotFoundError) {
-          return ok(true)
-        }
-        return err(error)
-      })
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          fs.promises.writeFile(pathToEfsFile, encodedContent, encoding),
-          (error) => {
-            logger.error(`Error when creating ${filePath}: ${error}`)
-            if (error instanceof Error) {
-              return new GitFileSystemNeedsRollbackError(error.message)
-            }
-            return new GitFileSystemNeedsRollbackError(
-              "An unknown error occurred"
-            )
+      return this.getLatestCommitOfBranch(repoName, branchName)
+        .andThen((latestCommit) => {
+          const { sha } = latestCommit
+          if (!sha) {
+            return errAsync(new GitFileSystemError("An unknown error occurred"))
           }
-        )
-      )
-      .andThen(() =>
-        this.commit(
-          repoName,
-          [pathToEfsFile],
-          userId,
-          `Create file: ${filePath}`,
-          branchName
-        )
-      )
-      .map((commit) => ({ newSha: commit }))
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
+          oldStateSha = sha
+          return okAsync(true)
+        })
+        .andThen(() =>
+          this.getFilePathStats(
+            repoName,
+            directoryName,
+            branchName !== STAGING_LITE_BRANCH
           )
-        }
+        )
+        .andThen((stats) => {
+          if (stats.isDirectory()) return ok(true)
+          return err(new NotFoundError())
+        })
+        .orElse((error) => {
+          if (error instanceof NotFoundError) {
+            // Create directory if it does not already exist
+            return ResultAsync.fromPromise(
+              fs.promises.mkdir(pathToEfsDir),
+              (mkdirErr) => {
+                logger.error(
+                  `Error occurred while creating ${pathToEfsDir} directory: ${mkdirErr}`
+                )
+                return new GitFileSystemError("An unknown error occurred")
+              }
+            ).map(() => true)
+          }
+          return err(error)
+        })
+        .andThen(() =>
+          this.getFilePathStats(
+            repoName,
+            filePath,
+            branchName !== STAGING_LITE_BRANCH
+          )
+        )
+        .andThen((stats) => {
+          if (stats.isFile())
+            return err(
+              new ConflictError(
+                `File ${filePath} already exists in repo ${repoName}`
+              )
+            )
+          return ok(true)
+        })
+        .orElse((error) => {
+          if (error instanceof NotFoundError) {
+            return ok(true)
+          }
+          return err(error)
+        })
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            fs.promises.writeFile(pathToEfsFile, encodedContent, encoding),
+            (error) => {
+              logger.error(`Error when creating ${filePath}: ${error}`)
+              if (error instanceof Error) {
+                return new GitFileSystemNeedsRollbackError(error.message)
+              }
+              return new GitFileSystemNeedsRollbackError(
+                "An unknown error occurred"
+              )
+            }
+          )
+        )
+        .andThen(() =>
+          this.commit(
+            repoName,
+            [pathToEfsFile],
+            userId,
+            `Create file: ${filePath}`,
+            branchName
+          )
+        )
+        .map((commit) => ({ newSha: commit }))
+        .orElse((error) => {
+          if (error instanceof GitFileSystemNeedsRollbackError) {
+            return this.rollback(
+              repoName,
+              oldStateSha,
+              branchName
+            ).andThen(() => errAsync(new GitFileSystemError(error.message)))
+          }
 
-        return errAsync(error)
-      })
+          return errAsync(error)
+        })
+    })
   }
 
   // Read the contents of a file
@@ -939,35 +960,37 @@ export default class GitFileSystemService {
     filePath: string,
     encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
-    const defaultEfsVolPath = EFS_VOL_PATH_STAGING
-    return ResultAsync.combine([
-      ResultAsync.fromPromise(
-        fs.promises.readFile(
-          `${defaultEfsVolPath}/${repoName}/${filePath}`,
-          encoding
+    return tracer.trace("GitFileSystem.read", () => {
+      const defaultEfsVolPath = EFS_VOL_PATH_STAGING
+      return ResultAsync.combine([
+        ResultAsync.fromPromise(
+          fs.promises.readFile(
+            `${defaultEfsVolPath}/${repoName}/${filePath}`,
+            encoding
+          ),
+          (error) => {
+            if (error instanceof Error && error.message.includes("ENOENT")) {
+              return new NotFoundError("File does not exist")
+            }
+
+            logger.error(`Error when reading ${filePath}: ${error}`)
+
+            if (error instanceof Error) {
+              return new GitFileSystemError("Unable to read file")
+            }
+
+            return new GitFileSystemError("An unknown error occurred")
+          }
         ),
-        (error) => {
-          if (error instanceof Error && error.message.includes("ENOENT")) {
-            return new NotFoundError("File does not exist")
-          }
-
-          logger.error(`Error when reading ${filePath}: ${error}`)
-
-          if (error instanceof Error) {
-            return new GitFileSystemError("Unable to read file")
-          }
-
-          return new GitFileSystemError("An unknown error occurred")
+        this.getGitBlobHash(repoName, filePath, true),
+      ]).map((contentAndHash) => {
+        const [content, sha] = contentAndHash
+        const result: GitFile = {
+          content,
+          sha,
         }
-      ),
-      this.getGitBlobHash(repoName, filePath, true),
-    ]).map((contentAndHash) => {
-      const [content, sha] = contentAndHash
-      const result: GitFile = {
-        content,
-        sha,
-      }
-      return result
+        return result
+      })
     })
   }
 
@@ -1007,30 +1030,36 @@ export default class GitFileSystemService {
     MediaFileOutput,
     GitFileSystemError | MediaTypeError | NotFoundError
   > {
-    return this.getFileExtension(fileName)
-      .andThen((fileExt) => this.getMimeType(fileExt))
-      .asyncAndThen((mimeType) =>
-        ResultAsync.combine([
-          okAsync(mimeType),
-          this.getFilePathStats(siteName, `${directoryName}/${fileName}`, true),
-          this.read(siteName, `${directoryName}/${fileName}`, "base64"),
-        ])
-      )
-      .andThen((combineResult) => {
-        const [mimeType, stats, file] = combineResult
-        const fileType = "file" as const
-        const dataUrlPrefix = `data:${mimeType};base64`
+    return tracer.trace("GitFileSystem.readMediaFile", () =>
+      this.getFileExtension(fileName)
+        .andThen((fileExt) => this.getMimeType(fileExt))
+        .asyncAndThen((mimeType) =>
+          ResultAsync.combine([
+            okAsync(mimeType),
+            this.getFilePathStats(
+              siteName,
+              `${directoryName}/${fileName}`,
+              true
+            ),
+            this.read(siteName, `${directoryName}/${fileName}`, "base64"),
+          ])
+        )
+        .andThen((combineResult) => {
+          const [mimeType, stats, file] = combineResult
+          const fileType = "file" as const
+          const dataUrlPrefix = `data:${mimeType};base64`
 
-        return okAsync({
-          name: fileName,
-          sha: file.sha,
-          mediaUrl: `${dataUrlPrefix},${file.content}`,
-          mediaPath: `${directoryName}/${fileName}`,
-          type: fileType,
-          addedTime: stats.ctimeMs,
-          size: stats.size,
+          return okAsync({
+            name: fileName,
+            sha: file.sha,
+            mediaUrl: `${dataUrlPrefix},${file.content}`,
+            mediaPath: `${directoryName}/${fileName}`,
+            type: fileType,
+            addedTime: stats.ctimeMs,
+            size: stats.size,
+          })
         })
-      })
+    )
   }
 
   // Read the contents of a directory
@@ -1040,86 +1069,89 @@ export default class GitFileSystemService {
     branchName: string,
     includeSha = true
   ): ResultAsync<GitDirectoryItem[], GitFileSystemError | NotFoundError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    const isStaging = this.isStagingFromBranchName(branchName)
+    return tracer.trace("GitFileSystem.listDirectoryContents", () => {
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      const isStaging = this.isStagingFromBranchName(branchName)
 
-    return this.getFilePathStats(
-      repoName,
-      directoryPath,
-      branchName !== STAGING_LITE_BRANCH
-    )
-      .andThen((stats) => {
-        if (!stats.isDirectory()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${directoryPath}" is not a valid directory in repo "${repoName}"`
-            )
-          )
-        }
-        return okAsync(true)
-      })
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          fs.promises.readdir(`${efsVolPath}/${repoName}/${directoryPath}`, {
-            withFileTypes: true,
-          }),
-          (error) => {
-            logger.error(`Error when reading ${directoryPath}: ${error}`)
-
-            if (error instanceof Error) {
-              return new GitFileSystemError("Unable to read directory")
-            }
-
-            return new GitFileSystemError("An unknown error occurred")
-          }
-        )
+      return this.getFilePathStats(
+        repoName,
+        directoryPath,
+        branchName !== STAGING_LITE_BRANCH
       )
-      .andThen((directoryContents) => {
-        const resultAsyncs = directoryContents.map((directoryItem) => {
-          const isDirectory = directoryItem.isDirectory()
-          const { name } = directoryItem
-          const path = directoryPath === "" ? name : `${directoryPath}/${name}`
-          const type = isDirectory ? "dir" : "file"
-
-          if (includeSha) {
-            return this.getGitBlobHash(repoName, path, isStaging)
-              .orElse(() => okAsync(""))
-              .andThen((sha) =>
-                ResultAsync.combine([
-                  okAsync(sha),
-                  this.getFilePathStats(repoName, path, isStaging),
-                ])
+        .andThen((stats) => {
+          if (!stats.isDirectory()) {
+            return errAsync(
+              new GitFileSystemError(
+                `Path "${directoryPath}" is not a valid directory in repo "${repoName}"`
               )
-              .andThen((shaAndStats) => {
-                const [sha, stats] = shaAndStats
+            )
+          }
+          return okAsync(true)
+        })
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            fs.promises.readdir(`${efsVolPath}/${repoName}/${directoryPath}`, {
+              withFileTypes: true,
+            }),
+            (error) => {
+              logger.error(`Error when reading ${directoryPath}: ${error}`)
+
+              if (error instanceof Error) {
+                return new GitFileSystemError("Unable to read directory")
+              }
+
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          )
+        )
+        .andThen((directoryContents) => {
+          const resultAsyncs = directoryContents.map((directoryItem) => {
+            const isDirectory = directoryItem.isDirectory()
+            const { name } = directoryItem
+            const path =
+              directoryPath === "" ? name : `${directoryPath}/${name}`
+            const type = isDirectory ? "dir" : "file"
+
+            if (includeSha) {
+              return this.getGitBlobHash(repoName, path, isStaging)
+                .orElse(() => okAsync(""))
+                .andThen((sha) =>
+                  ResultAsync.combine([
+                    okAsync(sha),
+                    this.getFilePathStats(repoName, path, isStaging),
+                  ])
+                )
+                .andThen((shaAndStats) => {
+                  const [sha, stats] = shaAndStats
+                  const result: GitDirectoryItem = {
+                    name,
+                    type,
+                    sha,
+                    path,
+                    size: type === "dir" ? 0 : stats.size,
+                    addedTime: stats.ctimeMs,
+                  }
+
+                  return okAsync(result)
+                })
+            }
+            return this.getFilePathStats(repoName, path, isStaging).andThen(
+              (stats) => {
                 const result: GitDirectoryItem = {
                   name,
                   type,
-                  sha,
                   path,
                   size: type === "dir" ? 0 : stats.size,
                   addedTime: stats.ctimeMs,
                 }
-
                 return okAsync(result)
-              })
-          }
-          return this.getFilePathStats(repoName, path, isStaging).andThen(
-            (stats) => {
-              const result: GitDirectoryItem = {
-                name,
-                type,
-                path,
-                size: type === "dir" ? 0 : stats.size,
-                addedTime: stats.ctimeMs,
               }
-              return okAsync(result)
-            }
-          )
-        })
+            )
+          })
 
-        return ResultAsync.combine(resultAsyncs)
-      })
+          return ResultAsync.combine(resultAsyncs)
+        })
+    })
   }
 
   listPaginatedDirectoryContents(
@@ -1130,65 +1162,74 @@ export default class GitFileSystemService {
     limit = 0,
     search = ""
   ): ResultAsync<DirectoryContents, GitFileSystemError | NotFoundError> {
-    const isStaging = this.isStagingFromBranchName(branchName)
+    return tracer.trace("GitFileSystem.listPaginatedDirectoryContents", () => {
+      const isStaging = this.isStagingFromBranchName(branchName)
 
-    return this.listDirectoryContents(
-      repoName,
-      directoryPath,
-      branchName,
-      false
-    )
-      .andThen((directoryContents) =>
-        okAsync(
-          getPaginatedDirectoryContents(directoryContents, page, limit, search)
-        )
+      return this.listDirectoryContents(
+        repoName,
+        directoryPath,
+        branchName,
+        false
       )
-      .andThen((paginatedDirectoryContents) => {
-        const directories = paginatedDirectoryContents.directories.map(
-          (directory) =>
-            this.getGitBlobHash(repoName, directory.path, isStaging)
+        .andThen((directoryContents) =>
+          okAsync(
+            getPaginatedDirectoryContents(
+              directoryContents,
+              page,
+              limit,
+              search
+            )
+          )
+        )
+        .andThen((paginatedDirectoryContents) => {
+          const directories = paginatedDirectoryContents.directories.map(
+            (directory) =>
+              this.getGitBlobHash(repoName, directory.path, isStaging)
+                .orElse(() => okAsync(""))
+                .andThen((sha) => {
+                  const result: GitDirectoryItem = {
+                    ...directory,
+                    sha,
+                  }
+
+                  return okAsync(result)
+                })
+          )
+
+          const files = paginatedDirectoryContents.files.map((file) =>
+            this.getGitBlobHash(repoName, file.path, isStaging)
               .orElse(() => okAsync(""))
               .andThen((sha) => {
                 const result: GitDirectoryItem = {
-                  ...directory,
+                  ...file,
                   sha,
                 }
 
                 return okAsync(result)
               })
-        )
+          )
 
-        const files = paginatedDirectoryContents.files.map((file) =>
-          this.getGitBlobHash(repoName, file.path, isStaging)
-            .orElse(() => okAsync(""))
-            .andThen((sha) => {
-              const result: GitDirectoryItem = {
-                ...file,
-                sha,
-              }
-
-              return okAsync(result)
-            })
-        )
-
-        return ResultAsync.combine([
-          ResultAsync.combine(directories),
-          ResultAsync.combine(files),
-          okAsync(paginatedDirectoryContents.total),
-        ])
-      })
-      .andThen(([directories, files, total]) =>
-        // Note: The sha is empty if the file is not tracked by Git
-        // This may result in the number of files being less than the requested
-        // limit (if limit is greater than 0), but the trade-off is acceptable
-        // here because the user can use pagination to get the next set of files,
-        // which is guaranteed to be a fresh set of files
-        okAsync({
-          directories: directories.filter((directory) => directory.sha !== ""),
-          files: files.filter((file) => file.sha !== ""),
-          total,
+          return ResultAsync.combine([
+            ResultAsync.combine(directories),
+            ResultAsync.combine(files),
+            okAsync(paginatedDirectoryContents.total),
+          ])
         })
-      )
+        .andThen(([directories, files, total]) =>
+          // Note: The sha is empty if the file is not tracked by Git
+          // This may result in the number of files being less than the requested
+          // limit (if limit is greater than 0), but the trade-off is acceptable
+          // here because the user can use pagination to get the next set of files,
+          // which is guaranteed to be a fresh set of files
+          okAsync({
+            directories: directories.filter(
+              (directory) => directory.sha !== ""
+            ),
+            files: files.filter((file) => file.sha !== ""),
+            total,
+          })
+        )
+    })
   }
 
   // Update the contents of a file
@@ -1200,85 +1241,89 @@ export default class GitFileSystemService {
     userId: SessionDataProps["isomerUserId"],
     branchName: string
   ): ResultAsync<string, GitFileSystemError | NotFoundError | ConflictError> {
-    let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    const isStaging = this.isStagingFromBranchName(branchName)
-    return this.getLatestCommitOfBranch(repoName, branchName)
-      .andThen((latestCommit) => {
-        // It is guaranteed that the latest commit contains the SHA hash
-        oldStateSha = latestCommit.sha as string
-        return okAsync(true)
-      })
-      .andThen(() =>
-        this.getFilePathStats(
-          repoName,
-          filePath,
-          branchName !== STAGING_LITE_BRANCH
-        )
-      )
-      .andThen((stats) => {
-        if (!stats.isFile()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${filePath}" is not a valid file in repo "${repoName}"`
-            )
+    return tracer.trace("GitFileSystem.update", () => {
+      let oldStateSha = ""
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      const isStaging = this.isStagingFromBranchName(branchName)
+      return this.getLatestCommitOfBranch(repoName, branchName)
+        .andThen((latestCommit) => {
+          // It is guaranteed that the latest commit contains the SHA hash
+          oldStateSha = latestCommit.sha as string
+          return okAsync(true)
+        })
+        .andThen(() =>
+          this.getFilePathStats(
+            repoName,
+            filePath,
+            branchName !== STAGING_LITE_BRANCH
           )
-        }
-        return okAsync(true)
-      })
-      .andThen(() =>
-        this.getGitBlobHash(repoName, filePath, isStaging).andThen((sha) => {
-          if (sha !== oldSha) {
+        )
+        .andThen((stats) => {
+          if (!stats.isFile()) {
             return errAsync(
-              new ConflictError(
-                "File has been changed recently, please try again"
+              new GitFileSystemError(
+                `Path "${filePath}" is not a valid file in repo "${repoName}"`
               )
             )
           }
-          return okAsync(sha)
+          return okAsync(true)
         })
-      )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          fs.promises.writeFile(
-            `${efsVolPath}/${repoName}/${filePath}`,
-            fileContent,
-            "utf-8"
-          ),
-          (error) => {
-            logger.error(`Error when updating ${filePath}: ${error}`)
-
-            if (error instanceof Error) {
-              return new GitFileSystemNeedsRollbackError(
-                "Unable to update file on disk"
+        .andThen(() =>
+          this.getGitBlobHash(repoName, filePath, isStaging).andThen((sha) => {
+            if (sha !== oldSha) {
+              return errAsync(
+                new ConflictError(
+                  "File has been changed recently, please try again"
+                )
               )
             }
+            return okAsync(sha)
+          })
+        )
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            fs.promises.writeFile(
+              `${efsVolPath}/${repoName}/${filePath}`,
+              fileContent,
+              "utf-8"
+            ),
+            (error) => {
+              logger.error(`Error when updating ${filePath}: ${error}`)
 
-            return new GitFileSystemNeedsRollbackError(
-              "An unknown error occurred"
-            )
-          }
-        )
-      )
-      .andThen(() => {
-        const fileName = filePath.split("/").pop()
-        return this.commit(
-          repoName,
-          [filePath],
-          userId,
-          `Update file: ${fileName}`,
-          branchName
-        )
-      })
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
+              if (error instanceof Error) {
+                return new GitFileSystemNeedsRollbackError(
+                  "Unable to update file on disk"
+                )
+              }
+
+              return new GitFileSystemNeedsRollbackError(
+                "An unknown error occurred"
+              )
+            }
           )
-        }
+        )
+        .andThen(() => {
+          const fileName = filePath.split("/").pop()
+          return this.commit(
+            repoName,
+            [filePath],
+            userId,
+            `Update file: ${fileName}`,
+            branchName
+          )
+        })
+        .orElse((error) => {
+          if (error instanceof GitFileSystemNeedsRollbackError) {
+            return this.rollback(
+              repoName,
+              oldStateSha,
+              branchName
+            ).andThen(() => errAsync(new GitFileSystemError(error.message)))
+          }
 
-        return errAsync(error)
-      })
+          return errAsync(error)
+        })
+    })
   }
 
   // Delete a file or directory
@@ -1290,103 +1335,109 @@ export default class GitFileSystemService {
     isDir: boolean,
     branchName: string
   ): ResultAsync<string, GitFileSystemError | NotFoundError> {
-    let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    const isStaging = this.isStagingFromBranchName(branchName)
+    return tracer.trace("GitFileSystem.delete", () => {
+      let oldStateSha = ""
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      const isStaging = this.isStagingFromBranchName(branchName)
 
-    return this.getLatestCommitOfBranch(repoName, branchName)
-      .andThen((latestCommit) => {
-        if (!latestCommit.sha) {
-          return errAsync(
-            new GitFileSystemError(
-              `Unable to find latest commit of repo: ${repoName} on branch "${branchName}"`
-            )
-          )
-        }
-        oldStateSha = latestCommit.sha as string
-        return okAsync(true)
-      })
-      .andThen(() =>
-        this.getFilePathStats(
-          repoName,
-          path,
-          branchName !== STAGING_LITE_BRANCH
-        )
-      )
-      .andThen((stats) => {
-        if (isDir && !stats.isDirectory()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${path}" is not a valid directory in repo "${repoName}"`
-            )
-          )
-        }
-        if (!isDir && !stats.isFile()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${path}" is not a valid file in repo "${repoName}"`
-            )
-          )
-        }
-        return okAsync(true)
-      })
-      .andThen(() => {
-        if (isDir) {
-          return okAsync(true) // If it's a directory, skip the blob hash verification
-        }
-        return this.getGitBlobHash(repoName, path, isStaging).andThen((sha) => {
-          if (sha !== oldSha) {
+      return this.getLatestCommitOfBranch(repoName, branchName)
+        .andThen((latestCommit) => {
+          if (!latestCommit.sha) {
             return errAsync(
-              new ConflictError(
-                "File has been changed recently, please try again"
+              new GitFileSystemError(
+                `Unable to find latest commit of repo: ${repoName} on branch "${branchName}"`
               )
             )
           }
-          return okAsync(sha)
+          oldStateSha = latestCommit.sha as string
+          return okAsync(true)
         })
-      })
-      .andThen(() => {
-        const deletePromise = isDir
-          ? fs.promises.rm(`${efsVolPath}/${repoName}/${path}`, {
-              recursive: true,
-              force: true,
-            })
-          : fs.promises.rm(`${efsVolPath}/${repoName}/${path}`)
-
-        return ResultAsync.fromPromise(deletePromise, (error) => {
-          logger.error(
-            `Error when deleting ${path} from Git file system: ${error}`
+        .andThen(() =>
+          this.getFilePathStats(
+            repoName,
+            path,
+            branchName !== STAGING_LITE_BRANCH
           )
-          if (error instanceof Error) {
-            return new GitFileSystemNeedsRollbackError(
-              `Unable to delete ${isDir ? "directory" : "file"} on disk`
+        )
+        .andThen((stats) => {
+          if (isDir && !stats.isDirectory()) {
+            return errAsync(
+              new GitFileSystemError(
+                `Path "${path}" is not a valid directory in repo "${repoName}"`
+              )
             )
           }
-          return new GitFileSystemNeedsRollbackError(
-            "An unknown error occurred"
+          if (!isDir && !stats.isFile()) {
+            return errAsync(
+              new GitFileSystemError(
+                `Path "${path}" is not a valid file in repo "${repoName}"`
+              )
+            )
+          }
+          return okAsync(true)
+        })
+        .andThen(() => {
+          if (isDir) {
+            return okAsync(true) // If it's a directory, skip the blob hash verification
+          }
+          return this.getGitBlobHash(repoName, path, isStaging).andThen(
+            (sha) => {
+              if (sha !== oldSha) {
+                return errAsync(
+                  new ConflictError(
+                    "File has been changed recently, please try again"
+                  )
+                )
+              }
+              return okAsync(sha)
+            }
           )
         })
-      })
-      .andThen(() =>
-        this.commit(
-          repoName,
-          [path],
-          userId,
-          `Delete ${
-            isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
-          }`,
-          branchName
-        )
-      )
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
-          )
-        }
+        .andThen(() => {
+          const deletePromise = isDir
+            ? fs.promises.rm(`${efsVolPath}/${repoName}/${path}`, {
+                recursive: true,
+                force: true,
+              })
+            : fs.promises.rm(`${efsVolPath}/${repoName}/${path}`)
 
-        return errAsync(error)
-      })
+          return ResultAsync.fromPromise(deletePromise, (error) => {
+            logger.error(
+              `Error when deleting ${path} from Git file system: ${error}`
+            )
+            if (error instanceof Error) {
+              return new GitFileSystemNeedsRollbackError(
+                `Unable to delete ${isDir ? "directory" : "file"} on disk`
+              )
+            }
+            return new GitFileSystemNeedsRollbackError(
+              "An unknown error occurred"
+            )
+          })
+        })
+        .andThen(() =>
+          this.commit(
+            repoName,
+            [path],
+            userId,
+            `Delete ${
+              isDir ? `directory: ${path}` : `file: ${path.split("/").pop()}`
+            }`,
+            branchName
+          )
+        )
+        .orElse((error) => {
+          if (error instanceof GitFileSystemNeedsRollbackError) {
+            return this.rollback(
+              repoName,
+              oldStateSha,
+              branchName
+            ).andThen(() => errAsync(new GitFileSystemError(error.message)))
+          }
+
+          return errAsync(error)
+        })
+    })
   }
 
   // Delete multiple files
@@ -1396,122 +1447,126 @@ export default class GitFileSystemService {
     userId: SessionDataProps["isomerUserId"],
     branchName: string
   ): ResultAsync<string, GitFileSystemError | NotFoundError> {
-    let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    const isStaging = this.isStagingFromBranchName(branchName)
+    return tracer.trace("GitFileSystem.deleteMultipleFiles", () => {
+      let oldStateSha = ""
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      const isStaging = this.isStagingFromBranchName(branchName)
 
-    return this.getLatestCommitOfBranch(repoName, branchName)
-      .andThen((latestCommit) => {
-        if (!latestCommit.sha) {
-          return errAsync(
-            new GitFileSystemError(
-              `Unable to find latest commit of repo: ${repoName} on branch "${branchName}"`
+      return this.getLatestCommitOfBranch(repoName, branchName)
+        .andThen((latestCommit) => {
+          if (!latestCommit.sha) {
+            return errAsync(
+              new GitFileSystemError(
+                `Unable to find latest commit of repo: ${repoName} on branch "${branchName}"`
+              )
             )
-          )
-        }
-        oldStateSha = latestCommit.sha
-        return okAsync(true)
-      })
-      .andThen(() =>
-        ResultAsync.combine(
-          items.map(({ filePath, sha }) =>
-            this.getFilePathStats(repoName, filePath, isStaging).andThen(
-              (stats) =>
-                okAsync({
-                  filePath,
-                  sha,
-                  stats,
-                })
+          }
+          oldStateSha = latestCommit.sha
+          return okAsync(true)
+        })
+        .andThen(() =>
+          ResultAsync.combine(
+            items.map(({ filePath, sha }) =>
+              this.getFilePathStats(repoName, filePath, isStaging).andThen(
+                (stats) =>
+                  okAsync({
+                    filePath,
+                    sha,
+                    stats,
+                  })
+              )
             )
           )
         )
-      )
-      .andThen((itemsWithStats) => {
-        const isFileConflict = !itemsWithStats.every(async (itemStats) => {
-          if (itemStats.stats.isDirectory()) {
-            // If it's a directory, skip the blob hash verification
-            return true
-          }
-
-          const result = await this.getGitBlobHash(
-            repoName,
-            itemStats.filePath,
-            isStaging
-          ).andThen((sha) => {
-            if (sha !== itemStats.sha) {
-              return okAsync(false)
+        .andThen((itemsWithStats) => {
+          const isFileConflict = !itemsWithStats.every(async (itemStats) => {
+            if (itemStats.stats.isDirectory()) {
+              // If it's a directory, skip the blob hash verification
+              return true
             }
 
-            return okAsync(true)
-          })
-
-          return result.isOk() && result.value
-        })
-
-        if (isFileConflict) {
-          return errAsync(
-            new ConflictError(
-              "File has been changed recently, please try again"
-            )
-          )
-        }
-
-        return okAsync(itemsWithStats)
-      })
-      .andThen((itemsWithStats) =>
-        // Note: All deletions must be successful, otherwise we rollback
-        ResultAsync.combine(
-          itemsWithStats.map((itemStats) => {
-            const deletePromise = itemStats.stats.isDirectory()
-              ? fs.promises.rm(
-                  `${efsVolPath}/${repoName}/${itemStats.filePath}`,
-                  {
-                    recursive: true,
-                    force: true,
-                  }
-                )
-              : fs.promises.rm(
-                  `${efsVolPath}/${repoName}/${itemStats.filePath}`
-                )
-
-            return ResultAsync.fromPromise(deletePromise, (error) => {
-              logger.error(
-                `Error when deleting ${itemStats.filePath} from Git file system: ${error}`
-              )
-
-              if (error instanceof Error) {
-                return new GitFileSystemNeedsRollbackError(
-                  `Unable to delete ${
-                    itemStats.stats.isDirectory() ? "directory" : "file"
-                  } on disk`
-                )
+            const result = await this.getGitBlobHash(
+              repoName,
+              itemStats.filePath,
+              isStaging
+            ).andThen((sha) => {
+              if (sha !== itemStats.sha) {
+                return okAsync(false)
               }
 
-              return new GitFileSystemNeedsRollbackError(
-                "An unknown error occurred"
-              )
+              return okAsync(true)
             })
-          })
-        )
-      )
-      .andThen(() =>
-        this.commit(
-          repoName,
-          items.map((item) => item.filePath),
-          userId,
-          `Delete ${items.length} items`,
-          branchName
-        )
-      )
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
-          )
-        }
 
-        return errAsync(error)
-      })
+            return result.isOk() && result.value
+          })
+
+          if (isFileConflict) {
+            return errAsync(
+              new ConflictError(
+                "File has been changed recently, please try again"
+              )
+            )
+          }
+
+          return okAsync(itemsWithStats)
+        })
+        .andThen((itemsWithStats) =>
+          // Note: All deletions must be successful, otherwise we rollback
+          ResultAsync.combine(
+            itemsWithStats.map((itemStats) => {
+              const deletePromise = itemStats.stats.isDirectory()
+                ? fs.promises.rm(
+                    `${efsVolPath}/${repoName}/${itemStats.filePath}`,
+                    {
+                      recursive: true,
+                      force: true,
+                    }
+                  )
+                : fs.promises.rm(
+                    `${efsVolPath}/${repoName}/${itemStats.filePath}`
+                  )
+
+              return ResultAsync.fromPromise(deletePromise, (error) => {
+                logger.error(
+                  `Error when deleting ${itemStats.filePath} from Git file system: ${error}`
+                )
+
+                if (error instanceof Error) {
+                  return new GitFileSystemNeedsRollbackError(
+                    `Unable to delete ${
+                      itemStats.stats.isDirectory() ? "directory" : "file"
+                    } on disk`
+                  )
+                }
+
+                return new GitFileSystemNeedsRollbackError(
+                  "An unknown error occurred"
+                )
+              })
+            })
+          )
+        )
+        .andThen(() =>
+          this.commit(
+            repoName,
+            items.map((item) => item.filePath),
+            userId,
+            `Delete ${items.length} items`,
+            branchName
+          )
+        )
+        .orElse((error) => {
+          if (error instanceof GitFileSystemNeedsRollbackError) {
+            return this.rollback(
+              repoName,
+              oldStateSha,
+              branchName
+            ).andThen(() => errAsync(new GitFileSystemError(error.message)))
+          }
+
+          return errAsync(error)
+        })
+    })
   }
 
   // Rename a single file or directory
@@ -1523,79 +1578,85 @@ export default class GitFileSystemService {
     branchName: string,
     message?: string
   ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
-    let oldStateSha = ""
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    return this.getLatestCommitOfBranch(repoName, branchName)
-      .andThen((latestCommit) => {
-        // It is guaranteed that the latest commit contains the SHA hash
-        oldStateSha = latestCommit.sha as string
-        return okAsync(true)
-      })
-      .andThen(() =>
-        this.getFilePathStats(
-          repoName,
-          oldPath,
-          branchName !== STAGING_LITE_BRANCH
-        )
-      )
-      .andThen(() =>
-        // We expect to see an error here, since the new path should not exist
-        this.getFilePathStats(
-          repoName,
-          newPath,
-          branchName !== STAGING_LITE_BRANCH
-        )
-          .andThen(() =>
-            errAsync(new ConflictError("File path already exists"))
+    return tracer.trace("GitFileSystem.renameSinglePath", () => {
+      let oldStateSha = ""
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      return this.getLatestCommitOfBranch(repoName, branchName)
+        .andThen((latestCommit) => {
+          // It is guaranteed that the latest commit contains the SHA hash
+          oldStateSha = latestCommit.sha as string
+          return okAsync(true)
+        })
+        .andThen(() =>
+          this.getFilePathStats(
+            repoName,
+            oldPath,
+            branchName !== STAGING_LITE_BRANCH
           )
-          .map(() => true)
-          .orElse((error) => {
-            if (error instanceof NotFoundError) {
-              return okAsync(true)
-            }
+        )
+        .andThen(() =>
+          // We expect to see an error here, since the new path should not exist
+          this.getFilePathStats(
+            repoName,
+            newPath,
+            branchName !== STAGING_LITE_BRANCH
+          )
+            .andThen(() =>
+              errAsync(new ConflictError("File path already exists"))
+            )
+            .map(() => true)
+            .orElse((error) => {
+              if (error instanceof NotFoundError) {
+                return okAsync(true)
+              }
 
-            return errAsync(error)
-          })
-      )
-      .andThen(() =>
-        ResultAsync.fromPromise(
-          this.git
-            .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-            .mv(oldPath, newPath),
-          (error) => {
-            logger.error(`Error when moving ${oldPath} to ${newPath}: ${error}`)
+              return errAsync(error)
+            })
+        )
+        .andThen(() =>
+          ResultAsync.fromPromise(
+            this.git
+              .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+              .mv(oldPath, newPath),
+            (error) => {
+              logger.error(
+                `Error when moving ${oldPath} to ${newPath}: ${error}`
+              )
 
-            if (error instanceof GitError) {
+              if (error instanceof GitError) {
+                return new GitFileSystemNeedsRollbackError(
+                  `Unable to rename ${oldPath} to ${newPath}`
+                )
+              }
+
               return new GitFileSystemNeedsRollbackError(
-                `Unable to rename ${oldPath} to ${newPath}`
+                "An unknown error occurred"
               )
             }
-
-            return new GitFileSystemNeedsRollbackError(
-              "An unknown error occurred"
-            )
-          }
-        )
-      )
-      .andThen(() =>
-        this.commit(
-          repoName,
-          [oldPath, newPath],
-          userId,
-          message || `Renamed ${oldPath} to ${newPath}`,
-          branchName,
-          true
-        )
-      )
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
           )
-        }
+        )
+        .andThen(() =>
+          this.commit(
+            repoName,
+            [oldPath, newPath],
+            userId,
+            message || `Renamed ${oldPath} to ${newPath}`,
+            branchName,
+            true
+          )
+        )
+        .orElse((error) => {
+          if (error instanceof GitFileSystemNeedsRollbackError) {
+            return this.rollback(
+              repoName,
+              oldStateSha,
+              branchName
+            ).andThen(() => errAsync(new GitFileSystemError(error.message)))
+          }
 
-        return errAsync(error)
-      })
+          return errAsync(error)
+        })
+    })
   }
 
   // Move multiple files from oldPath to newPath without renaming them
@@ -1608,117 +1669,123 @@ export default class GitFileSystemService {
     branchName: string,
     message?: string
   ): ResultAsync<string, GitFileSystemError | ConflictError | NotFoundError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-    let oldStateSha = ""
+    return tracer.trace("GitFileSystem.moveFiles", () => {
+      const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+      let oldStateSha = ""
 
-    return this.getLatestCommitOfBranch(repoName, branchName)
-      .andThen((latestCommit) => {
-        // It is guaranteed that the latest commit contains the SHA hash
-        oldStateSha = latestCommit.sha as string
-        return okAsync(true)
-      })
-      .andThen(() =>
-        this.getFilePathStats(
-          repoName,
-          oldPath,
-          branchName !== STAGING_LITE_BRANCH
-        )
-      )
-      .andThen((stats) => {
-        if (!stats.isDirectory()) {
-          return errAsync(
-            new GitFileSystemError(
-              `Path "${oldPath}" is not a valid directory in repo "${repoName}"`
-            )
+      return this.getLatestCommitOfBranch(repoName, branchName)
+        .andThen((latestCommit) => {
+          // It is guaranteed that the latest commit contains the SHA hash
+          oldStateSha = latestCommit.sha as string
+          return okAsync(true)
+        })
+        .andThen(() =>
+          this.getFilePathStats(
+            repoName,
+            oldPath,
+            branchName !== STAGING_LITE_BRANCH
           )
-        }
-        return okAsync(true)
-      })
-      .andThen(() =>
-        // Ensure that the new path exists
-        ResultAsync.fromPromise(
-          fs.promises.mkdir(`${efsVolPath}/${repoName}/${newPath}`, {
-            recursive: true,
-          }),
-          (error) => {
-            logger.error(`Error when creating ${newPath} during move: ${error}`)
-
-            if (error instanceof Error) {
-              return new GitFileSystemNeedsRollbackError(
-                `Unable to create ${newPath}`
+        )
+        .andThen((stats) => {
+          if (!stats.isDirectory()) {
+            return errAsync(
+              new GitFileSystemError(
+                `Path "${oldPath}" is not a valid directory in repo "${repoName}"`
               )
-            }
-
-            return new GitFileSystemNeedsRollbackError(
-              "An unknown error occurred"
             )
           }
-        )
-      )
-      .andThen(() =>
-        ResultAsync.combine(
-          targetFiles.map((targetFile) =>
-            // We expect to see an error here, since the new path should not exist
-            this.getFilePathStats(
-              repoName,
-              `${newPath}/${targetFile}`,
-              branchName !== STAGING_LITE_BRANCH
-            )
-              .andThen(() =>
-                errAsync(new ConflictError("File path already exists"))
+          return okAsync(true)
+        })
+        .andThen(() =>
+          // Ensure that the new path exists
+          ResultAsync.fromPromise(
+            fs.promises.mkdir(`${efsVolPath}/${repoName}/${newPath}`, {
+              recursive: true,
+            }),
+            (error) => {
+              logger.error(
+                `Error when creating ${newPath} during move: ${error}`
               )
-              .map(() => true)
-              .orElse((error) => {
-                if (error instanceof NotFoundError) {
-                  return okAsync(true)
-                }
 
-                return errAsync(error)
-              })
-              .andThen(() =>
-                ResultAsync.fromPromise(
-                  fs.promises.rename(
-                    `${efsVolPath}/${repoName}/${oldPath}/${targetFile}`,
-                    `${efsVolPath}/${repoName}/${newPath}/${targetFile}`
-                  ),
-                  (error) => {
-                    logger.error(
-                      `Error when moving ${targetFile} in ${oldPath} to ${newPath}: ${error}`
-                    )
+              if (error instanceof Error) {
+                return new GitFileSystemNeedsRollbackError(
+                  `Unable to create ${newPath}`
+                )
+              }
 
-                    if (error instanceof GitError) {
+              return new GitFileSystemNeedsRollbackError(
+                "An unknown error occurred"
+              )
+            }
+          )
+        )
+        .andThen(() =>
+          ResultAsync.combine(
+            targetFiles.map((targetFile) =>
+              // We expect to see an error here, since the new path should not exist
+              this.getFilePathStats(
+                repoName,
+                `${newPath}/${targetFile}`,
+                branchName !== STAGING_LITE_BRANCH
+              )
+                .andThen(() =>
+                  errAsync(new ConflictError("File path already exists"))
+                )
+                .map(() => true)
+                .orElse((error) => {
+                  if (error instanceof NotFoundError) {
+                    return okAsync(true)
+                  }
+
+                  return errAsync(error)
+                })
+                .andThen(() =>
+                  ResultAsync.fromPromise(
+                    fs.promises.rename(
+                      `${efsVolPath}/${repoName}/${oldPath}/${targetFile}`,
+                      `${efsVolPath}/${repoName}/${newPath}/${targetFile}`
+                    ),
+                    (error) => {
+                      logger.error(
+                        `Error when moving ${targetFile} in ${oldPath} to ${newPath}: ${error}`
+                      )
+
+                      if (error instanceof GitError) {
+                        return new GitFileSystemNeedsRollbackError(
+                          `Unable to move ${targetFile} to ${newPath}`
+                        )
+                      }
+
                       return new GitFileSystemNeedsRollbackError(
-                        `Unable to move ${targetFile} to ${newPath}`
+                        "An unknown error occurred"
                       )
                     }
-
-                    return new GitFileSystemNeedsRollbackError(
-                      "An unknown error occurred"
-                    )
-                  }
+                  )
                 )
-              )
+            )
           )
         )
-      )
-      .andThen(() =>
-        this.commit(
-          repoName,
-          [oldPath, newPath],
-          userId,
-          message || `Moved selected files from ${oldPath} to ${newPath}`,
-          branchName
-        )
-      )
-      .orElse((error) => {
-        if (error instanceof GitFileSystemNeedsRollbackError) {
-          return this.rollback(repoName, oldStateSha, branchName).andThen(() =>
-            errAsync(new GitFileSystemError(error.message))
+        .andThen(() =>
+          this.commit(
+            repoName,
+            [oldPath, newPath],
+            userId,
+            message || `Moved selected files from ${oldPath} to ${newPath}`,
+            branchName
           )
-        }
+        )
+        .orElse((error) => {
+          if (error instanceof GitFileSystemNeedsRollbackError) {
+            return this.rollback(
+              repoName,
+              oldStateSha,
+              branchName
+            ).andThen(() => errAsync(new GitFileSystemError(error.message)))
+          }
 
-        return errAsync(error)
-      })
+          return errAsync(error)
+        })
+    })
   }
 
   getLatestCommitOfBranch(

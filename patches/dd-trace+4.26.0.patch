@@ -17,14 +17,14 @@ index 50859bf..b083fa6 100644
 -      if (result && typeof result.then === 'function') {
 +      if (result && typeof result.andThen === 'function') {
 +        return result
-+          .andThen(value => {
++          .map(value => {
 +              span.finish()
-+              return ntOk(value)
++              return value
 +          })
 +          .mapErr(error => {
 +            addError(span, error)
 +            span.finish()
-+            return ntErr(error)
++            return error
 +          });
 +      }
 +      else if (result && typeof result.then === 'function') {

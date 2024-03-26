@@ -71,10 +71,11 @@ import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { mailer } from "@services/utilServices/MailClient"
 
+import { FormsgSiteAuditLogsRouter } from "../infra/formsg/formsgSiteAuditLogs"
+
 import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
-import { FormsgSiteAuditLogsRouter } from "./routes/formsg/formsgSiteAuditLogs"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
@@ -158,17 +159,12 @@ const { errorHandler } = require("@middleware/errorHandler")
 
 const { AuthRouter } = require("@routes/v2/auth")
 
-const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
-const {
-  FormsgSiteCheckerRouter,
-} = require("@root/routes/formsg/formsgSiteChecker")
-const {
-  FormsgSiteCreateRouter,
-} = require("@root/routes/formsg/formsgSiteCreation")
-const {
-  FormsgSiteLaunchRouter,
-} = require("@root/routes/formsg/formsgSiteLaunch")
 const { AuthService } = require("@services/utilServices/AuthService")
+
+const { FormsgGGsRepairRouter } = require("../infra/formsg/formsgGGsRepair")
+const { FormsgSiteCheckerRouter } = require("../infra/formsg/formsgSiteChecker")
+const { FormsgSiteCreateRouter } = require("../infra/formsg/formsgSiteCreation")
+const { FormsgSiteLaunchRouter } = require("../infra/formsg/formsgSiteLaunch")
 
 // growthbook polyfills
 setBrowserPolyfills()
@@ -489,3 +485,4 @@ sequelize
     // And gracefully shut down the application since we can't serve client
     process.exit(1)
   })
+startInfra()

@@ -305,9 +305,6 @@ const repoCheckerService = new RepoCheckerService({
   pageService,
 })
 
-// poller site launch updates
-infraService.pollMessages()
-
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,

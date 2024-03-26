@@ -1,13 +1,35 @@
 version: "3"
 services:
-  web:
+  reverse-proxy:
+    image: "caddy:2.7.6"
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  infra:
+    build:
+      dockerfile: ./infra/Dockerfile
+    expose:
+      - "8081"
+    env_file:
+      - .env
+    volumes:
+      - ./:/opt/isomercms-backend
+      - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
+      - "~/.gitconfig:/etc/gitconfig"
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
     depends_on:
       - postgres
+    expose:
+      - "8081"
     env_file:
       - .env
     volumes:
@@ -28,3 +50,5 @@ services:
 
 volumes:
   isomercms_data:
+  caddy_data:
+  caddy_config:

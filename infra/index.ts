@@ -1,3 +1,5 @@
+import "module-alias/register"
+
 import express from "express"
 
 import { infraService } from "@common/index"
@@ -16,6 +18,10 @@ useSharedMiddleware(app)
 // FormSG Backend handler routes
 app.use("/", v2Router)
 
-app.listen(8082, () => {
-  console.log("Server is running on port 8082")
+app.get("/v2/infra/formsg/a", (req, res) => {
+  res.status(200).send("Hello World!")
+})
+
+app.listen(8081, () => {
+  console.log("Infra container is running on port 8081")
 })

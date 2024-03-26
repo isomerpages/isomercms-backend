@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     ports:
       - "8081:8081"
+    # TODO: create and mount volumes on prod + staging using efs
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data

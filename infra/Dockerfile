@@ -9,6 +9,7 @@ RUN apk update && \
 RUN adduser -u 900 webapp -D -h /home/webapp -s /bin/sh
 USER webapp
 
+COPY ../src ./src
 COPY ../common ./common
 COPY ../infra ./infra 
 COPY ../package.json . 

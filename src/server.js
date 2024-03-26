@@ -71,16 +71,12 @@ import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
 import { mailer } from "@services/utilServices/MailClient"
 
-import { FormsgSiteAuditLogsRouter } from "../infra/formsg/formsgSiteAuditLogs"
-
-import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
-import AuditLogsService from "./services/admin/AuditLogsService"
 import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
@@ -160,11 +156,6 @@ const { errorHandler } = require("@middleware/errorHandler")
 const { AuthRouter } = require("@routes/v2/auth")
 
 const { AuthService } = require("@services/utilServices/AuthService")
-
-const { FormsgGGsRepairRouter } = require("../infra/formsg/formsgGGsRepair")
-const { FormsgSiteCheckerRouter } = require("../infra/formsg/formsgSiteChecker")
-const { FormsgSiteCreateRouter } = require("../infra/formsg/formsgSiteCreation")
-const { FormsgSiteLaunchRouter } = require("../infra/formsg/formsgSiteLaunch")
 
 // growthbook polyfills
 setBrowserPolyfills()
@@ -314,15 +305,6 @@ const repoCheckerService = new RepoCheckerService({
   pageService,
 })
 
-const auditLogsService = new AuditLogsService({
-  collaboratorsService,
-  isomerAdminsService,
-  notificationsService,
-  reviewRequestService,
-  sitesService,
-  usersService,
-})
-
 // poller site launch updates
 infraService.pollMessages()
 
@@ -387,28 +369,6 @@ const authV2Router = new AuthRouter({
   rateLimiter,
   statsMiddleware,
   sgidAuthRouter,
-})
-const formsgSiteCreateRouter = new FormsgSiteCreateRouter({
-  usersService,
-  infraService,
-  gitFileSystemService,
-})
-const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
-  usersService,
-  infraService,
-})
-
-const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
-  gitFileSystemService,
-  reposService,
-})
-
-const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
-  repoCheckerService,
-})
-
-const formsgSiteAuditLogsRouter = new FormsgSiteAuditLogsRouter({
-  auditLogsService,
 })
 
 const app = express()

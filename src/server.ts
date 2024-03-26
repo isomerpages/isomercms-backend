@@ -25,6 +25,7 @@ import { AuthRouter } from "@routes/v2/auth"
 
 import { MAX_CONCURRENT_GIT_PROCESSES } from "@constants/constants"
 
+import { useSharedMiddleware } from "@common/middleware"
 import initSequelize from "@database/index"
 import {
   Site,
@@ -370,27 +371,7 @@ const authV2Router = new AuthRouter({
 
 const app = express()
 
-if (isSecure) {
-  // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
-  // This is trusted because our security groups block all other access to the server
-  app.set("trust proxy", true)
-}
-app.use(helmet())
-
-// use growthbook across routes
-app.use(featureFlagMiddleware)
-
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-  })
-)
-app.use(express.json({ limit: "7mb" }))
-app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser())
-app.use(express.static(path.join(__dirname, "public")))
-app.use(nocache())
+useSharedMiddleware(app)
 
 app.use(sessionMiddleware)
 

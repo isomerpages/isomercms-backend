@@ -35,13 +35,4 @@ export type RequestHandlerWithGrowthbook<
   ReqBody = unknown,
   ReqQuery = unknown,
   Locals extends Record<string, unknown> = Record<string, unknown>
-> = (
-  req: RequestWithGrowthBook & {
-    params: P
-    body: ReqBody
-    query: ReqQuery
-    locals: Locals
-  },
-  res: Response<ResBody, Locals>,
-  next: NextFunction
-) => void
+> = ExpressHandler<P, ResBody, ReqBody, ReqQuery, Locals>

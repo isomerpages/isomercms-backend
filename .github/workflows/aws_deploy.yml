@@ -161,14 +161,14 @@ jobs:
         id: render-infra-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ inputs.task-definition-path }}
+          task-definition: ${{ steps.render-backend-task-def.outputs.task-definition }}
           container-name: infra 
           image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{env.INFRA_IMAGE_LABEL}}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.render-backend-task-def.outputs.task-definition }}
+          task-definition: ${{ steps.render-infra-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
           service: ${{ inputs.ecs-web-service-name }}
           wait-for-service-stability: true

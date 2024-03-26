@@ -60,7 +60,6 @@ on:
         required: true
 
 env: 
-  BACKEND_IMAGE_LABEL: backend 
   INFRA_IMAGE_LABEL: infra
 
 permissions:
@@ -90,7 +89,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-$BACKEND_IMAGE_LABEL
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{inputs.ecs-container-name}}
   
   build-infra:
     name: Build and push infra image to ECR
@@ -114,7 +113,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-$INFRA_IMAGE_LABEL
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{env.INFRA_IMAGE_LABEL}}
           file: infra/Dockerfile
 
   deploy:
@@ -155,7 +154,7 @@ jobs:
         with:
           task-definition: ${{ inputs.task-definition-path }}
           container-name: ${{ inputs.ecs-container-name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-$BACKEND_IMAGE_LABEL
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{inputs.ecs-container-name}}
       
       - name: Fill in the new infra image ID in the Amazon ECS task definition
         id: render-infra-task-def
@@ -163,7 +162,7 @@ jobs:
         with:
           task-definition: ${{ inputs.task-definition-path }}
           container-name: infra 
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-$INFRA_IMAGE_LABEL
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{env.INFRA_IMAGE_LABEL}}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

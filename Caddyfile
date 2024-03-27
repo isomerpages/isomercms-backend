@@ -2,3 +2,8 @@ http://localhost:8081 {
 	reverse_proxy /v2/infra/* infra:8082 
     reverse_proxy * backend:8083 
 }
+
+http://staging-cms-api.isomer.gov.sg:8081 { 
+    reverse_proxy /v2/infra/* 127.0.0.1:8082 
+    reverse_proxy * 127.0.0.1:8083 
+}

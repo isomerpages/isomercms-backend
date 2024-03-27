@@ -44,6 +44,17 @@ import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 import { getPaginatedDirectoryContents } from "@root/utils/files"
 
+// methods that do not need to be wrapped for instrumentation
+const METHOD_INSTRUMENTATION_BLACKLIST = [
+  // constructor cannot be instrumented with tracer.wrap() because it would lose invocation with 'new'
+  "constructor",
+
+  // these methods only check and return env vars, tracking spans for them is useless and wasteful
+  "getEfsVolPathFromBranch",
+  "getEfsVolPath",
+  "isStagingFromBranchName",
+]
+
 export default class GitFileSystemService {
   private readonly git: SimpleGit
 
@@ -58,9 +69,12 @@ export default class GitFileSystemService {
     for (const methodName of Object.getOwnPropertyNames(
       GitFileSystemService.prototype
     )) {
+      // eslint-disable-next-line no-continue
+      if (METHOD_INSTRUMENTATION_BLACKLIST.includes(methodName)) continue
+
       // @ts-ignore
       const method = this[methodName]
-      if (typeof method === "function" && methodName !== "constructor") {
+      if (typeof method === "function") {
         // @ts-ignore
         this[methodName] = tracer.wrap(
           `GitFileSystem.${methodName}`,

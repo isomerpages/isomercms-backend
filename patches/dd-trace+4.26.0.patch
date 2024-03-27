@@ -2,14 +2,6 @@ diff --git a/node_modules/dd-trace/packages/dd-trace/src/tracer.js b/node_module
 index 50859bf..b083fa6 100644
 --- a/node_modules/dd-trace/packages/dd-trace/src/tracer.js
 +++ b/node_modules/dd-trace/packages/dd-trace/src/tracer.js
-@@ -1,5 +1,7 @@
- 'use strict'
- 
-+const { err: ntErr, ok: ntOk } = require('neverthrow')
-+
- const Tracer = require('./opentracing/tracer')
- const tags = require('../../../ext/tags')
- const Scope = require('./scope')
 @@ -73,7 +75,19 @@ class DatadogTracer extends Tracer {
  
        const result = this.scope().activate(span, () => fn(span))

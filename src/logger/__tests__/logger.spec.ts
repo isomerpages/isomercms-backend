@@ -41,10 +41,13 @@ describe("logger", () => {
     })
 
     // Assert
-    expect(warnSpy).toHaveBeenCalledWith(MESSAGE, {
-      meta: { params: mockParams },
-      stackTrace: getTraceMeta([mockStackFrame]),
-    })
+    expect(warnSpy).toHaveBeenCalledWith(
+      {
+        meta: { params: mockParams },
+        stackTrace: getTraceMeta([mockStackFrame]),
+      },
+      MESSAGE
+    )
   })
 
   it("should call the underlying method on error with the given `Error` when an error is passed", async () => {
@@ -79,11 +82,14 @@ describe("logger", () => {
     })
 
     // Assert
-    expect(errorSpy).toHaveBeenCalledWith(MESSAGE, {
-      meta: {
-        params: mockParams,
+    expect(errorSpy).toHaveBeenCalledWith(
+      {
+        meta: {
+          params: mockParams,
+        },
+        stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
       },
-      stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
-    })
+      MESSAGE
+    )
   })
 })

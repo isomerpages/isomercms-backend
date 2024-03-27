@@ -421,6 +421,12 @@ export default class GitFileSystemService {
   ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
 
+    if (!Number.isInteger(maxCount) || maxCount < 1) {
+      return errAsync(
+        new GitFileSystemError(`Invalid maxCount value supplied: ${maxCount}`)
+      )
+    }
+
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: `${efsVolPath}/${repoName}`, root: false })

@@ -416,13 +416,20 @@ export default class GitFileSystemService {
   // Get the Git log of a particular branch
   getGitLog(
     repoName: string,
-    branchName: string
+    branchName: string,
+    maxCount?: number
   ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
+
+    const logArgs = [branchName]
+
+    if (maxCount) logArgs.unshift(`--max-count=${maxCount}`)
+
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .log([branchName]),
+        .log(logArgs),
+
       (error) => {
         logger.error(
           `Error when getting Git log of "${branchName}" branch: ${error}, when trying to access ${efsVolPath}/${repoName} for ${branchName}`
@@ -1726,13 +1733,13 @@ export default class GitFileSystemService {
     branchName: string
   ): ResultAsync<GitHubCommitData, GitFileSystemError> {
     return this.isLocalBranchPresent(repoName, branchName)
-      .andThen((isBranchLocallyPresent) => {
-        if (isBranchLocallyPresent) {
-          return this.getGitLog(repoName, branchName)
-        }
-
-        return this.getGitLog(repoName, `origin/${branchName}`)
-      })
+      .andThen((isBranchLocallyPresent) =>
+        this.getGitLog(
+          repoName,
+          isBranchLocallyPresent ? branchName : `origin/${branchName}`,
+          1
+        )
+      )
       .andThen((logSummary) => {
         const possibleCommit = logSummary.latest
         if (this.isDefaultLogFields(possibleCommit)) {

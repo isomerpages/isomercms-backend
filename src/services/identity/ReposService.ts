@@ -315,12 +315,14 @@ export const createRecords = (zoneId: string): Record[] => {
   return records;
 };
 `
-
+    const isProd = config.get("env") === "prod"
+    const branchName = isProd ? "staging" : "develop"
     return ResultAsync.fromPromise(
       octokit.repos.getContent({
         owner: ISOMER_GITHUB_ORGANIZATION_NAME,
         repo: DNS_INDIRECTION_REPO,
         path: `dns/${primaryDomain}.ts`,
+        ref: branchName,
       }),
       () => errAsync<true>(true)
     )
@@ -346,6 +348,7 @@ export const createRecords = (zoneId: string): Record[] => {
             path: `dns/${primaryDomain}.ts`,
             message: `Update ${primaryDomain}.ts`,
             content: Buffer.from(template).toString("base64"),
+            branch: branchName,
             sha,
           }),
           (error) => {
@@ -369,6 +372,7 @@ export const createRecords = (zoneId: string): Record[] => {
             path: `dns/${primaryDomain}.ts`,
             message: `Create ${primaryDomain}.ts`,
             content: Buffer.from(template).toString("base64"),
+            branch: branchName,
           }),
           (error) => {
             logger.error(

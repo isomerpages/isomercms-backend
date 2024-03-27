@@ -5,7 +5,6 @@ import { DigType } from "@root/types/dig"
 
 export interface DigDNSRecord {
   domain: string
-  class: string
   type: DigType
   value: string
 }
@@ -21,7 +20,8 @@ export interface DnsRecordsEmailProps {
   redirectionDomainSource?: string
   redirectionDomainTarget?: string
   quadARecords?: DigDNSRecord[]
-  addCAARecord?: boolean
+  addLetsEncryptCAA?: boolean
+  addAWSACMCertCAA?: boolean
 }
 
 export interface LaunchFailureEmailProps {
@@ -115,7 +115,7 @@ export function getDNSRecordsEmailBody(
 
   Object.keys(groupedDnsRecords).forEach((repoName) => {
     groupedDnsRecords[repoName].forEach((dnsRecord) => {
-      if (dnsRecord.addCAARecord) {
+      if (dnsRecord.addAWSACMCertCAA || dnsRecord.addLetsEncryptCAA) {
         html += `<p style="${bodyFooterStyle}">Please add CAA records for the following repo: <b>${repoName}</b>.`
 
         html += ` <table style="${tableStyle}">
@@ -128,7 +128,10 @@ export function getDNSRecordsEmailBody(
             <th style="${thStyle}">Value</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody>`
+
+        if (dnsRecord.addAWSACMCertCAA) {
+          html += `
           <tr style="${tdStyle}">
             <td style="${tdStyle}  background-color: #f2f2f2" rowspan="2" >${repoName}</td>
             <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
@@ -142,7 +145,25 @@ export function getDNSRecordsEmailBody(
             <td style="${tdStyle}">issuewild</td>
             <td style="${tdStyle}">amazontrust.com</td>
           </tr>
-        </tbody>
+       `
+        }
+        if (dnsRecord.addLetsEncryptCAA) {
+          html += `
+          <tr style="${tdStyle}">
+            <td style="${tdStyle}  background-color: #f2f2f2" rowspan="2" >${repoName}</td>
+            <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+            <td style="${tdStyle}">0</td>
+            <td style="${tdStyle}">issue</td>
+            <td style="${tdStyle}">letsencrypt.org</td>
+          </tr>
+          <tr style="${tdStyle}">
+            <td style="${tdStyle}">${dnsRecord.primaryDomainSource}</td>
+            <td style="${tdStyle}">0</td>
+            <td style="${tdStyle}">issuewild</td>
+            <td style="${tdStyle}">letsencrypt.org</td>
+          </tr>`
+        }
+        html += ` </tbody>
   </table>`
       }
     })
@@ -174,7 +195,6 @@ export function getDNSRecordsEmailBody(
         html += `
                 <tr style="${tdStyle}">
                   <td style="${tdStyle}" >${record.domain}</td>
-                  <td style="${tdStyle}">${record.class}</td>
                   <td style="${tdStyle}">${record.type}</td>
                   <td style="${tdStyle}">${record.value}</td>
                 </tr>`

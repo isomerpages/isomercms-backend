@@ -4,7 +4,7 @@ pull_request_rules:
       - author~=^dependabot\[bot\]$
       - check-success~=lint
       - check-success~=test
-      - title~=bump [^\s]+ from ([\d]+)\..+ to \1\.
+      - dependabot-update-type = version-update:semver-minor
     actions:
       review:
         type: APPROVE
@@ -16,7 +16,8 @@ pull_request_rules:
       - author=snyk-bot
       - check-success~=lint
       - check-success~=test
-      - title~=^\[Snyk\]
+      - title~=^\[Snyk\]]
+      - base = develop
     actions:
       review:
         type: APPROVE

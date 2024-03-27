@@ -48,10 +48,13 @@ export class Logger {
     const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
 
     if (typeof messageOrError === "string") {
-      this._logger.error(messageOrError, {
-        meta,
-        stackTrace,
-      })
+      this._logger.error(
+        {
+          meta,
+          stackTrace,
+        },
+        messageOrError
+      )
     } else {
       this._logger.error({
         error: messageOrError,
@@ -65,7 +68,7 @@ export class Logger {
     if (_.isEmpty(meta)) {
       this._logger.info(message)
     } else {
-      this._logger.info(message, meta)
+      this._logger.info(meta, message)
     }
   }
 
@@ -76,10 +79,13 @@ export class Logger {
     const stackFrames = get().slice(0, MAX_STACK_DEPTH)
     const stackTrace = getTraceMeta(stackFrames)
 
-    this._logger.warn(message, {
-      meta,
-      stackTrace,
-    })
+    this._logger.warn(
+      {
+        meta,
+        stackTrace,
+      },
+      message
+    )
   }
 }
 
@@ -90,19 +96,6 @@ const baseLogger = pino({
   messageKey: "message",
   formatters: {
     level: (label: string) => ({ level: label.toUpperCase() }),
-  },
-  hooks: {
-    logMethod(inputArgs, method) {
-      // NOTE: Pino expects `message` as the second argument
-      // but in our present codebase,
-      // we pass it as the first argument
-      if (inputArgs.length >= 2) {
-        const arg1 = inputArgs.shift()
-        const arg2 = inputArgs.shift()
-        return method.apply(this, [arg2, arg1, ...inputArgs])
-      }
-      return method.apply(this, inputArgs)
-    },
   },
 })
 

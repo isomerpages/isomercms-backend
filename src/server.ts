@@ -4,6 +4,7 @@ import "module-alias/register"
 
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
+import cors from "cors"
 import express from "express"
 import session from "express-session"
 import createError from "http-errors"
@@ -362,6 +363,12 @@ const authV2Router = new AuthRouter({
 const app = express()
 
 useSharedMiddleware(app)
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+)
 
 app.use(sessionMiddleware)
 

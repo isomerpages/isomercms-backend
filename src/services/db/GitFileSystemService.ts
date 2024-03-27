@@ -417,18 +417,14 @@ export default class GitFileSystemService {
   getGitLog(
     repoName: string,
     branchName: string,
-    maxCount?: number
+    maxCount = 1
   ): ResultAsync<LogResult<DefaultLogFields>, GitFileSystemError> {
     const efsVolPath = this.getEfsVolPathFromBranch(branchName)
-
-    const logArgs = [branchName]
-
-    if (maxCount) logArgs.unshift(`--max-count=${maxCount}`)
 
     return ResultAsync.fromPromise(
       this.git
         .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        .log(logArgs),
+        .log([`--max-count=${maxCount}`, branchName]),
 
       (error) => {
         logger.error(
@@ -1736,8 +1732,7 @@ export default class GitFileSystemService {
       .andThen((isBranchLocallyPresent) =>
         this.getGitLog(
           repoName,
-          isBranchLocallyPresent ? branchName : `origin/${branchName}`,
-          1
+          isBranchLocallyPresent ? branchName : `origin/${branchName}`
         )
       )
       .andThen((logSummary) => {

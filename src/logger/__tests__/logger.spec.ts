@@ -36,7 +36,8 @@ describe("logger", () => {
     mockGet.mockReturnValue([mockStackFrame])
 
     // Act
-    logger.warn(MESSAGE, {
+    logger.warn({
+      message: MESSAGE,
       params: mockParams,
     })
 
@@ -57,16 +58,17 @@ describe("logger", () => {
     const mockParams = { a: 1 }
 
     // Act
-    logger.error(mockError, {
+    logger.error({
+      error: mockError,
       params: mockParams,
     })
 
     // Assert
     expect(errorSpy).toHaveBeenCalledWith({
-      error: mockError,
       meta: {
         params: mockParams,
       },
+      error: mockError,
       stackTrace: getTraceMeta(parse(mockError).slice(0, MAX_STACK_DEPTH)),
     })
   })
@@ -74,19 +76,13 @@ describe("logger", () => {
   it("should call the underlying method on error when a string is passed", async () => {
     // Arrange
     const errorSpy = jest.spyOn(logger._logger, "error")
-    const mockParams = { a: 1 }
 
     // Act
-    logger.error(MESSAGE, {
-      params: mockParams,
-    })
+    logger.error(MESSAGE)
 
     // Assert
     expect(errorSpy).toHaveBeenCalledWith(
       {
-        meta: {
-          params: mockParams,
-        },
         stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
       },
       MESSAGE

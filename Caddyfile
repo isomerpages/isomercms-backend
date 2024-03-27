@@ -1,4 +1,4 @@
 http://localhost:8081 {
-	reverse_proxy /v2/infra/* infra:8082
-    reverse_proxy * backend:8083
+	reverse_proxy /v2/infra/* infra:8082 
+    reverse_proxy * backend:8083 
 }

@@ -23,7 +23,8 @@
     "jump:staging": "source .ssh/.env.staging && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-staging-bastion.pem",
     "db:migrate:staging": "source .ssh/.env.staging && npx sequelize-cli db:migrate",
     "jump:prod": "source .ssh/.env.prod && ssh -L 5433:$DB_HOST:5432 $SSH_USER@$SSH_HOST -i .ssh/isomercms-production-bastion.pem",
-    "db:migrate:prod": "source .ssh/.env.prod && npx sequelize-cli db:migrate"
+    "db:migrate:prod": "source .ssh/.env.prod && npx sequelize-cli db:migrate",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.521.0",
@@ -40,8 +41,8 @@
     "@types/node": "^20.11.13",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
-    "axios": "^1.6.5",
     "aws-sdk": "^2.1565.0",
+    "axios": "^1.6.5",
     "axios-cache-interceptor": "^0.10.7",
     "base-64": "^0.1.0",
     "bcryptjs": "^2.4.3",
@@ -55,7 +56,7 @@
     "cors": "^2.8.5",
     "cross-fetch": "^4.0.0",
     "crypto-js": "^4.2.0",
-    "dd-trace": "^4.11.0",
+    "dd-trace": "5.9.0",
     "debug": "~2.6.9",
     "dompurify": "^3.0.9",
     "dotenv": "^16.4.5",
@@ -87,6 +88,7 @@
     "node-dig-dns": "^0.3.3",
     "otplib": "^12.0.1",
     "papaparse": "^5.4.1",
+    "patch-package": "^8.0.0",
     "pg": "^8.6.0",
     "pg-connection-string": "^2.5.0",
     "pino": "^8.19.0",

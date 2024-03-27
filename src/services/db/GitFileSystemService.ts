@@ -19,6 +19,8 @@ import GitFileSystemError from "@errors/GitFileSystemError"
 import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackError"
 import { NotFoundError } from "@errors/NotFoundError"
 
+import tracer from "@utils/tracer"
+
 import {
   EFS_VOL_PATH_STAGING,
   EFS_VOL_PATH_STAGING_LITE,
@@ -42,11 +44,46 @@ import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 import { getPaginatedDirectoryContents } from "@root/utils/files"
 
+// methods that do not need to be wrapped for instrumentation
+const METHOD_INSTRUMENTATION_BLACKLIST = [
+  // constructor cannot be instrumented with tracer.wrap() because it would lose invocation with 'new'
+  "constructor",
+
+  // these methods only check and return env vars, tracking spans for them is useless and wasteful
+  "getEfsVolPathFromBranch",
+  "getEfsVolPath",
+  "isStagingFromBranchName",
+]
+
 export default class GitFileSystemService {
   private readonly git: SimpleGit
 
   constructor(git: SimpleGit) {
     this.git = git
+
+    // Below is a "dirty" hack to instrument ALL methods of GitFileSystemService
+    // all methods will create spans for visibility in traces
+
+    /* eslint-disable no-restricted-syntax */
+    /* eslint-disable @typescript-eslint/ban-ts-comment */
+    for (const methodName of Object.getOwnPropertyNames(
+      GitFileSystemService.prototype
+    )) {
+      // eslint-disable-next-line no-continue
+      if (METHOD_INSTRUMENTATION_BLACKLIST.includes(methodName)) continue
+
+      // @ts-ignore
+      const method = this[methodName]
+      if (typeof method === "function") {
+        // @ts-ignore
+        this[methodName] = tracer.wrap(
+          `GitFileSystem.${methodName}`,
+          method.bind(this)
+        )
+      }
+    }
+    /* eslint-enable @typescript-eslint/ban-ts-comment */
+    /* eslint-enable no-restricted-syntax */
   }
 
   private getEfsVolPathFromBranch(branchName: string): string {

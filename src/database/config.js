@@ -7,22 +7,37 @@ const { parse } = require("pg-connection-string")
 // Note: We are using process.env here instead of convict's config.get() as sequelize-cli is unable
 // to support import of TS files inside JS. Note that validation of these envs will still be
 // performed by convict in src/config/config.ts.
-const { DB_URI } = process.env
+const { DB_READ_URI, DB_WRITE_URI } = process.env
 const DB_MIN_POOL = parseInt(process.env.DB_MIN_POOL, 10)
 const DB_MAX_POOL = parseInt(process.env.DB_MAX_POOL, 10)
 const DB_ACQUIRE = parseInt(process.env.DB_ACQUIRE, 10)
 const DB_TIMEOUT = parseInt(process.env.DB_TIMEOUT, 10)
 
-const parsed = parse(DB_URI)
-const port = parsed.port ? parseInt(parsed.port, 10) : 5432
+const parsedReader = parse(DB_READ_URI)
+const parsedWriter = parse(DB_WRITE_URI)
+const readerPort = parsedReader.port ? parseInt(parsedReader.port, 10) : 5432
+const writerPort = parsedWriter.port ? parseInt(parsedWriter.port, 10) : 5432
 
 module.exports = {
   // Connection settings
-  database: parsed.database || "isomercms_dev",
-  host: parsed.host || "localhost",
-  username: parsed.user,
-  password: parsed.password,
-  port,
+  replication: {
+    read: [
+      {
+        database: parsedReader.database || "isomercms_dev",
+        host: parsedReader.host,
+        username: parsedReader.user,
+        password: parsedReader.password,
+        port: readerPort,
+      },
+    ],
+    write: {
+      database: parsedWriter.database || "isomercms_dev",
+      host: parsedWriter.host,
+      username: parsedWriter.user,
+      password: parsedWriter.password,
+      port: writerPort,
+    },
+  },
 
   // Database settings
   dialect: "postgres",

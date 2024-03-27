@@ -4,7 +4,8 @@ WORKDIR /opt/isomercms-backend
 RUN apk update && \
   apk add --no-cache bash && \
   apk add git && \
-  apk add openssh-client
+  apk add openssh-client && \ 
+  apk add bind-tools
 
 RUN adduser -u 900 webapp -D -h /home/webapp -s /bin/sh
 USER webapp

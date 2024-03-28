@@ -1313,10 +1313,34 @@ describe("ReviewRequestService", () => {
         sha: "234",
         url: "",
         commit: {
+          message: JSON.stringify({ userId: 2 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_TWO,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+      {
+        sha: "345",
+        url: "",
+        commit: {
           message: JSON.stringify({ userId: 1 }),
           url: "",
           author: {
             ...MOCK_GITHUB_COMMIT_AUTHOR_ONE,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+      {
+        sha: "456",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 2 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_TWO,
             date: new Date().toISOString(),
           },
         },
@@ -1331,20 +1355,29 @@ describe("ReviewRequestService", () => {
           unixTime: new Date(mockCommits[0].commit.author.date).getTime(),
         },
         "234": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_TWO.email,
+          unixTime: new Date(mockCommits[1].commit.author.date).getTime(),
+        },
+        "345": {
           author: MOCK_GITHUB_COMMIT_AUTHOR_ONE.email,
-          unixTime: new Date(mockCommits[0].commit.author.date).getTime(),
+          unixTime: new Date(mockCommits[2].commit.author.date).getTime(),
+        },
+        "456": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_TWO.email,
+          unixTime: new Date(mockCommits[3].commit.author.date).getTime(),
         },
       }
-      MockUsersRepository.findByPk.mockResolvedValue(
-        MOCK_GITHUB_COMMIT_AUTHOR_ONE
-      )
+
+      MockUsersRepository.findByPk
+        .mockResolvedValueOnce(MOCK_GITHUB_COMMIT_AUTHOR_ONE)
+        .mockResolvedValueOnce(MOCK_GITHUB_COMMIT_AUTHOR_TWO)
 
       // Act
       const actual = await ReviewRequestService.computeShaMappings(mockCommits)
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
     })
   })
 })

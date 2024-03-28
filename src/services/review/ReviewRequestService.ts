@@ -459,11 +459,11 @@ export default class ReviewRequestService {
 
     commits.forEach(({ commit, sha }, idx) => {
       const authorId = commitAuthorIds[idx]
+      const author = authorId ? authorsById[authorId] : null
       const lastChangedTime = new Date(commit.author.date).getTime()
 
       mappings[sha] = {
-        author:
-          (authorId && authorsById[authorId]?.email) || commit.author.name,
+        author: author?.email || commit.author.name,
         unixTime: lastChangedTime,
       }
     })

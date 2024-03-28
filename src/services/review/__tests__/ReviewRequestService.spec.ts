@@ -257,7 +257,7 @@ describe("ReviewRequestService", () => {
       // Arrange
       const mockComments: GithubCommentData[] = [
         MOCK_GITHUB_COMMENT_DATA_ONE,
-        MOCK_GITHUB_COMMENT_DATA_TWO,
+        MOCK_GITHUB_COMMENT_DATA_TWO, // same user id -_-
       ]
       const mockViewedTime = new Date("2022-09-23T00:00:00Z")
       const expected = [
@@ -268,17 +268,14 @@ describe("ReviewRequestService", () => {
           isRead: true,
         },
         {
-          user: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+          user: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           message: MOCK_GITHUB_COMMENT_TWO,
           createdAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
           isRead: false,
         },
       ]
-      MockUsersRepository.findByPk.mockResolvedValueOnce(
+      MockUsersRepository.findByPk.mockResolvedValue(
         MOCK_GITHUB_COMMIT_AUTHOR_ONE
-      )
-      MockUsersRepository.findByPk.mockResolvedValueOnce(
-        MOCK_GITHUB_COMMIT_AUTHOR_TWO
       )
 
       // Act
@@ -289,14 +286,14 @@ describe("ReviewRequestService", () => {
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
     })
 
     it("should return the correct comment objects with viewedTime being null", async () => {
       // Arrange
       const mockComments: GithubCommentData[] = [
         MOCK_GITHUB_COMMENT_DATA_ONE,
-        MOCK_GITHUB_COMMENT_DATA_TWO,
+        MOCK_GITHUB_COMMENT_DATA_TWO, // same user id -_-
       ]
       const expected = [
         {
@@ -306,17 +303,14 @@ describe("ReviewRequestService", () => {
           isRead: false,
         },
         {
-          user: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+          user: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           message: MOCK_GITHUB_COMMENT_TWO,
           createdAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
           isRead: false,
         },
       ]
-      MockUsersRepository.findByPk.mockResolvedValueOnce(
+      MockUsersRepository.findByPk.mockResolvedValue(
         MOCK_GITHUB_COMMIT_AUTHOR_ONE
-      )
-      MockUsersRepository.findByPk.mockResolvedValueOnce(
-        MOCK_GITHUB_COMMIT_AUTHOR_TWO
       )
 
       // Act
@@ -327,14 +321,14 @@ describe("ReviewRequestService", () => {
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
     })
 
     it("should return empty email string if user is not found", async () => {
       // Arrange
       const mockComments: GithubCommentData[] = [
         MOCK_GITHUB_COMMENT_DATA_ONE,
-        MOCK_GITHUB_COMMENT_DATA_TWO,
+        MOCK_GITHUB_COMMENT_DATA_TWO, // same user if -_-
       ]
       const expected = [
         {
@@ -350,8 +344,7 @@ describe("ReviewRequestService", () => {
           isRead: false,
         },
       ]
-      MockUsersRepository.findByPk.mockResolvedValueOnce(null)
-      MockUsersRepository.findByPk.mockResolvedValueOnce(null)
+      MockUsersRepository.findByPk.mockResolvedValue(null)
 
       // Act
       const actual = await ReviewRequestService.computeCommentData(
@@ -361,7 +354,7 @@ describe("ReviewRequestService", () => {
 
       // Assert
       expect(actual).toEqual(expected)
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
     })
 
     it("should return empty array if there are no comments", async () => {
@@ -512,7 +505,7 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
       )
       expect(SpyReviewRequestService.computeCommentData).toHaveBeenCalled()
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
     })
 
     it("should return an array of basic review request objects with a mix of read and unread comments", async () => {
@@ -553,11 +546,8 @@ describe("ReviewRequestService", () => {
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_VIEW_ONE
       )
-      MockUsersRepository.findByPk.mockResolvedValueOnce({
+      MockUsersRepository.findByPk.mockResolvedValue({
         email: MOCK_IDENTITY_EMAIL_ONE,
-      })
-      MockUsersRepository.findByPk.mockResolvedValueOnce({
-        email: MOCK_IDENTITY_EMAIL_TWO,
       })
       MockReviewCommentApi.getCommentsForReviewRequest([
         MOCK_REVIEW_REQUEST_COMMENT,
@@ -587,7 +577,7 @@ describe("ReviewRequestService", () => {
         MOCK_REVIEW_REQUEST_ONE.reviewMeta.pullRequestNumber
       )
       expect(SpyReviewRequestService.computeCommentData).toHaveBeenCalled()
-      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
     })
 
     it("should return an array of basic review request objects with no comments", async () => {
@@ -1244,7 +1234,7 @@ describe("ReviewRequestService", () => {
       // Arrange
       const mockComments: GithubCommentData[] = [
         MOCK_GITHUB_COMMENT_DATA_ONE,
-        MOCK_GITHUB_COMMENT_DATA_TWO,
+        MOCK_GITHUB_COMMENT_DATA_TWO, // same user id -_-
       ]
       const expected = [
         {
@@ -1254,7 +1244,7 @@ describe("ReviewRequestService", () => {
           isRead: true,
         },
         {
-          user: MOCK_GITHUB_EMAIL_ADDRESS_TWO,
+          user: MOCK_GITHUB_EMAIL_ADDRESS_ONE,
           message: MOCK_GITHUB_COMMENT_TWO,
           createdAt: new Date(MOCK_GITHUB_DATE_TWO).getTime(),
           isRead: false,
@@ -1267,11 +1257,8 @@ describe("ReviewRequestService", () => {
       MockReviewRequestViewRepository.findOne.mockResolvedValueOnce(
         MOCK_REVIEW_REQUEST_VIEW_ONE
       )
-      MockUsersRepository.findByPk.mockResolvedValueOnce(
+      MockUsersRepository.findByPk.mockResolvedValue(
         MOCK_GITHUB_COMMIT_AUTHOR_ONE
-      )
-      MockUsersRepository.findByPk.mockResolvedValueOnce(
-        MOCK_GITHUB_COMMIT_AUTHOR_TWO
       )
 
       // Act
@@ -1292,6 +1279,92 @@ describe("ReviewRequestService", () => {
         mockComments,
         MOCK_REVIEW_REQUEST_VIEW_ONE.lastViewedAt
       )
+    })
+  })
+
+  describe("computeShaMappings()", () => {
+    const mockCommits = [
+      {
+        sha: "123",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 1 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_ONE,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+      {
+        sha: "234",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 2 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_TWO,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+      {
+        sha: "345",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 1 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_ONE,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+      {
+        sha: "456",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 2 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_TWO,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+    ]
+
+    it("should not issue duplicated DB queries for the same users", async () => {
+      // Arrange
+      const expected = {
+        "123": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_ONE.email,
+          unixTime: new Date(mockCommits[0].commit.author.date).getTime(),
+        },
+        "234": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_TWO.email,
+          unixTime: new Date(mockCommits[1].commit.author.date).getTime(),
+        },
+        "345": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_ONE.email,
+          unixTime: new Date(mockCommits[2].commit.author.date).getTime(),
+        },
+        "456": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_TWO.email,
+          unixTime: new Date(mockCommits[3].commit.author.date).getTime(),
+        },
+      }
+
+      MockUsersRepository.findByPk
+        .mockResolvedValueOnce(MOCK_GITHUB_COMMIT_AUTHOR_ONE)
+        .mockResolvedValueOnce(MOCK_GITHUB_COMMIT_AUTHOR_TWO)
+
+      // Act
+      const actual = await ReviewRequestService.computeShaMappings(mockCommits)
+
+      // Assert
+      expect(actual).toEqual(expected)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(2)
     })
   })
 })

@@ -24,7 +24,7 @@ const getNpsVariant = (rating: number): NpsVariant => {
 }
 
 export class StatsService {
-  private readonly statsD: StatsD
+  readonly statsD: StatsD
 
   private readonly usersRepo: ModelStatic<User>
 

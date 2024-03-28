@@ -809,6 +809,34 @@ describe("GitFileSystemService", () => {
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
+
+    it("should return GitFileSystemError if maxCount is supplied as a float", async () => {
+      const result = await GitFileSystemService.getGitLog(
+        "fake-repo",
+        "fake-commit-sha",
+        1.1 // float value
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return GitFileSystemError if a maxCount less than 1 is supplied", async () => {
+      const result1 = await GitFileSystemService.getGitLog(
+        "fake-repo",
+        "fake-commit-sha",
+        0
+      )
+
+      expect(result1._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+
+      const result2 = await GitFileSystemService.getGitLog(
+        "fake-repo",
+        "fake-commit-sha",
+        -1
+      )
+
+      expect(result2._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
   })
 
   describe("rollback", () => {

@@ -1,0 +1,25 @@
+diff --git a/node_modules/dd-trace/packages/dd-trace/src/tracer.js b/node_modules/dd-trace/packages/dd-trace/src/tracer.js
+index 63c60e8..49b5b7e 100644
+--- a/node_modules/dd-trace/packages/dd-trace/src/tracer.js
++++ b/node_modules/dd-trace/packages/dd-trace/src/tracer.js
+@@ -73,7 +73,19 @@ class DatadogTracer extends Tracer {
+ 
+       const result = this.scope().activate(span, () => fn(span))
+ 
+-      if (result && typeof result.then === 'function') {
++      if (result && typeof result.andThen === 'function') {
++        return result
++          .map(value => {
++              span.finish()
++              return value
++          })
++          .mapErr(error => {
++            addError(span, error)
++            span.finish()
++            return error
++          });
++      }
++      else if (result && typeof result.then === 'function') {
+         return result.then(
+           value => {
+             span.finish()

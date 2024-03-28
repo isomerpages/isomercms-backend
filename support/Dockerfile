@@ -11,7 +11,7 @@ USER webapp
 
 COPY ../src ./src
 COPY ../common ./common
-COPY ../infra ./infra 
+COPY ../support ./support
 COPY ../package.json . 
 COPY ../package-lock.json .
 COPY ../scripts ./scripts
@@ -48,4 +48,4 @@ RUN echo "  name = Isomer Admin" >> /home/webapp/.gitconfig
 RUN echo "  email = admin@isomer.gov.sg" >> /home/webapp/.gitconfig
 
 EXPOSE "8082"
-CMD ["bash", "-c", "bash ./scripts/02_fetch_ssh_keys.sh & npm run start:infra:$NODE_ENV"]
+CMD ["bash", "-c", "bash ./scripts/02_fetch_ssh_keys.sh & npm run start:support:$NODE_ENV"]

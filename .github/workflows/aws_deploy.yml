@@ -59,16 +59,13 @@ on:
         description: "Datadog API key for sending logs"
         required: true
 
-env: 
-  INFRA_IMAGE_LABEL: infra
-
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  build-backend:
-    name: Build and push backend image to ECR
+  build:
+    name: Build and push image to ECR
     runs-on: ubuntu-latest
     steps:
       - name: Set up Docker Buildx
@@ -89,60 +86,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{inputs.ecs-container-name}}
-  
-  build-infra:
-    name: Build and push infra image to ECR
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ inputs.cicd-role }}
-          role-session-name: github-action-application-deploy
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build and push image to ECR
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{env.INFRA_IMAGE_LABEL}}
-          file: infra/Dockerfile
-
-  build-caddy:
-    name: Build and push infra image to ECR
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ inputs.cicd-role }}
-          role-session-name: github-action-application-deploy
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build and push image to ECR
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-caddy
-          file: Dockerfile.caddy
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
 
   deploy:
-    needs: [build-backend, build-infra]
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
@@ -173,34 +120,18 @@ jobs:
           sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/deploy/appspec.json
           sed -i 's/<ENVIRONMENT>/${{ inputs.shortEnv }}/g' .aws/deploy/appspec.json
 
-      - name: Fill in the new backend image ID in the Amazon ECS task definition
-        id: render-backend-task-def
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ inputs.task-definition-path }}
           container-name: ${{ inputs.ecs-container-name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{inputs.ecs-container-name}}
-      
-      - name: Fill in the new infra image ID in the Amazon ECS task definition
-        id: render-infra-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-backend-task-def.outputs.task-definition }}
-          container-name: infra 
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-${{env.INFRA_IMAGE_LABEL}}
-      
-      - name: Fill in the new infra image ID in the Amazon ECS task definition
-        id: render-caddy-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-infra-task-def.outputs.task-definition }}
-          container-name: reverse-proxy 
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}-caddy
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.render-caddy-task-def.outputs.task-definition }}
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
           service: ${{ inputs.ecs-web-service-name }}
           wait-for-service-stability: true

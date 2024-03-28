@@ -457,6 +457,14 @@ export default class ReviewRequestService {
       )
     )
 
+    logger.info({
+      message: "computeShaMappings(): author query optimisation results",
+      meta: {
+        numCommits: commits.length,
+        numUniqueValidAuthors: validAuthorIds.size,
+      },
+    })
+
     commits.forEach(({ commit, sha }, idx) => {
       const authorId = commitAuthorIds[idx]
       const author = authorId ? authorsById[authorId] : null

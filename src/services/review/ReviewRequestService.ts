@@ -483,7 +483,9 @@ export default class ReviewRequestService {
     viewedTime: Date | null
   ) => {
     // retrieve the comment users while minimizing the number of DB query
-    const userIds = [...new Set(comments.map(({ userId }) => userId))]
+    const userIds = [
+      ...new Set(comments.map(({ userId }) => userId).filter(_.identity)),
+    ]
     const userByIds = zipObject(
       userIds,
       await Promise.all(userIds.map((userId) => this.users.findByPk(userId)))

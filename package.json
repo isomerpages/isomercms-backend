@@ -44,7 +44,7 @@
     "aws-sdk": "^2.1565.0",
     "axios": "^1.6.5",
     "axios-cache-interceptor": "^0.10.7",
-    "base-64": "^0.1.0",
+    "base-64": "^1.0.0",
     "bcryptjs": "^2.4.3",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.2",

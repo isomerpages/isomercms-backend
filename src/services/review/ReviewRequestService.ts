@@ -692,7 +692,7 @@ export default class ReviewRequestService {
       })
     } catch (error) {
       // NOTE: If execution reaches this line, the transaction has already rolled back
-      logger.info({
+      logger.error({
         message: "Failed to mark all review requests as viewed",
         error,
       })

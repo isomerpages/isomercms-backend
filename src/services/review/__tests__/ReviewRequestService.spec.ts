@@ -1294,4 +1294,57 @@ describe("ReviewRequestService", () => {
       )
     })
   })
+
+  describe("computeShaMappings()", () => {
+    const mockCommits = [
+      {
+        sha: "123",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 1 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_ONE,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+      {
+        sha: "234",
+        url: "",
+        commit: {
+          message: JSON.stringify({ userId: 1 }),
+          url: "",
+          author: {
+            ...MOCK_GITHUB_COMMIT_AUTHOR_ONE,
+            date: new Date().toISOString(),
+          },
+        },
+      },
+    ]
+
+    it("should not issue duplicated DB queries for the same users", async () => {
+      // Arrange
+      const expected = {
+        "123": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_ONE.email,
+          unixTime: new Date(mockCommits[0].commit.author.date).getTime(),
+        },
+        "234": {
+          author: MOCK_GITHUB_COMMIT_AUTHOR_ONE.email,
+          unixTime: new Date(mockCommits[0].commit.author.date).getTime(),
+        },
+      }
+      MockUsersRepository.findByPk.mockResolvedValue(
+        MOCK_GITHUB_COMMIT_AUTHOR_ONE
+      )
+
+      // Act
+      const actual = await ReviewRequestService.computeShaMappings(mockCommits)
+
+      // Assert
+      expect(actual).toEqual(expected)
+      expect(MockUsersRepository.findByPk).toHaveBeenCalledTimes(1)
+    })
+  })
 })

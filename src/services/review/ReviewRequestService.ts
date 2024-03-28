@@ -25,6 +25,7 @@ import PageParseError from "@root/errors/PageParseError"
 import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import logger from "@root/logger/logger"
+import { statsService } from "@root/services/infra/StatsService"
 import {
   BaseEditedItemDto,
   CommentItem,
@@ -457,13 +458,11 @@ export default class ReviewRequestService {
       )
     )
 
-    logger.info({
-      message: "computeShaMappings(): author query optimisation results",
-      meta: {
-        numCommits: commits.length,
-        numUniqueValidAuthors: validAuthorIds.size,
-      },
-    })
+    statsService.statsD.increment("review_requests.commits", commits.length)
+    statsService.statsD.increment(
+      "review_requests.commits.users",
+      validAuthorIds.size
+    )
 
     commits.forEach(({ commit, sha }, idx) => {
       const authorId = commitAuthorIds[idx]
@@ -490,13 +489,11 @@ export default class ReviewRequestService {
       await Promise.all(userIds.map((userId) => this.users.findByPk(userId)))
     )
 
-    logger.info({
-      message: "computeCommentData(): author query optimisation results",
-      meta: {
-        numComments: comments.length,
-        numUniqueValidUsers: userIds.length,
-      },
-    })
+    statsService.statsD.increment("review_requests.comments", comments.length)
+    statsService.statsD.increment(
+      "review_requests.comments.users",
+      userIds.length
+    )
 
     const mappings = comments.map(({ userId, message, createdAt }) => {
       const createdTime = new Date(createdAt)

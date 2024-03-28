@@ -81,14 +81,6 @@ const config = convict({
     format: "required-string",
     default: "isomer-mutexes",
   },
-  sites: {
-    pageCount: {
-      doc: "Number of pages of repos to retrieve from GitHub API",
-      env: "ISOMERPAGES_REPO_PAGE_COUNT",
-      format: "required-positive-number",
-      default: 10,
-    },
-  },
   auth: {
     cookieDomain: {
       doc: "Domain to set for auth cookie",

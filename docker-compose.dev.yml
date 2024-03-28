@@ -2,7 +2,7 @@ version: "3"
 services:
   support:
     build:
-      dockerfile: ./infra/Dockerfile
+      dockerfile: ./support/Dockerfile
     ports:
       - "8082:8082"
     env_file:

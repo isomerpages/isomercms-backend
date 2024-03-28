@@ -454,7 +454,7 @@ export default class ReviewRequestService {
     const authorsById = zipObject(
       allAuthorIds,
       await Promise.all(
-        allAuthorIds.map(async (authorId) => this.users.findByPk(authorId))
+        allAuthorIds.map((authorId) => this.users.findByPk(authorId))
       )
     )
 

@@ -21,7 +21,7 @@ useSharedMiddleware(app)
 // TODO: prefix under infra
 // FormSG Backend handler routes
 app.use("/", v2Router)
-app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
+app.use("/v2/ping", (req, res) => res.status(200).send("Ok"))
 
 app.listen(PORT, () => {
   logger.info(`Infra container started on port ${PORT}`)

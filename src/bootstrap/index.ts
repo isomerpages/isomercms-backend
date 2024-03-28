@@ -8,9 +8,8 @@ import { config } from "@config/config"
 import logger from "@logger/logger"
 
 const debug = createDebug("isomercms:server")
-const BASE_PORT = config.get("port")
+const PORT = config.get("port")
 
-const PORT = BASE_PORT + 2
 /**
  * Create an event listener for HTTP server "error" event.
  *

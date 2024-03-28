@@ -1,2 +1,0 @@
-FROM caddy:2.7.6 as base 
-COPY Caddyfile /etc/caddy/Caddyfile

@@ -378,6 +378,7 @@ const UpdateNavigationRequestSchema = Joi.object().keys({
                 Joi.object().keys({
                   title: Joi.string().required(),
                   url: Joi.string().required(),
+                  external: Joi.boolean(),
                 })
               ),
             })

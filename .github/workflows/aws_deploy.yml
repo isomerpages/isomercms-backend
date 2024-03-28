@@ -91,7 +91,7 @@ jobs:
         with:
           file: ${{inputs.path-to-dockerfile}}
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}/${{inputs.ecs-web-service-name}}:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{inputs.ecs-web-service-name}}-${{ github.sha }}
 
   deploy:
     needs: build
@@ -131,7 +131,7 @@ jobs:
         with:
           task-definition: ${{ inputs.task-definition-path }}
           container-name: ${{ inputs.ecs-container-name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}/${{inputs.ecs-web-service-name}}:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}/${{inputs.ecs-web-service-name}}:${{inputs.ecs-web-service-name}}-${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

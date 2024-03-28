@@ -483,18 +483,32 @@ export default class ReviewRequestService {
     comments: GithubCommentData[],
     viewedTime: Date | null
   ) => {
-    const mappings = await Promise.all(
-      comments.map(async ({ userId, message, createdAt }) => {
-        const createdTime = new Date(createdAt)
-        const author = await this.users.findByPk(userId)
-        return {
-          user: author?.email || "",
-          message,
-          createdAt: createdTime.getTime(),
-          isRead: viewedTime ? createdTime < viewedTime : false,
-        }
-      })
+    // retrieve the comment users while minimizing the number of DB query
+    const userIds = [...new Set(comments.map(({ userId }) => userId))]
+    const userByIds = zipObject(
+      userIds,
+      await Promise.all(userIds.map((userId) => this.users.findByPk(userId)))
     )
+
+    logger.info({
+      message: "computeCommentData(): author query optimisation results",
+      meta: {
+        numComments: comments.length,
+        numUniqueValidUsers: userIds.length,
+      },
+    })
+
+    const mappings = comments.map(({ userId, message, createdAt }) => {
+      const createdTime = new Date(createdAt)
+      const author = userByIds[userId]
+      return {
+        user: author?.email || "",
+        message,
+        createdAt: createdTime.getTime(),
+        isRead: viewedTime ? createdTime < viewedTime : false,
+      }
+    })
+
     return mappings
   }
 

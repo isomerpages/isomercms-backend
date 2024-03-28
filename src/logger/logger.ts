@@ -3,8 +3,18 @@ import pino, { Logger as PinoLogger } from "pino"
 
 import { StackFrame, get, parse } from "./stack-trace"
 
-interface WarnMeta {
-  params: Record<string, unknown>
+interface ChildBindings {
+  module: string
+  [key: string]: unknown
+}
+
+type MergingObject = {
+  message: string
+  meta?: Record<string, unknown>
+}
+
+type ErrorMergingObject = MergingObject & {
+  error: unknown
 }
 
 export const MAX_STACK_DEPTH = 5
@@ -16,18 +26,20 @@ export interface TraceMeta {
 }
 
 export const getTraceMeta = (frames: StackFrame[]): TraceMeta[] =>
-  frames.map((frame) => ({
+  frames.slice(0, MAX_STACK_DEPTH).map((frame) => ({
     file: frame.getFileName(),
     line: frame.getLineNumber(),
     func: frame.getFunctionName(),
   }))
 
-const hasErrorProp = (
+const isErrorMergingObject = (
   messageOrError: unknown
-): messageOrError is { error: Error } =>
+): messageOrError is ErrorMergingObject =>
   typeof messageOrError === "object" &&
   !!messageOrError &&
-  "error" in messageOrError
+  "error" in messageOrError && // not checking type of error, it's still unknown
+  "message" in messageOrError &&
+  typeof messageOrError.message === "string"
 
 export class Logger {
   _logger: PinoLogger
@@ -36,9 +48,7 @@ export class Logger {
     this._logger = logger
   }
 
-  public child = (
-    bindings: Record<string, unknown> & { module: string }
-  ): Logger => {
+  public child = (bindings: ChildBindings): Logger => {
     const child = this._logger.child(bindings)
     return new Logger(child)
   }
@@ -47,81 +57,64 @@ export class Logger {
     // NOTE: Giving type as `unknown` here
     // because when we do a `catch`,
     // the caught error will be of type `unknown`
-    messageOrError: unknown
+    messageOrError: string | Error | ErrorMergingObject | unknown
   ): void => {
     if (typeof messageOrError === "string") {
-      const stackFrames = get()
-      const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
+      const stackTrace = getTraceMeta(get())
 
-      this._logger.error(
-        {
-          stackTrace,
-        },
-        messageOrError
-      )
+      this._logger.error({
+        message: messageOrError,
+        stackTrace,
+      })
     } else if (messageOrError instanceof Error) {
       const stackFrames = parse(messageOrError)
-      const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
+      const stackTrace = getTraceMeta(stackFrames)
 
       this._logger.error({
         error: messageOrError,
         stackTrace,
       })
-    } else if (hasErrorProp(messageOrError)) {
-      const stackFrames = parse(messageOrError?.error)
-      const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
+    } else if (isErrorMergingObject(messageOrError)) {
+      const stackFrames =
+        messageOrError.error instanceof Error
+          ? parse(messageOrError.error)
+          : get()
+      const stackTrace = getTraceMeta(stackFrames)
 
       this._logger.error({
-        error: messageOrError.error,
-        meta: _.omit(messageOrError, "error"),
+        ...messageOrError,
         stackTrace,
       })
     } else {
-      const stackFrames = get()
-      const stackTrace = getTraceMeta(stackFrames.slice(0, MAX_STACK_DEPTH))
+      const stackTrace = getTraceMeta(get())
 
       // NOTE: Not keying under `error` here because
       // there's no error given in either the property
       // or as the argument itself.
-      this._logger.error({ meta: messageOrError, stackTrace })
+      this._logger.error({
+        meta: messageOrError,
+        stackTrace,
+      })
     }
   }
 
-  public info = (
-    messageOrObject: string | (Record<string, unknown> & { message: string })
-  ): void => {
-    if (typeof messageOrObject === "string") {
-      this._logger.info(messageOrObject)
-    } else {
-      const meta = _.omit(messageOrObject, "message")
-      this._logger.info({ meta }, messageOrObject.message)
-    }
+  public info = (messageOrObject: string | MergingObject): void => {
+    this._logger.info(messageOrObject)
   }
 
-  public warn = (
-    messageOrObject:
-      | string
-      | (WarnMeta & Record<string, unknown> & { message: string })
-  ): void => {
-    const stackFrames = get().slice(0, MAX_STACK_DEPTH)
-    const stackTrace = getTraceMeta(stackFrames)
+  public warn = (messageOrObject: string | MergingObject): void => {
+    const stackTrace = getTraceMeta(get())
 
     if (typeof messageOrObject === "string") {
-      this._logger.warn(
-        {
-          stackTrace,
-        },
-        messageOrObject
-      )
+      this._logger.warn({
+        message: messageOrObject,
+        stackTrace,
+      })
     } else {
-      const meta = _.omit(messageOrObject, "message")
-      this._logger.warn(
-        {
-          meta,
-          stackTrace,
-        },
-        messageOrObject.message
-      )
+      this._logger.warn({
+        ...messageOrObject,
+        stackTrace,
+      })
     }
   }
 }

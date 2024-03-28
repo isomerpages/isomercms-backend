@@ -38,33 +38,38 @@ describe("logger", () => {
     // Act
     logger.warn({
       message: MESSAGE,
-      params: mockParams,
+      meta: {
+        params: mockParams,
+      },
     })
 
     // Assert
-    expect(warnSpy).toHaveBeenCalledWith(
-      {
-        meta: { params: mockParams },
-        stackTrace: getTraceMeta([mockStackFrame]),
-      },
-      MESSAGE
-    )
+    expect(warnSpy).toHaveBeenCalledWith({
+      message: MESSAGE,
+      meta: { params: mockParams },
+      stackTrace: getTraceMeta([mockStackFrame]),
+    })
   })
 
   it("should call the underlying method on error with the given `Error` when an error is passed", async () => {
     // Arrange
     const errorSpy = jest.spyOn(logger._logger, "error")
     const mockError = new Error("mock error")
+    const mockMessage = "An error occured"
     const mockParams = { a: 1 }
 
     // Act
     logger.error({
+      message: mockMessage,
       error: mockError,
-      params: mockParams,
+      meta: {
+        params: mockParams,
+      },
     })
 
     // Assert
     expect(errorSpy).toHaveBeenCalledWith({
+      message: mockMessage,
       meta: {
         params: mockParams,
       },
@@ -81,11 +86,9 @@ describe("logger", () => {
     logger.error(MESSAGE)
 
     // Assert
-    expect(errorSpy).toHaveBeenCalledWith(
-      {
-        stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
-      },
-      MESSAGE
-    )
+    expect(errorSpy).toHaveBeenCalledWith({
+      message: MESSAGE,
+      stackTrace: getTraceMeta(get().slice(0, MAX_STACK_DEPTH)),
+    })
   })
 })

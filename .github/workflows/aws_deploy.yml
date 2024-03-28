@@ -27,6 +27,10 @@ on:
         description: "Name of container in ECS task definition"
         required: true
         type: string
+      ecs-container-port:
+        description: "Container port number in ECS task definition"
+        required: true
+        type: number
       environment: 
         description: "Environment to deploy to"
         required: true
@@ -123,7 +127,9 @@ jobs:
       - name: Replace variables in appspec
         run: |
           sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/deploy/appspec.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.shortEnv }}/g' .aws/deploy/appspec.json
+          sed -i 's/<SHORTENV>/${{ inputs.shortEnv }}/g' .aws/deploy/appspec.json
+          sed -i 's/<CONTAINER_NAME>/${{ inputs.ecs-container-name }}/g' .aws/deploy/appspec.json
+          sed -i 's/<CONTAINER_PORT>/${{ inputs.ecs-container-port }}/g' .aws/deploy/appspec.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def

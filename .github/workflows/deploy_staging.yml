@@ -21,6 +21,7 @@ jobs:
       ecs-cluster-name: "isomer-stg-ecs"
       ecs-web-service-name: "isomer-stg-ecs-service"
       ecs-container-name: "backend"
+      ecs-container-port: 8081 
       environment: "staging"
       shortEnv: "stg"
       task-definition-path: ".aws/deploy/backend-task-definition.staging.json" 
@@ -43,6 +44,7 @@ jobs:
       ecs-cluster-name: "isomer-stg-ecs"
       ecs-web-service-name: "stg-support-ecs-service"
       ecs-container-name: "support"
+      ecs-container-port: 8082
       environment: "staging"
       shortEnv: "stg"
       task-definition-path: ".aws/deploy/support-task-definition.staging.json" 

@@ -26,6 +26,7 @@ jobs:
       task-definition-path: ".aws/deploy/backend-task-definition.staging.json" 
       codedeploy-application: "isomer-stg-ecs-app"
       codedeploy-deployment-group: "isomer-stg-ecs-dg"
+      path-to-dockerfile: "Dockerfile"
 
     secrets: 
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -44,9 +45,10 @@ jobs:
       ecs-container-name: "support"
       environment: "staging"
       shortEnv: "stg"
-      task-definition-path: ".aws/deploy/backend-task-definition.staging.json" 
-      codedeploy-application: "isomer-stg-ecs-app"
-      codedeploy-deployment-group: "isomer-stg-ecs-dg"
+      task-definition-path: ".aws/deploy/support-task-definition.staging.json" 
+      codedeploy-application: "stg-support-ecs-app"
+      codedeploy-deployment-group: "stg-support-ecs-dg"
+      path-to-dockerfile: "support/Dockerfile"
 
     secrets: 
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}

@@ -47,6 +47,10 @@ on:
         description: 'CodeDeploy deployment group to use'
         required: true
         type: string
+      path-to-dockerfile:
+        description: 'path to the dockerfile to use'
+        required: true
+        type: string
 
     secrets: 
       AWS_ACCOUNT_ID:
@@ -85,8 +89,9 @@ jobs:
       - name: Build and push image to ECR
         uses: docker/build-push-action@v4
         with:
+          file: ${{inputs.path-to-dockerfile}}
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}/${{inputs.ecs-web-service-name}}:${{ github.sha }}
 
   deploy:
     needs: build
@@ -126,7 +131,7 @@ jobs:
         with:
           task-definition: ${{ inputs.task-definition-path }}
           container-name: ${{ inputs.ecs-container-name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}/${{inputs.ecs-web-service-name}}:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

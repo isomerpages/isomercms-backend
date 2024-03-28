@@ -1,4 +1,4 @@
-import _, { sortBy, unionBy } from "lodash"
+import _, { sortBy, unionBy, zipObject } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
@@ -439,17 +439,35 @@ export default class ReviewRequestService {
     // NOTE: commits from github are capped at 300.
     // This implies that there might possibly be some files
     // whose commit isn't being returned.
-    await Promise.all(
-      commits.map(async ({ commit, sha }) => {
-        const { userId } = fromGithubCommitMessage(commit.message)
-        const author = await this.users.findByPk(userId)
-        const lastChangedTime = new Date(commit.author.date).getTime()
-        mappings[sha] = {
-          author: author?.email || commit.author.name,
-          unixTime: lastChangedTime,
-        }
-      })
+
+    // commitAuthorIds are linked to the commits by array index
+    const commitAuthorIds = commits.map(
+      ({ commit }) => fromGithubCommitMessage(commit.message).userId
     )
+
+    // Query DB for all valid author details
+    const validAuthorIds = new Set(
+      commitAuthorIds.filter(_.identity) as string[]
+    )
+    const allAuthorIds = [...validAuthorIds]
+    const authorsById = zipObject(
+      allAuthorIds,
+      await Promise.all(
+        allAuthorIds.map(async (authorId) => this.users.findByPk(authorId))
+      )
+    )
+
+    commits.forEach(({ commit, sha }, idx) => {
+      const authorId = commitAuthorIds[idx]
+      const lastChangedTime = new Date(commit.author.date).getTime()
+
+      mappings[sha] = {
+        author:
+          (authorId && authorsById[authorId]?.email) || commit.author.name,
+        unixTime: lastChangedTime,
+      }
+    })
+
     return mappings
   }
 

@@ -245,78 +245,80 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
     }
   }
 
-  Promise.resolve(routeHandler(req, res, next)).catch(async (err: Error) => {
-    try {
-      if (shouldUseGitFileSystem) {
-        await backOff(
-          () =>
-            convertNeverThrowToPromise(
-              gitFileSystemService.rollback(
-                siteName,
-                originalStagingCommitSha,
-                STAGING_BRANCH
-              )
-            ),
-          backoffOptions
-        )
-
-        if (shouldCheckStagingLite) {
-          // for quickie sites
+  Promise.resolve(routeHandler(req, res, next))
+    .then(async () => {
+      try {
+        await unlock(siteName)
+      } catch (err) {
+        next(err)
+      }
+    })
+    .catch(async (err: Error) => {
+      try {
+        if (shouldUseGitFileSystem) {
           await backOff(
             () =>
               convertNeverThrowToPromise(
                 gitFileSystemService.rollback(
                   siteName,
-                  originalStagingLiteCommitSha,
-                  STAGING_LITE_BRANCH
+                  originalStagingCommitSha,
+                  STAGING_BRANCH
                 )
               ),
             backoffOptions
           )
-        }
 
-        await backOff(() => {
-          let pushRes = gitFileSystemService.push(
-            siteName,
-            STAGING_BRANCH,
-            true
-          )
-          if (originalStagingLiteCommitSha) {
-            pushRes = pushRes.andThen(() =>
-              gitFileSystemService.push(siteName, STAGING_LITE_BRANCH, true)
+          if (shouldCheckStagingLite) {
+            // for quickie sites
+            await backOff(
+              () =>
+                convertNeverThrowToPromise(
+                  gitFileSystemService.rollback(
+                    siteName,
+                    originalStagingLiteCommitSha,
+                    STAGING_LITE_BRANCH
+                  )
+                ),
+              backoffOptions
             )
           }
 
-          return convertNeverThrowToPromise(pushRes)
-        }, backoffOptions)
-      } else {
-        // Github flow
-        await backOff(
-          () =>
-            revertCommit(
-              originalStagingCommitSha,
+          await backOff(() => {
+            let pushRes = gitFileSystemService.push(
               siteName,
-              accessToken,
-              STAGING_BRANCH
-            ),
-          backoffOptions
-        )
-      }
-    } catch (retryErr) {
-      await unlock(siteName)
-      logger.error(
-        `Failed to rollback repo ${siteName}: ${JSON.stringify(retryErr)}`
-      )
-      next(retryErr)
-      return
-    }
-    await unlock(siteName)
-    next(err)
-  })
+              STAGING_BRANCH,
+              true
+            )
+            if (originalStagingLiteCommitSha) {
+              pushRes = pushRes.andThen(() =>
+                gitFileSystemService.push(siteName, STAGING_LITE_BRANCH, true)
+              )
+            }
 
-  try {
-    await unlock(siteName)
-  } catch (err) {
-    next(err)
-  }
+            return convertNeverThrowToPromise(pushRes)
+          }, backoffOptions)
+        } else {
+          // Github flow
+          await backOff(
+            () =>
+              revertCommit(
+                originalStagingCommitSha,
+                siteName,
+                accessToken,
+                STAGING_BRANCH
+              ),
+            backoffOptions
+          )
+        }
+      } catch (retryErr) {
+        await unlock(siteName)
+        logger.error(
+          `Failed to rollback repo ${siteName}: ${JSON.stringify(retryErr)}`
+        )
+        next(retryErr)
+        return
+      }
+      await unlock(siteName)
+      next(err)
+    })
 }

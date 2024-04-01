@@ -245,15 +245,15 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
     }
   }
 
-  Promise.resolve(routeHandler(req, res, next))
-    .then(async () => {
+  Promise.resolve(routeHandler(req, res, next)).then(
+    async () => {
       try {
         await unlock(siteName)
       } catch (err) {
         next(err)
       }
-    })
-    .catch(async (err: Error) => {
+    },
+    async (err: Error) => {
       try {
         if (shouldUseGitFileSystem) {
           await backOff(
@@ -320,5 +320,6 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
       }
       await unlock(siteName)
       next(err)
-    })
+    }
+  )
 }

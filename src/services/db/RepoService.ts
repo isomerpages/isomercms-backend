@@ -230,8 +230,8 @@ export default class RepoService extends GitHubService {
     sessionData: UserWithSiteSessionData,
     { fileName, directoryName }: { fileName: string; directoryName: string }
   ): Promise<MediaFileOutput> {
-    logger.debug(`Reading media file: ${fileName}`)
-    logger.debug(`Reading directoryName: ${directoryName}`)
+    logger.info(`Reading media file: ${fileName}`)
+    logger.info(`Reading directoryName: ${directoryName}`)
     const { siteName } = sessionData
 
     // fetch from local disk
@@ -332,7 +332,7 @@ export default class RepoService extends GitHubService {
   }> {
     const { siteName } = sessionData
     const defaultBranch = STAGING_BRANCH
-    logger.debug(`Reading media directory: ${directoryName}`)
+    logger.info(`Reading media directory: ${directoryName}`)
     let dirContent: DirectoryContents
 
     if (

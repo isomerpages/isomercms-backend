@@ -1,4 +1,4 @@
-import _, { sortBy, unionBy } from "lodash"
+import _, { sortBy, unionBy, zipObject } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
@@ -25,6 +25,7 @@ import PageParseError from "@root/errors/PageParseError"
 import PlaceholderParseError from "@root/errors/PlaceholderParseError"
 import RequestNotFoundError from "@root/errors/RequestNotFoundError"
 import logger from "@root/logger/logger"
+import { statsService } from "@root/services/infra/StatsService"
 import {
   BaseEditedItemDto,
   CommentItem,
@@ -439,17 +440,41 @@ export default class ReviewRequestService {
     // NOTE: commits from github are capped at 300.
     // This implies that there might possibly be some files
     // whose commit isn't being returned.
-    await Promise.all(
-      commits.map(async ({ commit, sha }) => {
-        const { userId } = fromGithubCommitMessage(commit.message)
-        const author = await this.users.findByPk(userId)
-        const lastChangedTime = new Date(commit.author.date).getTime()
-        mappings[sha] = {
-          author: author?.email || commit.author.name,
-          unixTime: lastChangedTime,
-        }
-      })
+
+    // commitAuthorIds are linked to the commits by array index
+    const commitAuthorIds = commits.map(
+      ({ commit }) => fromGithubCommitMessage(commit.message).userId
     )
+
+    // Query DB for all valid author details
+    const validAuthorIds = new Set(
+      commitAuthorIds.filter(_.identity) as string[]
+    )
+    const allAuthorIds = [...validAuthorIds]
+    const authorsById = zipObject(
+      allAuthorIds,
+      await Promise.all(
+        allAuthorIds.map((authorId) => this.users.findByPk(authorId))
+      )
+    )
+
+    statsService.statsD.increment("review_requests.commits", commits.length)
+    statsService.statsD.increment(
+      "review_requests.commits.users",
+      validAuthorIds.size
+    )
+
+    commits.forEach(({ commit, sha }, idx) => {
+      const authorId = commitAuthorIds[idx]
+      const author = authorId ? authorsById[authorId] : null
+      const lastChangedTime = new Date(commit.author.date).getTime()
+
+      mappings[sha] = {
+        author: author?.email || commit.author.name,
+        unixTime: lastChangedTime,
+      }
+    })
+
     return mappings
   }
 
@@ -457,18 +482,32 @@ export default class ReviewRequestService {
     comments: GithubCommentData[],
     viewedTime: Date | null
   ) => {
-    const mappings = await Promise.all(
-      comments.map(async ({ userId, message, createdAt }) => {
-        const createdTime = new Date(createdAt)
-        const author = await this.users.findByPk(userId)
-        return {
-          user: author?.email || "",
-          message,
-          createdAt: createdTime.getTime(),
-          isRead: viewedTime ? createdTime < viewedTime : false,
-        }
-      })
+    // retrieve the comment users while minimizing the number of DB query
+    const userIds = [
+      ...new Set(comments.map(({ userId }) => userId).filter(_.identity)),
+    ]
+    const userByIds = zipObject(
+      userIds,
+      await Promise.all(userIds.map((userId) => this.users.findByPk(userId)))
     )
+
+    statsService.statsD.increment("review_requests.comments", comments.length)
+    statsService.statsD.increment(
+      "review_requests.comments.users",
+      userIds.length
+    )
+
+    const mappings = comments.map(({ userId, message, createdAt }) => {
+      const createdTime = new Date(createdAt)
+      const author = userByIds[userId]
+      return {
+        user: author?.email || "",
+        message,
+        createdAt: createdTime.getTime(),
+        isRead: viewedTime ? createdTime < viewedTime : false,
+      }
+    })
+
     return mappings
   }
 
@@ -692,7 +731,7 @@ export default class ReviewRequestService {
       })
     } catch (error) {
       // NOTE: If execution reaches this line, the transaction has already rolled back
-      logger.info({
+      logger.error({
         message: "Failed to mark all review requests as viewed",
         error,
       })

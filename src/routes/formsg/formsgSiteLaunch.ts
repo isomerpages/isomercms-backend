@@ -25,6 +25,7 @@ import {
   getErrorEmailBody,
 } from "@root/services/utilServices/SendDNSRecordEmailClient"
 import TRUSTED_AMPLIFY_CAA_RECORDS from "@root/types/caaAmplify"
+import { isErrnoException } from "@root/types/nodeError"
 import { SiteLaunchResult } from "@root/types/siteLaunch"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
@@ -244,12 +245,15 @@ export class FormsgSiteLaunchRouter {
         type: "AAAA",
         value: record,
       }))
-    } catch (e: any) {
-      if (e.code && e.code === "ENODATA") {
+    } catch (e) {
+      if (isErrnoException(e) && e.code === "ENODATA") {
         logger.info(
-          `Unable to get dig response for domain: ${launchResult.primaryDomainSource}. Skipping check for AAAA records`
+          `Domain ${launchResult.primaryDomainSource} does not have any AAAA records.`
         )
       }
+      logger.error(
+        `Error when trying to get AAAA records for domain ${launchResult.primaryDomainSource}: ${e}`
+      )
       throw e
     }
   }
@@ -265,50 +269,54 @@ export class FormsgSiteLaunchRouter {
         launchResult.primaryDomainSource
       )
 
-      if (caaDigResponses.length > 0) {
-        const caaRecords = caaDigResponses
+      if (caaDigResponses.length === 0) {
+        return {
+          addAWSACMCertCAA: false,
+          addLetsEncryptCAA: false,
+        }
+      }
 
-        /**
-         * NOTE: If there exists more than one CAA Record, we need to
-         * 1. check if they have whitelisted Amazon CAA && letsencrypt.org CAA (if using redir)
-         * 2. if not, send email to inform them to whitelist Amazon CAA and letsencrypt.org CAA (if using redir)
-         */
-        const hasAmazonCAAWhitelisted = caaRecords.some((record) => {
-          const isAmazonCAA = TRUSTED_AMPLIFY_CAA_RECORDS.some(
-            (trustedCAA) =>
-              trustedCAA === record.issue || trustedCAA === record.issuewild
-          )
-          return isAmazonCAA
+      const caaRecords = caaDigResponses
+
+      /**
+       * NOTE: If there exists more than one CAA Record, we need to
+       * 1. check if they have whitelisted Amazon CAA && letsencrypt.org CAA (if using redir)
+       * 2. if not, send email to inform them to whitelist Amazon CAA and letsencrypt.org CAA (if using redir)
+       */
+      const hasAmazonCAAWhitelisted = caaRecords.some((record) => {
+        const isAmazonCAA = TRUSTED_AMPLIFY_CAA_RECORDS.some(
+          (trustedCAA) =>
+            trustedCAA === record.issue || trustedCAA === record.issuewild
+        )
+        return isAmazonCAA
+      })
+
+      const isUsingRedirectionService = !!launchResult.redirectionDomainSource
+
+      const needsLetsEncryptCAAWhitelisted =
+        isUsingRedirectionService &&
+        !caaRecords.some((record) => {
+          const isLetsEncryptCAA =
+            record.issue === "letsencrypt.org" ||
+            record.issuewild === "letsencrypt.org"
+          return isLetsEncryptCAA
         })
 
-        const isUsingRedirectionService = !!launchResult.redirectionDomainSource
-
-        const needsLetsEncryptCAAWhitelisted =
-          isUsingRedirectionService &&
-          !caaRecords.some((record) => {
-            const isLetsEncryptCAA =
-              record.issue === "letsencrypt.org" ||
-              record.issuewild === "letsencrypt.org"
-            return isLetsEncryptCAA
-          })
-
-        const result = {
-          addAWSACMCertCAA: !hasAmazonCAAWhitelisted,
-          addLetsEncryptCAA: needsLetsEncryptCAAWhitelisted,
-        }
-
-        return result
+      const result = {
+        addAWSACMCertCAA: !hasAmazonCAAWhitelisted,
+        addLetsEncryptCAA: needsLetsEncryptCAAWhitelisted,
       }
-      return {
-        addAWSACMCertCAA: false,
-        addLetsEncryptCAA: false,
-      }
-    } catch (e: any) {
-      if (e.code && e.code === "ENODATA") {
+
+      return result
+    } catch (e) {
+      if (isErrnoException(e) && e.code === "ENODATA") {
         logger.info(
-          `Unable to get dig response for domain: ${launchResult.primaryDomainSource}. Skipping check for CAA records`
+          `Domain ${launchResult.primaryDomainSource} does not have any CAA records.`
         )
       }
+      logger.error(
+        `Error when trying to get CAA records for domain ${launchResult.primaryDomainSource}: ${e}`
+      )
       throw e
     }
   }

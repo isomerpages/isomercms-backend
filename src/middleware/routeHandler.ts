@@ -76,10 +76,16 @@ type RouteWrapper<
   next: NextFunction
 ) => void
 
-function nameRouteHandlerWrapper(
-  func: WrappedRouteHandler,
+const nameRouteHandlerWrapper = <
+  ResBody,
+  ReqBody,
+  ReqQuery,
+  Params = Record<string, unknown>,
+  Locals extends Record<string, unknown> = Record<string, unknown>
+>(
+  func: RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>,
   name: string
-): WrappedRouteHandler {
+): RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals> => {
   Object.defineProperty(func, "name", { value: name, writable: false })
   return func
 }

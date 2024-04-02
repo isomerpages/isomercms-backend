@@ -487,5 +487,5 @@ sequelize
 
     // If we cannot connect to the db, report an error using status code
     // And gracefully shut down the application since we can't serve client
-    process.exitCode = 1
+    process.exit(1)
   })

@@ -76,52 +76,66 @@ type RouteWrapper<
   next: NextFunction
 ) => void
 
-// Used when there are no write API calls to the repo on GitHub
-export const attachReadRouteHandlerWrapper: RouteWrapper = (
-  routeHandler
-) => async (req, res, next) => {
-  Promise.resolve(routeHandler(req, res, next)).catch((err: Error) => {
-    next(err)
-  })
+const nameRouteHandlerWrapper = <
+  ResBody,
+  ReqBody,
+  ReqQuery,
+  Params = Record<string, unknown>,
+  Locals extends Record<string, unknown> = Record<string, unknown>
+>(
+  func: RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>,
+  name: string
+): RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals> => {
+  Object.defineProperty(func, "name", { value: name, writable: false })
+  return func
 }
+
+// Used when there are no write API calls to the repo on GitHub
+export const attachReadRouteHandlerWrapper: RouteWrapper = (routeHandler) =>
+  nameRouteHandlerWrapper(async (req, res, next) => {
+    Promise.resolve(routeHandler(req, res, next)).catch((err: Error) => {
+      next(err)
+    })
+  }, routeHandler.name)
 
 // Used when there are write API calls to the repo on GitHub
 export const attachWriteRouteHandlerWrapper: RouteWrapper<{
   siteName: string
-}> = (routeHandler) => async (req, res, next) => {
-  const { siteName } = req.params
-  const { growthbook } = req
+}> = (routeHandler) =>
+  nameRouteHandlerWrapper(async (req, res, next) => {
+    const { siteName } = req.params
+    const { growthbook } = req
 
-  let isGitAvailable = true
+    let isGitAvailable = true
 
-  // only check git file lock if the repo is ggs enabled
-  if (growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_ENABLED, false)) {
-    isGitAvailable = await handleGitFileLock(siteName, next)
-  }
+    // only check git file lock if the repo is ggs enabled
+    if (growthbook?.getFeatureValue(FEATURE_FLAGS.IS_GGS_ENABLED, false)) {
+      isGitAvailable = await handleGitFileLock(siteName, next)
+    }
 
-  if (!isGitAvailable) return
+    if (!isGitAvailable) return
 
-  try {
-    await lock(siteName)
-  } catch (err) {
-    next(err)
-    return
-  }
+    try {
+      await lock(siteName)
+    } catch (err) {
+      next(err)
+      return
+    }
 
-  Promise.resolve(routeHandler(req, res, next)).then(
-    async () => {
-      try {
+    Promise.resolve(routeHandler(req, res, next)).then(
+      async () => {
+        try {
+          await unlock(siteName)
+        } catch (err) {
+          next(err)
+        }
+      },
+      async (err) => {
         await unlock(siteName)
-      } catch (err) {
         next(err)
       }
-    },
-    async (err) => {
-      await unlock(siteName)
-      next(err)
-    }
-  )
-}
+    )
+  }, routeHandler.name)
 
 export const attachRollbackRouteHandlerWrapper: RouteWrapper<
   {
@@ -133,196 +147,197 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
     userWithSiteSessionData: UserWithSiteSessionData
     githubSessionData: GithubSessionData
   }
-> = (routeHandler) => async (req, res, next: NextFunction) => {
-  const { userWithSiteSessionData } = res.locals
-  const { siteName } = req.params
+> = (routeHandler) =>
+  nameRouteHandlerWrapper(async (req, res, next: NextFunction) => {
+    const { userWithSiteSessionData } = res.locals
+    const { siteName } = req.params
 
-  const { accessToken } = userWithSiteSessionData
-  const { growthbook } = req
+    const { accessToken } = userWithSiteSessionData
+    const { growthbook } = req
 
-  if (!growthbook) {
-    next(new Error("GrowthBook instance is undefined."))
-    return
-  }
-
-  const isGitAvailable = await isGitFileAndIsGitAvail(
-    growthbook,
-    siteName,
-    next
-  )
-
-  if (!isGitAvailable) return
-  try {
-    await lock(siteName)
-  } catch (err) {
-    next(err)
-    return
-  }
-
-  let originalStagingCommitSha: string
-  let originalStagingLiteCommitSha: string
-
-  const shouldUseGitFileSystem = growthbook?.getFeatureValue(
-    FEATURE_FLAGS.IS_GGS_ENABLED,
-    false
-  )
-  const shouldCheckStagingLite = growthbook?.getFeatureValue(
-    FEATURE_FLAGS.IS_BUILD_TIMES_REDUCTION_ENABLED,
-    false
-  )
-
-  if (shouldUseGitFileSystem && shouldCheckStagingLite) {
-    // ggs + quickie
-    const results = await ResultAsync.combine([
-      gitFileSystemService.getLatestCommitOfBranch(siteName, STAGING_BRANCH),
-      gitFileSystemService.getLatestCommitOfBranch(
-        siteName,
-        STAGING_LITE_BRANCH
-      ),
-    ])
-
-    if (results.isErr()) {
-      await unlock(siteName)
-      next(results.error)
-      return
-    }
-    const [stagingResult, stagingLiteResult] = results.value
-    if (!stagingResult.sha || !stagingLiteResult.sha) {
-      await unlock(siteName)
+    if (!growthbook) {
+      next(new Error("GrowthBook instance is undefined."))
       return
     }
 
-    originalStagingCommitSha = stagingResult.sha
-    originalStagingLiteCommitSha = stagingLiteResult.sha
-    // Unused for git file system, but to maintain existing structure
-    res.locals.githubSessionData = new GithubSessionData({
-      currentCommitSha: "",
-      treeSha: "",
-    })
-  } else if (shouldUseGitFileSystem && !shouldCheckStagingLite) {
-    // ggs alone
-    const result = await gitFileSystemService.getLatestCommitOfBranch(
+    const isGitAvailable = await isGitFileAndIsGitAvail(
+      growthbook,
       siteName,
-      STAGING_BRANCH
+      next
     )
 
-    if (result.isErr()) {
-      await unlock(siteName)
-      next(result.error)
-      return
-    }
-
-    if (!result.value.sha) {
-      await unlock(siteName)
-      return
-    }
-
-    originalStagingCommitSha = result.value.sha
-    // Unused for git file system, but to maintain existing structure
-    res.locals.githubSessionData = new GithubSessionData({
-      currentCommitSha: "",
-      treeSha: "",
-    })
-  } else {
-    // non-GGS flow
+    if (!isGitAvailable) return
     try {
-      const {
-        currentCommitSha: currentStgCommitSha,
-        treeSha: stgTreeSha,
-      } = await getCommitAndTreeSha(siteName, accessToken, STAGING_BRANCH)
-
-      const githubSessionData = new GithubSessionData({
-        currentCommitSha: currentStgCommitSha,
-        treeSha: stgTreeSha,
-      })
-      res.locals.githubSessionData = githubSessionData
-
-      originalStagingCommitSha = currentStgCommitSha
+      await lock(siteName)
     } catch (err) {
-      await unlock(siteName)
-      logger.error(
-        `Failed to rollback repo ${siteName}: ${JSON.stringify(err)}`
-      )
       next(err)
       return
     }
-  }
 
-  Promise.resolve(routeHandler(req, res, next)).then(
-    async () => {
-      try {
+    let originalStagingCommitSha: string
+    let originalStagingLiteCommitSha: string
+
+    const shouldUseGitFileSystem = growthbook?.getFeatureValue(
+      FEATURE_FLAGS.IS_GGS_ENABLED,
+      false
+    )
+    const shouldCheckStagingLite = growthbook?.getFeatureValue(
+      FEATURE_FLAGS.IS_BUILD_TIMES_REDUCTION_ENABLED,
+      false
+    )
+
+    if (shouldUseGitFileSystem && shouldCheckStagingLite) {
+      // ggs + quickie
+      const results = await ResultAsync.combine([
+        gitFileSystemService.getLatestCommitOfBranch(siteName, STAGING_BRANCH),
+        gitFileSystemService.getLatestCommitOfBranch(
+          siteName,
+          STAGING_LITE_BRANCH
+        ),
+      ])
+
+      if (results.isErr()) {
         await unlock(siteName)
-      } catch (err) {
-        next(err)
+        next(results.error)
+        return
       }
-    },
-    async (err: Error) => {
-      try {
-        if (shouldUseGitFileSystem) {
-          await backOff(
-            () =>
-              convertNeverThrowToPromise(
-                gitFileSystemService.rollback(
-                  siteName,
-                  originalStagingCommitSha,
-                  STAGING_BRANCH
-                )
-              ),
-            backoffOptions
-          )
+      const [stagingResult, stagingLiteResult] = results.value
+      if (!stagingResult.sha || !stagingLiteResult.sha) {
+        await unlock(siteName)
+        return
+      }
 
-          if (shouldCheckStagingLite) {
-            // for quickie sites
+      originalStagingCommitSha = stagingResult.sha
+      originalStagingLiteCommitSha = stagingLiteResult.sha
+      // Unused for git file system, but to maintain existing structure
+      res.locals.githubSessionData = new GithubSessionData({
+        currentCommitSha: "",
+        treeSha: "",
+      })
+    } else if (shouldUseGitFileSystem && !shouldCheckStagingLite) {
+      // ggs alone
+      const result = await gitFileSystemService.getLatestCommitOfBranch(
+        siteName,
+        STAGING_BRANCH
+      )
+
+      if (result.isErr()) {
+        await unlock(siteName)
+        next(result.error)
+        return
+      }
+
+      if (!result.value.sha) {
+        await unlock(siteName)
+        return
+      }
+
+      originalStagingCommitSha = result.value.sha
+      // Unused for git file system, but to maintain existing structure
+      res.locals.githubSessionData = new GithubSessionData({
+        currentCommitSha: "",
+        treeSha: "",
+      })
+    } else {
+      // non-GGS flow
+      try {
+        const {
+          currentCommitSha: currentStgCommitSha,
+          treeSha: stgTreeSha,
+        } = await getCommitAndTreeSha(siteName, accessToken, STAGING_BRANCH)
+
+        const githubSessionData = new GithubSessionData({
+          currentCommitSha: currentStgCommitSha,
+          treeSha: stgTreeSha,
+        })
+        res.locals.githubSessionData = githubSessionData
+
+        originalStagingCommitSha = currentStgCommitSha
+      } catch (err) {
+        await unlock(siteName)
+        logger.error(
+          `Failed to rollback repo ${siteName}: ${JSON.stringify(err)}`
+        )
+        next(err)
+        return
+      }
+    }
+
+    Promise.resolve(routeHandler(req, res, next)).then(
+      async () => {
+        try {
+          await unlock(siteName)
+        } catch (err) {
+          next(err)
+        }
+      },
+      async (err: Error) => {
+        try {
+          if (shouldUseGitFileSystem) {
             await backOff(
               () =>
                 convertNeverThrowToPromise(
                   gitFileSystemService.rollback(
                     siteName,
-                    originalStagingLiteCommitSha,
-                    STAGING_LITE_BRANCH
+                    originalStagingCommitSha,
+                    STAGING_BRANCH
                   )
                 ),
               backoffOptions
             )
-          }
 
-          await backOff(() => {
-            let pushRes = gitFileSystemService.push(
-              siteName,
-              STAGING_BRANCH,
-              true
-            )
-            if (originalStagingLiteCommitSha) {
-              pushRes = pushRes.andThen(() =>
-                gitFileSystemService.push(siteName, STAGING_LITE_BRANCH, true)
+            if (shouldCheckStagingLite) {
+              // for quickie sites
+              await backOff(
+                () =>
+                  convertNeverThrowToPromise(
+                    gitFileSystemService.rollback(
+                      siteName,
+                      originalStagingLiteCommitSha,
+                      STAGING_LITE_BRANCH
+                    )
+                  ),
+                backoffOptions
               )
             }
 
-            return convertNeverThrowToPromise(pushRes)
-          }, backoffOptions)
-        } else {
-          // Github flow
-          await backOff(
-            () =>
-              revertCommit(
-                originalStagingCommitSha,
+            await backOff(() => {
+              let pushRes = gitFileSystemService.push(
                 siteName,
-                accessToken,
-                STAGING_BRANCH
-              ),
-            backoffOptions
+                STAGING_BRANCH,
+                true
+              )
+              if (originalStagingLiteCommitSha) {
+                pushRes = pushRes.andThen(() =>
+                  gitFileSystemService.push(siteName, STAGING_LITE_BRANCH, true)
+                )
+              }
+
+              return convertNeverThrowToPromise(pushRes)
+            }, backoffOptions)
+          } else {
+            // Github flow
+            await backOff(
+              () =>
+                revertCommit(
+                  originalStagingCommitSha,
+                  siteName,
+                  accessToken,
+                  STAGING_BRANCH
+                ),
+              backoffOptions
+            )
+          }
+        } catch (retryErr) {
+          await unlock(siteName)
+          logger.error(
+            `Failed to rollback repo ${siteName}: ${JSON.stringify(retryErr)}`
           )
+          next(retryErr)
+          return
         }
-      } catch (retryErr) {
         await unlock(siteName)
-        logger.error(
-          `Failed to rollback repo ${siteName}: ${JSON.stringify(retryErr)}`
-        )
-        next(retryErr)
-        return
+        next(err)
       }
-      await unlock(siteName)
-      next(err)
-    }
-  )
-}
+    )
+  }, routeHandler.name)

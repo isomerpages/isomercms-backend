@@ -1,9 +1,11 @@
-export function isErrnoException(obj: any): obj is NodeJS.ErrnoException {
+/* eslint-disable import/prefer-default-export */
+export function isErrnoException(obj: unknown): obj is NodeJS.ErrnoException {
+  const err = obj as NodeJS.ErrnoException
   return (
-    obj &&
-    (typeof obj.errno === "number" || obj.errno === undefined) &&
-    (typeof obj.code === "string" || obj.code === undefined) &&
-    (typeof obj.path === "string" || obj.path === undefined) &&
-    (typeof obj.syscall === "string" || obj.syscall === undefined)
+    err &&
+    (typeof err.errno === "number" || err.errno === undefined) &&
+    (typeof err.code === "string" || err.code === undefined) &&
+    (typeof err.path === "string" || err.path === undefined) &&
+    (typeof err.syscall === "string" || err.syscall === undefined)
   )
 }

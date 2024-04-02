@@ -108,16 +108,19 @@ export const attachWriteRouteHandlerWrapper: RouteWrapper<{
     return
   }
 
-  Promise.resolve(routeHandler(req, res, next)).catch(async (err: Error) => {
-    await unlock(siteName)
-    next(err)
-  })
-
-  try {
-    await unlock(siteName)
-  } catch (err) {
-    next(err)
-  }
+  Promise.resolve(routeHandler(req, res, next)).then(
+    async () => {
+      try {
+        await unlock(siteName)
+      } catch (err) {
+        next(err)
+      }
+    },
+    async (err) => {
+      await unlock(siteName)
+      next(err)
+    }
+  )
 }
 
 export const attachRollbackRouteHandlerWrapper: RouteWrapper<

@@ -88,7 +88,7 @@ const nameRouteHandlerWrapper = <
 ): RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals> => {
   if (original.name) {
     Object.defineProperty(wrapper, "name", {
-      value: original.name,
+      value: original.name.replace(/^bound /, ""),
       writable: false,
     })
   }

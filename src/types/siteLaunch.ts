@@ -40,6 +40,19 @@ export interface SiteLaunchMessage {
   statusMetadata?: string
 }
 
+export type SiteLaunchResult = Omit<
+  SiteLaunchMessage,
+  | "status"
+  | "statusMetadata"
+  | "redirectionDomain"
+  | "appId"
+  | "requestorEmail"
+  | "agencyEmail"
+> & {
+  redirectionDomainSource?: string
+  redirectionDomainTarget?: string
+}
+
 export function isSiteLaunchMessage(obj: unknown): obj is SiteLaunchMessage {
   if (!obj) {
     return false

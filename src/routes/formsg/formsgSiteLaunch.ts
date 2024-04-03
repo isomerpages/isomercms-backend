@@ -1,9 +1,10 @@
+import { CaaRecord } from "node:dns"
+import dnsPromises from "node:dns/promises"
+
 import { DecryptedContentAndAttachments } from "@opengovsg/formsg-sdk/dist/types"
 import autoBind from "auto-bind"
-import axios from "axios"
 import express, { RequestHandler } from "express"
 import { err, ok } from "neverthrow"
-import dig from "node-dig-dns"
 
 import { config } from "@config/config"
 
@@ -17,13 +18,15 @@ import { ISOMER_SUPPORT_EMAIL } from "@root/constants"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import {
+  DigDNSRecord,
   DnsRecordsEmailProps,
   LaunchFailureEmailProps,
   getDNSRecordsEmailBody,
   getErrorEmailBody,
 } from "@root/services/utilServices/SendDNSRecordEmailClient"
 import TRUSTED_AMPLIFY_CAA_RECORDS from "@root/types/caaAmplify"
-import { DigResponse, DigType } from "@root/types/dig"
+import { isErrnoException } from "@root/types/nodeError"
+import { SiteLaunchResult } from "@root/types/siteLaunch"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
 
@@ -225,23 +228,98 @@ export class FormsgSiteLaunchRouter {
     await mailer.sendMail(requesterEmail, subject, html)
   }
 
-  digDomainRecords = async (
-    domain: string,
-    digType: DigType
-  ): Promise<DigResponse | null> =>
-    dig([domain, digType])
-      .then((result: DigResponse) => {
-        logger.info(`Received DIG response: ${JSON.stringify(result)}`)
-        return result
-      })
-      .catch((err: unknown) => {
-        logger.error(
-          `An error occurred while performing dig for domain: ${domain}: ${JSON.stringify(
-            err
-          )}`
+  digAAAADomainRecords = async (
+    launchResult: SiteLaunchResult
+  ): Promise<DigDNSRecord[]> => {
+    try {
+      // check for AAAA records
+      const quadADigResponses = await dnsPromises.resolve6(
+        launchResult.primaryDomainSource
+      )
+
+      if (quadADigResponses.length <= 0) {
+        return []
+      }
+      return quadADigResponses.map((record) => ({
+        domain: launchResult.primaryDomainSource,
+        type: "AAAA",
+        value: record,
+      }))
+    } catch (e) {
+      if (isErrnoException(e) && e.code === "ENODATA") {
+        logger.info(
+          `Domain ${launchResult.primaryDomainSource} does not have any AAAA records.`
         )
-        return null
+      }
+      logger.error(
+        `Error when trying to get AAAA records for domain ${launchResult.primaryDomainSource}: ${e}`
+      )
+      throw e
+    }
+  }
+
+  digCAADomainRecords = async (
+    launchResult: SiteLaunchResult
+  ): Promise<{
+    addAWSACMCertCAA: boolean
+    addLetsEncryptCAA: boolean
+  }> => {
+    try {
+      const caaDigResponses: CaaRecord[] = await dnsPromises.resolveCaa(
+        launchResult.primaryDomainSource
+      )
+
+      if (caaDigResponses.length === 0) {
+        return {
+          addAWSACMCertCAA: false,
+          addLetsEncryptCAA: false,
+        }
+      }
+
+      const caaRecords = caaDigResponses
+
+      /**
+       * NOTE: If there exists more than one CAA Record, we need to
+       * 1. check if they have whitelisted Amazon CAA && letsencrypt.org CAA (if using redir)
+       * 2. if not, send email to inform them to whitelist Amazon CAA and letsencrypt.org CAA (if using redir)
+       */
+      const hasAmazonCAAWhitelisted = caaRecords.some((record) => {
+        const isAmazonCAA = TRUSTED_AMPLIFY_CAA_RECORDS.some(
+          (trustedCAA) =>
+            trustedCAA === record.issue || trustedCAA === record.issuewild
+        )
+        return isAmazonCAA
       })
+
+      const isUsingRedirectionService = !!launchResult.redirectionDomainSource
+
+      const needsLetsEncryptCAAWhitelisted =
+        isUsingRedirectionService &&
+        !caaRecords.some((record) => {
+          const isLetsEncryptCAA =
+            record.issue === "letsencrypt.org" ||
+            record.issuewild === "letsencrypt.org"
+          return isLetsEncryptCAA
+        })
+
+      const result = {
+        addAWSACMCertCAA: !hasAmazonCAAWhitelisted,
+        addLetsEncryptCAA: needsLetsEncryptCAAWhitelisted,
+      }
+
+      return result
+    } catch (e) {
+      if (isErrnoException(e) && e.code === "ENODATA") {
+        logger.info(
+          `Domain ${launchResult.primaryDomainSource} does not have any CAA records.`
+        )
+      }
+      logger.error(
+        `Error when trying to get CAA records for domain ${launchResult.primaryDomainSource}: ${e}`
+      )
+      throw e
+    }
+  }
 
   private async handleSiteLaunchResults(
     formResponses: FormResponsesProps[],
@@ -254,60 +332,18 @@ export class FormsgSiteLaunchRouter {
       const successResults: DnsRecordsEmailProps[] = []
       for (const launchResult of launchResults) {
         if (launchResult.isOk()) {
-          // check for AAAA records
-          const quadADigResponse = await this.digDomainRecords(
-            launchResult.value.primaryDomainSource,
-            "AAAA"
-          )
-          const caaDigResponse = await this.digDomainRecords(
-            launchResult.value.primaryDomainSource,
-            "CAA"
-          )
-
           const successResult: DnsRecordsEmailProps = launchResult.value
-          if (quadADigResponse && quadADigResponse.answer) {
-            const quadARecords = quadADigResponse.answer
-            successResult.quadARecords = quadARecords.map((record) => ({
-              domain: record.domain,
-              class: record.class,
-              type: record.type,
-              value: record.value,
-            }))
-          } else {
-            logger.info(
-              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for AAAA records`
-            )
-          }
 
-          if (!caaDigResponse) {
-            logger.info(
-              `Unable to get dig response for domain: ${launchResult.value.primaryDomainSource}. Skipping check for CAA records`
-            )
-          } else if (caaDigResponse.answer) {
-            const caaRecords = caaDigResponse.answer
+          successResult.quadARecords = await this.digAAAADomainRecords(
+            launchResult.value
+          )
+          const {
+            addAWSACMCertCAA,
+            addLetsEncryptCAA,
+          } = await this.digCAADomainRecords(launchResult.value)
 
-            /**
-             * NOTE: If there exists more than one CAA Record, we need to
-             * 1. check if they have whitelisted Amazon CAA
-             * 2. if not, send email to inform them to whitelist Amazon CAA
-             */
-            const hasAmazonCAAWhitelisted = caaRecords.some((record) => {
-              const isAmazonCAA = TRUSTED_AMPLIFY_CAA_RECORDS.some(
-                (trustedCAA) => trustedCAA === record.value
-              )
-              return isAmazonCAA
-            })
-            if (caaRecords.length > 0 && !hasAmazonCAAWhitelisted) {
-              successResult.addCAARecord = true
-            } else {
-              successResult.addCAARecord = false
-            }
-          } else {
-            logger.info(
-              `${launchResult.value.primaryDomainSource} Domain does not have any CAA records.`
-            )
-          }
-          // Create better uptime monitor
+          successResult.addAWSACMCertCAA = addAWSACMCertCAA
+          successResult.addLetsEncryptCAA = addLetsEncryptCAA
           successResults.push(successResult)
         }
       }

@@ -11,6 +11,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
 import { attachSiteHandler } from "@root/middleware"
 import type { RequestHandler } from "@root/types"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import { ResetRepoSchema } from "@root/validators/RequestSchema"
 import RepoManagementService from "@services/admin/RepoManagementService"
 
@@ -30,6 +31,7 @@ export class RepoManagementRouter {
   }: RepoManagementRouterProps) {
     this.repoManagementService = repoManagementService
     this.authorizationMiddleware = authorizationMiddleware
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

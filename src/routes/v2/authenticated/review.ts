@@ -31,6 +31,7 @@ import {
   BlobDiffDto,
   EditedItemDto,
 } from "@root/types/dto/review"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import {
   CreateCommentSchema,
   CreateReviewRequestSchema,
@@ -66,6 +67,7 @@ export class ReviewsRouter {
     this.notificationsService = notificationsService
     this.githubService = githubService
 
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

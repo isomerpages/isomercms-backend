@@ -21,6 +21,7 @@ import { RepositoryData } from "@root/types/repoInfo"
 import { BrokenLinkErrorDto } from "@root/types/siteChecker"
 import { SiteInfo, SiteLaunchDto } from "@root/types/siteInfo"
 import { StagingBuildStatus } from "@root/types/stagingBuildStatus"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import {
   GetPreviewInfoSchema,
   LaunchSiteSchema,
@@ -60,6 +61,7 @@ export class SitesRouter {
     this.infraService = infraService
     this.repoCheckerService = repoCheckerService
     // We need to bind all methods because we don't invoke them from the class directly
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

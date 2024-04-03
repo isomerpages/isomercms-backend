@@ -1,0 +1,23 @@
+diff --git a/node_modules/auto-bind/index.js b/node_modules/auto-bind/index.js
+index c4487af..200e1b9 100644
+--- a/node_modules/auto-bind/index.js
++++ b/node_modules/auto-bind/index.js
+@@ -35,7 +35,18 @@ module.exports = (self, {include, exclude} = {}) => {
+ 
+ 		const descriptor = Reflect.getOwnPropertyDescriptor(object, key);
+ 		if (descriptor && typeof descriptor.value === 'function') {
++			const originalName = self[key].name
++
+ 			self[key] = self[key].bind(self);
++
++			// after binding the method names will be "bound methodName"
++			// We reset the name to the original to drop the bound
++			// OR, we set the name to the method key if the method was anonymous
++			// Note that alternatively, we could conditionally set the name ONLY for anonymous function
++			Object.defineProperty(self[key], "name", {
++				value: originalName || key,
++				writable: false,
++			})
+ 		}
+ 	}
+ 

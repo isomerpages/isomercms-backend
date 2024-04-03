@@ -228,6 +228,7 @@ class NotificationsService {
     const recentTargetNotification = await this.repository.findOne({
       where: {
         user_id: siteMember.userId,
+        site_id: siteMember.siteId,
         type: notificationType,
         created_at: {
           [Op.gte]: getNotificationExpiryDate(notificationType),
@@ -235,16 +236,6 @@ class NotificationsService {
         link,
         source_username: notificationSourceUsername,
       },
-      include: [
-        {
-          model: Site,
-          as: "site",
-          required: true,
-          where: {
-            id: siteMember.siteId,
-          },
-        },
-      ],
     })
 
     if (recentTargetNotification) {

@@ -17,6 +17,7 @@ import type {
   MediaFileOutput,
   RequestHandler,
 } from "@root/types"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import {
   CreateMediaDirectoryRequestSchema,
   CreateMediaFileRequestSchema,
@@ -44,6 +45,7 @@ export class MediaRouter {
     this.mediaFileService = mediaFileService
     this.mediaDirectoryService = mediaDirectoryService
     // We need to bind all methods because we don't invoke them from the class directly
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

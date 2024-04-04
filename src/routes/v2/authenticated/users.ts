@@ -13,6 +13,7 @@ import UserSessionData from "@classes/UserSessionData"
 
 import DatabaseError from "@root/errors/DatabaseError"
 import { isError, RequestHandler } from "@root/types"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import {
   VerifyEmailOtpSchema,
   VerifyMobileNumberOtpSchema,
@@ -29,6 +30,7 @@ export class UsersRouter {
 
   constructor({ usersService }: UsersRouterProps) {
     this.usersService = usersService
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

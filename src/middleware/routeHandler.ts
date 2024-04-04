@@ -83,11 +83,16 @@ const nameRouteHandlerWrapper = <
   Params = Record<string, unknown>,
   Locals extends Record<string, unknown> = Record<string, unknown>
 >(
-  func: RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>,
-  name: string
+  wrapper: RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>,
+  original: { name: string }
 ): RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals> => {
-  Object.defineProperty(func, "name", { value: name, writable: false })
-  return func
+  if (original.name) {
+    Object.defineProperty(wrapper, "name", {
+      value: original.name.replace(/^bound /, ""),
+      writable: false,
+    })
+  }
+  return wrapper
 }
 
 // Used when there are no write API calls to the repo on GitHub
@@ -96,7 +101,7 @@ export const attachReadRouteHandlerWrapper: RouteWrapper = (routeHandler) =>
     Promise.resolve(routeHandler(req, res, next)).catch((err: Error) => {
       next(err)
     })
-  }, routeHandler.name)
+  }, routeHandler)
 
 // Used when there are write API calls to the repo on GitHub
 export const attachWriteRouteHandlerWrapper: RouteWrapper<{
@@ -135,7 +140,7 @@ export const attachWriteRouteHandlerWrapper: RouteWrapper<{
         next(err)
       }
     )
-  }, routeHandler.name)
+  }, routeHandler)
 
 export const attachRollbackRouteHandlerWrapper: RouteWrapper<
   {
@@ -340,4 +345,4 @@ export const attachRollbackRouteHandlerWrapper: RouteWrapper<
         next(err)
       }
     )
-  }, routeHandler.name)
+  }, routeHandler)

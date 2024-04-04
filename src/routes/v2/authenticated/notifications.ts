@@ -10,6 +10,7 @@ import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { attachSiteHandler } from "@root/middleware"
 import { AuthorizationMiddleware } from "@root/middleware/authorization"
 import { RequestHandler } from "@root/types"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import NotificationsService, {
   NotificationResponse,
 } from "@services/identity/NotificationsService"
@@ -31,6 +32,7 @@ export class NotificationsRouter {
   }: NotificationsRouterProps) {
     this.notificationsService = notificationsService
     this.authorizationMiddleware = authorizationMiddleware
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

@@ -11,6 +11,7 @@ import { BadRequestError } from "@errors/BadRequestError"
 import { getField } from "@utils/formsg-utils"
 
 import { attachFormSGHandler } from "@root/middleware"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import GitFileSystemService from "@services/db/GitFileSystemService"
 import UsersService from "@services/identity/UsersService"
 import InfraService from "@services/infra/InfraService"
@@ -45,6 +46,7 @@ export class FormsgSiteCreateRouter {
     this.infraService = infraService
     this.gitFileSystemService = gitFileSystemService
     // We need to bind all methods because we don't invoke them from the class directly
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

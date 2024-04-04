@@ -19,6 +19,7 @@ import {
 import { RequestHandler } from "@root/types"
 import { ResponseErrorBody } from "@root/types/dto/error"
 import { isPublicOfficerData, PublicOfficerData } from "@root/types/sgid"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import { isSecure } from "@root/utils/auth-utils"
 import { EmailSchema } from "@root/validators/RequestSchema"
 import UsersService from "@services/identity/UsersService"
@@ -42,6 +43,7 @@ export class SgidAuthRouter {
   constructor({ usersService, sgidAuthService }: SgidAuthRouterProps) {
     this.usersService = usersService
     this.sgidAuthService = sgidAuthService
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

@@ -13,6 +13,7 @@ import { attachSiteHandler } from "@root/middleware"
 import { RouteCheckerMiddleware } from "@root/middleware/routeChecker"
 import { RequestHandler } from "@root/types"
 import { UserDto } from "@root/types/dto/review"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import { CreateCollaboratorRequestSchema } from "@root/validators/RequestSchema"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 
@@ -33,6 +34,7 @@ export class CollaboratorsRouter {
   }: CollaboratorsRouterProps) {
     this.collaboratorsService = collaboratorsService
     this.authorizationMiddleware = authorizationMiddleware
+    nameAnonymousMethods(this)
     autoBind(this)
   }
 

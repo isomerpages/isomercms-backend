@@ -382,6 +382,7 @@ const UpdateNavigationRequestSchema = Joi.object().keys({
                 })
               ),
               false_collection: Joi.boolean(),
+              external: Joi.boolean(),
             })
             .oxor("url", "collection", "resource_room")
             .oxor("sublinks", "collection")

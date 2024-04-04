@@ -21,8 +21,5 @@ export const nameAnonymousMethods = <SelfType extends { [key: string]: any }>(
       writable: false,
     })
   }
-  /* eslint-enable no-restricted-syntax */
-  /* eslint-enable no-continue */
-
   return self
 }

@@ -2,8 +2,6 @@ import { GrowthBook } from "@growthbook/growthbook"
 import {
   RequestHandler as ExpressHandler,
   Request as ExpressRequest,
-  Response,
-  NextFunction,
 } from "express"
 
 import { FeatureFlags } from "./featureFlags"

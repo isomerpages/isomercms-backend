@@ -136,28 +136,32 @@ class UsersService {
   }
 
   async login(githubId: string): Promise<User> {
-    return this.sequelize.transaction<User>(async (transaction) => {
-      const [user] = await this.repository.findOrCreate({
-        where: { githubId },
-        transaction,
-      })
-      user.lastLoggedIn = new Date()
-
-      return user.save({ transaction })
+    const loginUpdate = { lastLoggedIn: new Date() }
+    const [user, created] = await this.repository.findOrCreate({
+      where: { githubId },
+      defaults: loginUpdate,
     })
+
+    if (!created) {
+      await user.update(loginUpdate)
+    }
+
+    return user
   }
 
   async loginWithEmail(email: string): Promise<User> {
     const parsedEmail = email.toLowerCase()
-    return this.sequelize.transaction<User>(async (transaction) => {
-      const [user] = await this.repository.findOrCreate({
-        where: { email: parsedEmail },
-        transaction,
-      })
-      user.lastLoggedIn = new Date()
-
-      return user.save({ transaction })
+    const loginUpdate = { lastLoggedIn: new Date() }
+    const [user, created] = await this.repository.findOrCreate({
+      where: { email: parsedEmail },
+      defaults: loginUpdate,
     })
+
+    if (!created) {
+      await user.update(loginUpdate)
+    }
+
+    return user
   }
 
   async canSendEmailOtp(email: string) {

@@ -102,8 +102,9 @@ describe("User Service", () => {
 
   it("should call `findOrCreate` on the db model and set the lastLoggedIn", async () => {
     // Arrange
+    const testTime = Date.now()
     const mockDbUser = {
-      save: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
       githubId: mockGithubId,
     }
     MockRepository.findOrCreate.mockResolvedValue([mockDbUser])
@@ -112,16 +113,13 @@ describe("User Service", () => {
     const actual = await UsersService.login(mockGithubId)
 
     // Assert
-    expect(MockSequelize.transaction).toBeCalled()
     expect(MockRepository.findOrCreate).toBeCalledWith({
       where: { githubId: mockGithubId },
-      transaction: "transaction",
+      defaults: { lastLoggedIn: expect.any(Date) },
     })
     expect(actual.lastLoggedIn).toBeDefined()
+    expect(actual.lastLoggedIn.getTime()).toBeGreaterThanOrEqual(testTime)
     expect(actual.githubId).toBe(mockGithubId)
-    expect(actual.save).toBeCalledWith({
-      transaction: "transaction",
-    })
   })
 
   it("should allow whitelisted emails", async () => {

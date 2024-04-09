@@ -189,20 +189,21 @@ class UsersService {
   async sendEmailOtp(email: string) {
     const parsedEmail = email.toLowerCase()
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
+    const data = {
+      hashedOtp,
+      attempts: 0,
+      expiresAt: this.getOtpExpiry(),
+    }
 
     // Reset attempts to login
-    const otpEntry = await this.otpRepository.findOne({
+    // Reset attempts to login
+    const [otpEntry, created] = await this.otpRepository.findOrCreate({
       where: { email: parsedEmail },
+      defaults: data,
     })
-    if (!otpEntry) {
-      // create new entry
-      await this.createOtpEntry(parsedEmail, OtpType.Email, hashedOtp)
-    } else {
-      await otpEntry?.update({
-        hashedOtp,
-        attempts: 0,
-        expiresAt: this.getOtpExpiry(),
-      })
+
+    if (!created) {
+      await otpEntry?.update(data)
     }
 
     const subject = "One-Time Password (OTP) for IsomerCMS"
@@ -216,15 +217,22 @@ class UsersService {
 
   async sendSmsOtp(mobileNumber: string) {
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
+    const data = {
+      hashedOtp,
+      attempts: 0,
+      expiresAt: this.getOtpExpiry(),
+    }
 
     // Reset attempts to login
-    const otpEntry = await this.otpRepository.findOne({
-      where: { mobileNumber },
+    const [otpEntry, created] = await this.otpRepository.findOrCreate({
+      where: {
+        mobileNumber,
+      },
+      defaults: data,
     })
-    if (!otpEntry) {
-      await this.createOtpEntry(mobileNumber, OtpType.Mobile, hashedOtp)
-    } else {
-      await otpEntry?.update({ hashedOtp, attempts: 0 })
+
+    if (!created) {
+      await otpEntry?.update(data)
     }
 
     const message = `Your OTP is ${otp}. It will expire in ${milliSecondsToMinutes(
@@ -432,26 +440,6 @@ class UsersService {
 
   private getOtpExpiry() {
     return new Date(Date.now() + OTP_EXPIRY)
-  }
-
-  private async createOtpEntry(
-    key: string,
-    keyType: OtpType,
-    hashedOtp: string
-  ) {
-    if (keyType === OtpType.Email) {
-      await this.otpRepository.create({
-        email: key.toLowerCase(),
-        hashedOtp,
-        expiresAt: this.getOtpExpiry(),
-      })
-    } else {
-      await this.otpRepository.create({
-        mobileNumber: key,
-        hashedOtp,
-        expiresAt: this.getOtpExpiry(),
-      })
-    }
   }
 }
 

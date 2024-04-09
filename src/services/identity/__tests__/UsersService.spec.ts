@@ -102,12 +102,11 @@ describe("User Service", () => {
 
   it("should call `findOrCreate` on the db model and set the lastLoggedIn", async () => {
     // Arrange
-    const testTime = Date.now()
     const mockDbUser = {
       update: jest.fn().mockReturnThis(),
       githubId: mockGithubId,
     }
-    MockRepository.findOrCreate.mockResolvedValue([mockDbUser])
+    MockRepository.findOrCreate.mockResolvedValue([mockDbUser, true])
 
     // Act
     const actual = await UsersService.login(mockGithubId)
@@ -117,8 +116,29 @@ describe("User Service", () => {
       where: { githubId: mockGithubId },
       defaults: { lastLoggedIn: expect.any(Date) },
     })
-    expect(actual.lastLoggedIn).toBeDefined()
-    expect(actual.lastLoggedIn.getTime()).toBeGreaterThanOrEqual(testTime)
+    expect(actual.update).not.toHaveBeenCalled()
+    expect(actual.githubId).toBe(mockGithubId)
+  })
+
+  it("should update the user with lastLoggedIn when not creating it", async () => {
+    // Arrange
+    const mockDbUser = {
+      update: jest.fn().mockReturnThis(),
+      githubId: mockGithubId,
+    }
+    MockRepository.findOrCreate.mockResolvedValue([mockDbUser, false])
+
+    // Act
+    const actual = await UsersService.login(mockGithubId)
+
+    // Assert
+    expect(MockRepository.findOrCreate).toBeCalledWith({
+      where: { githubId: mockGithubId },
+      defaults: { lastLoggedIn: expect.any(Date) },
+    })
+    expect(actual.update).toHaveBeenCalledWith({
+      lastLoggedIn: expect.any(Date),
+    })
     expect(actual.githubId).toBe(mockGithubId)
   })
 

@@ -5,6 +5,8 @@ import { RequireAtLeastOne } from "type-fest"
 
 import { config } from "@config/config"
 
+import { BaseIsomerError } from "@errors/BaseError"
+
 import { Otp, Repo, Site, User, Whitelist, SiteMember } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import DatabaseError from "@root/errors/DatabaseError"
@@ -22,6 +24,8 @@ enum OtpType {
   Email = "EMAIL",
   Mobile = "MOBILE",
 }
+
+type Class<T> = new (...args: any[]) => T
 
 interface UsersServiceProps {
   mailer: MailClient
@@ -208,202 +212,169 @@ class UsersService {
     await this.smsClient.sendSms(mobileNumber, message)
   }
 
-  private verifyOtp(
-    otpEntry: Otp | null,
-    otp: string,
-    transaction: Transaction
-  ) {
-    // TODO: Change all the following to use AuthError after FE fix
-    return okAsync(otp)
-      .andThen(() => {
+  private otpGetAndLogError<T extends BaseIsomerError>(
+    ErrorClass: Class<T>,
+    cause: unknown,
+    message: string
+  ): T {
+    logger.error({
+      error: cause,
+      message,
+    })
+
+    return new ErrorClass(message)
+  }
+
+  private otpDestroyEntry(otpEntry: Otp, transaction: Transaction) {
+    return ResultAsync.fromPromise(otpEntry.destroy({ transaction }), (error) =>
+      this.otpGetAndLogError(DatabaseError, error, `Error destroying OTP entry`)
+    )
+  }
+
+  private otpCommitTransaction(transaction: Transaction) {
+    return ResultAsync.fromPromise(transaction.commit(), (error) =>
+      this.otpGetAndLogError(
+        DatabaseError,
+        error,
+        `Error committing transaction`
+      )
+    )
+  }
+
+  private verifyOtp({
+    otp,
+    findConditions,
+    findErrorMessage,
+  }: {
+    otp: string | undefined
+    findConditions: { email: string } | { mobileNumber: string }
+    findErrorMessage: string
+  }) {
+    // immediate exit WITHOUT starting a transaction if input otp is invalid
+    if (!otp) {
+      return errAsync(new BadRequestError("Empty OTP provided"))
+    }
+
+    // local variables that can be referenced for convenience, instead of having the steps of the promise chain carry them each
+    //  time with AsyncResult.combine() wrappers (which makes the code har to read)
+    let transaction: Transaction | null = null
+    let otpEntry: Otp | null = null
+
+    // TypeScript can't tell when transaction and otpEntry are guaranteed to not be null in the promise chain steps
+    // So we'll provide non-null assertions ourselves, and we need to tell esling to leave us alone -_-
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    return ResultAsync.fromPromise(this.sequelize.transaction(), (error) =>
+      this.otpGetAndLogError(
+        DatabaseError,
+        error,
+        "Error starting database transaction"
+      )
+    )
+      .andThen((_transaction) => {
+        transaction = _transaction // store transaction in outer scope, so it is accessible all the way to the orElse() below
+
+        return ResultAsync.fromPromise(
+          this.otpRepository.findOne({
+            where: findConditions,
+            lock: true,
+            transaction,
+          }),
+          (error) =>
+            this.otpGetAndLogError(DatabaseError, error, findErrorMessage)
+        )
+      })
+      .andThen((_otpEntry: Otp | null) => {
+        otpEntry = _otpEntry // store otpEntry in outer scope, so it's easier to access it in the local promise chain steps
+
+        // verify that otpDbEntry exists
         if (!otpEntry) {
           return errAsync(new BadRequestError("OTP not found"))
         }
 
-        return okAsync(otpEntry)
-      })
-      .andThen((otpDbEntry) => {
-        if (otpDbEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
+        // after this point, otpEntry is guaranteed to be truthy is all promise chain steps (just like transaction)
+
+        // verify otpEntry validity
+
+        if (otpEntry.expiresAt < new Date()) {
+          return this.otpDestroyEntry(otpEntry, transaction!).andThen(() =>
+            errAsync(new BadRequestError("OTP has expired"))
+          )
+        }
+
+        if (otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
+          // should this delete the otpEntry as well?
           return errAsync(new BadRequestError("Max number of attempts reached"))
         }
 
-        return okAsync(otpDbEntry)
-      })
-      .andThen((otpDbEntry) => {
-        if (!otpDbEntry.hashedOtp) {
-          return ResultAsync.fromPromise(
-            otpDbEntry.destroy({ transaction }),
-            (error) => {
-              logger.error(
-                `Error destroying OTP entry: ${JSON.stringify(error)}`
-              )
-
-              return new DatabaseError("Error destroying OTP entry in database")
-            }
-          ).andThen(() => errAsync(new BadRequestError("Hashed OTP not found")))
+        if (!otpEntry.hashedOtp) {
+          return this.otpDestroyEntry(otpEntry, transaction!).andThen(() =>
+            errAsync(new BadRequestError("Hashed OTP not found"))
+          )
         }
 
-        return okAsync(otpDbEntry)
-      })
-      .andThen((otpDbEntry) =>
-        // increment attempts
-        ResultAsync.fromPromise(
+        return ResultAsync.fromPromise(
           this.otpRepository.increment("attempts", {
-            where: { id: otpDbEntry.id },
+            where: { id: otpEntry.id },
             transaction,
           }),
-          (error) => {
-            logger.error(
-              `Error incrementing OTP attempts: ${JSON.stringify(error)}`
+          (error) =>
+            this.otpGetAndLogError(
+              DatabaseError,
+              error,
+              "Error incrementing OTP attempts"
             )
-
-            return new DatabaseError("Error incrementing OTP attempts")
-          }
-        ).map(() => otpDbEntry)
+        )
+      })
+      .andThen(() =>
+        ResultAsync.fromPromise(
+          this.otpService.verifyOtp(otp, otpEntry!.hashedOtp),
+          (error) =>
+            this.otpGetAndLogError(
+              BadRequestError,
+              error,
+              "Error verifying OTP"
+            )
+        )
       )
-      .andThen((otpDbEntry) =>
-        ResultAsync.combine([
-          okAsync(otpDbEntry),
-          ResultAsync.fromPromise(
-            this.otpService.verifyOtp(otp, otpDbEntry.hashedOtp),
-            (error) => {
-              logger.error(`Error verifying OTP: ${JSON.stringify(error)}`)
-
-              return new BadRequestError("Error verifying OTP")
-            }
-          ),
-        ])
-      )
-      .andThen(([otpDbEntry, isValidOtp]) => {
+      .andThen((isValidOtp) => {
         if (!isValidOtp) {
           return errAsync(new BadRequestError("OTP is not valid"))
         }
 
-        if (isValidOtp && otpDbEntry.expiresAt < new Date()) {
-          return ResultAsync.fromPromise(
-            otpDbEntry.destroy({ transaction }),
-            (error) => {
-              logger.error(
-                `Error destroying OTP entry: ${JSON.stringify(error)}`
-              )
-
-              return new DatabaseError("Error destroying OTP entry in database")
-            }
-          ).andThen(() => errAsync(new BadRequestError("OTP has expired")))
+        // destroy otp before returning true since otp has been "used"
+        return this.otpDestroyEntry(otpEntry!, transaction!)
+      })
+      .andThen(() => this.otpCommitTransaction(transaction!))
+      .map(() => true)
+      .orElse((error) => {
+        // commit the transaction on error
+        if (transaction) {
+          this.otpCommitTransaction(transaction)
+            .andThen(() => errAsync(error))
+            .orElse(() => errAsync(error)) // this swallows the transaction commit error (it would still have been logged), and we bubble the original functional error instead
         }
 
-        return okAsync(otpDbEntry)
+        return errAsync(error)
       })
-      .andThen((otpDbEntry) =>
-        // destroy otp before returning true since otp has been "used"
-        ResultAsync.fromPromise(
-          otpDbEntry.destroy({ transaction }),
-          (error) => {
-            logger.error(`Error destroying OTP entry: ${JSON.stringify(error)}`)
-
-            return new DatabaseError("Error destroying OTP entry in database")
-          }
-        )
-          .andThen(() =>
-            ResultAsync.fromPromise(transaction.commit(), (txError) => {
-              logger.error(
-                `Error committing transaction: ${JSON.stringify(txError)}`
-              )
-              return new DatabaseError("Error committing transaction")
-            })
-          )
-          .map(() => true)
-      )
-      .orElse((error) =>
-        ResultAsync.fromPromise(transaction.commit(), (txError) => {
-          logger.error(
-            `Error committing transaction: ${JSON.stringify(txError)}`
-          )
-          return new DatabaseError("Error committing transaction")
-        }).andThen(() => errAsync(error))
-      )
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 
-  verifyEmailOtp(email: string, otp: string) {
-    if (!otp) {
-      return errAsync(new BadRequestError("Empty OTP provided"))
-    }
+  verifyEmailOtp(email: string, otp: string | undefined) {
+    const normalizedEmail = email.toLowerCase()
 
-    const parsedEmail = email.toLowerCase()
-
-    return ResultAsync.fromPromise(this.sequelize.transaction(), (error) => {
-      logger.error(
-        `Error starting database transaction: ${JSON.stringify(error)}`
-      )
-
-      return new BadRequestError("Error starting database transaction")
+    return this.verifyOtp({
+      otp,
+      findConditions: { email: normalizedEmail },
+      findErrorMessage: "Error finding OTP entry when verifying email OTP",
     })
-      .andThen((transaction) =>
-        ResultAsync.combine([
-          ResultAsync.fromPromise(
-            this.otpRepository.findOne({
-              where: { email: parsedEmail },
-              lock: true,
-              transaction,
-            }),
-            (error) => {
-              logger.error(
-                `Error finding OTP entry when verifying email OTP: ${JSON.stringify(
-                  error
-                )}`
-              )
-
-              return new BadRequestError(
-                "Error finding OTP entry when verifying email OTP"
-              )
-            }
-          ),
-          okAsync(transaction),
-        ])
-      )
-      .andThen(([otpEntry, transaction]) =>
-        this.verifyOtp(otpEntry, otp, transaction)
-      )
   }
 
-  verifyMobileOtp(mobileNumber: string, otp: string) {
-    if (!otp) {
-      return errAsync(new BadRequestError("Empty OTP provided"))
-    }
-
-    return ResultAsync.fromPromise(this.sequelize.transaction(), (error) => {
-      logger.error(
-        `Error starting database transaction: ${JSON.stringify(error)}`
-      )
-
-      return new BadRequestError("Error starting database transaction")
+  verifyMobileOtp(mobileNumber: string, otp: string | undefined) {
+    return this.verifyOtp({
+      otp,
+      findConditions: { mobileNumber },
+      findErrorMessage: "Error finding OTP entry when verifying mobile OTP",
     })
-      .andThen((transaction) =>
-        ResultAsync.combine([
-          ResultAsync.fromPromise(
-            this.otpRepository.findOne({
-              where: { mobileNumber },
-              lock: true,
-              transaction,
-            }),
-            (error) => {
-              logger.error(
-                `Error finding OTP entry when verifying mobile OTP: ${JSON.stringify(
-                  error
-                )}`
-              )
-
-              return new BadRequestError(
-                "Error finding OTP entry when verifying mobile OTP"
-              )
-            }
-          ),
-          okAsync(transaction),
-        ])
-      )
-      .andThen(([otpEntry, transaction]) =>
-        this.verifyOtp(otpEntry, otp, transaction)
-      )
   }
 
   private getOtpExpiry() {

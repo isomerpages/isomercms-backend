@@ -31,7 +31,7 @@ function errorHandler(err, req, res, next) {
 
   // Error handling for custom errors
   if (err.isIsomerError) {
-    logger.info(errMsg)
+    logger.error(errMsg)
     if (err.isV2Err) {
       return res.status(err.status).json({
         error: IsomerError.toExternalRepresentation(err),
@@ -47,7 +47,7 @@ function errorHandler(err, req, res, next) {
   }
   if (err.name === "PayloadTooLargeError") {
     // Error thrown by large payload is done by express
-    logger.info(errMsg)
+    logger.error(errMsg)
     return res.status(413).json({
       error: {
         name: err.name,
@@ -56,7 +56,7 @@ function errorHandler(err, req, res, next) {
       },
     })
   }
-  logger.info(`Unrecognized internal server error: ${errMsg}`)
+  logger.error(`Unrecognized internal server error: ${errMsg}`)
   return res.status(500).json({
     error: {
       code: 500,

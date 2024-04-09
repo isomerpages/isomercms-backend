@@ -215,13 +215,6 @@ class UsersService {
   ) {
     // TODO: Change all the following to use AuthError after FE fix
     return okAsync(otp)
-      .andThen((otp) => {
-        if (!otp) {
-          return errAsync(new BadRequestError("Empty OTP provided"))
-        }
-
-        return okAsync(otp)
-      })
       .andThen(() => {
         if (!otpEntry) {
           return errAsync(new BadRequestError("OTP not found"))
@@ -332,6 +325,10 @@ class UsersService {
   }
 
   verifyEmailOtp(email: string, otp: string) {
+    if (!otp) {
+      return errAsync(new BadRequestError("Empty OTP provided"))
+    }
+
     const parsedEmail = email.toLowerCase()
 
     return ResultAsync.fromPromise(this.sequelize.transaction(), (error) => {
@@ -370,6 +367,10 @@ class UsersService {
   }
 
   verifyMobileOtp(mobileNumber: string, otp: string) {
+    if (!otp) {
+      return errAsync(new BadRequestError("Empty OTP provided"))
+    }
+
     return ResultAsync.fromPromise(this.sequelize.transaction(), (error) => {
       logger.error(
         `Error starting database transaction: ${JSON.stringify(error)}`

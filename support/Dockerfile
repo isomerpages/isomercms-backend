@@ -16,6 +16,7 @@ COPY ../package.json .
 COPY ../package-lock.json .
 COPY ../scripts ./scripts
 COPY ../tsconfig.json .
+COPY ../patches ./patches
 
 # NOTE: We need to set up as root again because we need to perform chmod
 # We will fix all the permissions issue with a final chown to webapp

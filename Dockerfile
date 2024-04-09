@@ -8,7 +8,11 @@ RUN apk update && \
 
 RUN adduser -u 900 webapp -D -h /home/webapp -s /bin/sh
 USER webapp
-COPY . .
+
+COPY ./src ./src
+COPY ./patches ./patches
+COPY ./common ./common
+COPY ./scripts ./scripts
 
 # NOTE: We need to set up as root again because we need to perform chmod
 # We will fix all the permissions issue with a final chown to webapp

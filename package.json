@@ -113,7 +113,7 @@
   "devDependencies": {
     "@octokit/types": "^6.35.0",
     "@tsconfig/recommended": "^1.0.1",
-    "@types/aws-lambda": "^8.10.106",
+    "@types/aws-lambda": "^8.10.137",
     "@types/bcryptjs": "^2.4.4",
     "@types/bluebird": "^3.5.38",
     "@types/convict": "^6.1.1",

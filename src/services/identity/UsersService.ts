@@ -137,20 +137,12 @@ class UsersService {
 
   async login(githubId: string): Promise<User> {
     return this.sequelize.transaction<User>(async (transaction) => {
-      // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
-      let user = await this.repository.findOne({
+      const [user] = await this.repository.findOrCreate({
         where: { githubId },
         transaction,
       })
-
-      if (!user) {
-        user = await this.repository.create({
-          githubId,
-          transaction,
-        })
-      }
-
       user.lastLoggedIn = new Date()
+
       return user.save({ transaction })
     })
   }
@@ -158,7 +150,6 @@ class UsersService {
   async loginWithEmail(email: string): Promise<User> {
     const parsedEmail = email.toLowerCase()
     return this.sequelize.transaction<User>(async (transaction) => {
-      // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
       const [user] = await this.repository.findOrCreate({
         where: { email: parsedEmail },
         transaction,

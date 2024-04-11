@@ -136,30 +136,19 @@ class UsersService {
   }
 
   async login(githubId: string): Promise<User> {
-    const loginUpdate = { lastLoggedIn: new Date() }
-    const [user, created] = await this.repository.findOrCreate({
-      where: { githubId },
-      defaults: loginUpdate,
+    const [user] = await this.repository.upsert({
+      githubId,
+      lastLoggedIn: new Date(),
     })
-
-    if (!created) {
-      await user.update(loginUpdate)
-    }
 
     return user
   }
 
   async loginWithEmail(email: string): Promise<User> {
-    const parsedEmail = email.toLowerCase()
-    const loginUpdate = { lastLoggedIn: new Date() }
-    const [user, created] = await this.repository.findOrCreate({
-      where: { email: parsedEmail },
-      defaults: loginUpdate,
+    const [user] = await this.repository.upsert({
+      email: email.toLowerCase(),
+      lastLoggedIn: new Date(),
     })
-
-    if (!created) {
-      await user.update(loginUpdate)
-    }
 
     return user
   }

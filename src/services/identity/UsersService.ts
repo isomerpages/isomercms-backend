@@ -187,24 +187,16 @@ class UsersService {
   }
 
   async sendEmailOtp(email: string) {
-    const parsedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase()
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
-    const data = {
+
+    // Reset attempts to login
+    await this.otpRepository.upsert({
+      email: normalizedEmail,
       hashedOtp,
       attempts: 0,
       expiresAt: this.getOtpExpiry(),
-    }
-
-    // Reset attempts to login
-    // Reset attempts to login
-    const [otpEntry, created] = await this.otpRepository.findOrCreate({
-      where: { email: parsedEmail },
-      defaults: data,
     })
-
-    if (!created) {
-      await otpEntry?.update(data)
-    }
 
     const subject = "One-Time Password (OTP) for IsomerCMS"
     const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${milliSecondsToMinutes(
@@ -212,28 +204,19 @@ class UsersService {
     )} minutes. Please use this to verify your email address.</p>
     <p>If your OTP does not work, please request for a new OTP.</p>
     <p>IsomerCMS Support Team</p>`
-    await this.mailer.sendMail(parsedEmail, subject, html)
+    await this.mailer.sendMail(normalizedEmail, subject, html)
   }
 
   async sendSmsOtp(mobileNumber: string) {
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
-    const data = {
+
+    // Reset attempts to login
+    await this.otpRepository.upsert({
+      mobileNumber,
       hashedOtp,
       attempts: 0,
       expiresAt: this.getOtpExpiry(),
-    }
-
-    // Reset attempts to login
-    const [otpEntry, created] = await this.otpRepository.findOrCreate({
-      where: {
-        mobileNumber,
-      },
-      defaults: data,
     })
-
-    if (!created) {
-      await otpEntry?.update(data)
-    }
 
     const message = `Your OTP is ${otp}. It will expire in ${milliSecondsToMinutes(
       OTP_EXPIRY

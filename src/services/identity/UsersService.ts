@@ -136,37 +136,21 @@ class UsersService {
   }
 
   async login(githubId: string): Promise<User> {
-    return this.sequelize.transaction<User>(async (transaction) => {
-      // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
-      let user = await this.repository.findOne({
-        where: { githubId },
-        transaction,
-      })
-
-      if (!user) {
-        user = await this.repository.create({
-          githubId,
-          transaction,
-        })
-      }
-
-      user.lastLoggedIn = new Date()
-      return user.save({ transaction })
+    const [user] = await this.repository.upsert({
+      githubId,
+      lastLoggedIn: new Date(),
     })
+
+    return user
   }
 
   async loginWithEmail(email: string): Promise<User> {
-    const parsedEmail = email.toLowerCase()
-    return this.sequelize.transaction<User>(async (transaction) => {
-      // NOTE: The service's findOrCreate is not being used here as this requires an explicit transaction
-      const [user] = await this.repository.findOrCreate({
-        where: { email: parsedEmail },
-        transaction,
-      })
-      user.lastLoggedIn = new Date()
-
-      return user.save({ transaction })
+    const [user] = await this.repository.upsert({
+      email: email.toLowerCase(),
+      lastLoggedIn: new Date(),
     })
+
+    return user
   }
 
   async canSendEmailOtp(email: string) {
@@ -187,23 +171,16 @@ class UsersService {
   }
 
   async sendEmailOtp(email: string) {
-    const parsedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase()
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
 
     // Reset attempts to login
-    const otpEntry = await this.otpRepository.findOne({
-      where: { email: parsedEmail },
+    await this.otpRepository.upsert({
+      email: normalizedEmail,
+      hashedOtp,
+      attempts: 0,
+      expiresAt: this.getOtpExpiry(),
     })
-    if (!otpEntry) {
-      // create new entry
-      await this.createOtpEntry(parsedEmail, OtpType.Email, hashedOtp)
-    } else {
-      await otpEntry?.update({
-        hashedOtp,
-        attempts: 0,
-        expiresAt: this.getOtpExpiry(),
-      })
-    }
 
     const subject = "One-Time Password (OTP) for IsomerCMS"
     const html = `<p>Your OTP is <b>${otp}</b>. It will expire in ${milliSecondsToMinutes(
@@ -211,21 +188,19 @@ class UsersService {
     )} minutes. Please use this to verify your email address.</p>
     <p>If your OTP does not work, please request for a new OTP.</p>
     <p>IsomerCMS Support Team</p>`
-    await this.mailer.sendMail(parsedEmail, subject, html)
+    await this.mailer.sendMail(normalizedEmail, subject, html)
   }
 
   async sendSmsOtp(mobileNumber: string) {
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
 
     // Reset attempts to login
-    const otpEntry = await this.otpRepository.findOne({
-      where: { mobileNumber },
+    await this.otpRepository.upsert({
+      mobileNumber,
+      hashedOtp,
+      attempts: 0,
+      expiresAt: this.getOtpExpiry(),
     })
-    if (!otpEntry) {
-      await this.createOtpEntry(mobileNumber, OtpType.Mobile, hashedOtp)
-    } else {
-      await otpEntry?.update({ hashedOtp, attempts: 0 })
-    }
 
     const message = `Your OTP is ${otp}. It will expire in ${milliSecondsToMinutes(
       OTP_EXPIRY
@@ -432,26 +407,6 @@ class UsersService {
 
   private getOtpExpiry() {
     return new Date(Date.now() + OTP_EXPIRY)
-  }
-
-  private async createOtpEntry(
-    key: string,
-    keyType: OtpType,
-    hashedOtp: string
-  ) {
-    if (keyType === OtpType.Email) {
-      await this.otpRepository.create({
-        email: key.toLowerCase(),
-        hashedOtp,
-        expiresAt: this.getOtpExpiry(),
-      })
-    } else {
-      await this.otpRepository.create({
-        mobileNumber: key,
-        hashedOtp,
-        expiresAt: this.getOtpExpiry(),
-      })
-    }
   }
 }
 

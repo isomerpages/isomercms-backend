@@ -114,6 +114,7 @@ jobs:
             sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' ${{ inputs.task-definition-path }}
             sed -i 's/<EFS_FILE_SYSTEM_ID>/${{ secrets.EFS_FILE_SYSTEM_ID }}/g' ${{ inputs.task-definition-path }}
             sed -i 's/<DD_API_KEY>/${{ secrets.DD_API_KEY }}/g' ${{ inputs.task-definition-path }}
+            sed -i 's/<DD_COMMIT_SHA>/${{ github.sha }}/g' ${{ inputs.task-definition-path }}
       
       - name: Replace variables in appspec
         run: |

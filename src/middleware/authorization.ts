@@ -5,6 +5,7 @@ import { ForbiddenError } from "@errors/ForbiddenError"
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
 import { RequestHandler } from "@root/types"
+import { nameAnonymousMethods } from "@root/utils/apm-utils"
 import AuthorizationMiddlewareService from "@services/middlewareServices/AuthorizationMiddlewareService"
 
 export class AuthorizationMiddleware {
@@ -18,6 +19,7 @@ export class AuthorizationMiddleware {
     this.authorizationMiddlewareService = authorizationMiddlewareService
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
+    nameAnonymousMethods(this)
   }
 
   // Allows access only to users using email login

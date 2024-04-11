@@ -1,6 +1,6 @@
 {
   "name": "isomercms",
-  "version": "0.77.0",
+  "version": "0.78.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -27,7 +27,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@aws-sdk/client-amplify": "^3.521.0",
+    "@aws-sdk/client-amplify": "^3.549.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.521.0",
     "@aws-sdk/client-dynamodb": "^3.521.0",
     "@aws-sdk/client-secrets-manager": "^3.389.0",
@@ -44,7 +44,7 @@
     "aws-sdk": "^2.1565.0",
     "axios": "^1.6.5",
     "axios-cache-interceptor": "^0.10.7",
-    "base-64": "^0.1.0",
+    "base-64": "^1.0.0",
     "bcryptjs": "^2.4.3",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.2",
@@ -75,11 +75,11 @@
     "isomorphic-dompurify": "^0.27.0",
     "isomorphic-git": "^1.18.2",
     "joi": "^17.4.0",
-    "js-base64": "^3.7.5",
+    "js-base64": "^3.7.7",
     "jsdom": "^16.7.0",
     "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.21",
-    "marked": "^11.2.0",
+    "marked": "^12.0.1",
     "module-alias": "^2.2.2",
     "moment-timezone": "^0.5.35",
     "morgan": "~1.10.0",
@@ -113,7 +113,7 @@
   "devDependencies": {
     "@octokit/types": "^6.35.0",
     "@tsconfig/recommended": "^1.0.1",
-    "@types/aws-lambda": "^8.10.106",
+    "@types/aws-lambda": "^8.10.137",
     "@types/bcryptjs": "^2.4.4",
     "@types/bluebird": "^3.5.38",
     "@types/convict": "^6.1.1",

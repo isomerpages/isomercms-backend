@@ -56,6 +56,11 @@ const dirTree = {
   },
 }
 
+const dirTreeWithIgnoredFiles = {
+  ...dirTree,
+  ".git": "fake git directory",
+}
+
 describe("GitFileSystemService", () => {
   beforeEach(() => {
     mockFs({
@@ -171,6 +176,18 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
+    })
+
+    it("should ignore .git folder", async () => {
+      mockFs({
+        [EFS_VOL_PATH_STAGING]: dirTreeWithIgnoredFiles,
+      })
+      const result = await GitFileSystemService.listDirectoryContents(
+        "fake-repo",
+        "fake-empty-dir",
+        DEFAULT_BRANCH
+      )
+      expect(result._unsafeUnwrap()).toHaveLength(0)
     })
   })
 
@@ -660,6 +677,26 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
+    })
+
+    it("should return not found error for a non-existent file", async () => {
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        revparse: jest
+          .fn()
+          .mockRejectedValueOnce(
+            new GitError(
+              undefined,
+              `fatal: path //fake-media-file.png exists on disk, but not in 'HEAD'`
+            )
+          ),
+      })
+      const result = await GitFileSystemService.getGitBlobHash(
+        "fake-repo",
+        "fake-dir/%2ffake-media-file.png",
+        true
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(NotFoundError)
     })
   })
 

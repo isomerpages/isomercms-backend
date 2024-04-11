@@ -319,7 +319,7 @@ export default class GitFileSystemService {
     repoName: string,
     filePath: string,
     isStaging: boolean
-  ): ResultAsync<string, GitFileSystemError> {
+  ): ResultAsync<string, GitFileSystemError | NotFoundError> {
     const efsVolPath = isStaging
       ? EFS_VOL_PATH_STAGING
       : EFS_VOL_PATH_STAGING_LITE
@@ -333,6 +333,14 @@ export default class GitFileSystemService {
         )
 
         if (error instanceof GitError) {
+          // NOTE: While some path can be potentially normalised by Git (eg. images//path.png),
+          // it is not guaranteed to exist in HEAD. We simply return a not found error in this case.
+          if (
+            error.message.includes("fatal: path") &&
+            error.message.includes("exists on disk, but not in 'HEAD'")
+          ) {
+            return new NotFoundError("File/Directory does not exist")
+          }
           return new GitFileSystemError("Unable to determine Git blob hash")
         }
 
@@ -1121,7 +1129,11 @@ export default class GitFileSystemService {
         )
       )
       .andThen((directoryContents) => {
-        const resultAsyncs = directoryContents.map((directoryItem) => {
+        const IGNORED_FILES = [".git"]
+        const filteredDirectoryContents = directoryContents.filter(
+          (directoryItem) => !IGNORED_FILES.includes(directoryItem.name)
+        )
+        const resultAsyncs = filteredDirectoryContents.map((directoryItem) => {
           const isDirectory = directoryItem.isDirectory()
           const { name } = directoryItem
           const path = directoryPath === "" ? name : `${directoryPath}/${name}`

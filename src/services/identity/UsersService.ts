@@ -254,7 +254,6 @@ class UsersService {
     return ResultAsync.fromPromise(
       this.otpRepository.findOne({
         where: findConditions,
-        lock: true,
       }),
       (error) => this.otpGetAndLogError(DatabaseError, error, findErrorMessage)
     )

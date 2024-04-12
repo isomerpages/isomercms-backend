@@ -32,6 +32,7 @@ const MockRepository = {
 
 const MockSequelize = {
   transaction: jest.fn((closure) => closure("transaction")),
+  query: jest.fn(),
 }
 
 const MockWhitelist = {

@@ -253,7 +253,12 @@ class UsersService {
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return ResultAsync.fromPromise(
       this.otpRepository.findOne({
-        where: findConditions,
+        where: {
+          ...findConditions,
+          hashedOtp: {
+            [Op.regexp]: "\\S+", // at least one non-whitespace character (i.e. is truthy!)
+          },
+        },
       }),
       (error) => this.otpGetAndLogError(DatabaseError, error, findErrorMessage)
     )
@@ -278,12 +283,6 @@ class UsersService {
         if (otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
           // should this delete the otpEntry as well?
           return errAsync(new BadRequestError("Max number of attempts reached"))
-        }
-
-        if (!otpEntry.hashedOtp) {
-          return this.otpDestroyEntry(otpEntry).andThen(() =>
-            errAsync(new BadRequestError("Hashed OTP not found"))
-          )
         }
 
         return ResultAsync.fromPromise(

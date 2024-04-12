@@ -261,7 +261,7 @@ class UsersService {
     let otpEntry: Otp | null = null
 
     // TypeScript can't tell when transaction and otpEntry are guaranteed to not be null in the promise chain steps
-    // So we'll provide non-null assertions ourselves, and we need to tell esling to leave us alone -_-
+    // So we'll provide non-null assertions ourselves, and we need to tell eslint to leave us alone -_-
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return ResultAsync.fromPromise(this.sequelize.transaction(), (error) =>
       this.otpGetAndLogError(

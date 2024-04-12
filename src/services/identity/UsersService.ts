@@ -159,7 +159,7 @@ class UsersService {
     // raw query because ORMs suck!
     const records = (await this.sequelize.query(
       `
-        SELECT 1 AS found
+        SELECT email AS found
         FROM whitelist
         WHERE
           (expiry is NULL OR expiry >= NOW())
@@ -170,9 +170,21 @@ class UsersService {
         replacements: { email: normalizedEmail },
         type: QueryTypes.SELECT,
       }
-    )) as { found: 1 }[]
+    )) as { email: string }[]
 
-    return records.length >= 1
+    if (records.length >= 1) {
+      logger.info({
+        message: "Email valid for OTP by whitelist",
+        meta: {
+          email,
+          whitelistEntry: records[0].email,
+        },
+      })
+
+      return true
+    }
+
+    return false
   }
 
   async sendEmailOtp(email: string) {

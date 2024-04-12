@@ -154,7 +154,7 @@ class UsersService {
   }
 
   async canSendEmailOtp(email: string) {
-    const parsedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase()
     const whitelistEntries = await this.whitelist.findAll({
       attributes: ["email"],
       where: {
@@ -165,8 +165,15 @@ class UsersService {
     })
     const whitelistDomains = whitelistEntries.map((entry) => entry.email)
     const hasMatchDomain =
-      whitelistDomains.filter((domain) => parsedEmail.endsWith(domain)).length >
-      0
+      whitelistDomains.filter((domain) => {
+        // if domain is really just a domain (does not include a @ OR starts with a @), we can do a prefix match
+        if (/^@|^[^@]+$/.test(domain)) {
+          return normalizedEmail.endsWith(domain)
+        }
+
+        return normalizedEmail === domain
+        // otherwise we can ONLY do an exact match
+      }).length > 0
     return hasMatchDomain
   }
 

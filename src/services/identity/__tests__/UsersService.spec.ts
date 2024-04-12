@@ -32,6 +32,7 @@ const MockRepository = {
 
 const MockSequelize = {
   transaction: jest.fn((closure) => closure("transaction")),
+  query: jest.fn(),
 }
 
 const MockWhitelist = {
@@ -120,71 +121,31 @@ describe("User Service", () => {
     expect(actual.githubId).toBe(mockGithubId)
   })
 
-  it("should allow whitelisted emails", async () => {
-    // Arrange
-    const expected = true
-    const mockWhitelistEntry = {
-      email: ".gov.sg",
-    }
-    MockWhitelist.findAll.mockResolvedValueOnce([mockWhitelistEntry])
+  describe("canSendEmailOtp", () => {
+    it("should return true when the db query returns a record", async () => {
+      // Arrange
+      const expected = true
+      MockSequelize.query.mockResolvedValueOnce([{ found: 1 }])
 
-    // Act
-    const actual = await UsersService.canSendEmailOtp(mockEmail)
+      // Act
+      const actual = await UsersService.canSendEmailOtp(mockEmail)
 
-    // Assert
-    expect(actual).toBe(expected)
-  })
-  it("should not allow partial match of whitelisted emails", async () => {
-    // Arrange
-    const expected = false
-    // NOTE: This ends with gov.sg not .gov.sg (lacks a dot after the @)
-    const emailWithoutDot = "user@gov.sg"
-    const mockWhitelistEntry = {
-      email: ".gov.sg",
-    }
-    MockWhitelist.findAll.mockResolvedValueOnce([mockWhitelistEntry])
+      // Assert
+      expect(actual).toBe(expected)
+    })
 
-    // Act
-    const actual = await UsersService.canSendEmailOtp(emailWithoutDot)
+    it("should return false when the db query returns no record", async () => {
+      // Arrange
+      const expected = false
+      // NOTE: This ends with gov.sg not .gov.sg (lacks a dot after the @)
+      const emailWithoutDot = "user@gov.sg"
+      MockSequelize.query.mockResolvedValueOnce([])
 
-    // Assert
-    expect(actual).toBe(expected)
-  })
+      // Act
+      const actual = await UsersService.canSendEmailOtp(emailWithoutDot)
 
-  it("should allow not .gov.sg emails when whitelist does not contain .gov.sg", async () => {
-    // Arrange
-    const expected = false
-    const mockWhitelistEntries = [
-      {
-        email: "@accenture.com",
-      },
-      {
-        email: ".edu.sg",
-      },
-    ]
-    MockWhitelist.findAll.mockResolvedValueOnce(mockWhitelistEntries)
-
-    // Act
-    const actual = await UsersService.canSendEmailOtp(mockEmail)
-
-    // Assert
-    expect(actual).toBe(expected)
-  })
-
-  it("should not allow suffix match if the whitelist entry is a full email", async () => {
-    // Arrange
-    const expected = false
-    const mockWhitelistEntries = [
-      {
-        email: "foo@accenture.com",
-      },
-    ]
-    MockWhitelist.findAll.mockResolvedValueOnce(mockWhitelistEntries)
-
-    // Act
-    const actual = await UsersService.canSendEmailOtp("bar.foo@accenture.com")
-
-    // Assert
-    expect(actual).toBe(expected)
+      // Assert
+      expect(actual).toBe(expected)
+    })
   })
 })

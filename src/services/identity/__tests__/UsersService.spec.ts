@@ -125,7 +125,7 @@ describe("User Service", () => {
     it("should return true when the db query returns a record", async () => {
       // Arrange
       const expected = true
-      MockSequelize.query.mockResolvedValueOnce([{ found: 1 }])
+      MockSequelize.query.mockResolvedValueOnce([{ email: ".gov.sg" }])
 
       // Act
       const actual = await UsersService.canSendEmailOtp(mockEmail)

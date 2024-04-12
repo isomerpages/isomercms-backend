@@ -170,4 +170,21 @@ describe("User Service", () => {
     // Assert
     expect(actual).toBe(expected)
   })
+
+  it("should not allow suffix match if the whitelist entry is a full email", async () => {
+    // Arrange
+    const expected = false
+    const mockWhitelistEntries = [
+      {
+        email: "foo@accenture.com",
+      },
+    ]
+    MockWhitelist.findAll.mockResolvedValueOnce(mockWhitelistEntries)
+
+    // Act
+    const actual = await UsersService.canSendEmailOtp("bar.foo@accenture.com")
+
+    // Assert
+    expect(actual).toBe(expected)
+  })
 })

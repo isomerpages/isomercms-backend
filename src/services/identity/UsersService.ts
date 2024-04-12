@@ -1,5 +1,5 @@
 import { ResultAsync, errAsync, okAsync } from "neverthrow"
-import { Op, ModelStatic, Transaction } from "sequelize"
+import { Op, ModelStatic, Transaction, QueryTypes } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
@@ -155,26 +155,24 @@ class UsersService {
 
   async canSendEmailOtp(email: string) {
     const normalizedEmail = email.toLowerCase()
-    const whitelistEntries = await this.whitelist.findAll({
-      attributes: ["email"],
-      where: {
-        expiry: {
-          [Op.or]: [{ [Op.is]: null }, { [Op.gt]: new Date() }],
-        },
-      },
-    })
-    const whitelistDomains = whitelistEntries.map((entry) => entry.email)
-    const hasMatchDomain =
-      whitelistDomains.filter((domain) => {
-        // if domain is really just a domain (does not include a @ OR starts with a @), we can do a prefix match
-        if (/^@|^[^@]+$/.test(domain)) {
-          return normalizedEmail.endsWith(domain)
-        }
 
-        return normalizedEmail === domain
-        // otherwise we can ONLY do an exact match
-      }).length > 0
-    return hasMatchDomain
+    // raw query because ORMs suck!
+    const records = (await this.sequelize.query(
+      `
+        SELECT 1 AS found
+        FROM whitelist
+        WHERE
+          (expiry is NULL OR expiry >= NOW())
+          AND :email LIKE CONCAT('%', email)
+        LIMIT 1
+      `,
+      {
+        replacements: { email: normalizedEmail },
+        type: QueryTypes.SELECT,
+      }
+    )) as { found: 1 }[]
+
+    return records.length >= 1
   }
 
   async sendEmailOtp(email: string) {

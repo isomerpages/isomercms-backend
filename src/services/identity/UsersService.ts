@@ -1,5 +1,5 @@
-import { ResultAsync, errAsync, okAsync } from "neverthrow"
-import { Op, ModelStatic, Transaction } from "sequelize"
+import { ResultAsync, errAsync } from "neverthrow"
+import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
@@ -225,19 +225,9 @@ class UsersService {
     return new ErrorClass(message)
   }
 
-  private otpDestroyEntry(otpEntry: Otp, transaction: Transaction) {
-    return ResultAsync.fromPromise(otpEntry.destroy({ transaction }), (error) =>
+  private otpDestroyEntry(otpEntry: Otp) {
+    return ResultAsync.fromPromise(otpEntry.destroy(), (error) =>
       this.otpGetAndLogError(DatabaseError, error, `Error destroying OTP entry`)
-    )
-  }
-
-  private otpCommitTransaction(transaction: Transaction) {
-    return ResultAsync.fromPromise(transaction.commit(), (error) =>
-      this.otpGetAndLogError(
-        DatabaseError,
-        error,
-        `Error committing transaction`
-      )
     )
   }
 
@@ -250,39 +240,24 @@ class UsersService {
     findConditions: { email: string } | { mobileNumber: string }
     findErrorMessage: string
   }) {
-    // immediate exit WITHOUT starting a transaction if input otp is invalid
     if (!otp) {
       return errAsync(new BadRequestError("Empty OTP provided"))
     }
 
     // local variables that can be referenced for convenience, instead of having the steps of the promise chain carry them each
     //  time with AsyncResult.combine() wrappers (which makes the code har to read)
-    let transaction: Transaction | null = null
     let otpEntry: Otp | null = null
 
-    // TypeScript can't tell when transaction and otpEntry are guaranteed to not be null in the promise chain steps
+    // TypeScript can't tell when otpEntry is guaranteed to not be null in the promise chain steps
     // So we'll provide non-null assertions ourselves, and we need to tell eslint to leave us alone -_-
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    return ResultAsync.fromPromise(this.sequelize.transaction(), (error) =>
-      this.otpGetAndLogError(
-        DatabaseError,
-        error,
-        "Error starting database transaction"
-      )
+    return ResultAsync.fromPromise(
+      this.otpRepository.findOne({
+        where: findConditions,
+        lock: true,
+      }),
+      (error) => this.otpGetAndLogError(DatabaseError, error, findErrorMessage)
     )
-      .andThen((_transaction) => {
-        transaction = _transaction // store transaction in outer scope, so it is accessible all the way to the orElse() below
-
-        return ResultAsync.fromPromise(
-          this.otpRepository.findOne({
-            where: findConditions,
-            lock: true,
-            transaction,
-          }),
-          (error) =>
-            this.otpGetAndLogError(DatabaseError, error, findErrorMessage)
-        )
-      })
       .andThen((_otpEntry: Otp | null) => {
         otpEntry = _otpEntry // store otpEntry in outer scope, so it's easier to access it in the local promise chain steps
 
@@ -291,12 +266,12 @@ class UsersService {
           return errAsync(new BadRequestError("OTP not found"))
         }
 
-        // after this point, otpEntry is guaranteed to be truthy is all promise chain steps (just like transaction)
+        // after this point, otpEntry is guaranteed to be truthy is all promise chain steps
 
         // verify otpEntry validity
 
         if (otpEntry.expiresAt < new Date()) {
-          return this.otpDestroyEntry(otpEntry, transaction!).andThen(() =>
+          return this.otpDestroyEntry(otpEntry!).andThen(() =>
             errAsync(new BadRequestError("OTP has expired"))
           )
         }
@@ -307,7 +282,7 @@ class UsersService {
         }
 
         if (!otpEntry.hashedOtp) {
-          return this.otpDestroyEntry(otpEntry, transaction!).andThen(() =>
+          return this.otpDestroyEntry(otpEntry).andThen(() =>
             errAsync(new BadRequestError("Hashed OTP not found"))
           )
         }
@@ -315,7 +290,6 @@ class UsersService {
         return ResultAsync.fromPromise(
           this.otpRepository.increment("attempts", {
             where: { id: otpEntry.id },
-            transaction,
           }),
           (error) =>
             this.otpGetAndLogError(
@@ -342,20 +316,10 @@ class UsersService {
         }
 
         // destroy otp before returning true since otp has been "used"
-        return this.otpDestroyEntry(otpEntry!, transaction!)
+        return this.otpDestroyEntry(otpEntry!)
       })
-      .andThen(() => this.otpCommitTransaction(transaction!))
       .map(() => true)
-      .orElse((error) => {
-        // commit the transaction on error
-        if (transaction) {
-          this.otpCommitTransaction(transaction)
-            .andThen(() => errAsync(error))
-            .orElse(() => errAsync(error)) // this swallows the transaction commit error (it would still have been logged), and we bubble the original functional error instead
-        }
 
-        return errAsync(error)
-      })
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 

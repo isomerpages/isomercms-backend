@@ -157,13 +157,23 @@ class UsersService {
     const normalizedEmail = email.toLowerCase()
 
     // raw query because ORMs suck!
+    // why: we want to leverage the DB to see if a single record exists that whitelists the input
+    // we do not want to download the whole table locally to filter in local code
+    // query logic:
+    // - if whitelist entry is a full email (something before the @), then do exact match
+    // - if whitelist entry is a domain (no @, or starting with @), then do suffix match
+    // Limit 1 is added to allow the query to exit early on first match
     const records = (await this.sequelize.query(
       `
-        SELECT email AS found
+        SELECT email
         FROM whitelist
         WHERE
           (expiry is NULL OR expiry >= NOW())
-          AND :email LIKE CONCAT('%', email)
+          AND
+          CASE WHEN email ~ '^.+@'
+            THEN email = :email
+            ELSE :email LIKE CONCAT('%', email)
+          END
         LIMIT 1
       `,
       {

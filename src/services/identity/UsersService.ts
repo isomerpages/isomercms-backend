@@ -166,13 +166,13 @@ class UsersService {
     const whitelistDomains = whitelistEntries.map((entry) => entry.email)
     const hasMatchDomain =
       whitelistDomains.filter((domain) => {
-        // if domain is really just a domain (does not include a @ OR starts with a @), we can do a prefix match
+        // if domain is really just a domain (does not include a @ OR starts with a @), we can do a suffix match
         if (/^@|^[^@]+$/.test(domain)) {
           return normalizedEmail.endsWith(domain)
         }
 
-        return normalizedEmail === domain
         // otherwise we can ONLY do an exact match
+        return normalizedEmail === domain
       }).length > 0
     return hasMatchDomain
   }

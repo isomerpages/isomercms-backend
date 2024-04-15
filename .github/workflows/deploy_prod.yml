@@ -8,8 +8,8 @@ on:
   workflow_call: 
 
 jobs:
-  deploy:
-    name: Deploy
+  deploy-app:
+    name: Deploy app to production
     uses: ./.github/workflows/aws_deploy.yml
     with:
       aws-region: "ap-southeast-1"
@@ -18,12 +18,37 @@ jobs:
       ecs-cluster-name: "isomer-prod-ecs"
       ecs-web-service-name: "isomer-prod-ecs-service"
       ecs-container-name: "backend"
+      ecs-container-port: 8081
       environment: "prod"
       shortEnv: "prod"
       task-definition-path: ".aws/deploy/backend-task-definition.prod.json" 
       codedeploy-application: "isomer-prod-ecs-app"
       codedeploy-deployment-group: "isomer-prod-ecs-dg"
+      path-to-dockerfile: "Dockerfile"
 
+    secrets: 
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      EFS_FILE_SYSTEM_ID: ${{ secrets.PROD_EFS_FILE_SYSTEM_ID }}
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+
+  deploy-support: 
+    name: Deploy support to staging
+    uses: ./.github/workflows/aws_deploy.yml
+    with:
+      aws-region: "ap-southeast-1"
+      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-github-oidc-role-16ea937"
+      ecr-repository: "isomer-infra-prod-ecr"
+      ecs-cluster-name: "isomer-prod-ecs"
+      ecs-web-service-name: "prod-support-ecs-service"
+      ecs-container-name: "support"
+      ecs-container-port: 8082
+      environment: "prod"
+      shortEnv: "prod"
+      task-definition-path: ".aws/deploy/support-task-definition.prod.json" 
+      codedeploy-application: "prod-support-ecs-app"
+      codedeploy-deployment-group: "prod-support-ecs-dg"
+      path-to-dockerfile: "support/Dockerfile"
+      
     secrets: 
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       EFS_FILE_SYSTEM_ID: ${{ secrets.PROD_EFS_FILE_SYSTEM_ID }}

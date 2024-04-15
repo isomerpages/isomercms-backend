@@ -1,13 +1,25 @@
 version: "3"
 services:
-  web:
+  support:
+    build:
+      dockerfile: ./support/Dockerfile
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    volumes:
+      - ./:/opt/isomercms-backend
+      - ${EFS_VOL_PATH}:${EFS_VOL_PATH}
+      - "~/.gitconfig:/etc/gitconfig"
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
     depends_on:
       - postgres
+    ports:
+      - "8081:8081"
     env_file:
       - .env
     volumes:

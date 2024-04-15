@@ -2,8 +2,6 @@ import { GrowthBook } from "@growthbook/growthbook"
 import {
   RequestHandler as ExpressHandler,
   Request as ExpressRequest,
-  Response,
-  NextFunction,
 } from "express"
 
 import { FeatureFlags } from "./featureFlags"
@@ -35,13 +33,4 @@ export type RequestHandlerWithGrowthbook<
   ReqBody = unknown,
   ReqQuery = unknown,
   Locals extends Record<string, unknown> = Record<string, unknown>
-> = (
-  req: RequestWithGrowthBook & {
-    params: P
-    body: ReqBody
-    query: ReqQuery
-    locals: Locals
-  },
-  res: Response<ResBody, Locals>,
-  next: NextFunction
-) => void
+> = ExpressHandler<P, ResBody, ReqBody, ReqQuery, Locals>

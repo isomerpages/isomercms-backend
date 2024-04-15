@@ -168,7 +168,7 @@ class UsersService {
         SELECT email
         FROM whitelist
         WHERE
-          (expiry is NULL OR expiry >= NOW())
+          (expiry is NULL OR expiry > NOW())
           AND
           CASE WHEN email ~ '^.+@'
             THEN email = :email

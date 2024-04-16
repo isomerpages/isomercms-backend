@@ -285,10 +285,20 @@ class UsersService {
           return errAsync(new BadRequestError("Max number of attempts reached"))
         }
 
+        // We must successfully be able to increment the otp record attempts before any processing, to prevent brute-force race condition
+        // Consult GTA-24-012 WP3 for details
         return ResultAsync.fromPromise(
-          this.otpRepository.increment("attempts", {
-            where: { id: otpEntry.id },
-          }),
+          this.otpRepository.update(
+            {
+              attempts: otpEntry.attempts + 1,
+            },
+            {
+              where: {
+                id: otpEntry.id,
+                attempts: otpEntry.attempts, // required to ensure the record has not been modified in parallel
+              },
+            }
+          ),
           (error) =>
             this.otpGetAndLogError(
               DatabaseError,
@@ -297,8 +307,18 @@ class UsersService {
             )
         )
       })
-      .andThen(() =>
-        ResultAsync.fromPromise(
+      .andThen(([numAffectedRows]) => {
+        if (numAffectedRows <= 0) {
+          // Record could not be updated. It was likely changed in parallel by another request, we must fail this verification attempt now
+          return errAsync(
+            new BadRequestError("Unable to increment OTP attempts")
+          )
+        }
+
+        // Note/Warning: after this step, otpEntry.attempts does not have the value that is in DB (it is one less!)
+        // It's OK because we no longer reference otpEntry.attempts in this flow.
+
+        return ResultAsync.fromPromise(
           this.otpService.verifyOtp(otp, otpEntry!.hashedOtp),
           (error) =>
             this.otpGetAndLogError(
@@ -307,7 +327,7 @@ class UsersService {
               "Error verifying OTP"
             )
         )
-      )
+      })
       .andThen((isValidOtp) => {
         if (!isValidOtp) {
           return errAsync(new BadRequestError("OTP is not valid"))

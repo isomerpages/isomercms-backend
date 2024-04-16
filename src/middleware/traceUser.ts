@@ -1,15 +1,30 @@
+import { NextFunction, Request, Response } from "express"
+import { Session } from "express-session"
+
 import tracer from "@utils/tracer"
 
-import { RequestHandlerWithGrowthbook } from "@root/types"
+import { SessionData } from "@root/types/express/session"
+
+type UserSession = Session & SessionData
+
+function isUserSession(session: Session): session is UserSession {
+  return !!(
+    session &&
+    "id" in session &&
+    "userInfo" in session &&
+    typeof session.userInfo === "object" &&
+    session.userInfo &&
+    "isomerUserId" in session.userInfo
+  )
+}
 
 // eslint-disable-next-line import/prefer-default-export
-export const traceUserMiddleware: RequestHandlerWithGrowthbook<
-  never,
-  unknown,
-  unknown,
-  never
-> = async (req, res, next) => {
-  if (req.session?.userInfo?.isomerUserId) {
+export const traceUserMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (isUserSession(req.session)) {
     tracer.setUser({
       id: req.session.userInfo.isomerUserId,
       session_id: req.session.id,

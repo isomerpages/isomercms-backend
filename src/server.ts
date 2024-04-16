@@ -47,7 +47,7 @@ import {
   getAuthorizationMiddleware,
 } from "@root/middleware"
 import { statsMiddleware } from "@root/middleware/stats"
-import { traceUser } from "@root/middleware/traceUser"
+import { traceUserMiddleware } from "@root/middleware/traceUser"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
@@ -372,7 +372,7 @@ app.use(
 )
 
 app.use(sessionMiddleware)
-app.use(traceUser)
+app.use(traceUserMiddleware)
 
 // Health endpoint
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))

@@ -21,6 +21,7 @@ const mockValidEmail = "open@up.gov.sg"
 const mockInvalidEmail = "stay@home.sg"
 const mockUnwhitelistedEmail = "blacklisted@sad.sg"
 const mockWhitelistedDomain = ".gov.sg"
+const mockExactWhitelistedEmail = "exact@whitelisted.sg"
 const mockValidNumber = "92341234"
 const mockInvalidNumber = "00000000"
 const maxNumOfOtpAttempts = config.get("auth.maxNumOtpAttempts")
@@ -111,6 +112,9 @@ describe("Users Router", () => {
       await Whitelist.destroy({
         where: { email: mockWhitelistedDomain },
       })
+      await Whitelist.destroy({
+        where: { email: mockExactWhitelistedEmail },
+      })
     })
     it("should return 200 when email sending is successful", async () => {
       // Arrange
@@ -122,6 +126,22 @@ describe("Users Router", () => {
       // Act
       const actual = await request(app).post("/email/otp").send({
         email: mockValidEmail,
+      })
+
+      // Assert
+      expect(actual.statusCode).toBe(expected)
+    })
+
+    it("should return 200 when the email is an exact entry in the whitelist", async () => {
+      // Arrange
+      const expected = 200
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
+      await Whitelist.create({ email: mockExactWhitelistedEmail })
+
+      // Act
+      const actual = await request(app).post("/email/otp").send({
+        email: mockExactWhitelistedEmail,
       })
 
       // Assert
@@ -163,6 +183,24 @@ describe("Users Router", () => {
       const actual = await request(app).post("/email/otp").send({
         email: mockUnwhitelistedEmail,
       })
+
+      // Assert
+      expect(actual.statusCode).toBe(expected)
+    })
+
+    it("should return 400 when the email is a partial match of a exact entry in the whitelist", async () => {
+      // Arrange
+      const expected = 400
+      mockAxios.post.mockResolvedValueOnce(mockSendMailResponse)
+      mockAxios.get.mockResolvedValue(mockVerifyMailResponse)
+      await Whitelist.create({ email: mockExactWhitelistedEmail })
+
+      // Act
+      const actual = await request(app)
+        .post("/email/otp")
+        .send({
+          email: `evil.${mockExactWhitelistedEmail}`,
+        })
 
       // Assert
       expect(actual.statusCode).toBe(expected)

@@ -1,5 +1,5 @@
 import { ResultAsync, errAsync, okAsync } from "neverthrow"
-import { Op, ModelStatic, Transaction } from "sequelize"
+import { Op, ModelStatic, Transaction, QueryTypes } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
 import { RequireAtLeastOne } from "type-fest"
 
@@ -155,26 +155,51 @@ class UsersService {
 
   async canSendEmailOtp(email: string) {
     const normalizedEmail = email.toLowerCase()
-    const whitelistEntries = await this.whitelist.findAll({
-      attributes: ["email"],
-      where: {
-        expiry: {
-          [Op.or]: [{ [Op.is]: null }, { [Op.gt]: new Date() }],
-        },
-      },
-    })
-    const whitelistDomains = whitelistEntries.map((entry) => entry.email)
-    const hasMatchDomain =
-      whitelistDomains.filter((domain) => {
-        // if domain is really just a domain (does not include a @ OR starts with a @), we can do a prefix match
-        if (/^@|^[^@]+$/.test(domain)) {
-          return normalizedEmail.endsWith(domain)
-        }
 
-        return normalizedEmail === domain
-        // otherwise we can ONLY do an exact match
-      }).length > 0
-    return hasMatchDomain
+    // Raw query for readability because it uses 2 "unusual" query patterns
+    // - a CASE WHEN in the WHERE clause
+    // - a where condition of the form 'input like cell' (with a concat() call thrown in), as opposed to the more common 'cell like input'
+    //
+    // Why? We want to leverage the DB to see if a single record exists that whitelists the input
+    // we do not want to download the whole table locally to filter in local code
+    //
+    // query logic:
+    // - if whitelist entry is a full email (something before the @), then do exact match
+    // - if whitelist entry is a domain (no @, or starting with @), then do suffix match
+    //
+    // Limit 1 is added to allow the query to exit early on first match
+    const records = (await this.sequelize.query(
+      `
+        SELECT email
+        FROM whitelist
+        WHERE
+          (expiry is NULL OR expiry > NOW())
+          AND
+          CASE WHEN email ~ '^.+@'
+            THEN email = :email
+            ELSE :email LIKE CONCAT('%', email)
+          END
+        LIMIT 1
+      `,
+      {
+        replacements: { email: normalizedEmail },
+        type: QueryTypes.SELECT,
+      }
+    )) as { email: string }[]
+
+    if (records.length >= 1) {
+      logger.info({
+        message: "Email valid for OTP by whitelist",
+        meta: {
+          email,
+          whitelistEntry: records[0].email,
+        },
+      })
+
+      return true
+    }
+
+    return false
   }
 
   async sendEmailOtp(email: string) {

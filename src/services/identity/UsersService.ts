@@ -156,12 +156,17 @@ class UsersService {
   async canSendEmailOtp(email: string) {
     const normalizedEmail = email.toLowerCase()
 
-    // raw query because ORMs suck!
-    // why: we want to leverage the DB to see if a single record exists that whitelists the input
+    // Raw query for readability because it uses 2 "unusual" query patterns
+    // - a CASE WHEN in the WHERE clause
+    // - a where condition of the form 'input like cell' (with a concat() call thrown in), as opposed to the more common 'cell like input'
+    //
+    // Why? We want to leverage the DB to see if a single record exists that whitelists the input
     // we do not want to download the whole table locally to filter in local code
+    //
     // query logic:
     // - if whitelist entry is a full email (something before the @), then do exact match
     // - if whitelist entry is a domain (no @, or starting with @), then do suffix match
+    //
     // Limit 1 is added to allow the query to exit early on first match
     const records = (await this.sequelize.query(
       `

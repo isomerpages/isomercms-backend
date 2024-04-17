@@ -14,7 +14,8 @@ function isUserSession(session: Session): session is UserSession {
     "userInfo" in session &&
     typeof session.userInfo === "object" &&
     session.userInfo &&
-    "isomerUserId" in session.userInfo
+    "isomerUserId" in session.userInfo &&
+    "email" in session.userInfo
   )
 }
 

@@ -96,7 +96,7 @@
     "pino": "^8.19.0",
     "query-string": "^6.14.1",
     "reflect-metadata": "^0.1.13",
-    "sequelize": "^6.29.0",
+    "sequelize": "^6.37.1",
     "sequelize-typescript": "^2.1.6",
     "serialize-error": "^7.0.1",
     "simple-git": "^3.19.1",

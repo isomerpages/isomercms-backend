@@ -4,6 +4,7 @@ import logger from "@root/logger/logger"
 import { RequestHandlerWithGrowthbook } from "@root/types"
 import { getNewGrowthbookInstance } from "@root/utils/growthbook-utils"
 
+// eslint-disable-next-line import/prefer-default-export
 export const featureFlagMiddleware: RequestHandlerWithGrowthbook<
   never,
   unknown,

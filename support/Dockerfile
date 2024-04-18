@@ -2,14 +2,21 @@ FROM node:18-alpine AS base
 WORKDIR /opt/isomercms-backend
 
 RUN apk update && \
-  apk add --no-cache bash && \
-  apk add git && \
-  apk add openssh-client
+    apk add --no-cache bash && \
+    apk add git && \
+    apk add openssh-client
 
 RUN adduser -u 900 webapp -D -h /home/webapp -s /bin/sh
 USER webapp
 
-COPY . .
+COPY ../src ./src
+COPY ../common ./common
+COPY ../support ./support
+COPY ../package.json . 
+COPY ../package-lock.json .
+COPY ../scripts ./scripts
+COPY ../tsconfig.json .
+COPY ../patches ./patches
 
 # NOTE: We need to set up as root again because we need to perform chmod
 # We will fix all the permissions issue with a final chown to webapp
@@ -41,5 +48,5 @@ RUN echo "[user]" > /home/webapp/.gitconfig
 RUN echo "  name = Isomer Admin" >> /home/webapp/.gitconfig
 RUN echo "  email = admin@isomer.gov.sg" >> /home/webapp/.gitconfig
 
-EXPOSE "8081"
-CMD ["bash", "-c", "bash ./scripts/02_fetch_ssh_keys.sh & npm run start:ecs:$NODE_ENV"]
+EXPOSE "8082"
+CMD ["bash", "-c", "bash ./scripts/02_fetch_ssh_keys.sh & npm run start:support:$NODE_ENV"]

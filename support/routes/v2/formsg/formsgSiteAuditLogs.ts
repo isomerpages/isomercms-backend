@@ -81,14 +81,15 @@ export class FormsgSiteAuditLogsRouter {
       const endDateObject = new Date()
       endDateObject.setDate(0)
 
-      startDate = `${startDateObject.getFullYear()}-${startDateObject
-        .getMonth()
+      const startDateMonth = (startDateObject.getMonth() + 1)
         .toString()
-        .padStart(2, "0")}-01`
-      endDate = `${endDateObject.getFullYear()}-${endDateObject
-        .getMonth()
+        .padStart(2, "0")
+      const endDateMonth = (endDateObject.getMonth() + 1)
         .toString()
-        .padStart(2, "0")}-${endDateObject.getDate()}`
+        .padStart(2, "0")
+
+      startDate = `${startDateObject.getFullYear()}-${startDateMonth}-01`
+      endDate = `${endDateObject.getFullYear()}-${endDateMonth}-${endDateObject.getDate()}`
     } else {
       const startDateField = getField(responses, LOGS_TIMEFRAME_START_FIELD)
       const endDateField = getField(responses, LOGS_TIMEFRAME_END_FIELD)

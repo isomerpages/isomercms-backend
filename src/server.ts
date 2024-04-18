@@ -4,17 +4,23 @@ import "module-alias/register"
 
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
+import cors from "cors"
+import express from "express"
 import session from "express-session"
-import { result } from "lodash"
-import nocache from "nocache"
+import createError from "http-errors"
 import simpleGit from "simple-git"
 
 import { config } from "@config/config"
 
 import logger from "@logger/logger"
 
+import { errorHandler } from "@middleware/errorHandler"
+
+import { AuthRouter } from "@routes/v2/auth"
+
 import { MAX_CONCURRENT_GIT_PROCESSES } from "@constants/constants"
 
+import { useSharedMiddleware } from "@common/middleware"
 import initSequelize from "@database/index"
 import {
   Site,
@@ -39,9 +45,9 @@ import bootstrap from "@root/bootstrap"
 import {
   getAuthenticationMiddleware,
   getAuthorizationMiddleware,
-  featureFlagMiddleware,
 } from "@root/middleware"
 import { statsMiddleware } from "@root/middleware/stats"
+import { traceUserMiddleware } from "@root/middleware/traceUser"
 import { BaseDirectoryService } from "@root/services/directoryServices/BaseDirectoryService"
 import { CollectionPageService } from "@root/services/fileServices/MdPageServices/CollectionPageService"
 import { ContactUsPageService } from "@root/services/fileServices/MdPageServices/ContactUsPageService"
@@ -69,17 +75,15 @@ import SitesService from "@services/identity/SitesService"
 import InfraService from "@services/infra/InfraService"
 import StepFunctionsService from "@services/infra/StepFunctionsService"
 import ReviewRequestService from "@services/review/ReviewRequestService"
+import { AuthService } from "@services/utilServices/AuthService"
 import { mailer } from "@services/utilServices/MailClient"
 
-import { database } from "./database/config"
 import { apiLogger } from "./middleware/apiLogger"
 import { NotificationOnEditHandler } from "./middleware/notificationOnEditHandler"
-import { FormsgSiteAuditLogsRouter } from "./routes/formsg/formsgSiteAuditLogs"
 import getAuthenticatedSubrouter from "./routes/v2/authenticated"
 import { ReviewsRouter } from "./routes/v2/authenticated/review"
 import getAuthenticatedSitesSubrouter from "./routes/v2/authenticatedSites"
 import { SgidAuthRouter } from "./routes/v2/sgidAuth"
-import AuditLogsService from "./services/admin/AuditLogsService"
 import RepoManagementService from "./services/admin/RepoManagementService"
 import GitFileCommitService from "./services/db/GitFileCommitService"
 import GitFileSystemService from "./services/db/GitFileSystemService"
@@ -97,7 +101,9 @@ import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
 import { setBrowserPolyfills } from "./utils/growthbook-utils"
 
-const path = require("path")
+// Import middleware
+
+// Import routes
 
 const AUTH_TOKEN_EXPIRY_MS = config.get("auth.tokenExpiryInMs")
 
@@ -122,12 +128,6 @@ const sequelize = initSequelize([
 ])
 const usersService = getUsersService(sequelize)
 
-const cookieParser = require("cookie-parser")
-const cors = require("cors")
-const express = require("express")
-const helmet = require("helmet")
-const createError = require("http-errors")
-
 const SESSION_SECRET = config.get("auth.sessionSecret")
 
 const SequelizeStore = SequelizeStoreFactory(session.Store)
@@ -151,30 +151,12 @@ const sessionMiddleware = session({
 
 // Env vars
 const FRONTEND_URL = config.get("app.frontendUrl")
-// Import middleware
-
-// Import routes
-const { errorHandler } = require("@middleware/errorHandler")
-
-const { AuthRouter } = require("@routes/v2/auth")
-
-const { FormsgGGsRepairRouter } = require("@root/routes/formsg/formsgGGsRepair")
-const {
-  FormsgSiteCheckerRouter,
-} = require("@root/routes/formsg/formsgSiteChecker")
-const {
-  FormsgSiteCreateRouter,
-} = require("@root/routes/formsg/formsgSiteCreation")
-const {
-  FormsgSiteLaunchRouter,
-} = require("@root/routes/formsg/formsgSiteLaunch")
-const { AuthService } = require("@services/utilServices/AuthService")
 
 // growthbook polyfills
 setBrowserPolyfills()
 
 const authService = new AuthService({ usersService })
-const simpleGitInstance = new simpleGit({
+const simpleGitInstance = simpleGit({
   maxConcurrentProcesses: MAX_CONCURRENT_GIT_PROCESSES,
 })
 
@@ -318,18 +300,6 @@ const repoCheckerService = new RepoCheckerService({
   pageService,
 })
 
-const auditLogsService = new AuditLogsService({
-  collaboratorsService,
-  isomerAdminsService,
-  notificationsService,
-  reviewRequestService,
-  sitesService,
-  usersService,
-})
-
-// poller site launch updates
-infraService.pollMessages()
-
 const authenticationMiddleware = getAuthenticationMiddleware()
 const authorizationMiddleware = getAuthorizationMiddleware({
   identityAuthService,
@@ -357,9 +327,7 @@ const authenticatedSubrouterV2 = getAuthenticatedSubrouter({
   authenticationMiddleware,
   sitesService,
   usersService,
-  reposService,
   statsMiddleware,
-  deploymentsService,
   apiLogger,
   collaboratorsService,
   authorizationMiddleware,
@@ -392,71 +360,29 @@ const authV2Router = new AuthRouter({
   statsMiddleware,
   sgidAuthRouter,
 })
-const formsgSiteCreateRouter = new FormsgSiteCreateRouter({
-  usersService,
-  infraService,
-  gitFileSystemService,
-})
-const formsgSiteLaunchRouter = new FormsgSiteLaunchRouter({
-  usersService,
-  infraService,
-})
-
-const formsgGGsRepairRouter = new FormsgGGsRepairRouter({
-  gitFileSystemService,
-  reposService,
-})
-
-const formsgSiteCheckerRouter = new FormsgSiteCheckerRouter({
-  repoCheckerService,
-})
-
-const formsgSiteAuditLogsRouter = new FormsgSiteAuditLogsRouter({
-  auditLogsService,
-})
 
 const app = express()
 
-if (isSecure) {
-  // Our server only receives requests from the alb reverse proxy, so we need to use the client IP provided in X-Forwarded-For
-  // This is trusted because our security groups block all other access to the server
-  app.set("trust proxy", true)
-}
-app.use(helmet())
-
-// use growthbook across routes
-app.use(featureFlagMiddleware)
-
+useSharedMiddleware(app)
 app.use(
   cors({
     origin: FRONTEND_URL,
     credentials: true,
   })
 )
-app.use(express.json({ limit: "7mb" }))
-app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser())
-app.use(express.static(path.join(__dirname, "public")))
-app.use(nocache())
 
 app.use(sessionMiddleware)
+app.use(traceUserMiddleware)
 
 // Health endpoint
 app.use("/v2/ping", (req, res, next) => res.status(200).send("Ok"))
 
 // Routes layer setup
 app.use("/v2/auth", authV2Router.getRouter())
-// Endpoints which have require login, but not site access token
+// Endpoints which have from  login, but not site access token
 app.use("/v2", authenticatedSubrouterV2)
 // Endpoints which modify the github repo, used to inject site access token
 app.use("/v2/sites/:siteName", authenticatedSitesSubrouterV2)
-
-// FormSG Backend handler routes
-app.use("/formsg", formsgSiteCreateRouter.getRouter())
-app.use("/formsg", formsgSiteLaunchRouter.getRouter())
-app.use("/formsg", formsgGGsRepairRouter.getRouter())
-app.use("/formsg", formsgSiteCheckerRouter.getRouter())
-app.use("/formsg", formsgSiteAuditLogsRouter.getRouter())
 
 // catch unknown routes
 app.use((req, res, next) => {

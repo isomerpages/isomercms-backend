@@ -36,7 +36,12 @@ class MediaFileService {
     const cmConfig = isCloudmersiveEnabled(sessionData.growthbook)
     if (cmConfig.is_enabled) {
       const virusScanRes = await scanFileForVirus(fileBuffer, cmConfig.timeout)
-      logger.info(`File scan result: ${virusScanRes.CleanResult}`)
+      logger.info({
+        message: "File scan result",
+        meta: {
+          virusScanRes,
+        },
+      })
       if (!virusScanRes || !virusScanRes.CleanResult) {
         throw new BadRequestError("File did not pass virus scan")
       }

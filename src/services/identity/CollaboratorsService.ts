@@ -61,23 +61,15 @@ class CollaboratorsService {
   }
 
   deriveAllowedRoleFromEmail = async (fullEmail: string) => {
-    const whitelistEntries = await this.whitelist.findAll({
-      where: {
-        expiry: {
-          [Op.or]: [{ [Op.is]: null }, { [Op.gt]: new Date() }],
-        },
-      },
-    })
-
-    const matchedDomains = whitelistEntries.filter((entry) =>
-      fullEmail.endsWith(entry.email)
+    const whitelistEntries = await this.usersService.getWhitelistRecordsFromEmail(
+      fullEmail
     )
 
-    if (!matchedDomains.length) return null
+    if (!whitelistEntries.length) return null
 
     // TODO: Modify this method because the presence of the expiry field is not
     // the best way of differentiating Admin/Contributor roles
-    return matchedDomains[0].expiry
+    return whitelistEntries[0].expiry
       ? CollaboratorRoles.Contributor
       : CollaboratorRoles.Admin
   }

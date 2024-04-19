@@ -69,6 +69,41 @@ class UsersService {
     this.otpRepository = otpRepository
   }
 
+  async getWhitelistRecordsFromEmail(email: string) {
+    // Raw query for readability because it uses 2 "unusual" query patterns
+    // - a CASE WHEN in the WHERE clause
+    // - a where condition of the form 'input like cell' (with a concat() call thrown in), as opposed to the more common 'cell like input'
+    //
+    // Why? We want to leverage the DB to see if a single record exists that whitelists the input
+    // we do not want to download the whole table locally to filter in local code
+    //
+    // query logic:
+    // - if whitelist entry is a full email (something before the @), then do exact match
+    // - if whitelist entry is a domain (no @, or starting with @), then do suffix match
+    //
+    // Limit 1 is added to allow the query to exit early on first match
+    const normalizedEmail = email.toLowerCase()
+    const whitelist = (await this.sequelize.query(
+      `
+        SELECT email, expiry
+        FROM whitelist
+        WHERE
+          (expiry is NULL OR expiry > NOW())
+          AND
+          CASE WHEN email ~ '^.+@'
+            THEN email = :email
+            ELSE :email LIKE CONCAT('%', email)
+          END
+        LIMIT 1
+      `,
+      {
+        replacements: { email: normalizedEmail },
+        type: QueryTypes.SELECT,
+      }
+    )) as { email: string; expiry: string }[]
+    return whitelist
+  }
+
   async findById(id: string) {
     return this.repository.findOne({ where: { id } })
   }
@@ -154,38 +189,7 @@ class UsersService {
   }
 
   async canSendEmailOtp(email: string) {
-    const normalizedEmail = email.toLowerCase()
-
-    // Raw query for readability because it uses 2 "unusual" query patterns
-    // - a CASE WHEN in the WHERE clause
-    // - a where condition of the form 'input like cell' (with a concat() call thrown in), as opposed to the more common 'cell like input'
-    //
-    // Why? We want to leverage the DB to see if a single record exists that whitelists the input
-    // we do not want to download the whole table locally to filter in local code
-    //
-    // query logic:
-    // - if whitelist entry is a full email (something before the @), then do exact match
-    // - if whitelist entry is a domain (no @, or starting with @), then do suffix match
-    //
-    // Limit 1 is added to allow the query to exit early on first match
-    const records = (await this.sequelize.query(
-      `
-        SELECT email
-        FROM whitelist
-        WHERE
-          (expiry is NULL OR expiry > NOW())
-          AND
-          CASE WHEN email ~ '^.+@'
-            THEN email = :email
-            ELSE :email LIKE CONCAT('%', email)
-          END
-        LIMIT 1
-      `,
-      {
-        replacements: { email: normalizedEmail },
-        type: QueryTypes.SELECT,
-      }
-    )) as { email: string }[]
+    const records = await this.getWhitelistRecordsFromEmail(email)
 
     if (records.length >= 1) {
       logger.info({

@@ -347,6 +347,7 @@ describe("Sites Router", () => {
         ],
       }
       mockGenericAxios.get.mockResolvedValueOnce({
+        headers: {},
         data: [
           {
             pushed_at: mockUpdatedAt,

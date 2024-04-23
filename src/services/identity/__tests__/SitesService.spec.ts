@@ -130,7 +130,10 @@ const mockDeploymentWithStagingLiteUrl = {
 
 describe("SitesService", () => {
   // Prevent inter-test pollution of mocks
-  afterEach(() => jest.clearAllMocks())
+  afterEach(() => {
+    jest.clearAllMocks()
+    mockAxios.get.mockReset()
+  })
 
   describe("extractAuthorEmail", () => {
     it("should return the email address of the author of the commit", () => {

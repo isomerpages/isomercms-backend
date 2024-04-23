@@ -1,6 +1,8 @@
 import { HeadersDefaults } from "axios"
 import _ from "lodash"
 
+import logger from "@logger/logger"
+
 import tracer from "@utils/tracer"
 
 import {
@@ -132,6 +134,15 @@ async function fetchPageOfRepositories({
         }
       : { params }
   )
+
+  logger.info({
+    message: "Fetched one page of repo",
+    meta: {
+      page,
+      headers,
+      data,
+    },
+  })
 
   const res: FetchRepoPageResult = {
     repos: processAndFilterPageOfRepositories(data),

@@ -944,7 +944,7 @@ describe("SitesService", () => {
         headers: {
           link: [
             '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="first"',
-            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="prev"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=2>; rel="prev"',
           ].join(", "),
         },
         data: [],
@@ -1049,7 +1049,7 @@ describe("SitesService", () => {
         headers: {
           link: [
             '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="first"',
-            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="prev"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=2>; rel="prev"',
           ].join(", "),
         },
         data: [],

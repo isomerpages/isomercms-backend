@@ -215,7 +215,7 @@ export class SitesCacheService {
 
   constructor(refreshInterval: number) {
     this.repoDataCache = {} as CacheStore
-    this.refreshInterval = 90000
+    this.refreshInterval = refreshInterval
 
     this.startCache()
 

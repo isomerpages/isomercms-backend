@@ -44,11 +44,16 @@ const scanFileForVirus = (fileBuffer, timeout) => {
     defaultCloudmersiveClient.timeout = timeout
   }
   return new Promise((success, failure) => {
-    apiInstance.scanFile(fileBuffer, (error, data) => {
+    apiInstance.scanFile(fileBuffer, (error, data, response) => {
       if (error) {
-        logger.error(
-          `Error when calling Cloudmersive Virus Scan API: ${error.message}`
-        )
+        logger.error({
+          message: "Error when calling Cloudmersive Virus Scan API",
+          error,
+          meta: {
+            data,
+            headers: response?.headers,
+          },
+        })
         failure(error)
       } else {
         logger.info("Cloudmersive Virus Scan API called successfully")

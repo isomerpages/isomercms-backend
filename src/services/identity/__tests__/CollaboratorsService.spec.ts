@@ -51,6 +51,7 @@ describe("CollaboratorsService", () => {
   }
   const mockUsersService = {
     findOrCreateByEmail: jest.fn(),
+    getWhitelistRecordsFromEmail: jest.fn(),
   }
 
   const collaboratorsService = new CollaboratorsService({
@@ -70,15 +71,12 @@ describe("CollaboratorsService", () => {
       // Arrange
       const mockWhitelistEntries = [
         {
-          id: mockWhitelistId,
           email: mockEmailAddress,
           expiry: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       ]
-      mockWhitelistRepo.findAll.mockResolvedValue(
-        (mockWhitelistEntries as unknown) as Whitelist[]
+      mockUsersService.getWhitelistRecordsFromEmail.mockResolvedValue(
+        mockWhitelistEntries
       )
 
       // Act
@@ -88,22 +86,19 @@ describe("CollaboratorsService", () => {
 
       // Assert
       expect(role).toStrictEqual(CollaboratorRoles.Admin)
-      expect(mockWhitelistRepo.findAll).toHaveBeenCalled()
+      expect(mockUsersService.getWhitelistRecordsFromEmail).toHaveBeenCalled()
     })
 
     it("should derive contributor role for valid contributor-eligible emails", async () => {
       // Arrange
       const mockWhitelistEntries = [
         {
-          id: mockWhitelistId,
           email: mockEmailAddress,
           expiry: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       ]
-      mockWhitelistRepo.findAll.mockResolvedValue(
-        (mockWhitelistEntries as unknown) as Whitelist[]
+      mockUsersService.getWhitelistRecordsFromEmail.mockResolvedValue(
+        mockWhitelistEntries
       )
 
       // Act
@@ -113,13 +108,13 @@ describe("CollaboratorsService", () => {
 
       // Assert
       expect(role).toStrictEqual(CollaboratorRoles.Contributor)
-      expect(mockWhitelistRepo.findAll).toHaveBeenCalled()
+      expect(mockUsersService.getWhitelistRecordsFromEmail).toHaveBeenCalled()
     })
 
     it("should derive no role for emails from non-whitelisted domains", async () => {
       // Arrange
       const mockWhitelistEntries: never[] = []
-      mockWhitelistRepo.findAll.mockResolvedValue(
+      mockUsersService.getWhitelistRecordsFromEmail.mockResolvedValue(
         mockWhitelistEntries as Whitelist[]
       )
 
@@ -130,7 +125,7 @@ describe("CollaboratorsService", () => {
 
       // Assert
       expect(role).toStrictEqual(null)
-      expect(mockWhitelistRepo.findAll).toHaveBeenCalled()
+      expect(mockUsersService.getWhitelistRecordsFromEmail).toHaveBeenCalled()
     })
   })
 

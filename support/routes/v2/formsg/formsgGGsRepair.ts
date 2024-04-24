@@ -31,6 +31,7 @@ interface FormsgGGsRepairRouterProps {
 }
 
 interface RepairEmailProps {
+  lockedRepos: string[]
   clonedRepos: string[]
   syncedRepos: string[]
   errors: GitFileSystemError[]
@@ -41,7 +42,9 @@ const REQUESTER_EMAIL_FIELD = "Email"
 const OPTION_TO_SUBMIT_CSV = "Do you want to upload list of sites as a CSV?"
 const ATTACHMENT = "Attachment"
 const REPO_NAME_FIELD = "Table (Repo Name (in GitHub))"
+const REPAIR_MODE_FIELD = "Repair mode"
 
+type RepairModeType = "only_lock" | "repair_without_lock" | "repair_with_lock"
 export class FormsgGGsRepairRouter {
   private readonly gitFileSystemService: FormsgGGsRepairRouterProps["gitFileSystemService"]
 
@@ -66,6 +69,16 @@ export class FormsgGGsRepairRouter {
 
     const requesterEmail = getField(responses, REQUESTER_EMAIL_FIELD)
     const optionToSubmitCsv = getField(responses, OPTION_TO_SUBMIT_CSV)
+    const repairModeResponse = getField(responses, REPAIR_MODE_FIELD)
+
+    let repairMode: RepairModeType = "repair_with_lock"
+
+    if (repairModeResponse === "Repair without acquiring lock") {
+      repairMode = "repair_without_lock"
+    } else if (repairModeResponse === "Only lock repo") {
+      repairMode = "only_lock"
+    }
+
     const repoNames: string[] = []
     if (optionToSubmitCsv === "Yes") {
       const attachmentId = getId(responses, ATTACHMENT)
@@ -110,11 +123,18 @@ export class FormsgGGsRepairRouter {
       return
     }
     res.sendStatus(200) // we have received the form and obtained relevant field
-    this.handleGGsFormSubmission(repoNames, requesterEmail)
+    this.handleGGsFormSubmission(repoNames, requesterEmail, repairMode)
   }
 
-  handleGGsFormSubmission = (repoNames: string[], requesterEmail: string) => {
-    const repairs: ResultAsync<string, GitFileSystemError | LockedError>[] = []
+  handleGGsFormSubmission = (
+    repoNames: string[],
+    requesterEmail: string,
+    repairMode: RepairModeType
+  ) => {
+    const repairs: ResultAsync<
+      string | void,
+      GitFileSystemError | LockedError
+    >[] = []
 
     const clonedStagingRepos: string[] = []
     const syncedStagingAndStagingLiteRepos: string[] = []
@@ -122,11 +142,22 @@ export class FormsgGGsRepairRouter {
     repoNames.forEach((repoName) => {
       const repoUrl = `git@github.com:isomerpages/${repoName}.git`
 
+      const lockRepo: ResultAsync<"locked", LockedError> =
+        repairMode === "repair_without_lock"
+          ? okAsync("locked")
+          : ResultAsync.fromPromise(
+              lock(repoName, LOCK_TIME_SECONDS),
+              (err) =>
+                new LockedError(`Unable to lock repo ${repoName}, ${err}`)
+            ).map(() => "locked")
+
+      if (repairMode === "only_lock") {
+        repairs.push(lockRepo)
+        return
+      }
+
       repairs.push(
-        ResultAsync.fromPromise(
-          lock(repoName, LOCK_TIME_SECONDS),
-          (err) => new LockedError(`Unable to lock repo ${repoName}`)
-        )
+        lockRepo
           .andThen(() => this.doesRepoNeedClone(repoName))
           .andThen(() => {
             const isStaging = true
@@ -193,6 +224,7 @@ export class FormsgGGsRepairRouter {
         fromPromise(
           this.sendEmail({
             requesterEmail,
+            lockedRepos: repairMode === "only_lock" ? repoNames : [],
             clonedRepos: clonedStagingRepos,
             syncedRepos: syncedStagingAndStagingLiteRepos,
             errors,
@@ -200,7 +232,7 @@ export class FormsgGGsRepairRouter {
           (error) => {
             const emailContent = `Sites have been repaired ${
               errors ? `with errors ${errors}` : `without errors`
-            } and clonedRepos ${clonedStagingRepos} and syncedRepos ${syncedStagingAndStagingLiteRepos}`
+            } and clonedRepos ${clonedStagingRepos} and syncedRepos ${syncedStagingAndStagingLiteRepos} and lockedRepos ${repoNames} for requester ${requesterEmail} with repair mode ${repairMode}`
             // Logging information in case email sending fails
             logger.error(
               `There was an error sending email to ${requesterEmail}: ${error}\n The content of the email is: ${emailContent}`
@@ -212,6 +244,7 @@ export class FormsgGGsRepairRouter {
 
   async sendEmail({
     requesterEmail,
+    lockedRepos,
     clonedRepos,
     syncedRepos,
     errors,
@@ -222,6 +255,14 @@ export class FormsgGGsRepairRouter {
         ? `The following errors were observed while repairing the sites:
 <ul>
 ${errors.map((error) => `<li>${error.message}</li>`)}
+</ul>`
+        : ""
+
+    const lockedReposReport =
+      lockedRepos.length > 0
+        ? `The following sites were locked:
+<ul>
+${lockedRepos.map((repo) => `<li>${repo}</li>`)}
 </ul>`
         : ""
 
@@ -241,7 +282,8 @@ ${syncedRepos.map((repo) => `<li>${repo}</li>`)}
 </ul>`
         : ""
 
-    const html = errorReport + clonedReposReport + syncedReposReport
+    const html =
+      errorReport + clonedReposReport + syncedReposReport + lockedReposReport
     await mailer.sendMail(requesterEmail, subject, html)
   }
 

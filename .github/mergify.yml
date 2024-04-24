@@ -17,7 +17,7 @@ pull_request_rules:
       - author=isomeradmin
       - check-success~=lint
       - check-success~=test
-      - title~=^\[Snyk\]]
+      - title~=^\[Snyk\]
       - base = develop
     actions:
       review:

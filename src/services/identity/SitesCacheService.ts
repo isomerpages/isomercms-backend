@@ -1,8 +1,6 @@
 import { HeadersDefaults } from "axios"
 import _ from "lodash"
 
-import logger from "@logger/logger"
-
 import tracer from "@utils/tracer"
 
 import {
@@ -28,8 +26,10 @@ type GitHubResponseHeaders = HeadersDefaults & {
   link?: string
 }
 
+type LinkRelation = "first" | "last" | "prev" | "next"
+
 type Link = {
-  relid: "first" | "last" | "prev" | "next"
+  relid: LinkRelation
   url: string
   pagenum: number
 }
@@ -43,7 +43,7 @@ type LinkSet = {
 
 type LinkMatch = RegExpExecArray & {
   groups: {
-    relid: "first" | "last" | "prev" | "next"
+    relid: LinkRelation
     url: string
   }
 }
@@ -134,15 +134,6 @@ async function fetchPageOfRepositories({
         }
       : { params }
   )
-
-  logger.info({
-    message: "Fetched one page of repo",
-    meta: {
-      page,
-      headers,
-      data,
-    },
-  })
 
   const res: FetchRepoPageResult = {
     repos: processAndFilterPageOfRepositories(data),

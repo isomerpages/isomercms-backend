@@ -62,10 +62,12 @@ function parseGitHubLinkHeader(linkheader: string): LinkSet {
   const links: LinkSet = {}
 
   const linkRe = /<(?<url>[^>]+)>; rel="(?<relid>[a-z]+)"(, )?/g
-  let regRes: LinkMatch | null = null
 
-  // eslint-disable-next-line no-cond-assign
-  while ((regRes = linkRe.exec(linkheader) as LinkMatch) !== null) {
+  // we expect a small input so it's OK to loop on the matchAll() iterator
+  /* eslint-disable no-restricted-syntax */
+  for (const regRes of linkheader.matchAll(
+    linkRe
+  ) as IterableIterator<LinkMatch>) {
     const url = new URL(regRes.groups.url)
     const pageNum = url.searchParams.get("page") as string // Per specifications, we KNOW the github link urls WILL include a page number in the url
     links[regRes.groups.relid] = {
@@ -74,6 +76,7 @@ function parseGitHubLinkHeader(linkheader: string): LinkSet {
       pagenum: parseInt(pageNum, 10),
     }
   }
+  /* eslint-enable no-restricted-syntax */
 
   return links
 }

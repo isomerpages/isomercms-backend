@@ -1,15 +1,22 @@
 import { GrowthBook, setPolyfills } from "@growthbook/growthbook"
 
-import config from "@root/config/config"
+import { config } from "@root/config/config"
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
 import { FeatureFlags, CloudmersiveConfigType } from "@root/types/featureFlags"
 
 const GROWTHBOOK_API_HOST = "https://cdn.growthbook.io"
 
-export const getNewGrowthbookInstance = (clientKey: string) =>
+export const getNewGrowthbookInstance = ({
+  clientKey,
+  subscribeToChanges,
+}: {
+  clientKey: string
+  subscribeToChanges: boolean
+}) =>
   new GrowthBook<FeatureFlags>({
     apiHost: GROWTHBOOK_API_HOST,
     clientKey,
+    subscribeToChanges,
     enableDevMode: config.get("env") === "dev",
   })
 

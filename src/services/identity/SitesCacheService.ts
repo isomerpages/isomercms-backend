@@ -57,7 +57,7 @@ type CacheStore = {
   [key: string]: RepositoryData
 }
 
-function parseGitHubLinkHeader(linkheader: string) {
+function parseGitHubLinkHeader(linkheader: string): LinkSet {
   // example value: link: <https://api.github.com/organizations/40887764/repos?page=2>; rel="next", <https://api.github.com/organizations/40887764/repos?page=34>; rel="last"
   const links: LinkSet = {}
 

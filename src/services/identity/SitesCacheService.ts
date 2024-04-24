@@ -35,10 +35,7 @@ type Link = {
 }
 
 type LinkSet = {
-  first?: Link
-  last?: Link
-  prev?: Link
-  next?: Link
+  [relid in LinkRelation]?: Link
 }
 
 type LinkMatch = RegExpExecArray & {

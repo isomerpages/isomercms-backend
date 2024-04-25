@@ -260,6 +260,7 @@ class CollaboratorsService {
             AND repos.deleted_at IS NULL
             AND sites.deleted_at IS NULL
             AND users.deleted_at IS NULL
+        LIMIT 1
       `,
       {
         replacements: { siteName, userId },
@@ -267,7 +268,7 @@ class CollaboratorsService {
       }
     )) as { role: CollaboratorRoles }[]
 
-    if (records.length > 0) {
+    if (records.length === 1) {
       return records[0].role
     }
 

@@ -1,5 +1,6 @@
 import { errAsync, okAsync } from "neverthrow"
 import { ModelStatic } from "sequelize"
+import { Sequelize } from "sequelize-typescript"
 
 import { ForbiddenError } from "@errors/ForbiddenError"
 import { NotFoundError } from "@errors/NotFoundError"
@@ -24,6 +25,7 @@ import CollaboratorsService from "@services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
 import UsersService from "@services/identity/UsersService"
+import { sequelize } from "@tests/database"
 
 describe("CollaboratorsService", () => {
   const mockSiteName = "sitename"
@@ -31,6 +33,9 @@ describe("CollaboratorsService", () => {
   const mockSiteId = 1
   const mockUserId = "2"
   const mockWhitelistId = 3
+  const MockSequelize = {
+    query: jest.fn(),
+  }
   const mockSiteRepo = {
     findOne: jest.fn(),
   }
@@ -55,6 +60,7 @@ describe("CollaboratorsService", () => {
   }
 
   const collaboratorsService = new CollaboratorsService({
+    sequelize: (MockSequelize as unknown) as Sequelize,
     siteRepository: (mockSiteRepo as unknown) as ModelStatic<Site>,
     siteMemberRepository: (mockSiteMemberRepo as unknown) as ModelStatic<SiteMember>,
     isomerAdminsService: (mockIsomerAdminsService as unknown) as IsomerAdminsService,
@@ -177,16 +183,14 @@ describe("CollaboratorsService", () => {
   describe("getRole", () => {
     it("should retrieve correct admin role", async () => {
       // Arrange
-      mockSiteRepo.findOne.mockResolvedValue(
-        mockSiteOrmResponseWithOneAdminCollaborator
-      )
+      MockSequelize.query.mockResolvedValue([{ role: CollaboratorRoles.Admin }])
       mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
-      expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(MockSequelize.query).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.Admin)
 
       // isUserIsomerAdmin() should not have been called if a valid role was retrieved
@@ -195,16 +199,16 @@ describe("CollaboratorsService", () => {
 
     it("should retrieve correct contributor role", async () => {
       // Arrange
-      mockSiteRepo.findOne.mockResolvedValue(
-        mockSiteOrmResponseWithOneContributorCollaborator
-      )
+      MockSequelize.query.mockResolvedValue([
+        { role: CollaboratorRoles.Contributor },
+      ])
       mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
-      expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(MockSequelize.query).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.Contributor)
 
       // isUserIsomerAdmin() should not have been called if a valid role was retrieved
@@ -213,46 +217,42 @@ describe("CollaboratorsService", () => {
 
     it("should retrieve correct null role if site has no collaborators", async () => {
       // Arrange
-      mockSiteRepo.findOne.mockResolvedValue(
-        mockSiteOrmResponseWithNoCollaborators
-      )
+      MockSequelize.query.mockResolvedValue([])
       mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
-      expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(MockSequelize.query).toHaveBeenCalled()
       expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(null)
     })
 
     it("should retrieve correct Isomer admin role if user is not a collaborator but is an Isomer admin", async () => {
       // Arrange
-      mockSiteRepo.findOne.mockResolvedValue(
-        mockSiteOrmResponseWithNoCollaborators
-      )
+      MockSequelize.query.mockResolvedValue([])
       mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(true)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
-      expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(MockSequelize.query).toHaveBeenCalled()
       expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.IsomerAdmin)
     })
 
     it("should retrieve correct null role if site does not exist", async () => {
       // Arrange
-      mockSiteRepo.findOne.mockResolvedValue([])
+      MockSequelize.query.mockResolvedValue([])
       mockIsomerAdminsService.isUserIsomerAdmin.mockResolvedValue(false)
 
       // Act
       const role = await collaboratorsService.getRole(mockSiteName, mockUserId)
 
       // Assert
-      expect(mockSiteRepo.findOne).toHaveBeenCalled()
+      expect(MockSequelize.query).toHaveBeenCalled()
       expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(null)
     })

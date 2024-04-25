@@ -231,34 +231,6 @@ class CollaboratorsService {
     siteName: string,
     userId: string
   ): Promise<CollaboratorRoles | null> => {
-    const site = await this.siteRepository.findOne({
-      include: [
-        {
-          model: User,
-          as: "site_members",
-          where: {
-            id: userId,
-          },
-        },
-        {
-          model: Repo,
-          where: {
-            name: siteName,
-          },
-        },
-      ],
-      logging: (sql, timing) =>
-        logger.info({
-          message: "getRole() original query details",
-          meta: {
-            sql,
-            timing,
-          },
-        }),
-    })
-
-    const role = site?.site_members?.[0]?.SiteMember?.role
-
     // Note: We could make the query even cheaper if we assume the site and user cannot be deleted when this verification is done
     // Basically with just:
     // SELECT sm.role
@@ -271,7 +243,7 @@ class CollaboratorsService {
     //     AND sm.user_id = :userId
     //     AND r.deleted_at IS NULL
 
-    const records1 = (await this.sequelize.query(
+    const records = (await this.sequelize.query(
       `
         SELECT sm.role
         FROM
@@ -292,58 +264,11 @@ class CollaboratorsService {
       {
         replacements: { siteName, userId },
         type: QueryTypes.SELECT,
-        logging: (sql, timing) =>
-          logger.info({
-            message: "getRole() option 1 query details",
-            meta: {
-              sql,
-              timing,
-            },
-          }),
       }
     )) as { role: CollaboratorRoles }[]
 
-    const records2 = (await this.sequelize.query(
-      `
-      SELECT sm.role
-      FROM
-          site_members sm,
-          repos r
-      WHERE
-          r.site_id = sm.site_id
-          AND r.name = :siteName
-          AND sm.user_id = :userId
-          AND r.deleted_at IS NULL
-      `,
-      {
-        replacements: { siteName, userId },
-        type: QueryTypes.SELECT,
-        logging: (sql, timing) =>
-          logger.info({
-            message: "getRole() option 2 query details",
-            meta: {
-              sql,
-              timing,
-            },
-          }),
-      }
-    )) as { role: CollaboratorRoles }[]
-
-    logger.info({
-      message: "validating new getRole() query",
-      meta: {
-        role1: site?.site_members?.[0]?.SiteMember?.role,
-        role2: records1?.[0]?.role,
-        role3: records2?.[0]?.role,
-        matches1:
-          site?.site_members?.[0]?.SiteMember?.role === records1?.[0]?.role,
-        matches2:
-          site?.site_members?.[0]?.SiteMember?.role === records2?.[0]?.role,
-      },
-    })
-
-    if (role) {
-      return role
+    if (records.length > 0) {
+      return records[0].role
     }
 
     const isIsomerAdmin = await this.isomerAdminsService.isUserIsomerAdmin(

@@ -1,5 +1,6 @@
 import _ from "lodash"
-import { ModelStatic, Op } from "sequelize"
+import { ModelStatic, QueryTypes } from "sequelize"
+import { Sequelize } from "sequelize-typescript"
 import validator from "validator"
 
 import { ForbiddenError } from "@errors/ForbiddenError"
@@ -21,6 +22,7 @@ import SitesService from "./SitesService"
 import UsersService from "./UsersService"
 
 interface CollaboratorsServiceProps {
+  sequelize: Sequelize
   siteRepository: ModelStatic<Site>
   siteMemberRepository: ModelStatic<SiteMember>
   isomerAdminsService: IsomerAdminsService
@@ -32,6 +34,8 @@ interface CollaboratorsServiceProps {
 class CollaboratorsService {
   // NOTE: Explicitly specifying using keyed properties to ensure
   // that the types are synced.
+  private readonly sequelize: CollaboratorsServiceProps["sequelize"]
+
   private readonly siteRepository: CollaboratorsServiceProps["siteRepository"]
 
   private readonly siteMemberRepository: CollaboratorsServiceProps["siteMemberRepository"]
@@ -46,6 +50,7 @@ class CollaboratorsService {
 
   constructor({
     siteRepository,
+    sequelize,
     siteMemberRepository,
     isomerAdminsService,
     sitesService,
@@ -53,6 +58,7 @@ class CollaboratorsService {
     whitelist,
   }: CollaboratorsServiceProps) {
     this.siteRepository = siteRepository
+    this.sequelize = sequelize
     this.siteMemberRepository = siteMemberRepository
     this.isomerAdminsService = isomerAdminsService
     this.sitesService = sitesService
@@ -225,30 +231,52 @@ class CollaboratorsService {
     siteName: string,
     userId: string
   ): Promise<CollaboratorRoles | null> => {
-    const site = await this.siteRepository.findOne({
-      include: [
-        {
-          model: User,
-          as: "site_members",
-          where: {
-            id: userId,
-          },
-        },
-        {
-          model: Repo,
-          where: {
-            name: siteName,
-          },
-        },
-      ],
-    })
+    // Note: We could make the query even cheaper if we assume the site and user cannot be deleted when this verification is done
+    // Basically with just:
+    // SELECT sm.role
+    // FROM
+    //     site_members,
+    //     repos,
+    // WHERE
+    //     repos.site_id = site_members.site_id
+    //     AND repos.name = :siteName
+    //     AND site_members.user_id = :userId
+    //     AND repos.deleted_at IS NULL
+
+    const records = (await this.sequelize.query(
+      `
+        SELECT site_members.role
+        FROM
+            site_members,
+            sites,
+            repos,
+            users
+        WHERE
+            repos.site_id = sites.id
+            AND site_members.site_id = sites.id
+            AND repos.name = :siteName
+            AND site_members.user_id = users.id
+            AND site_members.user_id = :userId
+            AND repos.deleted_at IS NULL
+            AND sites.deleted_at IS NULL
+            AND users.deleted_at IS NULL
+        LIMIT 1
+      `,
+      {
+        replacements: { siteName, userId },
+        type: QueryTypes.SELECT,
+      }
+    )) as { role: CollaboratorRoles }[]
+
+    if (records.length === 1) {
+      return records[0].role
+    }
 
     const isIsomerAdmin = await this.isomerAdminsService.isUserIsomerAdmin(
       userId
     )
-    const isomerAdminRole = isIsomerAdmin ? CollaboratorRoles.IsomerAdmin : null
 
-    return site?.site_members?.[0]?.SiteMember?.role ?? isomerAdminRole
+    return isIsomerAdmin ? CollaboratorRoles.IsomerAdmin : null
   }
 
   getStatistics = async (siteName: string) => {

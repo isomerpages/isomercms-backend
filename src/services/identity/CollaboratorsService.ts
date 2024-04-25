@@ -245,7 +245,7 @@ class CollaboratorsService {
 
     const records = (await this.sequelize.query(
       `
-        SELECT sm.role
+        SELECT site_members.role
         FROM
             site_members,
             sites,

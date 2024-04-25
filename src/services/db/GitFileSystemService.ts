@@ -396,7 +396,7 @@ export default class GitFileSystemService {
       return ResultAsync.fromPromise(
         this.git
           .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-          .diff(["master..staging", "--name-only"]),
+          .raw(["diff-tree", "-r", "--name-only", "master..staging"]),
         (error) => {
           logger.error(
             `Error when getting diff files between master and staging: ${error}, when trying to access ${efsVolPath}/${repoName}`

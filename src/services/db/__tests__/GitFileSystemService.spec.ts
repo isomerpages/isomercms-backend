@@ -753,7 +753,7 @@ describe("GitFileSystemService", () => {
 
     it("should return the files changed and defensively try creating local branches", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        diff: jest
+        raw: jest
           .fn()
           .mockResolvedValueOnce("fake-dir/fake-file\nanother-fake-file\n"),
       })
@@ -768,7 +768,7 @@ describe("GitFileSystemService", () => {
 
     it("should return GitFileSystemError if an error occurred when getting the git diff", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        diff: jest.fn().mockRejectedValueOnce(new GitError()),
+        raw: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
       const actual = await GitFileSystemService.getFilesChanged("fake-repo")

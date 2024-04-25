@@ -385,7 +385,7 @@ export default class GitFileSystemService {
   }
 
   /**
-   * Wrapper over `git diff --name-only` that also creates `master` branch if it does not exist.
+   * Wrapper over `git diff-tree -r --name-only master..staging` that also creates `master` branch if it does not exist.
    */
   getFilesChanged(repoName: string): ResultAsync<string[], GitFileSystemError> {
     return this.createLocalTrackingBranchIfNotExists(
@@ -419,42 +419,31 @@ export default class GitFileSystemService {
     })
   }
 
-  /**
-   * Get latest commit for a file path on a branch (including deleted files)
-   */
-  getLatestCommitOfPath(
-    repoName: string,
-    path: string,
-    branch = "staging"
-  ): ResultAsync<DefaultLogFields & ListLogLine, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branch)
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        // -1 to return latest commit only, -- to get logs even for deleted files
-        .log(["-1", branch, "--", path]),
-      (error) => {
-        logger.error(
-          `Error when getting latest commit for "${path}" on "${branch}": ${error}, when trying to access ${efsVolPath}/${repoName}`
-        )
-
-        if (error instanceof GitError) {
-          return new GitFileSystemError(
-            "Unable to retrieve latest log info from disk"
+  getCommitsBetweenMasterAndStaging(
+    repoName: string
+  ): ResultAsync<LogResult, GitFileSystemError> {
+    return this.createLocalTrackingBranchIfNotExists(
+      repoName,
+      "master"
+    ).andThen(() => {
+      const efsVolPath = this.getEfsVolPathFromBranch("staging")
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .log(["master..staging", "--name-only"]),
+        (error) => {
+          logger.error(
+            `Error when getting commits between master and staging: ${error}, when trying to access ${efsVolPath}/${repoName}`
           )
+
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              "Unable to retrieve git logs info from disk"
+            )
+          }
+          return new GitFileSystemError("An unknown error occurred")
         }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    ).andThen((logs) => {
-      if (logs.latest === null) {
-        return errAsync(
-          new GitFileSystemError(
-            `No commit was found for "${path}" on "${branch}"`
-          )
-        )
-      }
-      return okAsync(logs.latest)
+      )
     })
   }
 

@@ -235,31 +235,31 @@ class CollaboratorsService {
     // Basically with just:
     // SELECT sm.role
     // FROM
-    //     site_members sm,
-    //     repos r,
+    //     site_members,
+    //     repos,
     // WHERE
-    //     r.site_id = sm.site_id
-    //     AND r.name = :siteName
-    //     AND sm.user_id = :userId
-    //     AND r.deleted_at IS NULL
+    //     repos.site_id = site_members.site_id
+    //     AND repos.name = :siteName
+    //     AND site_members.user_id = :userId
+    //     AND repos.deleted_at IS NULL
 
     const records = (await this.sequelize.query(
       `
         SELECT sm.role
         FROM
-            site_members sm,
-            sites s,
-            repos r,
-            users u
+            site_members,
+            sites,
+            repos,
+            users
         WHERE
-            r.site_id = s.id
-            AND sm.site_id = s.id
-            AND r.name = :siteName
-            AND sm.user_id = u.id
-            AND sm.user_id = :userId
-            AND r.deleted_at IS NULL
-            AND s.deleted_at IS NULL
-            AND u.deleted_at IS NULL
+            repos.site_id = sites.id
+            AND site_members.site_id = sites.id
+            AND repos.name = :siteName
+            AND site_members.user_id = users.id
+            AND site_members.user_id = :userId
+            AND repos.deleted_at IS NULL
+            AND sites.deleted_at IS NULL
+            AND users.deleted_at IS NULL
       `,
       {
         replacements: { siteName, userId },

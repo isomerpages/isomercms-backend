@@ -1,5 +1,6 @@
 import _ from "lodash"
-import { ModelStatic, Op } from "sequelize"
+import { ModelStatic, QueryTypes } from "sequelize"
+import { Sequelize } from "sequelize-typescript"
 import validator from "validator"
 
 import { ForbiddenError } from "@errors/ForbiddenError"
@@ -21,6 +22,7 @@ import SitesService from "./SitesService"
 import UsersService from "./UsersService"
 
 interface CollaboratorsServiceProps {
+  sequelize: Sequelize
   siteRepository: ModelStatic<Site>
   siteMemberRepository: ModelStatic<SiteMember>
   isomerAdminsService: IsomerAdminsService
@@ -32,6 +34,8 @@ interface CollaboratorsServiceProps {
 class CollaboratorsService {
   // NOTE: Explicitly specifying using keyed properties to ensure
   // that the types are synced.
+  private readonly sequelize: CollaboratorsServiceProps["sequelize"]
+
   private readonly siteRepository: CollaboratorsServiceProps["siteRepository"]
 
   private readonly siteMemberRepository: CollaboratorsServiceProps["siteMemberRepository"]
@@ -46,6 +50,7 @@ class CollaboratorsService {
 
   constructor({
     siteRepository,
+    sequelize,
     siteMemberRepository,
     isomerAdminsService,
     sitesService,
@@ -53,6 +58,7 @@ class CollaboratorsService {
     whitelist,
   }: CollaboratorsServiceProps) {
     this.siteRepository = siteRepository
+    this.sequelize = sequelize
     this.siteMemberRepository = siteMemberRepository
     this.isomerAdminsService = isomerAdminsService
     this.sitesService = sitesService
@@ -241,9 +247,100 @@ class CollaboratorsService {
           },
         },
       ],
+      logging: (sql, timing) =>
+        logger.info({
+          message: "getRole() original query details",
+          meta: {
+            sql,
+            timing,
+          },
+        }),
     })
 
     const role = site?.site_members?.[0]?.SiteMember?.role
+
+    // Note: We could make the query even cheaper if we assume the site and user cannot be deleted when this verification is done
+    // Basically with just:
+    // SELECT sm.role
+    // FROM
+    //     site_members sm,
+    //     repos r,
+    // WHERE
+    //     r.site_id = sm.site_id
+    //     AND r.name = :siteName
+    //     AND sm.user_id = :userId
+    //     AND r.deleted_at IS NULL
+
+    const records1 = (await this.sequelize.query(
+      `
+        SELECT sm.role
+        FROM
+            site_members sm,
+            sites s,
+            repos r,
+            users u
+        WHERE
+            r.site_id = s.id
+            AND sm.site_id = s.id
+            AND r.name = :siteName
+            AND sm.user_id = u.id
+            AND sm.user_id = :userId
+            AND r.deleted_at IS NULL
+            AND s.deleted_at IS NULL
+            AND u.deleted_at IS NULL
+      `,
+      {
+        replacements: { siteName, userId },
+        type: QueryTypes.SELECT,
+        logging: (sql, timing) =>
+          logger.info({
+            message: "getRole() option 1 query details",
+            meta: {
+              sql,
+              timing,
+            },
+          }),
+      }
+    )) as { role: CollaboratorRoles }[]
+
+    const records2 = (await this.sequelize.query(
+      `
+      SELECT sm.role
+      FROM
+          site_members sm,
+          repos r
+      WHERE
+          r.site_id = sm.site_id
+          AND r.name = :siteName
+          AND sm.user_id = :userId
+          AND r.deleted_at IS NULL
+      `,
+      {
+        replacements: { siteName, userId },
+        type: QueryTypes.SELECT,
+        logging: (sql, timing) =>
+          logger.info({
+            message: "getRole() option 2 query details",
+            meta: {
+              sql,
+              timing,
+            },
+          }),
+      }
+    )) as { role: CollaboratorRoles }[]
+
+    logger.info({
+      message: "validating new getRole() query",
+      meta: {
+        role1: site?.site_members?.[0]?.SiteMember?.role,
+        role2: records1?.[0]?.role,
+        role3: records2?.[0]?.role,
+        matches1:
+          site?.site_members?.[0]?.SiteMember?.role === records1?.[0]?.role,
+        matches2:
+          site?.site_members?.[0]?.SiteMember?.role === records2?.[0]?.role,
+      },
+    })
 
     if (role) {
       return role

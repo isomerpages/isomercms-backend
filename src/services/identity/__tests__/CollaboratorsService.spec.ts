@@ -187,8 +187,10 @@ describe("CollaboratorsService", () => {
 
       // Assert
       expect(mockSiteRepo.findOne).toHaveBeenCalled()
-      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.Admin)
+
+      // isUserIsomerAdmin() should not have been called if a valid role was retrieved
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).not.toHaveBeenCalled()
     })
 
     it("should retrieve correct contributor role", async () => {
@@ -203,8 +205,10 @@ describe("CollaboratorsService", () => {
 
       // Assert
       expect(mockSiteRepo.findOne).toHaveBeenCalled()
-      expect(mockIsomerAdminsService.isUserIsomerAdmin).toHaveBeenCalled()
       expect(role).toStrictEqual(CollaboratorRoles.Contributor)
+
+      // isUserIsomerAdmin() should not have been called if a valid role was retrieved
+      expect(mockIsomerAdminsService.isUserIsomerAdmin).not.toHaveBeenCalled()
     })
 
     it("should retrieve correct null role if site has no collaborators", async () => {

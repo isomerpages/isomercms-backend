@@ -243,12 +243,17 @@ class CollaboratorsService {
       ],
     })
 
+    const role = site?.site_members?.[0]?.SiteMember?.role
+
+    if (role) {
+      return role
+    }
+
     const isIsomerAdmin = await this.isomerAdminsService.isUserIsomerAdmin(
       userId
     )
-    const isomerAdminRole = isIsomerAdmin ? CollaboratorRoles.IsomerAdmin : null
 
-    return site?.site_members?.[0]?.SiteMember?.role ?? isomerAdminRole
+    return isIsomerAdmin ? CollaboratorRoles.IsomerAdmin : null
   }
 
   getStatistics = async (siteName: string) => {

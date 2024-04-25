@@ -54,10 +54,12 @@ import {
   MOCK_FILENAME_TO_LATEST_LOG_MAP,
   MOCK_REVIEW_REQUEST_META,
   MOCK_REVIEW_REQUEST_COMMENT,
+  MOCK_LATEST_LOGS,
 } from "@root/fixtures/review"
 import {
   mockEmail,
   mockGrowthBook,
+  mockIsomerUserId,
   mockUserWithSiteSessionData,
   mockUserWithSiteSessionDataAndGrowthBook,
 } from "@root/fixtures/sessionData"
@@ -90,7 +92,7 @@ const MockReviewApi = {
   getCommitDiff: jest.fn(),
   getPullRequest: jest.fn(),
   getFilesChanged: jest.fn(),
-  getLatestLocalCommitOfPath: jest.fn(),
+  getCommitsBetweenMasterAndStaging: jest.fn(),
   fastForwardMaster: jest.fn(),
 }
 
@@ -178,11 +180,11 @@ describe("ReviewRequestService", () => {
       MockReviewApi.getFilesChanged.mockReturnValue(
         okAsync(MOCK_PULL_REQUEST_FILES_CHANGED)
       )
-      MockReviewApi.getLatestLocalCommitOfPath = jest.fn(
-        (repoName: string, path: string) =>
-          okAsync(MOCK_FILENAME_TO_LATEST_LOG_MAP[path])
+      MockReviewApi.getCommitsBetweenMasterAndStaging = jest.fn(() =>
+        okAsync(MOCK_LATEST_LOGS)
       )
       MockUsersRepository.findByPk.mockResolvedValue({
+        id: mockIsomerUserId,
         email: mockEmail,
       })
       MockPageService.parsePageName.mockReturnValue(okAsync("mock page name"))
@@ -229,7 +231,9 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(actual).toEqual(expected)
       expect(MockReviewApi.getFilesChanged).toHaveBeenCalled()
-      expect(MockReviewApi.getLatestLocalCommitOfPath).toHaveBeenCalledTimes(2)
+      expect(
+        MockReviewApi.getCommitsBetweenMasterAndStaging
+      ).toHaveBeenCalledTimes(1)
       expect(MockPageService.retrieveStagingPermalink).toHaveBeenCalled()
     })
 
@@ -247,7 +251,9 @@ describe("ReviewRequestService", () => {
       // Assert
       expect(actual).toEqual(expected)
       expect(MockReviewApi.getFilesChanged).toHaveBeenCalled()
-      expect(MockReviewApi.getLatestLocalCommitOfPath).not.toHaveBeenCalled()
+      expect(
+        MockReviewApi.getCommitsBetweenMasterAndStaging
+      ).not.toHaveBeenCalled()
       expect(MockPageService.retrieveStagingPermalink).not.toHaveBeenCalled()
     })
   })

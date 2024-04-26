@@ -130,7 +130,10 @@ const mockDeploymentWithStagingLiteUrl = {
 
 describe("SitesService", () => {
   // Prevent inter-test pollution of mocks
-  afterEach(() => jest.clearAllMocks())
+  afterEach(() => {
+    jest.clearAllMocks()
+    mockAxios.get.mockReset()
+  })
 
   describe("extractAuthorEmail", () => {
     it("should return the email address of the author of the commit", () => {
@@ -905,10 +908,6 @@ describe("SitesService", () => {
 
   describe("getSites", () => {
     it("Filters accessible sites for github user correctly", async () => {
-      // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = config.get("sites.pageCount")
-      config.set("sites.pageCount", 3)
-
       const expectedResp = [
         {
           lastUpdated: repoInfo.pushed_at,
@@ -925,25 +924,43 @@ describe("SitesService", () => {
       ]
       MockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
       mockAxios.get.mockResolvedValueOnce({
+        headers: {
+          link: [
+            '<https://api.github.dummy.com/organizations/1234/repos?page=2>; rel="next"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=3>; rel="last"',
+          ].join(", "),
+        },
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
+      mockAxios.get.mockResolvedValueOnce({
+        headers: {
+          link: [
+            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="first"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="prev"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=3>; rel="next"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=3>; rel="last"',
+          ].join(", "),
+        },
+        data: [],
+      })
+      mockAxios.get.mockResolvedValueOnce({
+        headers: {
+          link: [
+            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="first"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=2>; rel="prev"',
+          ].join(", "),
+        },
+        data: [],
+      })
 
       await expect(
         SitesService.getSites(mockUserWithSiteSessionData)
       ).resolves.toMatchObject(expectedResp)
 
       expect(mockAxios.get).toHaveBeenCalledTimes(3)
-      config.set("sites.pageCount", currRepoCount)
-      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
 
     it("Filters accessible sites for email user correctly", async () => {
-      // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = config.get("sites.pageCount")
-      config.set("sites.pageCount", 3)
-
       const expectedResp: RepositoryData[] = [
         {
           repoName: repoInfo.name,
@@ -954,10 +971,9 @@ describe("SitesService", () => {
         site_members: [{ repo: { name: repoInfo.name } }],
       }))
       mockAxios.get.mockResolvedValueOnce({
+        headers: {},
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
 
       await expect(
         SitesService.getSites(mockSessionDataEmailUser)
@@ -967,23 +983,16 @@ describe("SitesService", () => {
         mockIsomerUserId
       )
       expect(mockAxios.get).toHaveBeenCalledTimes(0)
-      config.set("sites.pageCount", currRepoCount)
-      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
 
     it("Filters accessible sites for email user with no sites correctly", async () => {
-      // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = config.get("sites.pageCount")
-      config.set("sites.pageCount", 3)
-
       const expectedResp: RepositoryData[] = []
       MockIsomerAdminsService.getByUserId.mockImplementationOnce(() => null)
       MockUsersService.findSitesByUserId.mockImplementationOnce(() => null)
       mockAxios.get.mockResolvedValueOnce({
+        headers: {},
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
 
       await expect(
         SitesService.getSites(mockSessionDataEmailUser)
@@ -996,15 +1005,9 @@ describe("SitesService", () => {
         mockIsomerUserId
       )
       expect(mockAxios.get).toHaveBeenCalledTimes(0)
-      config.set("sites.pageCount", currRepoCount)
-      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
 
     it("Returns all accessible sites for admin user correctly", async () => {
-      // Store the API key and set it later so that other tests are not affected
-      const currRepoCount = config.get("sites.pageCount")
-      config.set("sites.pageCount", 3)
-
       const expectedResp = [
         {
           lastUpdated: repoInfo.pushed_at,
@@ -1024,11 +1027,36 @@ describe("SitesService", () => {
         repoInfo.name,
         repoInfo2.name,
       ])
+
       mockAxios.get.mockResolvedValueOnce({
+        headers: {
+          link: [
+            '<https://api.github.dummy.com/organizations/1234/repos?page=2>; rel="next"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=3>; rel="last"',
+          ].join(", "),
+        },
         data: [repoInfo, repoInfo2, adminRepo, noAccessRepo],
       })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
-      mockAxios.get.mockResolvedValueOnce({ data: [] })
+      mockAxios.get.mockResolvedValueOnce({
+        headers: {
+          link: [
+            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="first"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="prev"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=3>; rel="next"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=3>; rel="last"',
+          ].join(", "),
+        },
+        data: [],
+      })
+      mockAxios.get.mockResolvedValueOnce({
+        headers: {
+          link: [
+            '<https://api.github.dummy.com/organizations/1234/repos?page=1>; rel="first"',
+            '<https://api.github.dummy.com/organizations/1234/repos?page=2>; rel="prev"',
+          ].join(", "),
+        },
+        data: [],
+      })
 
       await expect(
         SitesService.getSites(mockUserWithSiteSessionData)
@@ -1038,8 +1066,6 @@ describe("SitesService", () => {
         mockIsomerUserId
       )
       expect(mockAxios.get).toHaveBeenCalledTimes(3)
-      config.set("sites.pageCount", currRepoCount)
-      expect(config.get("sites.pageCount")).toBe(currRepoCount)
     })
   })
 

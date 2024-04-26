@@ -156,6 +156,7 @@ const sitesService = new SitesService({
   deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
+  sequelize,
   siteRepository: Site,
   siteMemberRepository: SiteMember,
   isomerAdminsService,
@@ -347,6 +348,7 @@ describe("Sites Router", () => {
         ],
       }
       mockGenericAxios.get.mockResolvedValueOnce({
+        headers: {},
         data: [
           {
             pushed_at: mockUpdatedAt,

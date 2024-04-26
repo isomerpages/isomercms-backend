@@ -42,7 +42,6 @@ export const E2E_TEST_EMAIL = "test@e2e"
 export const E2E_TEST_CONTACT = "12345678"
 
 export const GH_MAX_REPO_COUNT = 100
-export const ISOMERPAGES_REPO_PAGE_COUNT = config.get("sites.pageCount")
 export const ISOMER_GITHUB_ORG_NAME = config.get("github.orgName")
 export const ISOMER_ADMIN_REPOS = [
   "isomercms-backend",

@@ -155,6 +155,7 @@ const sitesService = new SitesService({
   deploymentsService,
 })
 const collaboratorsService = new CollaboratorsService({
+  sequelize,
   siteRepository: Site,
   siteMemberRepository: SiteMember,
   isomerAdminsService: (jest.fn() as unknown) as IsomerAdminsService,

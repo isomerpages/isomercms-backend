@@ -263,6 +263,7 @@ const dynamoDBService = new DynamoDBService({
 
 const identityAuthService = getIdentityAuthService(gitHubService)
 const collaboratorsService = new CollaboratorsService({
+  sequelize,
   siteRepository: Site,
   siteMemberRepository: SiteMember,
   isomerAdminsService,

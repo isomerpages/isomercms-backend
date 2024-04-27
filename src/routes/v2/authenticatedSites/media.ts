@@ -18,6 +18,7 @@ import type {
   RequestHandler,
 } from "@root/types"
 import { nameAnonymousMethods } from "@root/utils/apm-utils"
+import { recursiveTrimAndReplaceLineBreaks } from "@root/utils/yaml-utils"
 import {
   CreateMediaDirectoryRequestSchema,
   CreateMediaFileRequestSchema,
@@ -154,7 +155,7 @@ export class MediaRouter {
       userWithSiteSessionData,
       githubSessionData,
       {
-        directoryName: newDirectoryName,
+        directoryName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
         objArray: items,
       }
     )
@@ -185,7 +186,7 @@ export class MediaRouter {
       githubSessionData,
       {
         directoryName,
-        newDirectoryName,
+        newDirectoryName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
       }
     )
 
@@ -270,7 +271,7 @@ export class MediaRouter {
     const createResp = await this.mediaFileService.create(
       userWithSiteSessionData,
       {
-        fileName: newFileName,
+        fileName: recursiveTrimAndReplaceLineBreaks(newFileName),
         directoryName,
         content,
       }
@@ -325,7 +326,7 @@ export class MediaRouter {
         githubSessionData,
         {
           oldFileName: fileName,
-          newFileName,
+          newFileName: recursiveTrimAndReplaceLineBreaks(newFileName),
           directoryName,
           sha,
         }

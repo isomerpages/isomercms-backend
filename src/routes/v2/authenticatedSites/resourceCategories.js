@@ -15,6 +15,8 @@ const {
   MoveResourceDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@root/utils/yaml-utils")
+
 class ResourceCategoriesRouter {
   constructor({ resourceDirectoryService }) {
     this.resourceDirectoryService = resourceDirectoryService
@@ -46,7 +48,9 @@ class ResourceCategoriesRouter {
       userWithSiteSessionData,
       {
         resourceRoomName,
-        resourceCategoryName: newDirectoryName,
+        resourceCategoryName: recursiveTrimAndReplaceLineBreaks(
+          newDirectoryName
+        ),
       }
     )
 
@@ -68,7 +72,7 @@ class ResourceCategoriesRouter {
       {
         resourceRoomName,
         resourceCategoryName,
-        newDirectoryName,
+        newDirectoryName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
       }
     )
 

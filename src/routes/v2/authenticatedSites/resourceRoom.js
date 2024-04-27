@@ -14,6 +14,8 @@ const {
   RenameResourceDirectoryRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@root/utils/yaml-utils")
+
 class ResourceRoomRouter {
   constructor({ resourceRoomDirectoryService }) {
     this.resourceRoomDirectoryService = resourceRoomDirectoryService
@@ -57,7 +59,7 @@ class ResourceRoomRouter {
     const createResp = await this.resourceRoomDirectoryService.createResourceRoomDirectory(
       userWithSiteSessionData,
       {
-        resourceRoomName: newDirectoryName,
+        resourceRoomName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
       }
     )
 
@@ -78,7 +80,7 @@ class ResourceRoomRouter {
       githubSessionData,
       {
         resourceRoomName,
-        newDirectoryName,
+        newDirectoryName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
       }
     )
 

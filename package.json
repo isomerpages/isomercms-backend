@@ -94,7 +94,7 @@
     "pg-connection-string": "^2.5.0",
     "pino": "^8.19.0",
     "query-string": "^6.14.1",
-    "reflect-metadata": "^0.1.13",
+    "reflect-metadata": "^0.2.2",
     "sequelize": "^6.37.1",
     "sequelize-typescript": "^2.1.6",
     "serialize-error": "^7.0.1",

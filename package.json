@@ -98,7 +98,7 @@
     "sequelize": "^6.37.1",
     "sequelize-typescript": "^2.1.6",
     "serialize-error": "^7.0.1",
-    "simple-git": "^3.19.1",
+    "simple-git": "^3.24.0",
     "slugify": "^1.6.0",
     "supertest": "^6.3.3",
     "toml": "^3.0.0",

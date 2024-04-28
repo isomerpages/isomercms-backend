@@ -1,5 +1,11 @@
 version: "3"
 services:
+  # htmlproofer:
+  #   build:
+  #     dockerfile: ./htmlproofer/Dockerfile
+  #   command: tail -f /dev/null
+  #   volumes:
+  #     - ./:/opt/isomercms-backend
   support:
     build:
       dockerfile: ./support/Dockerfile

@@ -1,6 +1,8 @@
 /* eslint-disable no-continue */
 /* eslint-disable no-restricted-syntax */
 import fs from "fs"
+import { exec } from "node:child_process"
+import util from "node:util"
 import path from "path"
 
 import jsdom from "jsdom"
@@ -372,6 +374,151 @@ export default class RepoCheckerService {
     })
   }
 
+  async checker2(repo: string) {
+    const repoPath = path.join(EFS_VOL_PATH_STAGING, repo)
+    const repoBuildPath = path.join(repoPath, "_site")
+
+    const reportPath = path.join(SITE_CHECKER_REPO_PATH, repo, "report.txt")
+
+    // todo code out how to get the build folder AFTER rfc discussion, this should be done prior to
+    // merging to dev branch
+
+    // const buildCommand = `curl https://raw.githubusercontent.com/opengovsg/isomer-build/amplify/build.sh | bash`
+
+    const promisifiedExec = util.promisify(exec)
+
+    try {
+      // await promisifiedExec(`cd ${repoPath} && ${buildCommand}`)
+      const { stdout } = await promisifiedExec(
+        `htmlproofer --disable_external --ignore_empty_mailto --no-enforce_https --ignore_empty_alt --ignore_missing_alt --allow_missing_href ${repoBuildPath}`
+      )
+      if (stdout) {
+        console.log("This is stdout", stdout)
+        await fs.promises.writeFile(reportPath, stdout)
+      }
+    } catch (error) {
+      console.error("This is in error block", error)
+      // Unfortunately, this cli command raises an error for any existence of an broken link found
+      // Therefore, we check for the existence of the string "HTML-Proofer found xx failures!"
+      // to determine if there are any errors in running the command
+
+      const expectedRegex = /HTML-Proofer found \d+ failures!/g
+      if (expectedRegex.test(`${error}`)) {
+        console.log("This is stderr", error)
+        await fs.promises.writeFile(reportPath, `${error}`)
+      } else {
+        throw new SiteCheckerError(`${error}`)
+      }
+    }
+
+    await this.reporter2(repo)
+  }
+
+  async getFilePathFromPermalink(permalink: string, repo: string) {
+    const repoPath = path.join(EFS_VOL_PATH_STAGING, repo)
+
+    const r = this.getListOfMarkdownFiles(repoPath).andThen((mdFiles) =>
+      ResultAsync.fromPromise(
+        this.getAllPermalinks(
+          repoPath,
+          Array.from(mdFiles),
+          ({} as unknown) as UserWithSiteSessionData
+        ),
+        (e) => e
+      ).andThen((permalinks) => {
+        const mdFileToPermalinkMap = permalinks[0]
+        for (const [key, value] of mdFileToPermalinkMap.entries()) {
+          if (this.normalisePath(value) === this.normalisePath(permalink)) {
+            return okAsync(key)
+          }
+        }
+        return errAsync("Permalink not found")
+      })
+    )
+    return r
+  }
+
+  async reporter2(repo: string) {
+    const report = (
+      await fs.promises.readFile(
+        path.join(SITE_CHECKER_REPO_PATH, repo, "report.txt")
+      )
+    ).toString()
+
+    /**
+     * * At /Users/kishorer/isomer-migrations/repos/sportsg-corp/_site/media-centre/media-release/all-systems-go-as-organisers-and-40000-runners-make-final-preparations/index.html:251:
+
+  internally linking to evelyn_liu@ssc.gov.sg, which does not exist
+  * At /Users/kishorer/isomer-migrations/repos/sportsg-corp/_site/media-centre/media-release/dual-contingent-ceremony-marks-the-start-of-team-singapores-major-games/index.html:737:
+
+  http: is an invalid URL
+
+  * At /Users/kishorer/isomer-migrations/repos/sportsg-corp/_site/media-centre/media-release/new-programme-unveiled-to-develop-future-volunteer-leaders/index.html:320:
+
+  internally linking to #_ftnref1; the file exists, but the hash '_ftnref1' does not
+
+     */
+    // get internal link errors
+    const brokenLinkRegex = /At (.*)\n\n\s\s(?:(.* is an invalid URL)|(.* contains an invalid email address)|(internally linking to (.*), which does not exist)|(internally linking to (.*); the file exists, but the hash (.*) does not))/g
+    const brokenLinks = report.match(brokenLinkRegex)
+    console.log({ brokenLinks })
+
+    const errors: RepoError[] = []
+    brokenLinks?.forEach(async (link) => {
+      console.log({ link })
+      const rawPath = link
+        .slice("At ".length, link.length)
+        .split("\n\n")[0]
+        .split(":")[0]
+
+      const relativeFileLinkError = path.relative(
+        path.join(EFS_VOL_PATH_STAGING, repo, "_site"),
+        rawPath
+      )
+      const viewablePageInCms = relativeFileLinkError.slice(
+        0,
+        relativeFileLinkError.length - "index.html".length
+      )
+
+      console.log({ viewablePageInCms })
+
+      const error = link.split("\n\n")[1].trim()
+      let erraneousLink = ""
+      if (error.includes("is an invalid URL")) {
+        erraneousLink = error.slice(
+          0,
+          error.length - "is an invalid URL".length
+        )
+
+        console.log("This is an invalid URL", erraneousLink)
+
+        const filePathInCms = await this.getFilePathFromPermalink(
+          erraneousLink,
+          repo
+        )
+        // errors.push({
+        //   linkedText: erraneousLink,
+
+        // })
+      } else if (error.includes("contains an invalid email address")) {
+        console.log("This is an invalid email address")
+      } else if (error.includes("which does not exist")) {
+        // const referencedLink = error
+        //   .split("\n")[3]
+        //   .split(", which does not exist")[0]
+        //   .trim()
+        //   .slice("internally linking to ".length)
+
+        console.log({ error })
+
+        console.log("This link does not exist")
+      } else if (error.includes("the file exists, but the hash")) {
+        console.log("This hash does not exist")
+      }
+    })
+    // get broken image errors
+  }
+
   checker(
     repo: string,
     userWithSiteSessionData: UserWithSiteSessionData
@@ -425,7 +572,7 @@ export default class RepoCheckerService {
               if (!filePermalink) {
                 return errAsync("No permalink found in front matter")
               }
-              const normalisedPermalink = this.normalisePermalink(filePermalink)
+              const normalisedPermalink = this.normalisePath(filePermalink)
               // we are only parsing out the front matter
               const fileContent = file.split("---")?.slice(2).join("---")
               if (!fileContent) {
@@ -947,11 +1094,15 @@ export default class RepoCheckerService {
     })
   }
 
-  normalisePermalink(permalink: string) {
+  normalisePath(permalink: string) {
     let finalPermalink = permalink.replace(/^['"]|['"]$/g, "")
 
     if (!finalPermalink.startsWith("/")) {
       finalPermalink = `/${finalPermalink}`
+    }
+
+    if (!finalPermalink.endsWith("/")) {
+      finalPermalink += "/"
     }
 
     return finalPermalink
@@ -963,7 +1114,7 @@ export default class RepoCheckerService {
     mdFiles: string[],
     userWithSiteSessionData: UserWithSiteSessionData
   ) {
-    const setOfAllPermalinks = new Set<string>()
+    const mapOfAllPermalinksToMdFiles = new Map<string, string>()
     const files = mdFiles
     const errors: RepoError[] = []
     const promises = files
@@ -980,7 +1131,10 @@ export default class RepoCheckerService {
         matches?.forEach((match) => {
           const permalink = match.split(": ")[1].trim()
           // permalinks for posts are generated dynamically based on the file name, and thus wont have conflict
-          if (!file.includes("_posts") && setOfAllPermalinks.has(permalink)) {
+          if (
+            !file.includes("_posts") &&
+            mapOfAllPermalinksToMdFiles.has(permalink)
+          ) {
             const error: RepoError = {
               type: RepoErrorTypes.DUPLICATE_PERMALINK,
               permalink,
@@ -988,7 +1142,7 @@ export default class RepoCheckerService {
             }
             errors.push(error)
           } else {
-            setOfAllPermalinks.add(this.normalisePermalink(permalink))
+            mapOfAllPermalinksToMdFiles.set(file, this.normalisePath(permalink))
           }
         })
       })
@@ -1000,10 +1154,14 @@ export default class RepoCheckerService {
     )
 
     if (resourceRoom.isOk()) {
-      setOfAllPermalinks.add(this.normalisePermalink(resourceRoom.value.name))
+      mapOfAllPermalinksToMdFiles.set(
+        // todo: set correct paths
+        resourceRoom.value.name,
+        this.normalisePath(resourceRoom.value.name)
+      )
     }
 
     // this should be only after all files have been parsed
-    return [setOfAllPermalinks, errors] as const
+    return [mapOfAllPermalinksToMdFiles, errors] as const
   }
 }

@@ -2,6 +2,10 @@
 import "./utils/tracer"
 import "module-alias/register"
 
+import fs from "fs"
+import { exec } from "node:child_process"
+import path from "node:path"
+
 import { SgidClient } from "@opengovsg/sgid-client"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import cors from "cors"
@@ -18,7 +22,10 @@ import { errorHandler } from "@middleware/errorHandler"
 
 import { AuthRouter } from "@routes/v2/auth"
 
-import { MAX_CONCURRENT_GIT_PROCESSES } from "@constants/constants"
+import {
+  EFS_VOL_PATH_STAGING,
+  MAX_CONCURRENT_GIT_PROCESSES,
+} from "@constants/constants"
 
 import { useSharedMiddleware } from "@common/middleware"
 import initSequelize from "@database/index"
@@ -100,6 +107,26 @@ import { rateLimiter } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
 import { setBrowserPolyfills } from "./utils/growthbook-utils"
+
+// const repoPath = path.join(EFS_VOL_PATH_STAGING, "pa-corp", "_site")
+// // check if directory exists
+// console.log(fs.existsSync(repoPath))
+// console.log(fs.existsSync(repoPath))
+// console.log({ repoPath })
+// exec(`ruby -v`, (err, stdout, stderr) => {
+//   console.log({ err, stdout, stderr })
+// })
+// exec(
+//   `htmlproofer --disable_external --ignore_empty_mailto --no-enforce_https ${repoPath}`,
+//   (err, stdout, stderr) => {
+//     if (err) {
+//       console.log({ err })
+//       return
+//     }
+
+//     console.log({ stdout, stderr })
+//   }
+// )
 
 // Import middleware
 
@@ -416,3 +443,19 @@ sequelize
     // And gracefully shut down the application since we can't serve client
     process.exit(1)
   })
+
+// repoCheckerService
+//   .reporter2("sportsg-corp")
+//   .then((res) => {
+//     console.log({ res })
+//   })
+//   .catch((err) => {
+//     console.log({ err })
+//   })
+repoCheckerService
+  .getFilePathFromPermalink(
+    "singapore-sport-institute/athlete-life/athlete-life-coaching",
+    "sportsg-corp"
+  )
+  .then(console.log)
+  .catch(console.error)

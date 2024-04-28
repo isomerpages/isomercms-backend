@@ -1,3 +1,5 @@
+import { ResultAsync } from "neverthrow"
+
 import GithubSessionData from "@root/classes/GithubSessionData"
 import UserWithSiteSessionData from "@root/classes/UserWithSiteSessionData"
 import { STAGING_BRANCH, STAGING_LITE_BRANCH } from "@root/constants"
@@ -24,22 +26,20 @@ export default class GitFileCommitService {
     sessionData: UserWithSiteSessionData,
     shouldUpdateStagingLite: boolean
   ) {
-    // We await the push to staging FIRST, and then push to staging-lite
-    // We don't want a case when staging lite updates but staging doesn't
     const res = this.gitFileSystemService.push(
       sessionData.siteName,
       STAGING_BRANCH
     )
 
-    if (shouldUpdateStagingLite) {
-      res.andThen(() =>
-        this.gitFileSystemService.push(
-          sessionData.siteName,
-          STAGING_LITE_BRANCH
-        )
-      )
+    if (!shouldUpdateStagingLite) {
+      return res
     }
-    return res
+
+    return ResultAsync.combine([
+      res,
+
+      this.gitFileSystemService.push(sessionData.siteName, STAGING_LITE_BRANCH),
+    ])
   }
 
   async create(

@@ -1,10 +1,25 @@
+# FROM ruby:3-alpine AS htmlproofer
+
+# RUN apk add --no-cache build-base libcurl gcompat && gem install html-proofer -v 5.0.8 && apk del build-base
+
+# COPY . .
+# CMD ["htmlproofer","--help"]
+
+
+
 FROM node:18-alpine AS base
 WORKDIR /opt/isomercms-backend
+
+# # Install Ruby and htmlproofer
+# RUN apk add --no-cache bash git openssh-client ruby ruby-dev linux-headers build-base libcurl gcompat && \
+#     gem install html-proofer -v 5.0.8 && \
+#     apk del build-base
 
 RUN apk update && \
     apk add --no-cache bash && \
     apk add git && \
     apk add openssh-client
+
 
 RUN adduser -u 900 webapp -D -h /home/webapp -s /bin/sh
 USER webapp

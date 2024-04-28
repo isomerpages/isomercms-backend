@@ -90,7 +90,7 @@
     "otplib": "^12.0.1",
     "papaparse": "^5.4.1",
     "patch-package": "^8.0.0",
-    "pg": "^8.6.0",
+    "pg": "^8.11.5",
     "pg-connection-string": "^2.5.0",
     "pino": "^8.19.0",
     "query-string": "^6.14.1",

@@ -252,6 +252,7 @@ export class FormsgSiteLaunchRouter {
         logger.info(
           `Domain ${launchResult.primaryDomainSource} does not have any AAAA records.`
         )
+        return [] // no AAAA records found
       }
       logger.error(
         `Error when trying to get AAAA records for domain ${launchResult.primaryDomainSource}: ${e}`
@@ -315,6 +316,12 @@ export class FormsgSiteLaunchRouter {
         logger.info(
           `Domain ${launchResult.primaryDomainSource} does not have any CAA records.`
         )
+
+        // if no CAA records, no need to add Amazon CAA and letsencrypt.org CAA
+        return {
+          addAWSACMCertCAA: false,
+          addLetsEncryptCAA: false,
+        }
       }
       logger.error(
         `Error when trying to get CAA records for domain ${launchResult.primaryDomainSource}: ${e}`

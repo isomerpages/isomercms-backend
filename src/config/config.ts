@@ -458,6 +458,14 @@ const config = convict({
       default: "",
     },
   },
+  slackbot: {
+    secret: {
+      doc: "Slackbot signing secret",
+      env: "SLACK_SIGNING_SECRET",
+      format: String,
+      default: "",
+    },
+  },
 })
 
 // Perform validation

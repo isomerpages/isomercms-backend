@@ -1,9 +1,15 @@
 import express, { RequestHandler } from "express"
 
+import { Whitelist } from "@database/models"
+import logger from "@root/logger/logger"
+import WhitelistService from "@root/services/identity/WhitelistService"
+
 import BotService, { SlackPayload } from "./ops/botService"
 
 export const isobotRouter = express.Router()
-const botService = new BotService()
+const botService = new BotService(
+  new WhitelistService({ repository: Whitelist })
+)
 
 const handleWhitelistEmails: RequestHandler<
   {},
@@ -25,9 +31,14 @@ const handleWhitelistEmails: RequestHandler<
     req.body
   )
   if (!isVerifiedMessage) return res.send({ message: "Invalid signature" })
-  const teamId = botService.whitelistEmails(req.body)
-  console.log(teamId)
-  return res.json({ message: "Hello, world!" })
+
+  try {
+    await botService.whitelistEmails(req.body)
+    return res.send({ message: "Emails whitelisted successfully" })
+  } catch (e) {
+    logger.error({ error: e })
+    return res.send({ message: "Failed to whitelist emails" })
+  }
 }
 
 isobotRouter.post("/whitelist-emails", handleWhitelistEmails)

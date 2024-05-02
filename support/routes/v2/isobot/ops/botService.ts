@@ -5,6 +5,7 @@ import qs from "qs"
 import { config } from "@config/config"
 
 import logger from "@root/logger/logger"
+import WhitelistService from "@root/services/identity/WhitelistService"
 
 export interface SlackPayload {
   token: string
@@ -19,6 +20,12 @@ export interface SlackPayload {
 }
 
 class BotService {
+  whitelistService: WhitelistService
+
+  constructor(whitelistService: WhitelistService) {
+    this.whitelistService = whitelistService
+  }
+
   public verifySignature(
     signature: string,
     timestamp: string,
@@ -47,10 +54,6 @@ class BotService {
       meta: {
         currentTime,
         slackTimestamp,
-        computedSig,
-        signature,
-        computedHash,
-        signatureBasestr,
         reqBody,
       },
     })
@@ -63,9 +66,30 @@ class BotService {
     return false
   }
 
-  public whitelistEmails(payload: SlackPayload) {
-    console.log(payload)
-    return payload.channel_id
+  public async whitelistEmails(payload: SlackPayload) {
+    // Sample user input:
+    // email1,expDate email2,expDate
+    const rawEmails = payload.text.split(" ")
+    const emails = rawEmails.map((email) => {
+      const [emailStr, expStr] = email.split(",")
+      const expDate = new Date(expStr)
+      if (expDate.toString() === "Invalid Date") {
+        logger.error({
+          message: "Invalid date format when attempting to whitelist emails",
+          meta: { expStr },
+        })
+        throw new Error(`Invalid date format: ${expStr}`)
+      }
+      // Update timing of the expiry to be 16:00:00 +00
+      expDate.setUTCHours(16, 0, 0, 0)
+      return {
+        email: emailStr,
+        exp: expDate,
+      }
+    })
+    logger.info({ message: "Whitelisting emails", meta: { emails } })
+
+    await this.whitelistService.addWhitelist(emails)
   }
 }
 

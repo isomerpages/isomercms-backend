@@ -750,28 +750,30 @@ export default class GitFileSystemService {
         .orElse(() =>
           // Retry push twice
           // TODO: To eliminate duplicate code by using a backoff or retry package
-          ResultAsync.fromPromise(
-            isForce
-              ? this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push([...gitOptions, "--force"])
-              : this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(gitOptions),
-            (error) => {
-              logger.error(
-                `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
-              )
-
-              if (error instanceof GitError) {
-                return new GitFileSystemError(
-                  "Unable to push latest changes of repo"
+          // As a last resort, we do a force push to GitHub as EFS is the source of truth
+          {
+            logger.info(
+              `Performing a force push to GitHub as earlier retries have failed for ${repoName}`
+            )
+            return ResultAsync.fromPromise(
+              this.git
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                .push([...gitOptions, "--force"]),
+              (error) => {
+                logger.error(
+                  `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
                 )
-              }
 
-              return new GitFileSystemError("An unknown error occurred")
-            }
-          )
+                if (error instanceof GitError) {
+                  return new GitFileSystemError(
+                    "Unable to push latest changes of repo"
+                  )
+                }
+
+                return new GitFileSystemError("An unknown error occurred")
+              }
+            )
+          }
         )
         .map(() => `${efsVolPath}/${repoName}`)
     })

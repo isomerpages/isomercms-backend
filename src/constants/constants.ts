@@ -76,6 +76,8 @@ export const REDIRECTION_SERVER_IPS = [
   "18.138.108.8",
   "18.139.47.66",
 ]
+export const ALLOWED_DNS_ERROR_CODES = ["ENOTFOUND", "ENODATA"]
+
 export const DNS_INDIRECTION_DOMAIN = "hostedon.isomer.gov.sg"
 export const DNS_INDIRECTION_REPO = "isomer-indirection"
 export const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"

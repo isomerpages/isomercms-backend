@@ -1,7 +1,7 @@
 import fs, { Stats } from "fs"
 
 import mockFs from "mock-fs"
-import { okAsync } from "neverthrow"
+import { errAsync, okAsync } from "neverthrow"
 import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"
@@ -3322,6 +3322,40 @@ describe("GitFileSystemService", () => {
 
       expect(result._unsafeUnwrap()).toEqual(true)
       expect(branch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("getCommitsBetweenMasterAndStaging", () => {
+    it("should get commits between staging and master branches", async () => {
+      jest
+        .spyOn(GitFileSystemService, "createLocalTrackingBranchIfNotExists")
+        .mockReturnValueOnce(okAsync(false))
+
+      const log = jest.fn().mockResolvedValueOnce({})
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log,
+      })
+
+      await GitFileSystemService.getCommitsBetweenMasterAndStaging("fake-repo")
+      expect(log).toHaveBeenCalledWith(["master..staging", "--name-only"])
+    })
+
+    it("should throw an error if there exists an error is getting log", async () => {
+      jest
+        .spyOn(GitFileSystemService, "createLocalTrackingBranchIfNotExists")
+        .mockReturnValueOnce(okAsync(false))
+
+      const log = jest.fn().mockRejectedValueOnce(new Error())
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log,
+      })
+      const result = await GitFileSystemService.getCommitsBetweenMasterAndStaging(
+        "fake-repo"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
   })
 })

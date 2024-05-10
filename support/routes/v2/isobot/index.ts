@@ -48,20 +48,6 @@ const handleDnsChecker: RequestHandler<
   unknown,
   never
 > = async (req, res) => {
-  const slackTimestamp = req.headers["x-slack-request-timestamp"] as string
-  const slackSig = req.headers["x-slack-signature"] as string
-
-  if (!slackTimestamp || !slackSig)
-    return res.status(400).send({ message: "Missing header/signature" })
-
-  const isVerifiedMessage = botService.verifySignature(
-    slackSig,
-    slackTimestamp,
-    req.body
-  )
-  if (!isVerifiedMessage)
-    return res.status(400).send({ message: "Invalid signature" })
-
   const validatedDomain = botService.getValidatedDomain(req.body)
   if (!validatedDomain)
     return res.status(200).send({

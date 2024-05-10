@@ -196,7 +196,7 @@ class BotService {
   ) {
     // Domain has a CNAME pointing to one of our known suffixes
     const isDomainCnameCorrect =
-      cnameRecord &&
+      !!cnameRecord &&
       (cnameRecord.endsWith(`.${DNS_INDIRECTION_DOMAIN}`) ||
         DNS_CNAME_SUFFIXES.some((suffix) => cnameRecord.endsWith(`.${suffix}`)))
 
@@ -211,7 +211,9 @@ class BotService {
       ((cnameRecord &&
         cnameRecord.endsWith(".kxcdn.com") &&
         intermediateRecords.length === 1) ||
-        (isDomainCnameCorrect && intermediateRecords.length === 4))
+        (intermediateRecords.length === 4 &&
+          (isDomainCnameCorrect ||
+            indirectionDomain.endsWith(`.${DNS_INDIRECTION_DOMAIN}`))))
 
     // The redirection domain has records that are all resolving to our known IPs
     const isRedirectionValid =
@@ -299,7 +301,7 @@ class BotService {
         `Oh no, the domain \`${domain}\` seems to be gone, but okay lah our indirection layer is correctly configured.`
       )
       response.push("This is *AGENCY fault*!")
-    } else if (!cnameRecord && !redirectionRecords) {
+    } else if (!cnameRecord && !intermediateRecords && !redirectionRecords) {
       // Everything is gone
       response.push(
         `Jialat, the DNS for \`${domain}\` seems to be gone, and our indirection layer does not seem to be configured correctly.`

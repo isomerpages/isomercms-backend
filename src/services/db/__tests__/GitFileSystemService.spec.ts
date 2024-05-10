@@ -1,7 +1,7 @@
 import fs, { Stats } from "fs"
 
 import mockFs from "mock-fs"
-import { okAsync } from "neverthrow"
+import { errAsync, okAsync } from "neverthrow"
 import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"
@@ -753,7 +753,7 @@ describe("GitFileSystemService", () => {
 
     it("should return the files changed and defensively try creating local branches", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        diff: jest
+        raw: jest
           .fn()
           .mockResolvedValueOnce("fake-dir/fake-file\nanother-fake-file\n"),
       })
@@ -768,55 +768,12 @@ describe("GitFileSystemService", () => {
 
     it("should return GitFileSystemError if an error occurred when getting the git diff", async () => {
       MockSimpleGit.cwd.mockReturnValueOnce({
-        diff: jest.fn().mockRejectedValueOnce(new GitError()),
+        raw: jest.fn().mockRejectedValueOnce(new GitError()),
       })
 
       const actual = await GitFileSystemService.getFilesChanged("fake-repo")
 
       expect(actual._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-    })
-  })
-
-  describe("getLatestLocalCommitOfPath", () => {
-    it("should return the latest commit for a valid path", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({
-          latest: MOCK_LATEST_LOG_ONE,
-        }),
-      })
-
-      const result = await GitFileSystemService.getLatestCommitOfPath(
-        "fake-repo",
-        "fake-dir/fake-file"
-      )
-
-      expect(result._unsafeUnwrap()).toEqual(MOCK_LATEST_LOG_ONE)
-    })
-
-    it("should return GitFileSystemError if an error occurred when getting the git log", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockRejectedValueOnce(new GitError()),
-      })
-
-      const result = await GitFileSystemService.getLatestCommitOfPath(
-        "fake-repo",
-        "fake-dir/fake-file"
-      )
-
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
-    })
-
-    it("should return GitFileSystemError if there were no commits found", async () => {
-      MockSimpleGit.cwd.mockReturnValueOnce({
-        log: jest.fn().mockResolvedValueOnce({ latest: null }),
-      })
-
-      const result = await GitFileSystemService.getLatestCommitOfPath(
-        "fake-repo",
-        "fake-dir/fake-file"
-      )
-
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
   })
 
@@ -3365,6 +3322,40 @@ describe("GitFileSystemService", () => {
 
       expect(result._unsafeUnwrap()).toEqual(true)
       expect(branch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("getCommitsBetweenMasterAndStaging", () => {
+    it("should get commits between staging and master branches", async () => {
+      jest
+        .spyOn(GitFileSystemService, "createLocalTrackingBranchIfNotExists")
+        .mockReturnValueOnce(okAsync(false))
+
+      const log = jest.fn().mockResolvedValueOnce({})
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log,
+      })
+
+      await GitFileSystemService.getCommitsBetweenMasterAndStaging("fake-repo")
+      expect(log).toHaveBeenCalledWith(["master..staging", "--name-only"])
+    })
+
+    it("should throw an error if there exists an error is getting log", async () => {
+      jest
+        .spyOn(GitFileSystemService, "createLocalTrackingBranchIfNotExists")
+        .mockReturnValueOnce(okAsync(false))
+
+      const log = jest.fn().mockRejectedValueOnce(new Error())
+
+      MockSimpleGit.cwd.mockReturnValueOnce({
+        log,
+      })
+      const result = await GitFileSystemService.getCommitsBetweenMasterAndStaging(
+        "fake-repo"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(GitFileSystemError)
     })
   })
 })

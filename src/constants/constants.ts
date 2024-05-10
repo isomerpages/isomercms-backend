@@ -79,6 +79,7 @@ export const REDIRECTION_SERVER_IPS = [
 export const ALLOWED_DNS_ERROR_CODES = ["ENOTFOUND", "ENODATA"]
 
 export const DNS_INDIRECTION_DOMAIN = "hostedon.isomer.gov.sg"
+export const DNS_CNAME_SUFFIXES = ["cloudfront.net", "kxcdn.com"]
 export const DNS_INDIRECTION_REPO = "isomer-indirection"
 export const ISOMER_ADMIN_EMAIL = "admin@isomer.gov.sg"
 export const ISOMER_SUPPORT_EMAIL = "support@isomer.gov.sg"

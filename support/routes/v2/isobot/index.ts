@@ -3,6 +3,7 @@ import express, { RequestHandler } from "express"
 import { Whitelist } from "@database/models"
 import logger from "@root/logger/logger"
 import WhitelistService from "@root/services/identity/WhitelistService"
+import type { DnsCheckerResponse } from "@root/types/dnsChecker"
 
 import BotService, { SlackPayload } from "./ops/botService"
 
@@ -40,4 +41,39 @@ const handleWhitelistEmails: RequestHandler<
   }
 }
 
+const handleDnsChecker: RequestHandler<
+  never,
+  DnsCheckerResponse | { message: string },
+  SlackPayload,
+  unknown,
+  never
+> = async (req, res) => {
+  const slackTimestamp = req.headers["x-slack-request-timestamp"] as string
+  const slackSig = req.headers["x-slack-signature"] as string
+
+  if (!slackTimestamp || !slackSig)
+    return res.status(400).send({ message: "Missing header/signature" })
+
+  const isVerifiedMessage = botService.verifySignature(
+    slackSig,
+    slackTimestamp,
+    req.body
+  )
+  if (!isVerifiedMessage)
+    return res.status(400).send({ message: "Invalid signature" })
+
+  const validatedDomain = botService.getValidatedDomain(req.body)
+  if (!validatedDomain)
+    return res.status(200).send({
+      message: `Sorry, \`${req.body.text}\` is not a valid domain name. Please try again with a valid one instead.`,
+    })
+
+  // We need to return 200 OK to Slack before we process the request
+  // The response will be done via the response_url provided in the payload
+  return botService
+    .dnsChecker(req.body)
+    .map((response) => res.status(200).send(response))
+}
+
+isobotRouter.post("/dns-checker", handleDnsChecker)
 isobotRouter.post("/whitelist-emails", handleWhitelistEmails)

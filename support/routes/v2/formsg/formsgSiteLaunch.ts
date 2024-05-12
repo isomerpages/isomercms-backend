@@ -14,7 +14,7 @@ import InitializationError from "@errors/InitializationError"
 
 import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 
-import { ISOMER_SUPPORT_EMAIL } from "@root/constants"
+import { ALLOWED_DNS_ERROR_CODES, ISOMER_SUPPORT_EMAIL } from "@root/constants"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import {
@@ -258,7 +258,11 @@ export class FormsgSiteLaunchRouter {
         value: record,
       }))
     } catch (e) {
-      if (isErrnoException(e) && e.code === "ENODATA") {
+      if (
+        isErrnoException(e) &&
+        e.code &&
+        ALLOWED_DNS_ERROR_CODES.includes(e.code)
+      ) {
         this.siteLaunchLogger.info({
           message: `Domain does not have any AAAA records.`,
           meta: {
@@ -329,7 +333,11 @@ export class FormsgSiteLaunchRouter {
 
       return result
     } catch (e) {
-      if (isErrnoException(e) && e.code === "ENODATA") {
+      if (
+        isErrnoException(e) &&
+        e.code &&
+        ALLOWED_DNS_ERROR_CODES.includes(e.code)
+      ) {
         this.siteLaunchLogger.info({
           message: `Domain does not have any CAA records.`,
           meta: {

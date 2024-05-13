@@ -54,8 +54,6 @@ const handleDnsChecker: RequestHandler<
       message: `Sorry, \`${req.body.text}\` is not a valid domain name. Please try again with a valid one instead.`,
     })
 
-  // We need to return 200 OK to Slack before we process the request
-  // The response will be done via the response_url provided in the payload
   return botService
     .dnsChecker(req.body)
     .map((response) => res.status(200).send(response))

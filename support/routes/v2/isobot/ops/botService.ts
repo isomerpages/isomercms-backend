@@ -389,9 +389,11 @@ class BotService {
             : `${domain.replaceAll(".", "-")}.${DNS_INDIRECTION_DOMAIN}`
 
           return ResultAsync.combine([
-            okAsync(null),
-            okAsync(cnameRecord),
-            okAsync(indirectionDomain),
+            okAsync({
+              cnameDomain: null,
+              cnameRecord,
+              indirectionDomain,
+            }),
             this.checkA(indirectionDomain),
           ])
         }
@@ -399,35 +401,44 @@ class BotService {
         // Either the original or www version of the domain has a CNAME record,
         // check if the CNAME record is valid
         return ResultAsync.combine([
-          okAsync(cnameDomain),
-          okAsync(cnameRecord),
-          okAsync(cnameRecord),
+          okAsync({
+            cnameDomain,
+            cnameRecord,
+            indirectionDomain: cnameRecord,
+          }),
           this.checkA(cnameRecord),
         ])
       })
       .andThen(
-        ([cnameDomain, cnameRecord, indirectionDomain, indirectionRecords]) => {
+        ([
+          { cnameDomain, cnameRecord, indirectionDomain },
+          indirectionRecords,
+        ]) => {
           const redirectionDomain = domain.startsWith("www.")
             ? domain.slice(4)
             : domain
 
           return ResultAsync.combine([
-            okAsync(cnameDomain),
-            okAsync(cnameRecord),
-            okAsync(indirectionDomain),
-            okAsync(indirectionRecords),
-            okAsync(redirectionDomain),
+            okAsync({
+              cnameDomain,
+              cnameRecord,
+              indirectionDomain,
+              indirectionRecords,
+              redirectionDomain,
+            }),
             this.checkA(redirectionDomain),
           ])
         }
       )
       .andThen(
         ([
-          cnameDomain,
-          cnameRecord,
-          indirectionDomain,
-          indirectionRecords,
-          redirectionDomain,
+          {
+            cnameDomain,
+            cnameRecord,
+            indirectionDomain,
+            indirectionRecords,
+            redirectionDomain,
+          },
           redirection,
         ]) =>
           okAsync(

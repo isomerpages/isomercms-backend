@@ -378,7 +378,6 @@ class CollaboratorsService {
     }
     recipientEmails.push(ISOMER_SUPPORT_EMAIL)
 
-    console.log(recipientEmails)
     // Send email to all admins of the site
     return mailer.sendMailWithCc(
       recipientEmails[0], // Limitation of Postman API - only one recipient allowed

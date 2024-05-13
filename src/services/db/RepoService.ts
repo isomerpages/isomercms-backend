@@ -58,8 +58,8 @@ export default class RepoService extends GitHubService {
     return this.gitFileSystemService.getFilesChanged(siteName)
   }
 
-  getLatestLocalCommitOfPath(repoName: string, path: string) {
-    return this.gitFileSystemService.getLatestCommitOfPath(repoName, path)
+  getCommitsBetweenMasterAndStaging(siteName: string) {
+    return this.gitFileSystemService.getCommitsBetweenMasterAndStaging(siteName)
   }
 
   getCommitDiff(siteName: string, base?: string, head?: string) {

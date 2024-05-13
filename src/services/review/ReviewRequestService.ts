@@ -2,6 +2,7 @@ import _, { sortBy, unionBy, zipObject } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
+import { DefaultLogFields, ListLogLine } from "simple-git"
 
 import UserWithSiteSessionData from "@classes/UserWithSiteSessionData"
 
@@ -150,15 +151,65 @@ export default class ReviewRequestService {
     this.apiService
       .getFilesChanged(userWithSiteSessionData.siteName)
       .andThen((filenames) => {
-        // map each filename to its edit metadata
-        const editMetadata = filenames.map((filename) =>
-          this.createEditedItemDtoWithEditMeta(
-            filename,
-            userWithSiteSessionData,
-            stagingLink
-          )
-        )
-        return ResultAsync.combine(editMetadata)
+        if (filenames.length === 0) {
+          return okAsync([])
+        }
+        const filenamesSet = new Set(filenames)
+        return this.apiService
+          .getCommitsBetweenMasterAndStaging(userWithSiteSessionData.siteName)
+          .andThen((logs) => {
+            const filenameToLogMap = new Map<
+              string,
+              DefaultLogFields & ListLogLine
+            >()
+            const userIds = new Set<string>()
+            logs.all.forEach((log) => {
+              const { userId } = fromGithubCommitMessage(log.message)
+              if (userId) {
+                userIds.add(userId)
+              }
+              log.diff?.files.forEach((file) => {
+                // Skip if we already have a log for file since we only want the latest log
+                if (
+                  filenamesSet.has(file.file) &&
+                  !filenameToLogMap.has(file.file)
+                ) {
+                  filenameToLogMap.set(file.file, log)
+                }
+              })
+            })
+
+            return ResultAsync.combine(
+              Array.from(userIds).map((userId) =>
+                ResultAsync.fromPromise(this.users.findByPk(userId), () => {
+                  logger.warn(`Error while finding userId: ${userId}`)
+                  return new DatabaseError(
+                    `Error while finding userId: ${userId}`
+                  )
+                }).orElse(() => okAsync(null))
+              )
+            )
+              .map((users) => {
+                const userIdToUserMap = new Map<string, User>()
+                users.forEach((user) => {
+                  if (user) {
+                    userIdToUserMap.set(user.id.toString(), user)
+                  }
+                })
+                // map each filename to its edit metadata
+                const editMetadata = filenames.map((filename) =>
+                  this.createEditedItemDtoWithEditMeta(
+                    filename,
+                    filenameToLogMap,
+                    userIdToUserMap,
+                    userWithSiteSessionData,
+                    stagingLink
+                  )
+                )
+                return ResultAsync.combine(editMetadata)
+              })
+              .andThen((res) => res)
+          })
       })
       .map((changedItems) =>
         changedItems.filter(
@@ -169,11 +220,16 @@ export default class ReviewRequestService {
 
   createEditedItemDtoWithEditMeta = (
     filename: string,
+    filenameToLogMap: Map<string, DefaultLogFields & ListLogLine>,
+    userIdToUserMap: Map<string, User>,
     sessionData: UserWithSiteSessionData,
     stagingLink: StagingPermalink
   ): ResultAsync<WithEditMeta<EditedItemDto>, never> => {
-    const { siteName } = sessionData
-    const editMeta = this.extractEditMeta(siteName, filename)
+    const editMeta = this.extractEditMeta(
+      filename,
+      filenameToLogMap,
+      userIdToUserMap
+    )
     const editedItemInfo = this.extractEditedItemInfo(
       filename,
       sessionData,
@@ -189,41 +245,26 @@ export default class ReviewRequestService {
   }
 
   extractEditMeta = (
-    siteName: string,
-    filename: string
-  ): ResultAsync<WithEditMeta<unknown>, never> =>
-    this.apiService
-      .getLatestLocalCommitOfPath(siteName, filename)
-      .andThen((latestLog) => {
-        const lastEditedTime = new Date(latestLog.date).getTime()
-        const { userId } = fromGithubCommitMessage(latestLog.message)
-        return ResultAsync.fromPromise(
-          this.users.findByPk(userId),
-          () => new DatabaseError(`Error while finding userId: ${userId}`)
-        )
-          .map((author) => ({
-            lastEditedBy: author?.email || latestLog.author_email,
-            lastEditedTime,
-          }))
-          .orElse((error) => {
-            logger.warn(
-              `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
-            )
-            return ok({
-              lastEditedBy: "Unknown",
-              lastEditedTime,
-            })
-          })
+    filename: string,
+    filenameToLogMap: Map<string, DefaultLogFields & ListLogLine>,
+    userIdToUserMap: Map<string, User>
+  ): ResultAsync<WithEditMeta<unknown>, never> => {
+    const log = filenameToLogMap.get(filename)
+    if (!log) {
+      return okAsync({
+        lastEditedBy: "Unknown",
+        lastEditedTime: 0,
       })
-      .orElse((error) => {
-        logger.warn(
-          `Error getting edit metadata for ${filename} in ${siteName}: ${error}`
-        )
-        return ok({
-          lastEditedBy: "Unknown",
-          lastEditedTime: 0,
-        })
-      })
+    }
+    const lastEditedTime = new Date(log.date).getTime()
+    const { userId } = fromGithubCommitMessage(log.message)
+    const user = userIdToUserMap.get(userId ?? "")
+    const lastEditedBy = user?.email ?? log.author_email
+    return okAsync({
+      lastEditedBy,
+      lastEditedTime,
+    })
+  }
 
   extractEditedItemInfo = (
     filename: string,

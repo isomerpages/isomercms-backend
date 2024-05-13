@@ -47,6 +47,9 @@ export const MOCK_LATEST_LOG_ONE = {
   body: "body",
   author_name: "name",
   author_email: "email",
+  diff: {
+    files: [{ file: MOCK_COMMIT_FILEPATH_ONE + MOCK_COMMIT_FILENAME_ONE }],
+  },
 }
 
 export const MOCK_LATEST_LOG_TWO = {
@@ -57,6 +60,13 @@ export const MOCK_LATEST_LOG_TWO = {
   body: "body",
   author_name: "name",
   author_email: "email",
+  diff: {
+    files: [{ file: MOCK_COMMIT_FILEPATH_TWO + MOCK_COMMIT_FILENAME_TWO }],
+  },
+}
+
+export const MOCK_LATEST_LOGS = {
+  all: [MOCK_LATEST_LOG_ONE, MOCK_LATEST_LOG_TWO],
 }
 
 export const MOCK_FILENAME_TO_LATEST_LOG_MAP = {

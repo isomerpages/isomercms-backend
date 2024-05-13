@@ -8,13 +8,13 @@ import { err, ok } from "neverthrow"
 
 import { config } from "@config/config"
 
-import logger from "@logger/logger"
+import parentLogger from "@logger/logger"
 
 import InitializationError from "@errors/InitializationError"
 
 import { getField, getFieldsFromTable } from "@utils/formsg-utils"
 
-import { ISOMER_SUPPORT_EMAIL } from "@root/constants"
+import { ALLOWED_DNS_ERROR_CODES, ISOMER_SUPPORT_EMAIL } from "@root/constants"
 import { attachFormSGHandler } from "@root/middleware"
 import { mailer } from "@root/services/utilServices/MailClient"
 import {
@@ -85,9 +85,15 @@ export class FormsgSiteLaunchRouter {
       },
     ]
 
-    logger.info(
-      `Launch site form submission [${submissionId}] (repoName '${repoName}', domain '${primaryDomain}') requested by <${requesterEmail}>`
-    )
+    this.siteLaunchLogger.info({
+      message: "Launch site form submission",
+      meta: {
+        submissionId,
+        repoName,
+        primaryDomain,
+        requesterEmail,
+      },
+    })
 
     // 2. Check arguments
     if (!requesterEmail) {
@@ -146,6 +152,10 @@ export class FormsgSiteLaunchRouter {
   private readonly usersService: FormsgSiteLaunchRouterProps["usersService"]
 
   private readonly infraService: FormsgSiteLaunchRouterProps["infraService"]
+
+  private readonly siteLaunchLogger = parentLogger.child({
+    module: "formsgSiteLaunch",
+  })
 
   constructor({ usersService, infraService }: FormsgSiteLaunchRouterProps) {
     this.usersService = usersService
@@ -248,15 +258,26 @@ export class FormsgSiteLaunchRouter {
         value: record,
       }))
     } catch (e) {
-      if (isErrnoException(e) && e.code === "ENODATA") {
-        logger.info(
-          `Domain ${launchResult.primaryDomainSource} does not have any AAAA records.`
-        )
+      if (
+        isErrnoException(e) &&
+        e.code &&
+        ALLOWED_DNS_ERROR_CODES.includes(e.code)
+      ) {
+        this.siteLaunchLogger.info({
+          message: `Domain does not have any AAAA records.`,
+          meta: {
+            domain: launchResult.primaryDomainSource,
+          },
+        })
         return [] // no AAAA records found
       }
-      logger.error(
-        `Error when trying to get AAAA records for domain ${launchResult.primaryDomainSource}: ${e}`
-      )
+      this.siteLaunchLogger.error({
+        message: "Error when trying to get AAAA records for domain",
+        error: e,
+        meta: {
+          domain: launchResult.primaryDomainSource,
+        },
+      })
       throw e
     }
   }
@@ -312,10 +333,17 @@ export class FormsgSiteLaunchRouter {
 
       return result
     } catch (e) {
-      if (isErrnoException(e) && e.code === "ENODATA") {
-        logger.info(
-          `Domain ${launchResult.primaryDomainSource} does not have any CAA records.`
-        )
+      if (
+        isErrnoException(e) &&
+        e.code &&
+        ALLOWED_DNS_ERROR_CODES.includes(e.code)
+      ) {
+        this.siteLaunchLogger.info({
+          message: `Domain does not have any CAA records.`,
+          meta: {
+            domain: launchResult.primaryDomainSource,
+          },
+        })
 
         // if no CAA records, no need to add Amazon CAA and letsencrypt.org CAA
         return {
@@ -323,9 +351,14 @@ export class FormsgSiteLaunchRouter {
           addLetsEncryptCAA: false,
         }
       }
-      logger.error(
-        `Error when trying to get CAA records for domain ${launchResult.primaryDomainSource}: ${e}`
-      )
+
+      this.siteLaunchLogger.error({
+        message: "Error when trying to get CAA records for domain",
+        error: e,
+        meta: {
+          domain: launchResult.primaryDomainSource,
+        },
+      })
       throw e
     }
   }
@@ -375,9 +408,13 @@ export class FormsgSiteLaunchRouter {
 
       await this.sendLaunchError(submissionId, failureResults)
     } catch (e) {
-      logger.error(
-        `Something unexpected went wrong when launching sites from form submission ${submissionId}. Error: ${e}`
-      )
+      this.siteLaunchLogger.error({
+        message: `Something unexpected went wrong when launching sites from form submission`,
+        error: e,
+        meta: {
+          submissionId,
+        },
+      })
     }
   }
 

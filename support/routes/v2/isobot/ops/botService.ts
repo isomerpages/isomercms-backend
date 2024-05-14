@@ -9,6 +9,7 @@ import { config } from "@config/config"
 import {
   DNS_CNAME_SUFFIXES,
   DNS_INDIRECTION_DOMAIN,
+  DNS_KEYCDN_SUFFIX,
   REDIRECTION_SERVER_IPS,
 } from "@root/constants"
 import logger from "@root/logger/logger"
@@ -209,7 +210,7 @@ class BotService {
     const isIntermediateValid =
       intermediateRecords &&
       ((cnameRecord &&
-        cnameRecord.endsWith(".kxcdn.com") &&
+        cnameRecord.endsWith(`.${DNS_KEYCDN_SUFFIX}`) &&
         intermediateRecords.length === 1) ||
         (intermediateRecords.length === 4 &&
           (isDomainCnameCorrect ||

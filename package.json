@@ -43,7 +43,7 @@
     "@types/dompurify": "^3.0.5",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
-    "aws-sdk": "^2.1599.0",
+    "aws-sdk": "^2.1619.0",
     "axios": "^1.6.8",
     "axios-cache-interceptor": "^0.10.7",
     "base-64": "^1.0.0",

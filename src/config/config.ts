@@ -195,6 +195,7 @@ const config = convict({
       },
     },
   },
+
   github: {
     orgName: {
       doc: "GitHub organization that owns all site repositories",
@@ -469,6 +470,13 @@ const config = convict({
       doc: "Slackbot token",
       env: "SLACK_TOKEN",
       format: String,
+    },
+  },
+  keyCdn: {
+    apiKey: {
+      doc: "KeyCDN API key",
+      env: "KEYCDN_API_KEY",
+      format: "required-string",
       default: "",
     },
   },

@@ -353,6 +353,12 @@ export class LaunchesService {
           new SiteLaunchError(`Failed to update site status for ${siteName}`)
       )
     })
+
+  getAllDomains = () =>
+    ResultAsync.fromPromise(
+      this.launchesRepository.findAll(),
+      () => new SiteLaunchError("Failed to fetch launches")
+    ).map((launch) => launch.map((l) => l.primaryDomainSource))
 }
 
 export default LaunchesService

@@ -21,20 +21,22 @@ jobs:
       ecs-cluster-name: "isomer-stg-ecs"
       ecs-web-service-name: "isomer-stg-ecs-service"
       ecs-container-name: "backend"
-      ecs-container-port: 8081 
+      ecs-container-port: 8081
       environment: "staging"
       shortEnv: "stg"
-      task-definition-path: ".aws/deploy/backend-task-definition.staging.json" 
+      task-definition-path: ".aws/deploy/backend-task-definition.staging.json"
       codedeploy-application: "isomer-stg-ecs-app"
       codedeploy-deployment-group: "isomer-stg-ecs-dg"
       path-to-dockerfile: "Dockerfile"
 
-    secrets: 
+    secrets:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       EFS_FILE_SYSTEM_ID: ${{ secrets.STAGING_EFS_FILE_SYSTEM_ID }}
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-  
-  deploy-support: 
+      RDS_READER_ENDPOINT: ${{ secrets.STAGING_RDS_READER_ENDPOINT }}
+      RDS_DATADOG_PASSWORD: ${{ secrets.STAGING_RDS_DATADOG_PASSWORD }}
+
+  deploy-support:
     name: Deploy support to staging
     uses: ./.github/workflows/aws_deploy.yml
     with:
@@ -47,12 +49,14 @@ jobs:
       ecs-container-port: 8082
       environment: "staging"
       shortEnv: "stg"
-      task-definition-path: ".aws/deploy/support-task-definition.staging.json" 
+      task-definition-path: ".aws/deploy/support-task-definition.staging.json"
       codedeploy-application: "stg-support-ecs-app"
       codedeploy-deployment-group: "stg-support-ecs-dg"
       path-to-dockerfile: "support/Dockerfile"
 
-    secrets: 
+    secrets:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       EFS_FILE_SYSTEM_ID: ${{ secrets.STAGING_EFS_FILE_SYSTEM_ID }}
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      RDS_READER_ENDPOINT: ""
+      RDS_DATADOG_PASSWORD: ""

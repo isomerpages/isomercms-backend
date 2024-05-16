@@ -66,6 +66,12 @@ on:
       DD_API_KEY:
         description: "Datadog API key for sending logs"
         required: true
+      RDS_READER_ENDPOINT:
+        description: "RDS reader endpoint for database connection"
+        required: false
+      RDS_DATADOG_PASSWORD:
+        description: "Password for datadog user inside RDS"
+        required: false
 
 permissions:
   id-token: write

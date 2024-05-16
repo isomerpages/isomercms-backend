@@ -55,5 +55,3 @@ jobs:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       EFS_FILE_SYSTEM_ID: ${{ secrets.PROD_EFS_FILE_SYSTEM_ID }}
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      RDS_READER_ENDPOINT: ""
-      RDS_DATADOG_PASSWORD: ""

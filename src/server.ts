@@ -3,6 +3,7 @@ import "./utils/tracer"
 import "module-alias/register"
 
 import { SgidClient } from "@opengovsg/sgid-client"
+import { Queue } from "bullmq"
 import SequelizeStoreFactory from "connect-session-sequelize"
 import cors from "cors"
 import express from "express"

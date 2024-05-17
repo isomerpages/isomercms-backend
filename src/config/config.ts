@@ -195,7 +195,14 @@ const config = convict({
       },
     },
   },
-
+  bullmq: {
+    redisHostname: {
+      doc: "Redis host name for bullmq",
+      env: "REDIS_HOST",
+      format: "required-string",
+      default: "isomerpages",
+    },
+  },
   github: {
     orgName: {
       doc: "GitHub organization that owns all site repositories",

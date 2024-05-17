@@ -1,10 +1,18 @@
 version: "3"
 services:
+  redis:
+    image: redis
+    container_name: isomercms-redis
+    ports:
+      - 6379:6379
   support:
     build:
       dockerfile: ./support/Dockerfile
     ports:
       - "8082:8082"
+    depends_on:
+      - postgres
+      - redis
     env_file:
       - .env
     volumes:
@@ -18,6 +26,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - postgres
+      - redis
     ports:
       - "8081:8081"
     env_file:

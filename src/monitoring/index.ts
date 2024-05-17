@@ -4,6 +4,7 @@ import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 import autoBind from "auto-bind"
 import axios from "axios"
+import { Job, Queue, Worker } from "bullmq"
 import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
 
@@ -12,6 +13,7 @@ import parentLogger from "@logger/logger"
 import config from "@root/config/config"
 import MonitoringError from "@root/errors/MonitoringError"
 import LaunchesService from "@root/services/identity/LaunchesService"
+import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import promisifyPapaParse from "@root/utils/papa-parse"
 
 interface MonitoringServiceProps {
@@ -65,9 +67,74 @@ export default class MonitoringService {
     module: "monitoringService",
   })
 
+  private readonly REDIS_CONNECTION = {
+    host: config.get("bullmq.redisHostname"),
+    port: 6379,
+  }
+
+  private readonly queue = new Queue("MonitoringQueue", {
+    connection: {
+      ...this.REDIS_CONNECTION,
+    },
+    defaultJobOptions: {
+      removeOnComplete: true,
+      removeOnFail: true,
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 60000, // this operation is not critical, so we can wait a minute
+      },
+    },
+  })
+
+  private readonly worker: Worker<unknown, string, string> | undefined
+
   constructor({ launchesService }: MonitoringServiceProps) {
     autoBind(this)
+    const jobName = "dnsMonitoring"
     this.launchesService = launchesService
+    this.worker = new Worker(
+      this.queue.name,
+      async (job: Job) => {
+        this.monitoringServiceLogger.info(`Monitoring Worker ${job.id}`)
+        if (job.name === jobName) {
+          // The retry's work on a thrown error, so we need to convert the neverthrow to a promise
+          const res = await convertNeverThrowToPromise(this.driver())
+          return res
+        }
+        throw new MonitoringError("Invalid job name")
+      },
+      {
+        connection: {
+          ...this.REDIS_CONNECTION,
+        },
+        lockDuration: 60000, // 1 minute, since this is a relatively expensive operation
+      }
+    )
+
+    const dailyCron = "0 0 9 * *"
+
+    ResultAsync.fromPromise(
+      this.queue.add(
+        jobName,
+        {},
+        {
+          repeat: {
+            pattern: dailyCron,
+          },
+        }
+      ),
+      (e) => e
+    )
+      .map((ok) => {
+        this.monitoringServiceLogger.info(
+          `Monitoring job scheduled at ${dailyCron}`
+        )
+        return ok
+      })
+      .mapErr((error) => {
+        this.monitoringServiceLogger.error(`Failed to schedule job: ${error}`)
+      })
   }
 
   getKeyCdnDomains() {
@@ -227,7 +294,9 @@ export default class MonitoringService {
   }
 
   driver() {
+    const start = Date.now()
     this.monitoringServiceLogger.info("Monitoring service started")
+
     return this.getAllDomains()
       .andThen(this.generateReportCard)
       .andThen((reportCard) => {
@@ -239,6 +308,13 @@ export default class MonitoringService {
           },
         })
         return okAsync(reportCard)
+      })
+      .orElse(() => okAsync([]))
+      .andThen(() => {
+        this.monitoringServiceLogger.info(
+          `Monitoring service completed in ${Date.now() - start}ms`
+        )
+        return okAsync("Monitoring service completed")
       })
   }
 }

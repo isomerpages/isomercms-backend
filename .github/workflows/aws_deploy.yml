@@ -31,15 +31,15 @@ on:
         description: "Container port number in ECS task definition"
         required: true
         type: number
-      environment: 
+      environment:
         description: "Environment to deploy to"
         required: true
         type: string
-      shortEnv: 
+      shortEnv:
         description: "Shortened version of the environment"
         required: true
         type: string
-      task-definition-path: 
+      task-definition-path:
         description: "Path to task definition file"
         required: true
         type: string
@@ -56,16 +56,22 @@ on:
         required: true
         type: string
 
-    secrets: 
+    secrets:
       AWS_ACCOUNT_ID:
         description: "AWS account ID to deploy to"
         required: true
-      EFS_FILE_SYSTEM_ID: 
+      EFS_FILE_SYSTEM_ID:
         description: "EFS file system ID to mount"
         required: true
-      DD_API_KEY: 
+      DD_API_KEY:
         description: "Datadog API key for sending logs"
         required: true
+      RDS_READER_ENDPOINT:
+        description: "RDS reader endpoint for database connection"
+        required: false
+      RDS_DATADOG_PASSWORD:
+        description: "Password for datadog user inside RDS"
+        required: false
 
 permissions:
   id-token: write
@@ -103,7 +109,7 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -123,8 +129,10 @@ jobs:
             sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' ${{ inputs.task-definition-path }}
             sed -i 's/<EFS_FILE_SYSTEM_ID>/${{ secrets.EFS_FILE_SYSTEM_ID }}/g' ${{ inputs.task-definition-path }}
             sed -i 's/<DD_API_KEY>/${{ secrets.DD_API_KEY }}/g' ${{ inputs.task-definition-path }}
+            sed -i 's/<RDS_READER_ENDPOINT>/${{ secrets.RDS_READER_ENDPOINT }}/g' ${{ inputs.task-definition-path }}
+            sed -i 's/<RDS_DATADOG_PASSWORD>/${{ secrets.RDS_DATADOG_PASSWORD }}/g' ${{ inputs.task-definition-path }}
             sed -i 's/<DD_COMMIT_SHA>/${{ github.sha }}/g' ${{ inputs.task-definition-path }}
-      
+
       - name: Replace variables in appspec
         run: |
           sed -i 's/<AWS_ACCOUNT_ID>/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/deploy/appspec.json

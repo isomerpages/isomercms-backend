@@ -42,4 +42,3 @@ const handleWhitelistEmails: RequestHandler<
 }
 
 isobotRouter.post("/whitelist-emails", handleWhitelistEmails)
-isobotRouter.get("/hello", (req, res) => res.json({ message: "Hello, world!" }))

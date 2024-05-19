@@ -69,6 +69,7 @@ class BotService {
   public async whitelistEmails(payload: SlackPayload) {
     // Sample user input:
     // email1,expDate email2,expDate
+    // email1@xyz.com,2024-06-22 email2@abc.com,2025-01-31
     const rawEmails = payload.text.split(" ")
     const emails = rawEmails.map((email) => {
       const [emailStr, expStr] = email.split(",")

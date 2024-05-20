@@ -13,14 +13,18 @@ import {
   mockSiteOrmResponseWithOneAdminCollaborator,
   mockSiteOrmResponseWithOneContributorCollaborator,
   mockSiteOrmResponseWithNoCollaborators,
+  mockCollaboratorAdmin1,
+  mockCollaboratorAdmin2,
 } from "@fixtures/identity"
 import {
   CollaboratorRoles,
   CollaboratorRolesWithoutIsomerAdmin,
   INACTIVE_USER_THRESHOLD_DAYS,
+  ISOMER_SUPPORT_EMAIL,
 } from "@root/constants"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { ConflictError } from "@root/errors/ConflictError"
+import { mailer } from "@root/services/utilServices/MailClient"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import IsomerAdminsService from "@services/identity/IsomerAdminsService"
 import SitesService from "@services/identity/SitesService"
@@ -556,6 +560,95 @@ describe("CollaboratorsService", () => {
 
       // Assert
       expect(mockSiteRepo.findOne).toBeCalled()
+    })
+  })
+
+  describe("notify", () => {
+    it("should send an email to all site admins", async () => {
+      // Arrange
+      mockSiteRepo.findOne.mockResolvedValue(
+        mockSiteOrmResponseWithAllCollaborators
+      )
+      const spySendMailWithCc = jest.spyOn(mailer, "sendMailWithCc")
+      spySendMailWithCc.mockResolvedValueOnce()
+
+      // Act
+      await collaboratorsService.notify(
+        mockSiteName,
+        "subject",
+        "body",
+        mockEmailAddress
+      )
+
+      // Assert
+      expect(mockSiteRepo.findOne).toHaveBeenCalledOnce()
+      expect(spySendMailWithCc).toHaveBeenCalledWith(
+        mockCollaboratorAdmin1.email,
+        "Isomer Team",
+        [mockCollaboratorAdmin2.email, mockEmailAddress, ISOMER_SUPPORT_EMAIL],
+        ISOMER_SUPPORT_EMAIL,
+        "subject",
+        "body"
+      )
+    })
+
+    it("should return a NotFoundError if the site does not have any admins", async () => {
+      // Arrange
+      mockSiteRepo.findOne.mockResolvedValue(
+        mockSiteOrmResponseWithOneContributorCollaborator
+      )
+      const spySendMailWithCc = jest.spyOn(mailer, "sendMailWithCc")
+
+      // Act
+      const result = await collaboratorsService.notify(
+        mockSiteName,
+        "subject",
+        "body",
+        mockEmailAddress
+      )
+
+      // Assert
+      expect(result).toBeInstanceOf(NotFoundError)
+      expect(mockSiteRepo.findOne).toHaveBeenCalledOnce()
+      expect(spySendMailWithCc).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("notifyWithDnsRecords", () => {
+    it("should send an email to all site admins with DNS records", async () => {
+      // Arrange
+      mockSiteRepo.findOne.mockResolvedValue(
+        mockSiteOrmResponseWithAllCollaborators
+      )
+      const spySendMailWithCc = jest.spyOn(mailer, "sendMailWithCc")
+      spySendMailWithCc.mockResolvedValueOnce()
+      const dnsRecords = [
+        {
+          source: "source",
+          target: "target",
+          type: "A" as const,
+        },
+      ]
+
+      // Act
+      await collaboratorsService.notifyWithDnsRecords(
+        "main",
+        mockSiteName,
+        "domain",
+        dnsRecords,
+        mockEmailAddress
+      )
+
+      // Assert
+      expect(mockSiteRepo.findOne).toHaveBeenCalledOnce()
+      expect(spySendMailWithCc).toHaveBeenCalledWith(
+        mockCollaboratorAdmin1.email,
+        "Isomer Team",
+        [mockCollaboratorAdmin2.email, mockEmailAddress, ISOMER_SUPPORT_EMAIL],
+        ISOMER_SUPPORT_EMAIL,
+        expect.any(String),
+        expect.any(String)
+      )
     })
   })
 })

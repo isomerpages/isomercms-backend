@@ -44,13 +44,37 @@ class MailClient {
     body: string,
     attachments?: string[]
   ): Promise<void> {
+    await this.sendMailWithCc(
+      recipient,
+      "IsomerCMS",
+      [],
+      "noreply@isomer.gov.sg",
+      subject,
+      body,
+      attachments
+    )
+  }
+
+  async sendMailWithCc(
+    recipient: string,
+    senderName: string,
+    cc: string[],
+    replyTo: string,
+    subject: string,
+    body: string,
+    attachments?: string[]
+  ): Promise<void> {
     const sendEndpoint = `${POSTMAN_API_URL}/transactional/email/send`
     const form = new FormData()
     form.append("subject", subject)
-    form.append("from", "IsomerCMS <donotreply@isomer.gov.sg>")
+    form.append("from", `${senderName} <donotreply@isomer.gov.sg>`)
     form.append("body", body)
     form.append("recipient", recipient)
-    form.append("reply_to", "noreply@isomer.gov.sg")
+    form.append("reply_to", replyTo)
+    cc.forEach((ccEmail) => {
+      form.append("cc", ccEmail)
+    })
+
     if (attachments) {
       await Promise.all(
         attachments?.map(async (attachment) => {

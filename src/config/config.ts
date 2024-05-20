@@ -313,6 +313,13 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    notifySiteCollaboratorsFormKey: {
+      doc: "FormSG API key for notify site collaborators form",
+      env: "NOTIFY_SITE_COLLABORATORS_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {

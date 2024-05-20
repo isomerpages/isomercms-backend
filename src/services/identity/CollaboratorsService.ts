@@ -338,7 +338,7 @@ class CollaboratorsService {
           method: "notfify",
         },
       })
-      return new NotFoundError(`Site does not exist`)
+      return new NotFoundError(`No collaborators found for site`)
     }
 
     // Send email to only the admins of the site and filter for only those with emails

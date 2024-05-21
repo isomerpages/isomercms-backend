@@ -5,7 +5,16 @@ import { sanitizer } from "@services/utilServices/Sanitizer"
 const LINE_BREAK_REGEX = "[\r\n\x0B\x0C\u0085\u2028\u2029]"
 const GLOBAL_LINE_BREAK_SEARCH = new RegExp(LINE_BREAK_REGEX, "gi")
 
-export const recursiveTrimAndReplaceLineBreaks = (obj: any): any => {
+type RecursiveInput =
+  | string
+  | RecursiveInput[]
+  | { [key: string]: RecursiveInput }
+  | undefined
+  | null
+
+export const recursiveTrimAndReplaceLineBreaks = (
+  obj: RecursiveInput
+): RecursiveInput => {
   if (typeof obj === "string") {
     return obj.replaceAll(GLOBAL_LINE_BREAK_SEARCH, " ").trim()
   }
@@ -13,7 +22,7 @@ export const recursiveTrimAndReplaceLineBreaks = (obj: any): any => {
     return obj.map((item) => recursiveTrimAndReplaceLineBreaks(item))
   }
   if (typeof obj === "object" && obj !== null) {
-    const newObj: any = {}
+    const newObj: RecursiveInput = {}
     Object.keys(obj).forEach((key) => {
       newObj[key] = recursiveTrimAndReplaceLineBreaks(obj[key])
     })
@@ -38,7 +47,7 @@ export const sanitizedYamlParse = (
   )
 
 export const sanitizedYamlStringify = (
-  prestringifiedContent: object
+  prestringifiedContent: RecursiveInput
 ): string => {
   const formattedPrestringifiedContent = recursiveTrimAndReplaceLineBreaks(
     prestringifiedContent

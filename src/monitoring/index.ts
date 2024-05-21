@@ -2,14 +2,15 @@ import dns from "dns/promises"
 
 import { Octokit } from "@octokit/rest"
 import autoBind from "auto-bind"
+import axios from "axios"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
-import Papa from "papaparse"
 
 import parentLogger from "@logger/logger"
 
 import config from "@root/config/config"
 import MonitoringError from "@root/errors/MonitoringError"
 import LaunchesService from "@root/services/identity/LaunchesService"
+import promisifyPapaParse from "@root/utils/papa-parse"
 
 interface MonitoringServiceInterface {
   launchesService: LaunchesService
@@ -55,8 +56,10 @@ function isKeyCdnZoneAlias(object: unknown): object is keyCdnZoneAlias {
   return "name" in (object as keyCdnZoneAlias)
 }
 
-function isKeyCdnResponse(object: unknown): object is KeyCdnResponse {
-  return "data" in (object as KeyCdnResponse)
+function isKeyCdnResponse(object: unknown): object is keyCdnZoneAlias[] {
+  if (!object) return false
+  if (Array.isArray(object)) return object.every(isKeyCdnZoneAlias)
+  return false
 }
 
 export default class MonitoringService {
@@ -75,58 +78,35 @@ export default class MonitoringService {
     const keyCdnApiKey = config.get("keyCdn.apiKey")
 
     return ResultAsync.fromPromise(
-      fetch(`https://api.keycdn.com/zonealiases.json`, {
+      axios.get(`https://api.keycdn.com/zonealiases.json`, {
         headers: {
           Authorization: `Basic ${btoa(`${keyCdnApiKey}:`)}`,
         },
       }),
       (error) => new MonitoringError(`Failed to fetch zones: ${error}`)
     )
-      .andThen((response) => {
-        if (!response.ok) {
-          return errAsync(
-            new MonitoringError(
-              `Failed to retrieve zones: ${response.statusText}`
-            )
-          )
-        }
-        return okAsync(response)
-      })
-      .andThen((response) =>
-        ResultAsync.fromPromise(
-          response.json(),
-          (error) => new MonitoringError(`Failed to parse response: ${error}`)
-        )
-      )
-      .andThen((data: unknown) => {
+      .map((response) => response.data.data.zonealiases)
+      .andThen((data) => {
         if (!isKeyCdnResponse(data)) {
           return errAsync(new MonitoringError("Failed to parse response"))
         }
 
-        const domains = data.data.zonealiases
-          .filter(isKeyCdnZoneAlias)
-          .map((zone: keyCdnZoneAlias) => zone.name)
-          .map(
-            (domain) =>
-              ({
-                domain,
-                type: IsomerHostedDomainType.KEYCDN,
-              } as IsomerHostedDomain)
-          )
-
+        const domains = data
+          .map((zone) => zone.name)
+          .map((domain) => ({
+            domain,
+            type: IsomerHostedDomainType.KEYCDN,
+          }))
         return okAsync(domains)
       })
   }
 
   getAmplifyDeployments() {
     return this.launchesService.getAllDomains().map((domains) =>
-      domains.map(
-        (domain) =>
-          ({
-            domain,
-            type: IsomerHostedDomainType.AMPLIFY,
-          } as IsomerHostedDomain)
-      )
+      domains.map((domain) => ({
+        domain,
+        type: IsomerHostedDomainType.AMPLIFY,
+      }))
     )
   }
 
@@ -153,35 +133,19 @@ export default class MonitoringService {
         const content = Buffer.from(response.data.content, "base64").toString(
           "utf-8"
         )
+
         return ResultAsync.fromPromise(
-          new Promise<RedirectionDomain[]>((resolve, reject) => {
-            Papa.parse(content, {
-              header: true,
-              complete(results) {
-                // validate the csv
-                if (!results.data) {
-                  reject(new MonitoringError("Failed to parse csv"))
-                }
-                resolve(results.data as RedirectionDomain[])
-              },
-              error(error: unknown) {
-                reject(error)
-              },
-            })
-          }),
+          promisifyPapaParse<RedirectionDomain[]>(content),
           (error) => new MonitoringError(`Failed to parse csv: ${error}`)
         )
       })
       .map((redirectionDomains) =>
         redirectionDomains
           .map((domain) => domain.source)
-          .map(
-            (domain) =>
-              ({
-                domain,
-                type: IsomerHostedDomainType.REDIRECTION,
-              } as IsomerHostedDomain)
-          )
+          .map((domain) => ({
+            domain,
+            type: IsomerHostedDomainType.REDIRECTION,
+          }))
       )
   }
 

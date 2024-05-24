@@ -1,8 +1,10 @@
 import dns from "dns/promises"
 
+import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 import autoBind from "auto-bind"
 import axios from "axios"
+import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
 
 import parentLogger from "@logger/logger"
@@ -30,12 +32,6 @@ interface IsomerHostedDomain {
 
 type keyCdnZoneAlias = {
   name: string
-}
-
-interface KeyCdnResponse {
-  data: {
-    zonealiases: keyCdnZoneAlias[]
-  }
 }
 
 interface RedirectionDomain {
@@ -116,8 +112,11 @@ export default class MonitoringService {
    */
   getRedirectionDomains() {
     const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
-    const OctokitRetry = Octokit.plugin()
-    const octokitWithRetry = new OctokitRetry({
+    // seems to be a bug in typing, this is a direct
+    // copy paste from the octokit documentation
+    // https://octokit.github.io/rest.js/v20#automatic-retries
+    const OctokitRetry = Octokit.plugin(retry as any)
+    const octokitWithRetry: Octokit = new OctokitRetry({
       auth: SYSTEM_GITHUB_TOKEN,
       request: { retries: 5 },
     })
@@ -164,25 +163,9 @@ export default class MonitoringService {
     ]).andThen(([amplifyDeployments, redirectionDomains, keyCdnDomains]) => {
       this.monitoringServiceLogger.info("Fetched all domains")
       return okAsync(
-        [...amplifyDeployments, ...redirectionDomains, ...keyCdnDomains].sort(
-          (a, b) => {
-            const domainA = a.domain
-            const domainB = b.domain
-            if (
-              domainA.startsWith("www.") &&
-              domainA.slice(`www.`.length) === domainB
-            ) {
-              return 0
-            }
-            if (
-              domainB.startsWith("www.") &&
-              domainA === domainB.slice(`www.`.length)
-            ) {
-              return 0
-            }
-            if (domainA === domainB) return 0
-            return domainA > domainB ? 1 : -1
-          }
+        _.sortBy(
+          [...amplifyDeployments, ...redirectionDomains, ...keyCdnDomains],
+          (val) => (val.domain.startsWith("www.") ? val.domain.slice(4) : val)
         )
       )
     })

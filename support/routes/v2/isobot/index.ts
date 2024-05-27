@@ -1,4 +1,11 @@
-import { App, ExpressReceiver } from "@slack/bolt"
+import {
+  App,
+  AuthorizationError,
+  ExpressReceiver,
+  Middleware,
+  SlackCommandMiddlewareArgs,
+} from "@slack/bolt"
+import { RequestHandler } from "express"
 
 import { Whitelist } from "@database/models"
 import config from "@root/config/config"
@@ -16,6 +23,8 @@ const token = config.get("slackbot.token")
 const botReceiver = new ExpressReceiver({ signingSecret, endpoints: "/" })
 export const isobotRouter = botReceiver.router
 
+// TODO: add slack ids of isomer user
+const ISOMER_USERS_ID = ["U01HTSFC0RY"]
 const bot = new App({
   token,
   receiver: botReceiver,
@@ -45,3 +54,37 @@ bot.command("/siteup", async ({ payload, respond, ack }) => {
 
   return botService.dnsChecker(payload).map((response) => respond(response))
 })
+const addUserContext: Middleware<SlackCommandMiddlewareArgs> = async ({
+  payload,
+  client,
+  context,
+  next,
+}) => {
+  const user = await client.users.info({
+    user: payload.user_id,
+  })
+
+  context.user = user
+
+  await next()
+}
+
+// NOTE: ALWAYS call this after `addUserContext`
+const validateIsomerUser: Middleware<SlackCommandMiddlewareArgs> = async ({
+  client,
+  context,
+  next,
+}) => {
+  // NOTE: Not calling `client.get` again - repeated work and also
+  // we only have a 3s window to ACK slack (haven't ack yet)
+  const user = context.user as Awaited<ReturnType<typeof client.users.info>>
+
+  if (!user || !ISOMER_USERS_ID.some((userId) => userId === user.user?.id)) {
+    throw new Error("Only Isomer members are allowed to use this command!")
+  }
+
+  next()
+}
+
+// FIXME: update this to proper signature
+// bot.command("/whitelist-emails", handleWhitelistEmails)

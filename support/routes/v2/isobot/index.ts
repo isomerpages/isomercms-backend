@@ -1,16 +1,29 @@
-import express, { RequestHandler } from "express"
+import { App, ExpressReceiver } from "@slack/bolt"
+import { RequestHandler } from "express"
 
 import { Whitelist } from "@database/models"
+import config from "@root/config/config"
 import logger from "@root/logger/logger"
 import WhitelistService from "@root/services/identity/WhitelistService"
 import type { DnsCheckerResponse } from "@root/types/dnsChecker"
 
 import BotService, { SlackPayload } from "./ops/botService"
 
-export const isobotRouter = express.Router()
 const botService = new BotService(
   new WhitelistService({ repository: Whitelist })
 )
+const signingSecret = config.get("slackbot.secret")
+const token = config.get("slackbot.token")
+
+const botReceiver = new ExpressReceiver({ signingSecret, endpoints: "/" })
+export const isobotRouter = botReceiver.router
+
+const bot = new App({
+  signingSecret,
+  token,
+  endpoints: "/",
+  receiver: botReceiver,
+})
 
 const handleWhitelistEmails: RequestHandler<
   {},
@@ -61,3 +74,5 @@ const handleDnsChecker: RequestHandler<
 
 isobotRouter.post("/dns-checker", handleDnsChecker)
 isobotRouter.post("/whitelist-emails", handleWhitelistEmails)
+// FIXME: update this to proper signature
+// bot.command("/whitelist-emails", handleWhitelistEmails)

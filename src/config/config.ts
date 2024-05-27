@@ -465,6 +465,12 @@ const config = convict({
       format: String,
       default: "",
     },
+    token: {
+      doc: "Slackbot token",
+      env: "SLACK_TOKEN",
+      format: String,
+      default: "",
+    },
   },
 })
 

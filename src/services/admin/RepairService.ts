@@ -13,42 +13,52 @@ import GitFileSystemService from "../db/GitFileSystemService"
 
 const LOCK_TIME_SECONDS = 15 * 60 // 15 minutes
 
-// TODO: Add class constructor and update these to be deps
-const gitFileSystemService: GitFileSystemService = (null as unknown) as GitFileSystemService
-const reposService: ReposService = (null as unknown) as ReposService
+interface RepairServiceProps {
+  gitFileSystemService: GitFileSystemService
+  reposService: ReposService
+}
 
-export const lockRepo = (
-  repoName: string,
-  lockDurationSeconds: number = LOCK_TIME_SECONDS
-) =>
-  ResultAsync.fromPromise(
-    lock(repoName, lockDurationSeconds),
-    (err) => new LockedError(`Unable to lock repo ${repoName}, ${err}`)
-  ).map(() => repoName)
+export class RepairService {
+  gitFileSystemService: GitFileSystemService
 
-export const cloneRepo = (repoName: string) => {
-  const repoUrl = `git@github.com:isomerpages/${repoName}.git`
+  reposService: ReposService
 
-  return (
-    gitFileSystemService
-      .cloneBranch(repoName, true)
-      // Repo does not exist in EFS, clone it
-      .andThen(() =>
-        // repo exists in efs, but we need to pull for staging and reset staging lite
-        gitFileSystemService
-          .pull(repoName, "staging")
-          .andThen(() =>
-            fromPromise(
-              reposService.setUpStagingLite(
-                path.join(EFS_VOL_PATH_STAGING_LITE, repoName),
-                repoUrl
-              ),
-              (error) =>
-                new GitFileSystemError(
-                  `Error setting up staging lite for repo ${repoName}: ${error}`
-                )
+  constructor({ gitFileSystemService, reposService }: RepairServiceProps) {
+    this.reposService = reposService
+    this.gitFileSystemService = gitFileSystemService
+  }
+
+  lockRepo(repoName: string, lockDurationSeconds: number = LOCK_TIME_SECONDS) {
+    return ResultAsync.fromPromise(
+      lock(repoName, lockDurationSeconds),
+      (err) => new LockedError(`Unable to lock repo ${repoName}, ${err}`)
+    ).map(() => repoName)
+  }
+
+  cloneRepo(repoName: string) {
+    const repoUrl = `git@github.com:isomerpages/${repoName}.git`
+
+    return (
+      this.gitFileSystemService
+        .cloneBranch(repoName, true)
+        // Repo does not exist in EFS, clone it
+        .andThen(() =>
+          // repo exists in efs, but we need to pull for staging and reset staging lite
+          this.gitFileSystemService
+            .pull(repoName, "staging")
+            .andThen(() =>
+              fromPromise(
+                this.reposService.setUpStagingLite(
+                  path.join(EFS_VOL_PATH_STAGING_LITE, repoName),
+                  repoUrl
+                ),
+                (error) =>
+                  new GitFileSystemError(
+                    `Error setting up staging lite for repo ${repoName}: ${error}`
+                  )
+              )
             )
-          )
-      )
-  )
+        )
+    )
+  }
 }

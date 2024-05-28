@@ -7,10 +7,10 @@ import {
 import { RequestHandler } from "express"
 import { okAsync } from "neverthrow"
 
+import { repairService } from "@common/index"
 import { Whitelist } from "@database/models"
 import config from "@root/config/config"
 import logger from "@root/logger/logger"
-import { cloneRepo, lockRepo } from "@root/services/admin/RepairService"
 import WhitelistService from "@root/services/identity/WhitelistService"
 
 import BotService from "./ops/botService"
@@ -62,9 +62,9 @@ const cloneRepoCommmand = bot.command(
       text: `${payload.user_id} attempting to clone repo: ${repo} to EFS. Should lock: ${shouldLock}`,
     })
 
-    const base = shouldLock ? lockRepo(tokens[0]) : okAsync("")
+    const base = shouldLock ? repairService.lockRepo(tokens[0]) : okAsync("")
     return base
-      .andThen(cloneRepo)
+      .andThen(repairService.cloneRepo)
       .map(() => respond(`${repo} was successfully cloned to efs!`))
       .mapErr((e) => respond(`${e} occurred while cloning repo to efs`))
   }
@@ -99,7 +99,8 @@ const lockRepoCommand = bot.command(
       text: `${payload.user_id} attempting to lock repo: ${repo} for ${lockTimeMinutes}`,
     })
 
-    return lockRepo(repo, lockTimeSeconds)
+    return repairService
+      .lockRepo(repo, lockTimeSeconds)
       .map((repo) => {
         respond(
           `${repo} was successfully locked for ${lockTimeMinutes} minutes!`

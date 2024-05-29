@@ -8,6 +8,7 @@ import { config } from "@root/config/config"
 import logger from "@root/logger/logger"
 
 import { v2Router } from "./routes"
+import { isobotRouter } from "./routes/v2/isobot"
 
 const BASE_PORT = config.get("port")
 const PORT = BASE_PORT + 1
@@ -16,8 +17,10 @@ const app = express()
 // poller site launch updates
 infraService.pollMessages()
 
-useSharedMiddleware(app)
+const ROUTE_PREFIX_ISOBOT = "/v2/isobot"
+app.use(ROUTE_PREFIX_ISOBOT, isobotRouter)
 
+useSharedMiddleware(app)
 app.use("/", v2Router)
 app.use("/v2/ping", (req, res) => res.status(200).send("Ok"))
 

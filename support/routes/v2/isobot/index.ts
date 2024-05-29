@@ -19,9 +19,7 @@ const botReceiver = new ExpressReceiver({ signingSecret, endpoints: "/" })
 export const isobotRouter = botReceiver.router
 
 const bot = new App({
-  signingSecret,
   token,
-  endpoints: "/",
   receiver: botReceiver,
 })
 
@@ -73,6 +71,5 @@ const handleDnsChecker: RequestHandler<
 }
 
 isobotRouter.post("/dns-checker", handleDnsChecker)
-isobotRouter.post("/whitelist-emails", handleWhitelistEmails)
 // FIXME: update this to proper signature
 // bot.command("/whitelist-emails", handleWhitelistEmails)

@@ -7,6 +7,7 @@ import { useSharedMiddleware } from "@common/middleware"
 import { config } from "@root/config/config"
 import logger from "@root/logger/logger"
 
+import { ROUTE_VERSION } from "./constants"
 import { v2Router } from "./routes"
 import { isobotRouter } from "./routes/v2/isobot"
 
@@ -17,12 +18,12 @@ const app = express()
 // poller site launch updates
 infraService.pollMessages()
 
-const ROUTE_PREFIX_ISOBOT = "/v2/isobot"
+const ROUTE_PREFIX_ISOBOT = `/${ROUTE_VERSION}/isobot`
 app.use(ROUTE_PREFIX_ISOBOT, isobotRouter)
 
 useSharedMiddleware(app)
 app.use("/", v2Router)
-app.use("/v2/ping", (req, res) => res.status(200).send("Ok"))
+app.use(`/${ROUTE_VERSION}/ping`, (req, res) => res.status(200).send("Ok"))
 
 sequelize
   .authenticate()

@@ -131,8 +131,9 @@ async function fetchPageOfRepositories({
       ? {
           headers: { Authorization: `token ${accessToken}` },
           params,
+          cache: false,
         }
-      : { params }
+      : { params, cache: false }
   )
 
   const res: FetchRepoPageResult = {

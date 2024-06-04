@@ -3,6 +3,7 @@ import express, { RequestHandler } from "express"
 import { Whitelist } from "@database/models"
 import logger from "@root/logger/logger"
 import WhitelistService from "@root/services/identity/WhitelistService"
+import type { DnsCheckerResponse } from "@root/types/dnsChecker"
 
 import BotService, { SlackPayload } from "./ops/botService"
 
@@ -40,4 +41,23 @@ const handleWhitelistEmails: RequestHandler<
   }
 }
 
+const handleDnsChecker: RequestHandler<
+  never,
+  DnsCheckerResponse | { message: string },
+  SlackPayload,
+  unknown,
+  never
+> = async (req, res) => {
+  const validatedDomain = botService.getValidatedDomain(req.body)
+  if (!validatedDomain)
+    return res.status(200).send({
+      message: `Sorry, \`${req.body.text}\` is not a valid domain name. Please try again with a valid one instead.`,
+    })
+
+  return botService
+    .dnsChecker(req.body)
+    .map((response) => res.status(200).send(response))
+}
+
+isobotRouter.post("/dns-checker", handleDnsChecker)
 isobotRouter.post("/whitelist-emails", handleWhitelistEmails)

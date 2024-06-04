@@ -53,6 +53,10 @@ export class Logger {
     return new Logger(child)
   }
 
+  public setBindings = (bindings: { [key: string]: unknown }): void => {
+    this._logger.setBindings(bindings)
+  }
+
   public error = (
     // NOTE: Giving type as `unknown` here
     // because when we do a `catch`,

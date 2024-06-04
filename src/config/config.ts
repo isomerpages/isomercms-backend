@@ -313,6 +313,13 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    notifySiteCollaboratorsFormKey: {
+      doc: "FormSG API key for notify site collaborators form",
+      env: "NOTIFY_SITE_COLLABORATORS_FORM_KEY",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   postman: {
     apiKey: {
@@ -447,6 +454,14 @@ const config = convict({
     apiKey: {
       doc: "Uptime Robot API key",
       env: "UPTIME_ROBOT_API_KEY",
+      format: String,
+      default: "",
+    },
+  },
+  slackbot: {
+    secret: {
+      doc: "Slackbot signing secret",
+      env: "SLACK_SIGNING_SECRET",
       format: String,
       default: "",
     },

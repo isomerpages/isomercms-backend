@@ -11,6 +11,7 @@ import MissingUserEmailError from "@root/errors/MissingUserEmailError"
 import MissingUserError from "@root/errors/MissingUserError"
 import { NotFoundError } from "@root/errors/NotFoundError"
 import { UnprocessableError } from "@root/errors/UnprocessableError"
+import logger from "@root/logger/logger"
 import PreviewService from "@root/services/identity/PreviewService"
 import {
   getAllRepoData,
@@ -411,7 +412,16 @@ class SitesService {
     // Github users are using their own access token, which already filters sites to only those they have write access to
     // Admin users should have access to all sites regardless
 
-    return getAllRepoData(accessToken)
+    const repos = await getAllRepoData(accessToken)
+    logger.info({
+      message: "logging repos retrieved for user",
+      meta: {
+        userId,
+        repos,
+      },
+    })
+
+    return repos
   }
 
   async checkHasAccessForGitHubUser(sessionData: UserWithSiteSessionData) {

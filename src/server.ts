@@ -93,6 +93,7 @@ import { ConfigService } from "./services/fileServices/YmlFileServices/ConfigSer
 import CollaboratorsService from "./services/identity/CollaboratorsService"
 import LaunchClient from "./services/identity/LaunchClient"
 import LaunchesService from "./services/identity/LaunchesService"
+import WhitelistService from "./services/identity/WhitelistService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
 import RepoCheckerService from "./services/review/RepoCheckerService"
 import ReviewCommentService from "./services/review/ReviewCommentService"
@@ -168,6 +169,7 @@ const gitHubService = new RepoService({
   gitFileSystemService,
   gitFileCommitService,
 })
+const whitelistService = new WhitelistService({ repository: Whitelist })
 
 const repoManagementService = new RepoManagementService({
   repoService: gitHubService,

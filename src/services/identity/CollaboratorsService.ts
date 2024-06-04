@@ -10,12 +10,16 @@ import { UnprocessableError } from "@errors/UnprocessableError"
 import {
   CollaboratorRoles,
   INACTIVE_USER_THRESHOLD_DAYS,
+  ISOMER_SUPPORT_EMAIL,
 } from "@constants/constants"
 
-import { Whitelist, User, Site, SiteMember, Repo } from "@database/models"
+import { Repo, Site, SiteMember, User, Whitelist } from "@database/models"
 import { BadRequestError } from "@root/errors/BadRequestError"
 import { ConflictError } from "@root/errors/ConflictError"
 import logger from "@root/logger/logger"
+import type { DNSRecord } from "@root/types/siteInfo"
+
+import { mailer } from "../utilServices/MailClient"
 
 import IsomerAdminsService from "./IsomerAdminsService"
 import SitesService from "./SitesService"
@@ -315,6 +319,141 @@ class CollaboratorsService {
       total: totalCount,
       inactive: inactiveCount,
     }
+  }
+
+  // Send email to all collaborators of given siteName
+  notify = async (
+    siteName: string,
+    subject: string,
+    body: string,
+    sender?: string
+  ) => {
+    const collaborators = await this.list(siteName)
+
+    if (collaborators.length === 0) {
+      logger.warn({
+        message: "No collaborators found for site",
+        meta: {
+          siteName,
+          method: "notfify",
+        },
+      })
+      return new NotFoundError(`No collaborators found for site`)
+    }
+
+    // Send email to only the admins of the site and filter for only those with emails
+    const recipientEmails = _.orderBy(
+      collaborators,
+      [
+        // Prioritize Admins over Contributors
+        (collaborator) =>
+          collaborator.SiteMember.role === CollaboratorRoles.Admin,
+        // Prioritize the user that has most recently logged in
+        (collaborator) => collaborator.lastLoggedIn,
+      ],
+      ["desc", "desc"]
+    )
+      .filter(
+        (collaborator) =>
+          collaborator.SiteMember.role === CollaboratorRoles.Admin
+      )
+      .flatMap((collaborator) =>
+        collaborator.email ? [collaborator.email] : []
+      )
+
+    if (recipientEmails.length === 0) {
+      logger.warn({
+        message: "No email addresses found for site admins",
+        meta: {
+          siteName,
+          method: "notify",
+        },
+      })
+      return new NotFoundError(`No email addresses found for site admins`)
+    }
+
+    // CC the sender and Isomer Support
+    if (sender) {
+      recipientEmails.push(sender)
+    }
+    recipientEmails.push(ISOMER_SUPPORT_EMAIL)
+
+    // Send email to all admins of the site
+    return mailer.sendMailWithCc(
+      recipientEmails[0], // Limitation of Postman API - only one recipient allowed
+      "Isomer Team",
+      recipientEmails.slice(1),
+      ISOMER_SUPPORT_EMAIL,
+      subject,
+      body
+    )
+  }
+
+  // Send email to all collaborators of given siteName with DNS records
+  notifyWithDnsRecords = async (
+    type: "apex" | "main",
+    siteName: string,
+    domainName: string,
+    dnsRecords: DNSRecord[],
+    sender: string
+  ) => {
+    const tableStyle =
+      "border-collapse: collapse; width: 100%; border: 1px solid #ddd; text-align: center;"
+
+    const thStyle = "padding: 8px; text-align: center; border: 1px solid #ddd;"
+
+    const tdStyle = "padding: 8px; text-align: left; border: 1px solid #ddd;"
+
+    const headerRowStyle =
+      "background-color: #f2f2f2; border: 1px solid #ddd; text-align: center;"
+
+    const subject = `[For Action] Incorrect DNS Configuration for ${domainName}`
+    const body = `<p>Admins of ${siteName} Isomer site,</p>
+    <p>We are from the Isomer team, and we have noticed that the DNS records for the ${domainName} domain have been incorrectly configured. This was flagged by our uptime monitoring service, which monitors the uptime of all Isomer websites.</p>
+    <p><b>What does this mean?</b></p>
+    <ul>
+      ${
+        type === "apex"
+          ? `<li>Should a user go to ${domainName}, they will not be redirected to www.${domainName}.</li>`
+          : ""
+      }
+      ${
+        type === "main"
+          ? `<li>Should a user go to ${domainName}, they will not be able to see your Isomer website.</li>`
+          : ""
+      }
+      <li>The user may potentially see other errors reported by their web browser.</li>
+    </ul>
+    <p><b>What can be done?</b></p>
+    <ul>
+      <li>Ensure that the DNS records for ${domainName} matches the ones provided in the following table, and does not contain any additional A or AAAA records:</li>
+    </ul>
+    <table style="${tableStyle}">
+      <thead>
+        <tr style="${headerRowStyle}">
+          <th style="${thStyle}">Source</th>
+          <th style="${thStyle}">Target</th>
+          <th style="${thStyle}">Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${dnsRecords
+          .map(
+            ({ source, target, type }) =>
+              `<tr style="${tdStyle}">
+          <td style="${tdStyle}">${source}</td>
+          <td style="${tdStyle}">${target}</td>
+          <td style="${tdStyle}">${type === "A" ? "A Record" : type}</td>
+        </tr>`
+          )
+          .join("\n")}
+      </tbody>
+    </table>
+    <p>Please let us know once the DNS records have been updated by replying to this email, thank you.</p>
+    <p></p>
+    <p>Warmest regards,<br />Isomer Team</p>`
+
+    return this.notify(siteName, subject, body, sender)
   }
 }
 

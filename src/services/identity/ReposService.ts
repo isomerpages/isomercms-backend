@@ -187,6 +187,7 @@ export default class ReposService {
       name: repoName,
       private: false,
       allow_squash_merge: false,
+      has_issues: false,
     })
 
   setRepoAndTeamPermissions = async (

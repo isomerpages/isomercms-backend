@@ -1,4 +1,4 @@
-import { AxiosCacheInstance } from "axios-cache-interceptor"
+import { AxiosInstance } from "axios"
 import _ from "lodash"
 import { ResultAsync } from "neverthrow"
 
@@ -34,7 +34,7 @@ const BRANCH_REF = config.get("github.branchRef")
 // We can type as `unknown` if required.
 
 interface RepoServiceParams {
-  isomerRepoAxiosInstance: AxiosCacheInstance
+  isomerRepoAxiosInstance: AxiosInstance
   gitFileSystemService: GitFileSystemService
   gitFileCommitService: GitFileCommitService
 }
@@ -58,8 +58,8 @@ export default class RepoService extends GitHubService {
     return this.gitFileSystemService.getFilesChanged(siteName)
   }
 
-  getLatestLocalCommitOfPath(repoName: string, path: string) {
-    return this.gitFileSystemService.getLatestCommitOfPath(repoName, path)
+  getCommitsBetweenMasterAndStaging(siteName: string) {
+    return this.gitFileSystemService.getCommitsBetweenMasterAndStaging(siteName)
   }
 
   getCommitDiff(siteName: string, base?: string, head?: string) {

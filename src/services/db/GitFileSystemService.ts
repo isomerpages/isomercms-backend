@@ -385,7 +385,7 @@ export default class GitFileSystemService {
   }
 
   /**
-   * Wrapper over `git diff --name-only` that also creates `master` branch if it does not exist.
+   * Wrapper over `git diff-tree -r --name-only master..staging` that also creates `master` branch if it does not exist.
    */
   getFilesChanged(repoName: string): ResultAsync<string[], GitFileSystemError> {
     return this.createLocalTrackingBranchIfNotExists(
@@ -396,7 +396,7 @@ export default class GitFileSystemService {
       return ResultAsync.fromPromise(
         this.git
           .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-          .diff(["master..staging", "--name-only"]),
+          .raw(["diff-tree", "-r", "--name-only", "master..staging"]),
         (error) => {
           logger.error(
             `Error when getting diff files between master and staging: ${error}, when trying to access ${efsVolPath}/${repoName}`
@@ -419,42 +419,31 @@ export default class GitFileSystemService {
     })
   }
 
-  /**
-   * Get latest commit for a file path on a branch (including deleted files)
-   */
-  getLatestCommitOfPath(
-    repoName: string,
-    path: string,
-    branch = "staging"
-  ): ResultAsync<DefaultLogFields & ListLogLine, GitFileSystemError> {
-    const efsVolPath = this.getEfsVolPathFromBranch(branch)
-    return ResultAsync.fromPromise(
-      this.git
-        .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-        // -1 to return latest commit only, -- to get logs even for deleted files
-        .log(["-1", branch, "--", path]),
-      (error) => {
-        logger.error(
-          `Error when getting latest commit for "${path}" on "${branch}": ${error}, when trying to access ${efsVolPath}/${repoName}`
-        )
-
-        if (error instanceof GitError) {
-          return new GitFileSystemError(
-            "Unable to retrieve latest log info from disk"
+  getCommitsBetweenMasterAndStaging(
+    repoName: string
+  ): ResultAsync<LogResult, GitFileSystemError> {
+    return this.createLocalTrackingBranchIfNotExists(
+      repoName,
+      "master"
+    ).andThen(() => {
+      const efsVolPath = this.getEfsVolPathFromBranch("staging")
+      return ResultAsync.fromPromise(
+        this.git
+          .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+          .log(["master..staging", "--name-only"]),
+        (error) => {
+          logger.error(
+            `Error when getting commits between master and staging: ${error}, when trying to access ${efsVolPath}/${repoName}`
           )
+
+          if (error instanceof GitError) {
+            return new GitFileSystemError(
+              "Unable to retrieve git logs info from disk"
+            )
+          }
+          return new GitFileSystemError("An unknown error occurred")
         }
-
-        return new GitFileSystemError("An unknown error occurred")
-      }
-    ).andThen((logs) => {
-      if (logs.latest === null) {
-        return errAsync(
-          new GitFileSystemError(
-            `No commit was found for "${path}" on "${branch}"`
-          )
-        )
-      }
-      return okAsync(logs.latest)
+      )
     })
   }
 
@@ -750,28 +739,30 @@ export default class GitFileSystemService {
         .orElse(() =>
           // Retry push twice
           // TODO: To eliminate duplicate code by using a backoff or retry package
-          ResultAsync.fromPromise(
-            isForce
-              ? this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push([...gitOptions, "--force"])
-              : this.git
-                  .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
-                  .push(gitOptions),
-            (error) => {
-              logger.error(
-                `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
-              )
-
-              if (error instanceof GitError) {
-                return new GitFileSystemError(
-                  "Unable to push latest changes of repo"
+          // As a last resort, we do a force push to GitHub as EFS is the source of truth
+          {
+            logger.info(
+              `Performing a force push to GitHub as earlier retries have failed for ${repoName}`
+            )
+            return ResultAsync.fromPromise(
+              this.git
+                .cwd({ path: `${efsVolPath}/${repoName}`, root: false })
+                .push([...gitOptions, "--force"]),
+              (error) => {
+                logger.error(
+                  `Both retries for git push have failed. Error when pushing ${repoName}: ${error}`
                 )
-              }
 
-              return new GitFileSystemError("An unknown error occurred")
-            }
-          )
+                if (error instanceof GitError) {
+                  return new GitFileSystemError(
+                    "Unable to push latest changes of repo"
+                  )
+                }
+
+                return new GitFileSystemError("An unknown error occurred")
+              }
+            )
+          }
         )
         .map(() => `${efsVolPath}/${repoName}`)
     })

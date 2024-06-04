@@ -1,4 +1,4 @@
-import { AxiosCacheInstance } from "axios-cache-interceptor"
+import { AxiosInstance } from "axios"
 import { okAsync } from "neverthrow"
 
 import {
@@ -60,7 +60,7 @@ const MockGitFileCommitService = {
 }
 
 const RepoService = new _RepoService({
-  isomerRepoAxiosInstance: (MockAxiosInstance as unknown) as AxiosCacheInstance,
+  isomerRepoAxiosInstance: (MockAxiosInstance as unknown) as AxiosInstance,
   gitFileSystemService: (MockGitFileSystemService as unknown) as GitFileSystemService,
   gitFileCommitService: (MockGitFileCommitService as unknown) as GitFileCommitService,
 })

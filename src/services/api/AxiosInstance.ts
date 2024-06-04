@@ -62,7 +62,10 @@ const requestFormatter = async (
       )
 
       const finalAxiosConfig = axiosConfig
-      if (!finalAxiosConfig.headers["Content-Type"]) {
+      if (
+        finalAxiosConfig.headers &&
+        !finalAxiosConfig.headers["Content-Type"]
+      ) {
         finalAxiosConfig.headers["Content-Type"] = "application/json"
       }
       finalAxiosConfig.headers.Authorization = `token ${accessToken.value}`

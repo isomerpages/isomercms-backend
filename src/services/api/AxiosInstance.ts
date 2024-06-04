@@ -1,5 +1,8 @@
-import axios, { AxiosRequestConfig } from "axios"
-import { CacheAxiosResponse, setupCache } from "axios-cache-interceptor"
+import axios, {
+  AxiosHeaderValue,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios"
 import _ from "lodash"
 
 import { config } from "@config/config"
@@ -8,7 +11,6 @@ import logger from "@logger/logger"
 
 import tracer from "@utils/tracer"
 
-import { customHeaderInterpreter } from "@root/utils/headerInterpreter"
 import { tokenServiceInstance } from "@services/db/TokenService"
 
 import { statsService } from "../infra/StatsService"
@@ -30,14 +32,16 @@ const extractRepoNameFromGithubUrl = (url: string): string => {
 }
 
 const getIsEmailUserFromAuthMessage = (
-  authMessage?: string | number | boolean
+  authMessage?: AxiosHeaderValue
 ): boolean =>
   !authMessage || authMessage === "token " || authMessage === "token undefined"
 
 // Env vars
 const GITHUB_ORG_NAME = config.get("github.orgName")
 
-const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
+const requestFormatter = async (
+  axiosConfig: InternalAxiosRequestConfig
+): Promise<InternalAxiosRequestConfig> => {
   logger.info("Making GitHub API call")
 
   const authMessage = axiosConfig.headers?.Authorization
@@ -56,14 +60,13 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
       logger.info(
         `Email login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
       )
-      return {
-        ...axiosConfig,
-        headers: {
-          "Content-Type": "application/json",
-          ...axiosConfig.headers,
-          Authorization: `token ${accessToken.value}`,
-        },
+
+      const finalAxiosConfig = axiosConfig
+      if (!finalAxiosConfig.headers["Content-Type"]) {
+        finalAxiosConfig.headers["Content-Type"] = "application/json"
       }
+      finalAxiosConfig.headers.Authorization = `token ${accessToken.value}`
+      return finalAxiosConfig
     }
   }
 
@@ -73,22 +76,21 @@ const requestFormatter = async (axiosConfig: AxiosRequestConfig) => {
   logger.info(
     `Github login user made ${requestMethod} call to Github API: ${axiosConfig.url}`
   )
-  return {
-    ...axiosConfig,
-    headers: {
-      "Content-Type": "application/json",
-      ...axiosConfig.headers,
-    },
+
+  const finalAxiosConfig = axiosConfig
+  if (!finalAxiosConfig.headers["Content-Type"]) {
+    finalAxiosConfig.headers["Content-Type"] = "application/json"
   }
+  return finalAxiosConfig
 }
 
-const respHandler = (response: CacheAxiosResponse) => {
+const respHandler = (response: AxiosResponse) => {
   // Any status code that lie within the range of 2xx will cause this function to trigger
   tokenServiceInstance.onResponse(response)
   return response
 }
 
-const githubApiInterceptor = (resp: CacheAxiosResponse) => {
+const githubApiInterceptor = (resp: AxiosResponse) => {
   const fullUrl = `${resp.config.baseURL || ""}${resp.config.url || ""}`
   if (
     resp.status !== 304 &&
@@ -103,25 +105,15 @@ const githubApiInterceptor = (resp: CacheAxiosResponse) => {
   return resp
 }
 
-const isomerRepoAxiosInstance = setupCache(
-  axios.create({
-    baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
-  }),
-  {
-    interpretHeader: true,
-    etag: true,
-    headerInterpreter: customHeaderInterpreter,
-  }
-)
+const isomerRepoAxiosInstance = axios.create({
+  baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
+})
+
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)
 isomerRepoAxiosInstance.interceptors.response.use(respHandler)
 isomerRepoAxiosInstance.interceptors.response.use(githubApiInterceptor)
 
-const genericGitHubAxiosInstance = setupCache(axios.create(), {
-  interpretHeader: true,
-  etag: true,
-  headerInterpreter: customHeaderInterpreter,
-})
+const genericGitHubAxiosInstance = axios.create()
 genericGitHubAxiosInstance.interceptors.request.use(requestFormatter)
 genericGitHubAxiosInstance.interceptors.response.use(respHandler)
 genericGitHubAxiosInstance.interceptors.response.use(githubApiInterceptor)

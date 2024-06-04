@@ -77,11 +77,13 @@ class BotService {
       if (expDate.toString() === "Invalid Date") {
         logger.error({
           message: "Invalid date format when attempting to whitelist emails",
-          meta: { expStr },
+          meta: { expiry: expStr, email: emailStr },
         })
         throw new Error(`Invalid date format: ${expStr}`)
       }
       // Update timing of the expiry to be 16:00:00 +00
+      // This is because the TZ of our locale is +8,
+      // so this resolves to 12AM of the following day.
       expDate.setUTCHours(16, 0, 0, 0)
       return {
         email: emailStr,

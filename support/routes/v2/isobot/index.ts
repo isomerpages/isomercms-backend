@@ -18,7 +18,6 @@ const handleWhitelistEmails: RequestHandler<
   {},
   {}
 > = async (req, res) => {
-  console.log(req.headers)
   const slackTimestamp = req.headers["x-slack-request-timestamp"] as string
   const slackSig = req.headers["x-slack-signature"] as string
 

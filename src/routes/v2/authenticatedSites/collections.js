@@ -9,6 +9,8 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@utils/yaml-utils")
+
 const {
   CreateDirectoryRequestSchema,
   RenameDirectoryRequestSchema,
@@ -72,7 +74,9 @@ class CollectionsRouter {
         userWithSiteSessionData,
         {
           collectionName,
-          subcollectionName: newDirectoryName,
+          subcollectionName: recursiveTrimAndReplaceLineBreaks(
+            newDirectoryName
+          ),
           objArray: items,
         }
       )
@@ -81,7 +85,7 @@ class CollectionsRouter {
       createResp = await this.collectionDirectoryService.createDirectory(
         userWithSiteSessionData,
         {
-          collectionName: newDirectoryName,
+          collectionName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
           objArray: items,
         }
       )
@@ -105,7 +109,7 @@ class CollectionsRouter {
         {
           collectionName,
           subcollectionName,
-          newDirectoryName,
+          newDirectoryName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
         }
       )
     } else {
@@ -114,7 +118,7 @@ class CollectionsRouter {
         githubSessionData,
         {
           collectionName,
-          newDirectoryName,
+          newDirectoryName: recursiveTrimAndReplaceLineBreaks(newDirectoryName),
         }
       )
     }

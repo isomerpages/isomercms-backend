@@ -16,6 +16,8 @@ const {
   MoveDirectoryPagesRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@root/utils/yaml-utils")
+
 class UnlinkedPagesRouter {
   constructor({ unlinkedPageService, unlinkedPagesDirectoryService }) {
     this.unlinkedPageService = unlinkedPageService
@@ -46,9 +48,9 @@ class UnlinkedPagesRouter {
     const createResp = await this.unlinkedPageService.create(
       userWithSiteSessionData,
       {
-        fileName: newFileName,
+        fileName: recursiveTrimAndReplaceLineBreaks(newFileName),
         content: pageBody,
-        frontMatter,
+        frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
       }
     )
 
@@ -88,9 +90,9 @@ class UnlinkedPagesRouter {
         userWithSiteSessionData,
         {
           oldFileName: pageName,
-          newFileName,
+          newFileName: recursiveTrimAndReplaceLineBreaks(newFileName),
           content: pageBody,
-          frontMatter,
+          frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
           sha,
         }
       )
@@ -100,7 +102,7 @@ class UnlinkedPagesRouter {
         {
           fileName: pageName,
           content: pageBody,
-          frontMatter,
+          frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
           sha,
         }
       )

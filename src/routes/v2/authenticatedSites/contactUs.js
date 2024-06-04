@@ -9,6 +9,8 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@utils/yaml-utils")
+
 const { UpdateContactUsSchema } = require("@validators/RequestSchema")
 
 class ContactUsRouter {
@@ -42,7 +44,11 @@ class ContactUsRouter {
 
     const updatedContactUsPage = await this.contactUsPageService.update(
       userWithSiteSessionData,
-      { content: pageBody, frontMatter, sha }
+      {
+        content: pageBody,
+        frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
+        sha,
+      }
     )
 
     res.status(200).json(updatedContactUsPage)

@@ -15,6 +15,8 @@ const {
   DeleteResourcePageRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@root/utils/yaml-utils")
+
 class ResourcePagesRouter {
   constructor({ resourcePageService }) {
     this.resourcePageService = resourcePageService
@@ -36,11 +38,11 @@ class ResourcePagesRouter {
     const createResp = await this.resourcePageService.create(
       userWithSiteSessionData,
       {
-        fileName: newFileName,
+        fileName: recursiveTrimAndReplaceLineBreaks(newFileName),
         resourceRoomName,
         resourceCategoryName,
         content: pageBody,
-        frontMatter,
+        frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
       }
     )
 
@@ -84,11 +86,11 @@ class ResourcePagesRouter {
         userWithSiteSessionData,
         {
           oldFileName: pageName,
-          newFileName,
+          newFileName: recursiveTrimAndReplaceLineBreaks(newFileName),
           resourceRoomName,
           resourceCategoryName,
           content: pageBody,
-          frontMatter,
+          frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
           sha,
         }
       )

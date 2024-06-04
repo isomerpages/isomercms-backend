@@ -16,6 +16,7 @@ const {
   UpdateRepoPasswordRequestSchema,
 } = require("@validators/RequestSchema")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@root/utils/yaml-utils")
 const { isPasswordValid } = require("@root/validators/validators")
 const { SettingsService } = require("@services/configServices/SettingsService")
 
@@ -68,7 +69,9 @@ class SettingsRouter {
       configContent: updatedConfigContent,
       footerContent: updatedFooterContent,
       navigationContent: updatedNavigationContent,
-    } = SettingsService.retrieveSettingsFields(settings)
+    } = SettingsService.retrieveSettingsFields(
+      recursiveTrimAndReplaceLineBreaks(settings)
+    )
 
     await this.settingsService.updateSettingsFiles(userWithSiteSessionData, {
       config,

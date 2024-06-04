@@ -1,4 +1,4 @@
-import { AxiosCacheInstance } from "axios-cache-interceptor"
+import { AxiosInstance } from "axios"
 
 import { ConflictError } from "@errors/ConflictError"
 import { NotFoundError } from "@errors/NotFoundError"
@@ -68,7 +68,7 @@ describe("Github Service", () => {
      * functions that we use + do not need to maintain a full
      * list of axios functions
      */
-    axiosInstance: (mockAxiosInstance as Partial<AxiosCacheInstance>) as AxiosCacheInstance,
+    axiosInstance: (mockAxiosInstance as unknown) as AxiosInstance,
   })
 
   beforeEach(() => {

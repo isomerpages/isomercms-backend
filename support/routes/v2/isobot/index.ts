@@ -70,6 +70,18 @@ const handleDnsChecker: RequestHandler<
     .map((response) => res.status(200).send(response))
 }
 
-isobotRouter.post("/dns-checker", handleDnsChecker)
-// FIXME: update this to proper signature
+// TODO: add in validation for user once downstream is merged
+bot.command("/siteup", async ({ payload, respond, ack }) => {
+  await ack()
+
+  try {
+    await botService.whitelistEmails(payload.text)
+    respond("Emails whitelisted successfully")
+  } catch (e) {
+    logger.error({ error: e })
+    respond("Failed to whitelist emails")
+  }
+})
+
+// bot.command("/siteup", handleDnsChecker)
 // bot.command("/whitelist-emails", handleWhitelistEmails)

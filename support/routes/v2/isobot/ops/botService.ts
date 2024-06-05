@@ -1,5 +1,6 @@
 import dns from "node:dns/promises"
 
+import { SlashCommand } from "@slack/bolt"
 import { ResultAsync, okAsync } from "neverthrow"
 
 import {
@@ -12,10 +13,6 @@ import logger from "@root/logger/logger"
 import WhitelistService from "@root/services/identity/WhitelistService"
 import { DnsCheckerResponse } from "@root/types/dnsChecker"
 
-// Slack only gives us 3 seconds to respond, but usually DNS resolution is fast,
-// so we will give it 2 seconds before we give up
-const DNS_TIMEOUT = 2000
-
 class BotService {
   whitelistService: WhitelistService
 
@@ -24,21 +21,13 @@ class BotService {
   }
 
   private checkCname(domain: string) {
-    return ResultAsync.fromPromise(
-      Promise.race([
-        dns.resolveCname(domain),
-        new Promise<null>((_, reject) =>
-          setTimeout(() => reject(null), DNS_TIMEOUT)
-        ),
-      ]),
-      () => {
-        logger.info({
-          message: "Error resolving CNAME",
-          meta: { domain, method: "checkCname" },
-        })
-        return new Error()
-      }
-    )
+    return ResultAsync.fromPromise(dns.resolveCname(domain), () => {
+      logger.info({
+        message: "Error resolving CNAME",
+        meta: { domain, method: "checkCname" },
+      })
+      return new Error()
+    })
       .andThen((cname) => {
         if (!cname || cname.length === 0) {
           return okAsync(null)
@@ -50,21 +39,13 @@ class BotService {
   }
 
   private checkA(domain: string) {
-    return ResultAsync.fromPromise(
-      Promise.race([
-        dns.resolve4(domain),
-        new Promise<null>((_, reject) =>
-          setTimeout(() => reject(null), DNS_TIMEOUT)
-        ),
-      ]),
-      () => {
-        logger.info({
-          message: "Error resolving A record",
-          meta: { domain, method: "checkA" },
-        })
-        return new Error()
-      }
-    )
+    return ResultAsync.fromPromise(dns.resolve4(domain), () => {
+      logger.info({
+        message: "Error resolving A record",
+        meta: { domain, method: "checkA" },
+      })
+      return new Error()
+    })
       .andThen((a) => {
         if (!a || a.length === 0) {
           return okAsync(null)
@@ -119,8 +100,7 @@ class BotService {
     await this.whitelistService.addWhitelist(emails)
   }
 
-  getValidatedDomain(payload: SlackPayload) {
-    const { text: domain } = payload
+  getValidatedDomain(domain: string) {
     const DOMAIN_NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/
 
     if (!DOMAIN_NAME_REGEX.test(domain)) {
@@ -296,7 +276,7 @@ class BotService {
     return this.getSlackMessage(response)
   }
 
-  dnsChecker(payload: SlackPayload) {
+  dnsChecker(payload: SlashCommand) {
     // Step 1: Get the domain name provided by the user
     const { user_name: user, channel_name: channel, text: domain } = payload
     logger.info({

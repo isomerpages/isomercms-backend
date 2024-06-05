@@ -22,7 +22,7 @@ class BotService {
 
   private checkCname(domain: string) {
     return ResultAsync.fromPromise(dns.resolveCname(domain), () => {
-      logger.info({
+      logger.error({
         message: "Error resolving CNAME",
         meta: { domain, method: "checkCname" },
       })
@@ -40,7 +40,7 @@ class BotService {
 
   private checkA(domain: string) {
     return ResultAsync.fromPromise(dns.resolve4(domain), () => {
-      logger.info({
+      logger.error({
         message: "Error resolving A record",
         meta: { domain, method: "checkA" },
       })

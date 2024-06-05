@@ -1,12 +1,11 @@
 import express from "express"
 
-import { formSgRouter } from "./formsg"
-import { isobotRouter } from "./isobot"
+import { ROUTE_VERSION } from "../../constants"
 
-const ROUTE_PREFIX = "/v2/infra"
-const ROUTE_PREFIX_ISOBOT = "/v2/isobot"
+import { formSgRouter } from "./formsg"
+
+const ROUTE_PREFIX = `/${ROUTE_VERSION}/infra`
 
 export const v2Router = express.Router()
 
 v2Router.use(ROUTE_PREFIX, formSgRouter)
-v2Router.use(ROUTE_PREFIX_ISOBOT, isobotRouter)

@@ -30,7 +30,7 @@ interface IsomerHostedDomain {
   type: typeof IsomerHostedDomainType[keyof typeof IsomerHostedDomainType]
 }
 
-type keyCdnZoneAlias = {
+type KeyCdnZoneAlias = {
   name: string
 }
 
@@ -48,11 +48,11 @@ interface ReportCard {
   caaRecord: string[]
 }
 
-function isKeyCdnZoneAlias(object: unknown): object is keyCdnZoneAlias {
-  return "name" in (object as keyCdnZoneAlias)
+function isKeyCdnZoneAlias(object: unknown): object is KeyCdnZoneAlias {
+  return "name" in (object as KeyCdnZoneAlias)
 }
 
-function isKeyCdnResponse(object: unknown): object is keyCdnZoneAlias[] {
+function isKeyCdnResponse(object: unknown): object is KeyCdnZoneAlias[] {
   if (!object) return false
   if (Array.isArray(object)) return object.every(isKeyCdnZoneAlias)
   return false
@@ -79,12 +79,15 @@ export default class MonitoringService {
           Authorization: `Basic ${btoa(`${keyCdnApiKey}:`)}`,
         },
       }),
-      (error) => new MonitoringError(`Failed to fetch zones: ${error}`)
+      (error) =>
+        new MonitoringError(`Failed to fetch zones from KeyCDN: ${error}`)
     )
       .map((response) => response.data.data.zonealiases)
       .andThen((data) => {
         if (!isKeyCdnResponse(data)) {
-          return errAsync(new MonitoringError("Failed to parse response"))
+          return errAsync(
+            new MonitoringError("Failed to parse response from KeyCDN")
+          )
         }
 
         const domains = data

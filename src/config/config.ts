@@ -470,6 +470,7 @@ const config = convict({
       doc: "Slackbot token",
       env: "SLACK_TOKEN",
       format: String,
+      default: "",
     },
   },
   keyCdn: {

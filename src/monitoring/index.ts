@@ -115,6 +115,7 @@ export default class MonitoringService {
     // seems to be a bug in typing, this is a direct
     // copy paste from the octokit documentation
     // https://octokit.github.io/rest.js/v20#automatic-retries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const OctokitRetry = Octokit.plugin(retry as any)
     const octokitWithRetry: Octokit = new OctokitRetry({
       auth: SYSTEM_GITHUB_TOKEN,
@@ -221,8 +222,16 @@ export default class MonitoringService {
         .andThen(() => okAsync(reportCard))
     })
 
-    return ResultAsync.combineWithAllErrors(domainResolvers)
-      .andThen(() => {
+    return ResultAsync.combineWithAllErrors(domainResolvers).map(
+      () => reportCard
+    )
+  }
+
+  driver() {
+    this.monitoringServiceLogger.info("Monitoring service started")
+    return this.getAllDomains()
+      .andThen(this.generateReportCard)
+      .andThen((reportCard) => {
         this.monitoringServiceLogger.info({
           message: "Report card generated",
           meta: {
@@ -232,11 +241,5 @@ export default class MonitoringService {
         })
         return okAsync(reportCard)
       })
-      .orElse(() => okAsync([]))
-  }
-
-  driver() {
-    this.monitoringServiceLogger.info("Monitoring service started")
-    return this.getAllDomains().andThen(this.generateReportCard)
   }
 }

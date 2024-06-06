@@ -365,10 +365,6 @@ const authV2Router = new AuthRouter({
   sgidAuthRouter,
 })
 
-const monitoringService = new MonitoringService({
-  launchesService,
-})
-
 const app = express()
 
 useSharedMiddleware(app)

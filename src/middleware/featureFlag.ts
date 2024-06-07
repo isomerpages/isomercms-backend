@@ -6,7 +6,7 @@ import { getNewGrowthbookInstance } from "@root/utils/growthbook-utils"
 
 // Keep one GrowthBook instance at module level
 // The instance will handle internal cache refreshes via a SSE connection
-const gb = getNewGrowthbookInstance({
+export const gb = getNewGrowthbookInstance({
   clientKey: config.get("growthbook.clientKey"),
   subscribeToChanges: true,
 })

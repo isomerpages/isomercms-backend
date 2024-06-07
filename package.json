@@ -49,7 +49,7 @@
     "bcryptjs": "^2.4.3",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.2",
-    "bullmq": "^5.7.8",
+    "bullmq": "^5.7.15",
     "cache-parser": "^1.2.4",
     "cloudmersive-virus-api-client": "^1.2.7",
     "connect-session-sequelize": "^7.1.5",

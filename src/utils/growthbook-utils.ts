@@ -67,3 +67,10 @@ export const isCloudmersiveEnabled = (
     defaultConfig
   )
 }
+
+export const isMonitoringEnabled = (
+  growthbook: GrowthBook<FeatureFlags> | undefined
+): boolean => {
+  if (!growthbook) return true
+  return growthbook.getFeatureValue(FEATURE_FLAGS.IS_MONITORING_ENABLED, true)
+}

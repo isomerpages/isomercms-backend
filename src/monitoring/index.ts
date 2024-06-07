@@ -1,5 +1,3 @@
-import dns from "dns/promises"
-
 import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 import autoBind from "auto-bind"
@@ -9,10 +7,14 @@ import _ from "lodash"
 import { errAsync, okAsync, ResultAsync } from "neverthrow"
 
 import parentLogger from "@logger/logger"
+import logger from "@logger/logger"
 
 import config from "@root/config/config"
 import MonitoringError from "@root/errors/MonitoringError"
+import { gb } from "@root/middleware/featureFlag"
 import LaunchesService from "@root/services/identity/LaunchesService"
+import { dnsMonitor } from "@root/utils/dns-utils"
+import { isMonitoringEnabled } from "@root/utils/growthbook-utils"
 import convertNeverThrowToPromise from "@root/utils/neverthrow"
 import promisifyPapaParse from "@root/utils/papa-parse"
 
@@ -41,15 +43,6 @@ interface RedirectionDomain {
   target: string
 }
 
-interface ReportCard {
-  domain: string
-  type: typeof IsomerHostedDomainType[keyof typeof IsomerHostedDomainType]
-  aRecord: string[]
-  quadArecord: string[]
-  cNameRecord: string[]
-  caaRecord: string[]
-}
-
 function isKeyCdnZoneAlias(object: unknown): object is KeyCdnZoneAlias {
   return "name" in (object as KeyCdnZoneAlias)
 }
@@ -59,7 +52,7 @@ function isKeyCdnResponse(object: unknown): object is KeyCdnZoneAlias[] {
   if (Array.isArray(object)) return object.every(isKeyCdnZoneAlias)
   return false
 }
-
+const ONE_MINUTE = 60000
 export default class MonitoringService {
   private readonly launchesService: MonitoringServiceProps["launchesService"]
 
@@ -82,17 +75,42 @@ export default class MonitoringService {
       attempts: 3,
       backoff: {
         type: "exponential",
-        delay: 60000, // this operation is not critical, so we can wait a minute
+        delay: ONE_MINUTE, // this operation is not critical, so we can wait a minute
       },
     },
   })
 
-  private readonly worker: Worker<unknown, string, string> | undefined
+  private readonly worker: Worker<unknown, string, string>
 
   constructor({ launchesService }: MonitoringServiceProps) {
     autoBind(this)
     const jobName = "dnsMonitoring"
     this.launchesService = launchesService
+
+    const FIVE_MINUTE_CRON = "5 * * * *"
+
+    const jobData = {
+      name: "monitoring sites",
+    }
+
+    ResultAsync.fromPromise(
+      this.queue.add(jobName, jobData, {
+        repeat: {
+          pattern: FIVE_MINUTE_CRON,
+        },
+      }),
+      (e) => e
+    )
+      .map((okRes) => {
+        this.monitoringServiceLogger.info(
+          `Monitoring job scheduled at interval ${FIVE_MINUTE_CRON}`
+        )
+        return okRes
+      })
+      .mapErr((errRes) => {
+        this.monitoringServiceLogger.error(`Failed to schedule job: ${errRes}`)
+      })
+
     this.worker = new Worker(
       this.queue.name,
       async (job: Job) => {
@@ -112,29 +130,15 @@ export default class MonitoringService {
       }
     )
 
-    const dailyCron = "0 0 9 * *"
-
-    ResultAsync.fromPromise(
-      this.queue.add(
-        jobName,
-        {},
-        {
-          repeat: {
-            pattern: dailyCron,
-          },
-        }
-      ),
-      (e) => e
-    )
-      .map((ok) => {
-        this.monitoringServiceLogger.info(
-          `Monitoring job scheduled at ${dailyCron}`
-        )
-        return ok
+    this.worker.on("failed", (job: Job | undefined, error: Error) => {
+      logger.error({
+        message: "Monitoring service has failed",
+        error,
+        meta: {
+          ...job?.data,
+        },
       })
-      .mapErr((error) => {
-        this.monitoringServiceLogger.error(`Failed to schedule job: ${error}`)
-      })
+    })
   }
 
   getKeyCdnDomains() {
@@ -192,8 +196,8 @@ export default class MonitoringService {
       octokitWithRetry.request(
         "GET /repos/opengovsg/isomer-redirection/contents/src/certbot-websites.csv"
       ),
-      (error) =>
-        new MonitoringError(`Failed to fetch redirection domains: ${error}`)
+      (err) =>
+        new MonitoringError(`Failed to fetch redirection domains: ${err}`)
     )
       .andThen((response) => {
         const content = Buffer.from(response.data.content, "base64").toString(
@@ -202,7 +206,7 @@ export default class MonitoringService {
 
         return ResultAsync.fromPromise(
           promisifyPapaParse<RedirectionDomain[]>(content),
-          (error) => new MonitoringError(`Failed to parse csv: ${error}`)
+          (err) => new MonitoringError(`Failed to parse csv: ${err}`)
         )
       })
       .map((redirectionDomains) =>
@@ -223,7 +227,7 @@ export default class MonitoringService {
     this.monitoringServiceLogger.info("Fetching all domains")
     return ResultAsync.combine([
       this.getAmplifyDeployments().mapErr(
-        (error) => new MonitoringError(error.message)
+        (err) => new MonitoringError(err.message)
       ),
       this.getRedirectionDomains(),
       this.getKeyCdnDomains(),
@@ -238,76 +242,35 @@ export default class MonitoringService {
     })
   }
 
-  // todo: once /siteup logic is merged into dev, we can add that as to alert isomer team
   generateReportCard(domains: IsomerHostedDomain[]) {
-    const reportCard: ReportCard[] = []
+    const dnsPromises: ResultAsync<string, string>[] = []
 
-    const domainResolvers = domains.map(({ domain, type }) => {
-      const aRecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "A"),
-        (e) => e
-      ).orElse(() => okAsync([]))
-      const quadArecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "AAAA"),
-        (e) => e
-      ).orElse(() => okAsync([]))
-
-      const cNameRecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "CNAME"),
-        (e) => e
-      ).orElse(() => okAsync([]))
-
-      const caaRecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "CAA"),
-        (e) => e
-      )
-        .orElse(() => okAsync([]))
-        .map((records) => records.map((record) => record.toString()))
-
-      return ResultAsync.combineWithAllErrors([
-        aRecord,
-        quadArecord,
-        cNameRecord,
-        caaRecord,
-      ])
-        .andThen((resolvedDns) =>
-          okAsync<ReportCard>({
-            domain,
-            type,
-            aRecord: resolvedDns[0],
-            quadArecord: resolvedDns[1],
-            cNameRecord: resolvedDns[2],
-            caaRecord: resolvedDns[3],
-          })
-        )
-        .map((value) =>
-          reportCard.push({
-            ...value,
-          })
-        )
-        .andThen(() => okAsync(reportCard))
-    })
-
-    return ResultAsync.combineWithAllErrors(domainResolvers).map(
-      () => reportCard
-    )
+    domains.forEach((domain) => dnsPromises.push(dnsMonitor(domain.domain)))
+    return ResultAsync.combineWithAllErrors(dnsPromises)
   }
 
   driver() {
+    if (!isMonitoringEnabled(gb)) return okAsync("Monitoring Service disabled")
     const start = Date.now()
     this.monitoringServiceLogger.info("Monitoring service started")
 
     return this.getAllDomains()
       .andThen(this.generateReportCard)
-      .andThen((reportCard) => {
-        this.monitoringServiceLogger.info({
-          message: "Report card generated",
+      .mapErr((reportCardErr: MonitoringError | string[]) => {
+        if (reportCardErr instanceof MonitoringError) {
+          this.monitoringServiceLogger.error({
+            error: reportCardErr,
+            message: "Error running monitoring service",
+          })
+          return
+        }
+        this.monitoringServiceLogger.error({
+          message: "Error running monitoring service",
           meta: {
-            reportCard,
+            dnsCheckerResult: reportCardErr,
             date: new Date(),
           },
         })
-        return okAsync(reportCard)
       })
       .orElse(() => okAsync([]))
       .andThen(() => {

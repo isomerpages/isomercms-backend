@@ -9,6 +9,8 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@utils/yaml-utils")
+
 const {
   CreatePageRequestSchema,
   UpdatePageRequestSchema,
@@ -32,9 +34,12 @@ class CollectionPagesRouter {
     if (error) throw new BadRequestError(error.message)
     const {
       content: { frontMatter, pageBody },
-      newFileName,
+      newFileName: unformattedNewFileName,
     } = req.body
     let createResp
+    const newFileName = recursiveTrimAndReplaceLineBreaks(
+      unformattedNewFileName
+    )
     if (subcollectionName) {
       createResp = await this.subcollectionPageService.create(
         userWithSiteSessionData,
@@ -42,7 +47,7 @@ class CollectionPagesRouter {
           fileName: newFileName,
           collectionName,
           content: pageBody,
-          frontMatter,
+          frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
           subcollectionName,
         }
       )
@@ -98,10 +103,16 @@ class CollectionPagesRouter {
     const { error } = UpdatePageRequestSchema.validate(req.body)
     if (error) throw new BadRequestError(error.message)
     const {
-      content: { frontMatter, pageBody },
+      content: { frontMatter: unformattedFrontMatter, pageBody },
       sha,
-      newFileName,
+      newFileName: unformattedNewFileName,
     } = req.body
+    const frontMatter = recursiveTrimAndReplaceLineBreaks(
+      unformattedFrontMatter
+    )
+    const newFileName = recursiveTrimAndReplaceLineBreaks(
+      unformattedNewFileName
+    )
     let updateResp
     if (subcollectionName) {
       if (newFileName) {

@@ -234,8 +234,6 @@ mockGenericAxios.patch.mockResolvedValue({
   data: [],
 })
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
-
 describe("Password integration tests", () => {
   beforeAll(async () => {
     // NOTE: Because SitesService uses an axios instance,

@@ -9,6 +9,8 @@ const {
   attachRollbackRouteHandlerWrapper,
 } = require("@middleware/routeHandler")
 
+const { recursiveTrimAndReplaceLineBreaks } = require("@utils/yaml-utils")
+
 const { UpdateHomepageSchema } = require("@validators/RequestSchema")
 
 class HomepageRouter {
@@ -44,7 +46,7 @@ class HomepageRouter {
       userWithSiteSessionData,
       {
         content: pageBody,
-        frontMatter,
+        frontMatter: recursiveTrimAndReplaceLineBreaks(frontMatter),
         sha,
       }
     )

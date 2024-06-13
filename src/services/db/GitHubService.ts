@@ -1,4 +1,4 @@
-import { AxiosCacheInstance } from "axios-cache-interceptor"
+import { AxiosInstance } from "axios"
 import { Base64 } from "js-base64"
 import { okAsync, errAsync, ResultAsync } from "neverthrow"
 import urlTemplate from "url-template"
@@ -20,9 +20,9 @@ import { GitHubRepoInfo, RawGitTreeEntry, RepoState } from "@root/types/github"
 import * as ReviewApi from "./review"
 
 export default class GitHubService {
-  private readonly axiosInstance: AxiosCacheInstance
+  private readonly axiosInstance: AxiosInstance
 
-  constructor({ axiosInstance }: { axiosInstance: AxiosCacheInstance }) {
+  constructor({ axiosInstance }: { axiosInstance: AxiosInstance }) {
     this.axiosInstance = axiosInstance
   }
 

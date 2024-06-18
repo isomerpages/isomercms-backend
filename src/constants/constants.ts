@@ -78,6 +78,7 @@ export const REDIRECTION_SERVER_IPS = [
 ]
 export const ALLOWED_DNS_ERROR_CODES = ["ENOTFOUND", "ENODATA"]
 
+export const BUILT_WITH_ISOMER_LOGO = `<p class="footer-credits"><a href="https://www.isomer.gov.sg/" target="_blank" rel="noreferrer">Created with <img src="/assets/img/isomer_logo.svg" alt="Isomer Logo"></a>`
 export const DNS_INDIRECTION_DOMAIN = "hostedon.isomer.gov.sg"
 export const DNS_KEYCDN_SUFFIX = "kxcdn.com"
 export const DNS_CNAME_SUFFIXES = ["cloudfront.net", DNS_KEYCDN_SUFFIX]

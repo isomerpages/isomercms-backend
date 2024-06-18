@@ -2,7 +2,11 @@ import { GrowthBook, setPolyfills } from "@growthbook/growthbook"
 
 import { config } from "@root/config/config"
 import { FEATURE_FLAGS } from "@root/constants/featureFlags"
-import { FeatureFlags, CloudmersiveConfigType } from "@root/types/featureFlags"
+import {
+  FeatureFlags,
+  CloudmersiveConfigType,
+  MonitoringConfig,
+} from "@root/types/featureFlags"
 
 const GROWTHBOOK_API_HOST = "https://cdn.growthbook.io"
 
@@ -68,9 +72,16 @@ export const isCloudmersiveEnabled = (
   )
 }
 
-export const isMonitoringEnabled = (
+export const getMonitoringConfig = (
   growthbook: GrowthBook<FeatureFlags> | undefined
-): boolean => {
-  if (!growthbook) return true
-  return growthbook.getFeatureValue(FEATURE_FLAGS.IS_MONITORING_ENABLED, true)
+): MonitoringConfig => {
+  const defaultConfig = {
+    isEnabled: true,
+    whitelistedRepos: [],
+  }
+  if (!growthbook) return defaultConfig
+  return growthbook.getFeatureValue(
+    FEATURE_FLAGS.IS_MONITORING_ENABLED,
+    defaultConfig
+  )
 }

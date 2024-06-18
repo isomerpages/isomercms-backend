@@ -7,7 +7,7 @@ import { useSharedMiddleware } from "@common/middleware"
 import { config } from "@root/config/config"
 import logger from "@root/logger/logger"
 import MonitoringService from "@root/monitoring/MonitoringService"
-import MonitoringWorker from "@root/monitoring/monitoringWorker"
+import MonitoringWorker from "@root/monitoring/MonitoringWorker"
 
 import { ROUTE_VERSION } from "./constants"
 import { v2Router } from "./routes"
@@ -24,6 +24,9 @@ infraService.pollMessages()
 export const monitoringWorker = new MonitoringWorker({
   launchesService,
 })
+// dnsMonitor("isomer.gov.sg").mapErr(console.log).map(console.log)
+// todo: remove after testing
+monitoringWorker.driver()
 
 export const monitoringService = new MonitoringService({
   monitoringWorker,

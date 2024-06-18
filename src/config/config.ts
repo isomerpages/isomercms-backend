@@ -254,6 +254,13 @@ const config = convict({
       format: "required-string",
       default: "",
     },
+    redirectionRepoGithubToken: {
+      doc: "Github access to read opengovsg/isomer-redirection",
+      env: "REDIRECTION_REPO_GITHUB_TOKEN",
+      sensitive: true,
+      format: "required-string",
+      default: "",
+    },
   },
   dataDog: {
     env: {

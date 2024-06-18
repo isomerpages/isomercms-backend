@@ -12,7 +12,7 @@ import MonitoringError from "@root/errors/MonitoringError"
 import { gb } from "@root/middleware/featureFlag"
 import LaunchesService from "@root/services/identity/LaunchesService"
 import { dnsMonitor } from "@root/utils/dns-utils"
-import { isMonitoringEnabled } from "@root/utils/growthbook-utils"
+import { getMonitoringConfig } from "@root/utils/growthbook-utils"
 import promisifyPapaParse from "@root/utils/papa-parse"
 
 const IsomerHostedDomainType = {
@@ -106,10 +106,12 @@ export default class MonitoringWorker {
    * @returns List of redirection domains that are listed in the isomer-redirection repository
    */
   getRedirectionDomains() {
-    const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
     const OctokitRetry = Octokit.plugin(retry)
+    const REDIRECTION_REPO_GITHUB_TOKEN = config.get(
+      "github.redirectionRepoGithubToken"
+    )
     const octokitWithRetry: Octokit = new OctokitRetry({
-      auth: SYSTEM_GITHUB_TOKEN,
+      auth: REDIRECTION_REPO_GITHUB_TOKEN,
       request: { retries: 5 },
     })
 
@@ -171,7 +173,11 @@ export default class MonitoringWorker {
   }
 
   driver() {
-    if (!isMonitoringEnabled(gb)) return okAsync("Monitoring Service disabled")
+    const monitoringConfig = getMonitoringConfig(gb)
+    if (!monitoringConfig.isEnabled) {
+      this.monitoringWorkerLogger.info("Monitoring Service disabled")
+      return okAsync("Monitoring Service disabled")
+    }
     const start = Date.now()
     this.monitoringWorkerLogger.info("Monitoring service started")
 
@@ -192,6 +198,15 @@ export default class MonitoringWorker {
             date: new Date(),
           },
         })
+        reportCardErr.map((err) =>
+          this.monitoringWorkerLogger.error({
+            message: "Error running monitoring service",
+            meta: {
+              dnsCheckerResult: err,
+              date: new Date(),
+            },
+          })
+        )
       })
       .orElse(() => okAsync([]))
       .andThen(() => {

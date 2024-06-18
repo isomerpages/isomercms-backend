@@ -1,14 +1,19 @@
 import dns from "node:dns/promises"
 
-import { err, ok, okAsync, Result, ResultAsync } from "neverthrow"
+import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 
 import {
+  BUILT_WITH_ISOMER_LOGO,
   DNS_CNAME_SUFFIXES,
   DNS_INDIRECTION_DOMAIN,
   DNS_KEYCDN_SUFFIX,
   REDIRECTION_SERVER_IPS,
 } from "@root/constants"
+import MonitoringError from "@root/errors/MonitoringError"
 import logger from "@root/logger/logger"
+import { gb } from "@root/middleware/featureFlag"
+
+import { getMonitoringConfig } from "./growthbook-utils"
 
 export function checkCname(domain: string) {
   return ResultAsync.fromPromise(dns.resolveCname(domain), () => {
@@ -20,6 +25,11 @@ export function checkCname(domain: string) {
   })
     .andThen((cname) => {
       if (!cname || cname.length === 0) {
+        return okAsync(null)
+      }
+
+      //! todo: remove, this is some colima weird logic
+      if (cname.length === 1 && cname[0] === domain) {
         return okAsync(null)
       }
 
@@ -118,7 +128,7 @@ export default function getDnsCheckerMessage(
       )
     }
     if (isIntermediateValid && isRedirectionValid) {
-      return err(
+      return ok(
         `The domain ${domain} is *all valid*! Although it is directly pointing to our CDN hosting provider and not the indirection layer. The apex domain \`${redirectionDomain}\` is also correctly configured to our redirection service.`
       )
     }
@@ -167,23 +177,36 @@ export default function getDnsCheckerMessage(
         : "no A records"
     }`
   }
+
   return err(responseMeta)
 }
 
 export function dnsMonitor(domain: string): ResultAsync<string, string> {
+  if (!domain) {
+    return okAsync("Empty domain provided")
+  }
   return checkCname(domain)
     .andThen((cname) => {
+      if (cname) {
+        return ResultAsync.combine([okAsync(domain), okAsync(cname)])
+      }
       // Original domain does not have a CNAME record, check if the www
       // version has a valid CNAME record
       if (!cname && !domain.startsWith("www.")) {
         const cnameDomain = `www.${domain}`
-        return ResultAsync.combine([
-          okAsync(cnameDomain),
-          checkCname(cnameDomain),
-        ])
+        return checkCname(cnameDomain).andThen((cnameDomainRes) => {
+          if (cnameDomainRes) {
+            return ResultAsync.combine([
+              okAsync(cnameDomain),
+              okAsync(cnameDomainRes),
+            ])
+          }
+          // this might be a redirection only domain
+          return ResultAsync.combine([okAsync(domain), okAsync(null)])
+        })
       }
-
-      return ResultAsync.combine([okAsync(domain), okAsync(cname)])
+      // might be a redirection only domain
+      return ResultAsync.combine([okAsync(domain), okAsync(null)])
     })
     .andThen(([cnameDomain, cnameRecord]) => {
       // Original and www version of the domain do not have a CNAME record,
@@ -245,8 +268,8 @@ export function dnsMonitor(domain: string): ResultAsync<string, string> {
           redirectionDomain,
         },
         redirection,
-      ]) =>
-        getDnsCheckerMessage(
+      ]) => {
+        const dnsCheckerMessage = getDnsCheckerMessage(
           domain,
           cnameDomain,
           redirectionDomain,
@@ -255,5 +278,50 @@ export function dnsMonitor(domain: string): ResultAsync<string, string> {
           indirectionRecords,
           redirection
         )
+
+        const domainCheckerRes = dnsCheckerMessage.isOk()
+          ? dnsCheckerMessage.value
+          : dnsCheckerMessage.error
+
+        return ResultAsync.fromPromise(
+          // using fetch as it has a convenient redirect option
+
+          fetch(`https://${domain}`),
+          () => new MonitoringError(`Failed to fetch site: ${domain}`)
+        )
+          .andThen((res) =>
+            ResultAsync.fromPromise(
+              res.text(),
+              () => new MonitoringError(`Failed to get text from response`)
+            )
+          )
+          .andThen((res) => {
+            const isStillHostingIsomerSite = res.includes(
+              BUILT_WITH_ISOMER_LOGO
+            )
+
+            if (isStillHostingIsomerSite) {
+              return okAsync(
+                `${domainCheckerRes}\nThe site is still being hosted with Isomer logo, and is likely still viewable by MOP`
+              )
+            }
+
+            const monitoringConfig = getMonitoringConfig(gb)
+
+            const isWeirdDomain = monitoringConfig.whitelistedRepos.includes(
+              domain
+            )
+            if (isWeirdDomain) {
+              return okAsync(
+                `${domainCheckerRes}\nThe site is not being hosted with Isomer logo, and is known to be an edge case.`
+              )
+            }
+            return errAsync(false)
+          })
+          .mapErr(
+            () =>
+              `${domainCheckerRes}\nThe site is **NOT** being hosted with Isomer logo, and is likely **NOT** viewable by MOP`
+          )
+      }
     )
 }

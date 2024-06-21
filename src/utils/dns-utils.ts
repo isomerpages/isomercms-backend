@@ -2,6 +2,7 @@ import dns from "node:dns/promises"
 
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 
+import config from "@root/config/config"
 import {
   BUILT_WITH_ISOMER_LOGO,
   DNS_CNAME_SUFFIXES,
@@ -11,9 +12,11 @@ import {
 } from "@root/constants"
 import MonitoringError from "@root/errors/MonitoringError"
 import logger from "@root/logger/logger"
-import { gb } from "@root/middleware/featureFlag"
 
-import { getMonitoringConfig } from "./growthbook-utils"
+import {
+  getMonitoringConfig,
+  getNewGrowthbookInstance,
+} from "./growthbook-utils"
 
 export function checkCname(domain: string) {
   return ResultAsync.fromPromise(dns.resolveCname(domain), () => {
@@ -25,11 +28,6 @@ export function checkCname(domain: string) {
   })
     .andThen((cname) => {
       if (!cname || cname.length === 0) {
-        return okAsync(null)
-      }
-
-      //! todo: remove, this is some colima weird logic
-      if (cname.length === 1 && cname[0] === domain) {
         return okAsync(null)
       }
 
@@ -305,7 +303,10 @@ export function dnsMonitor(domain: string): ResultAsync<string, string> {
                 `${domainCheckerRes}\nThe site is still being hosted with Isomer logo, and is likely still viewable by MOP`
               )
             }
-
+            const gb = getNewGrowthbookInstance({
+              clientKey: config.get("growthbook.clientKey"),
+              subscribeToChanges: true,
+            })
             const monitoringConfig = getMonitoringConfig(gb)
 
             const isWeirdDomain = monitoringConfig.whitelistedRepos.includes(

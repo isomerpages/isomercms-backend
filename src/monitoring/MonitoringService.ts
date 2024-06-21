@@ -42,7 +42,13 @@ export default class MonitoringService {
     },
   })
 
-  private readonly worker: Worker<unknown, string, string>
+  private readonly worker: Worker<
+    {
+      name: string
+    },
+    string,
+    string
+  >
 
   private readonly monitoringWorker: MonitoringServiceInterface["monitoringWorker"]
 
@@ -96,9 +102,15 @@ export default class MonitoringService {
       }
     )
 
+    this.worker.on("error", (error: Error) => {
+      logger.error({
+        message: "Monitoring service has errored",
+        error,
+      })
+    })
     this.worker.on("failed", (job: Job | undefined, error: Error) => {
       logger.error({
-        message: "Monitoring service has failed",
+        message: "Monitoring service has errored",
         error,
         meta: {
           ...job?.data,

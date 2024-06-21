@@ -199,7 +199,7 @@ const config = convict({
     redisHostname: {
       doc: "Redis host name for bullmq",
       env: "REDIS_HOST",
-      format: "required-string",
+      format: String,
       default: "isomerpages",
     },
   },
@@ -258,7 +258,7 @@ const config = convict({
       doc: "Github access to read opengovsg/isomer-redirection",
       env: "REDIRECTION_REPO_GITHUB_TOKEN",
       sensitive: true,
-      format: "required-string",
+      format: String,
       default: "",
     },
   },
@@ -491,7 +491,7 @@ const config = convict({
     apiKey: {
       doc: "KeyCDN API key",
       env: "KEYCDN_API_KEY",
-      format: "required-string",
+      format: String,
       default: "",
     },
   },

@@ -24,9 +24,6 @@ infraService.pollMessages()
 export const monitoringWorker = new MonitoringWorker({
   launchesService,
 })
-// dnsMonitor("isomer.gov.sg").mapErr(console.log).map(console.log)
-// todo: remove after testing
-monitoringWorker.driver()
 
 export const monitoringService = new MonitoringService({
   monitoringWorker,

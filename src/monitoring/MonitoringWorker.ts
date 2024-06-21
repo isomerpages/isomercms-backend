@@ -9,10 +9,12 @@ import parentLogger from "@logger/logger"
 
 import config from "@root/config/config"
 import MonitoringError from "@root/errors/MonitoringError"
-import { gb } from "@root/middleware/featureFlag"
 import LaunchesService from "@root/services/identity/LaunchesService"
 import { dnsMonitor } from "@root/utils/dns-utils"
-import { getMonitoringConfig } from "@root/utils/growthbook-utils"
+import {
+  getMonitoringConfig,
+  getNewGrowthbookInstance,
+} from "@root/utils/growthbook-utils"
 import promisifyPapaParse from "@root/utils/papa-parse"
 
 const IsomerHostedDomainType = {
@@ -173,6 +175,10 @@ export default class MonitoringWorker {
   }
 
   driver() {
+    const gb = getNewGrowthbookInstance({
+      clientKey: config.get("growthbook.clientKey"),
+      subscribeToChanges: true,
+    })
     const monitoringConfig = getMonitoringConfig(gb)
     if (!monitoringConfig.isEnabled) {
       this.monitoringWorkerLogger.info("Monitoring Service disabled")

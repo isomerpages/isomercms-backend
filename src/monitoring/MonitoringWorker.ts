@@ -108,10 +108,11 @@ export default class MonitoringWorker {
    * @returns List of redirection domains that are listed in the isomer-redirection repository
    */
   getRedirectionDomains() {
-    const OctokitRetry = Octokit.plugin(retry)
     const REDIRECTION_REPO_GITHUB_TOKEN = config.get(
       "github.redirectionRepoGithubToken"
     )
+
+    const OctokitRetry = Octokit.plugin(retry)
     const octokitWithRetry: Octokit = new OctokitRetry({
       auth: REDIRECTION_REPO_GITHUB_TOKEN,
       request: { retries: 5 },
@@ -177,7 +178,7 @@ export default class MonitoringWorker {
   driver() {
     const gb = getNewGrowthbookInstance({
       clientKey: config.get("growthbook.clientKey"),
-      subscribeToChanges: true,
+      subscribeToChanges: false,
     })
     const monitoringConfig = getMonitoringConfig(gb)
     if (!monitoringConfig.isEnabled) {

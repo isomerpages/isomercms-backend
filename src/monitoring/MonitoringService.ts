@@ -34,11 +34,6 @@ export default class MonitoringService {
     defaultJobOptions: {
       removeOnComplete: true,
       removeOnFail: true,
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: ONE_MINUTE, // this operation is not critical, so we can wait a minute
-      },
     },
   })
 

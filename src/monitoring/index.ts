@@ -14,7 +14,7 @@ import MonitoringError from "@root/errors/MonitoringError"
 import LaunchesService from "@root/services/identity/LaunchesService"
 import promisifyPapaParse from "@root/utils/papa-parse"
 
-interface MonitoringServiceInterface {
+interface MonitoringServiceProps {
   launchesService: LaunchesService
 }
 
@@ -59,13 +59,13 @@ function isKeyCdnResponse(object: unknown): object is KeyCdnZoneAlias[] {
 }
 
 export default class MonitoringService {
-  private readonly launchesService: MonitoringServiceInterface["launchesService"]
+  private readonly launchesService: MonitoringServiceProps["launchesService"]
 
   private readonly monitoringServiceLogger = parentLogger.child({
     module: "monitoringService",
   })
 
-  constructor({ launchesService }: MonitoringServiceInterface) {
+  constructor({ launchesService }: MonitoringServiceProps) {
     autoBind(this)
     this.launchesService = launchesService
   }
@@ -115,11 +115,7 @@ export default class MonitoringService {
    */
   getRedirectionDomains() {
     const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
-    // seems to be a bug in typing, this is a direct
-    // copy paste from the octokit documentation
-    // https://octokit.github.io/rest.js/v20#automatic-retries
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const OctokitRetry = Octokit.plugin(retry as any)
+    const OctokitRetry = Octokit.plugin(retry)
     const octokitWithRetry: Octokit = new OctokitRetry({
       auth: SYSTEM_GITHUB_TOKEN,
       request: { retries: 5 },

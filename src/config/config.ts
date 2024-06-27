@@ -195,7 +195,14 @@ const config = convict({
       },
     },
   },
-
+  bullmq: {
+    redisHostname: {
+      doc: "Redis host name for bullmq",
+      env: "REDIS_HOST",
+      format: String,
+      default: "isomerpages",
+    },
+  },
   github: {
     orgName: {
       doc: "GitHub organization that owns all site repositories",
@@ -245,6 +252,13 @@ const config = convict({
       env: "SYSTEM_GITHUB_TOKEN",
       sensitive: true,
       format: "required-string",
+      default: "",
+    },
+    redirectionRepoGithubToken: {
+      doc: "Github access to read opengovsg/isomer-redirection",
+      env: "REDIRECTION_REPO_GITHUB_TOKEN",
+      sensitive: true,
+      format: String,
       default: "",
     },
   },
@@ -477,7 +491,7 @@ const config = convict({
     apiKey: {
       doc: "KeyCDN API key",
       env: "KEYCDN_API_KEY",
-      format: "required-string",
+      format: String,
       default: "",
     },
   },

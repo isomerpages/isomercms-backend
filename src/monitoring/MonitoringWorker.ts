@@ -1,22 +1,21 @@
-import dns from "dns/promises"
-
 import { retry } from "@octokit/plugin-retry"
 import { Octokit } from "@octokit/rest"
 import autoBind from "auto-bind"
 import axios from "axios"
 import _ from "lodash"
-import { errAsync, okAsync, ResultAsync } from "neverthrow"
+import { ResultAsync, errAsync, okAsync } from "neverthrow"
 
 import parentLogger from "@logger/logger"
 
 import config from "@root/config/config"
 import MonitoringError from "@root/errors/MonitoringError"
 import LaunchesService from "@root/services/identity/LaunchesService"
+import { dnsMonitor } from "@root/utils/dns-utils"
+import {
+  getMonitoringConfig,
+  getNewGrowthbookInstance,
+} from "@root/utils/growthbook-utils"
 import promisifyPapaParse from "@root/utils/papa-parse"
-
-interface MonitoringServiceProps {
-  launchesService: LaunchesService
-}
 
 const IsomerHostedDomainType = {
   REDIRECTION: "redirection",
@@ -39,15 +38,6 @@ interface RedirectionDomain {
   target: string
 }
 
-interface ReportCard {
-  domain: string
-  type: typeof IsomerHostedDomainType[keyof typeof IsomerHostedDomainType]
-  aRecord: string[]
-  quadArecord: string[]
-  cNameRecord: string[]
-  caaRecord: string[]
-}
-
 function isKeyCdnZoneAlias(object: unknown): object is KeyCdnZoneAlias {
   return "name" in (object as KeyCdnZoneAlias)
 }
@@ -58,16 +48,20 @@ function isKeyCdnResponse(object: unknown): object is KeyCdnZoneAlias[] {
   return false
 }
 
-export default class MonitoringService {
-  private readonly launchesService: MonitoringServiceProps["launchesService"]
+interface MonitoringWorkerInterface {
+  launchesService: LaunchesService
+}
 
-  private readonly monitoringServiceLogger = parentLogger.child({
-    module: "monitoringService",
+export default class MonitoringWorker {
+  private readonly monitoringWorkerLogger = parentLogger.child({
+    module: "monitoringWorker",
   })
 
-  constructor({ launchesService }: MonitoringServiceProps) {
-    autoBind(this)
+  private readonly launchesService: MonitoringWorkerInterface["launchesService"]
+
+  constructor({ launchesService }: MonitoringWorkerInterface) {
     this.launchesService = launchesService
+    autoBind(this)
   }
 
   getKeyCdnDomains() {
@@ -114,10 +108,13 @@ export default class MonitoringService {
    * @returns List of redirection domains that are listed in the isomer-redirection repository
    */
   getRedirectionDomains() {
-    const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
+    const REDIRECTION_REPO_GITHUB_TOKEN = config.get(
+      "github.redirectionRepoGithubToken"
+    )
+
     const OctokitRetry = Octokit.plugin(retry)
     const octokitWithRetry: Octokit = new OctokitRetry({
-      auth: SYSTEM_GITHUB_TOKEN,
+      auth: REDIRECTION_REPO_GITHUB_TOKEN,
       request: { retries: 5 },
     })
 
@@ -125,8 +122,8 @@ export default class MonitoringService {
       octokitWithRetry.request(
         "GET /repos/opengovsg/isomer-redirection/contents/src/certbot-websites.csv"
       ),
-      (error) =>
-        new MonitoringError(`Failed to fetch redirection domains: ${error}`)
+      (err) =>
+        new MonitoringError(`Failed to fetch redirection domains: ${err}`)
     )
       .andThen((response) => {
         const content = Buffer.from(response.data.content, "base64").toString(
@@ -135,7 +132,7 @@ export default class MonitoringService {
 
         return ResultAsync.fromPromise(
           promisifyPapaParse<RedirectionDomain[]>(content),
-          (error) => new MonitoringError(`Failed to parse csv: ${error}`)
+          (err) => new MonitoringError(`Failed to parse csv: ${err}`)
         )
       })
       .map((redirectionDomains) =>
@@ -153,15 +150,15 @@ export default class MonitoringService {
    * of any subdomains and redirects.
    */
   getAllDomains() {
-    this.monitoringServiceLogger.info("Fetching all domains")
+    this.monitoringWorkerLogger.info("Fetching all domains")
     return ResultAsync.combine([
       this.getAmplifyDeployments().mapErr(
-        (error) => new MonitoringError(error.message)
+        (err) => new MonitoringError(err.message)
       ),
       this.getRedirectionDomains(),
       this.getKeyCdnDomains(),
     ]).andThen(([amplifyDeployments, redirectionDomains, keyCdnDomains]) => {
-      this.monitoringServiceLogger.info("Fetched all domains")
+      this.monitoringWorkerLogger.info("Fetched all domains")
       return okAsync(
         _.sortBy(
           [...amplifyDeployments, ...redirectionDomains, ...keyCdnDomains],
@@ -171,74 +168,59 @@ export default class MonitoringService {
     })
   }
 
-  // todo: once /siteup logic is merged into dev, we can add that as to alert isomer team
   generateReportCard(domains: IsomerHostedDomain[]) {
-    const reportCard: ReportCard[] = []
+    const dnsPromises: ResultAsync<string, string>[] = []
 
-    const domainResolvers = domains.map(({ domain, type }) => {
-      const aRecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "A"),
-        (e) => e
-      ).orElse(() => okAsync([]))
-      const quadArecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "AAAA"),
-        (e) => e
-      ).orElse(() => okAsync([]))
-
-      const cNameRecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "CNAME"),
-        (e) => e
-      ).orElse(() => okAsync([]))
-
-      const caaRecord = ResultAsync.fromPromise(
-        dns.resolve(domain, "CAA"),
-        (e) => e
-      )
-        .orElse(() => okAsync([]))
-        .map((records) => records.map((record) => record.toString()))
-
-      return ResultAsync.combineWithAllErrors([
-        aRecord,
-        quadArecord,
-        cNameRecord,
-        caaRecord,
-      ])
-        .andThen((resolvedDns) =>
-          okAsync<ReportCard>({
-            domain,
-            type,
-            aRecord: resolvedDns[0],
-            quadArecord: resolvedDns[1],
-            cNameRecord: resolvedDns[2],
-            caaRecord: resolvedDns[3],
-          })
-        )
-        .map((value) =>
-          reportCard.push({
-            ...value,
-          })
-        )
-        .andThen(() => okAsync(reportCard))
-    })
-
-    return ResultAsync.combineWithAllErrors(domainResolvers).map(
-      () => reportCard
-    )
+    domains.forEach((domain) => dnsPromises.push(dnsMonitor(domain.domain)))
+    return ResultAsync.combineWithAllErrors(dnsPromises)
   }
 
   driver() {
-    this.monitoringServiceLogger.info("Monitoring service started")
+    const gb = getNewGrowthbookInstance({
+      clientKey: config.get("growthbook.clientKey"),
+      subscribeToChanges: false,
+    })
+    const monitoringConfig = getMonitoringConfig(gb)
+    if (!monitoringConfig.isEnabled) {
+      this.monitoringWorkerLogger.info("Monitoring Service disabled")
+      return okAsync("Monitoring Service disabled")
+    }
+    const start = Date.now()
+    this.monitoringWorkerLogger.info("Monitoring service started")
+
     return this.getAllDomains()
       .andThen(this.generateReportCard)
-      .andThen((reportCard) => {
-        this.monitoringServiceLogger.info({
-          message: "Report card generated",
+      .mapErr((reportCardErr: MonitoringError | string[]) => {
+        if (reportCardErr instanceof MonitoringError) {
+          this.monitoringWorkerLogger.error({
+            error: reportCardErr,
+            message: "Error running monitoring service",
+          })
+          return
+        }
+        this.monitoringWorkerLogger.error({
+          message: "Error running monitoring service",
           meta: {
-            reportCard,
+            dnsCheckerResult: reportCardErr,
             date: new Date(),
           },
         })
-        return okAsync(reportCard)
+        reportCardErr.map((err) =>
+          this.monitoringWorkerLogger.error({
+            message: "Error running monitoring service",
+            meta: {
+              dnsCheckerResult: err,
+              date: new Date(),
+            },
+          })
+        )
+      })
+      .orElse(() => okAsync([]))
+      .andThen(() => {
+        this.monitoringWorkerLogger.info(
+          `Monitoring service completed in ${Date.now() - start}ms`
+        )
+        return okAsync("Monitoring service completed")
       })
   }
 }

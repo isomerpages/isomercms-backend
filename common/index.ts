@@ -27,7 +27,6 @@ import {
   Reviewer,
   ReviewRequestView,
 } from "@database/models"
-import MonitoringService from "@root/monitoring"
 import AuditLogsService from "@root/services/admin/AuditLogsService"
 import RepoManagementService from "@root/services/admin/RepoManagementService"
 import GitFileCommitService from "@root/services/db/GitFileCommitService"
@@ -248,8 +247,4 @@ export const auditLogsService = new AuditLogsService({
   reviewRequestService,
   sitesService,
   usersService,
-})
-
-export const monitoringService = new MonitoringService({
-  launchesService,
 })

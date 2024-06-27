@@ -7,12 +7,18 @@ export interface CloudmersiveConfigType {
   timeout: number
 }
 
+export interface MonitoringConfig {
+  isEnabled: boolean
+  whitelistedRepos: string[]
+}
+
 export interface FeatureFlags {
   is_build_times_reduction_enabled: boolean
   is_ggs_enabled: boolean
   is_show_staging_build_status_enabled: boolean
   is_cloudmersive_enabled: CloudmersiveConfigType
   is_local_diff_enabled: boolean
+  is_monitoring_enabled: MonitoringConfig
 }
 
 // List of attributes we set in GrowthBook Instance in auth middleware

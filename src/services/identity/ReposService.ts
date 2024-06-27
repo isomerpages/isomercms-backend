@@ -25,7 +25,7 @@ import { doesDirectoryExist } from "@root/utils/fs-utils"
 
 const SYSTEM_GITHUB_TOKEN = config.get("github.systemToken")
 const octokit = new Octokit({ auth: SYSTEM_GITHUB_TOKEN })
-const OctokitRetry = Octokit.plugin(retry as any)
+const OctokitRetry = Octokit.plugin(retry)
 const octokitWithRetry = new OctokitRetry({
   auth: SYSTEM_GITHUB_TOKEN,
   request: { retries: 5 },

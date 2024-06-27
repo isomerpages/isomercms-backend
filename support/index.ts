@@ -2,10 +2,12 @@ import "module-alias/register"
 
 import express from "express"
 
-import { infraService, sequelize } from "@common/index"
+import { infraService, launchesService, sequelize } from "@common/index"
 import { useSharedMiddleware } from "@common/middleware"
 import { config } from "@root/config/config"
 import logger from "@root/logger/logger"
+import MonitoringService from "@root/monitoring/MonitoringService"
+import MonitoringWorker from "@root/monitoring/MonitoringWorker"
 
 import { ROUTE_VERSION } from "./constants"
 import { v2Router } from "./routes"
@@ -17,6 +19,15 @@ const app = express()
 
 // poller site launch updates
 infraService.pollMessages()
+
+// only needed for support container
+export const monitoringWorker = new MonitoringWorker({
+  launchesService,
+})
+
+export const monitoringService = new MonitoringService({
+  monitoringWorker,
+})
 
 const ROUTE_PREFIX_ISOBOT = `/${ROUTE_VERSION}/isobot`
 app.use(ROUTE_PREFIX_ISOBOT, isobotRouter)

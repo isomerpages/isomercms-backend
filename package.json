@@ -30,10 +30,10 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@aws-sdk/client-amplify": "^3.575.0",
-    "@aws-sdk/client-cloudwatch-logs": "^3.575.0",
-    "@aws-sdk/client-dynamodb": "^3.575.0",
-    "@aws-sdk/client-secrets-manager": "^3.578.0",
+    "@aws-sdk/client-amplify": "^3.577.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.577.0",
+    "@aws-sdk/client-dynamodb": "^3.577.0",
+    "@aws-sdk/client-secrets-manager": "^3.577.0",
     "@aws-sdk/lib-dynamodb": "^3.577.0",
     "@growthbook/growthbook": "^0.36.0",
     "@octokit/plugin-retry": "^6.0.0",
@@ -43,7 +43,7 @@
     "@slack/bolt": "^3.19.0",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
-    "aws-sdk": "^2.1619.0",
+    "aws-sdk": "^2.1623.0",
     "axios": "^1.6.8",
     "base-64": "^1.0.0",
     "bcryptjs": "^2.4.3",

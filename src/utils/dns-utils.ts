@@ -20,7 +20,7 @@ import {
 
 export function checkCname(domain: string) {
   return ResultAsync.fromPromise(dns.resolveCname(domain), () => {
-    logger.error({
+    logger.info({
       message: "Error resolving CNAME",
       meta: { domain, method: "checkCname" },
     })
@@ -38,7 +38,7 @@ export function checkCname(domain: string) {
 
 export function checkA(domain: string) {
   return ResultAsync.fromPromise(dns.resolve4(domain), () => {
-    logger.error({
+    logger.info({
       message: "Error resolving A record",
       meta: { domain, method: "checkA" },
     })
@@ -180,6 +180,7 @@ export default function getDnsCheckerMessage(
 }
 
 export function dnsMonitor(domain: string): ResultAsync<string, string> {
+  console.log("dnsMonitor", domain)
   if (!domain) {
     return okAsync("Empty domain provided")
   }

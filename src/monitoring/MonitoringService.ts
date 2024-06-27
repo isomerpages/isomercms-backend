@@ -52,7 +52,7 @@ export default class MonitoringService {
     autoBind(this)
     const jobName = "dnsMonitoring"
 
-    const FIVE_MINUTE_CRON = "5 * * * *"
+    const FIVE_MINUTE_CRON = "*/5 * * * *"
 
     const jobData = {
       name: "monitoring sites",

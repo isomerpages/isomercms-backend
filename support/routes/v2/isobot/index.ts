@@ -4,7 +4,6 @@ import {
   Middleware,
   SlackCommandMiddlewareArgs,
 } from "@slack/bolt"
-import { RequestHandler } from "express"
 import { okAsync } from "neverthrow"
 
 import { repairService } from "@common/index"
@@ -32,8 +31,57 @@ const bot = new App({
   receiver: botReceiver,
 })
 
-const cloneRepoCommmand = bot.command(
+const validateIsomerUser: Middleware<SlackCommandMiddlewareArgs> = async ({
+  payload,
+  client,
+  next,
+}) => {
+  // NOTE: Not calling `client.get` again - repeated work and also
+  // we only have a 3s window to ACK slack (haven't ack yet)
+  if (!ISOMER_USERS_ID.some((userId) => userId === payload.user_id)) {
+    await client.chat.postEphemeral({
+      channel: payload.channel,
+      user: payload.user_id,
+      text: `Sorry @${payload.user_id}, only Isomer members are allowed to use this command!`,
+    })
+    await client.chat.postMessage({
+      channel: BOT_AUDIT_CHANNEL_ID,
+      text: `Attempted access by @${payload.user_id}`,
+    })
+    throw new Error("Non-isomer member")
+  }
+
+  next()
+}
+
+// TODO: add in validation for user once downstream is merged
+bot.command("/whitelist", async ({ payload, respond, ack }) => {
+  await ack()
+
+  try {
+    await botService.whitelistEmails(payload.text)
+    respond("Emails whitelisted successfully")
+  } catch (e) {
+    logger.error({ error: e })
+    respond("Failed to whitelist emails")
+  }
+})
+
+bot.command("/siteup", async ({ payload, respond, ack }) => {
+  await ack()
+
+  const validatedDomain = botService.getValidatedDomain(payload.text)
+  if (!validatedDomain)
+    return respond(
+      `Sorry, \`${payload.text}\` is not a valid domain name. Please try again with a valid one instead.`
+    )
+
+  return botService.dnsChecker(payload).map((response) => respond(response))
+})
+
+bot.command(
   "/clone",
+  validateIsomerUser,
   async ({ command, ack, respond, payload, client }) => {
     await ack()
 
@@ -70,8 +118,9 @@ const cloneRepoCommmand = bot.command(
   }
 )
 
-const lockRepoCommand = bot.command(
+bot.command(
   "/lock",
+  validateIsomerUser,
   async ({ command, ack, respond, payload, client }) => {
     await ack()
 
@@ -101,93 +150,40 @@ const lockRepoCommand = bot.command(
 
     return repairService
       .lockRepo(repo, lockTimeSeconds)
-      .map((repo) => {
+      .map((lockedRepo) =>
         respond(
-          `${repo} was successfully locked for ${lockTimeMinutes} minutes!`
+          `${lockedRepo} was successfully locked for ${lockTimeMinutes} minutes!`
         )
-      })
+      )
       .mapErr((e) => respond(`${e} occurred while attempting to lock repo`))
   }
 )
 
-const handleWhitelistEmails: RequestHandler<
-  {},
-  { message: string },
-  SlackPayload,
-  {},
-  {}
-> = async (req, res) => {
-  console.log(req.headers)
-  const slackTimestamp = req.headers["x-slack-request-timestamp"] as string
-  const slackSig = req.headers["x-slack-signature"] as string
+bot.command(
+  "/unlock",
+  validateIsomerUser,
+  async ({ command, ack, respond, payload, client }) => {
+    await ack()
 
-  if (!slackTimestamp || !slackSig)
-    return res.send({ message: "Missing header/signature" })
+    const HELP_TEXT =
+      "Usage: `/unlock <github_repo_name>`. This unlocks a previously locked repo. Has no effect if the repo is already unlocked"
+    const tokens = command.text.split(" ")
+    // NOTE: Invariant maintained:
+    // 1. token at index 0 is always the github repository
+    const repo = tokens[0]
 
-  const isVerifiedMessage = botService.verifySignature(
-    slackSig,
-    slackTimestamp,
-    req.body
-  )
-  if (!isVerifiedMessage) return res.send({ message: "Invalid signature" })
+    if (repo === "help" || repo === "h" || repo === "-help") {
+      return respond(HELP_TEXT)
+    }
 
-  try {
-    await botService.whitelistEmails(payload.text)
-    respond("Emails whitelisted successfully")
-  } catch (e) {
-    logger.error({ error: e })
-    respond("Failed to whitelist emails")
-  }
-})
-
-bot.command("/siteup", async ({ payload, respond, ack }) => {
-  await ack()
-
-  const validatedDomain = botService.getValidatedDomain(payload.text)
-  if (!validatedDomain)
-    return respond(
-      `Sorry, \`${payload.text}\` is not a valid domain name. Please try again with a valid one instead.`
-    )
-
-  return botService.dnsChecker(payload).map((response) => respond(response))
-})
-const addUserContext: Middleware<SlackCommandMiddlewareArgs> = async ({
-  payload,
-  client,
-  context,
-  next,
-}) => {
-  const user = await client.users.info({
-    user: payload.user_id,
-  })
-
-  context.user = user
-
-  await next()
-}
-
-const validateIsomerUser: Middleware<SlackCommandMiddlewareArgs> = async ({
-  payload,
-  client,
-  next,
-}) => {
-  // NOTE: Not calling `client.get` again - repeated work and also
-  // we only have a 3s window to ACK slack (haven't ack yet)
-  if (!ISOMER_USERS_ID.some((userId) => userId === payload.user_id)) {
-    await client.chat.postEphemeral({
-      channel: payload.channel,
-      user: payload.user_id,
-      text: `Sorry @${payload.user_id}, only Isomer members are allowed to use this command!`,
-    })
     await client.chat.postMessage({
       channel: BOT_AUDIT_CHANNEL_ID,
-      text: `Attempted access by @${payload.user_id}`,
+      text: `${payload.user_id} attempting to unlock repo: ${repo}`,
     })
-    throw new Error("Non-isomer member")
+
+    return repairService
+      .unlockRepo(repo)
+      .map(() => respond(`repo: ${repo} was successfully unlocked!`))
+      .mapErr(respond)
   }
-
-  next()
-}
-
-// FIXME: update this to proper signature
-// bot.command("/whitelist-emails", handleWhitelistEmails)
+)

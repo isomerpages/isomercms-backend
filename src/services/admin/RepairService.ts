@@ -2,7 +2,7 @@ import path from "path"
 
 import { fromPromise, ResultAsync } from "neverthrow"
 
-import { lock } from "@utils/mutex-utils"
+import { lock, unlock } from "@utils/mutex-utils"
 
 import { EFS_VOL_PATH_STAGING_LITE } from "@root/constants"
 import GitFileSystemError from "@root/errors/GitFileSystemError"
@@ -59,6 +59,13 @@ export class RepairService {
               )
             )
         )
+    )
+  }
+
+  unlockRepo(repoName: string) {
+    return ResultAsync.fromPromise(
+      unlock(repoName),
+      (err) => `Failed to unlock repo with error: ${err}`
     )
   }
 }

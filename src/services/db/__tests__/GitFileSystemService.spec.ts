@@ -24,7 +24,6 @@ import {
 } from "@fixtures/github"
 import { MOCK_USER_ID_ONE } from "@fixtures/users"
 import { MediaTypeError } from "@root/errors/MediaTypeError"
-import { MOCK_LATEST_LOG_ONE } from "@root/fixtures/review"
 import { MediaFileOutput } from "@root/types"
 import { GitHubCommitData } from "@root/types/commitData"
 import { GitDirectoryItem, GitFile } from "@root/types/gitfilesystem"

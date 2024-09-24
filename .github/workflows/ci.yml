@@ -86,8 +86,19 @@ jobs:
           path: ~/.npm
           key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: npm run test:docker
-      - run: . .env.test && npx jest --runInBand
+      - run: npm run test:docker      
+      - name: Configure Datadog Test Visibility
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+        uses: datadog/test-visibility-github-action@v2
+        with:
+          languages: js
+          service: isomer
+          api_key: ${{ secrets.DD_API_KEY }}
+      - name: run tests 
+        env: 
+          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }}
+        run: . .env.test && npx jest --runInBand
 
   gatekeep:
     name: Determine if Build & Deploy is needed

@@ -86,17 +86,19 @@ jobs:
           path: ~/.npm
           key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: npm run test:docker      
-      - name: Configure Datadog Test Visibility
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
-        uses: datadog/test-visibility-github-action@v2
-        with:
-          languages: js
-          service: isomer
-          api_key: ${{ secrets.DD_API_KEY }}
+      - run: npm run test:docker
+      # Not using Datadog Test Visibility action since we need to use the local 
+      # (patched) package for it to work with neverthrow
       - name: run tests 
         env: 
+          NODE_OPTIONS: "-r dd-trace/ci/init"
+          DD_CIVISIBILITY_ENABLED: true
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+          DD_ENV: ci
+          DD_SITE: datadoghq.com
+          DD_SERVICE: isomer
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER: github
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }}
         run: . .env.test && npx jest --runInBand
 

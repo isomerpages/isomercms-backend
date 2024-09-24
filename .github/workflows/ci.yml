@@ -99,7 +99,6 @@ jobs:
           DD_SERVICE: isomer
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
           DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER: github
-          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }}
         run: . .env.test && npx jest --runInBand
 
   gatekeep:

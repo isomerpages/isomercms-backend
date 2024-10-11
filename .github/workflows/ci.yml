@@ -99,7 +99,7 @@ jobs:
           DD_SERVICE: isomer
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
           DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER: github
-        run: . .env.test && npx jest --runInBand
+        run: . .env.test && npx jest -- --runInBand --coverage
 
   gatekeep:
     name: Determine if Build & Deploy is needed

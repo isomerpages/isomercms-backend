@@ -14,6 +14,7 @@
     "dev": "source .env && docker compose -f docker-compose.dev.yml up",
     "test:docker": "docker run -d -p 54321:5432 --name postgres -e POSTGRES_USER=isomer -e POSTGRES_PASSWORD=password -e POSTGRES_DB=isomercms_test postgres:latest",
     "test": "source .env.test && jest --runInBand",
+    "test:ci": "jest --runInBand --coverage",
     "release": "bash scripts/release_prep.sh",
     "lint": "npx eslint .",
     "lint-fix": "eslint --ignore-path .gitignore . --fix",

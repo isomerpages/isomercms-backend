@@ -87,6 +87,10 @@ jobs:
           key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
       - run: npm run test:docker
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v2
+        with:
+          mode: test
       # Not using Datadog Test Visibility action since we need to use the local 
       # (patched) package for it to work with neverthrow
       - name: run tests 
@@ -99,7 +103,7 @@ jobs:
           DD_SERVICE: isomer
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
           DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER: github
-        run: . .env.test && npx jest --runInBand
+        run: npm run test:ci
 
   gatekeep:
     name: Determine if Build & Deploy is needed

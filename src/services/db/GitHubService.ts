@@ -17,6 +17,8 @@ import logger from "@root/logger/logger"
 import { GitCommitResult } from "@root/types/gitfilesystem"
 import { GitHubRepoInfo, RawGitTreeEntry, RepoState } from "@root/types/github"
 
+import { E2E_TEST_GH_TOKEN } from "../middlewareServices/AuthenticationMiddlewareService"
+
 import * as ReviewApi from "./review"
 
 export default class GitHubService {
@@ -861,9 +863,9 @@ export default class GitHubService {
     const endpointTemplate = urlTemplate.parse(`{siteName}`)
     const endpoint = endpointTemplate.expand({ siteName })
 
-    // Privatising a repo is restricted to repo admins - an admin token will be inserted in via our axios interceptor
+    // Privatising a repo is restricted to repo admins - our main admin token is used
     const headers = {
-      Authorization: "",
+      Authorization: `token ${E2E_TEST_GH_TOKEN}`,
       "Content-Type": "application/json",
     }
 

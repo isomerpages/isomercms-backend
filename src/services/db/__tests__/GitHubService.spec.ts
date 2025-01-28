@@ -48,6 +48,7 @@ describe("Github Service", () => {
   const resourceCategoryFileName = "index.html"
 
   const sessionData = mockUserWithSiteSessionData
+  const mockE2eToken = "test"
 
   const authHeader = {
     headers: {
@@ -1042,7 +1043,7 @@ describe("Github Service", () => {
   describe("changeRepoPrivacy", () => {
     const refEndpoint = `${siteName}`
     const headers = {
-      Authorization: `token ${accessToken}`,
+      Authorization: `token ${mockE2eToken}`,
       "Content-Type": "application/json",
     }
     it("should modify the repo privacy accordingly if making repo private", async () => {

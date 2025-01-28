@@ -275,6 +275,7 @@ const config = convict({
         "prod",
         "stg",
         "dev",
+        "ci",
       ],
       env: "DD_ENV",
       default: "local",

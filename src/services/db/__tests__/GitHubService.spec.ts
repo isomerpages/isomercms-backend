@@ -1042,7 +1042,7 @@ describe("Github Service", () => {
   describe("changeRepoPrivacy", () => {
     const refEndpoint = `${siteName}`
     const headers = {
-      Authorization: "",
+      Authorization: `token ${accessToken}`,
       "Content-Type": "application/json",
     }
     it("should modify the repo privacy accordingly if making repo private", async () => {

@@ -110,6 +110,7 @@ const githubApiInterceptor = (resp: AxiosResponse) => {
 
 const isomerRepoAxiosInstance = axios.create({
   baseURL: `https://api.github.com/repos/${GITHUB_ORG_NAME}/`,
+  allowAbsoluteUrls: false,
 })
 
 isomerRepoAxiosInstance.interceptors.request.use(requestFormatter)

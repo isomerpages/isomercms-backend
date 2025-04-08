@@ -19,6 +19,7 @@ class SmsClient {
 
     this.axiosClient = axios.create({
       baseURL: POSTMAN_API_URL,
+      allowAbsoluteUrls: false,
       headers: {
         Authorization: `Bearer ${POSTMAN_API_KEY}`,
       },

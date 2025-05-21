@@ -1077,47 +1077,49 @@ export default class ReviewRequestService {
 
   createComment = async (
     sessionData: UserWithSiteSessionData,
-    pullRequestNumber: number,
+    reviewId: number,
     message: string
   ): Promise<ReviewComment> => {
     const { siteName, isomerUserId } = sessionData
 
-    logger.info(
-      `Creating comment for PR ${pullRequestNumber}, site: ${siteName}`
-    )
-    // get id of review request
+    logger.info(`Creating comment for PR ${reviewId}, site: ${siteName}`)
+    // NOTE: We need to do this to ensure that users are creating comments
+    // for a review request that exists.
+    // Without this check, users can ping our backend
+    // to create comments for any review request,
+    // even if the review request doesn't exist
     const reviewMeta = await this.reviewMeta.findOne({
-      where: { pullRequestNumber },
+      where: { reviewId },
     })
 
     if (reviewMeta?.reviewId) {
       try {
         return await this.reviewCommentService.createCommentForReviewRequest(
-          reviewMeta?.reviewId,
+          reviewId,
           isomerUserId,
           message
         )
       } catch (e) {
         logger.error(
-          `Error creating comment in DB for PR ${pullRequestNumber}, site: ${siteName}`
+          `Error creating comment in DB for PR ${reviewId}, site: ${siteName}`
         )
         throw new DatabaseError("Error creating comment in DB")
       }
     }
-    logger.info(`No review request found for PR ${pullRequestNumber}`)
+    logger.info(`No review request found for PR ${reviewId}`)
     throw new RequestNotFoundError("Review Request not found")
   }
 
   getComments = async (
     sessionData: UserWithSiteSessionData,
     site: Site,
-    pullRequestNumber: number
+    reviewId: number
   ): Promise<CommentItem[]> => {
     const { siteName, isomerUserId: userId } = sessionData
 
     // get review request id
     const reviewMeta = await this.reviewMeta.findOne({
-      where: { pullRequestNumber },
+      where: { reviewId },
     })
     if (!reviewMeta || !reviewMeta.reviewId) {
       throw new RequestNotFoundError("Review Request not found")
@@ -1125,7 +1127,7 @@ export default class ReviewRequestService {
 
     const comments = await this.apiService.getComments(
       siteName,
-      pullRequestNumber
+      reviewMeta.pullRequestNumber
     )
 
     const requestsView = await this.reviewRequestView.findOne({
@@ -1142,7 +1144,7 @@ export default class ReviewRequestService {
               model: ReviewMeta,
               required: true,
               where: {
-                pullRequestNumber,
+                reviewId,
               },
             },
           ],
@@ -1154,11 +1156,11 @@ export default class ReviewRequestService {
     let allComments = []
     try {
       allComments = await this.reviewCommentService.getCommentsForReviewRequest(
-        reviewMeta.reviewId
+        reviewId
       )
     } catch (e) {
       logger.error(
-        `Error getting comments for PR ${pullRequestNumber}, site: ${siteName}`
+        `Error getting comments for PR ${reviewId}, site: ${siteName}`
       )
       throw new DatabaseError("Error getting comments for PR")
     }

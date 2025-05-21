@@ -1,4 +1,4 @@
-import _, { sortBy, unionBy, zipObject } from "lodash"
+import _, { pull, sortBy, unionBy, zipObject } from "lodash"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import { Op, ModelStatic } from "sequelize"
 import { Sequelize } from "sequelize-typescript"
@@ -1077,49 +1077,82 @@ export default class ReviewRequestService {
 
   createComment = async (
     sessionData: UserWithSiteSessionData,
-    reviewId: number,
+    pullRequestNumber: number,
     message: string
   ): Promise<ReviewComment> => {
     const { siteName, isomerUserId } = sessionData
 
-    logger.info(`Creating comment for PR ${reviewId}, site: ${siteName}`)
+    logger.info(
+      `Creating comment for PR with pullRequestNumber: ${pullRequestNumber}, site: ${siteName}`
+    )
     // NOTE: We need to do this to ensure that users are creating comments
     // for a review request that exists.
     // Without this check, users can ping our backend
     // to create comments for any review request,
     // even if the review request doesn't exist
     const reviewMeta = await this.reviewMeta.findOne({
-      where: { reviewId },
+      where: {
+        pullRequestNumber,
+        reviewLink: {
+          // NOTE: The `/${requestId}/` that the frontend
+          // sends across is not actually the `reviewId`.
+          // This is actually the GITHUB `pullRequestNumber`
+          // and hence, we have to artifically construct
+          // the `reviewLink`.
+          // We need the starting `/` to prevent cases where `siteName`
+          // is potentially a substring of another site (eg: `moe-ny` and `moe-moe-ny`)
+          [Op.endsWith]: `/${siteName}/review/${pullRequestNumber}`,
+        },
+      },
     })
 
     if (reviewMeta?.reviewId) {
       try {
         return await this.reviewCommentService.createCommentForReviewRequest(
-          reviewId,
+          reviewMeta.reviewId,
           isomerUserId,
           message
         )
       } catch (e) {
         logger.error(
-          `Error creating comment in DB for PR ${reviewId}, site: ${siteName}`
+          `Error creating comment in DB for PR ${reviewMeta.reviewId}, site: ${siteName}`
         )
         throw new DatabaseError("Error creating comment in DB")
       }
     }
-    logger.info(`No review request found for PR ${reviewId}`)
+
+    logger.info(
+      `No review request found for PR with reviewId: ${reviewMeta?.reviewId}, pullRequestNumber: ${pullRequestNumber}, site: ${siteName}`
+    )
     throw new RequestNotFoundError("Review Request not found")
   }
 
   getComments = async (
     sessionData: UserWithSiteSessionData,
     site: Site,
-    reviewId: number
+    pullRequestNumber: number
   ): Promise<CommentItem[]> => {
     const { siteName, isomerUserId: userId } = sessionData
 
-    // get review request id
+    // NOTE: We need to do this to ensure that users are creating comments
+    // for a review request that exists.
+    // Without this check, users can ping our backend
+    // to create comments for any review request,
+    // even if the review request doesn't exist
     const reviewMeta = await this.reviewMeta.findOne({
-      where: { reviewId },
+      where: {
+        pullRequestNumber,
+        // NOTE: The `/${requestId}/` that the frontend
+        // sends across is not actually the `reviewId`.
+        // This is actually the GITHUB `pullRequestNumber`
+        // and hence, we have to artifically construct
+        // the `reviewLink`.
+        // We need the starting `/` to prevent cases where `siteName`
+        // is potentially a substring of another site (eg: `moe-ny` and `moe-moe-ny`)
+        reviewLink: {
+          [Op.endsWith]: `/${siteName}/review/${pullRequestNumber}`,
+        },
+      },
     })
     if (!reviewMeta || !reviewMeta.reviewId) {
       throw new RequestNotFoundError("Review Request not found")
@@ -1144,7 +1177,7 @@ export default class ReviewRequestService {
               model: ReviewMeta,
               required: true,
               where: {
-                reviewId,
+                pullRequestNumber,
               },
             },
           ],
@@ -1156,11 +1189,11 @@ export default class ReviewRequestService {
     let allComments = []
     try {
       allComments = await this.reviewCommentService.getCommentsForReviewRequest(
-        reviewId
+        reviewMeta.reviewId
       )
     } catch (e) {
       logger.error(
-        `Error getting comments for PR ${reviewId}, site: ${siteName}`
+        `Error getting comments for PR ${pullRequestNumber}, site: ${siteName}`
       )
       throw new DatabaseError("Error getting comments for PR")
     }

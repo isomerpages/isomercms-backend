@@ -298,7 +298,7 @@ describe("Notifications Router", () => {
       await ReviewMeta.create({
         reviewId: 1,
         pullRequestNumber: 1,
-        reviewLink: "test",
+        reviewLink: `/${mockSiteName}/review/1`,
       })
       mockGithubService.getComments.mockResolvedValueOnce([])
       mockGithubService.getCommitDiff.mockResolvedValueOnce({

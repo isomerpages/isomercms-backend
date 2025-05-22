@@ -39,13 +39,11 @@ import {
   MOCK_GITHUB_PULL_REQUEST_NUMBER,
   MOCK_GITHUB_RAWCOMMENT_ONE,
   MOCK_GITHUB_RAWCOMMENT_TWO,
-  MOCK_GITHUB_FRONTMATTER,
   MOCK_PAGE_PERMALINK,
 } from "@fixtures/github"
 import { MOCK_GITHUB_DATE_ONE } from "@fixtures/identity"
 import {
   MOCK_PULL_REQUEST_BODY_ONE,
-  MOCK_PULL_REQUEST_CHANGED_FILES_ONE,
   MOCK_PULL_REQUEST_ONE,
   MOCK_PULL_REQUEST_TITLE_ONE,
 } from "@fixtures/review"
@@ -1764,9 +1762,69 @@ describe("Review Requests Integration Tests", () => {
       await Reviewer.destroy({
         where: {},
       })
+      await ReviewComment.destroy({ where: {} })
       await ReviewRequest.destroy({
         where: {},
       })
+    })
+
+    it("should not retrieve comments for review requests with the same number across different sites", async () => {
+      // Arrange
+      const FAKE_COMMENT = "This is a comment that should not appear for site 1"
+      const duplicatedReviewRequest = await ReviewRequest.create({
+        requestorId: MOCK_USER_ID_ONE,
+        siteId: MOCK_SITE_ID_TWO,
+      })
+      await ReviewMeta.create({
+        reviewId: duplicatedReviewRequest?.id,
+        pullRequestNumber: MOCK_GITHUB_PULL_REQUEST_NUMBER,
+        // NOTE: the only relevant difference here is that the `siteName` is different
+        // but importantly, the pr number is the same across both this and the one we created
+        // earlier in the `beforeAll` block
+        reviewLink: `cms.isomer.gov.sg/sites/${MOCK_REPO_NAME_TWO}/review/${MOCK_GITHUB_PULL_REQUEST_NUMBER}`,
+      })
+
+      await ReviewComment.create({
+        reviewId: duplicatedReviewRequest.id,
+        reviewerId: MOCK_USER_ID_ONE,
+        comment: FAKE_COMMENT,
+        createdAt: new Date().getTime(),
+        updatedAt: new Date().getTime(),
+      })
+
+      const app = generateRouterForUserWithSite(
+        subrouter,
+        MOCK_USER_SESSION_DATA_TWO,
+        MOCK_REPO_NAME_ONE
+      )
+
+      mockGenericAxios.get.mockResolvedValueOnce({
+        data: [MOCK_GITHUB_RAWCOMMENT_ONE, MOCK_GITHUB_RAWCOMMENT_TWO],
+      })
+
+      const expected = [
+        {
+          user: MOCK_USER_EMAIL_ONE,
+          message: MOCK_GITHUB_COMMENT_BODY_ONE,
+          createdAt: new Date(MOCK_GITHUB_COMMIT_DATE_ONE).getTime(),
+          isRead: false,
+        },
+        {
+          user: MOCK_USER_EMAIL_TWO,
+          message: MOCK_GITHUB_COMMENT_BODY_TWO,
+          createdAt: new Date(MOCK_GITHUB_COMMIT_DATE_THREE).getTime(),
+          isRead: false,
+        },
+      ]
+
+      // Act
+      const actual = await request(app).get(
+        `/${MOCK_REPO_NAME_ONE}/${MOCK_GITHUB_PULL_REQUEST_NUMBER}/comments`
+      )
+
+      // Assert
+      expect(actual.statusCode).toEqual(200)
+      expect(actual.body).toEqual(expected)
     })
 
     it("should retrieve the comments for the review request", async () => {

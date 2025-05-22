@@ -1770,7 +1770,7 @@ describe("Review Requests Integration Tests", () => {
 
     it("should not retrieve comments for review requests with the same number across different sites", async () => {
       // Arrange
-      const FAKE_COMMENT = "This is a comment that shuold not appear for site 1"
+      const FAKE_COMMENT = "This is a comment that should not appear for site 1"
       const duplicatedReviewRequest = await ReviewRequest.create({
         requestorId: MOCK_USER_ID_ONE,
         siteId: MOCK_SITE_ID_TWO,

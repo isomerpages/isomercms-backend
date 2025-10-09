@@ -1,0 +1,59 @@
+name: Deploy to VAPT
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - vapt
+
+jobs:
+  deploy-app:
+    name: Deploy app to VAPT
+    uses: ./.github/workflows/aws_deploy.yml
+    with:
+      aws-region: "ap-southeast-1"
+      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-github-oidc-role-16ea937"
+      ecr-repository: "isomer-infra-vapt-ecr"
+      ecs-cluster-name: "isomer-vapt-ecs"
+      ecs-web-service-name: "isomer-vapt-ecs-service"
+      ecs-container-name: "backend"
+      ecs-container-port: 8081
+      environment: "vapt"
+      shortEnv: "vapt"
+      task-definition-path: ".aws/deploy/backend-task-definition.vapt.json"
+      codedeploy-application: "isomer-vapt-ecs-app"
+      codedeploy-deployment-group: "isomer-vapt-ecs-dg"
+      path-to-dockerfile: "Dockerfile"
+
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      EFS_FILE_SYSTEM_ID: ${{ secrets.VAPT_EFS_FILE_SYSTEM_ID }}
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      RDS_READER_ENDPOINT: ${{ secrets.VAPT_RDS_READER_ENDPOINT }}
+      RDS_DATADOG_PASSWORD: ${{ secrets.VAPT_RDS_DATADOG_PASSWORD }}
+
+  deploy-support:
+    name: Deploy support to VAPT
+    uses: ./.github/workflows/aws_deploy.yml
+    with:
+      aws-region: "ap-southeast-1"
+      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-github-oidc-role-16ea937"
+      ecr-repository: "isomer-infra-vapt-ecr"
+      ecs-cluster-name: "isomer-vapt-ecs"
+      ecs-web-service-name: "vapt-support-ecs-service"
+      ecs-container-name: "support"
+      ecs-container-port: 8082
+      environment: "vapt"
+      shortEnv: "vapt"
+      task-definition-path: ".aws/deploy/support-task-definition.vapt.json"
+      codedeploy-application: "vapt-support-ecs-app"
+      codedeploy-deployment-group: "vapt-support-ecs-dg"
+      path-to-dockerfile: "support/Dockerfile"
+
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      EFS_FILE_SYSTEM_ID: ${{ secrets.VAPT_EFS_FILE_SYSTEM_ID }}
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}

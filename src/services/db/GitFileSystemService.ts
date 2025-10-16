@@ -20,8 +20,6 @@ import { NotFoundError } from "@errors/NotFoundError"
 
 import tracer from "@utils/tracer"
 
-import { createPathSchema } from "@validators/path"
-
 import {
   EFS_VOL_PATH_STAGING,
   EFS_VOL_PATH_STAGING_LITE,
@@ -44,6 +42,7 @@ import type {
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 import { getPaginatedDirectoryContents } from "@root/utils/files"
+import { isSafePath } from "@root/validators/validators"
 
 // methods that do not need to be wrapped for instrumentation
 const METHOD_INSTRUMENTATION_BLACKLIST = [
@@ -372,10 +371,9 @@ export default class GitFileSystemService {
     // traversal attacks
     const repoBaseDirectory = `${efsVolPath}/${repoName}`
     const fullFilePath = path.resolve(repoBaseDirectory, filePath)
-    const pathSchema = createPathSchema({ basePath: repoBaseDirectory })
-    const parsedPathResult = pathSchema.safeParse(fullFilePath)
+    const isSafe = isSafePath(fullFilePath, repoBaseDirectory)
 
-    if (!parsedPathResult.success) {
+    if (!isSafe) {
       logger.error(`Invalid file path: ${filePath} for repo: ${repoName}`)
       return errAsync(new BadRequestError("Invalid file path"))
     }

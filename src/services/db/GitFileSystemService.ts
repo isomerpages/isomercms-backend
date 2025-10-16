@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 
+import { createPathSchema } from "@opengovsg/starter-kitty-validators"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
@@ -8,7 +9,6 @@ import {
   SimpleGit,
   DefaultLogFields,
   LogResult,
-  ListLogLine,
 } from "simple-git"
 
 import logger from "@logger/logger"
@@ -366,22 +366,32 @@ export default class GitFileSystemService {
     const efsVolPath = isStaging
       ? EFS_VOL_PATH_STAGING
       : EFS_VOL_PATH_STAGING_LITE
-    return ResultAsync.fromPromise(
-      fs.promises.stat(`${efsVolPath}/${repoName}/${filePath}`),
-      (error) => {
-        if (error instanceof Error && error.message.includes("ENOENT")) {
-          return new NotFoundError("File/Directory does not exist")
-        }
 
-        logger.error(`Error when reading ${filePath}: ${error}`)
+    // Validate that the filePath is a valid relative path to prevent directory
+    // traversal attacks
+    const repoBaseDirectory = `${efsVolPath}/${repoName}`
+    const fullFilePath = path.resolve(repoBaseDirectory, filePath)
+    const pathSchema = createPathSchema({ basePath: repoBaseDirectory })
+    const parsedPathResult = pathSchema.safeParse(fullFilePath)
 
-        if (error instanceof Error) {
-          return new GitFileSystemError("Unable to read file/directory")
-        }
+    if (!parsedPathResult.success) {
+      logger.error(`Invalid file path: ${filePath} for repo: ${repoName}`)
+      return errAsync(new BadRequestError("Invalid file path"))
+    }
 
-        return new GitFileSystemError("An unknown error occurred")
+    return ResultAsync.fromPromise(fs.promises.stat(fullFilePath), (error) => {
+      if (error instanceof Error && error.message.includes("ENOENT")) {
+        return new NotFoundError("File/Directory does not exist")
       }
-    )
+
+      logger.error(`Error when reading ${filePath}: ${error}`)
+
+      if (error instanceof Error) {
+        return new GitFileSystemError("Unable to read file/directory")
+      }
+
+      return new GitFileSystemError("An unknown error occurred")
+    })
   }
 
   /**
@@ -985,35 +995,39 @@ export default class GitFileSystemService {
     encoding: "utf-8" | "base64" = "utf-8"
   ): ResultAsync<GitFile, GitFileSystemError | NotFoundError> {
     const defaultEfsVolPath = EFS_VOL_PATH_STAGING
-    return ResultAsync.combine([
-      ResultAsync.fromPromise(
-        fs.promises.readFile(
-          `${defaultEfsVolPath}/${repoName}/${filePath}`,
-          encoding
-        ),
-        (error) => {
-          if (error instanceof Error && error.message.includes("ENOENT")) {
-            return new NotFoundError("File does not exist")
-          }
+    return this.getFilePathStats(repoName, filePath, true)
+      .andThen(() =>
+        ResultAsync.combine([
+          ResultAsync.fromPromise(
+            fs.promises.readFile(
+              `${defaultEfsVolPath}/${repoName}/${filePath}`,
+              encoding
+            ),
+            (error) => {
+              if (error instanceof Error && error.message.includes("ENOENT")) {
+                return new NotFoundError("File does not exist")
+              }
 
-          logger.error(`Error when reading ${filePath}: ${error}`)
+              logger.error(`Error when reading ${filePath}: ${error}`)
 
-          if (error instanceof Error) {
-            return new GitFileSystemError("Unable to read file")
-          }
+              if (error instanceof Error) {
+                return new GitFileSystemError("Unable to read file")
+              }
 
-          return new GitFileSystemError("An unknown error occurred")
+              return new GitFileSystemError("An unknown error occurred")
+            }
+          ),
+          this.getGitBlobHash(repoName, filePath, true),
+        ])
+      )
+      .map((contentAndHash) => {
+        const [content, sha] = contentAndHash
+        const result: GitFile = {
+          content,
+          sha,
         }
-      ),
-      this.getGitBlobHash(repoName, filePath, true),
-    ]).map((contentAndHash) => {
-      const [content, sha] = contentAndHash
-      const result: GitFile = {
-        content,
-        sha,
-      }
-      return result
-    })
+        return result
+      })
   }
 
   getFileExtension(fileName: string): Result<string, MediaTypeError> {

@@ -730,6 +730,36 @@ describe("GitFileSystemService", () => {
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
     })
 
+    it("should return a BadRequestError if the path contains glob expressions", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "{../,a}/some-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
+    })
+
+    it('should return a BadRequestError if path contains "%2f"', async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "..%2ffake-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
+    })
+
+    it("should return a BadRequestError if path contains backslashes", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "..\\fake-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
+    })
+
     it("should return a NotFoundError for a non-existent path", async () => {
       const result = await GitFileSystemService.getFilePathStats(
         "fake-repo",

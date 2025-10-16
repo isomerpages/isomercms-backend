@@ -1,7 +1,7 @@
 import fs, { Stats } from "fs"
 
 import mockFs from "mock-fs"
-import { errAsync, okAsync } from "neverthrow"
+import { okAsync } from "neverthrow"
 import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"

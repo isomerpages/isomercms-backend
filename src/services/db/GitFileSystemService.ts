@@ -8,7 +8,6 @@ import {
   SimpleGit,
   DefaultLogFields,
   LogResult,
-  ListLogLine,
 } from "simple-git"
 
 import logger from "@logger/logger"
@@ -43,6 +42,7 @@ import type {
 import type { IsomerCommitMessage } from "@root/types/github"
 import { ALLOWED_FILE_EXTENSIONS } from "@root/utils/file-upload-utils"
 import { getPaginatedDirectoryContents } from "@root/utils/files"
+import { isSafePath } from "@root/validators/validators"
 
 // methods that do not need to be wrapped for instrumentation
 const METHOD_INSTRUMENTATION_BLACKLIST = [
@@ -366,22 +366,31 @@ export default class GitFileSystemService {
     const efsVolPath = isStaging
       ? EFS_VOL_PATH_STAGING
       : EFS_VOL_PATH_STAGING_LITE
-    return ResultAsync.fromPromise(
-      fs.promises.stat(`${efsVolPath}/${repoName}/${filePath}`),
-      (error) => {
-        if (error instanceof Error && error.message.includes("ENOENT")) {
-          return new NotFoundError("File/Directory does not exist")
-        }
 
-        logger.error(`Error when reading ${filePath}: ${error}`)
+    // Validate that the filePath is a valid relative path to prevent directory
+    // traversal attacks
+    const repoBaseDirectory = `${efsVolPath}/${repoName}`
+    const fullFilePath = path.join(repoBaseDirectory, filePath)
+    const isSafe = isSafePath(fullFilePath, repoBaseDirectory)
 
-        if (error instanceof Error) {
-          return new GitFileSystemError("Unable to read file/directory")
-        }
+    if (!isSafe) {
+      logger.error(`Invalid file path: ${filePath} for repo: ${repoName}`)
+      return errAsync(new BadRequestError("Invalid file path"))
+    }
 
-        return new GitFileSystemError("An unknown error occurred")
+    return ResultAsync.fromPromise(fs.promises.stat(fullFilePath), (error) => {
+      if (error instanceof Error && error.message.includes("ENOENT")) {
+        return new NotFoundError("File/Directory does not exist")
       }
-    )
+
+      logger.error(`Error when reading ${filePath}: ${error}`)
+
+      if (error instanceof Error) {
+        return new GitFileSystemError("Unable to read file/directory")
+      }
+
+      return new GitFileSystemError("An unknown error occurred")
+    })
   }
 
   /**

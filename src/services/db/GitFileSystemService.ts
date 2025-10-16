@@ -1,7 +1,6 @@
 import fs from "fs"
 import path from "path"
 
-import { createPathSchema } from "@opengovsg/starter-kitty-validators"
 import { err, errAsync, ok, okAsync, Result, ResultAsync } from "neverthrow"
 import {
   CleanOptions,
@@ -20,6 +19,8 @@ import GitFileSystemNeedsRollbackError from "@errors/GitFileSystemNeedsRollbackE
 import { NotFoundError } from "@errors/NotFoundError"
 
 import tracer from "@utils/tracer"
+
+import { createPathSchema } from "@validators/path"
 
 import {
   EFS_VOL_PATH_STAGING,

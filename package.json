@@ -41,7 +41,6 @@
     "@octokit/rest": "^20.1.1",
     "@opengovsg/formsg-sdk": "^0.11.0",
     "@opengovsg/sgid-client": "^2.0.0",
-    "@opengovsg/starter-kitty-validators": "^1.2.11",
     "@slack/bolt": "^3.19.0",
     "auto-bind": "^4.0.0",
     "aws-lambda": "^1.0.7",
@@ -113,7 +112,9 @@
     "validator": "^13.12.0",
     "winston": "^3.13.0",
     "winston-cloudwatch": "^6.3.0",
-    "yaml": "^2.4.2"
+    "yaml": "^2.4.2",
+    "zod": "^3.25.76",
+    "zod-validation-error": "^3.5.3"
   },
   "devDependencies": {
     "@octokit/types": "^6.35.0",

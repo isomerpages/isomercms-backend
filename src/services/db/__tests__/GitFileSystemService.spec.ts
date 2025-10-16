@@ -1,7 +1,7 @@
 import fs, { Stats } from "fs"
 
 import mockFs from "mock-fs"
-import { errAsync, okAsync } from "neverthrow"
+import { okAsync } from "neverthrow"
 import { GitError, SimpleGit } from "simple-git"
 
 import config from "@config/config"
@@ -718,6 +718,46 @@ describe("GitFileSystemService", () => {
       )
 
       expect(result._unsafeUnwrap().isDirectory()).toBeTrue()
+    })
+
+    it("should return a BadRequestError if the path goes above the repo root", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "../some-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
+    })
+
+    it("should return a BadRequestError if the path contains glob expressions", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "{../,a}/some-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
+    })
+
+    it('should return a BadRequestError if path contains "%2f"', async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "..%2ffake-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
+    })
+
+    it("should return a BadRequestError if path contains backslashes", async () => {
+      const result = await GitFileSystemService.getFilePathStats(
+        "fake-repo",
+        "..\\fake-file",
+        DEFAULT_BRANCH === "staging"
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(BadRequestError)
     })
 
     it("should return a NotFoundError for a non-existent path", async () => {

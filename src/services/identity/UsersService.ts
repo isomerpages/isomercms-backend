@@ -273,12 +273,12 @@ class UsersService {
     otp,
     findConditions,
     findErrorMessage,
-    clientIp,
+    clientIp = "unknown", // default to 'unknown' bucket when IP missing to ensure users are not locked out
   }: {
     otp: string | undefined
     findConditions: { email: string } | { mobileNumber: string }
     findErrorMessage: string
-    clientIp: string
+    clientIp?: string
   }) {
     if (!otp) {
       return errAsync(new BadRequestError("Empty OTP provided"))
@@ -391,7 +391,7 @@ class UsersService {
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 
-  verifyEmailOtp(email: string, otp: string | undefined, clientIp: string) {
+  verifyEmailOtp(email: string, otp: string | undefined, clientIp?: string) {
     const normalizedEmail = email.toLowerCase()
 
     return this.verifyOtp({
@@ -405,7 +405,7 @@ class UsersService {
   verifyMobileOtp(
     mobileNumber: string,
     otp: string | undefined,
-    clientIp: string
+    clientIp?: string
   ) {
     return this.verifyOtp({
       otp,

@@ -11,7 +11,6 @@ import { attachReadRouteHandlerWrapper } from "@middleware/routeHandler"
 
 import UserSessionData from "@classes/UserSessionData"
 
-import { BaseIsomerError } from "@root/errors/BaseError"
 import DatabaseError from "@root/errors/DatabaseError"
 import { isError, RequestHandler } from "@root/types"
 import { nameAnonymousMethods } from "@root/utils/apm-utils"
@@ -86,12 +85,6 @@ export class UsersRouter {
     const parsedEmail = email.toLowerCase()
 
     const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
-    if (!userIp) {
-      throw new BaseIsomerError({
-        status: 500,
-        message: "No user IP found in the request",
-      })
-    }
     return this.usersService
       .verifyEmailOtp(parsedEmail, otp, userIp)
       .andThen(() =>
@@ -152,12 +145,6 @@ export class UsersRouter {
     const userId = userSessionData.isomerUserId
 
     const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
-    if (!userIp) {
-      throw new BaseIsomerError({
-        status: 500,
-        message: "No user IP found in the request",
-      })
-    }
     return this.usersService
       .verifyMobileOtp(mobile, otp, userIp)
       .andThen(() =>

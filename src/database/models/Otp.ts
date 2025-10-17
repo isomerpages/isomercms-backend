@@ -58,4 +58,12 @@ export class Otp extends Model {
 
   @UpdatedAt
   updatedAt!: Date
+
+  // JSON map of ip -> attempts for per-IP tracking
+  @Column({
+    allowNull: false,
+    type: DataType.JSONB,
+    defaultValue: {},
+  })
+  attemptsByIp!: Record<string, number>
 }

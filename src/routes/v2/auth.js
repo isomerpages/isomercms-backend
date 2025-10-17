@@ -1,3 +1,5 @@
+import { BaseIsomerError } from "@root/errors/BaseError"
+
 const autoBind = require("auto-bind")
 const express = require("express")
 
@@ -106,7 +108,16 @@ class AuthRouter {
         message: `Invalid request format: ${error.message}`,
       })
     const email = rawEmail.toLowerCase()
-    const userInfo = (await this.authService.verifyOtp({ email, otp })).value
+    const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
+    if (!userIp) {
+      throw new BaseIsomerError({
+        status: 500,
+        message: "No user IP found in the request",
+      })
+    }
+    const userInfo = (
+      await this.authService.verifyOtp({ email, otp, clientIp: userIp })
+    ).value
     Object.assign(req.session, { userInfo })
     logger.info(`User ${userInfo.email} successfully logged in`)
     return res.sendStatus(200)

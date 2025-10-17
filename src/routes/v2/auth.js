@@ -1,5 +1,3 @@
-import { BaseIsomerError } from "@root/errors/BaseError"
-
 const autoBind = require("auto-bind")
 const express = require("express")
 
@@ -109,12 +107,6 @@ class AuthRouter {
       })
     const email = rawEmail.toLowerCase()
     const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
-    if (!userIp) {
-      throw new BaseIsomerError({
-        status: 500,
-        message: "No user IP found in the request",
-      })
-    }
     const userInfo = (
       await this.authService.verifyOtp({ email, otp, clientIp: userIp })
     ).value

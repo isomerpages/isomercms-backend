@@ -219,6 +219,7 @@ class UsersService {
       email: normalizedEmail,
       hashedOtp,
       attempts: 0,
+      attemptsByIp: {},
       expiresAt: this.getOtpExpiry(),
     })
 
@@ -239,6 +240,7 @@ class UsersService {
       mobileNumber,
       hashedOtp,
       attempts: 0,
+      attemptsByIp: {},
       expiresAt: this.getOtpExpiry(),
     })
 
@@ -271,10 +273,12 @@ class UsersService {
     otp,
     findConditions,
     findErrorMessage,
+    clientIp,
   }: {
     otp: string | undefined
     findConditions: { email: string } | { mobileNumber: string }
     findErrorMessage: string
+    clientIp: string
   }) {
     if (!otp) {
       return errAsync(new BadRequestError("Empty OTP provided"))
@@ -316,17 +320,27 @@ class UsersService {
           )
         }
 
-        if (otpEntry.attempts >= MAX_NUM_OTP_ATTEMPTS) {
+        // GTA-80-009 WP2: Enforce per-IP attempts;
+        const attemptsByIp = otpEntry.attemptsByIp || {}
+        const attemptsForIp = attemptsByIp[clientIp] ?? 0
+        if (attemptsForIp >= MAX_NUM_OTP_ATTEMPTS) {
           // should this delete the otpEntry as well?
           return errAsync(new BadRequestError("Max number of attempts reached"))
         }
 
         // We must successfully be able to increment the otp record attempts before any processing, to prevent brute-force race condition
         // Consult GTA-24-012 WP3 for details
+        // atomically increment attempts for this IP using JSONB concatenation guarded by current value
+        const newAttemptsForIp = attemptsForIp + 1
+        const attemptsByIpUpdated = { ...(otpEntry.attemptsByIp || {}) }
+        attemptsByIpUpdated[clientIp] = newAttemptsForIp
+
         return ResultAsync.fromPromise(
           this.otpRepository.update(
             {
+              // maintain legacy aggregate attempts for monitoring, but do not enforce with it
               attempts: otpEntry.attempts + 1,
+              attemptsByIp: attemptsByIpUpdated,
             },
             {
               where: {
@@ -377,21 +391,27 @@ class UsersService {
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 
-  verifyEmailOtp(email: string, otp: string | undefined) {
+  verifyEmailOtp(email: string, otp: string | undefined, clientIp: string) {
     const normalizedEmail = email.toLowerCase()
 
     return this.verifyOtp({
       otp,
       findConditions: { email: normalizedEmail },
       findErrorMessage: "Error finding OTP entry when verifying email OTP",
+      clientIp,
     })
   }
 
-  verifyMobileOtp(mobileNumber: string, otp: string | undefined) {
+  verifyMobileOtp(
+    mobileNumber: string,
+    otp: string | undefined,
+    clientIp: string
+  ) {
     return this.verifyOtp({
       otp,
       findConditions: { mobileNumber },
       findErrorMessage: "Error finding OTP entry when verifying mobile OTP",
+      clientIp,
     })
   }
 

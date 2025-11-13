@@ -341,7 +341,6 @@ describe("Review Requests Router", () => {
       // Arrange
       mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
       mockIdentityUsersService.findByEmail.mockResolvedValueOnce("user")
-      mockCollaboratorsService.list.mockResolvedValueOnce([])
 
       // Act
       const response = await request(app)

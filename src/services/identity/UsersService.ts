@@ -212,6 +212,32 @@ class UsersService {
 
   async sendEmailOtp(email: string) {
     const normalizedEmail = email.toLowerCase()
+
+    // Check if there's already a valid OTP for this email
+    // This prevents creating new OTPs while a valid one exists, mitigating
+    // the attack vector where an attacker spam OTP requests
+    // to prevent the user from logging in
+    const existingOtp = await this.otpRepository.findOne({
+      where: {
+        email: normalizedEmail,
+        hashedOtp: {
+          [Op.regexp]: "\\S+", // at least one non-whitespace character (i.e. is truthy!)
+        },
+      },
+    })
+    if (existingOtp && existingOtp.expiresAt >= new Date()) {
+      logger.info({
+        message: "OTP request blocked: valid OTP already exists",
+        meta: {
+          email: normalizedEmail,
+          expiresAt: existingOtp.expiresAt,
+        },
+      })
+      // Return silently to avoid revealing whether an OTP exists
+      // This maintains security by not leaking information about existing OTPs
+      return
+    }
+
     const { otp, hashedOtp } = await this.otpService.generateLoginOtpWithHash()
 
     // Reset attempts to login

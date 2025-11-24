@@ -5,7 +5,11 @@ const {
   convertDataToMarkdown,
 } = require("@utils/markdown-utils")
 
-const { hasSpecialCharInTitle, isDateValid } = require("@validators/validators")
+const {
+  hasSpecialCharInTitle,
+  isDateValid,
+  isSafePath,
+} = require("@validators/validators")
 
 class ResourcePageService {
   constructor({ gitHubService }) {
@@ -16,7 +20,7 @@ class ResourcePageService {
     const fileNameArray = fileName.split(".md")[0]
     const tokenArray = fileNameArray.split("-")
     const date = tokenArray.slice(0, 3).join("-")
-    if (!isDateValid(date))
+    if (!isDateValid(date) || !isSafePath(`/${fileName}`, "/"))
       throw new BadRequestError("Special characters not allowed in file name")
 
     const type = ["file", "post", "link"].includes(tokenArray[3])

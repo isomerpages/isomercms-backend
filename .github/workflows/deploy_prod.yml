@@ -13,7 +13,7 @@ jobs:
     uses: ./.github/workflows/aws_deploy.yml
     with:
       aws-region: "ap-southeast-1"
-      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-github-oidc-role-16ea937"
+      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-prod-deploy-role"
       ecr-repository: "isomer-infra-prod-ecr"
       ecs-cluster-name: "isomer-prod-ecs"
       ecs-web-service-name: "isomer-prod-ecs-service"
@@ -38,7 +38,7 @@ jobs:
     uses: ./.github/workflows/aws_deploy.yml
     with:
       aws-region: "ap-southeast-1"
-      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-github-oidc-role-16ea937"
+      cicd-role: "arn:aws:iam::095733531422:role/isomer-infra-prod-deploy-role"
       ecr-repository: "isomer-infra-prod-ecr"
       ecs-cluster-name: "isomer-prod-ecs"
       ecs-web-service-name: "prod-support-ecs-service"

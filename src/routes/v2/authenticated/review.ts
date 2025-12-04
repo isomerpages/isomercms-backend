@@ -210,6 +210,26 @@ export class ReviewsRouter {
     )
     const { reviewers, title, description } = req.body
 
+    // NOTE: reject requests that asks for the user to be the reviewer
+    // rather than accept and filter later.
+    // We should be stricter because this is prohibited on frontend
+    // so this means that the user is trying to do something they know is forbidden
+    if (reviewers.includes(userWithSiteSessionData.email)) {
+      logger.error({
+        message: `User ${userWithSiteSessionData.email} attempted to request a review from themselves for site ${siteName}`,
+        method: "createReviewRequest",
+        meta: {
+          userId: userWithSiteSessionData.isomerUserId,
+          email: userWithSiteSessionData.email,
+          siteName,
+        },
+      })
+      return res.status(400).send({
+        message:
+          "Please ensure that you are not requesting a review from yourself!",
+      })
+    }
+
     // Step 3: Check if reviewers are admins of repo
     // Check if number of requested reviewers > 0
     if (reviewers.length === 0) {

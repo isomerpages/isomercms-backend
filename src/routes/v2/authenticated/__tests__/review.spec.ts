@@ -13,6 +13,7 @@ import { mockUserId } from "@fixtures/identity"
 import { MOCK_USER_EMAIL_ONE, MOCK_USER_EMAIL_TWO } from "@fixtures/users"
 import { CollaboratorRoles, ReviewRequestStatus } from "@root/constants"
 import MissingSiteError from "@root/errors/MissingSiteError"
+import { MOCK_USER_SESSION_DATA_ONE } from "@root/fixtures/sessionData"
 import GitHubService from "@root/services/db/GitHubService"
 import CollaboratorsService from "@services/identity/CollaboratorsService"
 import NotificationsService from "@services/identity/NotificationsService"
@@ -330,6 +331,34 @@ describe("Review Requests Router", () => {
       expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
       expect(mockIdentityUsersService.findByEmail).toHaveBeenCalledTimes(1)
       expect(mockCollaboratorsService.list).toHaveBeenCalledTimes(1)
+      expect(
+        mockReviewRequestService.createReviewRequest
+      ).not.toHaveBeenCalled()
+      expect(mockNotificationsService.create).not.toHaveBeenCalled()
+    })
+
+    it("should return 400 if the user requests themselves to review", async () => {
+      // Arrange
+      mockCollaboratorsService.getRole.mockResolvedValueOnce("role")
+      mockIdentityUsersService.findByEmail.mockResolvedValueOnce("user")
+
+      // Act
+      const response = await request(app)
+        .post("/mockSite/review/request")
+        .send({
+          // NOTE: this is injected via `generateRouterForDefaultUserWithSite`
+          // and from there, `attachDefaultUserSessionDataWithSite`
+          reviewers: [MOCK_USER_SESSION_DATA_ONE.email],
+          title: "mockTitle",
+          description: "mockDescription",
+        })
+
+      // Assert
+      expect(response.status).toEqual(400)
+      expect(mockSitesService.getBySiteName).toHaveBeenCalledTimes(1)
+      expect(mockCollaboratorsService.getRole).toHaveBeenCalledTimes(1)
+      expect(mockIdentityUsersService.findByEmail).toHaveBeenCalledTimes(1)
+      expect(mockCollaboratorsService.list).not.toHaveBeenCalled()
       expect(
         mockReviewRequestService.createReviewRequest
       ).not.toHaveBeenCalled()

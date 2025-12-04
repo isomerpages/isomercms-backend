@@ -1,7 +1,7 @@
 import rateLimit from "express-rate-limit"
 
 import { BaseIsomerError } from "@root/errors/BaseError"
-import { isSecure } from "@root/utils/auth-utils"
+import { getUserIPAddress } from "@root/utils/auth-utils"
 
 const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 
@@ -21,7 +21,7 @@ export const rateLimiter = rateLimit({
   // We know that this key exists in a secure env (Cloudflare)
   // See https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-connecting-ip
   keyGenerator: (req) => {
-    const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
+    const userIp = getUserIPAddress(req)
     if (!userIp) {
       // This should never happen, but if it does, we should know about it
       throw new BaseIsomerError({

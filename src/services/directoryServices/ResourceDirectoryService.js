@@ -7,6 +7,8 @@ const {
 } = require("@utils/markdown-utils")
 const { slugifyCollectionName } = require("@utils/utils")
 
+const { isSafePath } = require("@root/validators/validators")
+
 const INDEX_FILE_NAME = "index.html"
 
 class ResourceDirectoryService {
@@ -79,7 +81,13 @@ class ResourceDirectoryService {
     sessionData,
     { resourceRoomName, resourceCategoryName }
   ) {
-    if (/[^a-zA-Z0-9- ]/g.test(resourceCategoryName)) {
+    if (
+      /[^a-zA-Z0-9- ]/g.test(resourceCategoryName) ||
+      !isSafePath(
+        `/${resourceRoomName}/${resourceCategoryName}`,
+        `/${resourceRoomName}`
+      )
+    ) {
       // Contains non-allowed characters
       throw new BadRequestError(
         "Special characters not allowed in resource category name"
@@ -111,7 +119,13 @@ class ResourceDirectoryService {
     githubSessionData,
     { resourceRoomName, resourceCategoryName, newDirectoryName }
   ) {
-    if (/[^a-zA-Z0-9- ]/g.test(newDirectoryName)) {
+    if (
+      /[^a-zA-Z0-9- ]/g.test(newDirectoryName) ||
+      !isSafePath(
+        `/${resourceRoomName}/${newDirectoryName}`,
+        `/${resourceRoomName}`
+      )
+    ) {
       // Contains non-allowed characters
       throw new BadRequestError(
         "Special characters not allowed in resource category name"

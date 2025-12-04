@@ -9,7 +9,7 @@ const logger = require("@logger/logger").default
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const FRONTEND_URL = config.get("app.frontendUrl")
-const { isSecure } = require("@utils/auth-utils")
+const { isSecure, getUserIPAddress } = require("@utils/auth-utils")
 
 const {
   EmailSchema,
@@ -106,7 +106,7 @@ class AuthRouter {
         message: `Invalid request format: ${error.message}`,
       })
     const email = rawEmail.toLowerCase()
-    const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
+    const userIp = getUserIPAddress(req)
     const userInfo = (
       await this.authService.verifyOtp({ email, otp, clientIp: userIp })
     ).value

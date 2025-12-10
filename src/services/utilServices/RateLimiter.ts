@@ -30,14 +30,6 @@ export const rateLimiter = rateLimit({
   },
 })
 
-/**
- * | Scenario                     | IP+email only | Email only  | Both          |
- * |------------------------------|---------------|-------------|---------------|
- * | 1 attacker IP, 1 victim      | 5 requests    | 10 requests | 5 requests    |
- * | 9 attacker IPs, 1 victim     | 45 requests   | 10 requests | 10 requests   |
- * | 1 attacker IP, many victims  | 5 per victim  | Unlimited   | 5 per victim  |
- */
-
 // Rate limiter for OTP generation that limits by IP+email combination.
 // This prevents attackers with multiple IPs from continuously requesting new OTPs
 // to invalidate existing ones for a victim's email address.
@@ -57,19 +49,5 @@ export const otpGenerationRateLimiter = rateLimit({
     }
     const email = req.body?.email?.toLowerCase() || "unknown"
     return `otp:${userIp}:${email}`
-  },
-})
-
-// Additional rate limiter to limit total OTP requests per email
-// across all IPs. This prevents distributed attacks using many IPs.
-// Limit: 10 OTP requests per email per 15 minutes (across all IPs).
-export const otpGenerationByEmailRateLimiter = rateLimit({
-  windowMs: DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    const email = req.body?.email?.toLowerCase() || "unknown"
-    return `otp-email:${email}`
   },
 })

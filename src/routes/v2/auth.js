@@ -28,7 +28,6 @@ class AuthRouter {
     apiLogger,
     rateLimiter,
     otpGenerationRateLimiter,
-    otpGenerationByEmailRateLimiter,
     sgidAuthRouter,
   }) {
     this.authService = authService
@@ -37,7 +36,6 @@ class AuthRouter {
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
     this.otpGenerationRateLimiter = otpGenerationRateLimiter
-    this.otpGenerationByEmailRateLimiter = otpGenerationByEmailRateLimiter
     this.sgidAuthRouter = sgidAuthRouter
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
@@ -157,7 +155,6 @@ class AuthRouter {
     router.post(
       "/login",
       this.otpGenerationRateLimiter,
-      this.otpGenerationByEmailRateLimiter,
       attachReadRouteHandlerWrapper(this.login)
     )
     router.post(

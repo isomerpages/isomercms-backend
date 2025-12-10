@@ -101,7 +101,6 @@ import ReviewCommentService from "./services/review/ReviewCommentService"
 import {
   rateLimiter,
   otpGenerationRateLimiter,
-  otpGenerationByEmailRateLimiter,
 } from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
@@ -366,7 +365,6 @@ const authV2Router = new AuthRouter({
   apiLogger,
   rateLimiter,
   otpGenerationRateLimiter,
-  otpGenerationByEmailRateLimiter,
   statsMiddleware,
   sgidAuthRouter,
 })

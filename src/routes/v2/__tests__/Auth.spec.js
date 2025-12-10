@@ -9,7 +9,11 @@ const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const { generateRouter } = require("@fixtures/app")
 const { mockUserSessionData, mockEmail } = require("@fixtures/sessionData")
-const { rateLimiter } = require("@root/services/utilServices/RateLimiter")
+const {
+  rateLimiter,
+  otpGenerationRateLimiter,
+  otpGenerationByEmailRateLimiter,
+} = require("@root/services/utilServices/RateLimiter")
 
 const { CSRF_COOKIE_NAME, COOKIE_NAME, AuthRouter } = require("../auth")
 
@@ -38,6 +42,8 @@ describe("Unlinked Pages Router", () => {
     authService: mockAuthService,
     authenticationMiddleware: mockAuthenticationMiddleware,
     rateLimiter,
+    otpGenerationRateLimiter,
+    otpGenerationByEmailRateLimiter,
   })
 
   const subrouter = express()

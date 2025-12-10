@@ -27,6 +27,8 @@ class AuthRouter {
     statsMiddleware,
     apiLogger,
     rateLimiter,
+    otpGenerationRateLimiter,
+    otpGenerationByEmailRateLimiter,
     sgidAuthRouter,
   }) {
     this.authService = authService
@@ -34,6 +36,8 @@ class AuthRouter {
     this.statsMiddleware = statsMiddleware
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
+    this.otpGenerationRateLimiter = otpGenerationRateLimiter
+    this.otpGenerationByEmailRateLimiter = otpGenerationByEmailRateLimiter
     this.sgidAuthRouter = sgidAuthRouter
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
@@ -148,7 +152,14 @@ class AuthRouter {
       this.statsMiddleware.trackV2GithubLogins,
       attachReadRouteHandlerWrapper(this.githubAuth)
     )
-    router.post("/login", attachReadRouteHandlerWrapper(this.login))
+    // Apply stricter rate limiting for OTP generation
+    // to prevent attackers from invalidating OTPs by spamming requests
+    router.post(
+      "/login",
+      this.otpGenerationRateLimiter,
+      this.otpGenerationByEmailRateLimiter,
+      attachReadRouteHandlerWrapper(this.login)
+    )
     router.post(
       "/verify",
       this.statsMiddleware.trackEmailLogins,

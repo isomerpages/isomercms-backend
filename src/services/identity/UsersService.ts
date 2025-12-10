@@ -324,7 +324,7 @@ class UsersService {
         // GTA-80-009 WP2: Enforce per-IP attempts;
         const attemptsByIp = otpEntry.attemptsByIp || {}
         const attemptsForIp = attemptsByIp[clientIp] ?? 0
-        if (attemptsForIp > MAX_NUM_OTP_ATTEMPTS) {
+        if (attemptsForIp >= MAX_NUM_OTP_ATTEMPTS) {
           // should this delete the otpEntry as well?
           return errAsync(new BadRequestError("Max number of attempts reached"))
         }

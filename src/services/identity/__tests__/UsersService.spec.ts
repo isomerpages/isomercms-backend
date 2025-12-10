@@ -116,17 +116,20 @@ describe("User Service", () => {
         expect(result.isErr()).toBe(true)
         const err = result._unsafeUnwrapErr()
         expect(err).toBeInstanceOf(BadRequestError)
-        if (i < maxAttempts) {
-          expect((err as BadRequestError).message).toBe("OTP is not valid")
-        } else {
-          expect((err as BadRequestError).message).toBe(
-            "Max number of attempts reached"
-          )
-        }
+        expect((err as BadRequestError).message).toBe("OTP is not valid")
       }
 
+      // The next attempt should return max attempts error
+      const result = await UsersService.verifyEmailOtp(mockEmail, wrongOtp, ip)
+      expect(result.isErr()).toBe(true)
+      const err = result._unsafeUnwrapErr()
+      expect(err).toBeInstanceOf(BadRequestError)
+      expect((err as BadRequestError).message).toBe(
+        "Max number of attempts reached"
+      )
+
       expect(MockOtp.update).toHaveBeenCalled()
-      expect(dbAttemptsByIp[ip]).toBe(maxAttempts - 1) // last call rejected before increment
+      expect(dbAttemptsByIp[ip]).toBe(maxAttempts) // max attempts reached
     })
 
     it("uses 'unknown' bucket when clientIp is missing", async () => {

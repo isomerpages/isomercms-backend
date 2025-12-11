@@ -37,14 +37,3 @@ pull_request_rules:
     actions:
       edit:
         draft: True
-        
-  - name: Ping Isomer members for stale open PRs (>1 month since last activity)
-    conditions:
-      - updated-at<30 days ago
-      - -closed
-    actions:
-      request_reviews:
-        teams:
-          - "@isomerpages/iso-engineers"
-      comment:
-        message: This pull request has been stale for more than 30 days! Could someone please take a look at it @isomerpages/iso-engineers

@@ -164,7 +164,8 @@ describe("Auth Service", () => {
       expect(result._unsafeUnwrap()).toEqual(signedEmailToken)
       expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
-        mockOtp
+        mockOtp,
+        undefined
       )
       expect(mockUsersService.loginWithEmail).toHaveBeenCalledWith(mockEmail)
     })
@@ -179,7 +180,8 @@ describe("Auth Service", () => {
       ).rejects.toThrow(BadRequestError)
       expect(mockUsersService.verifyEmailOtp).toHaveBeenCalledWith(
         mockEmail,
-        mockOtp
+        mockOtp,
+        undefined
       )
     })
   })

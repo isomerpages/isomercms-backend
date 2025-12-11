@@ -9,7 +9,7 @@ const logger = require("@logger/logger").default
 const { attachReadRouteHandlerWrapper } = require("@middleware/routeHandler")
 
 const FRONTEND_URL = config.get("app.frontendUrl")
-const { isSecure } = require("@utils/auth-utils")
+const { isSecure, getUserIPAddress } = require("@utils/auth-utils")
 
 const {
   EmailSchema,
@@ -27,6 +27,7 @@ class AuthRouter {
     statsMiddleware,
     apiLogger,
     rateLimiter,
+    otpGenerationRateLimiter,
     sgidAuthRouter,
   }) {
     this.authService = authService
@@ -34,6 +35,7 @@ class AuthRouter {
     this.statsMiddleware = statsMiddleware
     this.apiLogger = apiLogger
     this.rateLimiter = rateLimiter
+    this.otpGenerationRateLimiter = otpGenerationRateLimiter
     this.sgidAuthRouter = sgidAuthRouter
     // We need to bind all methods because we don't invoke them from the class directly
     autoBind(this)
@@ -106,7 +108,10 @@ class AuthRouter {
         message: `Invalid request format: ${error.message}`,
       })
     const email = rawEmail.toLowerCase()
-    const userInfo = (await this.authService.verifyOtp({ email, otp })).value
+    const userIp = getUserIPAddress(req)
+    const userInfo = (
+      await this.authService.verifyOtp({ email, otp, clientIp: userIp })
+    ).value
     Object.assign(req.session, { userInfo })
     logger.info(`User ${userInfo.email} successfully logged in`)
     return res.sendStatus(200)
@@ -145,7 +150,13 @@ class AuthRouter {
       this.statsMiddleware.trackV2GithubLogins,
       attachReadRouteHandlerWrapper(this.githubAuth)
     )
-    router.post("/login", attachReadRouteHandlerWrapper(this.login))
+    // Apply stricter rate limiting for OTP generation
+    // to prevent attackers from invalidating OTPs by spamming requests
+    router.post(
+      "/login",
+      this.otpGenerationRateLimiter,
+      attachReadRouteHandlerWrapper(this.login)
+    )
     router.post(
       "/verify",
       this.statsMiddleware.trackEmailLogins,

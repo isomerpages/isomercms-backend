@@ -1,7 +1,7 @@
 import rateLimit from "express-rate-limit"
 
 import { BaseIsomerError } from "@root/errors/BaseError"
-import { isSecure } from "@root/utils/auth-utils"
+import { getUserIPAddress } from "@root/utils/auth-utils"
 
 const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 
@@ -12,16 +12,13 @@ const DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS = 900000
 // so our effective limit is 100 * 2.
 // This also implies that a client can hit the limit on 1 server
 // but not on the other, leading to inconsistent behaviour.
-// eslint-disable-next-line import/prefer-default-export
 export const rateLimiter = rateLimit({
   windowMs: DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS,
   max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // We know that this key exists in a secure env (Cloudflare)
-  // See https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-connecting-ip
   keyGenerator: (req) => {
-    const userIp = isSecure ? req.get("cf-connecting-ip") : req.ip
+    const userIp = getUserIPAddress(req)
     if (!userIp) {
       // This should never happen, but if it does, we should know about it
       throw new BaseIsomerError({
@@ -30,5 +27,27 @@ export const rateLimiter = rateLimit({
       })
     }
     return userIp
+  },
+})
+
+// Rate limiter for OTP generation that limits by IP+email combination.
+// This prevents attackers with multiple IPs from continuously requesting new OTPs
+// to invalidate existing ones for a victim's email address.
+// Limit: 5 OTP requests per IP+email combination per 15 minutes.
+export const otpGenerationRateLimiter = rateLimit({
+  windowMs: DEFAULT_AUTH_TOKEN_EXPIRY_MILLISECONDS,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const userIp = getUserIPAddress(req)
+    if (!userIp) {
+      throw new BaseIsomerError({
+        status: 500,
+        message: "No user IP found in the request",
+      })
+    }
+    const email = req.body?.email?.toLowerCase() || "unknown"
+    return `otp:${userIp}:${email}`
   },
 })

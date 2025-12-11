@@ -98,7 +98,10 @@ import WhitelistService from "./services/identity/WhitelistService"
 import DynamoDBDocClient from "./services/infra/DynamoDBClient"
 import RepoCheckerService from "./services/review/RepoCheckerService"
 import ReviewCommentService from "./services/review/ReviewCommentService"
-import { rateLimiter } from "./services/utilServices/RateLimiter"
+import {
+  rateLimiter,
+  otpGenerationRateLimiter,
+} from "./services/utilServices/RateLimiter"
 import SgidAuthService from "./services/utilServices/SgidAuthService"
 import { isSecure } from "./utils/auth-utils"
 import { setBrowserPolyfills } from "./utils/growthbook-utils"
@@ -361,6 +364,7 @@ const authV2Router = new AuthRouter({
   authService,
   apiLogger,
   rateLimiter,
+  otpGenerationRateLimiter,
   statsMiddleware,
   sgidAuthRouter,
 })

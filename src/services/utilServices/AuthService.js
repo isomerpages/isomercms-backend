@@ -125,9 +125,9 @@ class AuthService {
     }
   }
 
-  async verifyOtp({ email, otp }) {
+  async verifyOtp({ email, otp, clientIp }) {
     return this.usersService
-      .verifyEmailOtp(email, otp)
+      .verifyEmailOtp(email, otp, clientIp)
       .andThen(() =>
         ResultAsync.fromPromise(
           this.usersService.loginWithEmail(email),

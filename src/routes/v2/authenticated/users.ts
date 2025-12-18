@@ -14,6 +14,7 @@ import UserSessionData from "@classes/UserSessionData"
 import DatabaseError from "@root/errors/DatabaseError"
 import { isError, RequestHandler } from "@root/types"
 import { nameAnonymousMethods } from "@root/utils/apm-utils"
+import { getUserIPAddress } from "@root/utils/auth-utils"
 import {
   VerifyEmailOtpSchema,
   VerifyMobileNumberOtpSchema,
@@ -83,8 +84,9 @@ export class UsersRouter {
     const userId = userSessionData.isomerUserId
     const parsedEmail = email.toLowerCase()
 
+    const userIp = getUserIPAddress(req)
     return this.usersService
-      .verifyEmailOtp(parsedEmail, otp)
+      .verifyEmailOtp(parsedEmail, otp, userIp)
       .andThen(() =>
         ResultAsync.fromPromise(
           this.usersService.updateUserByIsomerId(userId, {
@@ -142,8 +144,9 @@ export class UsersRouter {
     const { userSessionData } = res.locals
     const userId = userSessionData.isomerUserId
 
+    const userIp = getUserIPAddress(req)
     return this.usersService
-      .verifyMobileOtp(mobile, otp)
+      .verifyMobileOtp(mobile, otp, userIp)
       .andThen(() =>
         ResultAsync.fromPromise(
           this.usersService.updateUserByIsomerId(userId, {
